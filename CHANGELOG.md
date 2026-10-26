@@ -104,6 +104,7 @@
 
 ### Fixed
 
+- Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.

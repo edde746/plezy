@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -491,7 +490,7 @@ class SourceController extends ChangeNotifier {
     try {
       return await task;
     } finally {
-      if (identical(_onlineLookups[key], task)) _onlineLookups.remove(key);
+      if (identical(_onlineLookups[key], task)) unawaited(_onlineLookups.remove(key));
     }
   }
 

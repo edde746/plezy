@@ -104,6 +104,7 @@ class TranslationsMs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ms fileSources = _Translations$fileSources$ms._(_root);
 	@override late final _Translations$lending$ms lending = _Translations$lending$ms._(_root);
 	@override late final _Translations$audiobook$ms audiobook = _Translations$audiobook$ms._(_root);
+	@override late final _Translations$sourceSetup$ms sourceSetup = _Translations$sourceSetup$ms._(_root);
 }
 
 // Path: app
@@ -3044,6 +3045,12 @@ class _Translations$fileSources$ms extends Translations$fileSources$en {
 	@override String get useFiles => 'Menggunakan fail dan buku';
 	@override String get cancelScan => 'Batalkan pemindaian';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Masukkan pelayan SMB dan satu folder kongsi.';
+	@override String get smbFolderHelp => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.';
+	@override String get smbDomain => 'Domain (pilihan)';
+	@override String get smbEncryption => 'Sulitkan sambungan SMB3';
+	@override String get smbEncryptionHint => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.';
 }
 
 // Path: lending
@@ -3163,6 +3170,109 @@ class _Translations$audiobook$ms extends Translations$audiobook$en {
 	@override String get statusFinished => 'selesai';
 	@override String get goToTime => 'Pergi ke masa';
 	@override String get timeHelp => 'Jam : minit : detik atau minit : detik';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$ms extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$ms._(TranslationsMs root) : this._root = root, super.internal(root);
+
+	final TranslationsMs _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Sijil pelayan yang disimpan';
+	@override String get nfsEndpointInvalid => 'Masukkan URL NFS, contohnya nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Tiada pelayan DLNA ditemukan. Masukkan URL perihalan peranti secara manual.';
+	@override String get dlnaServers => 'Pelayan media DLNA';
+	@override String get dlnaUnavailable => 'Penemuan DLNA tidak tersedia pada rangkaian ini. Masukkan URL perihalan peranti secara manual.';
+	@override String get dlnaSearching => 'Mencari pelayan DLNA pada rangkaian setempat';
+	@override String get networkSearching => 'Mencari pada rangkaian setempat…';
+	@override String get dlnaDiscover => 'Temukan pelayan DLNA';
+	@override String get dlnaHelp => 'Penemuan bergantung pada multisiar rangkaian setempat. Jika tiada pelayan muncul, masukkan URL perihalan perantinya di atas.';
+	@override String get dlnaRoot => 'ID objek DLNA; biarkan kosong untuk menggunakan akar peranti.';
+	@override String get passwordOrKey => 'Masukkan kata laluan atau tambah kunci peribadi di bawah.';
+	@override String get sshFingerprint => 'Cap jari SHA256 kunci hos SSH';
+	@override String get sshFingerprintHelp => 'Sahkan dengan pentadbir pelayan. Pada pelayan, jalankan ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub dan gunakan nilai SHA256-nya.';
+	@override String get sshFingerprintKeep => 'Biarkan kosong untuk mengekalkan cap jari yang ditetapkan sekarang, atau masukkan cap jari pelayan yang baharu.';
+	@override String get sshAuthentication => 'Pengesahan SSH dengan kunci awam';
+	@override String get sshAuthenticationHelp => 'Pilihan; pengesahan dengan kata laluan juga disokong.';
+	@override String get privateKey => 'Kunci peribadi (format PEM atau OpenSSH)';
+	@override String get privateKeyPassphrase => 'Frasa laluan kunci peribadi';
+	@override String get nfsMountPort => 'Port TCP perkhidmatan lekap NFS';
+	@override String get nfsMountPortHelp => 'Lalai: 20048';
+	@override String get nfsUserId => 'ID pengguna NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Lalai: 1000. Gunakan ID yang dibenarkan oleh perkongsian NFS pada NAS.';
+	@override String get nfsGroupId => 'ID kumpulan NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Lalai: 1000. Gunakan ID kumpulan yang dibenarkan oleh perkongsian NFS pada NAS.';
+	@override String get nfsEncryption => 'Wajibkan NFS disulitkan (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Wajibkan TLS 1.3 untuk NFS dan perkhidmatan lekap. Jika NAS tidak menyokongnya, sambungan ditolak.';
+	@override String get nfsTrustCertificate => 'CA NFS tersuai atau sijil pelayan (PEM, pilihan)';
+	@override String get nfsTrustHelp => 'Biarkan kosong untuk sijil yang dipercayai oleh peranti ini. Jika perlu, tambah sijil CA persendirian atau sijil pelayan yang ditandatangani sendiri; namanya mesti sepadan dengan hos dalam URL NFS.';
+	@override String get nfsTrustInvalid => 'Gunakan sijil CA atau pelayan dalam format PEM. Jangan sertakan kunci peribadi.';
+	@override String get addTrustCertificate => 'Tambah sijil kepercayaan tersuai';
+	@override String get replaceTrustCertificate => 'Gantikan sijil tersuai yang disimpan';
+	@override String get nfsTlsHelp => 'RPC-with-TLS menggunakan port NFS dan perkhidmatan lekap yang biasa serta memerlukan sokongan RFC 9289 pada NAS. TLS 1.3 diwajibkan. Nama hos atau IP mesti sepadan dengan sijil. AUTH_SYS UID/GID masih terpakai dalam saluran yang disulitkan.';
+	@override String get clientCertificate => 'Sijil klien (pilihan)';
+	@override String get clientCertificateHelp => 'Membolehkan NAS mengesahkan klien ini; ID AUTH_SYS masih bergantung pada dasar perkongsian NFS pada NAS.';
+	@override String get savedIdentity => 'Identiti klien yang disimpan akan digunakan.';
+	@override String get replaceIdentity => 'Gantikan identiti klien yang disimpan';
+	@override String get chooseIdentity => 'Pilih identiti klien PKCS#12';
+	@override String get identityPassphrase => 'Frasa laluan identiti klien';
+	@override String get identityPassphraseHelp => 'Biarkan kosong jika fail tiada frasa laluan.';
+	@override String get removeIdentity => 'Alih keluar sebarang identiti klien yang disimpan';
+	@override String get identityStorageHelp => 'Identiti klien disimpan dalam stor bukti kelayakan sumber yang disulitkan. Biarkan bahagian ini tidak berubah untuk mengekalkan identiti yang disimpan.';
+	@override String get nfsLimitations => 'NFSv3 baca sahaja melalui TCP. Tanpa RPC-with-TLS, trafik NFS tidak disulitkan. NAS mesti membenarkan ID AUTH_SYS yang dipilih dan port klien tanpa keistimewaan (sering dipanggil pilihan eksport “insecure”). NFSv4 dan UDP tidak disokong.';
+	@override String get nfsSetupHelp => 'Bantuan persediaan NFS';
+	@override String get nfsSetupHint => 'Semak tetapan ini jika sambungan tidak dapat dibuka.';
+	@override String get nfsSetupDetails => 'Gunakan perkongsian NFSv3 melalui TCP. Jika penyulitan diwajibkan, perkhidmatan NFS dan lekap mesti kedua-duanya menyokong RPC-with-TLS. Biarkan sijil tersuai kosong untuk sijil pelayan yang dipercayai oleh peranti ini, atau tambah sijil CA NAS atau sijil yang ditandatangani sendiri. Nama dalam sijil mesti sepadan dengan hos titik akhir. Jika NAS memerlukan pengesahan TLS dua hala, tambah identiti klien PKCS#12-nya. Akhir sekali, pastikan perkongsian membenarkan AUTH_SYS UID/GID yang dikonfigurasi serta dasar port klien.';
+	@override String get ftpHelp => 'FTP menggunakan mod pasif. Gunakan ftp:// untuk FTP tanpa penyulitan, ftpes:// untuk TLS eksplisit, atau ftps:// untuk TLS (implisit pada port 990; eksplisit pada port lain).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Carian sari kata pilihan untuk video kendiri.';
+	@override String get apiKey => 'Kunci API';
+	@override String get optionalUsername => 'Nama pengguna akaun (pilihan)';
+	@override String get optionalPassword => 'Kata laluan akaun (pilihan)';
+	@override String get subtitlePrivacy => 'Dapatkan kunci API daripada opensubtitles.com. Carian menghantar tajuk video dan ID IMDb/TMDB yang tersedia, bukan fail video sama sekali. Kunci dan bukti kelayakan akaun pilihan disulitkan bersama sumber ini.';
+	@override String get automaticMetadata => 'Metadata video dalam talian automatik';
+	@override String get metadataPrivacy => 'Hanya menghantar tajuk/tahun daripada nama fail dan nombor episod atau ID NFO; tidak sekali-kali menghantar media atau bukti kelayakan. Medan NFO kekal sebagai rujukan utama.';
+	@override String get nfsEncryptionFailure => 'Untuk NFS disulitkan, semak sokongan RFC 9289 dan TLS 1.3 pada kedua-dua perkhidmatan NAS, nama sijil dan UID/GID perkongsian. PlezyNG tidak akan mencuba semula sambungan ini tanpa penyulitan.';
+	@override String get sourceConnecting => 'Menyambung ke sumber';
+	@override String get metadataSearchPrivacy => 'Carian tajuk ini dihantar ke Trakt. Carian menghantar tajuk yang anda masukkan, bukan video atau bukti kelayakan sumber.';
+	@override String get chooseMatch => 'Pilih padanan';
+	@override String get metadataMatchHelp => 'Semak tajuk dan tahun sebelum memilih. Trakt menerima tajuk carian; video kekal pada sumbernya.';
+	@override String get metadataNoMatches => 'Tiada padanan tajuk dalam talian ditemukan. Cuba tajuk lain.';
+	@override String get metadataSearch => 'Cari metadata dalam talian';
+	@override String get metadataLoading => 'Mencari butiran filem dan rancangan TV dalam talian…';
+	@override String get metadataFromTrakt => 'Metadata dalam talian daripada Trakt';
+	@override String get metadataNoAutomaticMatch => 'Tiada padanan tajuk automatik ditemukan. Cari tajuk untuk memilih padanan.';
+	@override String get metadataFailed => 'Metadata dalam talian tidak dapat dimuatkan. Main balik dan butiran setempat masih tersedia.';
+	@override String get videoDetailsLoading => 'Memuatkan butiran video';
+	@override String get subtitleKeyRequired => 'Kunci API OpenSubtitles diperlukan';
+	@override String get subtitleKeyHelp => 'Edit sumber fail ini dan tambah kunci API OpenSubtitles dalam tetapan sari kata pilihannya.';
+	@override String get subtitleSearchFailed => 'Carian sari kata gagal. Semak kunci API, sambungan dan akses kepada perkhidmatan.';
+	@override String get subtitleApplyFailed => 'Sari kata ini tidak dapat dimuat turun atau digunakan. Semak sambungan dan cuba hasil lain.';
+	@override String get subtitleSearch => 'Cari di OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Carian menggunakan tajuk dan ID IMDb/TMDB yang tersedia. Fail video kekal pada sumbernya. Semak bahasa, penanda sari kata paksa atau untuk orang kurang upaya pendengaran, serta penilaian sebelum memilih.';
+	@override String get movieOrShow => 'Filem atau rancangan TV';
+	@override String get subtitleTitleHint => 'Masukkan tajuk untuk memperincikan hasil';
+	@override String get subtitleLanguage => 'Bahasa sari kata';
+	@override String get subtitleSearching => 'Mencari di OpenSubtitles';
+	@override String get subtitleNoMatches => 'Tiada sari kata sepadan ditemukan. Cuba tajuk atau bahasa lain.';
+	@override String get downloadSubtitle => 'Muat turun sari kata';
+	@override String get subtitle => 'Sari kata';
+	@override String get nfsTlsRequired => 'RPC-with-TLS diperlukan';
+	@override String get nfsUnencrypted => 'NFS tidak disulitkan';
+	@override String get tlsEncrypted => 'Disulitkan dengan TLS';
+	@override String get ftpPlain => 'FTP tanpa penyulitan';
+	@override String get sshPinned => 'SSH disulitkan · kunci hos ditetapkan';
+	@override String get smbEncrypted => 'Penyulitan SMB3 dihidupkan';
+	@override String get smbUnencrypted => 'Penyulitan SMB3 dimatikan';
+	@override String get httpUnencrypted => 'HTTP tanpa penyulitan pengangkutan';
+	@override String get checkEndpointSecurity => 'Semak keselamatan titik akhir';
+	@override String fieldRequired({required Object label}) => '${label} diperlukan.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Masukkan ${label} antara ${min} dengan ${max}.';
+	@override String replaceFile({required Object name}) => 'Gantikan ${name}';
+	@override String selectedIdentity({required Object name}) => 'Identiti klien yang dipilih: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Penilaian ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Memuat turun sari kata: ${title}';
 }
 
 // Path: appIcon.names
@@ -3416,48 +3526,48 @@ class _Translations$discover$findNext$ms extends Translations$discover$findNext$
 	final TranslationsMs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Cari yang seterusnya';
-	@override String get open => 'Cari yang seterusnya';
-	@override String get anyTime => 'Setiap kali';
+	@override String get title => 'Temui pilihan anda yang seterusnya';
+	@override String get open => 'Temui pilihan anda yang seterusnya';
+	@override String get anyTime => 'Tanpa had masa';
 	@override String get timeAvailable => 'Berapa banyak masa yang anda ada?';
-	@override String get filters => 'Pilih Masa';
-	@override String get watch => 'Lihat';
-	@override String get listen => 'Dengarkan';
-	@override String get read => 'Membaca';
-	@override String finishable({required Object duration}) => 'Berakhir di ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Mengenai ${duration}';
+	@override String get filters => 'Pilih yang sesuai untuk saat ini';
+	@override String get watch => 'Tonton';
+	@override String get listen => 'Dengar';
+	@override String get read => 'Baca';
+	@override String finishable({required Object duration}) => 'Boleh selesai dalam ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Kira-kira ${duration}';
 	@override String nextUnit({required Object duration}) => 'Bab seterusnya · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} jumlah';
-	@override String get timingVaries => 'Jadual berbeza';
+	@override String totalDuration({required Object duration}) => 'Jumlah masa: ${duration}';
+	@override String get timingVaries => 'Tempoh mungkin berbeza';
 	@override String get notNow => 'Bukan sekarang';
-	@override String get swipeHint => 'Leret kulit ke arah anak panah atau gunakan butang di bawah.';
-	@override String get saved => 'Penyimpanan picks';
-	@override String savedCount({required Object count}) => 'Perbezaan antara ${count}';
-	@override String get undo => 'dan';
-	@override String get details => 'Maklumat';
-	@override String get noPicks => 'Tiada apa yang boleh dipilih daripada';
-	@override String get noPicksHint => 'Sambungkan perpustakaan atau tambahkan sumber media untuk memulakan.';
-	@override String get noMatches => 'Tiada apa yang sesuai dengan masa ini';
-	@override String get noMatchesHint => 'Cuba format lain atau berikan diri anda lebih banyak masa.';
-	@override String get allDone => 'awak semua terperangkap';
-	@override String get allDoneHint => 'Mulakan campuran segar untuk melihat pilihan-pilihan ini lagi.';
-	@override String get refresh => 'Cari campuran lain';
-	@override String sourceReason({required Object source}) => 'daripada ${source}';
-	@override String libraryReason({required Object library}) => 'daripada ${library}';
-	@override String get ownedReason => 'daripada perpustakaan anda';
-	@override String get liveNow => 'Pada masa ini';
-	@override String get watchLive => 'Lihat Live';
-	@override String get filterAnything => 'Apa sahaja';
-	@override String get filterWatch => 'Lihat';
-	@override String get filterListen => 'Dengarkan';
-	@override String get filterRead => 'Membaca';
-	@override String get twentyMinutes => '20 minit';
-	@override String get fortyFiveMinutes => '45 minit';
-	@override String get ninetyMinutes => '90 minit';
-	@override String get apply => 'Permohonan';
-	@override String get openFailed => 'Pilihan ini tidak lagi boleh didapati.Refresh untuk memeriksa lagi.';
-	@override String get changeFailed => 'Saya tak boleh buat perubahan. cuba lagi.';
-	@override String get savedLimit => 'Pika disimpan penuh. menghapuskan satu pilihan untuk menyelamatkan yang lain.';
+	@override String get swipeHint => 'Leret imej muka depan ke arah anak panah atau gunakan butang di bawah.';
+	@override String get saved => 'Cadangan yang disimpan';
+	@override String savedCount({required Object count}) => 'Cadangan yang disimpan · ${count}';
+	@override String get undo => 'Buat asal';
+	@override String get details => 'Butiran';
+	@override String get noPicks => 'Belum ada pilihan';
+	@override String get noPicksHint => 'Sambungkan pustaka atau tambah sumber media untuk bermula.';
+	@override String get noMatches => 'Tiada yang sesuai untuk saat ini';
+	@override String get noMatchesHint => 'Cuba jenis media lain atau luangkan lebih banyak masa.';
+	@override String get allDone => 'Anda telah melihat semua cadangan';
+	@override String get allDoneHint => 'Mulakan himpunan baharu untuk melihat pilihan ini semula.';
+	@override String get refresh => 'Cari himpunan lain';
+	@override String sourceReason({required Object source}) => 'Daripada ${source}';
+	@override String libraryReason({required Object library}) => 'Daripada ${library}';
+	@override String get ownedReason => 'Daripada pustaka anda';
+	@override String get liveNow => 'Sedang disiarkan';
+	@override String get watchLive => 'Tonton siaran langsung';
+	@override String get filterAnything => 'Apa-apa sahaja';
+	@override String get filterWatch => 'Tonton';
+	@override String get filterListen => 'Dengar';
+	@override String get filterRead => 'Baca';
+	@override String get twentyMinutes => '20 min';
+	@override String get fortyFiveMinutes => '45 min';
+	@override String get ninetyMinutes => '90 min';
+	@override String get apply => 'Gunakan';
+	@override String get openFailed => 'Pilihan ini tidak lagi tersedia. Muat semula untuk menyemak lagi.';
+	@override String get changeFailed => 'Perubahan ini tidak dapat disimpan. Cuba lagi.';
+	@override String get savedLimit => 'Senarai cadangan yang disimpan sudah penuh. Alih keluar satu cadangan untuk menyimpan yang lain.';
 	@override String get chooseHint => 'Buka tajuk, simpan untuk kemudian atau langkau.';
 	@override String get howItWorks => 'Cara penggunaan';
 	@override String get notNowHelp => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.';
@@ -5464,48 +5574,48 @@ extension on TranslationsMs {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'M${season}E${episode}',
 			'discover.overview' => 'Gambaran keseluruhan',
 			'discover.cast' => 'Tembakan',
-			'discover.findNext.title' => 'Cari yang seterusnya',
-			'discover.findNext.open' => 'Cari yang seterusnya',
-			'discover.findNext.anyTime' => 'Setiap kali',
+			'discover.findNext.title' => 'Temui pilihan anda yang seterusnya',
+			'discover.findNext.open' => 'Temui pilihan anda yang seterusnya',
+			'discover.findNext.anyTime' => 'Tanpa had masa',
 			'discover.findNext.timeAvailable' => 'Berapa banyak masa yang anda ada?',
-			'discover.findNext.filters' => 'Pilih Masa',
-			'discover.findNext.watch' => 'Lihat',
-			'discover.findNext.listen' => 'Dengarkan',
-			'discover.findNext.read' => 'Membaca',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Berakhir di ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Mengenai ${duration}',
+			'discover.findNext.filters' => 'Pilih yang sesuai untuk saat ini',
+			'discover.findNext.watch' => 'Tonton',
+			'discover.findNext.listen' => 'Dengar',
+			'discover.findNext.read' => 'Baca',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Boleh selesai dalam ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Kira-kira ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'Bab seterusnya · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} jumlah',
-			'discover.findNext.timingVaries' => 'Jadual berbeza',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Jumlah masa: ${duration}',
+			'discover.findNext.timingVaries' => 'Tempoh mungkin berbeza',
 			'discover.findNext.notNow' => 'Bukan sekarang',
-			'discover.findNext.swipeHint' => 'Leret kulit ke arah anak panah atau gunakan butang di bawah.',
-			'discover.findNext.saved' => 'Penyimpanan picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Perbezaan antara ${count}',
-			'discover.findNext.undo' => 'dan',
-			'discover.findNext.details' => 'Maklumat',
-			'discover.findNext.noPicks' => 'Tiada apa yang boleh dipilih daripada',
-			'discover.findNext.noPicksHint' => 'Sambungkan perpustakaan atau tambahkan sumber media untuk memulakan.',
-			'discover.findNext.noMatches' => 'Tiada apa yang sesuai dengan masa ini',
-			'discover.findNext.noMatchesHint' => 'Cuba format lain atau berikan diri anda lebih banyak masa.',
-			'discover.findNext.allDone' => 'awak semua terperangkap',
-			'discover.findNext.allDoneHint' => 'Mulakan campuran segar untuk melihat pilihan-pilihan ini lagi.',
-			'discover.findNext.refresh' => 'Cari campuran lain',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'daripada ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'daripada ${library}',
-			'discover.findNext.ownedReason' => 'daripada perpustakaan anda',
-			'discover.findNext.liveNow' => 'Pada masa ini',
-			'discover.findNext.watchLive' => 'Lihat Live',
-			'discover.findNext.filterAnything' => 'Apa sahaja',
-			'discover.findNext.filterWatch' => 'Lihat',
-			'discover.findNext.filterListen' => 'Dengarkan',
-			'discover.findNext.filterRead' => 'Membaca',
-			'discover.findNext.twentyMinutes' => '20 minit',
-			'discover.findNext.fortyFiveMinutes' => '45 minit',
-			'discover.findNext.ninetyMinutes' => '90 minit',
-			'discover.findNext.apply' => 'Permohonan',
-			'discover.findNext.openFailed' => 'Pilihan ini tidak lagi boleh didapati.Refresh untuk memeriksa lagi.',
-			'discover.findNext.changeFailed' => 'Saya tak boleh buat perubahan. cuba lagi.',
-			'discover.findNext.savedLimit' => 'Pika disimpan penuh. menghapuskan satu pilihan untuk menyelamatkan yang lain.',
+			'discover.findNext.swipeHint' => 'Leret imej muka depan ke arah anak panah atau gunakan butang di bawah.',
+			'discover.findNext.saved' => 'Cadangan yang disimpan',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Cadangan yang disimpan · ${count}',
+			'discover.findNext.undo' => 'Buat asal',
+			'discover.findNext.details' => 'Butiran',
+			'discover.findNext.noPicks' => 'Belum ada pilihan',
+			'discover.findNext.noPicksHint' => 'Sambungkan pustaka atau tambah sumber media untuk bermula.',
+			'discover.findNext.noMatches' => 'Tiada yang sesuai untuk saat ini',
+			'discover.findNext.noMatchesHint' => 'Cuba jenis media lain atau luangkan lebih banyak masa.',
+			'discover.findNext.allDone' => 'Anda telah melihat semua cadangan',
+			'discover.findNext.allDoneHint' => 'Mulakan himpunan baharu untuk melihat pilihan ini semula.',
+			'discover.findNext.refresh' => 'Cari himpunan lain',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Daripada ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Daripada ${library}',
+			'discover.findNext.ownedReason' => 'Daripada pustaka anda',
+			'discover.findNext.liveNow' => 'Sedang disiarkan',
+			'discover.findNext.watchLive' => 'Tonton siaran langsung',
+			'discover.findNext.filterAnything' => 'Apa-apa sahaja',
+			'discover.findNext.filterWatch' => 'Tonton',
+			'discover.findNext.filterListen' => 'Dengar',
+			'discover.findNext.filterRead' => 'Baca',
+			'discover.findNext.twentyMinutes' => '20 min',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
+			'discover.findNext.ninetyMinutes' => '90 min',
+			'discover.findNext.apply' => 'Gunakan',
+			'discover.findNext.openFailed' => 'Pilihan ini tidak lagi tersedia. Muat semula untuk menyemak lagi.',
+			'discover.findNext.changeFailed' => 'Perubahan ini tidak dapat disimpan. Cuba lagi.',
+			'discover.findNext.savedLimit' => 'Senarai cadangan yang disimpan sudah penuh. Alih keluar satu cadangan untuk menyimpan yang lain.',
 			'discover.findNext.chooseHint' => 'Buka tajuk, simpan untuk kemudian atau langkau.',
 			'discover.findNext.howItWorks' => 'Cara penggunaan',
 			'discover.findNext.notNowHelp' => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.',
@@ -7091,6 +7201,12 @@ extension on TranslationsMs {
 			'fileSources.useFiles' => 'Menggunakan fail dan buku',
 			'fileSources.cancelScan' => 'Batalkan pemindaian',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Masukkan pelayan SMB dan satu folder kongsi.',
+			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.',
+			'fileSources.smbDomain' => 'Domain (pilihan)',
+			'fileSources.smbEncryption' => 'Sulitkan sambungan SMB3',
+			'fileSources.smbEncryptionHint' => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.',
 			'lending.title' => 'Perpustakaan Awam',
 			'lending.add' => 'Menambah perpustakaan',
 			'lending.other' => 'Perpustakaan lain',
@@ -7192,6 +7308,102 @@ extension on TranslationsMs {
 			'audiobook.statusFinished' => 'selesai',
 			'audiobook.goToTime' => 'Pergi ke masa',
 			'audiobook.timeHelp' => 'Jam : minit : detik atau minit : detik',
+			'sourceSetup.savedCertificate' => 'Sijil pelayan yang disimpan',
+			'sourceSetup.nfsEndpointInvalid' => 'Masukkan URL NFS, contohnya nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Tiada pelayan DLNA ditemukan. Masukkan URL perihalan peranti secara manual.',
+			'sourceSetup.dlnaServers' => 'Pelayan media DLNA',
+			'sourceSetup.dlnaUnavailable' => 'Penemuan DLNA tidak tersedia pada rangkaian ini. Masukkan URL perihalan peranti secara manual.',
+			'sourceSetup.dlnaSearching' => 'Mencari pelayan DLNA pada rangkaian setempat',
+			'sourceSetup.networkSearching' => 'Mencari pada rangkaian setempat…',
+			'sourceSetup.dlnaDiscover' => 'Temukan pelayan DLNA',
+			'sourceSetup.dlnaHelp' => 'Penemuan bergantung pada multisiar rangkaian setempat. Jika tiada pelayan muncul, masukkan URL perihalan perantinya di atas.',
+			'sourceSetup.dlnaRoot' => 'ID objek DLNA; biarkan kosong untuk menggunakan akar peranti.',
+			'sourceSetup.passwordOrKey' => 'Masukkan kata laluan atau tambah kunci peribadi di bawah.',
+			'sourceSetup.sshFingerprint' => 'Cap jari SHA256 kunci hos SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Sahkan dengan pentadbir pelayan. Pada pelayan, jalankan ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub dan gunakan nilai SHA256-nya.',
+			'sourceSetup.sshFingerprintKeep' => 'Biarkan kosong untuk mengekalkan cap jari yang ditetapkan sekarang, atau masukkan cap jari pelayan yang baharu.',
+			'sourceSetup.sshAuthentication' => 'Pengesahan SSH dengan kunci awam',
+			'sourceSetup.sshAuthenticationHelp' => 'Pilihan; pengesahan dengan kata laluan juga disokong.',
+			'sourceSetup.privateKey' => 'Kunci peribadi (format PEM atau OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Frasa laluan kunci peribadi',
+			'sourceSetup.nfsMountPort' => 'Port TCP perkhidmatan lekap NFS',
+			'sourceSetup.nfsMountPortHelp' => 'Lalai: 20048',
+			'sourceSetup.nfsUserId' => 'ID pengguna NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Lalai: 1000. Gunakan ID yang dibenarkan oleh perkongsian NFS pada NAS.',
+			'sourceSetup.nfsGroupId' => 'ID kumpulan NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Lalai: 1000. Gunakan ID kumpulan yang dibenarkan oleh perkongsian NFS pada NAS.',
+			'sourceSetup.nfsEncryption' => 'Wajibkan NFS disulitkan (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Wajibkan TLS 1.3 untuk NFS dan perkhidmatan lekap. Jika NAS tidak menyokongnya, sambungan ditolak.',
+			'sourceSetup.nfsTrustCertificate' => 'CA NFS tersuai atau sijil pelayan (PEM, pilihan)',
+			'sourceSetup.nfsTrustHelp' => 'Biarkan kosong untuk sijil yang dipercayai oleh peranti ini. Jika perlu, tambah sijil CA persendirian atau sijil pelayan yang ditandatangani sendiri; namanya mesti sepadan dengan hos dalam URL NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Gunakan sijil CA atau pelayan dalam format PEM. Jangan sertakan kunci peribadi.',
+			'sourceSetup.addTrustCertificate' => 'Tambah sijil kepercayaan tersuai',
+			'sourceSetup.replaceTrustCertificate' => 'Gantikan sijil tersuai yang disimpan',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS menggunakan port NFS dan perkhidmatan lekap yang biasa serta memerlukan sokongan RFC 9289 pada NAS. TLS 1.3 diwajibkan. Nama hos atau IP mesti sepadan dengan sijil. AUTH_SYS UID/GID masih terpakai dalam saluran yang disulitkan.',
+			'sourceSetup.clientCertificate' => 'Sijil klien (pilihan)',
+			'sourceSetup.clientCertificateHelp' => 'Membolehkan NAS mengesahkan klien ini; ID AUTH_SYS masih bergantung pada dasar perkongsian NFS pada NAS.',
+			'sourceSetup.savedIdentity' => 'Identiti klien yang disimpan akan digunakan.',
+			'sourceSetup.replaceIdentity' => 'Gantikan identiti klien yang disimpan',
+			'sourceSetup.chooseIdentity' => 'Pilih identiti klien PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Frasa laluan identiti klien',
+			'sourceSetup.identityPassphraseHelp' => 'Biarkan kosong jika fail tiada frasa laluan.',
+			'sourceSetup.removeIdentity' => 'Alih keluar sebarang identiti klien yang disimpan',
+			'sourceSetup.identityStorageHelp' => 'Identiti klien disimpan dalam stor bukti kelayakan sumber yang disulitkan. Biarkan bahagian ini tidak berubah untuk mengekalkan identiti yang disimpan.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 baca sahaja melalui TCP. Tanpa RPC-with-TLS, trafik NFS tidak disulitkan. NAS mesti membenarkan ID AUTH_SYS yang dipilih dan port klien tanpa keistimewaan (sering dipanggil pilihan eksport “insecure”). NFSv4 dan UDP tidak disokong.',
+			'sourceSetup.nfsSetupHelp' => 'Bantuan persediaan NFS',
+			'sourceSetup.nfsSetupHint' => 'Semak tetapan ini jika sambungan tidak dapat dibuka.',
+			'sourceSetup.nfsSetupDetails' => 'Gunakan perkongsian NFSv3 melalui TCP. Jika penyulitan diwajibkan, perkhidmatan NFS dan lekap mesti kedua-duanya menyokong RPC-with-TLS. Biarkan sijil tersuai kosong untuk sijil pelayan yang dipercayai oleh peranti ini, atau tambah sijil CA NAS atau sijil yang ditandatangani sendiri. Nama dalam sijil mesti sepadan dengan hos titik akhir. Jika NAS memerlukan pengesahan TLS dua hala, tambah identiti klien PKCS#12-nya. Akhir sekali, pastikan perkongsian membenarkan AUTH_SYS UID/GID yang dikonfigurasi serta dasar port klien.',
+			'sourceSetup.ftpHelp' => 'FTP menggunakan mod pasif. Gunakan ftp:// untuk FTP tanpa penyulitan, ftpes:// untuk TLS eksplisit, atau ftps:// untuk TLS (implisit pada port 990; eksplisit pada port lain).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Carian sari kata pilihan untuk video kendiri.',
+			'sourceSetup.apiKey' => 'Kunci API',
+			'sourceSetup.optionalUsername' => 'Nama pengguna akaun (pilihan)',
+			'sourceSetup.optionalPassword' => 'Kata laluan akaun (pilihan)',
+			'sourceSetup.subtitlePrivacy' => 'Dapatkan kunci API daripada opensubtitles.com. Carian menghantar tajuk video dan ID IMDb/TMDB yang tersedia, bukan fail video sama sekali. Kunci dan bukti kelayakan akaun pilihan disulitkan bersama sumber ini.',
+			'sourceSetup.automaticMetadata' => 'Metadata video dalam talian automatik',
+			'sourceSetup.metadataPrivacy' => 'Hanya menghantar tajuk/tahun daripada nama fail dan nombor episod atau ID NFO; tidak sekali-kali menghantar media atau bukti kelayakan. Medan NFO kekal sebagai rujukan utama.',
+			'sourceSetup.nfsEncryptionFailure' => 'Untuk NFS disulitkan, semak sokongan RFC 9289 dan TLS 1.3 pada kedua-dua perkhidmatan NAS, nama sijil dan UID/GID perkongsian. PlezyNG tidak akan mencuba semula sambungan ini tanpa penyulitan.',
+			'sourceSetup.sourceConnecting' => 'Menyambung ke sumber',
+			'sourceSetup.metadataSearchPrivacy' => 'Carian tajuk ini dihantar ke Trakt. Carian menghantar tajuk yang anda masukkan, bukan video atau bukti kelayakan sumber.',
+			'sourceSetup.chooseMatch' => 'Pilih padanan',
+			'sourceSetup.metadataMatchHelp' => 'Semak tajuk dan tahun sebelum memilih. Trakt menerima tajuk carian; video kekal pada sumbernya.',
+			'sourceSetup.metadataNoMatches' => 'Tiada padanan tajuk dalam talian ditemukan. Cuba tajuk lain.',
+			'sourceSetup.metadataSearch' => 'Cari metadata dalam talian',
+			'sourceSetup.metadataLoading' => 'Mencari butiran filem dan rancangan TV dalam talian…',
+			'sourceSetup.metadataFromTrakt' => 'Metadata dalam talian daripada Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Tiada padanan tajuk automatik ditemukan. Cari tajuk untuk memilih padanan.',
+			'sourceSetup.metadataFailed' => 'Metadata dalam talian tidak dapat dimuatkan. Main balik dan butiran setempat masih tersedia.',
+			'sourceSetup.videoDetailsLoading' => 'Memuatkan butiran video',
+			'sourceSetup.subtitleKeyRequired' => 'Kunci API OpenSubtitles diperlukan',
+			'sourceSetup.subtitleKeyHelp' => 'Edit sumber fail ini dan tambah kunci API OpenSubtitles dalam tetapan sari kata pilihannya.',
+			'sourceSetup.subtitleSearchFailed' => 'Carian sari kata gagal. Semak kunci API, sambungan dan akses kepada perkhidmatan.',
+			'sourceSetup.subtitleApplyFailed' => 'Sari kata ini tidak dapat dimuat turun atau digunakan. Semak sambungan dan cuba hasil lain.',
+			'sourceSetup.subtitleSearch' => 'Cari di OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Carian menggunakan tajuk dan ID IMDb/TMDB yang tersedia. Fail video kekal pada sumbernya. Semak bahasa, penanda sari kata paksa atau untuk orang kurang upaya pendengaran, serta penilaian sebelum memilih.',
+			'sourceSetup.movieOrShow' => 'Filem atau rancangan TV',
+			'sourceSetup.subtitleTitleHint' => 'Masukkan tajuk untuk memperincikan hasil',
+			'sourceSetup.subtitleLanguage' => 'Bahasa sari kata',
+			'sourceSetup.subtitleSearching' => 'Mencari di OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Tiada sari kata sepadan ditemukan. Cuba tajuk atau bahasa lain.',
+			'sourceSetup.downloadSubtitle' => 'Muat turun sari kata',
+			'sourceSetup.subtitle' => 'Sari kata',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS diperlukan',
+			'sourceSetup.nfsUnencrypted' => 'NFS tidak disulitkan',
+			'sourceSetup.tlsEncrypted' => 'Disulitkan dengan TLS',
+			'sourceSetup.ftpPlain' => 'FTP tanpa penyulitan',
+			'sourceSetup.sshPinned' => 'SSH disulitkan · kunci hos ditetapkan',
+			'sourceSetup.smbEncrypted' => 'Penyulitan SMB3 dihidupkan',
+			'sourceSetup.smbUnencrypted' => 'Penyulitan SMB3 dimatikan',
+			'sourceSetup.httpUnencrypted' => 'HTTP tanpa penyulitan pengangkutan',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Semak keselamatan titik akhir',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} diperlukan.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Masukkan ${label} antara ${min} dengan ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Gantikan ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identiti klien yang dipilih: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Penilaian ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Memuat turun sari kata: ${title}',
 			_ => null,
 		};
 	}

@@ -1,7 +1,7 @@
 {
   "locale": "pt-BR",
   "inherits": "pt",
-  "catalogSha256": "6fcaa2b19f79cd6729cc55ad9e1c5023721998a0d74101d57f9965f2dc807328",
+  "catalogSha256": "bc17369e67e9ecefc82ddcb8d8a38ba11f174edf83d92a35fcd49dd0984df313",
   "nativeSpeakerReviewed": false,
   "messages": {
     "cast.subtitle": "jellyfin-web:Subtitles",
@@ -384,6 +384,23 @@
     "fileSources.zoom": "jellyfin-web:AspectRatioCover",
     "fileSources.minutes": "unicode-cldr-generated",
     "lending.cancel": "jellyfin-web:ButtonCancel",
-    "fileSources.googleDrive": "nonlinguistic"
+    "fileSources.googleDrive": "nonlinguistic",
+    "discover.findNext.chooseHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.howItWorks": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.swipeHint": "independent-ai-reviewed-main-swipe-hint",
+    "discover.findNext.notNowHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.saveHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.openHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.controlsHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkLoading": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkUnavailable": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.savedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.skippedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.releaseToConfirm": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.remoteHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
+  },
+  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md",
+  "beforeMainMergeReview": {
+    "discover.findNext.swipeHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
   }
 }

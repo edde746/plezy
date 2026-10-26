@@ -104,6 +104,7 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$fa fileSources = _Translations$fileSources$fa._(_root);
 	@override late final _Translations$lending$fa lending = _Translations$lending$fa._(_root);
 	@override late final _Translations$audiobook$fa audiobook = _Translations$audiobook$fa._(_root);
+	@override late final _Translations$sourceSetup$fa sourceSetup = _Translations$sourceSetup$fa._(_root);
 }
 
 // Path: app
@@ -3064,6 +3065,12 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get useFiles => 'استفاده از فایل ها و کتاب ها';
 	@override String get cancelScan => 'حذف اسکن';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.';
+	@override String get smbFolderHelp => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.';
+	@override String get smbDomain => 'دامنه (اختیاری)';
+	@override String get smbEncryption => 'رمزگذاری اتصال SMB3';
+	@override String get smbEncryptionHint => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.';
 }
 
 // Path: lending
@@ -3183,6 +3190,109 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get statusFinished => 'به پایان رسید';
 	@override String get goToTime => 'به زمان برو';
 	@override String get timeHelp => 'ساعت: دقیقه ها: ثانیه ها یا دقیقه ها: ثانیه ها';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$fa extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'گواهی ذخیره‌شدهٔ سرور';
+	@override String get nfsEndpointInvalid => 'یک نشانی NFS مانند nfs://nas:2049/export وارد کنید.';
+	@override String get dlnaNone => 'سرور DLNA پیدا نشد. نشانی توضیحات دستگاه را دستی وارد کنید.';
+	@override String get dlnaServers => 'سرورهای رسانهٔ DLNA';
+	@override String get dlnaUnavailable => 'کشف DLNA در این شبکه در دسترس نیست. نشانی توضیحات دستگاه را دستی وارد کنید.';
+	@override String get dlnaSearching => 'در حال جست‌وجوی سرورهای DLNA در شبکهٔ محلی';
+	@override String get networkSearching => 'در حال جست‌وجو در شبکهٔ محلی…';
+	@override String get dlnaDiscover => 'یافتن سرورهای DLNA';
+	@override String get dlnaHelp => 'کشف دستگاه به چندپخشی در شبکهٔ محلی وابسته است. اگر سروری ظاهر نشد، نشانی توضیحات دستگاه را در بالا وارد کنید.';
+	@override String get dlnaRoot => 'شناسهٔ شیء DLNA؛ برای استفاده از ریشهٔ دستگاه، خالی بگذارید.';
+	@override String get passwordOrKey => 'گذرواژه وارد کنید یا در پایین یک کلید خصوصی اضافه کنید.';
+	@override String get sshFingerprint => 'اثر انگشت SHA256 کلید میزبان SSH';
+	@override String get sshFingerprintHelp => 'با مدیر سرور تأیید کنید. روی سرور، دستور ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub را اجرا کنید و از مقدار SHA256 آن استفاده کنید.';
+	@override String get sshFingerprintKeep => 'برای حفظ اثر انگشت تثبیت‌شدهٔ فعلی خالی بگذارید، یا اثر انگشت جدید سرور را وارد کنید.';
+	@override String get sshAuthentication => 'احراز هویت با کلید عمومی SSH';
+	@override String get sshAuthenticationHelp => 'اختیاری است؛ احراز هویت با گذرواژه نیز پشتیبانی می‌شود.';
+	@override String get privateKey => 'کلید خصوصی (با قالب PEM یا OpenSSH)';
+	@override String get privateKeyPassphrase => 'عبارت عبور کلید خصوصی';
+	@override String get nfsMountPort => 'درگاه TCP سرویس mount NFS';
+	@override String get nfsMountPortHelp => 'پیش‌فرض: 20048';
+	@override String get nfsUserId => 'شناسهٔ کاربر NFS ‏(AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'پیش‌فرض: 1000. از شناسه‌ای استفاده کنید که در تنظیمات اشتراک NFS روی NAS مجاز است.';
+	@override String get nfsGroupId => 'شناسهٔ گروه NFS ‏(AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'پیش‌فرض: 1000. از شناسهٔ گروهی استفاده کنید که در تنظیمات اشتراک NFS روی NAS مجاز است.';
+	@override String get nfsEncryption => 'الزام رمزگذاری NFS ‏(RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'TLS 1.3 را برای NFS و سرویس mount الزامی می‌کند. اگر NAS پشتیبانی نکند، اتصال رد می‌شود.';
+	@override String get nfsTrustCertificate => 'گواهی سفارشی CA یا سرور NFS ‏(PEM، اختیاری)';
+	@override String get nfsTrustHelp => 'برای گواهی‌های مورد اعتماد این دستگاه، خالی بگذارید. در صورت نیاز، گواهی CA خصوصی یا گواهی خودامضای سرور را اضافه کنید؛ نام‌های آن باید با میزبان نشانی NFS مطابقت داشته باشند.';
+	@override String get nfsTrustInvalid => 'از گواهی CA یا سرور با قالب PEM استفاده کنید. کلید خصوصی را در آن قرار ندهید.';
+	@override String get addTrustCertificate => 'افزودن گواهی اعتماد سفارشی';
+	@override String get replaceTrustCertificate => 'جایگزینی گواهی سفارشی ذخیره‌شده';
+	@override String get nfsTlsHelp => 'RPC-with-TLS از درگاه‌های معمول NFS و سرویس mount استفاده می‌کند و به پشتیبانی NAS از RFC 9289 نیاز دارد. TLS 1.3 الزامی است. نام میزبان یا IP باید با گواهی مطابقت داشته باشد. AUTH_SYS UID/GID در کانال رمزگذاری‌شده نیز اعمال می‌شوند.';
+	@override String get clientCertificate => 'گواهی کارخواه (اختیاری)';
+	@override String get clientCertificateHelp => 'به NAS اجازه می‌دهد هویت این کارخواه را تأیید کند؛ شناسه‌های AUTH_SYS همچنان تابع سیاست اشتراک‌گذاری NAS هستند.';
+	@override String get savedIdentity => 'از هویت ذخیره‌شدهٔ کارخواه استفاده می‌شود.';
+	@override String get replaceIdentity => 'جایگزینی هویت ذخیره‌شدهٔ کارخواه';
+	@override String get chooseIdentity => 'انتخاب هویت کارخواه PKCS#12';
+	@override String get identityPassphrase => 'عبارت عبور هویت کارخواه';
+	@override String get identityPassphraseHelp => 'اگر فایل عبارت عبور ندارد، خالی بگذارید.';
+	@override String get removeIdentity => 'حذف هویت ذخیره‌شدهٔ کارخواه';
+	@override String get identityStorageHelp => 'هویت‌های کارخواه در مخزن رمزگذاری‌شدهٔ اطلاعات ورود منابع ذخیره می‌شوند. برای حفظ هویت ذخیره‌شده، این بخش را تغییر ندهید.';
+	@override String get nfsLimitations => 'NFSv3 فقط‌خواندنی روی TCP. بدون RPC-with-TLS، ترافیک NFS رمزگذاری نمی‌شود. NAS باید شناسه‌های AUTH_SYS انتخاب‌شده و درگاه‌های بدون امتیاز ویژهٔ کارخواه را مجاز بداند (این گزینهٔ اشتراک‌گذاری معمولاً «insecure» نام دارد). NFSv4 و UDP پشتیبانی نمی‌شوند.';
+	@override String get nfsSetupHelp => 'راهنمای تنظیم NFS';
+	@override String get nfsSetupHint => 'اگر اتصال برقرار نمی‌شود، این تنظیمات را بررسی کنید.';
+	@override String get nfsSetupDetails => 'از یک اشتراک NFSv3 روی TCP استفاده کنید. اگر رمزگذاری الزامی است، NFS و سرویس mount باید هر دو از RPC-with-TLS پشتیبانی کنند. برای گواهی سروری که این دستگاه به آن اعتماد دارد، گواهی سفارشی را خالی بگذارید؛ یا گواهی CA یا خودامضای NAS را اضافه کنید. نام گواهی باید با میزبان نشانی اتصال مطابقت داشته باشد. اگر NAS به TLS متقابل نیاز دارد، هویت کارخواه PKCS#12 آن را اضافه کنید. در پایان، تأیید کنید که تنظیمات اشتراک، AUTH_SYS UID/GID تعیین‌شده و سیاست درگاه‌های کارخواه را مجاز می‌داند.';
+	@override String get ftpHelp => 'FTP از حالت پسیو (Passive) استفاده می‌کند. برای FTP بدون رمزگذاری از ftp://، برای فعال‌سازی TLS با فرمان جداگانه از ftpes:// و برای TLS از ftps:// استفاده کنید (روی درگاه 990، TLS بلافاصله آغاز می‌شود؛ روی سایر درگاه‌ها با فرمان جداگانه فعال می‌شود).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'جست‌وجوی اختیاری زیرنویس برای فایل‌های ویدیویی مستقل.';
+	@override String get apiKey => 'کلید API';
+	@override String get optionalUsername => 'نام کاربری حساب (اختیاری)';
+	@override String get optionalPassword => 'گذرواژهٔ حساب (اختیاری)';
+	@override String get subtitlePrivacy => 'کلید API را از opensubtitles.com بگیرید. جست‌وجو، عنوان ویدیو و شناسه‌های موجود IMDb/TMDB را ارسال می‌کند، اما هرگز فایل ویدیو را نمی‌فرستد. کلید و اطلاعات ورود اختیاری حساب، همراه این منبع به‌صورت رمزگذاری‌شده ذخیره می‌شوند.';
+	@override String get automaticMetadata => 'دریافت خودکار فرادادهٔ آنلاین ویدیو';
+	@override String get metadataPrivacy => 'فقط عنوان، سال و شمارهٔ قسمت از نام فایل یا شناسهٔ NFO ارسال می‌شود؛ رسانه و اطلاعات ورود هرگز ارسال نمی‌شوند. فیلدهای NFO همیشه اولویت دارند.';
+	@override String get nfsEncryptionFailure => 'برای NFS رمزگذاری‌شده، پشتیبانی هر دو سرویس NAS از RFC 9289 و TLS 1.3، نام گواهی و UID/GID اشتراک را بررسی کنید. PlezyNG این اتصال را بدون رمزگذاری دوباره امتحان نمی‌کند.';
+	@override String get sourceConnecting => 'در حال اتصال به منبع';
+	@override String get metadataSearchPrivacy => 'این جست‌وجوی عنوان به Trakt فرستاده می‌شود. فقط عنوانی که وارد می‌کنید ارسال می‌شود، نه ویدیو یا اطلاعات ورود منبع.';
+	@override String get chooseMatch => 'انتخاب نتیجهٔ مطابق';
+	@override String get metadataMatchHelp => 'پیش از انتخاب، عنوان و سال را بررسی کنید. Trakt عنوان جست‌وجو را دریافت می‌کند؛ ویدیو در منبع خود باقی می‌ماند.';
+	@override String get metadataNoMatches => 'عنوان مطابقی در اینترنت پیدا نشد. عنوان دیگری را امتحان کنید.';
+	@override String get metadataSearch => 'جست‌وجوی فرادادهٔ آنلاین';
+	@override String get metadataLoading => 'در حال جست‌وجوی آنلاین اطلاعات فیلم و سریال…';
+	@override String get metadataFromTrakt => 'فرادادهٔ آنلاین از Trakt';
+	@override String get metadataNoAutomaticMatch => 'عنوان مطابقی به‌صورت خودکار پیدا نشد. عنوان را جست‌وجو کنید تا نتیجهٔ مطابق را انتخاب کنید.';
+	@override String get metadataFailed => 'فرادادهٔ آنلاین بارگیری نشد. پخش و اطلاعات محلی همچنان در دسترس هستند.';
+	@override String get videoDetailsLoading => 'در حال بارگیری اطلاعات ویدیو';
+	@override String get subtitleKeyRequired => 'کلید API سرویس OpenSubtitles لازم است';
+	@override String get subtitleKeyHelp => 'این منبع فایل را ویرایش کنید و در تنظیمات اختیاری زیرنویس، کلید API سرویس OpenSubtitles را اضافه کنید.';
+	@override String get subtitleSearchFailed => 'جست‌وجوی زیرنویس ناموفق بود. کلید API، اتصال و دسترسی به سرویس را بررسی کنید.';
+	@override String get subtitleApplyFailed => 'دریافت یا اعمال این زیرنویس ممکن نشد. اتصال را بررسی کنید و نتیجهٔ دیگری را امتحان کنید.';
+	@override String get subtitleSearch => 'جست‌وجو در OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'جست‌وجو از عنوان و شناسه‌های موجود IMDb/TMDB استفاده می‌کند. فایل ویدیو در منبع خود باقی می‌ماند. پیش از انتخاب، زبان، نشان زیرنویس اجباری یا ویژهٔ کم‌شنوایان و امتیاز را بررسی کنید.';
+	@override String get movieOrShow => 'فیلم یا سریال';
+	@override String get subtitleTitleHint => 'برای محدود کردن نتایج، عنوانی وارد کنید';
+	@override String get subtitleLanguage => 'زبان زیرنویس';
+	@override String get subtitleSearching => 'در حال جست‌وجو در OpenSubtitles';
+	@override String get subtitleNoMatches => 'زیرنویس مطابقی پیدا نشد. عنوان یا زبان دیگری را امتحان کنید.';
+	@override String get downloadSubtitle => 'دریافت زیرنویس';
+	@override String get subtitle => 'زیرنویس';
+	@override String get nfsTlsRequired => 'RPC-with-TLS الزامی است';
+	@override String get nfsUnencrypted => 'NFS بدون رمزگذاری';
+	@override String get tlsEncrypted => 'رمزگذاری‌شده با TLS';
+	@override String get ftpPlain => 'FTP بدون رمزگذاری';
+	@override String get sshPinned => 'رمزگذاری SSH · کلید میزبان تثبیت‌شده';
+	@override String get smbEncrypted => 'رمزگذاری SMB3 روشن است';
+	@override String get smbUnencrypted => 'رمزگذاری SMB3 خاموش است';
+	@override String get httpUnencrypted => 'HTTP بدون رمزگذاری انتقال';
+	@override String get checkEndpointSecurity => 'امنیت نشانی اتصال را بررسی کنید';
+	@override String fieldRequired({required Object label}) => 'وارد کردن ${label} الزامی است.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label} را بین ${min} و ${max} وارد کنید.';
+	@override String replaceFile({required Object name}) => 'جایگزینی ${name}';
+	@override String selectedIdentity({required Object name}) => 'هویت کارخواه انتخاب‌شده: ${name}';
+	@override String subtitleRating({required Object rating}) => 'امتیاز ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'در حال دریافت زیرنویس: ${title}';
 }
 
 // Path: appIcon.names
@@ -3436,48 +3546,48 @@ class _Translations$discover$findNext$fa extends Translations$discover$findNext$
 	final TranslationsFa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'بعدی خود را پیدا کنید';
-	@override String get open => 'بعدی خود را پیدا کنید';
-	@override String get anyTime => 'هر زمان';
+	@override String get title => 'انتخاب بعدی‌تان را پیدا کنید';
+	@override String get open => 'انتخاب بعدی‌تان را پیدا کنید';
+	@override String get anyTime => 'بدون محدودیت زمانی';
 	@override String get timeAvailable => 'چقدر وقت دارید؟';
-	@override String get filters => 'لحظه را انتخاب کنید';
-	@override String get watch => 'تماشای';
+	@override String get filters => 'برای این لحظه انتخاب کنید';
+	@override String get watch => 'تماشا';
 	@override String get listen => 'گوش دادن';
 	@override String get read => 'خواندن';
-	@override String finishable({required Object duration}) => 'دانلود بازی ${duration}';
-	@override String aboutDuration({required Object duration}) => 'در مورد ${duration}';
+	@override String finishable({required Object duration}) => 'قابل اتمام در ${duration}';
+	@override String aboutDuration({required Object duration}) => 'حدود ${duration}';
 	@override String nextUnit({required Object duration}) => 'فصل بعدی · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} کل';
-	@override String get timingVaries => 'زمانبندی متفاوت';
-	@override String get notNow => 'در حال حاضر نه';
+	@override String totalDuration({required Object duration}) => 'در مجموع ${duration}';
+	@override String get timingVaries => 'مدت‌زمان متفاوت است';
+	@override String get notNow => 'الان نه';
 	@override String get swipeHint => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.';
-	@override String get saved => 'نجات پیتزا';
-	@override String savedCount({required Object count}) => 'دانلود بازی ${count}';
-	@override String get undo => 'و یا';
+	@override String get saved => 'پیشنهادهای ذخیره‌شده';
+	@override String savedCount({required Object count}) => 'پیشنهادهای ذخیره‌شده · ${count}';
+	@override String get undo => 'واگرد';
 	@override String get details => 'جزئیات';
-	@override String get noPicks => 'هنوز چیزی برای انتخاب نیست';
-	@override String get noPicksHint => 'یک کتابخانه را به هم متصل کنید یا منبع رسانه ای را برای شروع اضافه کنید.';
-	@override String get noMatches => 'هیچ چیز در این لحظه مناسب نیست.';
-	@override String get noMatchesHint => 'فرمت دیگری را امتحان کنید یا وقت بیشتری به خودتان بدهید.';
-	@override String get allDone => 'همه شما دستگیر شده اید';
-	@override String get allDoneHint => 'یک مخلوط تازه را شروع کنید تا دوباره این گزینه ها را ببینید.';
-	@override String get refresh => 'یک مخلوط دیگر پیدا کنید';
+	@override String get noPicks => 'هنوز چیزی برای انتخاب وجود ندارد';
+	@override String get noPicksHint => 'برای شروع، یک کتابخانه متصل کنید یا یک منبع رسانه اضافه کنید.';
+	@override String get noMatches => 'چیزی مناسب این لحظه پیدا نشد';
+	@override String get noMatchesHint => 'نوع دیگری از رسانه را امتحان کنید یا زمان بیشتری در نظر بگیرید.';
+	@override String get allDone => 'همهٔ پیشنهادها را دیدید';
+	@override String get allDoneHint => 'برای دیدن دوبارهٔ این گزینه‌ها، مجموعهٔ تازه‌ای از پیشنهادها را شروع کنید.';
+	@override String get refresh => 'پیشنهادهای دیگری پیدا کنید';
 	@override String sourceReason({required Object source}) => 'از ${source}';
 	@override String libraryReason({required Object library}) => 'از ${library}';
-	@override String get ownedReason => 'از کتابخانه شما';
-	@override String get liveNow => 'اکنون در';
+	@override String get ownedReason => 'از کتابخانهٔ شما';
+	@override String get liveNow => 'در حال پخش';
 	@override String get watchLive => 'تماشای زنده';
-	@override String get filterAnything => 'هر چیزی';
-	@override String get filterWatch => 'تماشای';
+	@override String get filterAnything => 'هر نوعی';
+	@override String get filterWatch => 'تماشا';
 	@override String get filterListen => 'گوش دادن';
 	@override String get filterRead => 'خواندن';
-	@override String get twentyMinutes => '20 دقیقه';
-	@override String get fortyFiveMinutes => '45 دقیقه';
-	@override String get ninetyMinutes => '90 دقیقه';
+	@override String get twentyMinutes => '۲۰ دقیقه';
+	@override String get fortyFiveMinutes => '۴۵ دقیقه';
+	@override String get ninetyMinutes => '۹۰ دقیقه';
 	@override String get apply => 'اعمال';
-	@override String get openFailed => 'این گزینه دیگر در دسترس نیست.تجدید برای بررسی دوباره.';
-	@override String get changeFailed => 'نمی توانم این تغییرات را حفظ کنم، دوباره امتحان کنید.';
-	@override String get savedLimit => 'ذخیره شده پیک ها پر است. حذف یک پیک برای ذخیره دیگری.';
+	@override String get openFailed => 'این گزینه دیگر در دسترس نیست. برای بررسی دوباره، تازه‌سازی کنید.';
+	@override String get changeFailed => 'این تغییر ذخیره نشد. دوباره تلاش کنید.';
+	@override String get savedLimit => 'فهرست پیشنهادهای ذخیره‌شده پر است. برای ذخیرهٔ پیشنهادی دیگر، یکی را حذف کنید.';
 	@override String get chooseHint => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.';
 	@override String get howItWorks => 'روش استفاده';
 	@override String get notNowHelp => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.';
@@ -5486,48 +5596,48 @@ extension on TranslationsFa {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'ف${season} ق${episode}',
 			'discover.overview' => 'نمای کلی',
 			'discover.cast' => 'کاست',
-			'discover.findNext.title' => 'بعدی خود را پیدا کنید',
-			'discover.findNext.open' => 'بعدی خود را پیدا کنید',
-			'discover.findNext.anyTime' => 'هر زمان',
+			'discover.findNext.title' => 'انتخاب بعدی‌تان را پیدا کنید',
+			'discover.findNext.open' => 'انتخاب بعدی‌تان را پیدا کنید',
+			'discover.findNext.anyTime' => 'بدون محدودیت زمانی',
 			'discover.findNext.timeAvailable' => 'چقدر وقت دارید؟',
-			'discover.findNext.filters' => 'لحظه را انتخاب کنید',
-			'discover.findNext.watch' => 'تماشای',
+			'discover.findNext.filters' => 'برای این لحظه انتخاب کنید',
+			'discover.findNext.watch' => 'تماشا',
 			'discover.findNext.listen' => 'گوش دادن',
 			'discover.findNext.read' => 'خواندن',
-			'discover.findNext.finishable' => ({required Object duration}) => 'دانلود بازی ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'در مورد ${duration}',
+			'discover.findNext.finishable' => ({required Object duration}) => 'قابل اتمام در ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'حدود ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'فصل بعدی · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} کل',
-			'discover.findNext.timingVaries' => 'زمانبندی متفاوت',
-			'discover.findNext.notNow' => 'در حال حاضر نه',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'در مجموع ${duration}',
+			'discover.findNext.timingVaries' => 'مدت‌زمان متفاوت است',
+			'discover.findNext.notNow' => 'الان نه',
 			'discover.findNext.swipeHint' => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.',
-			'discover.findNext.saved' => 'نجات پیتزا',
-			'discover.findNext.savedCount' => ({required Object count}) => 'دانلود بازی ${count}',
-			'discover.findNext.undo' => 'و یا',
+			'discover.findNext.saved' => 'پیشنهادهای ذخیره‌شده',
+			'discover.findNext.savedCount' => ({required Object count}) => 'پیشنهادهای ذخیره‌شده · ${count}',
+			'discover.findNext.undo' => 'واگرد',
 			'discover.findNext.details' => 'جزئیات',
-			'discover.findNext.noPicks' => 'هنوز چیزی برای انتخاب نیست',
-			'discover.findNext.noPicksHint' => 'یک کتابخانه را به هم متصل کنید یا منبع رسانه ای را برای شروع اضافه کنید.',
-			'discover.findNext.noMatches' => 'هیچ چیز در این لحظه مناسب نیست.',
-			'discover.findNext.noMatchesHint' => 'فرمت دیگری را امتحان کنید یا وقت بیشتری به خودتان بدهید.',
-			'discover.findNext.allDone' => 'همه شما دستگیر شده اید',
-			'discover.findNext.allDoneHint' => 'یک مخلوط تازه را شروع کنید تا دوباره این گزینه ها را ببینید.',
-			'discover.findNext.refresh' => 'یک مخلوط دیگر پیدا کنید',
+			'discover.findNext.noPicks' => 'هنوز چیزی برای انتخاب وجود ندارد',
+			'discover.findNext.noPicksHint' => 'برای شروع، یک کتابخانه متصل کنید یا یک منبع رسانه اضافه کنید.',
+			'discover.findNext.noMatches' => 'چیزی مناسب این لحظه پیدا نشد',
+			'discover.findNext.noMatchesHint' => 'نوع دیگری از رسانه را امتحان کنید یا زمان بیشتری در نظر بگیرید.',
+			'discover.findNext.allDone' => 'همهٔ پیشنهادها را دیدید',
+			'discover.findNext.allDoneHint' => 'برای دیدن دوبارهٔ این گزینه‌ها، مجموعهٔ تازه‌ای از پیشنهادها را شروع کنید.',
+			'discover.findNext.refresh' => 'پیشنهادهای دیگری پیدا کنید',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'از ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'از ${library}',
-			'discover.findNext.ownedReason' => 'از کتابخانه شما',
-			'discover.findNext.liveNow' => 'اکنون در',
+			'discover.findNext.ownedReason' => 'از کتابخانهٔ شما',
+			'discover.findNext.liveNow' => 'در حال پخش',
 			'discover.findNext.watchLive' => 'تماشای زنده',
-			'discover.findNext.filterAnything' => 'هر چیزی',
-			'discover.findNext.filterWatch' => 'تماشای',
+			'discover.findNext.filterAnything' => 'هر نوعی',
+			'discover.findNext.filterWatch' => 'تماشا',
 			'discover.findNext.filterListen' => 'گوش دادن',
 			'discover.findNext.filterRead' => 'خواندن',
-			'discover.findNext.twentyMinutes' => '20 دقیقه',
-			'discover.findNext.fortyFiveMinutes' => '45 دقیقه',
-			'discover.findNext.ninetyMinutes' => '90 دقیقه',
+			'discover.findNext.twentyMinutes' => '۲۰ دقیقه',
+			'discover.findNext.fortyFiveMinutes' => '۴۵ دقیقه',
+			'discover.findNext.ninetyMinutes' => '۹۰ دقیقه',
 			'discover.findNext.apply' => 'اعمال',
-			'discover.findNext.openFailed' => 'این گزینه دیگر در دسترس نیست.تجدید برای بررسی دوباره.',
-			'discover.findNext.changeFailed' => 'نمی توانم این تغییرات را حفظ کنم، دوباره امتحان کنید.',
-			'discover.findNext.savedLimit' => 'ذخیره شده پیک ها پر است. حذف یک پیک برای ذخیره دیگری.',
+			'discover.findNext.openFailed' => 'این گزینه دیگر در دسترس نیست. برای بررسی دوباره، تازه‌سازی کنید.',
+			'discover.findNext.changeFailed' => 'این تغییر ذخیره نشد. دوباره تلاش کنید.',
+			'discover.findNext.savedLimit' => 'فهرست پیشنهادهای ذخیره‌شده پر است. برای ذخیرهٔ پیشنهادی دیگر، یکی را حذف کنید.',
 			'discover.findNext.chooseHint' => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.',
 			'discover.findNext.howItWorks' => 'روش استفاده',
 			'discover.findNext.notNowHelp' => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.',
@@ -7113,6 +7223,12 @@ extension on TranslationsFa {
 			'fileSources.useFiles' => 'استفاده از فایل ها و کتاب ها',
 			'fileSources.cancelScan' => 'حذف اسکن',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.',
+			'fileSources.smbFolderHelp' => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.',
+			'fileSources.smbDomain' => 'دامنه (اختیاری)',
+			'fileSources.smbEncryption' => 'رمزگذاری اتصال SMB3',
+			'fileSources.smbEncryptionHint' => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.',
 			'lending.title' => 'کتابخانه های عمومی',
 			'lending.add' => 'اضافه کردن کتابخانه',
 			'lending.other' => 'کتابخانه دیگری',
@@ -7214,6 +7330,102 @@ extension on TranslationsFa {
 			'audiobook.statusFinished' => 'به پایان رسید',
 			'audiobook.goToTime' => 'به زمان برو',
 			'audiobook.timeHelp' => 'ساعت: دقیقه ها: ثانیه ها یا دقیقه ها: ثانیه ها',
+			'sourceSetup.savedCertificate' => 'گواهی ذخیره‌شدهٔ سرور',
+			'sourceSetup.nfsEndpointInvalid' => 'یک نشانی NFS مانند nfs://nas:2049/export وارد کنید.',
+			'sourceSetup.dlnaNone' => 'سرور DLNA پیدا نشد. نشانی توضیحات دستگاه را دستی وارد کنید.',
+			'sourceSetup.dlnaServers' => 'سرورهای رسانهٔ DLNA',
+			'sourceSetup.dlnaUnavailable' => 'کشف DLNA در این شبکه در دسترس نیست. نشانی توضیحات دستگاه را دستی وارد کنید.',
+			'sourceSetup.dlnaSearching' => 'در حال جست‌وجوی سرورهای DLNA در شبکهٔ محلی',
+			'sourceSetup.networkSearching' => 'در حال جست‌وجو در شبکهٔ محلی…',
+			'sourceSetup.dlnaDiscover' => 'یافتن سرورهای DLNA',
+			'sourceSetup.dlnaHelp' => 'کشف دستگاه به چندپخشی در شبکهٔ محلی وابسته است. اگر سروری ظاهر نشد، نشانی توضیحات دستگاه را در بالا وارد کنید.',
+			'sourceSetup.dlnaRoot' => 'شناسهٔ شیء DLNA؛ برای استفاده از ریشهٔ دستگاه، خالی بگذارید.',
+			'sourceSetup.passwordOrKey' => 'گذرواژه وارد کنید یا در پایین یک کلید خصوصی اضافه کنید.',
+			'sourceSetup.sshFingerprint' => 'اثر انگشت SHA256 کلید میزبان SSH',
+			'sourceSetup.sshFingerprintHelp' => 'با مدیر سرور تأیید کنید. روی سرور، دستور ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub را اجرا کنید و از مقدار SHA256 آن استفاده کنید.',
+			'sourceSetup.sshFingerprintKeep' => 'برای حفظ اثر انگشت تثبیت‌شدهٔ فعلی خالی بگذارید، یا اثر انگشت جدید سرور را وارد کنید.',
+			'sourceSetup.sshAuthentication' => 'احراز هویت با کلید عمومی SSH',
+			'sourceSetup.sshAuthenticationHelp' => 'اختیاری است؛ احراز هویت با گذرواژه نیز پشتیبانی می‌شود.',
+			'sourceSetup.privateKey' => 'کلید خصوصی (با قالب PEM یا OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'عبارت عبور کلید خصوصی',
+			'sourceSetup.nfsMountPort' => 'درگاه TCP سرویس mount NFS',
+			'sourceSetup.nfsMountPortHelp' => 'پیش‌فرض: 20048',
+			'sourceSetup.nfsUserId' => 'شناسهٔ کاربر NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'پیش‌فرض: 1000. از شناسه‌ای استفاده کنید که در تنظیمات اشتراک NFS روی NAS مجاز است.',
+			'sourceSetup.nfsGroupId' => 'شناسهٔ گروه NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'پیش‌فرض: 1000. از شناسهٔ گروهی استفاده کنید که در تنظیمات اشتراک NFS روی NAS مجاز است.',
+			'sourceSetup.nfsEncryption' => 'الزام رمزگذاری NFS ‏(RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'TLS 1.3 را برای NFS و سرویس mount الزامی می‌کند. اگر NAS پشتیبانی نکند، اتصال رد می‌شود.',
+			'sourceSetup.nfsTrustCertificate' => 'گواهی سفارشی CA یا سرور NFS ‏(PEM، اختیاری)',
+			'sourceSetup.nfsTrustHelp' => 'برای گواهی‌های مورد اعتماد این دستگاه، خالی بگذارید. در صورت نیاز، گواهی CA خصوصی یا گواهی خودامضای سرور را اضافه کنید؛ نام‌های آن باید با میزبان نشانی NFS مطابقت داشته باشند.',
+			'sourceSetup.nfsTrustInvalid' => 'از گواهی CA یا سرور با قالب PEM استفاده کنید. کلید خصوصی را در آن قرار ندهید.',
+			'sourceSetup.addTrustCertificate' => 'افزودن گواهی اعتماد سفارشی',
+			'sourceSetup.replaceTrustCertificate' => 'جایگزینی گواهی سفارشی ذخیره‌شده',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS از درگاه‌های معمول NFS و سرویس mount استفاده می‌کند و به پشتیبانی NAS از RFC 9289 نیاز دارد. TLS 1.3 الزامی است. نام میزبان یا IP باید با گواهی مطابقت داشته باشد. AUTH_SYS UID/GID در کانال رمزگذاری‌شده نیز اعمال می‌شوند.',
+			'sourceSetup.clientCertificate' => 'گواهی کارخواه (اختیاری)',
+			'sourceSetup.clientCertificateHelp' => 'به NAS اجازه می‌دهد هویت این کارخواه را تأیید کند؛ شناسه‌های AUTH_SYS همچنان تابع سیاست اشتراک‌گذاری NAS هستند.',
+			'sourceSetup.savedIdentity' => 'از هویت ذخیره‌شدهٔ کارخواه استفاده می‌شود.',
+			'sourceSetup.replaceIdentity' => 'جایگزینی هویت ذخیره‌شدهٔ کارخواه',
+			'sourceSetup.chooseIdentity' => 'انتخاب هویت کارخواه PKCS#12',
+			'sourceSetup.identityPassphrase' => 'عبارت عبور هویت کارخواه',
+			'sourceSetup.identityPassphraseHelp' => 'اگر فایل عبارت عبور ندارد، خالی بگذارید.',
+			'sourceSetup.removeIdentity' => 'حذف هویت ذخیره‌شدهٔ کارخواه',
+			'sourceSetup.identityStorageHelp' => 'هویت‌های کارخواه در مخزن رمزگذاری‌شدهٔ اطلاعات ورود منابع ذخیره می‌شوند. برای حفظ هویت ذخیره‌شده، این بخش را تغییر ندهید.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 فقط‌خواندنی روی TCP. بدون RPC-with-TLS، ترافیک NFS رمزگذاری نمی‌شود. NAS باید شناسه‌های AUTH_SYS انتخاب‌شده و درگاه‌های بدون امتیاز ویژهٔ کارخواه را مجاز بداند (این گزینهٔ اشتراک‌گذاری معمولاً «insecure» نام دارد). NFSv4 و UDP پشتیبانی نمی‌شوند.',
+			'sourceSetup.nfsSetupHelp' => 'راهنمای تنظیم NFS',
+			'sourceSetup.nfsSetupHint' => 'اگر اتصال برقرار نمی‌شود، این تنظیمات را بررسی کنید.',
+			'sourceSetup.nfsSetupDetails' => 'از یک اشتراک NFSv3 روی TCP استفاده کنید. اگر رمزگذاری الزامی است، NFS و سرویس mount باید هر دو از RPC-with-TLS پشتیبانی کنند. برای گواهی سروری که این دستگاه به آن اعتماد دارد، گواهی سفارشی را خالی بگذارید؛ یا گواهی CA یا خودامضای NAS را اضافه کنید. نام گواهی باید با میزبان نشانی اتصال مطابقت داشته باشد. اگر NAS به TLS متقابل نیاز دارد، هویت کارخواه PKCS#12 آن را اضافه کنید. در پایان، تأیید کنید که تنظیمات اشتراک، AUTH_SYS UID/GID تعیین‌شده و سیاست درگاه‌های کارخواه را مجاز می‌داند.',
+			'sourceSetup.ftpHelp' => 'FTP از حالت پسیو (Passive) استفاده می‌کند. برای FTP بدون رمزگذاری از ftp://، برای فعال‌سازی TLS با فرمان جداگانه از ftpes:// و برای TLS از ftps:// استفاده کنید (روی درگاه 990، TLS بلافاصله آغاز می‌شود؛ روی سایر درگاه‌ها با فرمان جداگانه فعال می‌شود).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'جست‌وجوی اختیاری زیرنویس برای فایل‌های ویدیویی مستقل.',
+			'sourceSetup.apiKey' => 'کلید API',
+			'sourceSetup.optionalUsername' => 'نام کاربری حساب (اختیاری)',
+			'sourceSetup.optionalPassword' => 'گذرواژهٔ حساب (اختیاری)',
+			'sourceSetup.subtitlePrivacy' => 'کلید API را از opensubtitles.com بگیرید. جست‌وجو، عنوان ویدیو و شناسه‌های موجود IMDb/TMDB را ارسال می‌کند، اما هرگز فایل ویدیو را نمی‌فرستد. کلید و اطلاعات ورود اختیاری حساب، همراه این منبع به‌صورت رمزگذاری‌شده ذخیره می‌شوند.',
+			'sourceSetup.automaticMetadata' => 'دریافت خودکار فرادادهٔ آنلاین ویدیو',
+			'sourceSetup.metadataPrivacy' => 'فقط عنوان، سال و شمارهٔ قسمت از نام فایل یا شناسهٔ NFO ارسال می‌شود؛ رسانه و اطلاعات ورود هرگز ارسال نمی‌شوند. فیلدهای NFO همیشه اولویت دارند.',
+			'sourceSetup.nfsEncryptionFailure' => 'برای NFS رمزگذاری‌شده، پشتیبانی هر دو سرویس NAS از RFC 9289 و TLS 1.3، نام گواهی و UID/GID اشتراک را بررسی کنید. PlezyNG این اتصال را بدون رمزگذاری دوباره امتحان نمی‌کند.',
+			'sourceSetup.sourceConnecting' => 'در حال اتصال به منبع',
+			'sourceSetup.metadataSearchPrivacy' => 'این جست‌وجوی عنوان به Trakt فرستاده می‌شود. فقط عنوانی که وارد می‌کنید ارسال می‌شود، نه ویدیو یا اطلاعات ورود منبع.',
+			'sourceSetup.chooseMatch' => 'انتخاب نتیجهٔ مطابق',
+			'sourceSetup.metadataMatchHelp' => 'پیش از انتخاب، عنوان و سال را بررسی کنید. Trakt عنوان جست‌وجو را دریافت می‌کند؛ ویدیو در منبع خود باقی می‌ماند.',
+			'sourceSetup.metadataNoMatches' => 'عنوان مطابقی در اینترنت پیدا نشد. عنوان دیگری را امتحان کنید.',
+			'sourceSetup.metadataSearch' => 'جست‌وجوی فرادادهٔ آنلاین',
+			'sourceSetup.metadataLoading' => 'در حال جست‌وجوی آنلاین اطلاعات فیلم و سریال…',
+			'sourceSetup.metadataFromTrakt' => 'فرادادهٔ آنلاین از Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'عنوان مطابقی به‌صورت خودکار پیدا نشد. عنوان را جست‌وجو کنید تا نتیجهٔ مطابق را انتخاب کنید.',
+			'sourceSetup.metadataFailed' => 'فرادادهٔ آنلاین بارگیری نشد. پخش و اطلاعات محلی همچنان در دسترس هستند.',
+			'sourceSetup.videoDetailsLoading' => 'در حال بارگیری اطلاعات ویدیو',
+			'sourceSetup.subtitleKeyRequired' => 'کلید API سرویس OpenSubtitles لازم است',
+			'sourceSetup.subtitleKeyHelp' => 'این منبع فایل را ویرایش کنید و در تنظیمات اختیاری زیرنویس، کلید API سرویس OpenSubtitles را اضافه کنید.',
+			'sourceSetup.subtitleSearchFailed' => 'جست‌وجوی زیرنویس ناموفق بود. کلید API، اتصال و دسترسی به سرویس را بررسی کنید.',
+			'sourceSetup.subtitleApplyFailed' => 'دریافت یا اعمال این زیرنویس ممکن نشد. اتصال را بررسی کنید و نتیجهٔ دیگری را امتحان کنید.',
+			'sourceSetup.subtitleSearch' => 'جست‌وجو در OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'جست‌وجو از عنوان و شناسه‌های موجود IMDb/TMDB استفاده می‌کند. فایل ویدیو در منبع خود باقی می‌ماند. پیش از انتخاب، زبان، نشان زیرنویس اجباری یا ویژهٔ کم‌شنوایان و امتیاز را بررسی کنید.',
+			'sourceSetup.movieOrShow' => 'فیلم یا سریال',
+			'sourceSetup.subtitleTitleHint' => 'برای محدود کردن نتایج، عنوانی وارد کنید',
+			'sourceSetup.subtitleLanguage' => 'زبان زیرنویس',
+			'sourceSetup.subtitleSearching' => 'در حال جست‌وجو در OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'زیرنویس مطابقی پیدا نشد. عنوان یا زبان دیگری را امتحان کنید.',
+			'sourceSetup.downloadSubtitle' => 'دریافت زیرنویس',
+			'sourceSetup.subtitle' => 'زیرنویس',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS الزامی است',
+			'sourceSetup.nfsUnencrypted' => 'NFS بدون رمزگذاری',
+			'sourceSetup.tlsEncrypted' => 'رمزگذاری‌شده با TLS',
+			'sourceSetup.ftpPlain' => 'FTP بدون رمزگذاری',
+			'sourceSetup.sshPinned' => 'رمزگذاری SSH · کلید میزبان تثبیت‌شده',
+			'sourceSetup.smbEncrypted' => 'رمزگذاری SMB3 روشن است',
+			'sourceSetup.smbUnencrypted' => 'رمزگذاری SMB3 خاموش است',
+			'sourceSetup.httpUnencrypted' => 'HTTP بدون رمزگذاری انتقال',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'امنیت نشانی اتصال را بررسی کنید',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'وارد کردن ${label} الزامی است.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} را بین ${min} و ${max} وارد کنید.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'جایگزینی ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'هویت کارخواه انتخاب‌شده: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'امتیاز ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'در حال دریافت زیرنویس: ${title}',
 			_ => null,
 		};
 	}

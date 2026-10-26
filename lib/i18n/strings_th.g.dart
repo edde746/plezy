@@ -104,6 +104,7 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$th fileSources = _Translations$fileSources$th._(_root);
 	@override late final _Translations$lending$th lending = _Translations$lending$th._(_root);
 	@override late final _Translations$audiobook$th audiobook = _Translations$audiobook$th._(_root);
+	@override late final _Translations$sourceSetup$th sourceSetup = _Translations$sourceSetup$th._(_root);
 }
 
 // Path: app
@@ -3044,6 +3045,12 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get useFiles => 'ใช้ไฟล์และหนังสือ';
 	@override String get cancelScan => 'สแกนลบ';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'ตัวอย่าง: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์';
+	@override String get smbFolderHelp => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น';
+	@override String get smbDomain => 'โดเมน (ไม่บังคับ)';
+	@override String get smbEncryption => 'เข้ารหัสการเชื่อมต่อ SMB3';
+	@override String get smbEncryptionHint => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ';
 }
 
 // Path: lending
@@ -3163,6 +3170,109 @@ class _Translations$audiobook$th extends Translations$audiobook$en {
 	@override String get statusFinished => 'เสร็จ';
 	@override String get goToTime => 'ไปยัง เวลา';
 	@override String get timeHelp => 'ชั่วโมง:นาที:วินาทีหรือนาที:วินาที';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$th extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'ใบรับรองเซิร์ฟเวอร์ที่บันทึกไว้';
+	@override String get nfsEndpointInvalid => 'ป้อน URL ของ NFS เช่น nfs://nas:2049/export.';
+	@override String get dlnaNone => 'ไม่พบเซิร์ฟเวอร์ DLNA ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง';
+	@override String get dlnaServers => 'เซิร์ฟเวอร์สื่อ DLNA';
+	@override String get dlnaUnavailable => 'เครือข่ายนี้ใช้การค้นหา DLNA ไม่ได้ ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง';
+	@override String get dlnaSearching => 'กำลังค้นหาเซิร์ฟเวอร์ DLNA ในเครือข่ายภายใน';
+	@override String get networkSearching => 'กำลังค้นหาในเครือข่ายภายใน…';
+	@override String get dlnaDiscover => 'ค้นหาเซิร์ฟเวอร์ DLNA';
+	@override String get dlnaHelp => 'การค้นหาต้องอาศัยมัลติคาสต์ในเครือข่ายภายใน หากไม่พบเซิร์ฟเวอร์ ให้ป้อน URL คำอธิบายอุปกรณ์ของเซิร์ฟเวอร์นั้นด้านบน';
+	@override String get dlnaRoot => 'ID ออบเจ็กต์ DLNA เว้นว่างไว้เพื่อใช้ระดับรากของอุปกรณ์';
+	@override String get passwordOrKey => 'ป้อนรหัสผ่านหรือเพิ่มกุญแจส่วนตัวด้านล่าง';
+	@override String get sshFingerprint => 'ลายนิ้วมือ SHA256 ของกุญแจโฮสต์ SSH';
+	@override String get sshFingerprintHelp => 'ตรวจสอบกับผู้ดูแลเซิร์ฟเวอร์ เรียกใช้ ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub บนเซิร์ฟเวอร์ แล้วใช้ค่า SHA256';
+	@override String get sshFingerprintKeep => 'เว้นว่างไว้เพื่อคงลายนิ้วมือที่ตรึงไว้อยู่ หรือป้อนลายนิ้วมือเซิร์ฟเวอร์ใหม่';
+	@override String get sshAuthentication => 'การยืนยันตัวตน SSH ด้วยกุญแจสาธารณะ';
+	@override String get sshAuthenticationHelp => 'ไม่บังคับ รองรับการยืนยันตัวตนด้วยรหัสผ่านด้วย';
+	@override String get privateKey => 'กุญแจส่วนตัว (รูปแบบ PEM หรือ OpenSSH)';
+	@override String get privateKeyPassphrase => 'วลีรหัสผ่านของกุญแจส่วนตัว';
+	@override String get nfsMountPort => 'พอร์ต TCP ของบริการเมานต์ NFS';
+	@override String get nfsMountPortHelp => 'ค่าเริ่มต้น: 20048';
+	@override String get nfsUserId => 'ID ผู้ใช้ NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'ค่าเริ่มต้น: 1000 ใช้ ID ที่ส่วนแบ่งปัน NFS ของ NAS อนุญาต';
+	@override String get nfsGroupId => 'ID กลุ่ม NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'ค่าเริ่มต้น: 1000 ใช้ ID กลุ่มที่ส่วนแบ่งปัน NFS ของ NAS อนุญาต';
+	@override String get nfsEncryption => 'บังคับใช้ NFS ที่เข้ารหัส (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'บังคับใช้ TLS 1.3 สำหรับ NFS และบริการเมานต์ หาก NAS ไม่รองรับ ระบบจะปฏิเสธการเชื่อมต่อ';
+	@override String get nfsTrustCertificate => 'CA ของ NFS หรือใบรับรองเซิร์ฟเวอร์ที่กำหนดเอง (PEM, ไม่บังคับ)';
+	@override String get nfsTrustHelp => 'เว้นว่างไว้เพื่อใช้ใบรับรองที่อุปกรณ์นี้เชื่อถือ หากจำเป็น ให้เพิ่มใบรับรองจาก CA ส่วนตัวหรือใบรับรองเซิร์ฟเวอร์ที่ลงนามด้วยตนเอง ชื่อในใบรับรองต้องตรงกับโฮสต์ใน URL ของ NFS';
+	@override String get nfsTrustInvalid => 'ใช้ใบรับรอง CA หรือเซิร์ฟเวอร์ในรูปแบบ PEM ห้ามใส่กุญแจส่วนตัว';
+	@override String get addTrustCertificate => 'เพิ่มใบรับรองความเชื่อถือที่กำหนดเอง';
+	@override String get replaceTrustCertificate => 'แทนที่ใบรับรองที่กำหนดเองซึ่งบันทึกไว้';
+	@override String get nfsTlsHelp => 'RPC-with-TLS ใช้พอร์ต NFS และบริการเมานต์ตามปกติ และ NAS ต้องรองรับ RFC 9289 ต้องใช้ TLS 1.3 ชื่อโฮสต์หรือ IP ต้องตรงกับใบรับรอง AUTH_SYS UID/GID ยังคงมีผลภายในช่องทางที่เข้ารหัส';
+	@override String get clientCertificate => 'ใบรับรองไคลเอนต์ (ไม่บังคับ)';
+	@override String get clientCertificateHelp => 'ช่วยให้ NAS ยืนยันตัวตนของไคลเอนต์นี้ได้ โดย ID ของ AUTH_SYS ยังขึ้นอยู่กับนโยบายส่วนแบ่งปัน NFS ของ NAS';
+	@override String get savedIdentity => 'จะใช้ข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้';
+	@override String get replaceIdentity => 'แทนที่ข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้';
+	@override String get chooseIdentity => 'เลือกข้อมูลประจำตัวไคลเอนต์ PKCS#12';
+	@override String get identityPassphrase => 'วลีรหัสผ่านของข้อมูลประจำตัวไคลเอนต์';
+	@override String get identityPassphraseHelp => 'เว้นว่างไว้หากไฟล์ไม่มีวลีรหัสผ่าน';
+	@override String get removeIdentity => 'นำข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้ออก';
+	@override String get identityStorageHelp => 'ข้อมูลประจำตัวไคลเอนต์จะบันทึกในที่เก็บข้อมูลรับรองของแหล่งข้อมูลที่เข้ารหัสไว้ อย่าเปลี่ยนส่วนนี้หากต้องการคงข้อมูลประจำตัวที่บันทึกไว้';
+	@override String get nfsLimitations => 'NFSv3 แบบอ่านอย่างเดียวผ่าน TCP หากไม่มี RPC-with-TLS การรับส่งข้อมูล NFS จะไม่เข้ารหัส NAS ต้องอนุญาต ID ของ AUTH_SYS ที่เลือกและพอร์ตไคลเอนต์ที่ไม่ต้องใช้สิทธิ์พิเศษ (มักเรียกว่าตัวเลือกเอ็กซ์พอร์ต “insecure”) ไม่รองรับ NFSv4 และ UDP';
+	@override String get nfsSetupHelp => 'ความช่วยเหลือในการตั้งค่า NFS';
+	@override String get nfsSetupHint => 'ตรวจสอบการตั้งค่าเหล่านี้หากเชื่อมต่อไม่ได้';
+	@override String get nfsSetupDetails => 'ใช้ส่วนแบ่งปัน NFSv3 ผ่าน TCP หากบังคับให้เข้ารหัส ทั้งบริการ NFS และบริการเมานต์ต้องรองรับ RPC-with-TLS เว้นช่องใบรับรองที่กำหนดเองว่างไว้เพื่อใช้ใบรับรองเซิร์ฟเวอร์ที่อุปกรณ์นี้เชื่อถือ หรือเพิ่มใบรับรอง CA หรือใบรับรองที่ลงนามด้วยตนเองของ NAS ชื่อในใบรับรองต้องตรงกับโฮสต์ของปลายทาง หาก NAS ต้องการ TLS แบบยืนยันตัวตนทั้งสองฝ่าย ให้เพิ่มข้อมูลประจำตัวไคลเอนต์ PKCS#12 ของ NAS สุดท้าย ตรวจสอบว่าส่วนแบ่งปันอนุญาต AUTH_SYS UID/GID ที่กำหนดไว้และนโยบายพอร์ตไคลเอนต์';
+	@override String get ftpHelp => 'FTP ใช้โหมดพาสซีฟ ใช้ ftp:// สำหรับ FTP ที่ไม่เข้ารหัส, ftpes:// สำหรับ TLS แบบชัดแจ้ง หรือ ftps:// สำหรับ TLS (แบบโดยนัยบนพอร์ต 990 และแบบชัดแจ้งบนพอร์ตอื่น)';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'การค้นหาคำบรรยายเสริมสำหรับวิดีโอเดี่ยว';
+	@override String get apiKey => 'คีย์ API';
+	@override String get optionalUsername => 'ชื่อผู้ใช้ของบัญชี (ไม่บังคับ)';
+	@override String get optionalPassword => 'รหัสผ่านบัญชี (ไม่บังคับ)';
+	@override String get subtitlePrivacy => 'รับคีย์ API จาก opensubtitles.com การค้นหาจะส่งชื่อวิดีโอและ ID ของ IMDb/TMDB ที่มี แต่จะไม่ส่งไฟล์วิดีโอ คีย์และข้อมูลรับรองบัญชีที่ระบุเพิ่มเติมจะเข้ารหัสพร้อมกับแหล่งข้อมูลนี้';
+	@override String get automaticMetadata => 'ข้อมูลกำกับวิดีโอออนไลน์อัตโนมัติ';
+	@override String get metadataPrivacy => 'ส่งเฉพาะชื่อเรื่อง/ปีจากชื่อไฟล์และหมายเลขตอน หรือ ID ของ NFO โดยไม่ส่งสื่อหรือข้อมูลรับรอง ช่องข้อมูล NFO ยังคงมีลำดับความสำคัญสูงสุด';
+	@override String get nfsEncryptionFailure => 'สำหรับ NFS ที่เข้ารหัส ให้ตรวจสอบว่าบริการทั้งสองของ NAS รองรับ RFC 9289 และ TLS 1.3 ตรวจสอบชื่อในใบรับรองและ UID/GID ของส่วนแบ่งปัน PlezyNG จะไม่ลองเชื่อมต่อใหม่โดยไม่มีการเข้ารหัส';
+	@override String get sourceConnecting => 'กำลังเชื่อมต่อแหล่งข้อมูล';
+	@override String get metadataSearchPrivacy => 'การค้นหาชื่อเรื่องนี้ส่งไปยัง Trakt โดยส่งชื่อที่คุณป้อน ไม่ใช่วิดีโอหรือข้อมูลรับรองของแหล่งข้อมูล';
+	@override String get chooseMatch => 'เลือกผลลัพธ์ที่ตรงกัน';
+	@override String get metadataMatchHelp => 'ตรวจสอบชื่อเรื่องและปีก่อนเลือก Trakt จะได้รับชื่อเรื่องที่ค้นหา ส่วนวิดีโอยังคงอยู่ในแหล่งข้อมูลเดิม';
+	@override String get metadataNoMatches => 'ไม่พบชื่อเรื่องที่ตรงกันออนไลน์ ลองใช้ชื่อเรื่องอื่น';
+	@override String get metadataSearch => 'ค้นหาข้อมูลกำกับออนไลน์';
+	@override String get metadataLoading => 'กำลังค้นหาข้อมูลภาพยนตร์และรายการทีวีออนไลน์…';
+	@override String get metadataFromTrakt => 'ข้อมูลกำกับออนไลน์จาก Trakt';
+	@override String get metadataNoAutomaticMatch => 'ไม่พบชื่อเรื่องที่ตรงกันโดยอัตโนมัติ ค้นหาชื่อเรื่องเพื่อเลือกผลลัพธ์ที่ตรงกัน';
+	@override String get metadataFailed => 'โหลดข้อมูลกำกับออนไลน์ไม่ได้ แต่ยังเล่นวิดีโอและดูข้อมูลในเครื่องได้';
+	@override String get videoDetailsLoading => 'กำลังโหลดรายละเอียดวิดีโอ';
+	@override String get subtitleKeyRequired => 'ต้องมีคีย์ API ของ OpenSubtitles';
+	@override String get subtitleKeyHelp => 'แก้ไขแหล่งไฟล์นี้และเพิ่มคีย์ API ของ OpenSubtitles ในการตั้งค่าคำบรรยายเสริม';
+	@override String get subtitleSearchFailed => 'ค้นหาคำบรรยายไม่สำเร็จ ตรวจสอบคีย์ API การเชื่อมต่อ และการเข้าถึงบริการ';
+	@override String get subtitleApplyFailed => 'ดาวน์โหลดหรือใช้คำบรรยายนี้ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองผลลัพธ์อื่น';
+	@override String get subtitleSearch => 'ค้นหาใน OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'การค้นหาใช้ชื่อเรื่องและ ID ของ IMDb/TMDB ที่มี ไฟล์วิดีโอยังคงอยู่ในแหล่งข้อมูลเดิม ก่อนเลือก ให้ตรวจสอบภาษา เครื่องหมายคำบรรยายแบบบังคับหรือสำหรับผู้มีความบกพร่องทางการได้ยิน และคะแนน';
+	@override String get movieOrShow => 'ภาพยนตร์หรือรายการทีวี';
+	@override String get subtitleTitleHint => 'ป้อนชื่อเรื่องเพื่อจำกัดผลลัพธ์';
+	@override String get subtitleLanguage => 'ภาษาคำบรรยาย';
+	@override String get subtitleSearching => 'กำลังค้นหาใน OpenSubtitles';
+	@override String get subtitleNoMatches => 'ไม่พบคำบรรยายที่ตรงกัน ลองใช้ชื่อเรื่องหรือภาษาอื่น';
+	@override String get downloadSubtitle => 'ดาวน์โหลดคำบรรยาย';
+	@override String get subtitle => 'คำบรรยาย';
+	@override String get nfsTlsRequired => 'ต้องใช้ RPC-with-TLS';
+	@override String get nfsUnencrypted => 'NFS ที่ไม่เข้ารหัส';
+	@override String get tlsEncrypted => 'เข้ารหัสด้วย TLS';
+	@override String get ftpPlain => 'FTP ที่ไม่เข้ารหัส';
+	@override String get sshPinned => 'SSH เข้ารหัส · ตรึงกุญแจโฮสต์แล้ว';
+	@override String get smbEncrypted => 'เปิดการเข้ารหัส SMB3';
+	@override String get smbUnencrypted => 'ปิดการเข้ารหัส SMB3';
+	@override String get httpUnencrypted => 'HTTP ที่ไม่มีการเข้ารหัสการรับส่งข้อมูล';
+	@override String get checkEndpointSecurity => 'ตรวจสอบความปลอดภัยของปลายทาง';
+	@override String fieldRequired({required Object label}) => 'ต้องระบุ ${label}';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'ป้อน ${label} ตั้งแต่ ${min} ถึง ${max}';
+	@override String replaceFile({required Object name}) => 'แทนที่ ${name}';
+	@override String selectedIdentity({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}';
+	@override String subtitleRating({required Object rating}) => 'คะแนน ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}';
 }
 
 // Path: appIcon.names
@@ -3416,48 +3526,48 @@ class _Translations$discover$findNext$th extends Translations$discover$findNext$
 	final TranslationsTh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'ค้นหาต่อไปของคุณ';
-	@override String get open => 'ค้นหาต่อไปของคุณ';
-	@override String get anyTime => 'เวลาใด ๆ';
-	@override String get timeAvailable => 'คุณมีเวลาเท่าไหร่';
-	@override String get filters => 'เลือกช่วงเวลา';
+	@override String get title => 'ค้นพบสิ่งใหม่ที่ถูกใจ';
+	@override String get open => 'ค้นพบสิ่งใหม่ที่ถูกใจ';
+	@override String get anyTime => 'ไม่จำกัดเวลา';
+	@override String get timeAvailable => 'คุณมีเวลาเท่าไร?';
+	@override String get filters => 'เลือกให้เหมาะกับช่วงเวลานี้';
 	@override String get watch => 'ดู';
-	@override String get listen => 'ดูข้อความ';
+	@override String get listen => 'ฟัง';
 	@override String get read => 'อ่าน';
-	@override String finishable({required Object duration}) => 'เสร็จสิ้นใน ${duration}';
-	@override String aboutDuration({required Object duration}) => 'เกี่ยวกับ ${duration}';
-	@override String nextUnit({required Object duration}) => 'บทความถัดไป · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} ทั้งหมด';
-	@override String get timingVaries => 'เวลาที่แตกต่างกัน';
-	@override String get notNow => 'ไม่ในขณะนี้';
+	@override String finishable({required Object duration}) => 'จบได้ภายใน ${duration}';
+	@override String aboutDuration({required Object duration}) => 'ประมาณ ${duration}';
+	@override String nextUnit({required Object duration}) => 'บทถัดไป · ${duration}';
+	@override String totalDuration({required Object duration}) => 'เวลารวม ${duration}';
+	@override String get timingVaries => 'ระยะเวลาอาจแตกต่างกัน';
+	@override String get notNow => 'ยังไม่ใช่ตอนนี้';
 	@override String get swipeHint => 'ปัดภาพปกไปทางลูกศร หรือใช้ปุ่มด้านล่าง';
-	@override String get saved => 'การบันทึก picks';
-	@override String savedCount({required Object count}) => 'การบันทึก · ${count}';
-	@override String get undo => 'ก้น';
+	@override String get saved => 'คำแนะนำที่บันทึกไว้';
+	@override String savedCount({required Object count}) => 'คำแนะนำที่บันทึกไว้ · ${count}';
+	@override String get undo => 'เลิกทำ';
 	@override String get details => 'รายละเอียด';
-	@override String get noPicks => 'ไม่มีอะไรที่จะเลือกจากตอนนี้';
-	@override String get noPicksHint => 'เชื่อมต่อห้องสมุดหรือเพิ่มแหล่งสื่อเพื่อเริ่มต้น';
-	@override String get noMatches => 'ไม่มีอะไรที่เหมาะสมกับช่วงเวลานี้';
-	@override String get noMatchesHint => 'พยายามรูปแบบอื่นหรือให้ตัวเองเวลามากขึ้น';
-	@override String get allDone => 'คุณทั้งหมดถูกจับ';
-	@override String get allDoneHint => 'เริ่มต้นผสมใหม่เพื่อดูตัวเลือกเหล่านี้อีกครั้ง';
-	@override String get refresh => 'ค้นหาผสมอื่น ๆ';
+	@override String get noPicks => 'ยังไม่มีรายการให้เลือก';
+	@override String get noPicksHint => 'เชื่อมต่อคลังหรือเพิ่มแหล่งสื่อเพื่อเริ่มต้น';
+	@override String get noMatches => 'ไม่มีรายการที่เหมาะกับช่วงเวลานี้';
+	@override String get noMatchesHint => 'ลองเลือกสื่อประเภทอื่นหรือเผื่อเวลาให้มากขึ้น';
+	@override String get allDone => 'คุณดูคำแนะนำครบแล้ว';
+	@override String get allDoneHint => 'เริ่มชุดคำแนะนำใหม่เพื่อดูตัวเลือกเหล่านี้อีกครั้ง';
+	@override String get refresh => 'หาชุดคำแนะนำอื่น';
 	@override String sourceReason({required Object source}) => 'จาก ${source}';
 	@override String libraryReason({required Object library}) => 'จาก ${library}';
-	@override String get ownedReason => 'จากห้องสมุดของคุณ';
-	@override String get liveNow => 'ในขณะนี้';
+	@override String get ownedReason => 'จากคลังของคุณ';
+	@override String get liveNow => 'กำลังออกอากาศ';
 	@override String get watchLive => 'ดูสด';
-	@override String get filterAnything => 'ทุกอย่าง';
+	@override String get filterAnything => 'ทุกประเภท';
 	@override String get filterWatch => 'ดู';
-	@override String get filterListen => 'ดูข้อความ';
+	@override String get filterListen => 'ฟัง';
 	@override String get filterRead => 'อ่าน';
 	@override String get twentyMinutes => '20 นาที';
 	@override String get fortyFiveMinutes => '45 นาที';
 	@override String get ninetyMinutes => '90 นาที';
-	@override String get apply => 'ใบสมัคร';
-	@override String get openFailed => 'ตัวเลือกนี้ไม่สามารถใช้ได้อีกต่อไป ปรับปรุงเพื่อตรวจสอบอีกครั้ง';
-	@override String get changeFailed => 'ไม่สามารถบันทึกการเปลี่ยนแปลงนี้ได้ พยายามอีกครั้ง';
-	@override String get savedLimit => 'ชิ้นที่บันทึกแล้วเต็มไป ลบตัวเลือกหนึ่งเพื่อบันทึกตัวเลือกอื่น ๆ';
+	@override String get apply => 'ใช้ตัวเลือกนี้';
+	@override String get openFailed => 'ตัวเลือกนี้ไม่พร้อมใช้งานแล้ว รีเฟรชเพื่อตรวจสอบอีกครั้ง';
+	@override String get changeFailed => 'บันทึกการเปลี่ยนแปลงนี้ไม่ได้ ลองอีกครั้ง';
+	@override String get savedLimit => 'รายการคำแนะนำที่บันทึกไว้เต็มแล้ว นำคำแนะนำหนึ่งรายการออกเพื่อบันทึกรายการอื่น';
 	@override String get chooseHint => 'เปิดรายการ บันทึกไว้ดูภายหลัง หรือข้ามไป';
 	@override String get howItWorks => 'วิธีใช้งาน';
 	@override String get notNowHelp => 'ข้ามรายการนี้ไปก่อน รายการยังคงอยู่ในคลังของคุณ';
@@ -5464,48 +5574,48 @@ extension on TranslationsTh {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'ซีซัน ${season} ตอน ${episode}',
 			'discover.overview' => 'ทบทวน',
 			'discover.cast' => 'คะแนน',
-			'discover.findNext.title' => 'ค้นหาต่อไปของคุณ',
-			'discover.findNext.open' => 'ค้นหาต่อไปของคุณ',
-			'discover.findNext.anyTime' => 'เวลาใด ๆ',
-			'discover.findNext.timeAvailable' => 'คุณมีเวลาเท่าไหร่',
-			'discover.findNext.filters' => 'เลือกช่วงเวลา',
+			'discover.findNext.title' => 'ค้นพบสิ่งใหม่ที่ถูกใจ',
+			'discover.findNext.open' => 'ค้นพบสิ่งใหม่ที่ถูกใจ',
+			'discover.findNext.anyTime' => 'ไม่จำกัดเวลา',
+			'discover.findNext.timeAvailable' => 'คุณมีเวลาเท่าไร?',
+			'discover.findNext.filters' => 'เลือกให้เหมาะกับช่วงเวลานี้',
 			'discover.findNext.watch' => 'ดู',
-			'discover.findNext.listen' => 'ดูข้อความ',
+			'discover.findNext.listen' => 'ฟัง',
 			'discover.findNext.read' => 'อ่าน',
-			'discover.findNext.finishable' => ({required Object duration}) => 'เสร็จสิ้นใน ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'เกี่ยวกับ ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'บทความถัดไป · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} ทั้งหมด',
-			'discover.findNext.timingVaries' => 'เวลาที่แตกต่างกัน',
-			'discover.findNext.notNow' => 'ไม่ในขณะนี้',
+			'discover.findNext.finishable' => ({required Object duration}) => 'จบได้ภายใน ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'ประมาณ ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'บทถัดไป · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'เวลารวม ${duration}',
+			'discover.findNext.timingVaries' => 'ระยะเวลาอาจแตกต่างกัน',
+			'discover.findNext.notNow' => 'ยังไม่ใช่ตอนนี้',
 			'discover.findNext.swipeHint' => 'ปัดภาพปกไปทางลูกศร หรือใช้ปุ่มด้านล่าง',
-			'discover.findNext.saved' => 'การบันทึก picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'การบันทึก · ${count}',
-			'discover.findNext.undo' => 'ก้น',
+			'discover.findNext.saved' => 'คำแนะนำที่บันทึกไว้',
+			'discover.findNext.savedCount' => ({required Object count}) => 'คำแนะนำที่บันทึกไว้ · ${count}',
+			'discover.findNext.undo' => 'เลิกทำ',
 			'discover.findNext.details' => 'รายละเอียด',
-			'discover.findNext.noPicks' => 'ไม่มีอะไรที่จะเลือกจากตอนนี้',
-			'discover.findNext.noPicksHint' => 'เชื่อมต่อห้องสมุดหรือเพิ่มแหล่งสื่อเพื่อเริ่มต้น',
-			'discover.findNext.noMatches' => 'ไม่มีอะไรที่เหมาะสมกับช่วงเวลานี้',
-			'discover.findNext.noMatchesHint' => 'พยายามรูปแบบอื่นหรือให้ตัวเองเวลามากขึ้น',
-			'discover.findNext.allDone' => 'คุณทั้งหมดถูกจับ',
-			'discover.findNext.allDoneHint' => 'เริ่มต้นผสมใหม่เพื่อดูตัวเลือกเหล่านี้อีกครั้ง',
-			'discover.findNext.refresh' => 'ค้นหาผสมอื่น ๆ',
+			'discover.findNext.noPicks' => 'ยังไม่มีรายการให้เลือก',
+			'discover.findNext.noPicksHint' => 'เชื่อมต่อคลังหรือเพิ่มแหล่งสื่อเพื่อเริ่มต้น',
+			'discover.findNext.noMatches' => 'ไม่มีรายการที่เหมาะกับช่วงเวลานี้',
+			'discover.findNext.noMatchesHint' => 'ลองเลือกสื่อประเภทอื่นหรือเผื่อเวลาให้มากขึ้น',
+			'discover.findNext.allDone' => 'คุณดูคำแนะนำครบแล้ว',
+			'discover.findNext.allDoneHint' => 'เริ่มชุดคำแนะนำใหม่เพื่อดูตัวเลือกเหล่านี้อีกครั้ง',
+			'discover.findNext.refresh' => 'หาชุดคำแนะนำอื่น',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'จาก ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'จาก ${library}',
-			'discover.findNext.ownedReason' => 'จากห้องสมุดของคุณ',
-			'discover.findNext.liveNow' => 'ในขณะนี้',
+			'discover.findNext.ownedReason' => 'จากคลังของคุณ',
+			'discover.findNext.liveNow' => 'กำลังออกอากาศ',
 			'discover.findNext.watchLive' => 'ดูสด',
-			'discover.findNext.filterAnything' => 'ทุกอย่าง',
+			'discover.findNext.filterAnything' => 'ทุกประเภท',
 			'discover.findNext.filterWatch' => 'ดู',
-			'discover.findNext.filterListen' => 'ดูข้อความ',
+			'discover.findNext.filterListen' => 'ฟัง',
 			'discover.findNext.filterRead' => 'อ่าน',
 			'discover.findNext.twentyMinutes' => '20 นาที',
 			'discover.findNext.fortyFiveMinutes' => '45 นาที',
 			'discover.findNext.ninetyMinutes' => '90 นาที',
-			'discover.findNext.apply' => 'ใบสมัคร',
-			'discover.findNext.openFailed' => 'ตัวเลือกนี้ไม่สามารถใช้ได้อีกต่อไป ปรับปรุงเพื่อตรวจสอบอีกครั้ง',
-			'discover.findNext.changeFailed' => 'ไม่สามารถบันทึกการเปลี่ยนแปลงนี้ได้ พยายามอีกครั้ง',
-			'discover.findNext.savedLimit' => 'ชิ้นที่บันทึกแล้วเต็มไป ลบตัวเลือกหนึ่งเพื่อบันทึกตัวเลือกอื่น ๆ',
+			'discover.findNext.apply' => 'ใช้ตัวเลือกนี้',
+			'discover.findNext.openFailed' => 'ตัวเลือกนี้ไม่พร้อมใช้งานแล้ว รีเฟรชเพื่อตรวจสอบอีกครั้ง',
+			'discover.findNext.changeFailed' => 'บันทึกการเปลี่ยนแปลงนี้ไม่ได้ ลองอีกครั้ง',
+			'discover.findNext.savedLimit' => 'รายการคำแนะนำที่บันทึกไว้เต็มแล้ว นำคำแนะนำหนึ่งรายการออกเพื่อบันทึกรายการอื่น',
 			'discover.findNext.chooseHint' => 'เปิดรายการ บันทึกไว้ดูภายหลัง หรือข้ามไป',
 			'discover.findNext.howItWorks' => 'วิธีใช้งาน',
 			'discover.findNext.notNowHelp' => 'ข้ามรายการนี้ไปก่อน รายการยังคงอยู่ในคลังของคุณ',
@@ -7091,6 +7201,12 @@ extension on TranslationsTh {
 			'fileSources.useFiles' => 'ใช้ไฟล์และหนังสือ',
 			'fileSources.cancelScan' => 'สแกนลบ',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'ตัวอย่าง: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์',
+			'fileSources.smbFolderHelp' => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น',
+			'fileSources.smbDomain' => 'โดเมน (ไม่บังคับ)',
+			'fileSources.smbEncryption' => 'เข้ารหัสการเชื่อมต่อ SMB3',
+			'fileSources.smbEncryptionHint' => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ',
 			'lending.title' => 'สวนสาธารณะ',
 			'lending.add' => 'เพิ่มห้องสมุด',
 			'lending.other' => 'อื่น ๆ บิสตจักร',
@@ -7192,6 +7308,102 @@ extension on TranslationsTh {
 			'audiobook.statusFinished' => 'เสร็จ',
 			'audiobook.goToTime' => 'ไปยัง เวลา',
 			'audiobook.timeHelp' => 'ชั่วโมง:นาที:วินาทีหรือนาที:วินาที',
+			'sourceSetup.savedCertificate' => 'ใบรับรองเซิร์ฟเวอร์ที่บันทึกไว้',
+			'sourceSetup.nfsEndpointInvalid' => 'ป้อน URL ของ NFS เช่น nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'ไม่พบเซิร์ฟเวอร์ DLNA ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง',
+			'sourceSetup.dlnaServers' => 'เซิร์ฟเวอร์สื่อ DLNA',
+			'sourceSetup.dlnaUnavailable' => 'เครือข่ายนี้ใช้การค้นหา DLNA ไม่ได้ ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง',
+			'sourceSetup.dlnaSearching' => 'กำลังค้นหาเซิร์ฟเวอร์ DLNA ในเครือข่ายภายใน',
+			'sourceSetup.networkSearching' => 'กำลังค้นหาในเครือข่ายภายใน…',
+			'sourceSetup.dlnaDiscover' => 'ค้นหาเซิร์ฟเวอร์ DLNA',
+			'sourceSetup.dlnaHelp' => 'การค้นหาต้องอาศัยมัลติคาสต์ในเครือข่ายภายใน หากไม่พบเซิร์ฟเวอร์ ให้ป้อน URL คำอธิบายอุปกรณ์ของเซิร์ฟเวอร์นั้นด้านบน',
+			'sourceSetup.dlnaRoot' => 'ID ออบเจ็กต์ DLNA เว้นว่างไว้เพื่อใช้ระดับรากของอุปกรณ์',
+			'sourceSetup.passwordOrKey' => 'ป้อนรหัสผ่านหรือเพิ่มกุญแจส่วนตัวด้านล่าง',
+			'sourceSetup.sshFingerprint' => 'ลายนิ้วมือ SHA256 ของกุญแจโฮสต์ SSH',
+			'sourceSetup.sshFingerprintHelp' => 'ตรวจสอบกับผู้ดูแลเซิร์ฟเวอร์ เรียกใช้ ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub บนเซิร์ฟเวอร์ แล้วใช้ค่า SHA256',
+			'sourceSetup.sshFingerprintKeep' => 'เว้นว่างไว้เพื่อคงลายนิ้วมือที่ตรึงไว้อยู่ หรือป้อนลายนิ้วมือเซิร์ฟเวอร์ใหม่',
+			'sourceSetup.sshAuthentication' => 'การยืนยันตัวตน SSH ด้วยกุญแจสาธารณะ',
+			'sourceSetup.sshAuthenticationHelp' => 'ไม่บังคับ รองรับการยืนยันตัวตนด้วยรหัสผ่านด้วย',
+			'sourceSetup.privateKey' => 'กุญแจส่วนตัว (รูปแบบ PEM หรือ OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'วลีรหัสผ่านของกุญแจส่วนตัว',
+			'sourceSetup.nfsMountPort' => 'พอร์ต TCP ของบริการเมานต์ NFS',
+			'sourceSetup.nfsMountPortHelp' => 'ค่าเริ่มต้น: 20048',
+			'sourceSetup.nfsUserId' => 'ID ผู้ใช้ NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'ค่าเริ่มต้น: 1000 ใช้ ID ที่ส่วนแบ่งปัน NFS ของ NAS อนุญาต',
+			'sourceSetup.nfsGroupId' => 'ID กลุ่ม NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'ค่าเริ่มต้น: 1000 ใช้ ID กลุ่มที่ส่วนแบ่งปัน NFS ของ NAS อนุญาต',
+			'sourceSetup.nfsEncryption' => 'บังคับใช้ NFS ที่เข้ารหัส (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'บังคับใช้ TLS 1.3 สำหรับ NFS และบริการเมานต์ หาก NAS ไม่รองรับ ระบบจะปฏิเสธการเชื่อมต่อ',
+			'sourceSetup.nfsTrustCertificate' => 'CA ของ NFS หรือใบรับรองเซิร์ฟเวอร์ที่กำหนดเอง (PEM, ไม่บังคับ)',
+			'sourceSetup.nfsTrustHelp' => 'เว้นว่างไว้เพื่อใช้ใบรับรองที่อุปกรณ์นี้เชื่อถือ หากจำเป็น ให้เพิ่มใบรับรองจาก CA ส่วนตัวหรือใบรับรองเซิร์ฟเวอร์ที่ลงนามด้วยตนเอง ชื่อในใบรับรองต้องตรงกับโฮสต์ใน URL ของ NFS',
+			'sourceSetup.nfsTrustInvalid' => 'ใช้ใบรับรอง CA หรือเซิร์ฟเวอร์ในรูปแบบ PEM ห้ามใส่กุญแจส่วนตัว',
+			'sourceSetup.addTrustCertificate' => 'เพิ่มใบรับรองความเชื่อถือที่กำหนดเอง',
+			'sourceSetup.replaceTrustCertificate' => 'แทนที่ใบรับรองที่กำหนดเองซึ่งบันทึกไว้',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS ใช้พอร์ต NFS และบริการเมานต์ตามปกติ และ NAS ต้องรองรับ RFC 9289 ต้องใช้ TLS 1.3 ชื่อโฮสต์หรือ IP ต้องตรงกับใบรับรอง AUTH_SYS UID/GID ยังคงมีผลภายในช่องทางที่เข้ารหัส',
+			'sourceSetup.clientCertificate' => 'ใบรับรองไคลเอนต์ (ไม่บังคับ)',
+			'sourceSetup.clientCertificateHelp' => 'ช่วยให้ NAS ยืนยันตัวตนของไคลเอนต์นี้ได้ โดย ID ของ AUTH_SYS ยังขึ้นอยู่กับนโยบายส่วนแบ่งปัน NFS ของ NAS',
+			'sourceSetup.savedIdentity' => 'จะใช้ข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้',
+			'sourceSetup.replaceIdentity' => 'แทนที่ข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้',
+			'sourceSetup.chooseIdentity' => 'เลือกข้อมูลประจำตัวไคลเอนต์ PKCS#12',
+			'sourceSetup.identityPassphrase' => 'วลีรหัสผ่านของข้อมูลประจำตัวไคลเอนต์',
+			'sourceSetup.identityPassphraseHelp' => 'เว้นว่างไว้หากไฟล์ไม่มีวลีรหัสผ่าน',
+			'sourceSetup.removeIdentity' => 'นำข้อมูลประจำตัวไคลเอนต์ที่บันทึกไว้ออก',
+			'sourceSetup.identityStorageHelp' => 'ข้อมูลประจำตัวไคลเอนต์จะบันทึกในที่เก็บข้อมูลรับรองของแหล่งข้อมูลที่เข้ารหัสไว้ อย่าเปลี่ยนส่วนนี้หากต้องการคงข้อมูลประจำตัวที่บันทึกไว้',
+			'sourceSetup.nfsLimitations' => 'NFSv3 แบบอ่านอย่างเดียวผ่าน TCP หากไม่มี RPC-with-TLS การรับส่งข้อมูล NFS จะไม่เข้ารหัส NAS ต้องอนุญาต ID ของ AUTH_SYS ที่เลือกและพอร์ตไคลเอนต์ที่ไม่ต้องใช้สิทธิ์พิเศษ (มักเรียกว่าตัวเลือกเอ็กซ์พอร์ต “insecure”) ไม่รองรับ NFSv4 และ UDP',
+			'sourceSetup.nfsSetupHelp' => 'ความช่วยเหลือในการตั้งค่า NFS',
+			'sourceSetup.nfsSetupHint' => 'ตรวจสอบการตั้งค่าเหล่านี้หากเชื่อมต่อไม่ได้',
+			'sourceSetup.nfsSetupDetails' => 'ใช้ส่วนแบ่งปัน NFSv3 ผ่าน TCP หากบังคับให้เข้ารหัส ทั้งบริการ NFS และบริการเมานต์ต้องรองรับ RPC-with-TLS เว้นช่องใบรับรองที่กำหนดเองว่างไว้เพื่อใช้ใบรับรองเซิร์ฟเวอร์ที่อุปกรณ์นี้เชื่อถือ หรือเพิ่มใบรับรอง CA หรือใบรับรองที่ลงนามด้วยตนเองของ NAS ชื่อในใบรับรองต้องตรงกับโฮสต์ของปลายทาง หาก NAS ต้องการ TLS แบบยืนยันตัวตนทั้งสองฝ่าย ให้เพิ่มข้อมูลประจำตัวไคลเอนต์ PKCS#12 ของ NAS สุดท้าย ตรวจสอบว่าส่วนแบ่งปันอนุญาต AUTH_SYS UID/GID ที่กำหนดไว้และนโยบายพอร์ตไคลเอนต์',
+			'sourceSetup.ftpHelp' => 'FTP ใช้โหมดพาสซีฟ ใช้ ftp:// สำหรับ FTP ที่ไม่เข้ารหัส, ftpes:// สำหรับ TLS แบบชัดแจ้ง หรือ ftps:// สำหรับ TLS (แบบโดยนัยบนพอร์ต 990 และแบบชัดแจ้งบนพอร์ตอื่น)',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'การค้นหาคำบรรยายเสริมสำหรับวิดีโอเดี่ยว',
+			'sourceSetup.apiKey' => 'คีย์ API',
+			'sourceSetup.optionalUsername' => 'ชื่อผู้ใช้ของบัญชี (ไม่บังคับ)',
+			'sourceSetup.optionalPassword' => 'รหัสผ่านบัญชี (ไม่บังคับ)',
+			'sourceSetup.subtitlePrivacy' => 'รับคีย์ API จาก opensubtitles.com การค้นหาจะส่งชื่อวิดีโอและ ID ของ IMDb/TMDB ที่มี แต่จะไม่ส่งไฟล์วิดีโอ คีย์และข้อมูลรับรองบัญชีที่ระบุเพิ่มเติมจะเข้ารหัสพร้อมกับแหล่งข้อมูลนี้',
+			'sourceSetup.automaticMetadata' => 'ข้อมูลกำกับวิดีโอออนไลน์อัตโนมัติ',
+			'sourceSetup.metadataPrivacy' => 'ส่งเฉพาะชื่อเรื่อง/ปีจากชื่อไฟล์และหมายเลขตอน หรือ ID ของ NFO โดยไม่ส่งสื่อหรือข้อมูลรับรอง ช่องข้อมูล NFO ยังคงมีลำดับความสำคัญสูงสุด',
+			'sourceSetup.nfsEncryptionFailure' => 'สำหรับ NFS ที่เข้ารหัส ให้ตรวจสอบว่าบริการทั้งสองของ NAS รองรับ RFC 9289 และ TLS 1.3 ตรวจสอบชื่อในใบรับรองและ UID/GID ของส่วนแบ่งปัน PlezyNG จะไม่ลองเชื่อมต่อใหม่โดยไม่มีการเข้ารหัส',
+			'sourceSetup.sourceConnecting' => 'กำลังเชื่อมต่อแหล่งข้อมูล',
+			'sourceSetup.metadataSearchPrivacy' => 'การค้นหาชื่อเรื่องนี้ส่งไปยัง Trakt โดยส่งชื่อที่คุณป้อน ไม่ใช่วิดีโอหรือข้อมูลรับรองของแหล่งข้อมูล',
+			'sourceSetup.chooseMatch' => 'เลือกผลลัพธ์ที่ตรงกัน',
+			'sourceSetup.metadataMatchHelp' => 'ตรวจสอบชื่อเรื่องและปีก่อนเลือก Trakt จะได้รับชื่อเรื่องที่ค้นหา ส่วนวิดีโอยังคงอยู่ในแหล่งข้อมูลเดิม',
+			'sourceSetup.metadataNoMatches' => 'ไม่พบชื่อเรื่องที่ตรงกันออนไลน์ ลองใช้ชื่อเรื่องอื่น',
+			'sourceSetup.metadataSearch' => 'ค้นหาข้อมูลกำกับออนไลน์',
+			'sourceSetup.metadataLoading' => 'กำลังค้นหาข้อมูลภาพยนตร์และรายการทีวีออนไลน์…',
+			'sourceSetup.metadataFromTrakt' => 'ข้อมูลกำกับออนไลน์จาก Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'ไม่พบชื่อเรื่องที่ตรงกันโดยอัตโนมัติ ค้นหาชื่อเรื่องเพื่อเลือกผลลัพธ์ที่ตรงกัน',
+			'sourceSetup.metadataFailed' => 'โหลดข้อมูลกำกับออนไลน์ไม่ได้ แต่ยังเล่นวิดีโอและดูข้อมูลในเครื่องได้',
+			'sourceSetup.videoDetailsLoading' => 'กำลังโหลดรายละเอียดวิดีโอ',
+			'sourceSetup.subtitleKeyRequired' => 'ต้องมีคีย์ API ของ OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'แก้ไขแหล่งไฟล์นี้และเพิ่มคีย์ API ของ OpenSubtitles ในการตั้งค่าคำบรรยายเสริม',
+			'sourceSetup.subtitleSearchFailed' => 'ค้นหาคำบรรยายไม่สำเร็จ ตรวจสอบคีย์ API การเชื่อมต่อ และการเข้าถึงบริการ',
+			'sourceSetup.subtitleApplyFailed' => 'ดาวน์โหลดหรือใช้คำบรรยายนี้ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองผลลัพธ์อื่น',
+			'sourceSetup.subtitleSearch' => 'ค้นหาใน OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'การค้นหาใช้ชื่อเรื่องและ ID ของ IMDb/TMDB ที่มี ไฟล์วิดีโอยังคงอยู่ในแหล่งข้อมูลเดิม ก่อนเลือก ให้ตรวจสอบภาษา เครื่องหมายคำบรรยายแบบบังคับหรือสำหรับผู้มีความบกพร่องทางการได้ยิน และคะแนน',
+			'sourceSetup.movieOrShow' => 'ภาพยนตร์หรือรายการทีวี',
+			'sourceSetup.subtitleTitleHint' => 'ป้อนชื่อเรื่องเพื่อจำกัดผลลัพธ์',
+			'sourceSetup.subtitleLanguage' => 'ภาษาคำบรรยาย',
+			'sourceSetup.subtitleSearching' => 'กำลังค้นหาใน OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'ไม่พบคำบรรยายที่ตรงกัน ลองใช้ชื่อเรื่องหรือภาษาอื่น',
+			'sourceSetup.downloadSubtitle' => 'ดาวน์โหลดคำบรรยาย',
+			'sourceSetup.subtitle' => 'คำบรรยาย',
+			'sourceSetup.nfsTlsRequired' => 'ต้องใช้ RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'NFS ที่ไม่เข้ารหัส',
+			'sourceSetup.tlsEncrypted' => 'เข้ารหัสด้วย TLS',
+			'sourceSetup.ftpPlain' => 'FTP ที่ไม่เข้ารหัส',
+			'sourceSetup.sshPinned' => 'SSH เข้ารหัส · ตรึงกุญแจโฮสต์แล้ว',
+			'sourceSetup.smbEncrypted' => 'เปิดการเข้ารหัส SMB3',
+			'sourceSetup.smbUnencrypted' => 'ปิดการเข้ารหัส SMB3',
+			'sourceSetup.httpUnencrypted' => 'HTTP ที่ไม่มีการเข้ารหัสการรับส่งข้อมูล',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'ตรวจสอบความปลอดภัยของปลายทาง',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'ต้องระบุ ${label}',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'ป้อน ${label} ตั้งแต่ ${min} ถึง ${max}',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'แทนที่ ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'คะแนน ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}',
 			_ => null,
 		};
 	}

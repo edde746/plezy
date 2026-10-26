@@ -11,6 +11,28 @@ import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
 void main() {
+  testWidgets('technical fields retain LTR entry inside an RTL interface', (tester) async {
+    final controller = TextEditingController(text: 'smb://nas/Movies');
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Directionality(
+            textDirection: TextDirection.rtl,
+            child: FocusableTextFormField(
+              controller: controller,
+              textDirection: TextDirection.ltr,
+              decoration: const InputDecoration(labelText: 'الخادم'),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.widget<EditableText>(find.byType(EditableText)).textDirection, TextDirection.ltr);
+    expect(Directionality.of(tester.element(find.byType(FocusableTextFormField))), TextDirection.rtl);
+    expect(controller.text, 'smb://nas/Movies');
+  });
+
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);

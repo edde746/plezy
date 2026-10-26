@@ -104,6 +104,7 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$fileSources$fr fileSources = Translations$fileSources$fr.internal(_root);
 	@override late final Translations$lending$fr lending = Translations$lending$fr.internal(_root);
 	@override late final Translations$audiobook$fr audiobook = Translations$audiobook$fr.internal(_root);
+	@override late final Translations$sourceSetup$fr sourceSetup = Translations$sourceSetup$fr.internal(_root);
 }
 
 // Path: app
@@ -3068,6 +3069,12 @@ class Translations$fileSources$fr extends Translations$fileSources$en {
 	@override String get useFiles => 'Utiliser des fichiers et des livres';
 	@override String get cancelScan => 'Annuler le scan';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Exemple : smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Saisissez un serveur SMB et un dossier partagé.';
+	@override String get smbFolderHelp => 'Laissez vide pour utiliser tout le dossier partagé, ou saisissez un dossier qu’il contient.';
+	@override String get smbDomain => 'Domaine (facultatif)';
+	@override String get smbEncryption => 'Chiffrer la connexion SMB3';
+	@override String get smbEncryptionHint => 'Utiliser le chiffrement SMB3 lorsque le NAS le prend en charge.';
 }
 
 // Path: lending
@@ -3187,6 +3194,109 @@ class Translations$audiobook$fr extends Translations$audiobook$en {
 	@override String get statusFinished => 'terminé';
 	@override String get goToTime => 'Aller dans le temps';
 	@override String get timeHelp => 'Hores : minutes : secondes ou minutes : secondes';
+}
+
+// Path: sourceSetup
+class Translations$sourceSetup$fr extends Translations$sourceSetup$en {
+	Translations$sourceSetup$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Certificat du serveur enregistré';
+	@override String get nfsEndpointInvalid => 'Saisissez une URL NFS, par exemple nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Aucun serveur DLNA trouvé. Saisissez manuellement l’URL de description de l’appareil.';
+	@override String get dlnaServers => 'Serveurs multimédias DLNA';
+	@override String get dlnaUnavailable => 'La découverte DLNA est indisponible sur ce réseau. Saisissez manuellement l’URL de description de l’appareil.';
+	@override String get dlnaSearching => 'Recherche de serveurs DLNA sur le réseau local';
+	@override String get networkSearching => 'Recherche sur le réseau local…';
+	@override String get dlnaDiscover => 'Découvrir les serveurs DLNA';
+	@override String get dlnaHelp => 'La découverte repose sur la multidiffusion du réseau local. Si aucun serveur n’apparaît, saisissez ci-dessus son URL de description de l’appareil.';
+	@override String get dlnaRoot => 'Identifiant d’objet DLNA ; laissez vide pour utiliser la racine de l’appareil.';
+	@override String get passwordOrKey => 'Saisissez un mot de passe ou ajoutez une clé privée ci-dessous.';
+	@override String get sshFingerprint => 'Empreinte SHA256 de la clé d’hôte SSH';
+	@override String get sshFingerprintHelp => 'Vérifiez-la auprès de l’administrateur du serveur. Sur le serveur, exécutez ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub et utilisez sa valeur SHA256.';
+	@override String get sshFingerprintKeep => 'Laissez vide pour conserver l’empreinte actuellement épinglée, ou saisissez une nouvelle empreinte du serveur.';
+	@override String get sshAuthentication => 'Authentification SSH par clé publique';
+	@override String get sshAuthenticationHelp => 'Facultative ; l’authentification par mot de passe est également prise en charge.';
+	@override String get privateKey => 'Clé privée (format PEM ou OpenSSH)';
+	@override String get privateKeyPassphrase => 'Phrase secrète de la clé privée';
+	@override String get nfsMountPort => 'Port TCP du service de montage NFS';
+	@override String get nfsMountPortHelp => 'Par défaut : 20048';
+	@override String get nfsUserId => 'Identifiant utilisateur NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Par défaut : 1000. Utilisez l’identifiant autorisé par le partage NFS du NAS.';
+	@override String get nfsGroupId => 'Identifiant de groupe NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Par défaut : 1000. Utilisez l’identifiant de groupe autorisé par le partage NFS du NAS.';
+	@override String get nfsEncryption => 'Exiger NFS chiffré (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Exiger TLS 1.3 pour NFS et le service de montage. Si le NAS ne le prend pas en charge, la connexion est refusée.';
+	@override String get nfsTrustCertificate => 'CA NFS personnalisée ou certificat du serveur (PEM, facultatif)';
+	@override String get nfsTrustHelp => 'Laissez vide pour utiliser les certificats reconnus par cet appareil. Si nécessaire, ajoutez un certificat d’une CA privée ou un certificat de serveur autosigné ; ses noms doivent correspondre à l’hôte de l’URL NFS.';
+	@override String get nfsTrustInvalid => 'Utilisez un certificat de CA ou de serveur au format PEM. N’incluez pas de clé privée.';
+	@override String get addTrustCertificate => 'Ajouter un certificat de confiance personnalisé';
+	@override String get replaceTrustCertificate => 'Remplacer le certificat personnalisé enregistré';
+	@override String get nfsTlsHelp => 'RPC-with-TLS utilise les ports habituels de NFS et du service de montage et exige la prise en charge de RFC 9289 par le NAS. TLS 1.3 est obligatoire. Le nom d’hôte ou l’adresse IP doit correspondre au certificat. Les UID/GID AUTH_SYS s’appliquent toujours dans le canal chiffré.';
+	@override String get clientCertificate => 'Certificat client (facultatif)';
+	@override String get clientCertificateHelp => 'Permet au NAS d’authentifier ce client ; les identifiants AUTH_SYS dépendent toujours des règles du partage NFS du NAS.';
+	@override String get savedIdentity => 'Une identité client enregistrée sera utilisée.';
+	@override String get replaceIdentity => 'Remplacer l’identité client enregistrée';
+	@override String get chooseIdentity => 'Choisir une identité client PKCS#12';
+	@override String get identityPassphrase => 'Phrase secrète de l’identité client';
+	@override String get identityPassphraseHelp => 'Laissez vide si le fichier n’a pas de phrase secrète.';
+	@override String get removeIdentity => 'Supprimer toute identité client enregistrée';
+	@override String get identityStorageHelp => 'Les identités client sont enregistrées dans le coffre chiffré des identifiants de la source. Ne modifiez pas cette section pour conserver l’identité enregistrée.';
+	@override String get nfsLimitations => 'NFSv3 en lecture seule sur TCP. Sans RPC-with-TLS, le trafic NFS n’est pas chiffré. Le NAS doit autoriser les identifiants AUTH_SYS choisis et les ports client non privilégiés (souvent via l’option d’export « insecure »). NFSv4 et UDP ne sont pas pris en charge.';
+	@override String get nfsSetupHelp => 'Aide à la configuration NFS';
+	@override String get nfsSetupHint => 'Vérifiez ces réglages si la connexion ne s’établit pas.';
+	@override String get nfsSetupDetails => 'Utilisez un partage NFSv3 sur TCP. Si le chiffrement est exigé, le service NFS et le service de montage doivent tous deux prendre en charge RPC-with-TLS. Laissez le certificat personnalisé vide pour utiliser un certificat de serveur reconnu par cet appareil, ou ajoutez le certificat de CA ou autosigné du NAS. Le nom du certificat doit correspondre à l’hôte du point de connexion. Si le NAS exige TLS mutuel, ajoutez son identité client PKCS#12. Vérifiez enfin que le partage autorise les UID/GID AUTH_SYS configurés et les règles de ports du client.';
+	@override String get ftpHelp => 'FTP utilise le mode passif. Utilisez ftp:// pour FTP sans chiffrement, ftpes:// pour TLS explicite, ou ftps:// pour TLS (implicite sur le port 990 ; explicite sur les autres ports).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Recherche facultative de sous-titres pour les vidéos indépendantes.';
+	@override String get apiKey => 'Clé API';
+	@override String get optionalUsername => 'Nom d’utilisateur du compte (facultatif)';
+	@override String get optionalPassword => 'Mot de passe du compte (facultatif)';
+	@override String get subtitlePrivacy => 'Obtenez une clé API sur opensubtitles.com. La recherche envoie le titre de la vidéo et les identifiants IMDb/TMDB disponibles, jamais le fichier vidéo. La clé et les identifiants facultatifs du compte sont chiffrés avec cette source.';
+	@override String get automaticMetadata => 'Métadonnées vidéo automatiques en ligne';
+	@override String get metadataPrivacy => 'Envoie uniquement le titre/l’année du nom de fichier et les numéros d’épisode, ou un identifiant NFO ; jamais les médias ni les identifiants de connexion. Les champs NFO restent prioritaires.';
+	@override String get nfsEncryptionFailure => 'Pour NFS chiffré, vérifiez la prise en charge de RFC 9289 et TLS 1.3 par les deux services du NAS, le nom du certificat et les UID/GID du partage. PlezyNG ne réessaiera pas cette connexion sans chiffrement.';
+	@override String get sourceConnecting => 'Connexion à la source';
+	@override String get metadataSearchPrivacy => 'Cette recherche de titre est envoyée à Trakt. Seul le titre saisi est transmis, pas la vidéo ni les identifiants de connexion de la source.';
+	@override String get chooseMatch => 'Choisir une correspondance';
+	@override String get metadataMatchHelp => 'Vérifiez le titre et l’année avant de choisir. Trakt reçoit le titre recherché ; la vidéo reste sur sa source.';
+	@override String get metadataNoMatches => 'Aucun titre correspondant trouvé en ligne. Essayez un autre titre.';
+	@override String get metadataSearch => 'Rechercher des métadonnées en ligne';
+	@override String get metadataLoading => 'Recherche en ligne d’informations sur les films et séries…';
+	@override String get metadataFromTrakt => 'Métadonnées en ligne de Trakt';
+	@override String get metadataNoAutomaticMatch => 'Aucune correspondance automatique trouvée pour le titre. Recherchez le titre pour choisir une correspondance.';
+	@override String get metadataFailed => 'Impossible de charger les métadonnées en ligne. La lecture et les informations locales restent disponibles.';
+	@override String get videoDetailsLoading => 'Chargement des détails de la vidéo';
+	@override String get subtitleKeyRequired => 'Clé API OpenSubtitles requise';
+	@override String get subtitleKeyHelp => 'Modifiez cette source de fichiers et ajoutez une clé API OpenSubtitles dans ses réglages facultatifs de sous-titres.';
+	@override String get subtitleSearchFailed => 'La recherche de sous-titres a échoué. Vérifiez la clé API, la connexion et l’accès au service.';
+	@override String get subtitleApplyFailed => 'Impossible de télécharger ou d’appliquer ces sous-titres. Vérifiez votre connexion et essayez un autre résultat.';
+	@override String get subtitleSearch => 'Rechercher sur OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'La recherche utilise le titre et les identifiants IMDb/TMDB disponibles. Le fichier vidéo reste sur sa source. Avant de choisir, vérifiez la langue, les indicateurs de sous-titres forcés ou pour sourds et malentendants, ainsi que la note.';
+	@override String get movieOrShow => 'Film ou série';
+	@override String get subtitleTitleHint => 'Saisissez un titre pour affiner les résultats';
+	@override String get subtitleLanguage => 'Langue des sous-titres';
+	@override String get subtitleSearching => 'Recherche sur OpenSubtitles';
+	@override String get subtitleNoMatches => 'Aucun sous-titre correspondant trouvé. Essayez un autre titre ou une autre langue.';
+	@override String get downloadSubtitle => 'Télécharger les sous-titres';
+	@override String get subtitle => 'Sous-titres';
+	@override String get nfsTlsRequired => 'RPC-with-TLS obligatoire';
+	@override String get nfsUnencrypted => 'NFS non chiffré';
+	@override String get tlsEncrypted => 'Chiffré avec TLS';
+	@override String get ftpPlain => 'FTP non chiffré';
+	@override String get sshPinned => 'SSH chiffré · clé d’hôte épinglée';
+	@override String get smbEncrypted => 'Chiffrement SMB3 activé';
+	@override String get smbUnencrypted => 'Chiffrement SMB3 désactivé';
+	@override String get httpUnencrypted => 'HTTP sans chiffrement du transport';
+	@override String get checkEndpointSecurity => 'Vérifier la sécurité du point de connexion';
+	@override String fieldRequired({required Object label}) => '${label} est obligatoire.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Saisissez ${label} entre ${min} et ${max}.';
+	@override String replaceFile({required Object name}) => 'Remplacer ${name}';
+	@override String selectedIdentity({required Object name}) => 'Identité client sélectionnée : ${name}';
+	@override String subtitleRating({required Object rating}) => 'Note ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Téléchargement des sous-titres : ${title}';
 }
 
 // Path: appIcon.names
@@ -3440,48 +3550,48 @@ class Translations$discover$findNext$fr extends Translations$discover$findNext$e
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Trouvez votre prochain';
-	@override String get open => 'Trouvez votre prochain';
-	@override String get anyTime => 'A tout moment';
-	@override String get timeAvailable => 'Combien de temps avez-vous ?';
-	@override String get filters => 'Choisissez le moment';
-	@override String get watch => 'regarder';
+	@override String get title => 'Votre prochaine découverte';
+	@override String get open => 'Votre prochaine découverte';
+	@override String get anyTime => 'Sans limite de temps';
+	@override String get timeAvailable => 'De combien de temps disposez-vous ?';
+	@override String get filters => 'Choisissez selon le moment';
+	@override String get watch => 'Regarder';
 	@override String get listen => 'Écouter';
 	@override String get read => 'Lire';
-	@override String finishable({required Object duration}) => 'Résultats en ${duration}';
-	@override String aboutDuration({required Object duration}) => 'A propos de ${duration}';
-	@override String nextUnit({required Object duration}) => 'Suivant Article suivant ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} total';
-	@override String get timingVaries => 'Temps varié';
+	@override String finishable({required Object duration}) => 'Vous pouvez finir en ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Environ ${duration}';
+	@override String nextUnit({required Object duration}) => 'Chapitre suivant · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} au total';
+	@override String get timingVaries => 'La durée peut varier';
 	@override String get notNow => 'Pas maintenant';
 	@override String get swipeHint => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.';
-	@override String get saved => 'Les pics sauvés';
-	@override String savedCount({required Object count}) => 'Réservation de l\'écran · ${count}';
-	@override String get undo => 'et non';
-	@override String get details => 'Les détails';
-	@override String get noPicks => 'Rien à choisir encore';
+	@override String get saved => 'Suggestions enregistrées';
+	@override String savedCount({required Object count}) => 'Suggestions enregistrées · ${count}';
+	@override String get undo => 'Annuler';
+	@override String get details => 'Détails';
+	@override String get noPicks => 'Rien à choisir pour le moment';
 	@override String get noPicksHint => 'Connectez une bibliothèque ou ajoutez une source de médias pour commencer.';
-	@override String get noMatches => 'Rien ne correspond à ce moment';
-	@override String get noMatchesHint => 'Essayez un autre format ou donnez-vous plus de temps.';
-	@override String get allDone => 'Vous êtes tous capturés';
-	@override String get allDoneHint => 'Commencez par un mélange frais pour voir ces choix à nouveau.';
-	@override String get refresh => 'Trouvez un autre mix';
-	@override String sourceReason({required Object source}) => 'à partir de ${source}';
-	@override String libraryReason({required Object library}) => 'à partir de ${library}';
-	@override String get ownedReason => 'De votre bibliothèque';
-	@override String get liveNow => 'En ce moment';
-	@override String get watchLive => 'Voir en live';
-	@override String get filterAnything => 'Tout';
-	@override String get filterWatch => 'regarder';
+	@override String get noMatches => 'Rien ne convient pour le moment';
+	@override String get noMatchesHint => 'Essayez un autre type de contenu ou accordez-vous plus de temps.';
+	@override String get allDone => 'Vous avez vu toutes les suggestions';
+	@override String get allDoneHint => 'Lancez une nouvelle sélection pour revoir ces suggestions.';
+	@override String get refresh => 'Trouver une autre sélection';
+	@override String sourceReason({required Object source}) => 'Depuis ${source}';
+	@override String libraryReason({required Object library}) => 'Depuis ${library}';
+	@override String get ownedReason => 'Dans votre bibliothèque';
+	@override String get liveNow => 'En cours de diffusion';
+	@override String get watchLive => 'Regarder en direct';
+	@override String get filterAnything => 'Tous les types';
+	@override String get filterWatch => 'Regarder';
 	@override String get filterListen => 'Écouter';
 	@override String get filterRead => 'Lire';
 	@override String get twentyMinutes => '20 min';
 	@override String get fortyFiveMinutes => '45 min';
 	@override String get ninetyMinutes => '90 min';
 	@override String get apply => 'Appliquer';
-	@override String get openFailed => 'Cette option n’est plus disponible.Refresh pour vérifier à nouveau.';
-	@override String get changeFailed => 'Je ne pouvais pas sauver ce changement, essayez de nouveau.';
-	@override String get savedLimit => 'Les pics sauvés sont remplis. supprimer un choix pour sauver un autre.';
+	@override String get openFailed => 'Ce choix n’est plus disponible. Actualisez pour vérifier à nouveau.';
+	@override String get changeFailed => 'Impossible d’enregistrer ce changement. Réessayez.';
+	@override String get savedLimit => 'La liste des suggestions enregistrées est pleine. Retirez une suggestion pour en enregistrer une autre.';
 	@override String get chooseHint => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.';
 	@override String get howItWorks => 'Comment ça marche';
 	@override String get notNowHelp => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.';
@@ -5490,48 +5600,48 @@ extension on TranslationsFr {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Aperçu',
 			'discover.cast' => 'Distribution',
-			'discover.findNext.title' => 'Trouvez votre prochain',
-			'discover.findNext.open' => 'Trouvez votre prochain',
-			'discover.findNext.anyTime' => 'A tout moment',
-			'discover.findNext.timeAvailable' => 'Combien de temps avez-vous ?',
-			'discover.findNext.filters' => 'Choisissez le moment',
-			'discover.findNext.watch' => 'regarder',
+			'discover.findNext.title' => 'Votre prochaine découverte',
+			'discover.findNext.open' => 'Votre prochaine découverte',
+			'discover.findNext.anyTime' => 'Sans limite de temps',
+			'discover.findNext.timeAvailable' => 'De combien de temps disposez-vous ?',
+			'discover.findNext.filters' => 'Choisissez selon le moment',
+			'discover.findNext.watch' => 'Regarder',
 			'discover.findNext.listen' => 'Écouter',
 			'discover.findNext.read' => 'Lire',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Résultats en ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'A propos de ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Suivant Article suivant ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
-			'discover.findNext.timingVaries' => 'Temps varié',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Vous pouvez finir en ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Environ ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Chapitre suivant · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} au total',
+			'discover.findNext.timingVaries' => 'La durée peut varier',
 			'discover.findNext.notNow' => 'Pas maintenant',
 			'discover.findNext.swipeHint' => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.',
-			'discover.findNext.saved' => 'Les pics sauvés',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Réservation de l\'écran · ${count}',
-			'discover.findNext.undo' => 'et non',
-			'discover.findNext.details' => 'Les détails',
-			'discover.findNext.noPicks' => 'Rien à choisir encore',
+			'discover.findNext.saved' => 'Suggestions enregistrées',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Suggestions enregistrées · ${count}',
+			'discover.findNext.undo' => 'Annuler',
+			'discover.findNext.details' => 'Détails',
+			'discover.findNext.noPicks' => 'Rien à choisir pour le moment',
 			'discover.findNext.noPicksHint' => 'Connectez une bibliothèque ou ajoutez une source de médias pour commencer.',
-			'discover.findNext.noMatches' => 'Rien ne correspond à ce moment',
-			'discover.findNext.noMatchesHint' => 'Essayez un autre format ou donnez-vous plus de temps.',
-			'discover.findNext.allDone' => 'Vous êtes tous capturés',
-			'discover.findNext.allDoneHint' => 'Commencez par un mélange frais pour voir ces choix à nouveau.',
-			'discover.findNext.refresh' => 'Trouvez un autre mix',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'à partir de ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'à partir de ${library}',
-			'discover.findNext.ownedReason' => 'De votre bibliothèque',
-			'discover.findNext.liveNow' => 'En ce moment',
-			'discover.findNext.watchLive' => 'Voir en live',
-			'discover.findNext.filterAnything' => 'Tout',
-			'discover.findNext.filterWatch' => 'regarder',
+			'discover.findNext.noMatches' => 'Rien ne convient pour le moment',
+			'discover.findNext.noMatchesHint' => 'Essayez un autre type de contenu ou accordez-vous plus de temps.',
+			'discover.findNext.allDone' => 'Vous avez vu toutes les suggestions',
+			'discover.findNext.allDoneHint' => 'Lancez une nouvelle sélection pour revoir ces suggestions.',
+			'discover.findNext.refresh' => 'Trouver une autre sélection',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Depuis ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Depuis ${library}',
+			'discover.findNext.ownedReason' => 'Dans votre bibliothèque',
+			'discover.findNext.liveNow' => 'En cours de diffusion',
+			'discover.findNext.watchLive' => 'Regarder en direct',
+			'discover.findNext.filterAnything' => 'Tous les types',
+			'discover.findNext.filterWatch' => 'Regarder',
 			'discover.findNext.filterListen' => 'Écouter',
 			'discover.findNext.filterRead' => 'Lire',
 			'discover.findNext.twentyMinutes' => '20 min',
 			'discover.findNext.fortyFiveMinutes' => '45 min',
 			'discover.findNext.ninetyMinutes' => '90 min',
 			'discover.findNext.apply' => 'Appliquer',
-			'discover.findNext.openFailed' => 'Cette option n’est plus disponible.Refresh pour vérifier à nouveau.',
-			'discover.findNext.changeFailed' => 'Je ne pouvais pas sauver ce changement, essayez de nouveau.',
-			'discover.findNext.savedLimit' => 'Les pics sauvés sont remplis. supprimer un choix pour sauver un autre.',
+			'discover.findNext.openFailed' => 'Ce choix n’est plus disponible. Actualisez pour vérifier à nouveau.',
+			'discover.findNext.changeFailed' => 'Impossible d’enregistrer ce changement. Réessayez.',
+			'discover.findNext.savedLimit' => 'La liste des suggestions enregistrées est pleine. Retirez une suggestion pour en enregistrer une autre.',
 			'discover.findNext.chooseHint' => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.',
 			'discover.findNext.howItWorks' => 'Comment ça marche',
 			'discover.findNext.notNowHelp' => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.',
@@ -7117,6 +7227,12 @@ extension on TranslationsFr {
 			'fileSources.useFiles' => 'Utiliser des fichiers et des livres',
 			'fileSources.cancelScan' => 'Annuler le scan',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Exemple : smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Saisissez un serveur SMB et un dossier partagé.',
+			'fileSources.smbFolderHelp' => 'Laissez vide pour utiliser tout le dossier partagé, ou saisissez un dossier qu’il contient.',
+			'fileSources.smbDomain' => 'Domaine (facultatif)',
+			'fileSources.smbEncryption' => 'Chiffrer la connexion SMB3',
+			'fileSources.smbEncryptionHint' => 'Utiliser le chiffrement SMB3 lorsque le NAS le prend en charge.',
 			'lending.title' => 'Bibliothèques publiques',
 			'lending.add' => 'Ajoutez une bibliothèque',
 			'lending.other' => 'Une autre bibliothèque',
@@ -7218,6 +7334,102 @@ extension on TranslationsFr {
 			'audiobook.statusFinished' => 'terminé',
 			'audiobook.goToTime' => 'Aller dans le temps',
 			'audiobook.timeHelp' => 'Hores : minutes : secondes ou minutes : secondes',
+			'sourceSetup.savedCertificate' => 'Certificat du serveur enregistré',
+			'sourceSetup.nfsEndpointInvalid' => 'Saisissez une URL NFS, par exemple nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Aucun serveur DLNA trouvé. Saisissez manuellement l’URL de description de l’appareil.',
+			'sourceSetup.dlnaServers' => 'Serveurs multimédias DLNA',
+			'sourceSetup.dlnaUnavailable' => 'La découverte DLNA est indisponible sur ce réseau. Saisissez manuellement l’URL de description de l’appareil.',
+			'sourceSetup.dlnaSearching' => 'Recherche de serveurs DLNA sur le réseau local',
+			'sourceSetup.networkSearching' => 'Recherche sur le réseau local…',
+			'sourceSetup.dlnaDiscover' => 'Découvrir les serveurs DLNA',
+			'sourceSetup.dlnaHelp' => 'La découverte repose sur la multidiffusion du réseau local. Si aucun serveur n’apparaît, saisissez ci-dessus son URL de description de l’appareil.',
+			'sourceSetup.dlnaRoot' => 'Identifiant d’objet DLNA ; laissez vide pour utiliser la racine de l’appareil.',
+			'sourceSetup.passwordOrKey' => 'Saisissez un mot de passe ou ajoutez une clé privée ci-dessous.',
+			'sourceSetup.sshFingerprint' => 'Empreinte SHA256 de la clé d’hôte SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Vérifiez-la auprès de l’administrateur du serveur. Sur le serveur, exécutez ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub et utilisez sa valeur SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Laissez vide pour conserver l’empreinte actuellement épinglée, ou saisissez une nouvelle empreinte du serveur.',
+			'sourceSetup.sshAuthentication' => 'Authentification SSH par clé publique',
+			'sourceSetup.sshAuthenticationHelp' => 'Facultative ; l’authentification par mot de passe est également prise en charge.',
+			'sourceSetup.privateKey' => 'Clé privée (format PEM ou OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Phrase secrète de la clé privée',
+			'sourceSetup.nfsMountPort' => 'Port TCP du service de montage NFS',
+			'sourceSetup.nfsMountPortHelp' => 'Par défaut : 20048',
+			'sourceSetup.nfsUserId' => 'Identifiant utilisateur NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Par défaut : 1000. Utilisez l’identifiant autorisé par le partage NFS du NAS.',
+			'sourceSetup.nfsGroupId' => 'Identifiant de groupe NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Par défaut : 1000. Utilisez l’identifiant de groupe autorisé par le partage NFS du NAS.',
+			'sourceSetup.nfsEncryption' => 'Exiger NFS chiffré (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Exiger TLS 1.3 pour NFS et le service de montage. Si le NAS ne le prend pas en charge, la connexion est refusée.',
+			'sourceSetup.nfsTrustCertificate' => 'CA NFS personnalisée ou certificat du serveur (PEM, facultatif)',
+			'sourceSetup.nfsTrustHelp' => 'Laissez vide pour utiliser les certificats reconnus par cet appareil. Si nécessaire, ajoutez un certificat d’une CA privée ou un certificat de serveur autosigné ; ses noms doivent correspondre à l’hôte de l’URL NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Utilisez un certificat de CA ou de serveur au format PEM. N’incluez pas de clé privée.',
+			'sourceSetup.addTrustCertificate' => 'Ajouter un certificat de confiance personnalisé',
+			'sourceSetup.replaceTrustCertificate' => 'Remplacer le certificat personnalisé enregistré',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS utilise les ports habituels de NFS et du service de montage et exige la prise en charge de RFC 9289 par le NAS. TLS 1.3 est obligatoire. Le nom d’hôte ou l’adresse IP doit correspondre au certificat. Les UID/GID AUTH_SYS s’appliquent toujours dans le canal chiffré.',
+			'sourceSetup.clientCertificate' => 'Certificat client (facultatif)',
+			'sourceSetup.clientCertificateHelp' => 'Permet au NAS d’authentifier ce client ; les identifiants AUTH_SYS dépendent toujours des règles du partage NFS du NAS.',
+			'sourceSetup.savedIdentity' => 'Une identité client enregistrée sera utilisée.',
+			'sourceSetup.replaceIdentity' => 'Remplacer l’identité client enregistrée',
+			'sourceSetup.chooseIdentity' => 'Choisir une identité client PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Phrase secrète de l’identité client',
+			'sourceSetup.identityPassphraseHelp' => 'Laissez vide si le fichier n’a pas de phrase secrète.',
+			'sourceSetup.removeIdentity' => 'Supprimer toute identité client enregistrée',
+			'sourceSetup.identityStorageHelp' => 'Les identités client sont enregistrées dans le coffre chiffré des identifiants de la source. Ne modifiez pas cette section pour conserver l’identité enregistrée.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 en lecture seule sur TCP. Sans RPC-with-TLS, le trafic NFS n’est pas chiffré. Le NAS doit autoriser les identifiants AUTH_SYS choisis et les ports client non privilégiés (souvent via l’option d’export « insecure »). NFSv4 et UDP ne sont pas pris en charge.',
+			'sourceSetup.nfsSetupHelp' => 'Aide à la configuration NFS',
+			'sourceSetup.nfsSetupHint' => 'Vérifiez ces réglages si la connexion ne s’établit pas.',
+			'sourceSetup.nfsSetupDetails' => 'Utilisez un partage NFSv3 sur TCP. Si le chiffrement est exigé, le service NFS et le service de montage doivent tous deux prendre en charge RPC-with-TLS. Laissez le certificat personnalisé vide pour utiliser un certificat de serveur reconnu par cet appareil, ou ajoutez le certificat de CA ou autosigné du NAS. Le nom du certificat doit correspondre à l’hôte du point de connexion. Si le NAS exige TLS mutuel, ajoutez son identité client PKCS#12. Vérifiez enfin que le partage autorise les UID/GID AUTH_SYS configurés et les règles de ports du client.',
+			'sourceSetup.ftpHelp' => 'FTP utilise le mode passif. Utilisez ftp:// pour FTP sans chiffrement, ftpes:// pour TLS explicite, ou ftps:// pour TLS (implicite sur le port 990 ; explicite sur les autres ports).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Recherche facultative de sous-titres pour les vidéos indépendantes.',
+			'sourceSetup.apiKey' => 'Clé API',
+			'sourceSetup.optionalUsername' => 'Nom d’utilisateur du compte (facultatif)',
+			'sourceSetup.optionalPassword' => 'Mot de passe du compte (facultatif)',
+			'sourceSetup.subtitlePrivacy' => 'Obtenez une clé API sur opensubtitles.com. La recherche envoie le titre de la vidéo et les identifiants IMDb/TMDB disponibles, jamais le fichier vidéo. La clé et les identifiants facultatifs du compte sont chiffrés avec cette source.',
+			'sourceSetup.automaticMetadata' => 'Métadonnées vidéo automatiques en ligne',
+			'sourceSetup.metadataPrivacy' => 'Envoie uniquement le titre/l’année du nom de fichier et les numéros d’épisode, ou un identifiant NFO ; jamais les médias ni les identifiants de connexion. Les champs NFO restent prioritaires.',
+			'sourceSetup.nfsEncryptionFailure' => 'Pour NFS chiffré, vérifiez la prise en charge de RFC 9289 et TLS 1.3 par les deux services du NAS, le nom du certificat et les UID/GID du partage. PlezyNG ne réessaiera pas cette connexion sans chiffrement.',
+			'sourceSetup.sourceConnecting' => 'Connexion à la source',
+			'sourceSetup.metadataSearchPrivacy' => 'Cette recherche de titre est envoyée à Trakt. Seul le titre saisi est transmis, pas la vidéo ni les identifiants de connexion de la source.',
+			'sourceSetup.chooseMatch' => 'Choisir une correspondance',
+			'sourceSetup.metadataMatchHelp' => 'Vérifiez le titre et l’année avant de choisir. Trakt reçoit le titre recherché ; la vidéo reste sur sa source.',
+			'sourceSetup.metadataNoMatches' => 'Aucun titre correspondant trouvé en ligne. Essayez un autre titre.',
+			'sourceSetup.metadataSearch' => 'Rechercher des métadonnées en ligne',
+			'sourceSetup.metadataLoading' => 'Recherche en ligne d’informations sur les films et séries…',
+			'sourceSetup.metadataFromTrakt' => 'Métadonnées en ligne de Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Aucune correspondance automatique trouvée pour le titre. Recherchez le titre pour choisir une correspondance.',
+			'sourceSetup.metadataFailed' => 'Impossible de charger les métadonnées en ligne. La lecture et les informations locales restent disponibles.',
+			'sourceSetup.videoDetailsLoading' => 'Chargement des détails de la vidéo',
+			'sourceSetup.subtitleKeyRequired' => 'Clé API OpenSubtitles requise',
+			'sourceSetup.subtitleKeyHelp' => 'Modifiez cette source de fichiers et ajoutez une clé API OpenSubtitles dans ses réglages facultatifs de sous-titres.',
+			'sourceSetup.subtitleSearchFailed' => 'La recherche de sous-titres a échoué. Vérifiez la clé API, la connexion et l’accès au service.',
+			'sourceSetup.subtitleApplyFailed' => 'Impossible de télécharger ou d’appliquer ces sous-titres. Vérifiez votre connexion et essayez un autre résultat.',
+			'sourceSetup.subtitleSearch' => 'Rechercher sur OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'La recherche utilise le titre et les identifiants IMDb/TMDB disponibles. Le fichier vidéo reste sur sa source. Avant de choisir, vérifiez la langue, les indicateurs de sous-titres forcés ou pour sourds et malentendants, ainsi que la note.',
+			'sourceSetup.movieOrShow' => 'Film ou série',
+			'sourceSetup.subtitleTitleHint' => 'Saisissez un titre pour affiner les résultats',
+			'sourceSetup.subtitleLanguage' => 'Langue des sous-titres',
+			'sourceSetup.subtitleSearching' => 'Recherche sur OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Aucun sous-titre correspondant trouvé. Essayez un autre titre ou une autre langue.',
+			'sourceSetup.downloadSubtitle' => 'Télécharger les sous-titres',
+			'sourceSetup.subtitle' => 'Sous-titres',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS obligatoire',
+			'sourceSetup.nfsUnencrypted' => 'NFS non chiffré',
+			'sourceSetup.tlsEncrypted' => 'Chiffré avec TLS',
+			'sourceSetup.ftpPlain' => 'FTP non chiffré',
+			'sourceSetup.sshPinned' => 'SSH chiffré · clé d’hôte épinglée',
+			'sourceSetup.smbEncrypted' => 'Chiffrement SMB3 activé',
+			'sourceSetup.smbUnencrypted' => 'Chiffrement SMB3 désactivé',
+			'sourceSetup.httpUnencrypted' => 'HTTP sans chiffrement du transport',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Vérifier la sécurité du point de connexion',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} est obligatoire.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Saisissez ${label} entre ${min} et ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Remplacer ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identité client sélectionnée : ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Note ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Téléchargement des sous-titres : ${title}',
 			_ => null,
 		};
 	}

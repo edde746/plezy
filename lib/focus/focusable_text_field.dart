@@ -632,6 +632,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   final int? maxLines;
   final int? minLines;
   final TextAlign textAlign;
+  final TextDirection? textDirection;
   final TextCapitalization textCapitalization;
   final TextStyle? style;
 
@@ -666,6 +667,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     this.maxLines = 1,
     this.minLines,
     this.textAlign = TextAlign.start,
+    this.textDirection,
     this.textCapitalization = TextCapitalization.none,
     this.style,
     this.onNavigateLeft,
@@ -1563,6 +1565,7 @@ class FocusableTextField extends _FocusableTextInputBase {
     super.maxLines,
     super.minLines,
     super.textAlign,
+    super.textDirection,
     super.textCapitalization,
     super.style,
     super.onNavigateLeft,
@@ -1609,6 +1612,7 @@ class FocusableTextField extends _FocusableTextInputBase {
         maxLines: maxLines,
         minLines: minLines,
         textAlign: textAlign,
+        textDirection: textDirection,
         textCapitalization: textCapitalization,
         style: style,
         readOnly: tvInput.readOnly,
@@ -1655,6 +1659,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
     super.maxLines,
     super.minLines,
     super.textAlign,
+    super.textDirection,
     super.textCapitalization,
     super.style,
     super.onNavigateLeft,
@@ -1702,6 +1707,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         maxLines: maxLines,
         minLines: minLines,
         textAlign: textAlign,
+        textDirection: textDirection,
         textCapitalization: textCapitalization,
         style: style,
         readOnly: tvInput.readOnly,

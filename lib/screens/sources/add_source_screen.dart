@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../providers/trackers_provider.dart';
 import '../../sources/dlna_discovery.dart';
 import '../../sources/source_controller.dart';
@@ -61,7 +62,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('rpcTlsServerCertificatePem').text = old.options['rpcTlsServerCertificatePem'] ?? '';
       if (old.kind == FileSourceKind.nfs) {
         if (field('rpcTlsServerCertificatePem').text.isNotEmpty) {
-          _nfsServerCertificateFileName = 'Saved server certificate';
+          _nfsServerCertificateFileName = t.sourceSetup.savedCertificate;
         }
         WidgetsBinding.instance.addPostFrameCallback((_) => _loadSavedNfsTlsIdentity(old));
       }
@@ -110,15 +111,29 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     child: FocusableTextFormField(
       controller: field(key),
       obscureText: secret,
+      textDirection: key == 'name' ? null : TextDirection.ltr,
       maxLines: maxLines,
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
       autocorrect: false,
       enableSuggestions: !secret,
-      decoration: InputDecoration(labelText: label, helperText: hint),
-      validator: validator ?? (required ? (value) => value?.trim().isNotEmpty == true ? null : '$label is required.' : null),
+      decoration: InputDecoration(labelText: label, helperText: hint, helperMaxLines: 6, errorMaxLines: 4),
+      validator:
+          validator ??
+          (required
+              ? (value) => value?.trim().isNotEmpty == true ? null : t.sourceSetup.fieldRequired(label: label)
+              : null),
     ),
   );
+
+  String? _validateSmbEndpoint(String? value) {
+    try {
+      validateSmbSourceEndpoint(value?.trim() ?? '');
+      return null;
+    } on SourceException {
+      return t.fileSources.smbEndpointInvalid;
+    }
+  }
 
   String? _validateNfsEndpoint(String? value) {
     final uri = Uri.tryParse(value?.trim() ?? '');
@@ -130,16 +145,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         uri.hasFragment ||
         uri.hasPort && (uri.port < 1 || uri.port > 65535) ||
         uri.pathSegments.any((part) => part == '.' || part == '..' || part.contains(String.fromCharCode(0)))) {
-      return 'Enter an NFS URL such as nfs://nas:2049/export.';
+      return t.sourceSetup.nfsEndpointInvalid;
     }
     return null;
   }
 
   String? _validateNfsInteger(String? value, {required int min, required int max, required String label}) {
     if (value?.trim().isEmpty != false) return null;
-    final parsed = int.tryParse(value!.trim());
+    final parsed = parseLocalizedInteger(value!);
     if (parsed == null || parsed < min || parsed > max) {
-      return 'Enter $label from $min to $max.';
+      return t.sourceSetup.integerRange(
+        label: label,
+        min: formatDecimal(min, maximumDecimals: 0),
+        max: formatDecimal(max, maximumDecimals: 0),
+      );
     }
     return null;
   }
@@ -197,15 +216,14 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       if (mounted) setState(() => _error = const SourceException(SourceFailure.invalidData));
     }
   }
+
   Future<void> _discoverDlna() async {
     setState(() => _discoveringDlna = true);
     try {
       final devices = await DlnaDiscovery().discover();
       if (!mounted) return;
       if (devices.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No DLNA servers found. Enter the device description URL manually.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.sourceSetup.dlnaNone)));
         return;
       }
       final selected = await showModalBottomSheet<DlnaDiscoveredDevice>(
@@ -217,7 +235,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Text('DLNA media servers', style: Theme.of(sheetContext).textTheme.titleLarge),
+                child: Text(t.sourceSetup.dlnaServers, style: Theme.of(sheetContext).textTheme.titleLarge),
               ),
               for (final device in devices)
                 FocusableListTile(
@@ -234,9 +252,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       setState(() => _allowHttp = selected.location.scheme == 'http');
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('DLNA discovery is unavailable on this network. Enter the device description URL manually.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.sourceSetup.dlnaUnavailable)));
       }
     } finally {
       if (mounted) setState(() => _discoveringDlna = false);
@@ -268,9 +284,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           'shelves': _shelves.map((s) => s.name).join(','),
           'onlineMetadata': '$_onlineMetadata',
           if (_kind == FileSourceKind.nfs && field('mountPort').text.trim().isNotEmpty)
-            'mountPort': field('mountPort').text.trim(),
-          if (_kind == FileSourceKind.nfs && field('uid').text.trim().isNotEmpty) 'uid': field('uid').text.trim(),
-          if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty) 'gid': field('gid').text.trim(),
+            'mountPort': normalizeDecimalDigits(field('mountPort').text.trim()),
+          if (_kind == FileSourceKind.nfs && field('uid').text.trim().isNotEmpty)
+            'uid': normalizeDecimalDigits(field('uid').text.trim()),
+          if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty)
+            'gid': normalizeDecimalDigits(field('gid').text.trim()),
           if (_kind == FileSourceKind.nfs && _nfsRpcTls) ...{
             'rpcTls': 'required',
             'rpcTlsServerCertificatePem': field('rpcTlsServerCertificatePem').text.trim(),
@@ -286,7 +304,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         ...switch (_kind) {
           FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
           FileSourceKind.smb || FileSourceKind.ftp => const ['username', 'password'],
-          FileSourceKind.sftp => const ['username', 'password', 'hostKeyFingerprint', 'privateKey', 'privateKeyPassphrase'],
+          FileSourceKind.sftp => const [
+            'username',
+            'password',
+            'hostKeyFingerprint',
+            'privateKey',
+            'privateKeyPassphrase',
+          ],
           FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
           FileSourceKind.audiobookshelf => const ['token'],
@@ -387,7 +411,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         t.fileSources.endpoint,
                         required: true,
                         hint: switch (_kind) {
-                          FileSourceKind.smb => 'smb://nas/Movies',
+                          FileSourceKind.smb => t.fileSources.smbEndpointHint,
                           FileSourceKind.ftp => 'ftp://nas:21',
                           FileSourceKind.sftp => 'sftp://nas:22',
                           FileSourceKind.nfs => 'nfs://nas:2049/export',
@@ -395,14 +419,18 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           FileSourceKind.komga => 'https://komga.example.com',
                           _ => null,
                         },
-                        validator: _kind == FileSourceKind.nfs ? _validateNfsEndpoint : null,
+                        validator: _kind == FileSourceKind.nfs
+                            ? _validateNfsEndpoint
+                            : _kind == FileSourceKind.smb
+                            ? _validateSmbEndpoint
+                            : null,
                       ),
                     if (_kind == FileSourceKind.dlna) ...[
                       OutlinedButton.icon(
                         onPressed: _busy || _discoveringDlna ? null : _discoverDlna,
                         icon: _discoveringDlna
                             ? Semantics(
-                                label: 'Searching local network for DLNA servers',
+                                label: t.sourceSetup.dlnaSearching,
                                 liveRegion: true,
                                 child: const SizedBox(
                                   width: 18,
@@ -411,13 +439,10 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                 ),
                               )
                             : const Icon(Icons.search_rounded),
-                        label: Text(_discoveringDlna ? 'Searching local network…' : 'Discover DLNA servers'),
+                        label: Text(_discoveringDlna ? t.sourceSetup.networkSearching : t.sourceSetup.dlnaDiscover),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Discovery depends on local-network multicast. If no server appears, enter its device description URL above.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      Text(t.sourceSetup.dlnaHelp, style: Theme.of(context).textTheme.bodySmall),
                     ],
                     if (_kind == FileSourceKind.local) ...[
                       input('root', t.fileSources.root, required: true),
@@ -436,7 +461,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       input(
                         'root',
                         t.fileSources.root,
-                        hint: _kind == FileSourceKind.dlna ? 'DLNA object ID; blank uses the device root.' : t.fileSources.folderHelp,
+                        hint: _kind == FileSourceKind.dlna
+                            ? t.sourceSetup.dlnaRoot
+                            : _kind == FileSourceKind.smb
+                            ? t.fileSources.smbFolderHelp
+                            : t.fileSources.folderHelp,
                       ),
                     if (const {
                       FileSourceKind.webdav,
@@ -446,7 +475,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.ftp,
                       FileSourceKind.sftp,
                     }.contains(_kind)) ...[
-                      input('username', t.fileSources.username, required: _kind == FileSourceKind.sftp && widget.existing == null),
+                      input(
+                        'username',
+                        t.fileSources.username,
+                        required: _kind == FileSourceKind.sftp && widget.existing == null,
+                      ),
                       input(
                         'password',
                         t.fileSources.password,
@@ -454,183 +487,162 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         validator: _kind == FileSourceKind.sftp && widget.existing == null
                             ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
                                   ? null
-                                  : 'Enter a password or add a private key below.'
+                                  : t.sourceSetup.passwordOrKey
                             : null,
                       ),
                       if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
-                    if (_kind == FileSourceKind.sftp) ...[
-                      input('hostKeyFingerprint', 'SSH host key SHA256 fingerprint', required: widget.existing == null,
-                        hint: widget.existing == null
-                            ? 'Verify with the server administrator. On the server, run ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub and use its SHA256 value.'
-                            : 'Leave blank to keep the current pin, or enter a new server fingerprint.'),
-                      ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        title: const Text('SSH public key authentication'),
-                        subtitle: const Text('Optional; password authentication is also supported.'),
-                        children: [
-                          input('privateKey', 'Private key (PEM or OpenSSH format)', maxLines: 5),
-                          input('privateKeyPassphrase', 'Private key passphrase', secret: true),
-                        ],
-                      ),
-                    ],
-                    if (_kind == FileSourceKind.nfs) ...[
-                      input(
-                        'mountPort',
-                        'NFS mount service TCP port',
-                        hint: 'Default: 20048',
-                        keyboardType: TextInputType.number,
-                        validator: (value) => _validateNfsInteger(
-                          value,
-                          min: 1,
-                          max: 65535,
-                          label: 'a TCP port',
-                        ),
-                      ),
-                      input(
-                        'uid',
-                        'NFS user ID (AUTH_SYS)',
-                        hint: 'Default: 1000. Use the ID the NAS export allows.',
-                        keyboardType: TextInputType.number,
-                        validator: (value) => _validateNfsInteger(
-                          value,
-                          min: 0,
-                          max: 0xffffffff,
-                          label: 'a UID',
-                        ),
-                      ),
-                      input(
-                        'gid',
-                        'NFS group ID (AUTH_SYS)',
-                        hint: 'Default: 1000. Use the group ID the NAS export allows.',
-                        keyboardType: TextInputType.number,
-                        validator: (value) => _validateNfsInteger(
-                          value,
-                          min: 0,
-                          max: 0xffffffff,
-                          label: 'a GID',
-                        ),
-                      ),
-                      FocusableSwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Require encrypted NFS (RPC-with-TLS)'),
-                        subtitle: const Text(
-                          'Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.',
-                        ),
-                        value: _nfsRpcTls,
-                        onChanged: _busy ? null : (value) => setState(() => _nfsRpcTls = value),
-                      ),
-                      if (_nfsRpcTls) ...[
+                      if (_kind == FileSourceKind.sftp) ...[
                         input(
-                          'rpcTlsServerCertificatePem',
-                          'Custom NFS CA or server certificate (PEM, optional)',
-                          maxLines: 6,
-                          hint: 'Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.',
-                          validator: (value) {
-                            final pem = value?.trim() ?? '';
-                            if (pem.isNotEmpty &&
-                                (!pem.contains('-----BEGIN CERTIFICATE-----') || pem.contains('PRIVATE KEY'))) {
-                              return 'Use a CA or server certificate in PEM format. Do not include a private key.';
-                            }
-                            return null;
-                          },
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _busy ? null : _pickNfsServerCertificate,
-                          icon: const Icon(Icons.upload_file_rounded),
-                          label: Text(
-                            _nfsServerCertificateFileName != null
-                                ? 'Replace ${_nfsServerCertificateFileName!}'
-                                : field('rpcTlsServerCertificatePem').text.trim().isEmpty
-                                    ? 'Add custom trust certificate'
-                                    : 'Replace saved custom certificate',
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8, bottom: 12),
-                          child: Text(
-                            'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.',
-                          ),
+                          'hostKeyFingerprint',
+                          t.sourceSetup.sshFingerprint,
+                          required: widget.existing == null,
+                          hint: widget.existing == null
+                              ? t.sourceSetup.sshFingerprintHelp
+                              : t.sourceSetup.sshFingerprintKeep,
                         ),
                         ExpansionTile(
                           tilePadding: EdgeInsets.zero,
-                          title: const Text('Client certificate (optional)'),
-                          subtitle: const Text('Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.'),
+                          title: Text(t.sourceSetup.sshAuthentication),
+                          subtitle: Text(t.sourceSetup.sshAuthenticationHelp),
                           children: [
-                            if (_nfsClientIdentityFileName != null)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text('Selected client identity: ${_nfsClientIdentityFileName!}'),
-                              )
-                            else if (_nfsTlsIdentitySaved && !_clearNfsTlsIdentity)
-                              const Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text('A saved client identity will be used.'),
-                              ),
-                            OutlinedButton.icon(
-                              onPressed: _busy ? null : _pickNfsClientIdentity,
-                              icon: const Icon(Icons.upload_file_rounded),
-                              label: Text(
-                                _nfsClientIdentityFileName != null
-                                    ? 'Replace ${_nfsClientIdentityFileName!}'
-                                    : _nfsTlsIdentitySaved && !_clearNfsTlsIdentity
-                                        ? 'Replace saved client identity'
-                                        : 'Choose PKCS#12 client identity',
-                              ),
-                            ),
-                            input(
-                              'nfsTlsClientIdentityPassword',
-                              'Client identity passphrase',
-                              secret: true,
-                              hint: 'Leave blank if the file has no passphrase.',
-                            ),
-                            TextButton.icon(
-                              onPressed: _busy
-                                  ? null
-                                  : () => setState(() {
-                                      _clearNfsTlsIdentity = true;
-                                      _nfsTlsIdentitySelected = false;
-                                      _nfsClientIdentityFileName = null;
-                                      field('nfsTlsClientIdentity').clear();
-                                      field('nfsTlsClientIdentityPassword').clear();
-                                    }),
-                              icon: const Icon(Icons.delete_outline_rounded),
-                              label: const Text('Remove any saved client identity'),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 12),
-                              child: Text(
-                                'Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.',
-                              ),
-                            ),
+                            input('privateKey', t.sourceSetup.privateKey, maxLines: 5),
+                            input('privateKeyPassphrase', t.sourceSetup.privateKeyPassphrase, secret: true),
                           ],
                         ),
                       ],
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 12),
-                        child: Text(
-                          'Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.',
+                      if (_kind == FileSourceKind.nfs) ...[
+                        input(
+                          'mountPort',
+                          t.sourceSetup.nfsMountPort,
+                          hint: t.sourceSetup.nfsMountPortHelp,
+                          keyboardType: TextInputType.number,
+                          validator: (value) =>
+                              _validateNfsInteger(value, min: 1, max: 65535, label: t.sourceSetup.nfsMountPort),
                         ),
-                      ),
-                      ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        title: const Text('NFS setup help'),
-                        subtitle: const Text('Check these settings if the connection does not open.'),
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              'Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.',
+                        input(
+                          'uid',
+                          t.sourceSetup.nfsUserId,
+                          hint: t.sourceSetup.nfsUserIdHelp,
+                          keyboardType: TextInputType.number,
+                          validator: (value) =>
+                              _validateNfsInteger(value, min: 0, max: 0xffffffff, label: t.sourceSetup.nfsUserId),
+                        ),
+                        input(
+                          'gid',
+                          t.sourceSetup.nfsGroupId,
+                          hint: t.sourceSetup.nfsGroupIdHelp,
+                          keyboardType: TextInputType.number,
+                          validator: (value) =>
+                              _validateNfsInteger(value, min: 0, max: 0xffffffff, label: t.sourceSetup.nfsGroupId),
+                        ),
+                        FocusableSwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(t.sourceSetup.nfsEncryption),
+                          subtitle: Text(t.sourceSetup.nfsEncryptionHelp),
+                          value: _nfsRpcTls,
+                          onChanged: _busy ? null : (value) => setState(() => _nfsRpcTls = value),
+                        ),
+                        if (_nfsRpcTls) ...[
+                          input(
+                            'rpcTlsServerCertificatePem',
+                            t.sourceSetup.nfsTrustCertificate,
+                            maxLines: 6,
+                            hint: t.sourceSetup.nfsTrustHelp,
+                            validator: (value) {
+                              final pem = value?.trim() ?? '';
+                              if (pem.isNotEmpty &&
+                                  (!pem.contains('-----BEGIN CERTIFICATE-----') || pem.contains('PRIVATE KEY'))) {
+                                return t.sourceSetup.nfsTrustInvalid;
+                              }
+                              return null;
+                            },
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _busy ? null : _pickNfsServerCertificate,
+                            icon: const Icon(Icons.upload_file_rounded),
+                            label: Text(
+                              _nfsServerCertificateFileName != null
+                                  ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsServerCertificateFileName!))
+                                  : field('rpcTlsServerCertificatePem').text.trim().isEmpty
+                                  ? t.sourceSetup.addTrustCertificate
+                                  : t.sourceSetup.replaceTrustCertificate,
                             ),
                           ),
+                          Padding(padding: EdgeInsets.only(top: 8, bottom: 12), child: Text(t.sourceSetup.nfsTlsHelp)),
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            title: Text(t.sourceSetup.clientCertificate),
+                            subtitle: Text(t.sourceSetup.clientCertificateHelp),
+                            children: [
+                              if (_nfsClientIdentityFileName != null)
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    t.sourceSetup.selectedIdentity(
+                                      name: isolateDisplayText(_nfsClientIdentityFileName!),
+                                    ),
+                                  ),
+                                )
+                              else if (_nfsTlsIdentitySaved && !_clearNfsTlsIdentity)
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(t.sourceSetup.savedIdentity),
+                                ),
+                              OutlinedButton.icon(
+                                onPressed: _busy ? null : _pickNfsClientIdentity,
+                                icon: const Icon(Icons.upload_file_rounded),
+                                label: Text(
+                                  _nfsClientIdentityFileName != null
+                                      ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsClientIdentityFileName!))
+                                      : _nfsTlsIdentitySaved && !_clearNfsTlsIdentity
+                                      ? t.sourceSetup.replaceIdentity
+                                      : t.sourceSetup.chooseIdentity,
+                                ),
+                              ),
+                              input(
+                                'nfsTlsClientIdentityPassword',
+                                t.sourceSetup.identityPassphrase,
+                                secret: true,
+                                hint: t.sourceSetup.identityPassphraseHelp,
+                              ),
+                              TextButton.icon(
+                                onPressed: _busy
+                                    ? null
+                                    : () => setState(() {
+                                        _clearNfsTlsIdentity = true;
+                                        _nfsTlsIdentitySelected = false;
+                                        _nfsClientIdentityFileName = null;
+                                        field('nfsTlsClientIdentity').clear();
+                                        field('nfsTlsClientIdentityPassword').clear();
+                                      }),
+                                icon: const Icon(Icons.delete_outline_rounded),
+                                label: Text(t.sourceSetup.removeIdentity),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(bottom: 12),
+                                child: Text(t.sourceSetup.identityStorageHelp),
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ],
-                    if (_kind == FileSourceKind.ftp)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text('FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).',
-                          style: Theme.of(context).textTheme.bodySmall),
-                      ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 8, bottom: 12),
+                          child: Text(t.sourceSetup.nfsLimitations),
+                        ),
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          title: Text(t.sourceSetup.nfsSetupHelp),
+                          subtitle: Text(t.sourceSetup.nfsSetupHint),
+                          children: [
+                            Padding(padding: EdgeInsets.only(bottom: 12), child: Text(t.sourceSetup.nfsSetupDetails)),
+                          ],
+                        ),
+                      ],
+                      if (_kind == FileSourceKind.ftp)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(t.sourceSetup.ftpHelp, style: Theme.of(context).textTheme.bodySmall),
+                        ),
                       if (_kind == FileSourceKind.smb)
                         FocusableSwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -643,33 +655,27 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (_kind == FileSourceKind.audiobookshelf)
                       input('token', t.fileSources.token, secret: true, required: widget.existing == null),
                     if (_kind == FileSourceKind.komga)
-                      input(
-                        'token',
-                        t.fileSources.token,
-                        secret: true,
-                        hint: 'Komga API key. You can also use a username and password above.',
-                      ),
+                      input('token', t.fileSources.token, secret: true, hint: t.sourceSetup.sshAuthenticationHelp),
                     if (_kind == FileSourceKind.s3) ...[
                       input('region', t.fileSources.region),
                       input('accessKey', t.fileSources.accessKey, required: widget.existing == null),
                       input('secretKey', t.fileSources.secretKey, secret: true, required: widget.existing == null),
                       input('sessionToken', t.fileSources.sessionToken, secret: true),
                     ],
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.komga)
+                    if (_kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.komga)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
-                        title: const Text('OpenSubtitles'),
-                        subtitle: const Text('Optional subtitle search for standalone videos.'),
+                        title: Text(t.sourceSetup.openSubtitles),
+                        subtitle: Text(t.sourceSetup.subtitleSetup),
                         children: [
-                          input('openSubtitlesApiKey', 'API key', secret: true),
-                          input('openSubtitlesUsername', 'Account username (optional)'),
-                          input('openSubtitlesPassword', 'Account password (optional)', secret: true),
+                          input('openSubtitlesApiKey', t.sourceSetup.apiKey, secret: true),
+                          input('openSubtitlesUsername', t.sourceSetup.optionalUsername),
+                          input('openSubtitlesPassword', t.sourceSetup.optionalPassword, secret: true),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              'Get an API key from opensubtitles.com. Search sends the video title and available IMDb/TMDB IDs, never the video file. The key and optional account credentials are encrypted with this source.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                            child: Text(t.sourceSetup.subtitlePrivacy, style: Theme.of(context).textTheme.bodySmall),
                           ),
                         ],
                       ),
@@ -683,31 +689,36 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.komga)
+                    if (_kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.komga)
                       FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text('Automatic ${t.trakt.title} video metadata'),
-                        subtitle: Text(
-                          context.watch<TrackersProvider>().traktCatalogClient != null
-                              ? 'Sends only filename title/year, episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.'
-                              : 'Connect Trakt under Settings → Services to enable online lookups. Only filename title/year, episode numbers or an NFO ID are sent; never media or credentials.',
-                        ),
+                        title: Text(t.sourceSetup.automaticMetadata),
+                        subtitle: Text(t.sourceSetup.metadataPrivacy),
                         value: _onlineMetadata,
                         onChanged: _busy ? null : (v) => setState(() => _onlineMetadata = v),
                       ),
-                      if (context.watch<TrackersProvider>().traktCatalogClient == null)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
-                            ),
-                            icon: const Icon(Icons.link_rounded),
-                            label: Text('${t.common.connect} ${t.trakt.title}'),
+                    if (context.watch<TrackersProvider?>()?.traktCatalogClient == null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                           ),
+                          icon: const Icon(Icons.link_rounded),
+                          label: Text('${t.common.connect} ${t.trakt.title}'),
                         ),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.s3, FileSourceKind.audiobookshelf, FileSourceKind.dlna, FileSourceKind.komga}.contains(_kind))
+                      ),
+                    if (const {
+                      FileSourceKind.webdav,
+                      FileSourceKind.opds,
+                      FileSourceKind.s3,
+                      FileSourceKind.audiobookshelf,
+                      FileSourceKind.dlna,
+                      FileSourceKind.komga,
+                    }.contains(_kind))
                       FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
@@ -728,12 +739,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         ),
                       ),
                     if (_error != null && _kind == FileSourceKind.nfs && _nfsRpcTls)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          'For encrypted NFS, check RFC 9289 and TLS 1.3 support on both NAS services, the certificate name, and the export UID/GID. PlezyNG will not retry this connection without encryption.',
-                        ),
-                      ),
+                      Padding(padding: EdgeInsets.only(bottom: 12), child: Text(t.sourceSetup.nfsEncryptionFailure)),
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 8,
@@ -761,7 +767,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       onPressed: _busy ? null : connect,
                       child: _busy
                           ? Semantics(
-                              label: 'Connecting to source',
+                              label: t.sourceSetup.sourceConnecting,
                               liveRegion: true,
                               child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                             )
