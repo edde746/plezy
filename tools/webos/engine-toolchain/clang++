@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${WEBOS_ENGINE_ROOT:?build_engine.sh must set WEBOS_ENGINE_ROOT}"
+: "${WEBOS_NDK_HOST_SYSROOT:?build_engine.sh must set WEBOS_NDK_HOST_SYSROOT}"
+
+pinned_clangxx="$WEBOS_ENGINE_ROOT/flutter/buildtools/linux-x64/clang/bin/clang++"
+ndk_gxx="$WEBOS_NDK_HOST_SYSROOT/usr/bin/arm-webosmllib32-linux-gnueabi/arm-webosmllib32-linux-gnueabi-g++"
+gcc_include="$WEBOS_NDK_HOST_SYSROOT/usr/lib/arm-webos-linux-gnueabi/gcc/arm-webos-linux-gnueabi/13.3.0/include"
+
+if [[ ! -x "$pinned_clangxx" || ! -x "$ndk_gxx" || ! -d "$gcc_include" ]]; then
+  echo "Pinned Flutter Clang or webOS NDK C++ tools are missing." >&2
+  exit 1
+fi
+
+is_shared_link=false
+for arg in "$@"; do
+  if [[ "$arg" == "-shared" ]]; then
+    is_shared_link=true
+    break
+  fi
+done
+
+if [[ "$is_shared_link" == true ]]; then
+  args=()
+  for arg in "$@"; do
+    [[ "$arg" == --target=* ]] && continue
+    args+=("$arg")
+  done
+  exec "$ndk_gxx" -mthumb -mfpu=neon -mfloat-abi=softfp -mcpu=cortex-a9 -mtune=cortex-a9 -nostdlib++ "${args[@]}" -lm
+fi
+
+exec "$pinned_clangxx" -idirafter "$gcc_include" "$@"

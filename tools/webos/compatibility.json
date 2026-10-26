@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "status": "local-validation-only",
+  "officialMinimum": "webOS TV 26 Re:New",
+  "target": "armv7-a softfp NEON",
+  "sdk": {
+    "repository": "https://github.com/lg-flutter-webos/flutter-webos.git",
+    "revision": "950398131830e9bd5dc91e588c3db8f5c42322be",
+    "frameworkVersion": "3.47.1",
+    "frameworkRevision": "6655482ec06e547f90abf8ae7590466f4415978d",
+    "engineRevision": "5d531788691ec3404cac0cee66ead4007b177363",
+    "dartVersion": "3.13.1",
+    "dartRevision": "852b3e3608906afbe6102573cfd4407aeedd1b78",
+    "skiaRevision": "8df24be66531469e576a806749a0202ae26b8d08"
+  },
+  "sdkPatches": {
+    "flutterWebOS": {
+      "path": "tools/webos/flutter-webos-3.47.1.patch",
+      "sha256": "9c0f879fe8463602681e32855c96aad60a34c74c80d77084be5933b6687bb6ee"
+    },
+    "flutterFramework": {
+      "path": "tools/webos/flutter-framework-3.47.1.patch",
+      "sha256": "566604406af9f7febe11b62dca799812cca97d81270c4981cf1445c80dd4d01c",
+      "addedFiles": [
+        "packages/flutter_tools/test/general.shard/isolated/native_assets_linux_arm_target_test.dart"
+      ]
+    }
+  },
+  "engineBuild": {
+    "hostArgs": "tools/webos/engine-args-host.gn",
+    "armArgs": "tools/webos/engine-args-arm.gn",
+    "hostArgsSha256": "02d3a26607957ebafb88b734e9f58a934d224a6bba394a2ad52b465afe7bd682",
+    "armArgsSha256": "575a45bd5fbb7da788f412d9b8a0a534b339e45e0ce43096209e9bbc6c0b51cc",
+    "ninjaVersion": "1.13.2",
+    "ninjaSha256": "386e7381e7664302b9add6890de5f09a37513bb8c1d034210ac757332898f5ab",
+    "pythonVersion": "3.14.8",
+    "pythonSha256": "375532f83be620283ab780c14ca6bcc5907dc379d2b621de0c5d0a112cf5458b",
+    "ndkMetadataRevision": "01423828248b75e1f5afe2e5959ccd971df875cd",
+    "ndkVersionFileSha256": "5d65e4341fdc97d9afe51deb49386d9b82ec7b2545ea8219ca689d69d3e02eaa",
+    "ndkEnvironmentSetupScript": "environment-setup-ca9v1-webosmllib32-linux-gnueabi",
+    "ndkEnvironmentSetupNormalizedSha256": "47a2a5243d984c8572c65d0c09bc25dfee389a842e452dc20ccfd5a5f34036fd",
+    "ndkEnvironmentSetupFiles": [
+      {
+        "path": "sysroots/x86_64-starfishsdk-linux/environment-setup.d/cmake.sh",
+        "sha256": "5650c533024e96420326cfd55a5c5bbddd8bc3cc8670c21caa83a30604467722"
+      },
+      {
+        "path": "sysroots/x86_64-starfishsdk-linux/environment-setup.d/file.sh",
+        "sha256": "8d6af3c136cba18e28a2a11cab2677e6af30c4ba34206fa76a57cfc4fa53a5d9"
+      },
+      {
+        "path": "sysroots/x86_64-starfishsdk-linux/environment-setup.d/openssl.sh",
+        "sha256": "47cd13755080fc5e87ddbf1719abbbe8d1543a8920261e224de3be74446684e5"
+      },
+      {
+        "path": "sysroots/x86_64-starfishsdk-linux/environment-setup.d/rpm.sh",
+        "sha256": "066a0975e481f4ed4c89393ebdbbb9f35904f1d5c099ac86875b97c86adf24a7"
+      }
+    ],
+    "gccVersion": "13.3.0",
+    "gccSha256": "2f2423fb1befcfeeccf410121aeca21e4d8ad9f18a3abbc9bda93ac0971f1fa4",
+    "gccDriverSha256": "8fea8f1a84f99a53cbfbe7e92627eabe5eb1d15c7f9eb1974a1d948285118c59",
+    "ndkTools": {
+      "ld": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-ld",
+        "sha256": "56dcd894582405a9619930750b067cb3c637fab6a74e51333a550a2c2c18c21e"
+      },
+      "ar": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-ar",
+        "sha256": "11a216098368cfec619cc71a638d6092fcac1f493dd6d875cbd82f6266e114ff"
+      },
+      "as": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-as",
+        "sha256": "95db7acc315f19bd92a1987a8d42684668ca1c3329278801bce486ff145bcd61"
+      },
+      "strip": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-strip",
+        "sha256": "8f286e94709e17077f8e24e9e1034d359903bba526a5b33c4becca34c2b8b8fd"
+      },
+      "readelf": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-readelf",
+        "sha256": "0a0c087b1599fe73c5bd58fbbc438376f930fc8a45705f21b88a1d559f7d4fc9"
+      },
+      "nm": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-nm",
+        "sha256": "5afdd7c188468da7933d816c51863722c0013f4445b37f5324e22c9051c990d6"
+      },
+      "objdump": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-objdump",
+        "sha256": "f41f54e470f2b19068b030c57a1623eca2c9ce2fe08f389c26756385634741fd"
+      },
+      "ranlib": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-ranlib",
+        "sha256": "74a6f60cbe68afdefb26d4e38a917e4bdf6ea2858f9c4400f3f6156d263ab415"
+      },
+      "objcopy": {
+        "path": "sysroots/x86_64-starfishsdk-linux/usr/bin/arm-webos-linux-gnueabi/arm-webos-linux-gnueabi-objcopy",
+        "sha256": "bcc78ec664d98f150bf6bff3135e71268a521f18a2077a68172af88fca81242a"
+      }
+    },
+    "clangSha256": "a50ded9e62bb90048748f46106e31bf57f3e5262c5ab93134db9d8f082e89c4b",
+    "gnSha256": "c6be2b6774aa536bbeef8f2c2c793f52fa4c27f883c7a01d4260653b0a71e0cf",
+    "clangWrapperSha256": "bedd483838386788ded3359e31a89743d0ee96106659ba9115387f1bbcc16954",
+    "clangxxWrapperSha256": "e6c7e41d0c74ac828b353944274fc39f0a786be4d6a1613a91fc9d662e073f42",
+    "vpython3Sha256": "f6af230a8c23357e41f652d6320360e735a2ad2c660128067b5e56b224984c08",
+    "vpythonBypass": "manually managed python not supported by chrome operations",
+    "depotToolsRevision": "580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7"
+  },
+  "lgArtifacts": {
+    "releaseTag": "c6f67dede3-webos26-2",
+    "ndkVersion": "11.2.0",
+    "baseEngineArchiveSha256": "28fd011b3334323c1e28343f600c40f7ebabaee51fe0cafe6e9463340b5c7fb9",
+    "engineArchiveSha256": "5c6e6840a33079baa176cc11c553d44708f31ecf46e1fb2f371b6a270aaa1360",
+    "commonArchiveSha256": "b0706807140c4792525879de30ecd0d219111f521252965cb75c01fef5a20a2e",
+    "genSnapshotSha256": "78ab5c5423adaabe59ca150def5922568eddb1e820b282e273acca19d62c8e01",
+    "runtimeLibraries": {
+      "libflutter_engine.so": "638ec83182c769a23490c293b4b744fec606cfa6165e8e6033ee4093b123988b",
+      "libflutter_common.so": "e9b2e94d297e71f2e7341642ecac408220138cc6ee7ab4bef25df2ceadce8a85",
+      "libflutter_webos_media.so": "a801821781c34ddeae16332f168c2651d14ef872ecf950baa118307064d12c43"
+    }
+  },
+  "packager": {
+    "path": "tools/webos/package_ipk.py",
+    "version": 1,
+    "runtime": "Python 3.10+ standard library only",
+    "archive": "IPK v2 with USTAR payloads and deterministic gzip headers"
+  },
+  "appSpecificACG": [
+    "network.query",
+    "securitykey.operation"
+  ],
+  "packagerACG": [
+    "application.launcher",
+    "lunabus.query",
+    "settings.query",
+    "systemconfig.query",
+    "tts.operation"
+  ],
+  "testedDevice": {
+    "model": "OLED77C6HUP",
+    "webOSVersion": "26",
+    "firmware": "43.21.79"
+  }
+}

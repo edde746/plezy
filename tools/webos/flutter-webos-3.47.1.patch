@@ -1,0 +1,573 @@
+diff --git a/bin/internal/flutter.version b/bin/internal/flutter.version
+index 672b413..c2ae50b 100644
+--- a/bin/internal/flutter.version
++++ b/bin/internal/flutter.version
+@@ -1 +1 @@
+-c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
++6655482ec06e547f90abf8ae7590466f4415978d
+diff --git a/lib/commands/analyze.dart b/lib/commands/analyze.dart
+index 97f1745..7ec94f5 100644
+--- a/lib/commands/analyze.dart
++++ b/lib/commands/analyze.dart
+@@ -29,6 +29,6 @@ class WebosAnalyzeCommand extends AnalyzeCommand with WebosExtension {
+               git: globals.git,
+             ),
+           ],
+-          suppressAnalytics: globals.flutterUsage.suppressAnalytics,
++          suppressAnalytics: !globals.analytics.okToSend,
+         );
+ }
+diff --git a/lib/commands/build.dart b/lib/commands/build.dart
+index 399f55d..a7b9a23 100644
+--- a/lib/commands/build.dart
++++ b/lib/commands/build.dart
+@@ -29,6 +29,18 @@ class WebosBuildCommand extends BuildCommand {
+           verboseHelp: verboseHelp,
+           androidSdk: globals.androidSdk,
+           logger: globals.logger,
++          artifacts: globals.artifacts!,
++          cache: globals.cache,
++          flutterVersion: globals.flutterVersion,
++          config: globals.config,
++          platform: globals.platform,
++          processUtils: globals.processUtils,
++          processManager: globals.processManager,
++          fileSystemUtils: globals.fsUtils,
++          templateRenderer: globals.templateRenderer,
++          terminal: globals.terminal,
++          plistParser: globals.plistParser,
++          xcode: globals.xcode,
+         ) {
+     addSubcommand(BuildPackageCommand(verboseHelp: verboseHelp));
+   }
+diff --git a/lib/commands/create.dart b/lib/commands/create.dart
+index feea85c..12177f0 100644
+--- a/lib/commands/create.dart
++++ b/lib/commands/create.dart
+@@ -32,12 +32,17 @@ class WebosCreateCommand extends CreateCommand {
+   WebosCreateCommand({super.verboseHelp});
+ 
+   @override
+-  void addPlatformsOptions({String? customHelp}) {
++  void addPlatformsOptions({String? customHelp, required Map<String, String> allowedHelp}) {
++    final platformHelp = <String, String>{
++      ...allowedHelp,
++      'webos': 'Flutter apps for LG webOS TVs',
++    };
+     argParser.addMultiOption(
+       'platforms',
+       help: customHelp,
+       defaultsTo: _kAvailablePlatforms,
+       allowed: _kAvailablePlatforms,
++      allowedHelp: platformHelp,
+     );
+   }
+ 
+diff --git a/lib/webos_device_discovery.dart b/lib/webos_device_discovery.dart
+index 8c7ac04..f2a04bb 100644
+--- a/lib/webos_device_discovery.dart
++++ b/lib/webos_device_discovery.dart
+@@ -100,7 +100,7 @@ class WebosDeviceDiscovery extends PollingDeviceDiscovery {
+   bool get canListAnything => _webosWorkflow.canListDevices;
+ 
+   @override
+-  Future<List<Device>> pollingGetDevices({Duration? timeout}) async {
++  Future<List<Device>> pollingGetDevices({Duration? timeout, bool forWirelessDiscovery = false}) async {
+     if (!canListAnything) {
+       return const <Device>[];
+     }
+diff --git a/lib/webos_doctor.dart b/lib/webos_doctor.dart
+index 6177bb5..373750e 100644
+--- a/lib/webos_doctor.dart
++++ b/lib/webos_doctor.dart
+@@ -4,27 +4,17 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+-// ignore_for_file: unused_element, unused_field
+-// fork residue from upstream flutter_tools/lib/src/doctor.dart; see 28 / 34.2 (decision pending)
+-
+ import 'dart:io';
+-import 'package:flutter_tools/src/artifacts.dart';
++
+ import 'package:flutter_tools/src/base/context.dart';
+-import 'package:flutter_tools/src/base/file_system.dart';
+-import 'package:flutter_tools/src/base/io.dart';
+-import 'package:flutter_tools/src/base/net.dart';
+ import 'package:flutter_tools/src/base/os.dart';
+-import 'package:flutter_tools/src/base/platform.dart';
+ import 'package:flutter_tools/src/base/user_messages.dart';
+ import 'package:flutter_tools/src/base/version.dart';
+ import 'package:flutter_tools/src/commands/doctor.dart';
+ import 'package:flutter_tools/src/doctor.dart';
+ import 'package:flutter_tools/src/doctor_validator.dart';
+-import 'package:flutter_tools/src/globals.dart' as globals;
+-import 'package:flutter_tools/src/http_host_validator.dart';
+-import 'package:flutter_tools/src/linux/linux_doctor.dart';
+-import 'package:flutter_tools/src/version.dart';
+ import 'package:process/process.dart';
++
+ import 'webos_sdk.dart';
+ 
+ WebosWorkflow? get webosWorkflow => context.get<WebosWorkflow>();
+@@ -42,30 +32,10 @@ class WebosDoctorCommand extends DoctorCommand {
+ 
+ class WebosDoctorValidatorsProvider implements DoctorValidatorsProvider {
+   @override
+-  List<DoctorValidator> get validators {
+-    final List<DoctorValidator> validators = DoctorValidatorsProvider.defaultInstance.validators;
+-    final customFlutterValidator = CustomFlutterValidator(
+-      fileSystem: globals.fs,
+-      platform: globals.platform,
+-      flutterVersion: () =>
+-          globals.flutterVersion.fetchTagsAndGetVersion(clock: globals.systemClock),
+-      devToolsVersion: () => globals.cache.devToolsVersion,
+-      processManager: globals.processManager,
+-      userMessages: globals.userMessages,
+-      artifacts: globals.artifacts!,
+-      operatingSystemUtils: globals.os,
+-    );
+-
+-    // Find the position of LinuxDoctorValidator in validators to remove it and replace it with CustomLinuxDoctorValidator.
+-    final int index = validators.indexWhere((DoctorValidator v) => v is LinuxDoctorValidator);
+-    final customLinuxDoctorValidator = CustomLinuxDoctorValidator(
+-        processManager: globals.processManager, userMessages: globals.userMessages);
+-    if (index != -1) {
+-      validators[index] = customLinuxDoctorValidator;
+-    }
+-
+-    return <DoctorValidator>[customFlutterValidator, webosValidator!, ...validators.sublist(1)];
+-  }
++  List<DoctorValidator> get validators => <DoctorValidator>[
++        ...DoctorValidatorsProvider.defaultInstance.validators,
++        webosValidator!,
++      ];
+ 
+   @override
+   List<Workflow> get workflows => <Workflow>[
+@@ -86,214 +56,6 @@ class _VersionInfo {
+   Version? number;
+ }
+ 
+-class CustomFlutterValidator extends DoctorValidator {
+-  CustomFlutterValidator({
+-    required Platform platform,
+-    required FlutterVersion Function() flutterVersion,
+-    required String Function() devToolsVersion,
+-    required UserMessages userMessages,
+-    required FileSystem fileSystem,
+-    required Artifacts artifacts,
+-    required ProcessManager processManager,
+-    required OperatingSystemUtils operatingSystemUtils,
+-  })  : _flutterVersion = flutterVersion,
+-        _devToolsVersion = devToolsVersion,
+-        _platform = platform,
+-        _userMessages = userMessages,
+-        _fileSystem = fileSystem,
+-        _artifacts = artifacts,
+-        _processManager = processManager,
+-        _operatingSystemUtils = operatingSystemUtils,
+-        super('Flutter');
+-
+-  final Platform _platform;
+-  final FlutterVersion Function() _flutterVersion;
+-  final String Function() _devToolsVersion;
+-  final UserMessages _userMessages;
+-  final FileSystem _fileSystem;
+-  final Artifacts _artifacts;
+-  final ProcessManager _processManager;
+-  final OperatingSystemUtils _operatingSystemUtils;
+-
+-  @override
+-  Future<ValidationResult> validateImpl() {
+-    throw UnimplementedError(
+-      'CustomFlutterValidator.validateImpl is not implemented. '
+-      'Use validate() instead.',
+-    );
+-  }
+-
+-  @override
+-  Future<ValidationResult> validate() async {
+-    final messages = <ValidationMessage>[];
+-    String? versionChannel;
+-    String? frameworkVersion;
+-
+-    try {
+-      final FlutterVersion version = _flutterVersion();
+-      final String? gitUrl = _platform.environment['FLUTTER_GIT_URL'];
+-      versionChannel = version.channel;
+-      frameworkVersion = version.frameworkVersion;
+-
+-      messages.add(_getFlutterUpstreamMessage(version));
+-      if (gitUrl != null) {
+-        messages.add(ValidationMessage(_userMessages.flutterGitUrl(gitUrl)));
+-      }
+-      messages.add(ValidationMessage(_userMessages.flutterRevision(
+-        version.frameworkRevisionShort,
+-        version.frameworkAge,
+-        version.frameworkCommitDate,
+-      )));
+-      messages.add(ValidationMessage(_userMessages.engineRevision(version.engineRevisionShort)));
+-      messages.add(ValidationMessage(_userMessages.dartRevision(version.dartSdkVersion)));
+-      messages.add(ValidationMessage(_userMessages.devToolsVersion(_devToolsVersion())));
+-      final String? pubUrl = _platform.environment[kPubDevOverride];
+-      if (pubUrl != null) {
+-        messages.add(ValidationMessage(_userMessages.pubMirrorURL(pubUrl)));
+-      }
+-      final String? storageBaseUrl = _platform.environment[kFlutterStorageBaseUrl];
+-      if (storageBaseUrl != null) {
+-        messages.add(ValidationMessage(_userMessages.flutterMirrorURL(storageBaseUrl)));
+-      }
+-    } on VersionCheckError catch (e) {
+-      messages.add(ValidationMessage.error(e.message));
+-    }
+-
+-    // Check that the binaries we downloaded for this platform actually run on it.
+-    // If the binaries are not downloaded (because android is not enabled), then do
+-    // not run this check.
+-    final String genSnapshotPath = _artifacts.getArtifactPath(Artifact.genSnapshot);
+-    if (_fileSystem.file(genSnapshotPath).existsSync() && !_genSnapshotRuns(genSnapshotPath)) {
+-      final buffer = StringBuffer();
+-      buffer.writeln(_userMessages.flutterBinariesDoNotRun);
+-      if (_platform.isLinux) {
+-        buffer.writeln(_userMessages.flutterBinariesLinuxRepairCommands);
+-      } else if (_platform.isMacOS &&
+-          _operatingSystemUtils.hostPlatform == HostPlatform.darwin_arm64) {
+-        buffer.writeln(
+-            'Flutter requires the Rosetta translation environment on ARM Macs. Try running:');
+-        buffer.writeln('  sudo softwareupdate --install-rosetta --agree-to-license');
+-      }
+-      messages.add(ValidationMessage.error(buffer.toString()));
+-    }
+-
+-    ValidationType valid;
+-    if (messages.every((ValidationMessage message) => message.isInformation)) {
+-      valid = ValidationType.success;
+-    } else {
+-      // The issues for this validator stem from broken git configuration of the local install;
+-      // in that case, make it clear that it is fine to continue, but freshness check/upgrades
+-      // won't be supported.
+-      valid = ValidationType.partial;
+-      messages.add(
+-        ValidationMessage(_userMessages.flutterValidatorErrorIntentional),
+-      );
+-    }
+-
+-    return ValidationResult(
+-      valid,
+-      messages,
+-      statusInfo: _userMessages.flutterStatusInfo(
+-        versionChannel,
+-        frameworkVersion,
+-        _operatingSystemUtils.name,
+-        _platform.localeName,
+-      ),
+-    );
+-  }
+-
+-  ValidationMessage _getFlutterVersionMessage(
+-      String frameworkVersion, String versionChannel, String flutterRoot) {
+-    String flutterVersionMessage =
+-        _userMessages.flutterVersion(frameworkVersion, versionChannel, flutterRoot);
+-
+-    // The tool sets the channel as kUserBranch, if the current branch is on a
+-    // "detached HEAD" state, doesn't have an upstream, or is on a user branch,
+-    // and sets the frameworkVersion as "0.0.0-unknown" if "git describe" on
+-    // HEAD doesn't produce an expected format to be parsed for the frameworkVersion.
+-    if (versionChannel != kUserBranch && frameworkVersion != '0.0.0-unknown') {
+-      return ValidationMessage(flutterVersionMessage);
+-    }
+-    if (versionChannel == kUserBranch) {
+-      flutterVersionMessage = '$flutterVersionMessage\n${_userMessages.flutterUnknownChannel}';
+-    }
+-    if (frameworkVersion == '0.0.0-unknown') {
+-      flutterVersionMessage = '$flutterVersionMessage\n${_userMessages.flutterUnknownVersion}';
+-    }
+-    return ValidationMessage.hint(flutterVersionMessage);
+-  }
+-
+-  List<ValidationMessage> _validateRequiredBinaries(String flutterRoot) {
+-    final ValidationMessage? flutterWarning = _validateSdkBinary('flutter', flutterRoot);
+-    final ValidationMessage? dartWarning = _validateSdkBinary('dart', flutterRoot);
+-    return <ValidationMessage>[
+-      if (flutterWarning != null) flutterWarning,
+-      if (dartWarning != null) dartWarning,
+-    ];
+-  }
+-
+-  /// Return a warning if the provided [binary] on the user's path does not
+-  /// resolve within the Flutter SDK.
+-  ValidationMessage? _validateSdkBinary(String binary, String flutterRoot) {
+-    final String flutterBinDir = _fileSystem.path.join(flutterRoot, 'bin');
+-
+-    final File? flutterBin = _operatingSystemUtils.which(binary);
+-    if (flutterBin == null) {
+-      return ValidationMessage.hint(
+-        'The $binary binary is not on your path. Consider adding '
+-        '$flutterBinDir to your path.',
+-      );
+-    }
+-    final String resolvedFlutterPath = flutterBin.resolveSymbolicLinksSync();
+-    if (!_filePathContainsDirPath(flutterRoot, resolvedFlutterPath)) {
+-      final hint = 'Warning: `$binary` on your path resolves to '
+-          '$resolvedFlutterPath, which is not inside your current Flutter '
+-          'SDK checkout at $flutterRoot. Consider adding $flutterBinDir to '
+-          'the front of your path.';
+-      return ValidationMessage.hint(hint);
+-    }
+-    return null;
+-  }
+-
+-  bool _filePathContainsDirPath(String directory, String file) {
+-    // calling .canonicalize() will normalize for alphabetic case and path
+-    // separators
+-    return _fileSystem.path
+-        .canonicalize(file)
+-        .startsWith(_fileSystem.path.canonicalize(directory) + _fileSystem.path.separator);
+-  }
+-
+-  ValidationMessage _getFlutterUpstreamMessage(FlutterVersion version) {
+-    final String? repositoryUrl = version.repositoryUrl;
+-    final VersionCheckError? upstreamValidationError =
+-        VersionUpstreamValidator(version: version, platform: _platform).run();
+-
+-    // VersionUpstreamValidator can produce an error if repositoryUrl is null
+-    if (upstreamValidationError != null) {
+-      final String errorMessage = upstreamValidationError.message;
+-      if (errorMessage.contains('could not determine the remote upstream which is being tracked')) {
+-        return ValidationMessage.hint(_userMessages.flutterUpstreamRepositoryUnknown);
+-      }
+-      if (errorMessage
+-          .contains('Either remove "FLUTTER_GIT_URL" from the environment or set it to')) {
+-        return ValidationMessage.hint(
+-            _userMessages.flutterUpstreamRepositoryUrlEnvMismatch(repositoryUrl!));
+-      }
+-    }
+-    return ValidationMessage(_userMessages.flutterUpstreamRepositoryUrl(repositoryUrl!));
+-  }
+-
+-  bool _genSnapshotRuns(String genSnapshotPath) {
+-    const kExpectedExitCode = 255;
+-    try {
+-      return _processManager.runSync(<String>[genSnapshotPath]).exitCode == kExpectedExitCode;
+-    } on Exception {
+-      return false;
+-    }
+-  }
+-}
+-
+-/// See: [LinuxDoctorValidator] in `linux_doctor.dart`
+ class WebosValidator extends DoctorValidator {
+   WebosValidator({
+     required ProcessManager processManager,
+@@ -466,184 +228,3 @@ class WebosWorkflow extends Workflow {
+   @override
+   bool get canListEmulators => false;
+ }
+-
+-class CustomLinuxDoctorValidator extends DoctorValidator {
+-  CustomLinuxDoctorValidator({
+-    required ProcessManager processManager,
+-    required UserMessages userMessages,
+-  })  : _processManager = processManager,
+-        _userMessages = userMessages,
+-        super('Linux toolchain - develop for Linux desktop');
+-
+-  final ProcessManager _processManager;
+-  final UserMessages _userMessages;
+-
+-  static const kClangBinary = 'clang++';
+-  static const kCmakeBinary = 'cmake';
+-  static const kNinjaBinary = 'ninja';
+-  static const kPkgConfigBinary = 'pkg-config';
+-
+-  final _requiredBinaryVersions = <String, Version>{
+-    kClangBinary: Version(3, 4, 0),
+-    kCmakeBinary: Version(3, 10, 0),
+-    kNinjaBinary: Version(1, 8, 0),
+-    kPkgConfigBinary: Version(0, 29, 0),
+-  };
+-
+-  final _requiredGtkLibraries = <String>[
+-    'gtk+-3.0',
+-    'glib-2.0',
+-    'gio-2.0',
+-  ];
+-
+-  @override
+-  Future<ValidationResult> validateImpl() {
+-    throw UnimplementedError(
+-      'CustomLinuxDoctorValidator.validateImpl is not implemented. '
+-      'Use validate() instead.',
+-    );
+-  }
+-
+-  @override
+-  Future<ValidationResult> validate() async {
+-    ValidationType validationType = ValidationType.success;
+-    final messages = <ValidationMessage>[];
+-
+-    final installedVersions = <String, _VersionInfo?>{
+-      // Sort the check to make the call order predictable for unit tests.
+-      for (final String binary in _requiredBinaryVersions.keys.toList()..sort())
+-        binary: await _getBinaryVersion(binary),
+-    };
+-
+-    // Determine overall validation level.
+-    if (installedVersions.values.any((_VersionInfo? versionInfo) => versionInfo?.number == null)) {
+-      validationType = ValidationType.missing;
+-    } else if (installedVersions.keys.any(
+-        (String binary) => installedVersions[binary]!.number! < _requiredBinaryVersions[binary]!)) {
+-      validationType = ValidationType.partial;
+-    }
+-
+-    // Message for Clang.
+-    {
+-      final _VersionInfo? version = installedVersions[kClangBinary];
+-      if (version == null || version.number == null) {
+-        messages.add(ValidationMessage.error(_userMessages.clangMissing));
+-      } else {
+-        assert(_requiredBinaryVersions.containsKey(kClangBinary));
+-        messages.add(ValidationMessage(version.description));
+-        final Version requiredVersion = _requiredBinaryVersions[kClangBinary]!;
+-        if (version.number! < requiredVersion) {
+-          messages
+-              .add(ValidationMessage.error(_userMessages.clangTooOld(requiredVersion.toString())));
+-        }
+-      }
+-    }
+-
+-    // Message for CMake.
+-    {
+-      final _VersionInfo? version = installedVersions[kCmakeBinary];
+-      if (version == null || version.number == null) {
+-        messages.add(ValidationMessage.error(_userMessages.cmakeMissing));
+-      } else {
+-        assert(_requiredBinaryVersions.containsKey(kCmakeBinary));
+-        messages.add(ValidationMessage(version.description));
+-        final Version requiredVersion = _requiredBinaryVersions[kCmakeBinary]!;
+-        if (version.number! < requiredVersion) {
+-          messages
+-              .add(ValidationMessage.error(_userMessages.cmakeTooOld(requiredVersion.toString())));
+-        }
+-      }
+-    }
+-
+-    // Message for ninja.
+-    {
+-      final _VersionInfo? version = installedVersions[kNinjaBinary];
+-      if (version == null || version.number == null) {
+-        messages.add(ValidationMessage.error(_userMessages.ninjaMissing));
+-      } else {
+-        assert(_requiredBinaryVersions.containsKey(kNinjaBinary));
+-        // The full version description is just the number, so add context.
+-        messages.add(ValidationMessage(_userMessages.ninjaVersion(version.description)));
+-        final Version requiredVersion = _requiredBinaryVersions[kNinjaBinary]!;
+-        if (version.number! < requiredVersion) {
+-          messages
+-              .add(ValidationMessage.error(_userMessages.ninjaTooOld(requiredVersion.toString())));
+-        }
+-      }
+-    }
+-
+-    // Message for pkg-config.
+-    {
+-      final _VersionInfo? version = installedVersions[kPkgConfigBinary];
+-      if (version == null || version.number == null) {
+-        messages.add(ValidationMessage.error(_userMessages.pkgConfigMissing));
+-        // Exit early because we cannot validate libraries without pkg-config.
+-        return ValidationResult(validationType, messages);
+-      } else {
+-        assert(_requiredBinaryVersions.containsKey(kPkgConfigBinary));
+-        // The full version description is just the number, so add context.
+-        messages.add(ValidationMessage(_userMessages.pkgConfigVersion(version.description)));
+-        final Version requiredVersion = _requiredBinaryVersions[kPkgConfigBinary]!;
+-        if (version.number! < requiredVersion) {
+-          messages.add(
+-              ValidationMessage.error(_userMessages.pkgConfigTooOld(requiredVersion.toString())));
+-        }
+-      }
+-    }
+-
+-    // Messages for libraries.
+-    {
+-      var libraryMissing = false;
+-      for (final String library in _requiredGtkLibraries) {
+-        if (!await _libraryIsPresent(library)) {
+-          libraryMissing = true;
+-          break;
+-        }
+-      }
+-      if (libraryMissing) {
+-        validationType = ValidationType.missing;
+-        messages.add(ValidationMessage.error(_userMessages.gtkLibrariesMissing));
+-      }
+-    }
+-
+-    return ValidationResult(validationType, messages);
+-  }
+-
+-  /// Returns the installed version of [binary], or null if it's not installed.
+-  ///
+-  /// Requires tha [binary] take a '--version' flag, and print a version of the
+-  /// form x.y.z somewhere on the first line of output.
+-  Future<_VersionInfo?> _getBinaryVersion(String binary) async {
+-    ProcessResult? result;
+-    try {
+-      result = await _processManager.run(<String>[
+-        binary,
+-        '--version',
+-      ]);
+-    } on ArgumentError {
+-      // ignore error.
+-    } on ProcessException {
+-      // ignore error.
+-    }
+-    if (result == null || result.exitCode != 0) {
+-      return null;
+-    }
+-    final String firstLine = (result.stdout as String).split('\n').first.trim();
+-    return _VersionInfo(firstLine);
+-  }
+-
+-  /// Checks that [library] is available via pkg-config.
+-  Future<bool> _libraryIsPresent(String library) async {
+-    ProcessResult? result;
+-    try {
+-      result = await _processManager.run(<String>[
+-        'bash',
+-        '-c',
+-        'export PATH=/usr/bin:\$PATH && pkg-config --exists $library',
+-      ]);
+-    } on ArgumentError {
+-      // ignore error.
+-    }
+-    return (result?.exitCode ?? 1) == 0;
+-  }
+-}
+diff --git a/lib/webos_version.dart b/lib/webos_version.dart
+index b27369f..dd25353 100644
+--- a/lib/webos_version.dart
++++ b/lib/webos_version.dart
+@@ -128,6 +128,11 @@ class WebosFlutterVersion implements FlutterVersion {
+     return baseVersion.ensureVersionFile();
+   }
+ 
++  @override
++  void deleteVersionFile() {
++    baseVersion.deleteVersionFile();
++  }
++
+   @override
+   String getVersionString({bool redactUnknownBranches = false}) {
+     return baseVersion.getVersionString(redactUnknownBranches: redactUnknownBranches);
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 6cdc1b7..2d3ce87 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -27,4 +27,4 @@ dev_dependencies:
+   test:
+ 
+ dependency_overrides:
+-  meta: 1.16.0
++  meta: 1.18.3

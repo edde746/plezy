@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+: "${WEBOS_ENGINE_ROOT:?build_engine.sh must set WEBOS_ENGINE_ROOT}"
+: "${WEBOS_NDK_HOST_SYSROOT:?build_engine.sh must set WEBOS_NDK_HOST_SYSROOT}"
+
+compiler="$WEBOS_ENGINE_ROOT/flutter/buildtools/linux-x64/clang/bin/clang"
+gcc_include="$WEBOS_NDK_HOST_SYSROOT/usr/lib/arm-webos-linux-gnueabi/gcc/arm-webos-linux-gnueabi/13.3.0/include"
+
+if [ ! -x "$compiler" ] || [ ! -d "$gcc_include" ]; then
+  echo "Pinned Flutter Clang or webOS NDK GCC headers are missing." >&2
+  exit 1
+fi
+
+exec "$compiler" -idirafter "$gcc_include" "$@"

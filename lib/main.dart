@@ -1227,6 +1227,14 @@ void _registerAppLicenses() {
       'Provider artwork',
     ], await rootBundle.loadString('assets/provider_marks/NOTICE.txt'));
   });
+  if (const bool.fromEnvironment('PLEZY_WEBOS')) {
+    LicenseRegistry.addLicense(() async* {
+      yield LicenseEntryWithLineBreaks(
+        const ['LG Electronics Flutter webOS Runtime'],
+        await rootBundle.loadString('assets/licenses/LGFlutterWebOSRuntimeNotice.txt'),
+      );
+    });
+  }
   // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
   // into libmpv there and not on macOS.
   if (Platform.isIOS) _registerSpatialAudioLicenses();

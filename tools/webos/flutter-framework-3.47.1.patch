@@ -1,0 +1,449 @@
+diff --git a/packages/flutter_tools/lib/src/android/android_device.dart b/packages/flutter_tools/lib/src/android/android_device.dart
+index 9246d697..737ea083 100644
+--- a/packages/flutter_tools/lib/src/android/android_device.dart
++++ b/packages/flutter_tools/lib/src/android/android_device.dart
+@@ -227,6 +227,7 @@ class AndroidDevice extends Device {
+       case TargetPlatform.fuchsia_arm64:
+       case TargetPlatform.fuchsia_x64:
+       case TargetPlatform.ios:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.linux_x64:
+@@ -552,6 +553,7 @@ class AndroidDevice extends Device {
+       case TargetPlatform.fuchsia_arm64:
+       case TargetPlatform.fuchsia_x64:
+       case TargetPlatform.ios:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.linux_x64:
+diff --git a/packages/flutter_tools/lib/src/artifacts.dart b/packages/flutter_tools/lib/src/artifacts.dart
+index 2c4d4b73..33a5f59e 100644
+--- a/packages/flutter_tools/lib/src/artifacts.dart
++++ b/packages/flutter_tools/lib/src/artifacts.dart
+@@ -211,6 +211,7 @@ TargetPlatform? _mapTargetPlatform(TargetPlatform? targetPlatform) {
+     case TargetPlatform.ios:
+     case TargetPlatform.darwin:
+     case TargetPlatform.linux_x64:
++    case TargetPlatform.linux_arm:
+     case TargetPlatform.linux_arm64:
+     case TargetPlatform.linux_riscv64:
+     case TargetPlatform.windows_x64:
+@@ -433,6 +434,7 @@ class CachedArtifacts implements Artifacts {
+         return _getIosArtifactPath(artifact, platform!, mode, environmentType);
+       case TargetPlatform.darwin:
+       case TargetPlatform.linux_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.windows_x64:
+@@ -787,6 +789,7 @@ class CachedArtifacts implements Artifacts {
+     final String platformName = _enginePlatformDirectoryName(platform);
+     switch (platform) {
+       case TargetPlatform.linux_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.darwin:
+@@ -1581,6 +1584,8 @@ String _getPrebuiltTarget(Platform platform, OperatingSystemUtils operatingSyste
+       return 'macos-x64';
+     case TargetPlatform.linux_riscv64:
+       return 'linux-riscv64';
++    case TargetPlatform.linux_arm:
++      return 'linux-arm';
+     case TargetPlatform.linux_arm64:
+       return 'linux-arm64';
+     case TargetPlatform.linux_x64:
+diff --git a/packages/flutter_tools/lib/src/build_info.dart b/packages/flutter_tools/lib/src/build_info.dart
+index cae5808e..d5b0f0a4 100644
+--- a/packages/flutter_tools/lib/src/build_info.dart
++++ b/packages/flutter_tools/lib/src/build_info.dart
+@@ -625,6 +625,7 @@ enum TargetPlatform {
+   ios('ios'),
+   darwin('darwin'),
+   linux_x64('linux-x64'),
++  linux_arm('linux-arm'),
+   linux_arm64('linux-arm64'),
+   linux_riscv64('linux-riscv64'),
+   windows_x64('windows-x64'),
+@@ -657,6 +658,7 @@ enum TargetPlatform {
+       // host platform name (HostPlatform.darwin_x64)
+       'darwin' || 'darwin-x64' || 'darwin-arm64' => TargetPlatform.darwin,
+       'linux-x64' => TargetPlatform.linux_x64,
++      'linux-arm' => TargetPlatform.linux_arm,
+       'linux-arm64' => TargetPlatform.linux_arm64,
+       'linux-riscv64' => TargetPlatform.linux_riscv64,
+       'windows-x64' => TargetPlatform.windows_x64,
+@@ -686,6 +688,7 @@ enum TargetPlatform {
+     android_x64 ||
+     darwin ||
+     ios ||
++    linux_arm ||
+     linux_arm64 ||
+     linux_riscv64 ||
+     linux_x64 ||
+@@ -697,7 +700,7 @@ enum TargetPlatform {
+   };
+ 
+   String get osName => switch (this) {
+-    linux_x64 || linux_arm64 || linux_riscv64 => 'linux',
++    linux_x64 || linux_arm || linux_arm64 || linux_riscv64 => 'linux',
+     darwin => 'macos',
+     windows_x64 || windows_arm64 => 'windows',
+     android || android_arm || android_arm64 || android_x64 => 'android',
+@@ -711,6 +714,7 @@ enum TargetPlatform {
+   String get simpleName => switch (this) {
+     linux_x64 || darwin || windows_x64 => 'x64',
+     linux_arm64 || windows_arm64 => 'arm64',
++    linux_arm => 'arm',
+     linux_riscv64 => 'riscv64',
+     android ||
+     android_arm ||
+diff --git a/packages/flutter_tools/lib/src/build_system/targets/common.dart b/packages/flutter_tools/lib/src/build_system/targets/common.dart
+index 692bc456..703f7b21 100644
+--- a/packages/flutter_tools/lib/src/build_system/targets/common.dart
++++ b/packages/flutter_tools/lib/src/build_system/targets/common.dart
+@@ -250,6 +250,7 @@ class KernelSnapshot extends Target {
+       case TargetPlatform.fuchsia_arm64:
+       case TargetPlatform.fuchsia_x64:
+       case TargetPlatform.ios:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.tester:
+@@ -267,6 +268,7 @@ class KernelSnapshot extends Target {
+       TargetPlatform.android_x64 => 'android',
+       TargetPlatform.darwin => 'macos',
+       TargetPlatform.ios => 'ios',
++      TargetPlatform.linux_arm ||
+       TargetPlatform.linux_arm64 ||
+       TargetPlatform.linux_riscv64 ||
+       TargetPlatform.linux_x64 => 'linux',
+diff --git a/packages/flutter_tools/lib/src/build_system/tools/shader_compiler.dart b/packages/flutter_tools/lib/src/build_system/tools/shader_compiler.dart
+index beb18e37..8f31c278 100644
+--- a/packages/flutter_tools/lib/src/build_system/tools/shader_compiler.dart
++++ b/packages/flutter_tools/lib/src/build_system/tools/shader_compiler.dart
+@@ -181,6 +181,7 @@ class ShaderCompiler {
+       case TargetPlatform.android_arm64:
+       case TargetPlatform.android:
+       case TargetPlatform.linux_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.windows_x64:
+diff --git a/packages/flutter_tools/lib/src/commands/build_bundle.dart b/packages/flutter_tools/lib/src/commands/build_bundle.dart
+index 32ef91fc..6607c219 100644
+--- a/packages/flutter_tools/lib/src/commands/build_bundle.dart
++++ b/packages/flutter_tools/lib/src/commands/build_bundle.dart
+@@ -45,6 +45,7 @@ class BuildBundleCommand extends BuildSubCommand {
+           'ios',
+           'darwin',
+           'linux-x64',
++          'linux-arm',
+           'linux-arm64',
+           'linux-riscv64',
+           'windows-x64',
+@@ -122,6 +123,7 @@ class BuildBundleCommand extends BuildSubCommand {
+           throwToolExit('Windows is not a supported target platform.');
+         }
+       case TargetPlatform.linux_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+         if (!featureFlags.isLinuxEnabled) {
+diff --git a/packages/flutter_tools/lib/src/flutter_application_package.dart b/packages/flutter_tools/lib/src/flutter_application_package.dart
+index c61de499..f153f291 100644
+--- a/packages/flutter_tools/lib/src/flutter_application_package.dart
++++ b/packages/flutter_tools/lib/src/flutter_application_package.dart
+@@ -90,6 +90,7 @@ class FlutterApplicationPackageFactory extends ApplicationPackageFactory {
+         }
+         return WebApplicationPackage(FlutterProject.current());
+       case TargetPlatform.linux_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+         return applicationBinary == null
+diff --git a/packages/flutter_tools/lib/src/isolated/native_assets/native_assets.dart b/packages/flutter_tools/lib/src/isolated/native_assets/native_assets.dart
+index f021e638..4e2f36c3 100644
+--- a/packages/flutter_tools/lib/src/isolated/native_assets/native_assets.dart
++++ b/packages/flutter_tools/lib/src/isolated/native_assets/native_assets.dart
+@@ -969,6 +969,7 @@ OS getNativeOSFromTargetPlatform(TargetPlatform platform) {
+     case TargetPlatform.darwin:
+       return OS.macOS;
+     case TargetPlatform.linux_x64:
++    case TargetPlatform.linux_arm:
+     case TargetPlatform.linux_arm64:
+     case TargetPlatform.linux_riscv64:
+       return OS.linux;
+diff --git a/packages/flutter_tools/lib/src/isolated/native_assets/targets.dart b/packages/flutter_tools/lib/src/isolated/native_assets/targets.dart
+index e4726d0a..2d00984d 100644
+--- a/packages/flutter_tools/lib/src/isolated/native_assets/targets.dart
++++ b/packages/flutter_tools/lib/src/isolated/native_assets/targets.dart
+@@ -74,6 +74,8 @@ sealed class AssetBuildTarget {
+         return _windowsTarget(supportedAssetTypes, Architecture.x64);
+       case TargetPlatform.linux_x64:
+         return _linuxTarget(supportedAssetTypes, Architecture.x64, buildMode, buildDirectory);
++      case TargetPlatform.linux_arm:
++        return _linuxTarget(supportedAssetTypes, Architecture.arm, buildMode, buildDirectory);
+       case TargetPlatform.linux_arm64:
+         return _linuxTarget(supportedAssetTypes, Architecture.arm64, buildMode, buildDirectory);
+       case TargetPlatform.linux_riscv64:
+@@ -438,6 +440,7 @@ List<AndroidArch> _androidArchs(TargetPlatform targetPlatform, String? androidAr
+     case TargetPlatform.fuchsia_arm64:
+     case TargetPlatform.fuchsia_x64:
+     case TargetPlatform.ios:
++    case TargetPlatform.linux_arm:
+     case TargetPlatform.linux_arm64:
+     case TargetPlatform.linux_riscv64:
+     case TargetPlatform.linux_x64:
+diff --git a/packages/flutter_tools/lib/src/mdns_discovery.dart b/packages/flutter_tools/lib/src/mdns_discovery.dart
+index 0840c95b..8256685c 100644
+--- a/packages/flutter_tools/lib/src/mdns_discovery.dart
++++ b/packages/flutter_tools/lib/src/mdns_discovery.dart
+@@ -598,6 +598,7 @@ class MDnsVmServiceDiscovery {
+       case TargetPlatform.darwin:
+       case TargetPlatform.fuchsia_arm64:
+       case TargetPlatform.fuchsia_x64:
++      case TargetPlatform.linux_arm:
+       case TargetPlatform.linux_arm64:
+       case TargetPlatform.linux_riscv64:
+       case TargetPlatform.linux_x64:
+diff --git a/packages/flutter_tools/lib/src/resident_runner.dart b/packages/flutter_tools/lib/src/resident_runner.dart
+index fb85b532..010dc2df 100644
+--- a/packages/flutter_tools/lib/src/resident_runner.dart
++++ b/packages/flutter_tools/lib/src/resident_runner.dart
+@@ -1638,6 +1638,7 @@ Future<String?> getMissingPackageHintForPlatform(TargetPlatform platform) async
+     case TargetPlatform.darwin:
+     case TargetPlatform.fuchsia_arm64:
+     case TargetPlatform.fuchsia_x64:
++    case TargetPlatform.linux_arm:
+     case TargetPlatform.linux_arm64:
+     case TargetPlatform.linux_riscv64:
+     case TargetPlatform.linux_x64:
+diff --git a/packages/flutter_tools/lib/src/runner/flutter_command.dart b/packages/flutter_tools/lib/src/runner/flutter_command.dart
+index 1671d157..d62730cd 100644
+--- a/packages/flutter_tools/lib/src/runner/flutter_command.dart
++++ b/packages/flutter_tools/lib/src/runner/flutter_command.dart
+@@ -2238,6 +2238,7 @@ DevelopmentArtifact? artifactFromTargetPlatform(TargetPlatform targetPlatform) {
+       }
+       return null;
+     case TargetPlatform.linux_x64:
++    case TargetPlatform.linux_arm:
+     case TargetPlatform.linux_arm64:
+     case TargetPlatform.linux_riscv64:
+       if (featureFlags.isLinuxEnabled) {
+diff --git a/packages/flutter_tools/test/commands.shard/permeable/build_bundle_test.dart b/packages/flutter_tools/test/commands.shard/permeable/build_bundle_test.dart
+index 43eab645..a064c5cc 100644
+--- a/packages/flutter_tools/test/commands.shard/permeable/build_bundle_test.dart
++++ b/packages/flutter_tools/test/commands.shard/permeable/build_bundle_test.dart
+@@ -255,6 +255,54 @@ void main() {
+     },
+   );
+ 
++  testUsingContext(
++    'bundle accepts linux-arm as a target platform (embedded armv7)',
++    () async {
++      // Regression test for https://github.com/flutter/flutter/issues/187018:
++      // `--target-platform linux-arm` must be an accepted option value so that
++      // armv7 embedded (Yocto/meta-flutter) cross-builds get past argument
++      // parsing. Before linux-arm was added to the allowed list, this failed
++      // with "linux-arm" is not an allowed value for option "--target-platform".
++      // With the Linux feature disabled it now reaches the feature gate rather
++      // than being rejected at parse time.
++      globals.fs.file(globals.fs.path.join('lib', 'main.dart')).createSync(recursive: true);
++      globals.fs.file('pubspec.yaml').createSync();
++      final CommandRunner<void> runner = createTestCommandRunner(
++        BuildBundleCommand(logger: BufferLogger.test()),
++      );
++
++      expect(
++        () => runner.run(<String>['bundle', '--no-pub', '--target-platform=linux-arm']),
++        throwsToolExit(message: 'Linux is not a supported target platform.'),
++      );
++    },
++    overrides: <Type, Generator>{
++      BuildSystem: () => TestBuildSystem.all(BuildResult(success: true)),
++      FileSystem: fsFactory,
++      ProcessManager: () => FakeProcessManager.any(),
++      FeatureFlags: () => TestFeatureFlags(),
++    },
++  );
++
++  testUsingContext(
++    'bundle can build for linux-arm (embedded armv7) if feature is enabled',
++    () async {
++      globals.fs.file(globals.fs.path.join('lib', 'main.dart')).createSync(recursive: true);
++      globals.fs.file('pubspec.yaml').createSync();
++      final CommandRunner<void> runner = createTestCommandRunner(
++        BuildBundleCommand(logger: BufferLogger.test()),
++      );
++
++      await runner.run(<String>['bundle', '--no-pub', '--target-platform=linux-arm']);
++    },
++    overrides: <Type, Generator>{
++      BuildSystem: () => TestBuildSystem.all(BuildResult(success: true)),
++      FileSystem: fsFactory,
++      ProcessManager: () => FakeProcessManager.any(),
++      FeatureFlags: () => TestFeatureFlags(isLinuxEnabled: true),
++    },
++  );
++
+   testUsingContext(
+     'bundle can build for macOS if feature is enabled',
+     () async {
+diff --git a/packages/flutter_tools/test/general.shard/isolated/linux/native_assets_test.dart b/packages/flutter_tools/test/general.shard/isolated/linux/native_assets_test.dart
+index 3cfb0a8d..8518e9af 100644
+--- a/packages/flutter_tools/test/general.shard/isolated/linux/native_assets_test.dart
++++ b/packages/flutter_tools/test/general.shard/isolated/linux/native_assets_test.dart
+@@ -17,6 +17,7 @@ import 'package:flutter_tools/src/build_system/build_system.dart';
+ import 'package:flutter_tools/src/globals.dart' as globals;
+ import 'package:flutter_tools/src/isolated/native_assets/linux/native_assets.dart';
+ import 'package:flutter_tools/src/isolated/native_assets/native_assets.dart';
++import 'package:hooks/hooks.dart';
+ 
+ import '../../../src/common.dart';
+ import '../../../src/context.dart';
+@@ -74,6 +75,46 @@ void main() {
+     },
+   );
+ 
++  // Regression test for https://github.com/flutter/flutter/issues/187018: a
++  // linux_arm build must hand the build runner a linux/arm target. Before
++  // linux_arm existed, armv7 Linux cross-builds emitted a NativeAssetsManifest
++  // keyed `android_arm`, so at load time the engine's `linux_arm` lookup missed
++  // and FFI/code-asset plugins were silently dropped. Mock the build runner and
++  // assert the OS and architecture carried on the BuildInput.
++  testUsingContext(
++    'linux_arm passes OS linux and architecture arm to the build runner',
++    overrides: <Type, Generator>{
++      ProcessManager: () => FakeProcessManager.empty(),
++      FileSystem: () => fileSystem,
++    },
++    () async {
++      final File packageConfig = environment.projectDir.childFile('.dart_tool/package_config.json');
++      await packageConfig.create(recursive: true);
++
++      BuildInput? capturedInput;
++      await runFlutterSpecificHooks(
++        environmentDefines: <String, String>{kBuildMode: BuildMode.debug.cliName},
++        targetPlatform: TargetPlatform.linux_arm,
++        projectUri: projectUri,
++        fileSystem: fileSystem,
++        buildRunner: FakeFlutterNativeAssetsBuildRunner(
++          packagesWithNativeAssetsResult: <String>['foo'],
++          onBuild: (BuildInput input) {
++            capturedInput = input;
++            return const FakeFlutterNativeAssetsBuilderResult();
++          },
++        ),
++        buildCodeAssets: BuildCodeAssetsOptions(appBuildDirectory: environment.outputDir),
++        buildDataAssets: true,
++        recordedUsesFile: null,
++      );
++
++      expect(capturedInput, isNotNull, reason: 'build runner should have been invoked');
++      expect(capturedInput!.config.code.targetOS, OS.linux);
++      expect(capturedInput!.config.code.targetArchitecture, Architecture.arm);
++    },
++  );
++
+   // This logic is mocked in the other tests to avoid having test order
+   // randomization causing issues with what processes are invoked.
+   // Exercise the parsing of the process output in this separate test.
+diff --git a/packages/flutter_tools/test/integration.shard/isolated/native_assets_without_cbuild_assemble_test.dart b/packages/flutter_tools/test/integration.shard/isolated/native_assets_without_cbuild_assemble_test.dart
+index 098b3e81..dbc5fd4e 100644
+--- a/packages/flutter_tools/test/integration.shard/isolated/native_assets_without_cbuild_assemble_test.dart
++++ b/packages/flutter_tools/test/integration.shard/isolated/native_assets_without_cbuild_assemble_test.dart
+@@ -61,6 +61,11 @@ void main() {
+       processManager: processManager,
+       hooksVersionConstraint: constraint,
+     );
++    _testBuildBundle(
++      targetPlatform: 'linux-arm',
++      processManager: processManager,
++      hooksVersionConstraint: constraint,
++    );
+   }
+ }
+ 
+diff --git a/packages/flutter_tools/test/general.shard/isolated/native_assets_linux_arm_target_test.dart b/packages/flutter_tools/test/general.shard/isolated/native_assets_linux_arm_target_test.dart
+new file mode 100644
+index 00000000..d08e6f40
+--- /dev/null
++++ b/packages/flutter_tools/test/general.shard/isolated/native_assets_linux_arm_target_test.dart
+@@ -0,0 +1,74 @@
++// Copyright 2014 The Flutter Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++// Regression test for https://github.com/flutter/flutter/issues/187018.
++//
++// Before linux_arm existed, armv7 Linux cross-builds emitted a
++// NativeAssetsManifest.json keyed `android_arm` instead of `linux_arm`. That
++// wrong key silently disabled FFI and code-asset plugins: at load time nothing
++// matched the linux/arm host, so the plugins were dropped without surfacing an
++// error.
++//
++// The TargetPlatform -> native-assets target translation is pure and
++// deterministic, so these are hermetic unit tests: they assert the resolved
++// target's OS, architecture, and manifest key directly. No arm32 silicon and
++// no engine artifacts are required to prove the manifest is keyed `linux_arm`.
++
++import 'package:code_assets/code_assets.dart';
++import 'package:file/memory.dart';
++import 'package:flutter_tools/src/build_info.dart';
++import 'package:flutter_tools/src/isolated/native_assets/native_assets.dart';
++import 'package:flutter_tools/src/isolated/native_assets/targets.dart';
++
++import '../../src/common.dart';
++
++List<AssetBuildTarget> _targetsFor(TargetPlatform targetPlatform) {
++  return AssetBuildTarget.targetsFor(
++    targetPlatform: targetPlatform,
++    buildMode: BuildMode.debug,
++    environmentDefines: <String, String>{},
++    fileSystem: MemoryFileSystem.test(),
++    supportedAssetTypes: <SupportedAssetTypes>[SupportedAssetTypes.codeAssets],
++    buildDirectory: null,
++  );
++}
++
++void main() {
++  testWithoutContext('linux_arm maps to the linux native OS (not android)', () {
++    expect(getNativeOSFromTargetPlatform(TargetPlatform.linux_arm), OS.linux);
++  });
++
++  testWithoutContext(
++    'linux_arm resolves to a single linux/arm code-asset target, not android_arm',
++    () {
++      final List<AssetBuildTarget> targets = _targetsFor(TargetPlatform.linux_arm);
++
++      expect(targets, hasLength(1));
++      final AssetBuildTarget target = targets.single;
++      expect(target, isA<LinuxAssetTarget>());
++
++      final codeTarget = target as CodeAssetTarget;
++      // The #187018 bug emitted an android_arm-keyed manifest; assert the
++      // resolved target is 32-bit arm AND linux (i.e. NOT android).
++      expect(codeTarget.architecture, Architecture.arm);
++      expect(codeTarget.os, OS.linux);
++      expect(codeTarget.os, isNot(OS.android));
++      // The native-assets manifest is keyed by `${os}_${arch}`; this is the
++      // key that must read `linux_arm` rather than `android_arm`.
++      expect(codeTarget.targetString, 'linux_arm');
++    },
++  );
++
++  testWithoutContext('linux_arm and linux_arm64 resolve to distinct linux targets', () {
++    final arm = _targetsFor(TargetPlatform.linux_arm).single as CodeAssetTarget;
++    final arm64 = _targetsFor(TargetPlatform.linux_arm64).single as CodeAssetTarget;
++
++    expect(arm.architecture, Architecture.arm);
++    expect(arm64.architecture, Architecture.arm64);
++    expect(arm.os, OS.linux);
++    expect(arm64.os, OS.linux);
++    expect(arm.targetString, 'linux_arm');
++    expect(arm64.targetString, 'linux_arm64');
++  });
++}
