@@ -842,7 +842,7 @@ class SourceController extends ChangeNotifier {
     var local = await repository.progress(profile, initial.key);
     final owner = sources.where((s) => s.id == entry.sourceId).firstOrNull;
     final syncEntry = owner == null ? entry : _withSyncIdentity(owner, entry);
-    if (owner != null && syncConfig == null) {
+    if (owner != null) {
       final provider = _stateAdapter(syncEntry, initial);
       if (provider != null) {
         try {
@@ -1003,6 +1003,8 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    Object? firstFailure;
+    StackTrace? firstFailureStack;
     if (syncConfig != null) {
       final config = syncConfig!;
       final source = sources.where((s) => s.id == config.sourceId).firstOrNull;
@@ -1016,10 +1018,13 @@ class SourceController extends ChangeNotifier {
           activeKeys: activeProgressKeys,
           check: () => requireSession(epoch),
         );
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        firstFailure = error;
+        firstFailureStack = stackTrace;
       } finally {
         if (current(epoch)) _notify();
       }
-      return;
     }
     final entriesByKey = <String, SourceEntry?>{};
     Future<SourceEntry?> entryFor(String key) async {
@@ -1031,8 +1036,6 @@ class SourceController extends ChangeNotifier {
     }
     final sourcesById = <String, FileSource>{for (final source in sources) source.id: source};
     final events = await repository.pendingEvents(profile);
-    Object? firstFailure;
-    StackTrace? firstFailureStack;
     final latest = <String, Map<String, dynamic>>{};
     for (final event in events) {
       if (event['kind'] == 'annotation') continue;
