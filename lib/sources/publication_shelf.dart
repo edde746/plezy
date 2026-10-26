@@ -2,6 +2,12 @@ import 'source_models.dart';
 
 enum PublicationShelf { ebooks, audiobooks, comics, videos }
 
+Set<PublicationShelf> defaultPublicationShelves(FileSourceKind kind) => {
+  PublicationShelf.ebooks,
+  PublicationShelf.audiobooks,
+  if (kind == FileSourceKind.local || kind == FileSourceKind.smb) PublicationShelf.videos,
+};
+
 extension PublicationShelfContents on PublicationShelf {
   bool includes(SourceEntry entry) => switch (this) {
     PublicationShelf.ebooks => entry.ebooks.any((f) => f.kind == SourceItemKind.ebook),

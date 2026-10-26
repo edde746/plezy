@@ -26,18 +26,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
   bool _busy = false, _allowHttp = false, _encryptSmb = false;
-  Set<PublicationShelf> _shelves = _defaultShelves(FileSourceKind.webdav);
+  Set<PublicationShelf> _shelves = defaultPublicationShelves(FileSourceKind.webdav);
   bool _shelvesCustomized = false;
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
   bool get oauth => const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(_kind);
-
-  static Set<PublicationShelf> _defaultShelves(FileSourceKind kind) => {
-    PublicationShelf.ebooks,
-    PublicationShelf.audiobooks,
-    if (kind == FileSourceKind.local || kind == FileSourceKind.smb) PublicationShelf.videos,
-  };
 
   @override
   void initState() {
@@ -51,7 +45,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('clientId').text = old.options['clientId'] ?? '';
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
-      final defaultShelves = _defaultShelves(old.kind).map((s) => s.name).join(',');
+      final defaultShelves = defaultPublicationShelves(old.kind).map((s) => s.name).join(',');
       _shelves = PublicationShelf.values
           .where((s) => (old.options['shelves'] ?? defaultShelves).split(',').contains(s.name))
           .toSet();
@@ -187,7 +181,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           ? null
                           : (kind) => setState(() {
                               _kind = kind!;
-                              if (!_shelvesCustomized) _shelves = _defaultShelves(_kind);
+                              if (!_shelvesCustomized) _shelves = defaultPublicationShelves(_kind);
                             }),
                     ),
                     const SizedBox(height: 24),

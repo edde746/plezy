@@ -202,7 +202,11 @@ class SourceController extends ChangeNotifier {
     shelves = {
       for (final shelf in PublicationShelf.values)
         if (entries.any(shelf.includes) ||
-            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(shelf.name)))
+            sources.any((source) {
+              final configured = source.options['shelves']?.split(',');
+              final enabled = configured ?? defaultPublicationShelves(source.kind).map((s) => s.name).toList();
+              return enabled.contains(shelf.name);
+            }))
           shelf,
     };
   }
