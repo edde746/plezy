@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../discovery/discovery_choice.dart';
 import '../../focus/focusable_button.dart';
 import '../../discovery/discovery_store.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
@@ -1149,10 +1150,10 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Widget _buildChoice(DiscoveryChoice choice, {required bool canUndo}) => DiscoveryDeckView(
     choiceId: choice.id,
-    title: choice.title,
-    subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).join(' · '),
+    title: isolateDisplayText(choice.title),
+    subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).map(isolateDisplayText).join(' · '),
     facts: [_typeLabel(choice), _durationLabel(choice), if (choice.offlineReady) t.fileSources.offline].join(' · '),
-    summary: choice.summary,
+    summary: isolateDisplayText(choice.summary),
     artwork: _artwork(choice),
     artworkAspectRatio: _artworkAspectRatio(choice),
     enabled: !_committing,
