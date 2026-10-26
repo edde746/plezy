@@ -91,11 +91,125 @@ class PublicationSync {
     resetStatus();
   }
 
+  static String recoveryName(String namespace) => 'plezyng-recovery-v1-$namespace.json';
+
+  /// Exports only the encrypted sync document. The user must retain the
+  /// private sync code separately; no source account or media data is bundled.
+  Future<String> exportRecovery(String profile) async {
+    final config = await this.config(profile);
+    if (config == null) throw const SourceException(SourceFailure.unsupported);
+    final cipher = SyncCipher(config.code);
+    final cache = _SyncCache(await repository.preference(profile, _cacheKey(cipher.namespace)));
+    cache.document.compactSafe();
+    final name = recoveryName(cipher.namespace);
+    final encrypted = await cipher.seal(cache.document, name);
+    return canonicalSyncJson({'format': 'plezyng-encrypted-recovery-v1', 'name': name, 'encrypted': encrypted});
+  }
+
+  /// Imports are additive. The recovery file is authenticated with the
+  /// configured code and merged through the same causal rules as cloud state.
+  Future<void> importRecovery({
+    required String profile,
+    required String text,
+    required List<FileSource> sources,
+    required Set<String> activeKeys,
+  }) async {
+    final config = await this.config(profile);
+    if (config == null) throw const SourceException(SourceFailure.unsupported);
+    try {
+      final envelope = sourceMap(jsonDecode(text));
+      final cipher = SyncCipher(config.code);
+      final name = envelope['name'];
+      if (envelope['format'] != 'plezyng-encrypted-recovery-v1' ||
+          name != recoveryName(cipher.namespace) ||
+          envelope['encrypted'] is! String) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      final incoming = await cipher.open(envelope['encrypted'] as String, name as String);
+      final entries = await repository.entries(profile);
+      final cacheKey = _cacheKey(cipher.namespace);
+      await repository.database.transaction(() async {
+        final cache = _SyncCache(await repository.preference(profile, cacheKey));
+        cache.document.merge(incoming);
+        cache.document.compactSafe();
+        cache.published = '';
+        await _apply(profile, cache, _identities(sources, entries), activeKeys);
+        await repository.savePreference(profile, cacheKey, cache.toJson());
+      });
+    } on SourceException {
+      rethrow;
+    } on Object {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+  }
+
+  /// Re-keys cached sync records when a user pairs an existing source under a
+  /// shared library ID. Old records remain as migration history so an offline
+  /// device can still merge its writes; the paired identity receives copies.
+  Future<void> migrateSourceIdentity({
+    required String profile,
+    required FileSource oldSource,
+    required FileSource newSource,
+    required List<SourceEntry> entries,
+  }) async {
+    if (oldSource.options['syncLibrary'] == newSource.options['syncLibrary']) return;
+    final config = await this.config(profile);
+    if (config == null) return;
+    final cacheKey = _cacheKey(SyncCipher(config.code).namespace);
+    await repository.database.transaction(() async {
+      final cache = _SyncCache(await repository.preference(profile, cacheKey));
+      final additions = SyncDocument();
+      final identityMigrations = <String, String>{};
+      for (final entry in entries) {
+        final oldIdentity = entryIdentity(oldSource, entry);
+        final newIdentity = entryIdentity(newSource, entry);
+        if (oldIdentity != newIdentity) identityMigrations[oldIdentity] = newIdentity;
+      }
+      for (final record in cache.document.records.entries) {
+        for (final version in record.value) {
+          final value = version.value;
+          final newIdentity = identityMigrations[value['entry']];
+          if (newIdentity == null) continue;
+          final data = sourceMap(value['data']);
+          final type = value['type'];
+          final migratedValue = {...value, 'entry': newIdentity};
+          final String? migratedKey;
+          if (type == 'progress' &&
+              data['edition'] is String &&
+              PublicationMode.values.any((mode) => mode.name == data['mode'])) {
+            migratedKey = progressKey(newIdentity, data['edition'] as String, PublicationMode.values.byName(data['mode'] as String));
+          } else if (type == 'annotation' && data['id'] is String) {
+            migratedKey = annotationKey(newIdentity, data['id'] as String);
+          } else {
+            continue;
+          }
+          additions.merge(SyncDocument({
+            migratedKey: [SyncVersion(version.clock, migratedValue, actor: version.actor)],
+          }));
+          if (cache.observed[record.key] == _hash(value)) {
+            cache.observed[migratedKey] = _hash(migratedValue);
+          }
+        }
+      }
+      cache.document.merge(additions);
+      cache.document.compactSafe();
+      for (final key in additions.records.keys) {
+        final versions = cache.document.records[key];
+        if (versions != null) cache.basis[key] = joinedClock(versions);
+      }
+      cache.published = '';
+      await repository.savePreference(profile, cacheKey, cache.toJson());
+    });
+  }
+
   static String entryIdentity(FileSource source, SourceEntry entry) {
     // Connection UUIDs and local profile IDs differ across installations.
     // Provider IDs plus origin identify the publication. Roots are browsing
     // preferences and do not change an existing provider object's identity.
     final library = source.options['syncLibrary'];
+    if (library?.trim().isNotEmpty == true) {
+      return sourceDigest(canonicalSyncJson(['paired-library-v1', library!.trim().toLowerCase(), entry.id]));
+    }
     return sourceDigest(
       canonicalSyncJson([
         source.kind.name,
@@ -322,6 +436,7 @@ class PublicationSync {
       await repository.database.transaction(() async {
         check();
         _capture(cache, device, await _locals(profile, sources, entries));
+        cache.document.compactSafe();
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
       final listed = await store.list(cipher.namespace);
@@ -346,6 +461,7 @@ class PublicationSync {
         publishedLocals = await _locals(profile, sources, entries);
         _capture(cache, device, publishedLocals);
         cache.document.merge(remote);
+        cache.document.compactSafe();
         await _apply(profile, cache, _identities(sources, entries), activeKeys);
         check();
         await repository.savePreference(profile, cacheKey, cache.toJson());
@@ -428,3 +544,4 @@ class PublicationSync {
     });
   }
 }
+
