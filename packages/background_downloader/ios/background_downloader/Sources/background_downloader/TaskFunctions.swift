@@ -435,7 +435,7 @@ func processStatusUpdate(task: Task, status: TaskStatus, taskException: TaskExce
     let credentialedTask = task.options?.auth?.hasOnAuthCallback() == true
     let safeTaskException = credentialedTask && taskException != nil
         ? TaskException(type: .general, httpResponseCode: -1, description: "")
-        : safeTaskException
+        : taskException
     let safeResponseBody = credentialedTask ? nil : responseBody
     let safeResponseHeaders = credentialedTask ? nil : responseHeaders
     let task = storageFailure ? task.copyWith(retriesRemaining: 0) : task
