@@ -4,6 +4,7 @@
 
 - Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync.
 - Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
+- Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.
 - Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded folder/progress queries.
 - Bind cloud settings backups and restore writes to the initiating profile, enforce a 4 MiB download bound, and roll back an import if ownership changes.
 - Require successful CI for the exact release commit while keeping release validation on private JIT runners.

@@ -147,6 +147,11 @@ jobs:
             ~/.pub-cache
           key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
 
+      - name: Install native reader test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang build-essential
+
       - name: Install dependencies
         run: |
           flutter clean
@@ -159,6 +164,23 @@ jobs:
           else
             echo "No tests found, skipping test execution"
           fi
+
+      - name: Setup Node for reader browser checks
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tools/reader-tests/package-lock.json
+
+      - name: Install reader browser dependencies
+        working-directory: tools/reader-tests
+        run: |
+          npm ci --ignore-scripts
+          npm exec -- playwright install --with-deps chromium
+
+      - name: Run real reader browser checks
+        working-directory: tools/reader-tests
+        run: npm test
 
       - name: Install wakelock_plus test dependencies
         working-directory: packages/wakelock_plus
