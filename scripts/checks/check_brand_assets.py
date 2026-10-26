@@ -84,6 +84,8 @@ def check(root: Path = ROOT) -> list[str]:
         for density in ('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'):
             if (root / f'android/app/src/main/res/drawable-{density}/ic_launcher_{layer}.png').exists():
                 errors.append(f'Retired Android {density} {layer} PNG remains')
+    # This fixed Android launcher manifest is checked into the repository.
+    # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse -- the verifier reads this trusted app resource, never external input
     adaptive = ET.parse(root / 'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml').getroot()
     for layer in ('foreground', 'monochrome'):
         resource = adaptive.find(layer).attrib['{http://schemas.android.com/apk/res/android}drawable']
