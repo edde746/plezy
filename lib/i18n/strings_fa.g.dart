@@ -197,7 +197,7 @@ class _Translations$auth$fa extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'منتظر تصویب...';
 	@override String get quickConnectCancel => 'لغو کردن';
 	@override String get quickConnectExpired => 'مهلت اتصال سریع تمام شد. دوباره تلاش کنید.';
-	@override String get localDataRecoveryRequired => 'PlezyNG نمی تواند به طور ایمن بازگرداندن ثبت نام محلی و داده های بازگرداندن در انتظار.';
+	@override String get localDataRecoveryRequired => 'PlezyNG نتوانست اطلاعات ورود محلی و داده‌های پخشِ در انتظار را به‌طور ایمن بازیابی کند. لطفاً دوباره وارد حساب شوید.';
 	@override String get pinCheckRejected => 'چک PIN Plex رد شد';
 	@override String get connectToDirectPlex => 'اتصال به سرور محلی Plex';
 }
@@ -790,7 +790,7 @@ class _Translations$themeEditor$fa extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$fa contrast = _Translations$themeEditor$contrast$fa._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, زیر توصیه شده ${minimum}:1';
 	@override String get discardTitle => 'تغییرات را نادیده بگیرید؟';
-	@override String get discardMessage => 'تغییرات رنگ ناخوشایند شما از دست رفته است.';
+	@override String get discardMessage => 'تغییرات ذخیره‌نشدهٔ رنگ از دست می‌روند.';
 	@override String get discard => 'نادیده گرفتن';
 	@override String previewCardTitle({required Object number}) => 'صفحه اصلی ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} دقیقه باقی مانده';
@@ -939,7 +939,7 @@ class _Translations$fileInfo$fa extends Translations$fileInfo$en {
 	@override String get versionId => 'نسخه ID';
 	@override String get fileId => 'فایل ID';
 	@override String get defaultAudioTrack => 'تریلر Audio Track';
-	@override String get defaultSubtitleTrack => 'دانلود زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس';
+	@override String get defaultSubtitleTrack => 'ترک زیرنویس پیش‌فرض';
 	@override String get subtitlesOff => 'خاموش';
 	@override String get flagDefault => 'پیشفرض';
 	@override String get flagForced => 'اجباری';
@@ -980,22 +980,22 @@ class _Translations$mediaMenu$fa extends Translations$mediaMenu$en {
 	@override String get deleteShowConfirm => 'نمایش حذف';
 	@override String get deleteMovieConfirm => 'حذف فیلم';
 	@override String get deleteAnyway => 'حذف به هر حال';
-	@override String confirmDeleteTarget({required Object title}) => 'به طور دائم حذف ${title} از سرور خود را؟';
+	@override String confirmDeleteTarget({required Object title}) => '«${title}» برای همیشه از سرور شما حذف شود؟';
 	@override String get deleteMultipleWarning => 'این شامل تمام قسمت ها و فایل های آنها است.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n,
-		one: 'این حذف تمام ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت در آن، و فایل آن.',
-		other: 'این حذف تمام ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت در آن، و فایل های آنها.',
+		one: 'با این کار، ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت موجود در آن و فایل آن حذف می‌شود.',
+		other: 'با این کار، همهٔ ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت موجود در آن و فایل‌های آن‌ها حذف می‌شوند.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n,
-		one: 'این آیتم به عنوان فایل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ذخیره می شود که حذف خواهد شد.',
-		other: 'این آیتم از طریق فایل های ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ذخیره می شود و همه آنها حذف می شوند.',
+		one: 'این مورد در ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فایل ذخیره شده است و آن فایل حذف خواهد شد.',
+		other: 'این مورد در ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فایل ذخیره شده است و همهٔ آن‌ها حذف خواهند شد.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت های دیگر در همان فایل ذخیره می شوند و حذف می شوند:',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت های دیگر در همان فایل ذخیره می شوند و همچنین حذف می شوند:',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت دیگر در همین فایل ذخیره شده است و آن هم حذف خواهد شد:',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت دیگر در همین فایل ذخیره شده‌اند و آن‌ها هم حذف خواهند شد:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG نمی توانست بررسی کند که کدام فایل ها حذف می شود، بنابراین ممکن است بیشتر از آیتم ذکر شده در بالا حذف شود.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'سرور شما جزئیات فایل را برای این آیتم ارائه نکرده است، بنابراین PlezyNG نمی تواند بررسی کند که کدام فایل ها را حذف می کند.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG نتوانست بررسی کند کدام فایل‌ها حذف می‌شوند؛ بنابراین ممکن است مواردی بیش از مورد بالا حذف شوند. لغو کنید و دوباره تلاش کنید، یا در هر صورت حذف کنید.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'سرور شما جزئیات فایل‌های این مورد را ارائه نکرده است، بنابراین PlezyNG نمی‌تواند بررسی کند کدام فایل‌ها حذف می‌شوند. ممکن است مواردی بیش از مورد بالا حذف شوند.';
 	@override String get mediaDeletedSuccessfully => 'موضوع رسانه ها با موفقیت حذف شد';
 	@override String get mediaFailedToDelete => 'ناپدید شدن حذف رسانه ها';
 	@override String get rate => 'ارزیابی کن';
@@ -1032,8 +1032,8 @@ class _Translations$accessibility$fa extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'مشاهده شده';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} درصد بازدید';
-	@override String get mediaCardUnwatched => 'ناشناخته';
-	@override String get tapToPlay => 'تپ برای بازی';
+	@override String get mediaCardUnwatched => 'تماشا نشده';
+	@override String get tapToPlay => 'برای پخش ضربه بزنید';
 	@override String get decrease => 'کاهش';
 	@override String get increase => 'افزایش';
 	@override String decreaseValue({required Object label}) => 'کمبود ${label}';
@@ -1045,7 +1045,7 @@ class _Translations$accessibility$fa extends Translations$accessibility$en {
 	@override String get expandText => 'گسترش متن';
 	@override String get collapseText => 'متن خراب';
 	@override String get alphabetNavigation => 'آلبوم ناوبری';
-	@override String get alphabetScrollHint => 'بالا یا پایین حرکت کنید تا با نامه حرکت کنید.';
+	@override String get alphabetScrollHint => 'برای جابه‌جایی بر اساس حروف، انگشت خود را به بالا یا پایین بکشید';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'ردیف ${row} از ${rowCount}، ستون ${column} از ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'خط ${row} از ${rowCount}';
 	@override String get autoScrollPlay => 'بازی خودکار اسکرول';
@@ -1072,10 +1072,10 @@ class _Translations$accessibility$fa extends Translations$accessibility$en {
 	@override String get highContrastHint => 'متن قوی تر، شاخص های برجسته و تمرکز بر روی سطوح روشن یا تاریک.';
 	@override String get interaction => 'حرکت و تعامل';
 	@override String get reduceMotion => 'کاهش حرکت';
-	@override String get reduceMotionHint => 'تمرکز، انتقال صفحات و اثرات تزئینی را حفظ کنید.';
+	@override String get reduceMotionHint => 'حرکت نشانگر تمرکز، گذارهای صفحه و جلوه‌های تزئینی را متوقف کنید.';
 	@override String get largeTargets => 'هدف های لمسی بزرگتر';
 	@override String get largeTargetsHint => 'کنترل های به اشتراک گذاشته شده را برای لمس و ناوبری کمک کننده فضای بیشتری فراهم می کند.';
-	@override String get navigationHint => 'از Tab و Shift+Tab برای حرکت بین کنترل ها، Enter یا Space برای فعال کردن و Escape یا Back to close استفاده کنید.';
+	@override String get navigationHint => 'برای جابه‌جایی بین کنترل‌ها از Tab و Shift+Tab، برای فعال‌سازی از Enter یا Space و برای بستن از Escape یا دکمهٔ بازگشت استفاده کنید. وقتی کتاب باز است، بزرگ‌نمایی و تنظیمات خواندن در دسترس‌اند.';
 }
 
 // Path: tooltips
@@ -1269,7 +1269,7 @@ class _Translations$messages$fa extends Translations$messages$en {
 	@override String get serverBusyTitle => 'جریان در دسترس نیست';
 	@override String get serverBusyBody => 'سرور از پخش این فایل امتناع کرد (HTTP 503). ممکن است دوباره راه اندازی شود، شلوغ باشد، یا ذخیره سازی فایل ممکن است آفلاین باشد. دوباره در یک لحظه امتحان کنید - اگر این اتفاق می افتد، از صاحب سرور بخواهید که سرور و ذخیره سازی فایل را بررسی کند.';
 	@override String get playbackNotAllowedTitle => 'Playback مجاز نیست';
-	@override String get playbackNotAllowedBody => 'سرور از پخش این آیتم امتناع کرد (HTTP 403). حساب شما ممکن است اجازه پخش آن را نداشته باشد، یا سرور ممکن است فقط اجازه پخش در شبکه محلی خود را.';
+	@override String get playbackNotAllowedBody => 'سرور از پخش این مورد خودداری کرد (HTTP 403). ممکن است حساب شما مجوز پخش آن را نداشته باشد، یا سرور فقط در شبکهٔ محلی خود اجازهٔ پخش بدهد.';
 	@override String get logsUploaded => 'Logs بارگذاری';
 	@override String get logsUploadFailed => 'شکست در بارگذاری مجلات';
 	@override String get logId => 'ID ثبت نام';
@@ -1698,7 +1698,7 @@ class _Translations$startup$fa extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG نمی تواند شروع شود';
 	@override String get failedBody => 'چیزی در هنگام راه اندازی اشتباه شد. جزئیات زیر نشان می دهد که چه چیزی شکست خورده است.';
-	@override String get failedBodyRepairable => 'فایل تنظیمات ذخیره شده PlezyNG آسیب دیده است و باید قبل از شروع PlezyNG بازسازی شود.';
+	@override String get failedBodyRepairable => 'فایل تنظیمات ذخیره‌شدهٔ PlezyNG آسیب دیده است و باید پیش از شروع برنامه بازسازی شود. تلاش دوباره کمکی نمی‌کند؛ «تعمیر فضای ذخیره‌سازی» را انتخاب کنید.';
 	@override String get phaseLabel => 'قدم';
 	@override String get showDetails => 'نمایش جزئیات';
 	@override String get hideDetails => 'پنهان کردن جزئیات';
@@ -1707,10 +1707,10 @@ class _Translations$startup$fa extends Translations$startup$en {
 	@override String get uploadDetails => 'اضافه کردن جزئیات';
 	@override String get repairStorage => 'تعمیر ذخیره سازی';
 	@override String get repairTitle => 'اصلاح داده های ذخیره شده؟';
-	@override String get repairBodyCommon => 'فایل تنظیمات PlezyNG آسیب دیده است و نمی تواند خوانده شود.';
-	@override String get repairBodyOneCredential => 'یک ثبت نام ذخیره شده آسیب دیده است و نمی تواند خوانده شود. تعمیر فقط آن را حذف می کند؛ تنظیمات دیگر شما تنها باقی می ماند.';
-	@override String get repairBodySignInsKept => 'سرورها و پروفایل های شما باید ثبت نام کنند.';
-	@override String get repairBodySignInsLost => 'کلید محافظت از ثبت نام ذخیره شده شما نمی تواند از این فایل بازگردانده شود، بنابراین شما مجبور خواهید شد به هر سرور و پروفایل دوباره ثبت نام کنید.';
+	@override String get repairBodyCommon => 'فایل تنظیمات PlezyNG آسیب دیده و قابل خواندن نیست. تعمیر، همهٔ تنظیمات را به مقدار پیش‌فرض برمی‌گرداند.';
+	@override String get repairBodyOneCredential => 'اطلاعات یکی از ورودهای ذخیره‌شده آسیب دیده و قابل خواندن نیست. تعمیر فقط همان مورد را حذف می‌کند؛ سایر تنظیمات شما تغییر نمی‌کنند.';
+	@override String get repairBodySignInsKept => 'ورود شما به سرورها و نمایه‌ها باید حفظ شود.';
+	@override String get repairBodySignInsLost => 'کلیدی که از اطلاعات ورود ذخیره‌شده محافظت می‌کند از این فایل قابل بازیابی نیست، پس باید دوباره به هر سرور و نمایه وارد شوید. هیچ چیز در سرور رسانهٔ شما تغییر نمی‌کند.';
 	@override String get repairBodySessionsUncertain => 'اطلاعات سرویس‌های پیگیری (MAL، AniList، Simkl، Trakt) و Seerr جداگانه ذخیره می‌شود و ممکن است باقی بماند یا از دست برود. PlezyNG دقیقاً به شما می‌گوید چه اطلاعاتی حفظ شده است.';
 	@override String get repairConfirm => 'اصلاحات';
 	@override String get repairSucceeded => 'ذخیره سازی اصلاح شده';
@@ -1718,11 +1718,11 @@ class _Translations$startup$fa extends Translations$startup$en {
 	@override String get restartRequiredBody => 'داده‌های شما تعمیر شد، اما برای استفاده از آن‌ها باید PlezyNG دوباره راه‌اندازی شود. PlezyNG را ببندید و دوباره باز کنید.';
 	@override String get quitPlezy => 'آگهی PlezyNG';
 	@override String get repairFailed => 'اصلاح شکست خورده';
-	@override String get repairKeptSignIns => 'سرورها و پروفایل های شما هنوز هم ثبت شده اند.';
-	@override String get repairLostSignIns => 'کلید محافظت از ثبت نام ذخیره شده شما نمی تواند بازگردانده شود.شما باید به هر سرور و پروفایل دوباره ثبت نام کنید.';
+	@override String get repairKeptSignIns => 'همچنان به سرورها و نمایه‌های خود وارد هستید.';
+	@override String get repairLostSignIns => 'کلیدی که از اطلاعات ورود ذخیره‌شده محافظت می‌کند قابل بازیابی نیست. باید دوباره به هر سرور و نمایه وارد شوید.';
 	@override String get repairLostSessions => 'حداقل یک ردیاب یا اتصال Seerr از دست رفته است و باید دوباره متصل شود.';
 	@override String get backupTitle => 'یک کپی از فایل آسیب دیده حفظ شده است';
-	@override String get backupWarning => 'این کتاب شامل اعتبارات ثبت نام شما است.این کتاب را بارگذاری یا به اشتراک نگذارید.';
+	@override String get backupWarning => 'این نسخه حاوی اطلاعات ورود شماست. آن را بارگذاری یا به اشتراک نگذارید.';
 	@override String get deleteBackup => 'حذف کپی';
 	@override String get backupDeleted => 'کپی حذف شده';
 	@override String get previousFailureTitle => 'PlezyNG آخرین بار شروع نشد';
@@ -1919,7 +1919,7 @@ class _Translations$collections$fa extends Translations$collections$en {
 	@override String get collection => 'مجموعه';
 	@override String get empty => 'مجموعه خالی است';
 	@override String get deleteCollection => 'حذف مجموعه';
-	@override String deleteConfirm({required Object title}) => 'حذف "${title}"؟ این نمی تواند بیهوده باشد.';
+	@override String deleteConfirm({required Object title}) => '«${title}» حذف شود؟ این کار قابل بازگشت نیست.';
 	@override String get deleted => 'جمع آوری حذف شده';
 	@override String get deleteFailed => 'عدم حذف مجموعه';
 	@override String deleteFailedWithError({required Object error}) => 'عدم حذف مجموعه: ${error}';
@@ -2642,7 +2642,7 @@ class _Translations$seerr$fa extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'این مثال Seerr از Quick Connect پشتیبانی نمی کند.این مثال نیاز به Seerr 3.4 یا جدیدتر دارد.';
 	@override String get notInitialized => 'این حالت Seerr نصب اولیه را تکمیل نکرده است';
 	@override String get noPlexTokenForReauth => 'شماره Plex توکن برای ثبت نام مجدد در دسترس است';
-	@override String get noStoredCredentials => 'هیچ اعتبار ذخیره شده برای ثبت نام مجدد در دسترس نیست';
+	@override String get noStoredCredentials => 'اطلاعات ورود ذخیره‌شده‌ای برای ورود دوباره در دسترس نیست';
 	@override String get signInRejected => 'ثبت نام رد شد';
 	@override String get noSessionCookie => 'Seerr یک کوکی جلسه را منتشر نکرده است';
 	@override String get freshCookieRejected => 'Seerr کوکی جلسه جدید را رد کرد';
@@ -2742,7 +2742,7 @@ class _Translations$addServer$fa extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'با استفاده از IP یا URL محلی به طور مستقیم به آن متصل شوید.به ${name} متصل شوید.';
 	@override String get insecureTitle => 'اتصال بدون رمزگذاری';
 	@override String insecureDescription({required Object url}) => '${url} از HTTP استفاده می‌کند. افراد حاضر در شبکه ممکن است گذرواژه، توکن‌ها و رسانه‌های شما را بخوانند یا تغییر دهند. در صورت امکان از HTTPS استفاده کنید. فقط اگر به این شبکه اعتماد دارید و خطر را می‌پذیرید ادامه دهید.';
-	@override String get allowHttp => 'مجوز HTTP';
+	@override String get allowHttp => 'اجازه دادن به HTTP';
 	@override String get httpsRequired => 'استفاده از HTTPS یا به صراحت اجازه یک اتصال غیر رمزگذاری شده.';
 }
 
@@ -2899,7 +2899,7 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get source => 'منبع';
 	@override String get name => 'نام';
 	@override String get endpoint => 'سرور URL';
-	@override String get root => 'فاکتور یا پیش فرض';
+	@override String get root => 'پوشه یا پیشوند';
 	@override String get username => 'نام کاربری';
 	@override String get password => 'گذرواژه';
 	@override String get token => 'API توکن';
@@ -2978,19 +2978,19 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get margin => 'مارگین';
 	@override String get font => 'نوع چهره';
 	@override String get serif => 'سریف';
-	@override String get sans => 'بدون سیری';
-	@override String get mono => 'مونیخ';
+	@override String get sans => 'بدون سریف';
+	@override String get mono => 'تک‌فاصله';
 	@override String get columns => 'ستون ها';
 	@override String get scroll => 'چرخش عمودی';
-	@override String get justify => 'متن را توجیه کنید';
+	@override String get justify => 'تراز دوطرفهٔ متن';
 	@override String get readerTheme => 'صفحه ظاهر';
 	@override String get appTheme => 'پیگیری برنامه های کاربردی';
 	@override String get paper => 'کاغذ';
-	@override String get sepia => 'سیب';
+	@override String get sepia => 'سپیا';
 	@override String get night => 'شب';
 	@override String get readAloud => 'این صفحه را با صدای بلند بخوانید';
-	@override String get readAlong => 'ادامه خواندن';
-	@override String get stopReading => 'توقف داستان';
+	@override String get readAlong => 'خواندن همراه با صدا';
+	@override String get stopReading => 'توقف خواندن با صدا';
 	@override String get searchBook => 'جستجو در کتاب';
 	@override String get noMatches => 'هیچ بازی';
 	@override String get previousPage => 'صفحه قبلی';
@@ -3005,7 +3005,7 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get all => 'همه';
 	@override String get downloads => 'فایل های غیر آنلاین';
 	@override String get confirmDelete => 'نسخهٔ آفلاین انتخاب‌شده حذف شود؟ موقعیت خواندن یا شنیدن و یادداشت‌های شما حفظ می‌شوند.';
-	@override String get errorAuthentication => 'برای این منبع دوباره وارد شوید.';
+	@override String get errorAuthentication => 'برای اتصال دوباره به این منبع، دوباره وارد حساب شوید.';
 	@override String get errorPermission => 'این منبع دسترسی به فایل مورد نظر را فراهم نکرده است.';
 	@override String get errorUnavailable => 'منبع در دسترس نیست. دوباره امتحان کنید یا یک کپی غیر آنلاین را باز کنید.';
 	@override String get errorUnsupported => 'این فرمت یا اتصال در این دستگاه پشتیبانی نمی شود.در راهنمای تنظیم منبع بررسی کنید.';
@@ -3014,7 +3014,7 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get errorConflict => 'موقعیت در جلسه دیگری تغییر کرده است.نمایش را برای انتخاب موقعیت دوباره باز کنید.';
 	@override String get signIn => 'ورود';
 	@override String get reconnect => 'دوباره متصل';
-	@override String get folderHelp => 'اجازه دهید خالی برای شروع در ریشه منبع. URL های S3 شامل بکت.';
+	@override String get folderHelp => 'برای شروع از پوشهٔ ریشهٔ منبع، این قسمت را خالی بگذارید. نشانی‌های S3 شامل نام باکت هستند.';
 	@override String get preferences => 'ترجیحات';
 	@override String get timePosition => 'موقعیت';
 	@override String get audioTrack => 'Audio Track';
@@ -3038,17 +3038,17 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get actualSize => 'حجم فعلی';
 	@override String get goToPage => 'به صفحه برو';
 	@override String get goToSection => 'به فصل بروید';
-	@override String pageRange({required Object count}) => 'شماره 1 را وارد کنید تا ${count}';
+	@override String pageRange({required Object count}) => 'عددی از ۱ تا ${count} وارد کنید';
 	@override String get pageLayout => 'صفحه Layout';
 	@override String get automatic => 'اتوماتیک';
 	@override String get singlePage => 'صفحه تک';
 	@override String get twoPages => '2 صفحه';
 	@override String get readingDirection => 'خواندن جهت';
 	@override String get leftToRight => 'سمت چپ به سمت راست';
-	@override String get rightToLeft => 'حق رفتن به سمت';
+	@override String get rightToLeft => 'از راست به چپ';
 	@override String get letterSpacing => 'نامه فضایی';
 	@override String get wordSpacing => 'کلمه فضا';
-	@override String get readerControlsHelp => 'برای گسترش صفحات، از کنترل های زوم استفاده کنید یا از کنترل های زاوم استفاده کنید.در صفحه Ctrl/ ⁇  + یا − تنظیم زوم؛ در صفحه Ctrl/ maybe 0 دوباره تنظیم می شود.در صفحه بالا و صفحه پایین، صفحات را تغییر دهید.';
+	@override String get readerControlsHelp => 'برای بزرگ‌کردن صفحه‌ها، دو انگشت را از هم باز کنید یا از کنترل‌های بزرگ‌نمایی استفاده کنید. برای جابه‌جایی صفحه بکشید. Ctrl/⌘ همراه + یا − بزرگ‌نمایی را تنظیم می‌کند؛ Ctrl/⌘ همراه 0 آن را بازنشانی می‌کند. Page Up و Page Down صفحه را عوض می‌کنند.';
 	@override String get imagePage => 'صفحه کمدی';
 	@override String get resetReader => 'تنظیم مجدد ترجیحات خواندن';
 	@override String get zoom => 'پوشش دادن';
@@ -3069,50 +3069,50 @@ class _Translations$lending$fa extends Translations$lending$en {
 	@override String get other => 'کتابخانه دیگری';
 	@override String get libraryName => 'نام کتابخانه';
 	@override String get libraryUrl => 'وبسایت کتابخانه';
-	@override String get libraryUrlHint => 'از کاتالوگ کتابخانه یا صفحه ثبت نام خود استفاده کنید.';
+	@override String get libraryUrlHint => 'از فهرست کتابخانه یا صفحهٔ ورود آن استفاده کنید.';
 	@override String get intro => 'کتاب را از کتابخانه خود قرض بگیرید کتاب های خود را در نزدیکی خود نگه دارید.';
-	@override String get handoff => 'ثبت نام کنید، وام بگیرید و با خدمات کتابخانه خود به راحتی بخوانید.';
+	@override String get handoff => 'با سرویس خود کتابخانه، وارد حساب شوید، کتاب امانت بگیرید و با امنیت بخوانید.';
 	@override String get openService => 'کتابخانه باز';
 	@override String get findLibrary => 'پیدا کردن کتابخانه';
 	@override String get search => 'جستجو برای کتاب ها و نویسندگان';
 	@override String get catalogue => 'کاتالوگ';
-	@override String get loans => 'وام ها';
-	@override String get holds => 'نگه داشتن';
+	@override String get loans => 'امانت‌ها';
+	@override String get holds => 'رزروها';
 	@override String get signIn => 'ثبت نام با کتابخانه خود';
 	@override String get waiting => 'ثبت نام را در مرورگر خود به پایان برسانید و سپس به اینجا برگردید.';
 	@override String get cancel => 'لغو کردن';
 	@override String get disconnect => 'حذف کتابخانه';
-	@override String get disconnectMessage => 'حذف این کتابخانه از این پروفایل؟ وام های خود را و نگه داشتن اقامت با کتابخانه خود را.';
+	@override String get disconnectMessage => 'این کتابخانه از این نمایه حذف شود؟ امانت‌ها و رزروهای شما در کتابخانه باقی می‌مانند.';
 	@override String get getBook => 'کتاب را بخوانید';
 	@override String get checkAvailability => 'بررسی در دسترس بودن';
-	@override String get available => 'در دسترس برای وام گرفتن';
+	@override String get available => 'آمادهٔ امانت گرفتن';
 	@override String get unavailable => 'در حال حاضر در دسترس نیست';
-	@override String get borrow => 'وام';
-	@override String get placeHold => 'مکان نگه داشتن';
-	@override String get returnBook => 'بازگشت زود';
-	@override String get cancelHold => 'حذف نگه داشتن';
+	@override String get borrow => 'امانت گرفتن';
+	@override String get placeHold => 'رزرو کردن';
+	@override String get returnBook => 'بازگرداندن پیش از موعد';
+	@override String get cancelHold => 'لغو رزرو';
 	@override String get confirmBorrow => 'این کتاب را از کتابخانه خود قرض می دهید؟';
-	@override String get confirmReturn => 'آیا می خواهید این کار را انجام دهید؟ ممکن است برای ادامه کار دوباره وام بگیرید.';
-	@override String get confirmCancelHold => 'آیا در این عنوان از دست رفته اید؟';
+	@override String get confirmReturn => 'این عنوان اکنون بازگردانده شود؟ برای ادامه ممکن است لازم باشد دوباره آن را امانت بگیرید.';
+	@override String get confirmCancelHold => 'رزرو شما برای این عنوان لغو شود؟';
 	@override String get email => 'ارسال ایمیل اطلاع رسانی';
-	@override String due({required Object date}) => 'درگذشت ${date}';
+	@override String due({required Object date}) => 'موعد بازگشت: ${date}';
 	@override String queue({required Object position}) => 'موقعیت ${position} در خط';
 	@override String get empty => 'هنوز هیچ عنوانی در اینجا وجود ندارد.';
-	@override String get openLibraryNote => 'کاتالوگ کتابخانه باز را کشف کنید. گزینه های خواندن و وام در صفحه هر عنوان نمایش داده می شود.';
+	@override String get openLibraryNote => 'فهرست Open Library را مرور کنید. گزینه‌های خواندن و امانت گرفتن در صفحهٔ هر عنوان نمایش داده می‌شوند.';
 	@override String get more => 'بار بیشتر';
 	@override String get gateway => 'کتابخانه ثبت نام در سرویس';
 	@override String get gatewayHint => 'توسط کتابخانه یا مدیر PlezyNG ارائه شده است.';
 	@override String get advanced => 'کتابخانه ادغام';
 	@override String get loadLibraries => 'کتابخانه خود را انتخاب کنید';
-	@override String get expired => 'این وام به پایان رسیده است.';
+	@override String get expired => 'مدت این امانت به پایان رسیده است.';
 	@override String get updated => 'کتابخانه به روز شده';
 	@override String get continueService => 'ادامه خدمت';
 	@override String get comingSoon => 'وام های جدید در آینده ای نزدیک';
 	@override String get comingSoonDescription => 'شما می توانید از کتابخانه خود در Libby استفاده کنید در حالی که ما آن را به اتصال می رسانیم.';
-	@override String get suspendHold => 'تعلیق نگه داشتن';
-	@override String get resumeHold => 'بایگانی برچسب ها:';
-	@override String get suspendMessage => 'آیا جای خود را در خط نگه دارید و اجازه دهید خواننده بعدی این کپی را قرض دهد؟ شما می توانید پس از آن نگه دارید.';
-	@override String get resumeMessage => 'این را دوباره تکرار کنید تا کتابخانه شما بتواند نسخه بعدی را به شما ارائه دهد؟';
+	@override String get suspendHold => 'تعلیق رزرو';
+	@override String get resumeHold => 'ازسرگیری رزرو';
+	@override String get suspendMessage => 'جای خود را در صف حفظ کنید و اجازه دهید خوانندهٔ بعدی این نسخه را امانت بگیرد؟ می‌توانید بعداً رزرو را از سر بگیرید.';
+	@override String get resumeMessage => 'این رزرو از سر گرفته شود تا کتابخانه بتواند نسخهٔ بعدیِ موجود را به شما پیشنهاد دهد؟';
 	@override String get editEmail => 'تغییر ایمیل اطلاع رسانی';
 }
 
@@ -3501,7 +3501,7 @@ class _Translations$libraries$selection$fa extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} انتخاب شده';
 	@override String get actions => 'فعالیت های انتخابی';
 	@override String get confirmDescendants => 'این تغییرات تمام قسمت ها را در نمایش ها و فصل های انتخاب شده تغییر می دهد.';
-	@override String get confirmUnwatched => 'این نیز پیشرفت بازتاب را برای آیتم های انتخاب شده روشن می کند.';
+	@override String get confirmUnwatched => 'این کار پیشرفت پخش موارد انتخاب‌شده را نیز پاک می‌کند.';
 	@override String confirmCount({required Object count}) => 'تعداد بازدید : ${count}';
 	@override String completed({required Object count}) => 'بایگانی برچسب ها: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'به روز شده ${succeeded}؛ شکست خورده ${failed}.نمونه های شکست خورده باقی می ماند.';
@@ -4155,7 +4155,7 @@ extension on TranslationsFa {
 			'auth.quickConnectWaiting' => 'منتظر تصویب...',
 			'auth.quickConnectCancel' => 'لغو کردن',
 			'auth.quickConnectExpired' => 'مهلت اتصال سریع تمام شد. دوباره تلاش کنید.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG نمی تواند به طور ایمن بازگرداندن ثبت نام محلی و داده های بازگرداندن در انتظار.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG نتوانست اطلاعات ورود محلی و داده‌های پخشِ در انتظار را به‌طور ایمن بازیابی کند. لطفاً دوباره وارد حساب شوید.',
 			'auth.pinCheckRejected' => 'چک PIN Plex رد شد',
 			'auth.connectToDirectPlex' => 'اتصال به سرور محلی Plex',
 			'common.cancel' => 'لغو کردن',
@@ -4724,7 +4724,7 @@ extension on TranslationsFa {
 			'themeEditor.contrast.labelOnAccent' => 'برچسب ها بر روی تمرکز',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, زیر توصیه شده ${minimum}:1',
 			'themeEditor.discardTitle' => 'تغییرات را نادیده بگیرید؟',
-			'themeEditor.discardMessage' => 'تغییرات رنگ ناخوشایند شما از دست رفته است.',
+			'themeEditor.discardMessage' => 'تغییرات ذخیره‌نشدهٔ رنگ از دست می‌روند.',
 			'themeEditor.discard' => 'نادیده گرفتن',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'صفحه اصلی ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} دقیقه باقی مانده',
@@ -4874,7 +4874,7 @@ extension on TranslationsFa {
 			'fileInfo.versionId' => 'نسخه ID',
 			'fileInfo.fileId' => 'فایل ID',
 			'fileInfo.defaultAudioTrack' => 'تریلر Audio Track',
-			'fileInfo.defaultSubtitleTrack' => 'دانلود زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس زیرنویس',
+			'fileInfo.defaultSubtitleTrack' => 'ترک زیرنویس پیش‌فرض',
 			'fileInfo.subtitlesOff' => 'خاموش',
 			'fileInfo.flagDefault' => 'پیشفرض',
 			'fileInfo.flagForced' => 'اجباری',
@@ -4906,13 +4906,13 @@ extension on TranslationsFa {
 			'mediaMenu.deleteShowConfirm' => 'نمایش حذف',
 			'mediaMenu.deleteMovieConfirm' => 'حذف فیلم',
 			'mediaMenu.deleteAnyway' => 'حذف به هر حال',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'به طور دائم حذف ${title} از سرور خود را؟',
+			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '«${title}» برای همیشه از سرور شما حذف شود؟',
 			'mediaMenu.deleteMultipleWarning' => 'این شامل تمام قسمت ها و فایل های آنها است.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: 'این حذف تمام ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت در آن، و فایل آن.', other: 'این حذف تمام ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت در آن، و فایل های آنها.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: 'این آیتم به عنوان فایل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ذخیره می شود که حذف خواهد شد.', other: 'این آیتم از طریق فایل های ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ذخیره می شود و همه آنها حذف می شوند.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت های دیگر در همان فایل ذخیره می شوند و حذف می شوند:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت های دیگر در همان فایل ذخیره می شوند و همچنین حذف می شوند:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG نمی توانست بررسی کند که کدام فایل ها حذف می شود، بنابراین ممکن است بیشتر از آیتم ذکر شده در بالا حذف شود.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'سرور شما جزئیات فایل را برای این آیتم ارائه نکرده است، بنابراین PlezyNG نمی تواند بررسی کند که کدام فایل ها را حذف می کند.',
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: 'با این کار، ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت موجود در آن و فایل آن حذف می‌شود.', other: 'با این کار، همهٔ ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت موجود در آن و فایل‌های آن‌ها حذف می‌شوند.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: 'این مورد در ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فایل ذخیره شده است و آن فایل حذف خواهد شد.', other: 'این مورد در ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فایل ذخیره شده است و همهٔ آن‌ها حذف خواهند شد.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت دیگر در همین فایل ذخیره شده است و آن هم حذف خواهد شد:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} قسمت دیگر در همین فایل ذخیره شده‌اند و آن‌ها هم حذف خواهند شد:', ), 
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG نتوانست بررسی کند کدام فایل‌ها حذف می‌شوند؛ بنابراین ممکن است مواردی بیش از مورد بالا حذف شوند. لغو کنید و دوباره تلاش کنید، یا در هر صورت حذف کنید.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'سرور شما جزئیات فایل‌های این مورد را ارائه نکرده است، بنابراین PlezyNG نمی‌تواند بررسی کند کدام فایل‌ها حذف می‌شوند. ممکن است مواردی بیش از مورد بالا حذف شوند.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'موضوع رسانه ها با موفقیت حذف شد',
 			'mediaMenu.mediaFailedToDelete' => 'ناپدید شدن حذف رسانه ها',
 			'mediaMenu.rate' => 'ارزیابی کن',
@@ -4931,8 +4931,8 @@ extension on TranslationsFa {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'مشاهده شده',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} درصد بازدید',
-			'accessibility.mediaCardUnwatched' => 'ناشناخته',
-			'accessibility.tapToPlay' => 'تپ برای بازی',
+			'accessibility.mediaCardUnwatched' => 'تماشا نشده',
+			'accessibility.tapToPlay' => 'برای پخش ضربه بزنید',
 			'accessibility.decrease' => 'کاهش',
 			'accessibility.increase' => 'افزایش',
 			'accessibility.decreaseValue' => ({required Object label}) => 'کمبود ${label}',
@@ -4944,7 +4944,7 @@ extension on TranslationsFa {
 			'accessibility.expandText' => 'گسترش متن',
 			'accessibility.collapseText' => 'متن خراب',
 			'accessibility.alphabetNavigation' => 'آلبوم ناوبری',
-			'accessibility.alphabetScrollHint' => 'بالا یا پایین حرکت کنید تا با نامه حرکت کنید.',
+			'accessibility.alphabetScrollHint' => 'برای جابه‌جایی بر اساس حروف، انگشت خود را به بالا یا پایین بکشید',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'ردیف ${row} از ${rowCount}، ستون ${column} از ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'خط ${row} از ${rowCount}',
 			'accessibility.autoScrollPlay' => 'بازی خودکار اسکرول',
@@ -4971,10 +4971,10 @@ extension on TranslationsFa {
 			'accessibility.highContrastHint' => 'متن قوی تر، شاخص های برجسته و تمرکز بر روی سطوح روشن یا تاریک.',
 			'accessibility.interaction' => 'حرکت و تعامل',
 			'accessibility.reduceMotion' => 'کاهش حرکت',
-			'accessibility.reduceMotionHint' => 'تمرکز، انتقال صفحات و اثرات تزئینی را حفظ کنید.',
+			'accessibility.reduceMotionHint' => 'حرکت نشانگر تمرکز، گذارهای صفحه و جلوه‌های تزئینی را متوقف کنید.',
 			'accessibility.largeTargets' => 'هدف های لمسی بزرگتر',
 			'accessibility.largeTargetsHint' => 'کنترل های به اشتراک گذاشته شده را برای لمس و ناوبری کمک کننده فضای بیشتری فراهم می کند.',
-			'accessibility.navigationHint' => 'از Tab و Shift+Tab برای حرکت بین کنترل ها، Enter یا Space برای فعال کردن و Escape یا Back to close استفاده کنید.',
+			'accessibility.navigationHint' => 'برای جابه‌جایی بین کنترل‌ها از Tab و Shift+Tab، برای فعال‌سازی از Enter یا Space و برای بستن از Escape یا دکمهٔ بازگشت استفاده کنید. وقتی کتاب باز است، بزرگ‌نمایی و تنظیمات خواندن در دسترس‌اند.',
 			'tooltips.shufflePlay' => 'بازی شوفلی',
 			'tooltips.playTrailer' => 'بازی تریلر',
 			'tooltips.markAsWatched' => 'مارک به نظر می رسد',
@@ -5135,7 +5135,7 @@ extension on TranslationsFa {
 			'messages.serverBusyTitle' => 'جریان در دسترس نیست',
 			'messages.serverBusyBody' => 'سرور از پخش این فایل امتناع کرد (HTTP 503). ممکن است دوباره راه اندازی شود، شلوغ باشد، یا ذخیره سازی فایل ممکن است آفلاین باشد. دوباره در یک لحظه امتحان کنید - اگر این اتفاق می افتد، از صاحب سرور بخواهید که سرور و ذخیره سازی فایل را بررسی کند.',
 			'messages.playbackNotAllowedTitle' => 'Playback مجاز نیست',
-			'messages.playbackNotAllowedBody' => 'سرور از پخش این آیتم امتناع کرد (HTTP 403). حساب شما ممکن است اجازه پخش آن را نداشته باشد، یا سرور ممکن است فقط اجازه پخش در شبکه محلی خود را.',
+			'messages.playbackNotAllowedBody' => 'سرور از پخش این مورد خودداری کرد (HTTP 403). ممکن است حساب شما مجوز پخش آن را نداشته باشد، یا سرور فقط در شبکهٔ محلی خود اجازهٔ پخش بدهد.',
 			'messages.logsUploaded' => 'Logs بارگذاری',
 			'messages.logsUploadFailed' => 'شکست در بارگذاری مجلات',
 			'messages.logId' => 'ID ثبت نام',
@@ -5499,7 +5499,7 @@ extension on TranslationsFa {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} انتخاب شده',
 			'libraries.selection.actions' => 'فعالیت های انتخابی',
 			'libraries.selection.confirmDescendants' => 'این تغییرات تمام قسمت ها را در نمایش ها و فصل های انتخاب شده تغییر می دهد.',
-			'libraries.selection.confirmUnwatched' => 'این نیز پیشرفت بازتاب را برای آیتم های انتخاب شده روشن می کند.',
+			'libraries.selection.confirmUnwatched' => 'این کار پیشرفت پخش موارد انتخاب‌شده را نیز پاک می‌کند.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'تعداد بازدید : ${count}',
 			'libraries.selection.completed' => ({required Object count}) => 'بایگانی برچسب ها: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'به روز شده ${succeeded}؛ شکست خورده ${failed}.نمونه های شکست خورده باقی می ماند.',
@@ -5526,7 +5526,7 @@ extension on TranslationsFa {
 			'detail.endsAt' => ({required Object time}) => 'در نهایت در ${time}',
 			'startup.failedTitle' => 'PlezyNG نمی تواند شروع شود',
 			'startup.failedBody' => 'چیزی در هنگام راه اندازی اشتباه شد. جزئیات زیر نشان می دهد که چه چیزی شکست خورده است.',
-			'startup.failedBodyRepairable' => 'فایل تنظیمات ذخیره شده PlezyNG آسیب دیده است و باید قبل از شروع PlezyNG بازسازی شود.',
+			'startup.failedBodyRepairable' => 'فایل تنظیمات ذخیره‌شدهٔ PlezyNG آسیب دیده است و باید پیش از شروع برنامه بازسازی شود. تلاش دوباره کمکی نمی‌کند؛ «تعمیر فضای ذخیره‌سازی» را انتخاب کنید.',
 			'startup.phaseLabel' => 'قدم',
 			'startup.showDetails' => 'نمایش جزئیات',
 			'startup.hideDetails' => 'پنهان کردن جزئیات',
@@ -5535,10 +5535,10 @@ extension on TranslationsFa {
 			'startup.uploadDetails' => 'اضافه کردن جزئیات',
 			'startup.repairStorage' => 'تعمیر ذخیره سازی',
 			'startup.repairTitle' => 'اصلاح داده های ذخیره شده؟',
-			'startup.repairBodyCommon' => 'فایل تنظیمات PlezyNG آسیب دیده است و نمی تواند خوانده شود.',
-			'startup.repairBodyOneCredential' => 'یک ثبت نام ذخیره شده آسیب دیده است و نمی تواند خوانده شود. تعمیر فقط آن را حذف می کند؛ تنظیمات دیگر شما تنها باقی می ماند.',
-			'startup.repairBodySignInsKept' => 'سرورها و پروفایل های شما باید ثبت نام کنند.',
-			'startup.repairBodySignInsLost' => 'کلید محافظت از ثبت نام ذخیره شده شما نمی تواند از این فایل بازگردانده شود، بنابراین شما مجبور خواهید شد به هر سرور و پروفایل دوباره ثبت نام کنید.',
+			'startup.repairBodyCommon' => 'فایل تنظیمات PlezyNG آسیب دیده و قابل خواندن نیست. تعمیر، همهٔ تنظیمات را به مقدار پیش‌فرض برمی‌گرداند.',
+			'startup.repairBodyOneCredential' => 'اطلاعات یکی از ورودهای ذخیره‌شده آسیب دیده و قابل خواندن نیست. تعمیر فقط همان مورد را حذف می‌کند؛ سایر تنظیمات شما تغییر نمی‌کنند.',
+			'startup.repairBodySignInsKept' => 'ورود شما به سرورها و نمایه‌ها باید حفظ شود.',
+			'startup.repairBodySignInsLost' => 'کلیدی که از اطلاعات ورود ذخیره‌شده محافظت می‌کند از این فایل قابل بازیابی نیست، پس باید دوباره به هر سرور و نمایه وارد شوید. هیچ چیز در سرور رسانهٔ شما تغییر نمی‌کند.',
 			'startup.repairBodySessionsUncertain' => 'اطلاعات سرویس‌های پیگیری (MAL، AniList، Simkl، Trakt) و Seerr جداگانه ذخیره می‌شود و ممکن است باقی بماند یا از دست برود. PlezyNG دقیقاً به شما می‌گوید چه اطلاعاتی حفظ شده است.',
 			'startup.repairConfirm' => 'اصلاحات',
 			'startup.repairSucceeded' => 'ذخیره سازی اصلاح شده',
@@ -5546,11 +5546,11 @@ extension on TranslationsFa {
 			'startup.restartRequiredBody' => 'داده‌های شما تعمیر شد، اما برای استفاده از آن‌ها باید PlezyNG دوباره راه‌اندازی شود. PlezyNG را ببندید و دوباره باز کنید.',
 			'startup.quitPlezy' => 'آگهی PlezyNG',
 			'startup.repairFailed' => 'اصلاح شکست خورده',
-			'startup.repairKeptSignIns' => 'سرورها و پروفایل های شما هنوز هم ثبت شده اند.',
-			'startup.repairLostSignIns' => 'کلید محافظت از ثبت نام ذخیره شده شما نمی تواند بازگردانده شود.شما باید به هر سرور و پروفایل دوباره ثبت نام کنید.',
+			'startup.repairKeptSignIns' => 'همچنان به سرورها و نمایه‌های خود وارد هستید.',
+			'startup.repairLostSignIns' => 'کلیدی که از اطلاعات ورود ذخیره‌شده محافظت می‌کند قابل بازیابی نیست. باید دوباره به هر سرور و نمایه وارد شوید.',
 			'startup.repairLostSessions' => 'حداقل یک ردیاب یا اتصال Seerr از دست رفته است و باید دوباره متصل شود.',
 			'startup.backupTitle' => 'یک کپی از فایل آسیب دیده حفظ شده است',
-			'startup.backupWarning' => 'این کتاب شامل اعتبارات ثبت نام شما است.این کتاب را بارگذاری یا به اشتراک نگذارید.',
+			'startup.backupWarning' => 'این نسخه حاوی اطلاعات ورود شماست. آن را بارگذاری یا به اشتراک نگذارید.',
 			'startup.deleteBackup' => 'حذف کپی',
 			'startup.backupDeleted' => 'کپی حذف شده',
 			'startup.previousFailureTitle' => 'PlezyNG آخرین بار شروع نشد',
@@ -5829,7 +5829,7 @@ extension on TranslationsFa {
 			'collections.collection' => 'مجموعه',
 			'collections.empty' => 'مجموعه خالی است',
 			'collections.deleteCollection' => 'حذف مجموعه',
-			'collections.deleteConfirm' => ({required Object title}) => 'حذف "${title}"؟ این نمی تواند بیهوده باشد.',
+			'collections.deleteConfirm' => ({required Object title}) => '«${title}» حذف شود؟ این کار قابل بازگشت نیست.',
 			'collections.deleted' => 'جمع آوری حذف شده',
 			'collections.deleteFailed' => 'عدم حذف مجموعه',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'عدم حذف مجموعه: ${error}',
@@ -6538,7 +6538,7 @@ extension on TranslationsFa {
 			'seerr.quickConnectUnsupported' => 'این مثال Seerr از Quick Connect پشتیبانی نمی کند.این مثال نیاز به Seerr 3.4 یا جدیدتر دارد.',
 			'seerr.notInitialized' => 'این حالت Seerr نصب اولیه را تکمیل نکرده است',
 			'seerr.noPlexTokenForReauth' => 'شماره Plex توکن برای ثبت نام مجدد در دسترس است',
-			'seerr.noStoredCredentials' => 'هیچ اعتبار ذخیره شده برای ثبت نام مجدد در دسترس نیست',
+			'seerr.noStoredCredentials' => 'اطلاعات ورود ذخیره‌شده‌ای برای ورود دوباره در دسترس نیست',
 			'seerr.signInRejected' => 'ثبت نام رد شد',
 			'seerr.noSessionCookie' => 'Seerr یک کوکی جلسه را منتشر نکرده است',
 			'seerr.freshCookieRejected' => 'Seerr کوکی جلسه جدید را رد کرد',
@@ -6644,7 +6644,7 @@ extension on TranslationsFa {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'با استفاده از IP یا URL محلی به طور مستقیم به آن متصل شوید.به ${name} متصل شوید.',
 			'addServer.insecureTitle' => 'اتصال بدون رمزگذاری',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} از HTTP استفاده می‌کند. افراد حاضر در شبکه ممکن است گذرواژه، توکن‌ها و رسانه‌های شما را بخوانند یا تغییر دهند. در صورت امکان از HTTPS استفاده کنید. فقط اگر به این شبکه اعتماد دارید و خطر را می‌پذیرید ادامه دهید.',
-			'addServer.allowHttp' => 'مجوز HTTP',
+			'addServer.allowHttp' => 'اجازه دادن به HTTP',
 			'addServer.httpsRequired' => 'استفاده از HTTPS یا به صراحت اجازه یک اتصال غیر رمزگذاری شده.',
 			'watchLink.serverUnavailable' => 'من نمی توانستم به یک سرور Plex برای این لینک دسترسی داشته باشم.',
 			'watchLink.notFound' => 'من نمی توانم این نمایش یا فیلم را در سرورهای Plex خود پیدا کنم.',
@@ -6767,7 +6767,7 @@ extension on TranslationsFa {
 			'fileSources.source' => 'منبع',
 			'fileSources.name' => 'نام',
 			'fileSources.endpoint' => 'سرور URL',
-			'fileSources.root' => 'فاکتور یا پیش فرض',
+			'fileSources.root' => 'پوشه یا پیشوند',
 			'fileSources.username' => 'نام کاربری',
 			'fileSources.password' => 'گذرواژه',
 			'fileSources.token' => 'API توکن',
@@ -6843,19 +6843,19 @@ extension on TranslationsFa {
 			'fileSources.margin' => 'مارگین',
 			'fileSources.font' => 'نوع چهره',
 			'fileSources.serif' => 'سریف',
-			'fileSources.sans' => 'بدون سیری',
-			'fileSources.mono' => 'مونیخ',
+			'fileSources.sans' => 'بدون سریف',
+			'fileSources.mono' => 'تک‌فاصله',
 			'fileSources.columns' => 'ستون ها',
 			'fileSources.scroll' => 'چرخش عمودی',
-			'fileSources.justify' => 'متن را توجیه کنید',
+			'fileSources.justify' => 'تراز دوطرفهٔ متن',
 			'fileSources.readerTheme' => 'صفحه ظاهر',
 			'fileSources.appTheme' => 'پیگیری برنامه های کاربردی',
 			'fileSources.paper' => 'کاغذ',
-			'fileSources.sepia' => 'سیب',
+			'fileSources.sepia' => 'سپیا',
 			'fileSources.night' => 'شب',
 			'fileSources.readAloud' => 'این صفحه را با صدای بلند بخوانید',
-			'fileSources.readAlong' => 'ادامه خواندن',
-			'fileSources.stopReading' => 'توقف داستان',
+			'fileSources.readAlong' => 'خواندن همراه با صدا',
+			'fileSources.stopReading' => 'توقف خواندن با صدا',
 			'fileSources.searchBook' => 'جستجو در کتاب',
 			'fileSources.noMatches' => 'هیچ بازی',
 			'fileSources.previousPage' => 'صفحه قبلی',
@@ -6870,7 +6870,7 @@ extension on TranslationsFa {
 			'fileSources.all' => 'همه',
 			'fileSources.downloads' => 'فایل های غیر آنلاین',
 			'fileSources.confirmDelete' => 'نسخهٔ آفلاین انتخاب‌شده حذف شود؟ موقعیت خواندن یا شنیدن و یادداشت‌های شما حفظ می‌شوند.',
-			'fileSources.errorAuthentication' => 'برای این منبع دوباره وارد شوید.',
+			'fileSources.errorAuthentication' => 'برای اتصال دوباره به این منبع، دوباره وارد حساب شوید.',
 			'fileSources.errorPermission' => 'این منبع دسترسی به فایل مورد نظر را فراهم نکرده است.',
 			'fileSources.errorUnavailable' => 'منبع در دسترس نیست. دوباره امتحان کنید یا یک کپی غیر آنلاین را باز کنید.',
 			'fileSources.errorUnsupported' => 'این فرمت یا اتصال در این دستگاه پشتیبانی نمی شود.در راهنمای تنظیم منبع بررسی کنید.',
@@ -6879,7 +6879,7 @@ extension on TranslationsFa {
 			'fileSources.errorConflict' => 'موقعیت در جلسه دیگری تغییر کرده است.نمایش را برای انتخاب موقعیت دوباره باز کنید.',
 			'fileSources.signIn' => 'ورود',
 			'fileSources.reconnect' => 'دوباره متصل',
-			'fileSources.folderHelp' => 'اجازه دهید خالی برای شروع در ریشه منبع. URL های S3 شامل بکت.',
+			'fileSources.folderHelp' => 'برای شروع از پوشهٔ ریشهٔ منبع، این قسمت را خالی بگذارید. نشانی‌های S3 شامل نام باکت هستند.',
 			'fileSources.preferences' => 'ترجیحات',
 			'fileSources.timePosition' => 'موقعیت',
 			'fileSources.audioTrack' => 'Audio Track',
@@ -6903,17 +6903,17 @@ extension on TranslationsFa {
 			'fileSources.actualSize' => 'حجم فعلی',
 			'fileSources.goToPage' => 'به صفحه برو',
 			'fileSources.goToSection' => 'به فصل بروید',
-			'fileSources.pageRange' => ({required Object count}) => 'شماره 1 را وارد کنید تا ${count}',
+			'fileSources.pageRange' => ({required Object count}) => 'عددی از ۱ تا ${count} وارد کنید',
 			'fileSources.pageLayout' => 'صفحه Layout',
 			'fileSources.automatic' => 'اتوماتیک',
 			'fileSources.singlePage' => 'صفحه تک',
 			'fileSources.twoPages' => '2 صفحه',
 			'fileSources.readingDirection' => 'خواندن جهت',
 			'fileSources.leftToRight' => 'سمت چپ به سمت راست',
-			'fileSources.rightToLeft' => 'حق رفتن به سمت',
+			'fileSources.rightToLeft' => 'از راست به چپ',
 			'fileSources.letterSpacing' => 'نامه فضایی',
 			'fileSources.wordSpacing' => 'کلمه فضا',
-			'fileSources.readerControlsHelp' => 'برای گسترش صفحات، از کنترل های زوم استفاده کنید یا از کنترل های زاوم استفاده کنید.در صفحه Ctrl/ ⁇  + یا − تنظیم زوم؛ در صفحه Ctrl/ maybe 0 دوباره تنظیم می شود.در صفحه بالا و صفحه پایین، صفحات را تغییر دهید.',
+			'fileSources.readerControlsHelp' => 'برای بزرگ‌کردن صفحه‌ها، دو انگشت را از هم باز کنید یا از کنترل‌های بزرگ‌نمایی استفاده کنید. برای جابه‌جایی صفحه بکشید. Ctrl/⌘ همراه + یا − بزرگ‌نمایی را تنظیم می‌کند؛ Ctrl/⌘ همراه 0 آن را بازنشانی می‌کند. Page Up و Page Down صفحه را عوض می‌کنند.',
 			'fileSources.imagePage' => 'صفحه کمدی',
 			'fileSources.resetReader' => 'تنظیم مجدد ترجیحات خواندن',
 			'fileSources.zoom' => 'پوشش دادن',
@@ -6925,50 +6925,50 @@ extension on TranslationsFa {
 			'lending.other' => 'کتابخانه دیگری',
 			'lending.libraryName' => 'نام کتابخانه',
 			'lending.libraryUrl' => 'وبسایت کتابخانه',
-			'lending.libraryUrlHint' => 'از کاتالوگ کتابخانه یا صفحه ثبت نام خود استفاده کنید.',
+			'lending.libraryUrlHint' => 'از فهرست کتابخانه یا صفحهٔ ورود آن استفاده کنید.',
 			'lending.intro' => 'کتاب را از کتابخانه خود قرض بگیرید کتاب های خود را در نزدیکی خود نگه دارید.',
-			'lending.handoff' => 'ثبت نام کنید، وام بگیرید و با خدمات کتابخانه خود به راحتی بخوانید.',
+			'lending.handoff' => 'با سرویس خود کتابخانه، وارد حساب شوید، کتاب امانت بگیرید و با امنیت بخوانید.',
 			'lending.openService' => 'کتابخانه باز',
 			'lending.findLibrary' => 'پیدا کردن کتابخانه',
 			'lending.search' => 'جستجو برای کتاب ها و نویسندگان',
 			'lending.catalogue' => 'کاتالوگ',
-			'lending.loans' => 'وام ها',
-			'lending.holds' => 'نگه داشتن',
+			'lending.loans' => 'امانت‌ها',
+			'lending.holds' => 'رزروها',
 			'lending.signIn' => 'ثبت نام با کتابخانه خود',
 			'lending.waiting' => 'ثبت نام را در مرورگر خود به پایان برسانید و سپس به اینجا برگردید.',
 			'lending.cancel' => 'لغو کردن',
 			'lending.disconnect' => 'حذف کتابخانه',
-			'lending.disconnectMessage' => 'حذف این کتابخانه از این پروفایل؟ وام های خود را و نگه داشتن اقامت با کتابخانه خود را.',
+			'lending.disconnectMessage' => 'این کتابخانه از این نمایه حذف شود؟ امانت‌ها و رزروهای شما در کتابخانه باقی می‌مانند.',
 			'lending.getBook' => 'کتاب را بخوانید',
 			'lending.checkAvailability' => 'بررسی در دسترس بودن',
-			'lending.available' => 'در دسترس برای وام گرفتن',
+			'lending.available' => 'آمادهٔ امانت گرفتن',
 			'lending.unavailable' => 'در حال حاضر در دسترس نیست',
-			'lending.borrow' => 'وام',
-			'lending.placeHold' => 'مکان نگه داشتن',
-			'lending.returnBook' => 'بازگشت زود',
-			'lending.cancelHold' => 'حذف نگه داشتن',
+			'lending.borrow' => 'امانت گرفتن',
+			'lending.placeHold' => 'رزرو کردن',
+			'lending.returnBook' => 'بازگرداندن پیش از موعد',
+			'lending.cancelHold' => 'لغو رزرو',
 			'lending.confirmBorrow' => 'این کتاب را از کتابخانه خود قرض می دهید؟',
-			'lending.confirmReturn' => 'آیا می خواهید این کار را انجام دهید؟ ممکن است برای ادامه کار دوباره وام بگیرید.',
-			'lending.confirmCancelHold' => 'آیا در این عنوان از دست رفته اید؟',
+			'lending.confirmReturn' => 'این عنوان اکنون بازگردانده شود؟ برای ادامه ممکن است لازم باشد دوباره آن را امانت بگیرید.',
+			'lending.confirmCancelHold' => 'رزرو شما برای این عنوان لغو شود؟',
 			'lending.email' => 'ارسال ایمیل اطلاع رسانی',
-			'lending.due' => ({required Object date}) => 'درگذشت ${date}',
+			'lending.due' => ({required Object date}) => 'موعد بازگشت: ${date}',
 			'lending.queue' => ({required Object position}) => 'موقعیت ${position} در خط',
 			'lending.empty' => 'هنوز هیچ عنوانی در اینجا وجود ندارد.',
-			'lending.openLibraryNote' => 'کاتالوگ کتابخانه باز را کشف کنید. گزینه های خواندن و وام در صفحه هر عنوان نمایش داده می شود.',
+			'lending.openLibraryNote' => 'فهرست Open Library را مرور کنید. گزینه‌های خواندن و امانت گرفتن در صفحهٔ هر عنوان نمایش داده می‌شوند.',
 			'lending.more' => 'بار بیشتر',
 			'lending.gateway' => 'کتابخانه ثبت نام در سرویس',
 			'lending.gatewayHint' => 'توسط کتابخانه یا مدیر PlezyNG ارائه شده است.',
 			'lending.advanced' => 'کتابخانه ادغام',
 			'lending.loadLibraries' => 'کتابخانه خود را انتخاب کنید',
-			'lending.expired' => 'این وام به پایان رسیده است.',
+			'lending.expired' => 'مدت این امانت به پایان رسیده است.',
 			'lending.updated' => 'کتابخانه به روز شده',
 			'lending.continueService' => 'ادامه خدمت',
 			'lending.comingSoon' => 'وام های جدید در آینده ای نزدیک',
 			'lending.comingSoonDescription' => 'شما می توانید از کتابخانه خود در Libby استفاده کنید در حالی که ما آن را به اتصال می رسانیم.',
-			'lending.suspendHold' => 'تعلیق نگه داشتن',
-			'lending.resumeHold' => 'بایگانی برچسب ها:',
-			'lending.suspendMessage' => 'آیا جای خود را در خط نگه دارید و اجازه دهید خواننده بعدی این کپی را قرض دهد؟ شما می توانید پس از آن نگه دارید.',
-			'lending.resumeMessage' => 'این را دوباره تکرار کنید تا کتابخانه شما بتواند نسخه بعدی را به شما ارائه دهد؟',
+			'lending.suspendHold' => 'تعلیق رزرو',
+			'lending.resumeHold' => 'ازسرگیری رزرو',
+			'lending.suspendMessage' => 'جای خود را در صف حفظ کنید و اجازه دهید خوانندهٔ بعدی این نسخه را امانت بگیرد؟ می‌توانید بعداً رزرو را از سر بگیرید.',
+			'lending.resumeMessage' => 'این رزرو از سر گرفته شود تا کتابخانه بتواند نسخهٔ بعدیِ موجود را به شما پیشنهاد دهد؟',
 			'lending.editEmail' => 'تغییر ایمیل اطلاع رسانی',
 			_ => null,
 		};

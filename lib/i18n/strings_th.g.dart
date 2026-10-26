@@ -197,7 +197,7 @@ class _Translations$auth$th extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'รอการอนุมัติ';
 	@override String get quickConnectCancel => 'ยกเลิก';
 	@override String get quickConnectExpired => 'Quick Connect หมดอายุ ลองอีกครั้ง';
-	@override String get localDataRecoveryRequired => 'PlezyNG ไม่สามารถคืนข้อมูลการลงชื่อเข้าและข้อมูลการสะท้อนกลับในท้องถิ่นได้อย่างปลอดภัย โปรดลงชื่อเข้าอีกครั้ง';
+	@override String get localDataRecoveryRequired => 'PlezyNG ไม่สามารถกู้คืนข้อมูลเข้าสู่ระบบในเครื่องและข้อมูลการเล่นที่รอดำเนินการได้อย่างปลอดภัย โปรดเข้าสู่ระบบอีกครั้ง';
 	@override String get pinCheckRejected => 'การตรวจสอบ PIN Plex ได้รับการปฏิเสธ';
 	@override String get connectToDirectPlex => 'เชื่อมต่อกับเซิร์ฟเวอร์ท้องถิ่น Plex';
 }
@@ -521,7 +521,7 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'ไฟล์นี้ไม่ได้รับการส่งออกการตั้งค่า PlezyNG';
 	@override String get importSettingsNoUser => 'ลงทะเบียนก่อนนําเข้าการตั้งค่า';
 	@override String get cloudBackup => 'คล็อค Backup';
-	@override String get cloudBackupDescription => 'Backup settings portable to a WebDAV endpoint over HTTPS. การเชื่อมต่อเซิร์ฟเวอร์และการรับรองจะอยู่บนอุปกรณ์นี้';
+	@override String get cloudBackupDescription => 'สำรองการตั้งค่าที่โอนย้ายได้ไปยังปลายทาง WebDAV ผ่าน HTTPS การเชื่อมต่อเซิร์ฟเวอร์และข้อมูลเข้าสู่ระบบจะยังอยู่ในอุปกรณ์นี้';
 	@override String get cloudBackupUrl => 'WebDAV JSON ไฟล์ URL';
 	@override String get cloudBackupUsername => 'ชื่อผู้ใช้';
 	@override String get cloudBackupPassword => 'คู่มือ';
@@ -788,7 +788,7 @@ class _Translations$themeEditor$th extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$th contrast = _Translations$themeEditor$contrast$th._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, ด้านล่างของที่แนะนํา ${minimum}:1';
 	@override String get discardTitle => 'ปล่อยการเปลี่ยนแปลง?';
-	@override String get discardMessage => 'การเปลี่ยนแปลงสีที่ไม่ซ้ํากันของคุณจะหายไป';
+	@override String get discardMessage => 'การเปลี่ยนแปลงสีที่ยังไม่ได้บันทึกจะสูญหาย';
 	@override String get discard => 'ตูด';
 	@override String previewCardTitle({required Object number}) => 'ฉบับที่ ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} นาที left';
@@ -978,8 +978,8 @@ class _Translations$mediaMenu$th extends Translations$mediaMenu$en {
 	@override String get deleteShowConfirm => 'ลบแสดง';
 	@override String get deleteMovieConfirm => 'ลบภาพยนตร์';
 	@override String get deleteAnyway => 'ลบอย่างไรก็ตาม';
-	@override String confirmDeleteTarget({required Object title}) => 'ลบ ${title} จากเซิร์ฟเวอร์ของคุณอย่างต่อเนื่อง?';
-	@override String get deleteMultipleWarning => 'นี่รวมถึงบทความทั้งหมดและไฟล์ของพวกเขา';
+	@override String confirmDeleteTarget({required Object title}) => 'ลบ ${title} ออกจากเซิร์ฟเวอร์อย่างถาวรหรือไม่';
+	@override String get deleteMultipleWarning => 'รวมถึงตอนทั้งหมดและไฟล์ของแต่ละตอน';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
 		other: 'นี้ลบทั้งหมด ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes ในมัน, และไฟล์ของพวกเขา.',
 	);
@@ -989,7 +989,7 @@ class _Translations$mediaMenu$th extends Translations$mediaMenu$en {
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes อื่น ๆ จะถูกบันทึกในไฟล์เดียวกันและจะถูกลบยัง:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG ไม่สามารถตรวจสอบไฟล์ใดนี้จะลบดังนั้นจึงสามารถลบมากกว่ารายการที่ระบุไว้ข้างต้น ลบและลองอีกครั้งหรือลบในทางใด ๆ';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG ตรวจสอบไม่ได้ว่าจะลบไฟล์ใดบ้าง จึงอาจลบมากกว่ารายการที่ระบุข้างต้น ยกเลิกแล้วลองอีกครั้ง หรือเลือกที่จะลบต่อไป';
 	@override String get deleteScopeUnverifiedNoFileInfo => 'เซิร์ฟเวอร์ของคุณไม่ให้ข้อมูลไฟล์สําหรับรายการนี้ดังนั้น PlezyNG ไม่สามารถตรวจสอบไฟล์ใดที่จะลบได้ มันอาจลบมากกว่ารายการที่ระบุไว้ข้างต้น';
 	@override String get mediaDeletedSuccessfully => 'รายการสื่อลบอย่างประสบความสําเร็จ';
 	@override String get mediaFailedToDelete => 'ไม่สามารถลบรายการสื่อ';
@@ -1027,7 +1027,7 @@ class _Translations$accessibility$th extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'มุมมอง';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent}% ครั้งที่เข้าดู';
-	@override String get mediaCardUnwatched => 'ไม่สังเกต';
+	@override String get mediaCardUnwatched => 'ยังไม่ได้ดู';
 	@override String get tapToPlay => 'คลิกที่เล่น';
 	@override String get decrease => 'การลดลง';
 	@override String get increase => 'เพิ่มขึ้น';
@@ -1040,8 +1040,8 @@ class _Translations$accessibility$th extends Translations$accessibility$en {
 	@override String get expandText => 'หมายเลขที่ขยาย';
 	@override String get collapseText => 'หมายเลขรุ่น';
 	@override String get alphabetNavigation => 'การนําทางอัลฟเฟต';
-	@override String get alphabetScrollHint => 'สวิทช์ขึ้นหรือลงเพื่อย้ายด้วยข้อความ';
-	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'รอบ ${row} ของ ${rowCount}, รอบ ${column} ของ ${columnCount}';
+	@override String get alphabetScrollHint => 'ปัดขึ้นหรือลงเพื่อเลื่อนตามตัวอักษร';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'แถว ${row} จาก ${rowCount} แถว คอลัมน์ ${column} จาก ${columnCount} คอลัมน์';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'รอบ ${row} ของ ${rowCount}';
 	@override String get autoScrollPlay => 'เล่น Auto-Scroll';
 	@override String get autoScrollPause => 'การหยุดชะลออัตโนมัติ';
@@ -1067,7 +1067,7 @@ class _Translations$accessibility$th extends Translations$accessibility$en {
 	@override String get highContrastHint => 'ข้อความที่แข็งแกร่งและแสดงผลที่สําคัญขึ้นบนพื้นผิวที่แสงหรือเข้ม';
 	@override String get interaction => 'การเคลื่อนไหวและการโต้ตอบ';
 	@override String get reduceMotion => 'ลดการเคลื่อนไหว';
-	@override String get reduceMotionHint => 'ปกติความสนใจการเปลี่ยนแปลงหน้าและผลตกแต่งอยู่';
+	@override String get reduceMotionHint => 'หยุดการเคลื่อนไหวของตัวบอกโฟกัส การเปลี่ยนหน้า และเอฟเฟกต์ตกแต่ง';
 	@override String get largeTargets => 'เป้าหมายสัมผัสขนาดใหญ่';
 	@override String get largeTargetsHint => 'ให้การควบคุมร่วมกันพื้นที่มากขึ้นสําหรับสัมผัสและนิวเวชั่นช่วย';
 	@override String get navigationHint => 'ใช้ Tab และ Shift+Tab เพื่อย้ายระหว่างควบคุม Enter หรือ Space เพื่อเปิดใช้งาน และ Escape หรือ Back เพื่อปิด โปรแกรมอ่าน zoom และเลือกอ่านพร้อมใช้งานในขณะที่หนังสือเปิด';
@@ -1690,7 +1690,7 @@ class _Translations$startup$th extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG ไม่สามารถเริ่มต้นได้';
 	@override String get failedBody => 'สิ่งบางอย่างผิดพลาดในระหว่างการเริ่มต้น รายละเอียดด้านล่างระบุสิ่งที่ไม่ประสบความสําเร็จ';
-	@override String get failedBodyRepairable => 'PlezyNG ไฟล์การตั้งค่าที่บันทึกจะเสียหายและต้องสร้างใหม่ก่อนที่ PlezyNG สามารถเริ่มต้น การคืนเงินจะไม่ช่วย - เลือกการซ่อมแซมการจัดเก็บข้อมูล';
+	@override String get failedBodyRepairable => 'ไฟล์การตั้งค่าที่บันทึกไว้ของ PlezyNG เสียหายและต้องสร้างใหม่ก่อนเริ่มแอป การลองอีกครั้งจะไม่ช่วย ให้เลือกซ่อมแซมพื้นที่จัดเก็บ';
 	@override String get phaseLabel => 'ขั้นตอน';
 	@override String get showDetails => 'แสดงรายละเอียด';
 	@override String get hideDetails => 'ลบรายละเอียด';
@@ -1699,22 +1699,22 @@ class _Translations$startup$th extends Translations$startup$en {
 	@override String get uploadDetails => 'รายละเอียดอัปโหลด';
 	@override String get repairStorage => 'การซ่อมแซม';
 	@override String get repairTitle => 'การซ่อมแซมข้อมูลที่เก็บไว้';
-	@override String get repairBodyCommon => 'PlezyNG ไฟล์การตั้งค่าจะเสียหายและไม่สามารถอ่านได้ การซ่อมแซมการตั้งค่าแต่ละตั้งค่าจะถูกกําหนดเอง';
-	@override String get repairBodyOneCredential => 'หนึ่งบันทึกจะเสียหายและไม่สามารถอ่านได้ การซ่อมแซมจะลบเพียงหนึ่งการตั้งค่าอื่น ๆ ของคุณจะหายไป';
-	@override String get repairBodySignInsKept => 'เซิร์ฟเวอร์และโปรไฟล์ของคุณควรจะยังคงลงทะเบียน';
-	@override String get repairBodySignInsLost => 'คีย์ที่ปกป้องการบันทึกบันทึกของคุณไม่สามารถกู้คืนจากไฟล์นี้ดังนั้นคุณจะต้องลงชื่อเข้าสู่เซิร์ฟเวอร์และโปรไฟล์อีกครั้ง ไม่มีอะไรในเซิร์ฟเวอร์สื่อของคุณจะได้รับผลกระทบ';
+	@override String get repairBodyCommon => 'ไฟล์การตั้งค่าของ PlezyNG เสียหายและอ่านไม่ได้ การซ่อมแซมจะรีเซ็ตการตั้งค่าทั้งหมดเป็นค่าเริ่มต้น';
+	@override String get repairBodyOneCredential => 'ข้อมูลเข้าสู่ระบบที่บันทึกไว้หนึ่งรายการเสียหายและอ่านไม่ได้ การซ่อมแซมจะลบเฉพาะรายการนั้น การตั้งค่าอื่นจะไม่เปลี่ยนแปลง';
+	@override String get repairBodySignInsKept => 'การเข้าสู่ระบบของเซิร์ฟเวอร์และโปรไฟล์ของคุณควรยังคงอยู่';
+	@override String get repairBodySignInsLost => 'ไม่สามารถกู้คืนคีย์ที่ปกป้องข้อมูลเข้าสู่ระบบที่บันทึกไว้จากไฟล์นี้ได้ จึงต้องเข้าสู่ระบบทุกเซิร์ฟเวอร์และทุกโปรไฟล์อีกครั้ง ข้อมูลบนเซิร์ฟเวอร์สื่อจะไม่ถูกกระทบ';
 	@override String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) และ Seerr จะถูกเก็บไว้แยกต่างหากและอาจหรืออาจไม่ได้อยู่อยู่ PlezyNG จะบอกคุณว่าสิ่งที่มันเก็บไว้';
 	@override String get repairConfirm => 'การซ่อมแซม';
 	@override String get repairSucceeded => 'การจัดเก็บที่ซ่อมแซม';
 	@override String get repairNeedsRestart => 'การจัดเก็บที่ซ่อมแซม - การเริ่มต้นใหม่ที่จําเป็น';
-	@override String get restartRequiredBody => 'ข้อมูลของคุณได้รับการแก้ไข แต่ PlezyNG จะต้องเริ่มต้นใหม่ก่อนที่จะสามารถใช้ได้ ลบ PlezyNG และเปิดอีกครั้ง';
+	@override String get restartRequiredBody => 'ข้อมูลของคุณได้รับการซ่อมแซมแล้ว แต่ต้องเริ่ม PlezyNG ใหม่ก่อนใช้งาน ปิด PlezyNG แล้วเปิดอีกครั้ง';
 	@override String get quitPlezy => 'เคลือบ PlezyNG';
 	@override String get repairFailed => 'การซ่อมแซมล้มเหลว';
-	@override String get repairKeptSignIns => 'เซิร์ฟเวอร์และโปรไฟล์ของคุณยังคงลงทะเบียน';
-	@override String get repairLostSignIns => 'คีย์ที่ปกป้องการบันทึกของคุณไม่สามารถกู้คืน คุณจะต้องลงชื่อเข้าสู่เซิร์ฟเวอร์และโปรไฟล์ทุกครั้งอีกครั้ง';
+	@override String get repairKeptSignIns => 'คุณยังคงเข้าสู่ระบบในเซิร์ฟเวอร์และโปรไฟล์ต่าง ๆ อยู่';
+	@override String get repairLostSignIns => 'ไม่สามารถกู้คืนคีย์ที่ปกป้องข้อมูลเข้าสู่ระบบที่บันทึกไว้ได้ คุณต้องเข้าสู่ระบบทุกเซิร์ฟเวอร์และทุกโปรไฟล์อีกครั้ง';
 	@override String get repairLostSessions => 'การเชื่อมต่อ Tracker หรือ Seerr หนึ่งอย่างน้อยถูกสูญเสียและต้องเชื่อมต่อใหม่';
 	@override String get backupTitle => 'คูปองของไฟล์ที่เสียหายถูกเก็บไว้';
-	@override String get backupWarning => 'มันมีใบรับรองการลงทะเบียนของคุณ อย่าอัพโหลดหรือแบ่งปัน';
+	@override String get backupWarning => 'สำเนานี้มีข้อมูลเข้าสู่ระบบของคุณ ห้ามอัปโหลดหรือแชร์';
 	@override String get deleteBackup => 'ลบสําเนา';
 	@override String get backupDeleted => 'การคัดลอกลบ';
 	@override String get previousFailureTitle => 'PlezyNG ไม่สามารถเริ่มต้นครั้งสุดท้าย';
@@ -1867,7 +1867,7 @@ class _Translations$liveTv$th extends Translations$liveTv$en {
 	@override String cancelRecordingMessage({required Object title}) => '${title} จะไม่ได้รับการบันทึก';
 	@override String get deleteRule => 'กฎการลบ';
 	@override String get deleteRuleTitle => 'ลบกฎการบันทึก';
-	@override String deleteRuleMessage({required Object title}) => 'ฉบับที่เกิดขึ้นในอนาคตของ ${title} จะไม่ได้บันทึก';
+	@override String deleteRuleMessage({required Object title}) => 'ตอนต่อไปของ ${title} จะไม่ถูกบันทึก';
 	@override String get recordingScheduled => 'การบันทึกที่วางแผน';
 	@override String get alreadyScheduled => 'โปรแกรมนี้ได้รับการวางแผน';
 	@override String get dvrAdminRequired => 'การตั้งค่า DVR ต้องมีบัญชี admin';
@@ -1908,7 +1908,7 @@ class _Translations$collections$th extends Translations$collections$en {
 	@override String get collection => 'การจัดเก็บ';
 	@override String get empty => 'การเก็บรวบรวมช็อตว่างเปล่า';
 	@override String get deleteCollection => 'ลบเก็บ';
-	@override String deleteConfirm({required Object title}) => 'ลบ "${title}"? นี้ไม่สามารถลบได้';
+	@override String deleteConfirm({required Object title}) => 'ลบ "${title}" หรือไม่ การดำเนินการนี้ไม่สามารถย้อนกลับได้';
 	@override String get deleted => 'การเก็บรวบรวมช็อตเด็ด';
 	@override String get deleteFailed => 'ไม่สามารถลบการเก็บรวบรวม';
 	@override String deleteFailedWithError({required Object error}) => 'ไม่ได้ลบการเก็บรวบรวมช็อตเด็ด: ${error}';
@@ -2195,7 +2195,7 @@ class _Translations$downloads$th extends Translations$downloads$en {
 	@override String keepNUnwatched({required Object count}) => 'เก็บ ${count} ไม่ตรวจสอบ';
 	@override String get editSyncRule => 'กฎการปรับแต่ง';
 	@override String get removeSyncRule => 'ปล่อยกฎการซิงค์';
-	@override String removeSyncRuleConfirm({required Object title}) => 'หยุดการซิงค์ "${title}"? ฉบับที่ดาวน์โหลดจะถูกเก็บไว้';
+	@override String removeSyncRuleConfirm({required Object title}) => 'หยุดซิงค์ "${title}" หรือไม่ ตอนที่ดาวน์โหลดไว้จะยังคงอยู่';
 	@override String removeListSyncRuleConfirm({required Object title}) => 'หยุดการซิงค์ "${title}"';
 	@override String get deleteSyncRuleDownloads => 'นอกจากนี้ยังลบดาวน์โหลดที่เกี่ยวข้อง';
 	@override String get deleteSyncRuleDownloadsDescription => 'ดาวน์โหลดที่ใช้ตามกฎการซิงค์หรือโปรไฟล์อื่น ๆ จะถูกเก็บไว้';
@@ -2623,7 +2623,7 @@ class _Translations$seerr$th extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'ตัวอย่าง Seerr นี้ไม่สนับสนุน Quick Connect. มันต้องการ Seerr 3.4 หรือใหม่กว่า';
 	@override String get notInitialized => 'ตัวอย่างนี้ Seerr ไม่ได้เสร็จสิ้นการตั้งค่าครั้งแรก';
 	@override String get noPlexTokenForReauth => 'No Plex token มีการลงทะเบียนอีกครั้ง';
-	@override String get noStoredCredentials => 'ไม่มีใบรับรองที่เก็บไว้พร้อมที่จะลงทะเบียนอีกครั้ง';
+	@override String get noStoredCredentials => 'ไม่มีข้อมูลเข้าสู่ระบบที่บันทึกไว้สำหรับเข้าสู่ระบบอีกครั้ง';
 	@override String get signInRejected => 'การลงทะเบียนถูกปฏิเสธ';
 	@override String get noSessionCookie => 'Seerr ไม่ได้ปล่อยคุกกี้การประชุม';
 	@override String get freshCookieRejected => 'Seerr ยกเลิกคุกกี้เซสชั่นใหม่';
@@ -2880,7 +2880,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get source => 'หลักสูตร';
 	@override String get name => 'ชื่อ';
 	@override String get endpoint => 'URL ของเซิร์ฟเวอร์';
-	@override String get root => 'แผงหรือ Prefix';
+	@override String get root => 'โฟลเดอร์หรือคำนำหน้า';
 	@override String get username => 'ชื่อผู้ใช้';
 	@override String get password => 'คู่มือ';
 	@override String get token => 'API โค้น';
@@ -2935,7 +2935,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get useRemote => 'ใช้อุปกรณ์อื่น ๆ';
 	@override String get history => 'ประวัติตําแหน่ง';
 	@override String get groupAudio => 'ดูเหมือนหนังสือเสียง';
-	@override String get groupHint => 'รวมไฟล์เสียงที่โหลดในโฟลเดอร์นี้ คลิกที่หน้าทั้งหมดก่อน';
+	@override String get groupHint => 'รวมไฟล์เสียงที่โหลดอยู่ในโฟลเดอร์นี้เข้าด้วยกัน โปรดโหลดทุกหน้าก่อน';
 	@override String get order => 'กรณีคําสั่ง';
 	@override String get moveUp => 'ขึ้นไป';
 	@override String get moveDown => 'การเคลื่อนไหวลง';
@@ -2957,23 +2957,23 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get lineHeight => 'สายการสเปน';
 	@override String get margin => 'มาร์เจน';
 	@override String get font => 'ประเภท';
-	@override String get serif => 'เซ็กส์';
-	@override String get sans => 'ไม่ใช่เซริฟ';
+	@override String get serif => 'แบบมีเชิง';
+	@override String get sans => 'แบบไม่มีเชิง';
 	@override String get mono => 'โมโนสเปน';
 	@override String get columns => 'คอลัมน์';
 	@override String get scroll => 'การสกรูแนวตั้ง';
-	@override String get justify => 'หมายเลข';
+	@override String get justify => 'จัดข้อความชิดขอบทั้งสองด้าน';
 	@override String get readerTheme => 'หน้าปรากฏ';
 	@override String get appTheme => 'ติดตาม app theme';
 	@override String get paper => 'กระดาษ';
-	@override String get sepia => 'ซิปต์';
+	@override String get sepia => 'ซีเปีย';
 	@override String get night => 'นอน';
 	@override String get readAloud => 'อ่านหน้านี้ด้วยเสียง';
-	@override String get readAlong => 'อ่านต่อไป';
+	@override String get readAlong => 'อ่านตามเสียง';
 	@override String get stopReading => 'ปิดการพูด';
 	@override String get searchBook => 'ค้นหาในหนังสือ';
 	@override String get noMatches => 'ไม่มีเกม';
-	@override String get previousPage => 'หน้าแรก';
+	@override String get previousPage => 'หน้าก่อนหน้า';
 	@override String get nextPage => 'หน้าต่อไป';
 	@override String page({required Object number}) => 'หน้า ${number}';
 	@override String get externalBlocked => 'ลิงค์หนังสือภายนอกจะถูกปิดใช้งานในผู้อ่าน';
@@ -2994,7 +2994,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get errorConflict => 'ตําแหน่งได้เปลี่ยนในเซสชั่นอื่น เปิดรายการอีกครั้งเพื่อเลือกตําแหน่ง';
 	@override String get signIn => 'เข้าสู่ระบบ';
 	@override String get reconnect => 'การเชื่อมต่อ';
-	@override String get folderHelp => 'ปล่อยให้เปิดเพื่อเริ่มต้นจากรากแหล่งที่มา URL S3 รวมถึงกล่อง';
+	@override String get folderHelp => 'เว้นว่างไว้เพื่อเริ่มที่โฟลเดอร์รากของแหล่งข้อมูล URL ของ S3 ต้องมีชื่อบัคเก็ต';
 	@override String get preferences => 'ความต้องการ';
 	@override String get timePosition => 'ตําแหน่ง';
 	@override String get audioTrack => 'ออนไลน์';
@@ -3002,7 +3002,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get none => 'ไม่มี';
 	@override String get fullscreen => 'หน้าจอเต็มรูปแบบ';
 	@override String get syncLocation => 'โฟลเดอร์ Sync Progress (ตัวเลือก)';
-	@override String get syncLocationHint => 'โพสต์ WebDAV ที่กําหนดเองสําหรับ PlezyNG state ใช้การเขียนที่กําหนดเอง; โมเดียมยังคงไม่เปลี่ยนแปลง';
+	@override String get syncLocationHint => 'โฟลเดอร์ WebDAV เฉพาะสำหรับสถานะของ PlezyNG ใช้การเขียนข้อมูลแบบมีเงื่อนไข โดยไฟล์สื่อจะไม่เปลี่ยนแปลง';
 	@override String get audiobooks => 'ออดิโอ';
 	@override String get comics => 'คอมเมติก';
 	@override String get scan => 'สแกนสําหรับหนังสือและสื่อ';
@@ -3018,17 +3018,17 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get actualSize => 'ขนาดปัจจุบัน';
 	@override String get goToPage => 'ไปที่หน้า';
 	@override String get goToSection => 'ไปยังบทความ';
-	@override String pageRange({required Object count}) => 'หมายเลข 1 ไปยัง ${count}';
+	@override String pageRange({required Object count}) => 'ป้อนตัวเลขตั้งแต่ 1 ถึง ${count}';
 	@override String get pageLayout => 'โลกหน้า';
 	@override String get automatic => 'อัตโนมัติ';
 	@override String get singlePage => 'หน้าเดียว';
 	@override String get twoPages => '2 หน้า';
 	@override String get readingDirection => 'การอ่านทิศทาง';
-	@override String get leftToRight => 'ป้ายไปขวา';
-	@override String get rightToLeft => 'หมายเลขรุ่น: Right to Lease';
+	@override String get leftToRight => 'จากซ้ายไปขวา';
+	@override String get rightToLeft => 'จากขวาไปซ้าย';
 	@override String get letterSpacing => 'สเปคจดหมาย';
 	@override String get wordSpacing => 'คําอธิบาย';
-	@override String get readerControlsHelp => 'ปิดหรือใช้ควบคุมการจูงเพื่อขยายหน้า แดร์ไปยังหน้า Ctrl/ ⁇  + หรือ − ปรับจูง Ctrl/ ⁇  0 จะรีเซ็ตหน้า Page Up และ Page Down จะเปิดหน้า';
+	@override String get readerControlsHelp => 'กางสองนิ้วหรือใช้ปุ่มซูมเพื่อขยายหน้า ลากเพื่อเลื่อนหน้า Ctrl/⌘ ร่วมกับ + หรือ − ใช้ปรับซูม และ Ctrl/⌘ ร่วมกับ 0 ใช้รีเซ็ตซูม Page Up และ Page Down ใช้เปลี่ยนหน้า';
 	@override String get imagePage => 'หน้าการ์ตูน';
 	@override String get resetReader => 'การตั้งค่าการอ่านใหม่';
 	@override String get zoom => 'โซม';
@@ -3049,50 +3049,50 @@ class _Translations$lending$th extends Translations$lending$en {
 	@override String get other => 'อื่น ๆ บิสตจักร';
 	@override String get libraryName => 'ชื่อห้องสมุด';
 	@override String get libraryUrl => 'เว็บไซต์ของห้องสมุด';
-	@override String get libraryUrlHint => 'ใช้คอลเลกชันของห้องสมุดหรือหน้าลงทะเบียน';
+	@override String get libraryUrlHint => 'ใช้แค็ตตาล็อกหรือหน้าเข้าสู่ระบบของห้องสมุดคุณ';
 	@override String get intro => 'จองจากห้องสมุดของคุณ ปกป้องหนังสือของคุณ';
-	@override String get handoff => 'ลงทะเบียนให้เช่าและอ่านได้อย่างปลอดภัยด้วยบริการของห้องสมุดของคุณเอง';
+	@override String get handoff => 'เข้าสู่ระบบ ยืม และอ่านอย่างปลอดภัยผ่านบริการของห้องสมุดคุณเอง';
 	@override String get openService => 'ห้องสมุดเปิด';
 	@override String get findLibrary => 'ค้นหาห้องสมุด';
 	@override String get search => 'ค้นหาหนังสือและผู้เขียน';
 	@override String get catalogue => 'คาตาล็อก';
-	@override String get loans => 'โอนเงิน';
-	@override String get holds => '⁇';
+	@override String get loans => 'หนังสือที่ยืม';
+	@override String get holds => 'รายการจอง';
 	@override String get signIn => 'ลงทะเบียนกับห้องสมุดของคุณ';
 	@override String get waiting => 'เสร็จสิ้นการลงทะเบียนในเบราว์เซอร์ของคุณแล้วกลับที่นี่';
 	@override String get cancel => 'ยกเลิก';
 	@override String get disconnect => 'ลบห้องสมุด';
-	@override String get disconnectMessage => 'ลบห้องสมุดนี้จากโปรไฟล์นี้? ใบรับรองของคุณและเก็บพักกับห้องสมุดของคุณ';
+	@override String get disconnectMessage => 'นำห้องสมุดนี้ออกจากโปรไฟล์นี้หรือไม่ หนังสือที่ยืมและรายการจองจะยังคงอยู่กับห้องสมุดของคุณ';
 	@override String get getBook => 'รับหนังสือ';
 	@override String get checkAvailability => 'ตรวจสอบความพร้อม';
-	@override String get available => 'มีให้เลือกที่จะให้เช่า';
+	@override String get available => 'พร้อมให้ยืม';
 	@override String get unavailable => 'ไม่สามารถใช้ได้ในขณะนี้';
-	@override String get borrow => 'โอกาส';
-	@override String get placeHold => 'สถานที่เก็บ';
-	@override String get returnBook => 'กลับมาก่อน';
-	@override String get cancelHold => 'ปล่อยการเก็บรักษา';
+	@override String get borrow => 'ยืม';
+	@override String get placeHold => 'จอง';
+	@override String get returnBook => 'คืนก่อนกำหนด';
+	@override String get cancelHold => 'ยกเลิกการจอง';
 	@override String get confirmBorrow => 'รับใบรับรองจากห้องสมุดของคุณหรือไม่';
-	@override String get confirmReturn => 'รับเงินคืนนี้ตอนนี้? คุณอาจต้องรับเงินคืนเพื่อให้ดําเนินการต่อไป';
-	@override String get confirmCancelHold => 'ลบการเก็บรักษาของคุณในชื่อนี้หรือไม่';
+	@override String get confirmReturn => 'คืนหนังสือเล่มนี้ตอนนี้หรือไม่ คุณอาจต้องยืมอีกครั้งเพื่ออ่านต่อ';
+	@override String get confirmCancelHold => 'ยกเลิกการจองหนังสือเล่มนี้หรือไม่';
 	@override String get email => 'หมายเลขอีเมล';
-	@override String due({required Object date}) => 'หมายเลขรุ่น: ${date}';
+	@override String due({required Object date}) => 'กำหนดคืน: ${date}';
 	@override String queue({required Object position}) => 'ตําแหน่ง ${position} ในเส้น';
 	@override String get empty => 'ไม่มีชื่อที่นี่';
-	@override String get openLibraryNote => 'ค้นหาคอลเลกชันของ Open Library ตัวเลือกการอ่านและรับเงินจะแสดงในหน้าของแต่ละหัวข้อ';
+	@override String get openLibraryNote => 'สำรวจแค็ตตาล็อกของ Open Library ตัวเลือกการอ่านและการยืมจะแสดงในหน้าของหนังสือแต่ละเล่ม';
 	@override String get more => 'บรรจุเพิ่มเติม';
 	@override String get gateway => 'บริการลงทะเบียนห้องสมุด';
 	@override String get gatewayHint => 'ให้โดยห้องสมุดของคุณหรือผู้ดูแลระบบ PlezyNG';
 	@override String get advanced => 'การรวมห้องสมุด';
 	@override String get loadLibraries => 'เลือกห้องสมุดของคุณ';
-	@override String get expired => 'โอนนี้หมดอายุ';
+	@override String get expired => 'ระยะเวลายืมหนังสือนี้สิ้นสุดแล้ว';
 	@override String get updated => 'บีบอิสระปรับปรุง';
 	@override String get continueService => 'ทํางานต่อไป';
 	@override String get comingSoon => 'การรับประกันในแอป · มาเร็ว ๆ นี้';
 	@override String get comingSoonDescription => 'การรวมของ Libby จะอยู่บนทางของคุณ คุณสามารถใช้ห้องสมุดของคุณใน Libby ในขณะที่เราจะเสร็จสิ้นการเชื่อมต่อ';
-	@override String get suspendHold => 'ปิดการเก็บรักษา';
-	@override String get resumeHold => 'ใบเสนอราคา';
-	@override String get suspendMessage => 'ปล่อยตําแหน่งของคุณในเส้นและปล่อยให้ผู้อ่านต่อไปให้คูปองนี้? คุณสามารถรับคืนการเก็บไว้ในภายหลัง';
-	@override String get resumeMessage => 'ใหม่นี้เก็บไว้เพื่อให้ห้องสมุดของคุณสามารถเสนอสําเนาต่อไปที่พร้อมใช้งานได้หรือไม่';
+	@override String get suspendHold => 'พักการจอง';
+	@override String get resumeHold => 'เปิดใช้การจองต่อ';
+	@override String get suspendMessage => 'เก็บลำดับของคุณในคิวไว้และให้ผู้อ่านคนถัดไปยืมสำเนานี้หรือไม่ คุณสามารถเปิดใช้การจองต่อได้ภายหลัง';
+	@override String get resumeMessage => 'เปิดใช้การจองนี้ต่อเพื่อให้ห้องสมุดเสนอสำเนาถัดไปที่พร้อมให้ยืมหรือไม่';
 	@override String get editEmail => 'การเปลี่ยนแปลงอีเมลการแจ้งเตือน';
 }
 
@@ -3481,7 +3481,7 @@ class _Translations$libraries$selection$th extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} เลือก';
 	@override String get actions => 'การเลือกกิจกรรม';
 	@override String get confirmDescendants => 'นี่จะเปลี่ยนทุก episodes ในการแสดงและฤดูกาลที่เลือก';
-	@override String get confirmUnwatched => 'นี่ยังทําความสะอาดการเล่นของรายการที่เลือก';
+	@override String get confirmUnwatched => 'การดำเนินการนี้จะล้างความคืบหน้าการเล่นของรายการที่เลือกด้วย';
 	@override String confirmCount({required Object count}) => 'รายการที่เลือก: ${count}';
 	@override String completed({required Object count}) => 'รายการที่ปรับปรุง: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'ปรับปรุง ${succeeded}; ไม่ได้สําเร็จ ${failed}. รายการที่ไม่สําเร็จจะยังคงเลือก';
@@ -4133,7 +4133,7 @@ extension on TranslationsTh {
 			'auth.quickConnectWaiting' => 'รอการอนุมัติ',
 			'auth.quickConnectCancel' => 'ยกเลิก',
 			'auth.quickConnectExpired' => 'Quick Connect หมดอายุ ลองอีกครั้ง',
-			'auth.localDataRecoveryRequired' => 'PlezyNG ไม่สามารถคืนข้อมูลการลงชื่อเข้าและข้อมูลการสะท้อนกลับในท้องถิ่นได้อย่างปลอดภัย โปรดลงชื่อเข้าอีกครั้ง',
+			'auth.localDataRecoveryRequired' => 'PlezyNG ไม่สามารถกู้คืนข้อมูลเข้าสู่ระบบในเครื่องและข้อมูลการเล่นที่รอดำเนินการได้อย่างปลอดภัย โปรดเข้าสู่ระบบอีกครั้ง',
 			'auth.pinCheckRejected' => 'การตรวจสอบ PIN Plex ได้รับการปฏิเสธ',
 			'auth.connectToDirectPlex' => 'เชื่อมต่อกับเซิร์ฟเวอร์ท้องถิ่น Plex',
 			'common.cancel' => 'ยกเลิก',
@@ -4431,7 +4431,7 @@ extension on TranslationsTh {
 			'settings.importSettingsInvalidFile' => 'ไฟล์นี้ไม่ได้รับการส่งออกการตั้งค่า PlezyNG',
 			'settings.importSettingsNoUser' => 'ลงทะเบียนก่อนนําเข้าการตั้งค่า',
 			'settings.cloudBackup' => 'คล็อค Backup',
-			'settings.cloudBackupDescription' => 'Backup settings portable to a WebDAV endpoint over HTTPS. การเชื่อมต่อเซิร์ฟเวอร์และการรับรองจะอยู่บนอุปกรณ์นี้',
+			'settings.cloudBackupDescription' => 'สำรองการตั้งค่าที่โอนย้ายได้ไปยังปลายทาง WebDAV ผ่าน HTTPS การเชื่อมต่อเซิร์ฟเวอร์และข้อมูลเข้าสู่ระบบจะยังอยู่ในอุปกรณ์นี้',
 			'settings.cloudBackupUrl' => 'WebDAV JSON ไฟล์ URL',
 			'settings.cloudBackupUsername' => 'ชื่อผู้ใช้',
 			'settings.cloudBackupPassword' => 'คู่มือ',
@@ -4702,7 +4702,7 @@ extension on TranslationsTh {
 			'themeEditor.contrast.labelOnAccent' => 'ปุ่มแท็กบน accent',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, ด้านล่างของที่แนะนํา ${minimum}:1',
 			'themeEditor.discardTitle' => 'ปล่อยการเปลี่ยนแปลง?',
-			'themeEditor.discardMessage' => 'การเปลี่ยนแปลงสีที่ไม่ซ้ํากันของคุณจะหายไป',
+			'themeEditor.discardMessage' => 'การเปลี่ยนแปลงสีที่ยังไม่ได้บันทึกจะสูญหาย',
 			'themeEditor.discard' => 'ตูด',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'ฉบับที่ ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} นาที left',
@@ -4884,12 +4884,12 @@ extension on TranslationsTh {
 			'mediaMenu.deleteShowConfirm' => 'ลบแสดง',
 			'mediaMenu.deleteMovieConfirm' => 'ลบภาพยนตร์',
 			'mediaMenu.deleteAnyway' => 'ลบอย่างไรก็ตาม',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'ลบ ${title} จากเซิร์ฟเวอร์ของคุณอย่างต่อเนื่อง?',
-			'mediaMenu.deleteMultipleWarning' => 'นี่รวมถึงบทความทั้งหมดและไฟล์ของพวกเขา',
+			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'ลบ ${title} ออกจากเซิร์ฟเวอร์อย่างถาวรหรือไม่',
+			'mediaMenu.deleteMultipleWarning' => 'รวมถึงตอนทั้งหมดและไฟล์ของแต่ละตอน',
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: 'นี้ลบทั้งหมด ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes ในมัน, และไฟล์ของพวกเขา.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: 'รายการนี้จะถูกเก็บไว้ผ่านไฟล์ ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} และทั้งหมดจะถูกลบ', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes อื่น ๆ จะถูกบันทึกในไฟล์เดียวกันและจะถูกลบยัง:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG ไม่สามารถตรวจสอบไฟล์ใดนี้จะลบดังนั้นจึงสามารถลบมากกว่ารายการที่ระบุไว้ข้างต้น ลบและลองอีกครั้งหรือลบในทางใด ๆ',
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG ตรวจสอบไม่ได้ว่าจะลบไฟล์ใดบ้าง จึงอาจลบมากกว่ารายการที่ระบุข้างต้น ยกเลิกแล้วลองอีกครั้ง หรือเลือกที่จะลบต่อไป',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'เซิร์ฟเวอร์ของคุณไม่ให้ข้อมูลไฟล์สําหรับรายการนี้ดังนั้น PlezyNG ไม่สามารถตรวจสอบไฟล์ใดที่จะลบได้ มันอาจลบมากกว่ารายการที่ระบุไว้ข้างต้น',
 			'mediaMenu.mediaDeletedSuccessfully' => 'รายการสื่อลบอย่างประสบความสําเร็จ',
 			'mediaMenu.mediaFailedToDelete' => 'ไม่สามารถลบรายการสื่อ',
@@ -4909,7 +4909,7 @@ extension on TranslationsTh {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'มุมมอง',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent}% ครั้งที่เข้าดู',
-			'accessibility.mediaCardUnwatched' => 'ไม่สังเกต',
+			'accessibility.mediaCardUnwatched' => 'ยังไม่ได้ดู',
 			'accessibility.tapToPlay' => 'คลิกที่เล่น',
 			'accessibility.decrease' => 'การลดลง',
 			'accessibility.increase' => 'เพิ่มขึ้น',
@@ -4922,8 +4922,8 @@ extension on TranslationsTh {
 			'accessibility.expandText' => 'หมายเลขที่ขยาย',
 			'accessibility.collapseText' => 'หมายเลขรุ่น',
 			'accessibility.alphabetNavigation' => 'การนําทางอัลฟเฟต',
-			'accessibility.alphabetScrollHint' => 'สวิทช์ขึ้นหรือลงเพื่อย้ายด้วยข้อความ',
-			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'รอบ ${row} ของ ${rowCount}, รอบ ${column} ของ ${columnCount}',
+			'accessibility.alphabetScrollHint' => 'ปัดขึ้นหรือลงเพื่อเลื่อนตามตัวอักษร',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'แถว ${row} จาก ${rowCount} แถว คอลัมน์ ${column} จาก ${columnCount} คอลัมน์',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'รอบ ${row} ของ ${rowCount}',
 			'accessibility.autoScrollPlay' => 'เล่น Auto-Scroll',
 			'accessibility.autoScrollPause' => 'การหยุดชะลออัตโนมัติ',
@@ -4949,7 +4949,7 @@ extension on TranslationsTh {
 			'accessibility.highContrastHint' => 'ข้อความที่แข็งแกร่งและแสดงผลที่สําคัญขึ้นบนพื้นผิวที่แสงหรือเข้ม',
 			'accessibility.interaction' => 'การเคลื่อนไหวและการโต้ตอบ',
 			'accessibility.reduceMotion' => 'ลดการเคลื่อนไหว',
-			'accessibility.reduceMotionHint' => 'ปกติความสนใจการเปลี่ยนแปลงหน้าและผลตกแต่งอยู่',
+			'accessibility.reduceMotionHint' => 'หยุดการเคลื่อนไหวของตัวบอกโฟกัส การเปลี่ยนหน้า และเอฟเฟกต์ตกแต่ง',
 			'accessibility.largeTargets' => 'เป้าหมายสัมผัสขนาดใหญ่',
 			'accessibility.largeTargetsHint' => 'ให้การควบคุมร่วมกันพื้นที่มากขึ้นสําหรับสัมผัสและนิวเวชั่นช่วย',
 			'accessibility.navigationHint' => 'ใช้ Tab และ Shift+Tab เพื่อย้ายระหว่างควบคุม Enter หรือ Space เพื่อเปิดใช้งาน และ Escape หรือ Back เพื่อปิด โปรแกรมอ่าน zoom และเลือกอ่านพร้อมใช้งานในขณะที่หนังสือเปิด',
@@ -5477,7 +5477,7 @@ extension on TranslationsTh {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} เลือก',
 			'libraries.selection.actions' => 'การเลือกกิจกรรม',
 			'libraries.selection.confirmDescendants' => 'นี่จะเปลี่ยนทุก episodes ในการแสดงและฤดูกาลที่เลือก',
-			'libraries.selection.confirmUnwatched' => 'นี่ยังทําความสะอาดการเล่นของรายการที่เลือก',
+			'libraries.selection.confirmUnwatched' => 'การดำเนินการนี้จะล้างความคืบหน้าการเล่นของรายการที่เลือกด้วย',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'รายการที่เลือก: ${count}',
 			'libraries.selection.completed' => ({required Object count}) => 'รายการที่ปรับปรุง: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'ปรับปรุง ${succeeded}; ไม่ได้สําเร็จ ${failed}. รายการที่ไม่สําเร็จจะยังคงเลือก',
@@ -5504,7 +5504,7 @@ extension on TranslationsTh {
 			'detail.endsAt' => ({required Object time}) => 'เสร็จสิ้นที่ ${time}',
 			'startup.failedTitle' => 'PlezyNG ไม่สามารถเริ่มต้นได้',
 			'startup.failedBody' => 'สิ่งบางอย่างผิดพลาดในระหว่างการเริ่มต้น รายละเอียดด้านล่างระบุสิ่งที่ไม่ประสบความสําเร็จ',
-			'startup.failedBodyRepairable' => 'PlezyNG ไฟล์การตั้งค่าที่บันทึกจะเสียหายและต้องสร้างใหม่ก่อนที่ PlezyNG สามารถเริ่มต้น การคืนเงินจะไม่ช่วย - เลือกการซ่อมแซมการจัดเก็บข้อมูล',
+			'startup.failedBodyRepairable' => 'ไฟล์การตั้งค่าที่บันทึกไว้ของ PlezyNG เสียหายและต้องสร้างใหม่ก่อนเริ่มแอป การลองอีกครั้งจะไม่ช่วย ให้เลือกซ่อมแซมพื้นที่จัดเก็บ',
 			'startup.phaseLabel' => 'ขั้นตอน',
 			'startup.showDetails' => 'แสดงรายละเอียด',
 			'startup.hideDetails' => 'ลบรายละเอียด',
@@ -5513,22 +5513,22 @@ extension on TranslationsTh {
 			'startup.uploadDetails' => 'รายละเอียดอัปโหลด',
 			'startup.repairStorage' => 'การซ่อมแซม',
 			'startup.repairTitle' => 'การซ่อมแซมข้อมูลที่เก็บไว้',
-			'startup.repairBodyCommon' => 'PlezyNG ไฟล์การตั้งค่าจะเสียหายและไม่สามารถอ่านได้ การซ่อมแซมการตั้งค่าแต่ละตั้งค่าจะถูกกําหนดเอง',
-			'startup.repairBodyOneCredential' => 'หนึ่งบันทึกจะเสียหายและไม่สามารถอ่านได้ การซ่อมแซมจะลบเพียงหนึ่งการตั้งค่าอื่น ๆ ของคุณจะหายไป',
-			'startup.repairBodySignInsKept' => 'เซิร์ฟเวอร์และโปรไฟล์ของคุณควรจะยังคงลงทะเบียน',
-			'startup.repairBodySignInsLost' => 'คีย์ที่ปกป้องการบันทึกบันทึกของคุณไม่สามารถกู้คืนจากไฟล์นี้ดังนั้นคุณจะต้องลงชื่อเข้าสู่เซิร์ฟเวอร์และโปรไฟล์อีกครั้ง ไม่มีอะไรในเซิร์ฟเวอร์สื่อของคุณจะได้รับผลกระทบ',
+			'startup.repairBodyCommon' => 'ไฟล์การตั้งค่าของ PlezyNG เสียหายและอ่านไม่ได้ การซ่อมแซมจะรีเซ็ตการตั้งค่าทั้งหมดเป็นค่าเริ่มต้น',
+			'startup.repairBodyOneCredential' => 'ข้อมูลเข้าสู่ระบบที่บันทึกไว้หนึ่งรายการเสียหายและอ่านไม่ได้ การซ่อมแซมจะลบเฉพาะรายการนั้น การตั้งค่าอื่นจะไม่เปลี่ยนแปลง',
+			'startup.repairBodySignInsKept' => 'การเข้าสู่ระบบของเซิร์ฟเวอร์และโปรไฟล์ของคุณควรยังคงอยู่',
+			'startup.repairBodySignInsLost' => 'ไม่สามารถกู้คืนคีย์ที่ปกป้องข้อมูลเข้าสู่ระบบที่บันทึกไว้จากไฟล์นี้ได้ จึงต้องเข้าสู่ระบบทุกเซิร์ฟเวอร์และทุกโปรไฟล์อีกครั้ง ข้อมูลบนเซิร์ฟเวอร์สื่อจะไม่ถูกกระทบ',
 			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) และ Seerr จะถูกเก็บไว้แยกต่างหากและอาจหรืออาจไม่ได้อยู่อยู่ PlezyNG จะบอกคุณว่าสิ่งที่มันเก็บไว้',
 			'startup.repairConfirm' => 'การซ่อมแซม',
 			'startup.repairSucceeded' => 'การจัดเก็บที่ซ่อมแซม',
 			'startup.repairNeedsRestart' => 'การจัดเก็บที่ซ่อมแซม - การเริ่มต้นใหม่ที่จําเป็น',
-			'startup.restartRequiredBody' => 'ข้อมูลของคุณได้รับการแก้ไข แต่ PlezyNG จะต้องเริ่มต้นใหม่ก่อนที่จะสามารถใช้ได้ ลบ PlezyNG และเปิดอีกครั้ง',
+			'startup.restartRequiredBody' => 'ข้อมูลของคุณได้รับการซ่อมแซมแล้ว แต่ต้องเริ่ม PlezyNG ใหม่ก่อนใช้งาน ปิด PlezyNG แล้วเปิดอีกครั้ง',
 			'startup.quitPlezy' => 'เคลือบ PlezyNG',
 			'startup.repairFailed' => 'การซ่อมแซมล้มเหลว',
-			'startup.repairKeptSignIns' => 'เซิร์ฟเวอร์และโปรไฟล์ของคุณยังคงลงทะเบียน',
-			'startup.repairLostSignIns' => 'คีย์ที่ปกป้องการบันทึกของคุณไม่สามารถกู้คืน คุณจะต้องลงชื่อเข้าสู่เซิร์ฟเวอร์และโปรไฟล์ทุกครั้งอีกครั้ง',
+			'startup.repairKeptSignIns' => 'คุณยังคงเข้าสู่ระบบในเซิร์ฟเวอร์และโปรไฟล์ต่าง ๆ อยู่',
+			'startup.repairLostSignIns' => 'ไม่สามารถกู้คืนคีย์ที่ปกป้องข้อมูลเข้าสู่ระบบที่บันทึกไว้ได้ คุณต้องเข้าสู่ระบบทุกเซิร์ฟเวอร์และทุกโปรไฟล์อีกครั้ง',
 			'startup.repairLostSessions' => 'การเชื่อมต่อ Tracker หรือ Seerr หนึ่งอย่างน้อยถูกสูญเสียและต้องเชื่อมต่อใหม่',
 			'startup.backupTitle' => 'คูปองของไฟล์ที่เสียหายถูกเก็บไว้',
-			'startup.backupWarning' => 'มันมีใบรับรองการลงทะเบียนของคุณ อย่าอัพโหลดหรือแบ่งปัน',
+			'startup.backupWarning' => 'สำเนานี้มีข้อมูลเข้าสู่ระบบของคุณ ห้ามอัปโหลดหรือแชร์',
 			'startup.deleteBackup' => 'ลบสําเนา',
 			'startup.backupDeleted' => 'การคัดลอกลบ',
 			'startup.previousFailureTitle' => 'PlezyNG ไม่สามารถเริ่มต้นครั้งสุดท้าย',
@@ -5768,7 +5768,7 @@ extension on TranslationsTh {
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} จะไม่ได้รับการบันทึก',
 			'liveTv.deleteRule' => 'กฎการลบ',
 			'liveTv.deleteRuleTitle' => 'ลบกฎการบันทึก',
-			'liveTv.deleteRuleMessage' => ({required Object title}) => 'ฉบับที่เกิดขึ้นในอนาคตของ ${title} จะไม่ได้บันทึก',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'ตอนต่อไปของ ${title} จะไม่ถูกบันทึก',
 			'liveTv.recordingScheduled' => 'การบันทึกที่วางแผน',
 			'liveTv.alreadyScheduled' => 'โปรแกรมนี้ได้รับการวางแผน',
 			'liveTv.dvrAdminRequired' => 'การตั้งค่า DVR ต้องมีบัญชี admin',
@@ -5807,7 +5807,7 @@ extension on TranslationsTh {
 			'collections.collection' => 'การจัดเก็บ',
 			'collections.empty' => 'การเก็บรวบรวมช็อตว่างเปล่า',
 			'collections.deleteCollection' => 'ลบเก็บ',
-			'collections.deleteConfirm' => ({required Object title}) => 'ลบ "${title}"? นี้ไม่สามารถลบได้',
+			'collections.deleteConfirm' => ({required Object title}) => 'ลบ "${title}" หรือไม่ การดำเนินการนี้ไม่สามารถย้อนกลับได้',
 			'collections.deleted' => 'การเก็บรวบรวมช็อตเด็ด',
 			'collections.deleteFailed' => 'ไม่สามารถลบการเก็บรวบรวม',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'ไม่ได้ลบการเก็บรวบรวมช็อตเด็ด: ${error}',
@@ -6093,7 +6093,7 @@ extension on TranslationsTh {
 			'downloads.keepNUnwatched' => ({required Object count}) => 'เก็บ ${count} ไม่ตรวจสอบ',
 			'downloads.editSyncRule' => 'กฎการปรับแต่ง',
 			'downloads.removeSyncRule' => 'ปล่อยกฎการซิงค์',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'หยุดการซิงค์ "${title}"? ฉบับที่ดาวน์โหลดจะถูกเก็บไว้',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'หยุดซิงค์ "${title}" หรือไม่ ตอนที่ดาวน์โหลดไว้จะยังคงอยู่',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'หยุดการซิงค์ "${title}"',
 			'downloads.deleteSyncRuleDownloads' => 'นอกจากนี้ยังลบดาวน์โหลดที่เกี่ยวข้อง',
 			'downloads.deleteSyncRuleDownloadsDescription' => 'ดาวน์โหลดที่ใช้ตามกฎการซิงค์หรือโปรไฟล์อื่น ๆ จะถูกเก็บไว้',
@@ -6516,7 +6516,7 @@ extension on TranslationsTh {
 			'seerr.quickConnectUnsupported' => 'ตัวอย่าง Seerr นี้ไม่สนับสนุน Quick Connect. มันต้องการ Seerr 3.4 หรือใหม่กว่า',
 			'seerr.notInitialized' => 'ตัวอย่างนี้ Seerr ไม่ได้เสร็จสิ้นการตั้งค่าครั้งแรก',
 			'seerr.noPlexTokenForReauth' => 'No Plex token มีการลงทะเบียนอีกครั้ง',
-			'seerr.noStoredCredentials' => 'ไม่มีใบรับรองที่เก็บไว้พร้อมที่จะลงทะเบียนอีกครั้ง',
+			'seerr.noStoredCredentials' => 'ไม่มีข้อมูลเข้าสู่ระบบที่บันทึกไว้สำหรับเข้าสู่ระบบอีกครั้ง',
 			'seerr.signInRejected' => 'การลงทะเบียนถูกปฏิเสธ',
 			'seerr.noSessionCookie' => 'Seerr ไม่ได้ปล่อยคุกกี้การประชุม',
 			'seerr.freshCookieRejected' => 'Seerr ยกเลิกคุกกี้เซสชั่นใหม่',
@@ -6745,7 +6745,7 @@ extension on TranslationsTh {
 			'fileSources.source' => 'หลักสูตร',
 			'fileSources.name' => 'ชื่อ',
 			'fileSources.endpoint' => 'URL ของเซิร์ฟเวอร์',
-			'fileSources.root' => 'แผงหรือ Prefix',
+			'fileSources.root' => 'โฟลเดอร์หรือคำนำหน้า',
 			'fileSources.username' => 'ชื่อผู้ใช้',
 			'fileSources.password' => 'คู่มือ',
 			'fileSources.token' => 'API โค้น',
@@ -6800,7 +6800,7 @@ extension on TranslationsTh {
 			'fileSources.useRemote' => 'ใช้อุปกรณ์อื่น ๆ',
 			'fileSources.history' => 'ประวัติตําแหน่ง',
 			'fileSources.groupAudio' => 'ดูเหมือนหนังสือเสียง',
-			'fileSources.groupHint' => 'รวมไฟล์เสียงที่โหลดในโฟลเดอร์นี้ คลิกที่หน้าทั้งหมดก่อน',
+			'fileSources.groupHint' => 'รวมไฟล์เสียงที่โหลดอยู่ในโฟลเดอร์นี้เข้าด้วยกัน โปรดโหลดทุกหน้าก่อน',
 			'fileSources.order' => 'กรณีคําสั่ง',
 			'fileSources.moveUp' => 'ขึ้นไป',
 			'fileSources.moveDown' => 'การเคลื่อนไหวลง',
@@ -6820,23 +6820,23 @@ extension on TranslationsTh {
 			'fileSources.lineHeight' => 'สายการสเปน',
 			'fileSources.margin' => 'มาร์เจน',
 			'fileSources.font' => 'ประเภท',
-			'fileSources.serif' => 'เซ็กส์',
-			'fileSources.sans' => 'ไม่ใช่เซริฟ',
+			'fileSources.serif' => 'แบบมีเชิง',
+			'fileSources.sans' => 'แบบไม่มีเชิง',
 			'fileSources.mono' => 'โมโนสเปน',
 			'fileSources.columns' => 'คอลัมน์',
 			'fileSources.scroll' => 'การสกรูแนวตั้ง',
-			'fileSources.justify' => 'หมายเลข',
+			'fileSources.justify' => 'จัดข้อความชิดขอบทั้งสองด้าน',
 			'fileSources.readerTheme' => 'หน้าปรากฏ',
 			'fileSources.appTheme' => 'ติดตาม app theme',
 			'fileSources.paper' => 'กระดาษ',
-			'fileSources.sepia' => 'ซิปต์',
+			'fileSources.sepia' => 'ซีเปีย',
 			'fileSources.night' => 'นอน',
 			'fileSources.readAloud' => 'อ่านหน้านี้ด้วยเสียง',
-			'fileSources.readAlong' => 'อ่านต่อไป',
+			'fileSources.readAlong' => 'อ่านตามเสียง',
 			'fileSources.stopReading' => 'ปิดการพูด',
 			'fileSources.searchBook' => 'ค้นหาในหนังสือ',
 			'fileSources.noMatches' => 'ไม่มีเกม',
-			'fileSources.previousPage' => 'หน้าแรก',
+			'fileSources.previousPage' => 'หน้าก่อนหน้า',
 			'fileSources.nextPage' => 'หน้าต่อไป',
 			'fileSources.page' => ({required Object number}) => 'หน้า ${number}',
 			'fileSources.externalBlocked' => 'ลิงค์หนังสือภายนอกจะถูกปิดใช้งานในผู้อ่าน',
@@ -6857,7 +6857,7 @@ extension on TranslationsTh {
 			'fileSources.errorConflict' => 'ตําแหน่งได้เปลี่ยนในเซสชั่นอื่น เปิดรายการอีกครั้งเพื่อเลือกตําแหน่ง',
 			'fileSources.signIn' => 'เข้าสู่ระบบ',
 			'fileSources.reconnect' => 'การเชื่อมต่อ',
-			'fileSources.folderHelp' => 'ปล่อยให้เปิดเพื่อเริ่มต้นจากรากแหล่งที่มา URL S3 รวมถึงกล่อง',
+			'fileSources.folderHelp' => 'เว้นว่างไว้เพื่อเริ่มที่โฟลเดอร์รากของแหล่งข้อมูล URL ของ S3 ต้องมีชื่อบัคเก็ต',
 			'fileSources.preferences' => 'ความต้องการ',
 			'fileSources.timePosition' => 'ตําแหน่ง',
 			'fileSources.audioTrack' => 'ออนไลน์',
@@ -6865,7 +6865,7 @@ extension on TranslationsTh {
 			'fileSources.none' => 'ไม่มี',
 			'fileSources.fullscreen' => 'หน้าจอเต็มรูปแบบ',
 			'fileSources.syncLocation' => 'โฟลเดอร์ Sync Progress (ตัวเลือก)',
-			'fileSources.syncLocationHint' => 'โพสต์ WebDAV ที่กําหนดเองสําหรับ PlezyNG state ใช้การเขียนที่กําหนดเอง; โมเดียมยังคงไม่เปลี่ยนแปลง',
+			'fileSources.syncLocationHint' => 'โฟลเดอร์ WebDAV เฉพาะสำหรับสถานะของ PlezyNG ใช้การเขียนข้อมูลแบบมีเงื่อนไข โดยไฟล์สื่อจะไม่เปลี่ยนแปลง',
 			'fileSources.audiobooks' => 'ออดิโอ',
 			'fileSources.comics' => 'คอมเมติก',
 			'fileSources.scan' => 'สแกนสําหรับหนังสือและสื่อ',
@@ -6881,17 +6881,17 @@ extension on TranslationsTh {
 			'fileSources.actualSize' => 'ขนาดปัจจุบัน',
 			'fileSources.goToPage' => 'ไปที่หน้า',
 			'fileSources.goToSection' => 'ไปยังบทความ',
-			'fileSources.pageRange' => ({required Object count}) => 'หมายเลข 1 ไปยัง ${count}',
+			'fileSources.pageRange' => ({required Object count}) => 'ป้อนตัวเลขตั้งแต่ 1 ถึง ${count}',
 			'fileSources.pageLayout' => 'โลกหน้า',
 			'fileSources.automatic' => 'อัตโนมัติ',
 			'fileSources.singlePage' => 'หน้าเดียว',
 			'fileSources.twoPages' => '2 หน้า',
 			'fileSources.readingDirection' => 'การอ่านทิศทาง',
-			'fileSources.leftToRight' => 'ป้ายไปขวา',
-			'fileSources.rightToLeft' => 'หมายเลขรุ่น: Right to Lease',
+			'fileSources.leftToRight' => 'จากซ้ายไปขวา',
+			'fileSources.rightToLeft' => 'จากขวาไปซ้าย',
 			'fileSources.letterSpacing' => 'สเปคจดหมาย',
 			'fileSources.wordSpacing' => 'คําอธิบาย',
-			'fileSources.readerControlsHelp' => 'ปิดหรือใช้ควบคุมการจูงเพื่อขยายหน้า แดร์ไปยังหน้า Ctrl/ ⁇  + หรือ − ปรับจูง Ctrl/ ⁇  0 จะรีเซ็ตหน้า Page Up และ Page Down จะเปิดหน้า',
+			'fileSources.readerControlsHelp' => 'กางสองนิ้วหรือใช้ปุ่มซูมเพื่อขยายหน้า ลากเพื่อเลื่อนหน้า Ctrl/⌘ ร่วมกับ + หรือ − ใช้ปรับซูม และ Ctrl/⌘ ร่วมกับ 0 ใช้รีเซ็ตซูม Page Up และ Page Down ใช้เปลี่ยนหน้า',
 			'fileSources.imagePage' => 'หน้าการ์ตูน',
 			'fileSources.resetReader' => 'การตั้งค่าการอ่านใหม่',
 			'fileSources.zoom' => 'โซม',
@@ -6903,50 +6903,50 @@ extension on TranslationsTh {
 			'lending.other' => 'อื่น ๆ บิสตจักร',
 			'lending.libraryName' => 'ชื่อห้องสมุด',
 			'lending.libraryUrl' => 'เว็บไซต์ของห้องสมุด',
-			'lending.libraryUrlHint' => 'ใช้คอลเลกชันของห้องสมุดหรือหน้าลงทะเบียน',
+			'lending.libraryUrlHint' => 'ใช้แค็ตตาล็อกหรือหน้าเข้าสู่ระบบของห้องสมุดคุณ',
 			'lending.intro' => 'จองจากห้องสมุดของคุณ ปกป้องหนังสือของคุณ',
-			'lending.handoff' => 'ลงทะเบียนให้เช่าและอ่านได้อย่างปลอดภัยด้วยบริการของห้องสมุดของคุณเอง',
+			'lending.handoff' => 'เข้าสู่ระบบ ยืม และอ่านอย่างปลอดภัยผ่านบริการของห้องสมุดคุณเอง',
 			'lending.openService' => 'ห้องสมุดเปิด',
 			'lending.findLibrary' => 'ค้นหาห้องสมุด',
 			'lending.search' => 'ค้นหาหนังสือและผู้เขียน',
 			'lending.catalogue' => 'คาตาล็อก',
-			'lending.loans' => 'โอนเงิน',
-			'lending.holds' => '⁇',
+			'lending.loans' => 'หนังสือที่ยืม',
+			'lending.holds' => 'รายการจอง',
 			'lending.signIn' => 'ลงทะเบียนกับห้องสมุดของคุณ',
 			'lending.waiting' => 'เสร็จสิ้นการลงทะเบียนในเบราว์เซอร์ของคุณแล้วกลับที่นี่',
 			'lending.cancel' => 'ยกเลิก',
 			'lending.disconnect' => 'ลบห้องสมุด',
-			'lending.disconnectMessage' => 'ลบห้องสมุดนี้จากโปรไฟล์นี้? ใบรับรองของคุณและเก็บพักกับห้องสมุดของคุณ',
+			'lending.disconnectMessage' => 'นำห้องสมุดนี้ออกจากโปรไฟล์นี้หรือไม่ หนังสือที่ยืมและรายการจองจะยังคงอยู่กับห้องสมุดของคุณ',
 			'lending.getBook' => 'รับหนังสือ',
 			'lending.checkAvailability' => 'ตรวจสอบความพร้อม',
-			'lending.available' => 'มีให้เลือกที่จะให้เช่า',
+			'lending.available' => 'พร้อมให้ยืม',
 			'lending.unavailable' => 'ไม่สามารถใช้ได้ในขณะนี้',
-			'lending.borrow' => 'โอกาส',
-			'lending.placeHold' => 'สถานที่เก็บ',
-			'lending.returnBook' => 'กลับมาก่อน',
-			'lending.cancelHold' => 'ปล่อยการเก็บรักษา',
+			'lending.borrow' => 'ยืม',
+			'lending.placeHold' => 'จอง',
+			'lending.returnBook' => 'คืนก่อนกำหนด',
+			'lending.cancelHold' => 'ยกเลิกการจอง',
 			'lending.confirmBorrow' => 'รับใบรับรองจากห้องสมุดของคุณหรือไม่',
-			'lending.confirmReturn' => 'รับเงินคืนนี้ตอนนี้? คุณอาจต้องรับเงินคืนเพื่อให้ดําเนินการต่อไป',
-			'lending.confirmCancelHold' => 'ลบการเก็บรักษาของคุณในชื่อนี้หรือไม่',
+			'lending.confirmReturn' => 'คืนหนังสือเล่มนี้ตอนนี้หรือไม่ คุณอาจต้องยืมอีกครั้งเพื่ออ่านต่อ',
+			'lending.confirmCancelHold' => 'ยกเลิกการจองหนังสือเล่มนี้หรือไม่',
 			'lending.email' => 'หมายเลขอีเมล',
-			'lending.due' => ({required Object date}) => 'หมายเลขรุ่น: ${date}',
+			'lending.due' => ({required Object date}) => 'กำหนดคืน: ${date}',
 			'lending.queue' => ({required Object position}) => 'ตําแหน่ง ${position} ในเส้น',
 			'lending.empty' => 'ไม่มีชื่อที่นี่',
-			'lending.openLibraryNote' => 'ค้นหาคอลเลกชันของ Open Library ตัวเลือกการอ่านและรับเงินจะแสดงในหน้าของแต่ละหัวข้อ',
+			'lending.openLibraryNote' => 'สำรวจแค็ตตาล็อกของ Open Library ตัวเลือกการอ่านและการยืมจะแสดงในหน้าของหนังสือแต่ละเล่ม',
 			'lending.more' => 'บรรจุเพิ่มเติม',
 			'lending.gateway' => 'บริการลงทะเบียนห้องสมุด',
 			'lending.gatewayHint' => 'ให้โดยห้องสมุดของคุณหรือผู้ดูแลระบบ PlezyNG',
 			'lending.advanced' => 'การรวมห้องสมุด',
 			'lending.loadLibraries' => 'เลือกห้องสมุดของคุณ',
-			'lending.expired' => 'โอนนี้หมดอายุ',
+			'lending.expired' => 'ระยะเวลายืมหนังสือนี้สิ้นสุดแล้ว',
 			'lending.updated' => 'บีบอิสระปรับปรุง',
 			'lending.continueService' => 'ทํางานต่อไป',
 			'lending.comingSoon' => 'การรับประกันในแอป · มาเร็ว ๆ นี้',
 			'lending.comingSoonDescription' => 'การรวมของ Libby จะอยู่บนทางของคุณ คุณสามารถใช้ห้องสมุดของคุณใน Libby ในขณะที่เราจะเสร็จสิ้นการเชื่อมต่อ',
-			'lending.suspendHold' => 'ปิดการเก็บรักษา',
-			'lending.resumeHold' => 'ใบเสนอราคา',
-			'lending.suspendMessage' => 'ปล่อยตําแหน่งของคุณในเส้นและปล่อยให้ผู้อ่านต่อไปให้คูปองนี้? คุณสามารถรับคืนการเก็บไว้ในภายหลัง',
-			'lending.resumeMessage' => 'ใหม่นี้เก็บไว้เพื่อให้ห้องสมุดของคุณสามารถเสนอสําเนาต่อไปที่พร้อมใช้งานได้หรือไม่',
+			'lending.suspendHold' => 'พักการจอง',
+			'lending.resumeHold' => 'เปิดใช้การจองต่อ',
+			'lending.suspendMessage' => 'เก็บลำดับของคุณในคิวไว้และให้ผู้อ่านคนถัดไปยืมสำเนานี้หรือไม่ คุณสามารถเปิดใช้การจองต่อได้ภายหลัง',
+			'lending.resumeMessage' => 'เปิดใช้การจองนี้ต่อเพื่อให้ห้องสมุดเสนอสำเนาถัดไปที่พร้อมให้ยืมหรือไม่',
 			'lending.editEmail' => 'การเปลี่ยนแปลงอีเมลการแจ้งเตือน',
 			_ => null,
 		};

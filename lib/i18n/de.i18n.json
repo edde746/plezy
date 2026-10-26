@@ -392,7 +392,7 @@
     "importSettingsInvalidFile": "Diese Datei ist kein gültiger PlezyNG-Einstellungsexport",
     "importSettingsNoUser": "Vor dem Import bitte anmelden",
     "cloudBackup": "Cloud-Sicherung",
-    "cloudBackupDescription": "Backup von Portable-Einstellungen auf eine Endstelle WebDAV über HTTPS. Serververbindungen und -kreditials bleiben auf diesem Gerät.",
+    "cloudBackupDescription": "Sichere übertragbare Einstellungen über HTTPS an einer WebDAV-Adresse. Serververbindungen und Anmeldedaten bleiben auf diesem Gerät.",
     "cloudBackupUrl": "WebDAV JSON Datei URL",
     "cloudBackupUsername": "Benutzername",
     "cloudBackupPassword": "Passwort",
@@ -862,7 +862,7 @@
     "confirmDeleteTarget": "„${title}“ dauerhaft von deinem Server löschen?",
     "deleteMultipleWarning": "Dies umfasst alle Episoden und deren Dateien.",
     "deleteEpisodeCountWarning": {
-      "one": "Dies löscht alle ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Folge darin sowie ihre Datei.",
+      "one": "Dies löscht die ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} enthaltene Folge und ihre Datei.",
       "other": "Dies löscht alle ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Folgen darin sowie ihre Dateien."
     },
     "deleteMultiPartWarning": {
@@ -937,10 +937,10 @@
     "highContrastHint": "Stärkeres Text, Auszeichnungen und Fokusindikatoren auf leichten oder dunklen Oberflächen.",
     "interaction": "Bewegung und Interaktion",
     "reduceMotion": "Bewegung reduzieren",
-    "reduceMotionHint": "Halten Sie den Fokus, die Seitenübergänge und die dekorativen Effekte immer noch.",
+    "reduceMotionHint": "Animationen der Fokusanzeige, Seitenübergänge und dekorative Effekte anhalten.",
     "largeTargets": "Großer Touch-Ziel",
     "largeTargetsHint": "Geben Sie den gemeinsamen Kontroll mehr Platz für Berührung und assistive Navigation.",
-    "navigationHint": "Verwenden Sie Tab und Shift+Tab, um zwischen den Kontrollstellen zu bewegen, Enter oder Space zu aktivieren und Escape oder Back to close."
+    "navigationHint": "Mit Tab und Shift+Tab wechselst du zwischen Bedienelementen, mit Enter oder der Leertaste aktivierst du sie, und mit Escape oder Zurück schließt du sie. Wenn ein Buch geöffnet ist, kannst du den Zoom und die Leseeinstellungen anpassen."
   },
   "tooltips": {
     "shufflePlay": "Zufallswiedergabe",
@@ -1526,7 +1526,7 @@
       "selectedCount": "${count} ausgewählt",
       "actions": "Auswahl Aktionen",
       "confirmDescendants": "Dies ändert alle Episoden in den ausgewählten Shows und Jahreszeiten.",
-      "confirmUnwatched": "Dies klärt auch den Playback-Vorgang für die ausgewählten Elemente.",
+      "confirmUnwatched": "Dabei wird auch der Wiedergabefortschritt der ausgewählten Elemente gelöscht.",
       "confirmCount": "Auswählte Artikel: ${count}.",
       "completed": "Aktualisierte Artikel: ${count}.",
       "partialFailure": "Aktualisiert ${succeeded}; versagt ${failed}. Versagtes Produkt bleibt ausgewählt."
@@ -2817,7 +2817,7 @@
     "connectDirectPlexCardSubtitleScoped": "Verbindet Sie direkt mit lokaler IP oder URL. Verbindet Sie zu ${name}.",
     "insecureTitle": "Unschlüsselte Verbindung",
     "insecureDescription": "$url verwendet HTTP. Personen im Netzwerk können dein Passwort, deine Tokens und deine Medien lesen oder verändern. Verwende nach Möglichkeit HTTPS. Fahre nur fort, wenn du diesem Netzwerk vertraust und das Risiko akzeptierst.",
-    "allowHttp": "Erlaubnis HTTP",
+    "allowHttp": "HTTP erlauben",
     "httpsRequired": "Verwenden Sie HTTPS oder erlauben Sie ausdrücklich eine unschlüsselte Verbindung."
   },
   "watchLink": {
@@ -2934,8 +2934,8 @@
   "platform": {
     "localNetworkPermission": "PlezyNG verbindet sich mit Ihren Medien-Server und Playback-Geräten auf Ihrem lokalen Netzwerk.",
     "locationPermission": "PlezyNG verwendet Standortzugang, wenn iOS es benötigt, um Ihr lokales Netzwerk zu erkennen und mit Ihren Medien-Server zu verbinden.",
-    "photoLibraryPermission": "Wählen Sie Bilder aus Ihrer Fotobibliothek als Medienkunstwerk zu verwenden.",
-    "cameraPermission": "Scannen Sie QR-Codes, um eine Companion Remote zu kombinieren."
+    "photoLibraryPermission": "Wähle Bilder aus deiner Fotomediathek aus, um sie als Mediencover und andere Medienbilder zu verwenden.",
+    "cameraPermission": "QR-Codes scannen, um eine Companion Remote zu koppeln."
   },
   "fileSources": {
     "title": "Dateien und Bücher",
@@ -2962,7 +2962,7 @@
     "save": "Speichern",
     "close": "Schließen",
     "removeSource": "Abschließen Quelle",
-    "disconnectMessage": "Die heruntergeladenen Dateien und Ihre Les- und Hörenhistorie bleiben auf diesem Gerät.",
+    "disconnectMessage": "Verbindung zu dieser Quelle trennen? Heruntergeladene Dateien sowie dein Lese- und Hörverlauf bleiben auf diesem Gerät.",
     "localFolder": "Wählen Sie die Folder",
     "empty": "Hier ist noch nichts",
     "emptyHint": "Ein Quell hinzufügen oder ein Buch, Audiobook, Musik oder Video importieren.",
@@ -3035,7 +3035,7 @@
     "paper": "Papier",
     "sepia": "Sepia",
     "night": "Nacht",
-    "readAloud": "Lesen Sie diese Seite auf dem Hülle",
+    "readAloud": "Diese Seite vorlesen",
     "readAlong": "Lesen Sie weiter",
     "stopReading": "Stoppen Sie mit Narration",
     "searchBook": "Suche in Buch",
@@ -3092,10 +3092,10 @@
     "twoPages": "Zwei Seiten",
     "readingDirection": "Lesen Richtung",
     "leftToRight": "links nach rechts",
-    "rightToLeft": "Recht auf Verlassen",
+    "rightToLeft": "Von rechts nach links",
     "letterSpacing": "Brief Spazier",
     "wordSpacing": "Spazierend Wort",
-    "readerControlsHelp": "Pinch oder verwenden Sie Zoom-Controller, um Seiten zu erweitern. Drücken Sie auf den Panel. Ctrl/ ⁇  + oder − justiert Zoom; Ctrl/ ⁇  0 reset es. Page Up und Page Down drehen Seiten.",
+    "readerControlsHelp": "Ziehe zwei Finger auseinander oder nutze die Zoom-Steuerung, um Seiten zu vergrößern. Ziehe die Seite, um sie zu verschieben. Ctrl/⌘ mit + oder − ändert den Zoom; Ctrl/⌘ mit 0 setzt ihn zurück. Page Up und Page Down blättern um.",
     "imagePage": "Komikseite",
     "resetReader": "Lesen Preferenzen wiederherstellen",
     "zoom": "Zoom",
@@ -3117,23 +3117,23 @@
     "search": "Suche nach Büchern und Autoren",
     "catalogue": "Katalog",
     "loans": "Darlehen",
-    "holds": "Halt",
+    "holds": "Vormerkungen",
     "signIn": "Anmeldung mit Ihrer Bibliothek",
     "waiting": "Beenden Sie die Anmeldung in Ihrem Browser und dann zurück.",
     "cancel": "Abbrechen",
     "disconnect": "Bibliothek entfernen",
-    "disconnectMessage": "Entfernen Sie diese Bibliothek aus diesem Profil? Ihre Darlehen und halten Sie Ihren Aufenthalt mit Ihrer Bibliothek.",
+    "disconnectMessage": "Diese Bibliothek aus diesem Profil entfernen? Deine Ausleihen und Vormerkungen bleiben bei der Bibliothek erhalten.",
     "getBook": "Buch bekommen",
     "checkAvailability": "Überprüfen Sie Verfügbarkeit",
     "available": "zur Verfügung zum Darlehen",
     "unavailable": "Aktuell unzugänglich",
-    "borrow": "Lohn",
-    "placeHold": "Platz halten",
+    "borrow": "Ausleihen",
+    "placeHold": "Vormerken",
     "returnBook": "früh zurück",
-    "cancelHold": "Ablehnung Hold",
+    "cancelHold": "Vormerkung stornieren",
     "confirmBorrow": "Löhnen Sie diesen Titel aus Ihrer Bibliothek?",
     "confirmReturn": "Geben Sie diesen Titel jetzt zurück? Sie müssen es vielleicht erneut leihen, um weiterzuführen.",
-    "confirmCancelHold": "Holen Sie sich Ihre Haltung auf diesem Titel?",
+    "confirmCancelHold": "Deine Vormerkung für diesen Titel stornieren?",
     "email": "E-Mail Nachricht halten",
     "due": "Die Anzahl $date",
     "queue": "Position $position in der Linie",
@@ -3151,8 +3151,8 @@
     "comingSoonDescription": "Sie können Ihre Bibliothek in Libby verwenden, während wir sie verbinden.",
     "suspendHold": "Halt aufhören",
     "resumeHold": "Resume halten",
-    "suspendMessage": "Halten Sie Ihre Stelle in der Linie und lassen Sie den nächsten Leser diese Kopie leihen?",
-    "resumeMessage": "Wiederholen Sie diese Haltung, damit Ihre Bibliothek Ihnen die nächste verfügbare Kopie anbietet kann?",
+    "suspendMessage": "Deinen Platz in der Warteschlange behalten und den nächsten Leser dieses Exemplar ausleihen lassen? Du kannst die Vormerkung später fortsetzen.",
+    "resumeMessage": "Diese Vormerkung fortsetzen, damit dir die Bibliothek das nächste verfügbare Exemplar anbieten kann?",
     "editEmail": "Änderung der E-Mail-Nachricht"
   }
 }

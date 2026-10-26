@@ -523,7 +523,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig eksport af PlezyNG-indstillinger';
 	@override String get importSettingsNoUser => 'Log ind før import af indstillinger';
 	@override String get cloudBackup => 'Sikkerhedskopi i skyen';
-	@override String get cloudBackupDescription => 'Backup bærbare indstillinger til en slutpunkt WebDAV over HTTPS. serverforbindelser og akkrediteringer forbliver på denne enhed.';
+	@override String get cloudBackupDescription => 'Sikkerhedskopiér indstillinger, der kan overføres, til en WebDAV-adresse via HTTPS. Serverforbindelser og loginoplysninger bliver på denne enhed.';
 	@override String get cloudBackupUrl => 'WebDAV JSON fil URL';
 	@override String get cloudBackupUsername => 'Brugernavn';
 	@override String get cloudBackupPassword => 'Adgangskode';
@@ -983,7 +983,7 @@ class _Translations$mediaMenu$da extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'Slet ${title} permanent fra din server?';
 	@override String get deleteMultipleWarning => 'Dette inkluderer alle episoder og deres filer.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n,
-		one: 'Dette sletter alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode i den og dens fil.',
+		one: 'Dette sletter ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode i elementet og dens fil.',
 		other: 'Dette sletter alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episoder i den og deres filer.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n,
@@ -1072,10 +1072,10 @@ class _Translations$accessibility$da extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Stærkere tekst, udskrifter og fokusindikatorer på lys eller mørke overflader.';
 	@override String get interaction => 'Motion og interaktion';
 	@override String get reduceMotion => 'Reduktion af bevægelsen';
-	@override String get reduceMotionHint => 'Hold fokus, sideovergangen og dekorative effekter stadig.';
+	@override String get reduceMotionHint => 'Stop bevægelse i fokusmarkeringer, sideovergange og dekorative effekter.';
 	@override String get largeTargets => 'Større touch mål';
 	@override String get largeTargetsHint => 'Giv delte kontroller mere plads til touch og assistive navigation.';
-	@override String get navigationHint => 'Brug Tab og Shift+Tab til at flytte mellem kontrol, Enter eller Space til at aktivere, og Escape eller Back til at lukke.';
+	@override String get navigationHint => 'Brug Tab og Shift+Tab til at flytte mellem kontrolelementer, Enter eller mellemrum til at aktivere og Escape eller Tilbage til at lukke. Zoom og læseindstillinger er tilgængelige, når en bog er åben.';
 }
 
 // Path: tooltips
@@ -2742,7 +2742,7 @@ class _Translations$addServer$da extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Forbinder direkte ved hjælp af lokal IP eller URL. Forbinder til ${name}.';
 	@override String get insecureTitle => 'Uencryptet forbindelse';
 	@override String insecureDescription({required Object url}) => '${url} bruger HTTP. Andre på netværket kan læse eller ændre din adgangskode, dine tokens og dine medier. Brug HTTPS, når det er muligt. Fortsæt kun, hvis du stoler på netværket og accepterer risikoen.';
-	@override String get allowHttp => 'Tilladelse HTTP';
+	@override String get allowHttp => 'Tillad HTTP';
 	@override String get httpsRequired => 'Brug HTTPS eller udtrykkeligt tillade en ikke-krypteret forbindelse.';
 }
 
@@ -2878,10 +2878,10 @@ class _Translations$platform$da extends Translations$platform$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get localNetworkPermission => 'PlezyNG forbinder til dine medie- og playback-enheder på dit lokale netværk.';
-	@override String get locationPermission => 'PlezyNG bruger lokationsindgang, når iOS kræver det for at opdage dit lokale netværk og tilslutte sig dine medie servere.';
-	@override String get photoLibraryPermission => 'Vælg billeder fra din fotobibliotek til at bruge som medie kunstværk.';
-	@override String get cameraPermission => 'Skan QR-koder til at parere en Companion Remote.';
+	@override String get localNetworkPermission => 'PlezyNG opretter forbindelse til dine medieservere og afspilningsenheder på dit lokale netværk.';
+	@override String get locationPermission => 'PlezyNG bruger adgang til lokalitet, når iOS kræver det for at finde dit lokale netværk og oprette forbindelse til dine medieservere.';
+	@override String get photoLibraryPermission => 'Vælg billeder fra dit fotobibliotek til omslag og andre mediebilleder.';
+	@override String get cameraPermission => 'Scan QR-koder for at parre en Companion Remote.';
 }
 
 // Path: fileSources
@@ -2915,7 +2915,7 @@ class _Translations$fileSources$da extends Translations$fileSources$en {
 	@override String get save => 'Gem';
 	@override String get close => 'Luk';
 	@override String get removeSource => 'Diskonneck kilde';
-	@override String get disconnectMessage => 'Downloadede filer og din læsnings- og lyttehistorie vil forblive på denne enhed.';
+	@override String get disconnectMessage => 'Afbryd forbindelsen til denne kilde? Downloadede filer og din læse- og lyttehistorik bliver på denne enhed.';
 	@override String get localFolder => 'Vælg mappe';
 	@override String get empty => 'Der er ikke noget her endnu';
 	@override String get emptyHint => 'Tilføj en kilde eller import en bog, audiobook, musik eller video.';
@@ -2988,7 +2988,7 @@ class _Translations$fileSources$da extends Translations$fileSources$en {
 	@override String get paper => 'Papir';
 	@override String get sepia => 'Sæb';
 	@override String get night => 'Nattedagen';
-	@override String get readAloud => 'Læs denne side i høj grad';
+	@override String get readAloud => 'Læs denne side højt';
 	@override String get readAlong => 'Læs videre';
 	@override String get stopReading => 'Stop med narration';
 	@override String get searchBook => 'Søg i bogen';
@@ -3044,11 +3044,11 @@ class _Translations$fileSources$da extends Translations$fileSources$en {
 	@override String get singlePage => 'Enkel side';
 	@override String get twoPages => 'To sider';
 	@override String get readingDirection => 'Læs retning';
-	@override String get leftToRight => 'Til højre';
-	@override String get rightToLeft => 'Retten til at forlade';
+	@override String get leftToRight => 'Fra venstre mod højre';
+	@override String get rightToLeft => 'Fra højre mod venstre';
 	@override String get letterSpacing => 'Brev til spænder';
 	@override String get wordSpacing => 'Ord spænder';
-	@override String get readerControlsHelp => 'Tryk eller brug zoomkontroller til at udvide sider. tryk til pan. Ctrl/ ⁇  + eller − justerer zoom; Ctrl/ ⁇  0 genopretter det. Page Up og Page Down slår sider.';
+	@override String get readerControlsHelp => 'Spred to fingre, eller brug zoomknapperne til at forstørre sider. Træk for at flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nulstiller den. Page Up og Page Down skifter side.';
 	@override String get imagePage => 'Comic side';
 	@override String get resetReader => 'Gennemføre læsning præferencer';
 	@override String get zoom => 'Zoom';
@@ -3082,18 +3082,18 @@ class _Translations$lending$da extends Translations$lending$en {
 	@override String get waiting => 'Endte med at logge ind i din browser, og så vende tilbage her.';
 	@override String get cancel => 'Annuller';
 	@override String get disconnect => 'Fjern biblioteket';
-	@override String get disconnectMessage => 'Fjern denne bibliotek fra denne profil? dine lån og holdes ophold med din bibliotek.';
+	@override String get disconnectMessage => 'Fjern dette bibliotek fra denne profil? Dine lån og reservationer bliver hos biblioteket.';
 	@override String get getBook => 'Få bogen';
 	@override String get checkAvailability => 'Tjek tilgængelighed';
 	@override String get available => 'Tilgængelig til låne';
 	@override String get unavailable => 'Foreløbig ikke tilgængelig';
 	@override String get borrow => 'Lån';
-	@override String get placeHold => 'Stedet holdes';
+	@override String get placeHold => 'Reserver';
 	@override String get returnBook => 'Tilbage tidligt';
-	@override String get cancelHold => 'Afbestill hold';
+	@override String get cancelHold => 'Annuller reservation';
 	@override String get confirmBorrow => 'Lån denne titel fra din bibliotek?';
-	@override String get confirmReturn => 'Du kan have brug for at låne det igen for at fortsætte.';
-	@override String get confirmCancelHold => 'Vil du fjerne din hold på denne titel?';
+	@override String get confirmReturn => 'Aflever denne titel nu? Du kan blive nødt til at låne den igen for at fortsætte.';
+	@override String get confirmCancelHold => 'Annuller din reservation af denne titel?';
 	@override String get email => 'Hold meddelelse e-mail';
 	@override String due({required Object date}) => 'af ${date}';
 	@override String queue({required Object position}) => 'Position ${position} i linje';
@@ -3111,8 +3111,8 @@ class _Translations$lending$da extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Du kan bruge din bibliotek i Libby, mens vi slutter med at forbinde det.';
 	@override String get suspendHold => 'Slutte hold';
 	@override String get resumeHold => 'Resumé hold';
-	@override String get suspendMessage => 'Hold din plads i linje og lad den næste læsere låne denne kopi? Du kan genoptage holdningen senere.';
-	@override String get resumeMessage => 'Gør denne holding genop, så din bibliotek kan tilbyde dig den næste tilgængelige kopi?';
+	@override String get suspendMessage => 'Behold din plads i køen, og lad den næste læser låne dette eksemplar? Du kan genoptage reservationen senere.';
+	@override String get resumeMessage => 'Genoptag denne reservation, så biblioteket kan tilbyde dig det næste ledige eksemplar?';
 	@override String get editEmail => 'Ændre meddelelse e-mail';
 }
 
@@ -3501,7 +3501,7 @@ class _Translations$libraries$selection$da extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} valgt';
 	@override String get actions => 'Valg af handlinger';
 	@override String get confirmDescendants => 'Dette ændrer alle episoder i de udvalgte shows og sæsoner.';
-	@override String get confirmUnwatched => 'Dette gør også klar for spillebevægelsen for de udvalgte elementer.';
+	@override String get confirmUnwatched => 'Dette nulstiller også afspilningsforløbet for de valgte elementer.';
 	@override String confirmCount({required Object count}) => 'Vælgede elementer: ${count}.';
 	@override String completed({required Object count}) => 'Aktualiseret produkt: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Opdateret ${succeeded}; mislykkede ${failed}. mislykkedes elementer forbliver valgt.';
@@ -4453,7 +4453,7 @@ extension on TranslationsDa {
 			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig eksport af PlezyNG-indstillinger',
 			'settings.importSettingsNoUser' => 'Log ind før import af indstillinger',
 			'settings.cloudBackup' => 'Sikkerhedskopi i skyen',
-			'settings.cloudBackupDescription' => 'Backup bærbare indstillinger til en slutpunkt WebDAV over HTTPS. serverforbindelser og akkrediteringer forbliver på denne enhed.',
+			'settings.cloudBackupDescription' => 'Sikkerhedskopiér indstillinger, der kan overføres, til en WebDAV-adresse via HTTPS. Serverforbindelser og loginoplysninger bliver på denne enhed.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON fil URL',
 			'settings.cloudBackupUsername' => 'Brugernavn',
 			'settings.cloudBackupPassword' => 'Adgangskode',
@@ -4908,7 +4908,7 @@ extension on TranslationsDa {
 			'mediaMenu.deleteAnyway' => 'Slet alligevel',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Slet ${title} permanent fra din server?',
 			'mediaMenu.deleteMultipleWarning' => 'Dette inkluderer alle episoder og deres filer.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Dette sletter alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode i den og dens fil.', other: 'Dette sletter alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episoder i den og deres filer.', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Dette sletter ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode i elementet og dens fil.', other: 'Dette sletter alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episoder i den og deres filer.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Dette emne er gemt som ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} fil, som vil blive slettet.', other: 'Dette emne er gemt på tværs af ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} filer, og alle vil blive slettet.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} anden episode er gemt i samme fil og vil også blive slettet:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} andre episoder er gemt i samme fil og vil også blive slettet:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG kunne ikke kontrollere, hvilke filer dette vil fjerne, så det kan slette mere end det ovennævnte emne. Annuller og prøv igen, eller slet alligevel.',
@@ -4971,10 +4971,10 @@ extension on TranslationsDa {
 			'accessibility.highContrastHint' => 'Stærkere tekst, udskrifter og fokusindikatorer på lys eller mørke overflader.',
 			'accessibility.interaction' => 'Motion og interaktion',
 			'accessibility.reduceMotion' => 'Reduktion af bevægelsen',
-			'accessibility.reduceMotionHint' => 'Hold fokus, sideovergangen og dekorative effekter stadig.',
+			'accessibility.reduceMotionHint' => 'Stop bevægelse i fokusmarkeringer, sideovergange og dekorative effekter.',
 			'accessibility.largeTargets' => 'Større touch mål',
 			'accessibility.largeTargetsHint' => 'Giv delte kontroller mere plads til touch og assistive navigation.',
-			'accessibility.navigationHint' => 'Brug Tab og Shift+Tab til at flytte mellem kontrol, Enter eller Space til at aktivere, og Escape eller Back til at lukke.',
+			'accessibility.navigationHint' => 'Brug Tab og Shift+Tab til at flytte mellem kontrolelementer, Enter eller mellemrum til at aktivere og Escape eller Tilbage til at lukke. Zoom og læseindstillinger er tilgængelige, når en bog er åben.',
 			'tooltips.shufflePlay' => 'Afspil tilfældigt',
 			'tooltips.playTrailer' => 'Afspil trailer',
 			'tooltips.markAsWatched' => 'Markér som set',
@@ -5499,7 +5499,7 @@ extension on TranslationsDa {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} valgt',
 			'libraries.selection.actions' => 'Valg af handlinger',
 			'libraries.selection.confirmDescendants' => 'Dette ændrer alle episoder i de udvalgte shows og sæsoner.',
-			'libraries.selection.confirmUnwatched' => 'Dette gør også klar for spillebevægelsen for de udvalgte elementer.',
+			'libraries.selection.confirmUnwatched' => 'Dette nulstiller også afspilningsforløbet for de valgte elementer.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Vælgede elementer: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Aktualiseret produkt: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Opdateret ${succeeded}; mislykkede ${failed}. mislykkedes elementer forbliver valgt.',
@@ -6644,7 +6644,7 @@ extension on TranslationsDa {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Forbinder direkte ved hjælp af lokal IP eller URL. Forbinder til ${name}.',
 			'addServer.insecureTitle' => 'Uencryptet forbindelse',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} bruger HTTP. Andre på netværket kan læse eller ændre din adgangskode, dine tokens og dine medier. Brug HTTPS, når det er muligt. Fortsæt kun, hvis du stoler på netværket og accepterer risikoen.',
-			'addServer.allowHttp' => 'Tilladelse HTTP',
+			'addServer.allowHttp' => 'Tillad HTTP',
 			'addServer.httpsRequired' => 'Brug HTTPS eller udtrykkeligt tillade en ikke-krypteret forbindelse.',
 			'watchLink.serverUnavailable' => 'Jeg kunne ikke nå en server på Plex for denne link.',
 			'watchLink.notFound' => 'Jeg kunne ikke finde denne show eller film på dine Plex servere.',
@@ -6755,10 +6755,10 @@ extension on TranslationsDa {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'på',
 			'homeLayout.resetHeroButtonDescription' => 'Det afbryder hver række af hjertesæt og bringer den ene roterende banner tilbage til toppen, som før hjertesæt eksisterede.',
-			'platform.localNetworkPermission' => 'PlezyNG forbinder til dine medie- og playback-enheder på dit lokale netværk.',
-			'platform.locationPermission' => 'PlezyNG bruger lokationsindgang, når iOS kræver det for at opdage dit lokale netværk og tilslutte sig dine medie servere.',
-			'platform.photoLibraryPermission' => 'Vælg billeder fra din fotobibliotek til at bruge som medie kunstværk.',
-			'platform.cameraPermission' => 'Skan QR-koder til at parere en Companion Remote.',
+			'platform.localNetworkPermission' => 'PlezyNG opretter forbindelse til dine medieservere og afspilningsenheder på dit lokale netværk.',
+			'platform.locationPermission' => 'PlezyNG bruger adgang til lokalitet, når iOS kræver det for at finde dit lokale netværk og oprette forbindelse til dine medieservere.',
+			'platform.photoLibraryPermission' => 'Vælg billeder fra dit fotobibliotek til omslag og andre mediebilleder.',
+			'platform.cameraPermission' => 'Scan QR-koder for at parre en Companion Remote.',
 			'fileSources.title' => 'Filer og bøger',
 			'fileSources.subtitle' => 'Læs, lytte og se fra dine egne filer.',
 			'fileSources.add' => 'Tilføj kilde',
@@ -6783,7 +6783,7 @@ extension on TranslationsDa {
 			'fileSources.save' => 'Gem',
 			'fileSources.close' => 'Luk',
 			'fileSources.removeSource' => 'Diskonneck kilde',
-			'fileSources.disconnectMessage' => 'Downloadede filer og din læsnings- og lyttehistorie vil forblive på denne enhed.',
+			'fileSources.disconnectMessage' => 'Afbryd forbindelsen til denne kilde? Downloadede filer og din læse- og lyttehistorik bliver på denne enhed.',
 			'fileSources.localFolder' => 'Vælg mappe',
 			'fileSources.empty' => 'Der er ikke noget her endnu',
 			'fileSources.emptyHint' => 'Tilføj en kilde eller import en bog, audiobook, musik eller video.',
@@ -6853,7 +6853,7 @@ extension on TranslationsDa {
 			'fileSources.paper' => 'Papir',
 			'fileSources.sepia' => 'Sæb',
 			'fileSources.night' => 'Nattedagen',
-			'fileSources.readAloud' => 'Læs denne side i høj grad',
+			'fileSources.readAloud' => 'Læs denne side højt',
 			'fileSources.readAlong' => 'Læs videre',
 			'fileSources.stopReading' => 'Stop med narration',
 			'fileSources.searchBook' => 'Søg i bogen',
@@ -6909,11 +6909,11 @@ extension on TranslationsDa {
 			'fileSources.singlePage' => 'Enkel side',
 			'fileSources.twoPages' => 'To sider',
 			'fileSources.readingDirection' => 'Læs retning',
-			'fileSources.leftToRight' => 'Til højre',
-			'fileSources.rightToLeft' => 'Retten til at forlade',
+			'fileSources.leftToRight' => 'Fra venstre mod højre',
+			'fileSources.rightToLeft' => 'Fra højre mod venstre',
 			'fileSources.letterSpacing' => 'Brev til spænder',
 			'fileSources.wordSpacing' => 'Ord spænder',
-			'fileSources.readerControlsHelp' => 'Tryk eller brug zoomkontroller til at udvide sider. tryk til pan. Ctrl/ ⁇  + eller − justerer zoom; Ctrl/ ⁇  0 genopretter det. Page Up og Page Down slår sider.',
+			'fileSources.readerControlsHelp' => 'Spred to fingre, eller brug zoomknapperne til at forstørre sider. Træk for at flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nulstiller den. Page Up og Page Down skifter side.',
 			'fileSources.imagePage' => 'Comic side',
 			'fileSources.resetReader' => 'Gennemføre læsning præferencer',
 			'fileSources.zoom' => 'Zoom',
@@ -6938,18 +6938,18 @@ extension on TranslationsDa {
 			'lending.waiting' => 'Endte med at logge ind i din browser, og så vende tilbage her.',
 			'lending.cancel' => 'Annuller',
 			'lending.disconnect' => 'Fjern biblioteket',
-			'lending.disconnectMessage' => 'Fjern denne bibliotek fra denne profil? dine lån og holdes ophold med din bibliotek.',
+			'lending.disconnectMessage' => 'Fjern dette bibliotek fra denne profil? Dine lån og reservationer bliver hos biblioteket.',
 			'lending.getBook' => 'Få bogen',
 			'lending.checkAvailability' => 'Tjek tilgængelighed',
 			'lending.available' => 'Tilgængelig til låne',
 			'lending.unavailable' => 'Foreløbig ikke tilgængelig',
 			'lending.borrow' => 'Lån',
-			'lending.placeHold' => 'Stedet holdes',
+			'lending.placeHold' => 'Reserver',
 			'lending.returnBook' => 'Tilbage tidligt',
-			'lending.cancelHold' => 'Afbestill hold',
+			'lending.cancelHold' => 'Annuller reservation',
 			'lending.confirmBorrow' => 'Lån denne titel fra din bibliotek?',
-			'lending.confirmReturn' => 'Du kan have brug for at låne det igen for at fortsætte.',
-			'lending.confirmCancelHold' => 'Vil du fjerne din hold på denne titel?',
+			'lending.confirmReturn' => 'Aflever denne titel nu? Du kan blive nødt til at låne den igen for at fortsætte.',
+			'lending.confirmCancelHold' => 'Annuller din reservation af denne titel?',
 			'lending.email' => 'Hold meddelelse e-mail',
 			'lending.due' => ({required Object date}) => 'af ${date}',
 			'lending.queue' => ({required Object position}) => 'Position ${position} i linje',
@@ -6967,8 +6967,8 @@ extension on TranslationsDa {
 			'lending.comingSoonDescription' => 'Du kan bruge din bibliotek i Libby, mens vi slutter med at forbinde det.',
 			'lending.suspendHold' => 'Slutte hold',
 			'lending.resumeHold' => 'Resumé hold',
-			'lending.suspendMessage' => 'Hold din plads i linje og lad den næste læsere låne denne kopi? Du kan genoptage holdningen senere.',
-			'lending.resumeMessage' => 'Gør denne holding genop, så din bibliotek kan tilbyde dig den næste tilgængelige kopi?',
+			'lending.suspendMessage' => 'Behold din plads i køen, og lad den næste læser låne dette eksemplar? Du kan genoptage reservationen senere.',
+			'lending.resumeMessage' => 'Genoptag denne reservation, så biblioteket kan tilbyde dig det næste ledige eksemplar?',
 			'lending.editEmail' => 'Ændre meddelelse e-mail',
 			_ => null,
 		};

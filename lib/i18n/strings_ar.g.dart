@@ -197,7 +197,7 @@ class _Translations$auth$ar extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'في انتظار الموافقة ..';
 	@override String get quickConnectCancel => 'إلغاء';
 	@override String get quickConnectExpired => 'انتهت صلاحية الاتصال السريع. حاول مرة أخرى.';
-	@override String get localDataRecoveryRequired => 'PlezyNG لا يمكن استرداد بيانات تسجيل الدخول المحلية واللعب المستمر بأمان.';
+	@override String get localDataRecoveryRequired => 'تعذّر على PlezyNG استعادة بيانات تسجيل الدخول المحلية وبيانات التشغيل المعلّقة بأمان. يُرجى تسجيل الدخول مجددًا.';
 	@override String get pinCheckRejected => 'تم رفض التحقق Plex PIN';
 	@override String get connectToDirectPlex => 'الاتصال بالخادم المحلي Plex';
 }
@@ -531,7 +531,7 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'هذا الملف غير صالحة PlezyNG إعدادات تصدير';
 	@override String get importSettingsNoUser => 'تسجيل الدخول قبل استيراد الإعدادات';
 	@override String get cloudBackup => 'سحابة النسخ الاحتياطي';
-	@override String get cloudBackupDescription => 'النسخ الاحتياطي للإعدادات المحمولة إلى نقطة النهاية WebDAV فوق HTTPS.تبقى اتصالات الخادم والشهادات على هذا الجهاز.';
+	@override String get cloudBackupDescription => 'انسخ الإعدادات القابلة للنقل احتياطيًا إلى نقطة اتصال WebDAV عبر HTTPS. تبقى اتصالات الخادم وبيانات تسجيل الدخول على هذا الجهاز.';
 	@override String get cloudBackupUrl => 'WebDAV JSON ملف URL';
 	@override String get cloudBackupUsername => 'اسم المستخدم';
 	@override String get cloudBackupPassword => 'كلمة المرور';
@@ -666,7 +666,7 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get audioChannelLimitSurround51Description => 'يخلط 7.1 إلى 5.1 بالنسبة للتلفزيونات والمستلمين الذين يستغرقون 5.1 PCM فقط.';
 	@override String get audioChannelLimitStereo => 'ستيريو (Stereo)';
 	@override String get audioChannelLimitStereoDescription => 'يخلط إلى اثنين من القنوات للمكبرات الصوتية الستيريو أو سماعات الرأس.';
-	@override String get downmixCenterBoost => 'قناة قناة قناة قناة';
+	@override String get downmixCenterBoost => 'تعزيز القناة الوسطى';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} دبي';
 	@override String get downmixCenterBoostLabel => 'الارتفاع (dB )';
 	@override String get downmixCenterBoostShort => 'دبي';
@@ -1014,8 +1014,8 @@ class _Translations$mediaMenu$ar extends Translations$mediaMenu$en {
 		many: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
 		other: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG لم يكن قادرا على التحقق من الملفات التي سيتم إزالتها، لذلك قد يحذف أكثر من العنصر المذكور أعلاه.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'لم يقدم خادمك تفاصيل الملفات لهذا العنصر، لذلك لا يمكن أن تحقق PlezyNG من الملفات التي سيتم إزالتها.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'تعذّر على PlezyNG التحقق من الملفات التي سيحذفها هذا الإجراء، لذلك قد يحذف أكثر من العنصر المذكور أعلاه. ألغِ الإجراء وحاول مجددًا، أو اختر الحذف على أي حال.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'لم يقدّم خادمك تفاصيل ملفات هذا العنصر، لذلك لا يستطيع PlezyNG التحقق من الملفات التي سيحذفها هذا الإجراء. قد تُحذف ملفات تتجاوز العنصر المذكور أعلاه.';
 	@override String get mediaDeletedSuccessfully => 'تم حذف منتجات وسائل الإعلام بنجاح';
 	@override String get mediaFailedToDelete => 'فشل في حذف موضوع وسائل الإعلام';
 	@override String get rate => 'المعدل';
@@ -1047,13 +1047,13 @@ class _Translations$accessibility$ar extends Translations$accessibility$en {
 
 	// Translations
 	@override String mediaCardMovie({required Object title}) => '${title}، فيلم';
-	@override String mediaCardShow({required Object title}) => '${title}، عرض التلفزيون';
+	@override String mediaCardShow({required Object title}) => '${title}، مسلسل تلفزيوني';
 	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'شوهد';
-	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent}% مشاهدة';
-	@override String get mediaCardUnwatched => 'غير ملاحظة';
-	@override String get tapToPlay => 'اضغط على اللعب';
+	@override String mediaCardPartiallyWatched({required Object percent}) => 'تمت مشاهدة ${percent} بالمئة';
+	@override String get mediaCardUnwatched => 'لم تتم مشاهدته';
+	@override String get tapToPlay => 'اضغط للتشغيل';
 	@override String get decrease => 'انخفاض';
 	@override String get increase => 'زيادة';
 	@override String decreaseValue({required Object label}) => 'انخفاض ${label}';
@@ -1065,8 +1065,8 @@ class _Translations$accessibility$ar extends Translations$accessibility$en {
 	@override String get expandText => 'توسيع النص';
 	@override String get collapseText => 'كسر النص';
 	@override String get alphabetNavigation => 'الأبجدية الملاحة';
-	@override String get alphabetScrollHint => 'قم بتحريك أو رفع للانتقال عن طريق الرسالة';
-	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'صف ${row} من ${rowCount}، صف ${column} من ${columnCount}';
+	@override String get alphabetScrollHint => 'مرّر لأعلى أو لأسفل للتنقل حسب الحرف';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'الصف ${row} من ${rowCount}، العمود ${column} من ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'صف ${row} من ${rowCount}';
 	@override String get autoScrollPlay => 'لعبة Auto-Scroll';
 	@override String get autoScrollPause => 'استراحة السيارات';
@@ -1297,7 +1297,7 @@ class _Translations$messages$ar extends Translations$messages$en {
 	@override String get serverBusyTitle => 'البث غير متوفر';
 	@override String get serverBusyBody => 'لا يزال الخادم يرفض بث هذا الملف (HTTP 503).قد يكون إعادة تشغيل، مشغول، أو قد يكون تخزين الملف غير متصل.حاول مرة أخرى في لحظة - إذا كان لا يزال يحدث، اطلب من مالك الخادم التحقق من الخادم وتخزين الملف.';
 	@override String get playbackNotAllowedTitle => 'لا يسمح لـ Playback';
-	@override String get playbackNotAllowedBody => 'ورفض الخادم بث هذا البند (HTTP 403). قد لا يكون حسابك مسموحًا بتشغيلها، أو قد يسمح الخادم فقط بالتشغيل على شبكتها المحلية.';
+	@override String get playbackNotAllowedBody => 'رفض الخادم بث هذا العنصر (HTTP 403). قد لا يملك حسابك صلاحية تشغيله، أو قد يسمح الخادم بالتشغيل على شبكته المحلية فقط.';
 	@override String get logsUploaded => 'Logs تحميل';
 	@override String get logsUploadFailed => 'فشل في تحميل اللوحات';
 	@override String get logId => 'معرّف السجل';
@@ -1409,7 +1409,7 @@ class _Translations$profiles$ar extends Translations$profiles$en {
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} ملفات تعريف · نشطة: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} ملفات تعريف';
 	@override String get removeConnectionTitle => 'إزالة الاتصال ؟';
-	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => 'إزالة الوصول إلى ${displayName} إلى ${connectionLabel}.الملفات الأخرى تحافظ عليه.';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => 'إزالة صلاحية وصول ${displayName} إلى ${connectionLabel}. تحتفظ الملفات الشخصية الأخرى بصلاحية الوصول.';
 	@override String get deleteProfileTitle => 'إزالة الملف الشخصي؟';
 	@override String deleteProfileMessage({required Object displayName}) => 'إزالة ${displayName} و اتصالاتها.الخوادم تبقى متاحة.';
 	@override String get profileNameLabel => 'اسم الملف الشخصي';
@@ -1730,7 +1730,7 @@ class _Translations$startup$ar extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG لا يمكن أن تبدأ';
 	@override String get failedBody => 'حدث شيء خاطئ أثناء بدء التشغيل، وتحدد التفاصيل أدناه ما فشلت.';
-	@override String get failedBodyRepairable => 'يتم تدمير ملف إعدادات PlezyNG الذي تم حفظه ويجب إعادة بناءه قبل أن يبدأ PlezyNG.';
+	@override String get failedBodyRepairable => 'ملف إعدادات PlezyNG المحفوظ تالف ويجب إعادة إنشائه قبل بدء التطبيق. لن تفيد إعادة المحاولة؛ اختر إصلاح التخزين.';
 	@override String get phaseLabel => 'خطوة';
 	@override String get showDetails => 'عرض التفاصيل';
 	@override String get hideDetails => 'إخفاء التفاصيل';
@@ -1739,10 +1739,10 @@ class _Translations$startup$ar extends Translations$startup$en {
 	@override String get uploadDetails => 'تحميل التفاصيل';
 	@override String get repairStorage => 'إصلاح التخزين';
 	@override String get repairTitle => 'إصلاح البيانات المخزنة؟';
-	@override String get repairBodyCommon => 'يتم تدمير ملف الإعدادات في PlezyNG ولا يمكن قراءته.إصلاح إعادة تعيين كل إعداد إلى الافتراضي.';
-	@override String get repairBodyOneCredential => 'يتم تدمير واحد من تسجيل الدخول الذي تم حفظه ولا يمكن قراءته.إصلاح يزيل فقط هذا واحد ؛ يتم ترك إعداداتك الأخرى وحدها.';
+	@override String get repairBodyCommon => 'ملف إعدادات PlezyNG تالف ولا يمكن قراءته. تؤدي عملية الإصلاح إلى إعادة جميع الإعدادات إلى قيمها الافتراضية.';
+	@override String get repairBodyOneCredential => 'تلفت بيانات إحدى عمليات تسجيل الدخول المحفوظة ولا يمكن قراءتها. يحذف الإصلاح هذه البيانات فقط، وتبقى إعداداتك الأخرى دون تغيير.';
 	@override String get repairBodySignInsKept => 'يجب أن تبقى خادماتك وملفاتك الشخصية مسجلة.';
-	@override String get repairBodySignInsLost => 'لا يمكن استرداد المفتاح الذي يحمي تسجيلاتك المحفوظة من هذا الملف، لذلك ستحتاج إلى تسجيل الدخول إلى كل خادم وملف تعريف مرة أخرى.';
+	@override String get repairBodySignInsLost => 'لا يمكن استعادة المفتاح الذي يحمي بيانات تسجيل الدخول المحفوظة من هذا الملف، لذلك ستحتاج إلى تسجيل الدخول إلى كل خادم وملف شخصي مجددًا. لن يتأثر أي شيء على خادم الوسائط.';
 	@override String get repairBodySessionsUncertain => 'تُحفظ بيانات خدمات التتبع (MAL وAniList وSimkl وTrakt) وSeerr بشكل منفصل، وقد تبقى أو تُفقد. سيُطلعك PlezyNG على البيانات التي احتفظ بها بالضبط.';
 	@override String get repairConfirm => 'إصلاح';
 	@override String get repairSucceeded => 'التخزين إصلاح';
@@ -1752,9 +1752,9 @@ class _Translations$startup$ar extends Translations$startup$en {
 	@override String get repairFailed => 'إصلاح فشل';
 	@override String get repairKeptSignIns => 'لا يزال الخوادم والملفات الشخصية الخاصة بك مسجلة.';
 	@override String get repairLostSignIns => 'لا يمكن استرداد المفتاح الذي يحمي تسجيلاتك المحفوظة.سوف تحتاج إلى تسجيل الدخول إلى كل خادم وملف تعريف مرة أخرى.';
-	@override String get repairLostSessions => 'فقدت اتصال واحد على الأقل أو اتصال Seerr ويجب إعادة الاتصال به.';
+	@override String get repairLostSessions => 'فُقد اتصال واحد على الأقل بخدمة تتبّع أو بخدمة Seerr، ويجب إعادة الاتصال به.';
 	@override String get backupTitle => 'تم الحفاظ على نسخة من الملف المتضرر';
-	@override String get backupWarning => 'يحتوي على شهادات تسجيل الدخول الخاصة بك. لا تقوم بتحميلها أو مشاركتها.';
+	@override String get backupWarning => 'تحتوي هذه النسخة على بيانات تسجيل الدخول الخاصة بك. لا ترفعها أو تشاركها.';
 	@override String get deleteBackup => 'حذف النسخة';
 	@override String get backupDeleted => 'نسخة حذف';
 	@override String get previousFailureTitle => 'PlezyNG فشل في البدء للمرة الأخيرة';
@@ -1963,7 +1963,7 @@ class _Translations$collections$ar extends Translations$collections$en {
 	@override String get collection => 'مجموعة';
 	@override String get empty => 'المجموعة فارغة';
 	@override String get deleteCollection => 'حذف المجموعة';
-	@override String deleteConfirm({required Object title}) => 'إزالة "${title}"؟ هذا لا يمكن أن يكون مفقودًا.';
+	@override String deleteConfirm({required Object title}) => 'حذف «${title}»؟ لا يمكن التراجع عن هذا الإجراء.';
 	@override String get deleted => 'جمع محذوف';
 	@override String get deleteFailed => 'فشل في حذف المجموعة';
 	@override String deleteFailedWithError({required Object error}) => 'لم يتم إزالة المجموعة: ${error}';
@@ -2475,7 +2475,7 @@ class _Translations$performanceOverlay$ar extends Translations$performanceOverla
 	@override String get p7Conversion => 'P7 كونف';
 	@override String get sampleRate => 'معدل العينة';
 	@override String get pixelFormat => 'بيكسل Fmt';
-	@override String get hwFormat => 'م م م م م م';
+	@override String get hwFormat => 'تنسيق العتاد';
 	@override String get matrix => 'ماتريكس';
 	@override String get primaries => 'الأوائل';
 	@override String get transfer => 'نقل';
@@ -2718,7 +2718,7 @@ class _Translations$seerr$ar extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'هذا المثال لا يدعم Quick Connect.إنه يحتاج إلى Seerr 3.4 أو أحدث.';
 	@override String get notInitialized => 'هذه الحالة Seerr لم تكتمل إعدادات أول تشغيل';
 	@override String get noPlexTokenForReauth => 'رقم Plex توكن متاح للتسجيل مرة أخرى';
-	@override String get noStoredCredentials => 'لا توجد شهادات متوفرة للتسجيل مرة أخرى';
+	@override String get noStoredCredentials => 'لا تتوفر بيانات تسجيل دخول محفوظة لتسجيل الدخول مجددًا';
 	@override String get signInRejected => 'تم رفض التسجيل';
 	@override String get noSessionCookie => 'لم تصدر شركة Seerr كوكيز الجلسة';
 	@override String get freshCookieRejected => 'سييرر يرفض الكوكيز الجلسة الجديدة';
@@ -2818,7 +2818,7 @@ class _Translations$addServer$ar extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'اتصل مباشرة باستخدام IP المحلي أو URL. اتصل ${name}.';
 	@override String get insecureTitle => 'اتصال غير مشفر';
 	@override String insecureDescription({required Object url}) => 'يستخدم ${url} بروتوكول HTTP. قد يتمكن أشخاص على الشبكة من قراءة كلمة مرورك ورموز الوصول والوسائط أو تغييرها. استخدم HTTPS عند توفره. لا تتابع إلا إذا كنت تثق بهذه الشبكة وتقبل هذه المخاطرة.';
-	@override String get allowHttp => 'السماح HTTP';
+	@override String get allowHttp => 'السماح باستخدام HTTP';
 	@override String get httpsRequired => 'استخدام HTTPS أو يسمح صراحة بتوصيل غير مشفر.';
 }
 
@@ -3581,7 +3581,7 @@ class _Translations$libraries$selection$ar extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} تم اختيارها';
 	@override String get actions => 'إجراءات الاختيار';
 	@override String get confirmDescendants => 'هذا يغير جميع الحلقات في العروض والموسم المحدد.';
-	@override String get confirmUnwatched => 'هذا أيضا يطهر التقدم الترويجي للمنتجات المختارة.';
+	@override String get confirmUnwatched => 'يؤدي هذا أيضًا إلى مسح تقدّم التشغيل للعناصر المحددة.';
 	@override String confirmCount({required Object count}) => 'العناصر المختارة: ${count}.';
 	@override String completed({required Object count}) => 'تحديث العناصر: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'تحديث ${succeeded}؛ فشل ${failed}. لا تزال العناصر المفقودة مختارة.';
@@ -4243,7 +4243,7 @@ extension on TranslationsAr {
 			'auth.quickConnectWaiting' => 'في انتظار الموافقة ..',
 			'auth.quickConnectCancel' => 'إلغاء',
 			'auth.quickConnectExpired' => 'انتهت صلاحية الاتصال السريع. حاول مرة أخرى.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG لا يمكن استرداد بيانات تسجيل الدخول المحلية واللعب المستمر بأمان.',
+			'auth.localDataRecoveryRequired' => 'تعذّر على PlezyNG استعادة بيانات تسجيل الدخول المحلية وبيانات التشغيل المعلّقة بأمان. يُرجى تسجيل الدخول مجددًا.',
 			'auth.pinCheckRejected' => 'تم رفض التحقق Plex PIN',
 			'auth.connectToDirectPlex' => 'الاتصال بالخادم المحلي Plex',
 			'common.cancel' => 'إلغاء',
@@ -4541,7 +4541,7 @@ extension on TranslationsAr {
 			'settings.importSettingsInvalidFile' => 'هذا الملف غير صالحة PlezyNG إعدادات تصدير',
 			'settings.importSettingsNoUser' => 'تسجيل الدخول قبل استيراد الإعدادات',
 			'settings.cloudBackup' => 'سحابة النسخ الاحتياطي',
-			'settings.cloudBackupDescription' => 'النسخ الاحتياطي للإعدادات المحمولة إلى نقطة النهاية WebDAV فوق HTTPS.تبقى اتصالات الخادم والشهادات على هذا الجهاز.',
+			'settings.cloudBackupDescription' => 'انسخ الإعدادات القابلة للنقل احتياطيًا إلى نقطة اتصال WebDAV عبر HTTPS. تبقى اتصالات الخادم وبيانات تسجيل الدخول على هذا الجهاز.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON ملف URL',
 			'settings.cloudBackupUsername' => 'اسم المستخدم',
 			'settings.cloudBackupPassword' => 'كلمة المرور',
@@ -4676,7 +4676,7 @@ extension on TranslationsAr {
 			'settings.audioChannelLimitSurround51Description' => 'يخلط 7.1 إلى 5.1 بالنسبة للتلفزيونات والمستلمين الذين يستغرقون 5.1 PCM فقط.',
 			'settings.audioChannelLimitStereo' => 'ستيريو (Stereo)',
 			'settings.audioChannelLimitStereoDescription' => 'يخلط إلى اثنين من القنوات للمكبرات الصوتية الستيريو أو سماعات الرأس.',
-			'settings.downmixCenterBoost' => 'قناة قناة قناة قناة',
+			'settings.downmixCenterBoost' => 'تعزيز القناة الوسطى',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} دبي',
 			'settings.downmixCenterBoostLabel' => 'الارتفاع (dB )',
 			'settings.downmixCenterBoostShort' => 'دبي',
@@ -4999,8 +4999,8 @@ extension on TranslationsAr {
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لن تُحذف أي حلقات.', one: 'سيُحذف جميع محتواها: حلقة واحدة وملفها.', two: 'سيُحذف جميع محتواها: حلقتان وملفاهما.', few: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات، مع ملفاتها.', many: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.', other: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد ملفات لهذا العنصر.', one: 'هذا العنصر محفوظ في ملف واحد سيُحذف.', two: 'هذا العنصر محفوظ في ملفين سيُحذفان.', few: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفات، وستُحذف كلها.', many: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفًا، وستُحذف كلها.', other: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملف، وستُحذف كلها.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد حلقات أخرى في الملف نفسه.', one: 'توجد حلقة أخرى في الملف نفسه وستُحذف أيضًا:', two: 'توجد حلقتان أخريان في الملف نفسه وستُحذفان أيضًا:', few: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات أخرى في الملف نفسه وستُحذف أيضًا:', many: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', other: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG لم يكن قادرا على التحقق من الملفات التي سيتم إزالتها، لذلك قد يحذف أكثر من العنصر المذكور أعلاه.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'لم يقدم خادمك تفاصيل الملفات لهذا العنصر، لذلك لا يمكن أن تحقق PlezyNG من الملفات التي سيتم إزالتها.',
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'تعذّر على PlezyNG التحقق من الملفات التي سيحذفها هذا الإجراء، لذلك قد يحذف أكثر من العنصر المذكور أعلاه. ألغِ الإجراء وحاول مجددًا، أو اختر الحذف على أي حال.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'لم يقدّم خادمك تفاصيل ملفات هذا العنصر، لذلك لا يستطيع PlezyNG التحقق من الملفات التي سيحذفها هذا الإجراء. قد تُحذف ملفات تتجاوز العنصر المذكور أعلاه.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'تم حذف منتجات وسائل الإعلام بنجاح',
 			'mediaMenu.mediaFailedToDelete' => 'فشل في حذف موضوع وسائل الإعلام',
 			'mediaMenu.rate' => 'المعدل',
@@ -5014,13 +5014,13 @@ extension on TranslationsAr {
 			'rateSheet.notAvailable' => 'لا توجد مباراة',
 			'rateSheet.noConnectedServices' => 'قم بتوصيل خدمة في الإعدادات لتقييمها هناك.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}، فيلم',
-			'accessibility.mediaCardShow' => ({required Object title}) => '${title}، عرض التلفزيون',
+			'accessibility.mediaCardShow' => ({required Object title}) => '${title}، مسلسل تلفزيوني',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'شوهد',
-			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent}% مشاهدة',
-			'accessibility.mediaCardUnwatched' => 'غير ملاحظة',
-			'accessibility.tapToPlay' => 'اضغط على اللعب',
+			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => 'تمت مشاهدة ${percent} بالمئة',
+			'accessibility.mediaCardUnwatched' => 'لم تتم مشاهدته',
+			'accessibility.tapToPlay' => 'اضغط للتشغيل',
 			'accessibility.decrease' => 'انخفاض',
 			'accessibility.increase' => 'زيادة',
 			'accessibility.decreaseValue' => ({required Object label}) => 'انخفاض ${label}',
@@ -5032,8 +5032,8 @@ extension on TranslationsAr {
 			'accessibility.expandText' => 'توسيع النص',
 			'accessibility.collapseText' => 'كسر النص',
 			'accessibility.alphabetNavigation' => 'الأبجدية الملاحة',
-			'accessibility.alphabetScrollHint' => 'قم بتحريك أو رفع للانتقال عن طريق الرسالة',
-			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'صف ${row} من ${rowCount}، صف ${column} من ${columnCount}',
+			'accessibility.alphabetScrollHint' => 'مرّر لأعلى أو لأسفل للتنقل حسب الحرف',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'الصف ${row} من ${rowCount}، العمود ${column} من ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'صف ${row} من ${rowCount}',
 			'accessibility.autoScrollPlay' => 'لعبة Auto-Scroll',
 			'accessibility.autoScrollPause' => 'استراحة السيارات',
@@ -5223,7 +5223,7 @@ extension on TranslationsAr {
 			'messages.serverBusyTitle' => 'البث غير متوفر',
 			'messages.serverBusyBody' => 'لا يزال الخادم يرفض بث هذا الملف (HTTP 503).قد يكون إعادة تشغيل، مشغول، أو قد يكون تخزين الملف غير متصل.حاول مرة أخرى في لحظة - إذا كان لا يزال يحدث، اطلب من مالك الخادم التحقق من الخادم وتخزين الملف.',
 			'messages.playbackNotAllowedTitle' => 'لا يسمح لـ Playback',
-			'messages.playbackNotAllowedBody' => 'ورفض الخادم بث هذا البند (HTTP 403). قد لا يكون حسابك مسموحًا بتشغيلها، أو قد يسمح الخادم فقط بالتشغيل على شبكتها المحلية.',
+			'messages.playbackNotAllowedBody' => 'رفض الخادم بث هذا العنصر (HTTP 403). قد لا يملك حسابك صلاحية تشغيله، أو قد يسمح الخادم بالتشغيل على شبكته المحلية فقط.',
 			'messages.logsUploaded' => 'Logs تحميل',
 			'messages.logsUploadFailed' => 'فشل في تحميل اللوحات',
 			'messages.logId' => 'معرّف السجل',
@@ -5299,7 +5299,7 @@ extension on TranslationsAr {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} ملفات تعريف · نشطة: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} ملفات تعريف',
 			'profiles.removeConnectionTitle' => 'إزالة الاتصال ؟',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'إزالة الوصول إلى ${displayName} إلى ${connectionLabel}.الملفات الأخرى تحافظ عليه.',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'إزالة صلاحية وصول ${displayName} إلى ${connectionLabel}. تحتفظ الملفات الشخصية الأخرى بصلاحية الوصول.',
 			'profiles.deleteProfileTitle' => 'إزالة الملف الشخصي؟',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'إزالة ${displayName} و اتصالاتها.الخوادم تبقى متاحة.',
 			'profiles.profileNameLabel' => 'اسم الملف الشخصي',
@@ -5587,7 +5587,7 @@ extension on TranslationsAr {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} تم اختيارها',
 			'libraries.selection.actions' => 'إجراءات الاختيار',
 			'libraries.selection.confirmDescendants' => 'هذا يغير جميع الحلقات في العروض والموسم المحدد.',
-			'libraries.selection.confirmUnwatched' => 'هذا أيضا يطهر التقدم الترويجي للمنتجات المختارة.',
+			'libraries.selection.confirmUnwatched' => 'يؤدي هذا أيضًا إلى مسح تقدّم التشغيل للعناصر المحددة.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'العناصر المختارة: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'تحديث العناصر: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'تحديث ${succeeded}؛ فشل ${failed}. لا تزال العناصر المفقودة مختارة.',
@@ -5614,7 +5614,7 @@ extension on TranslationsAr {
 			'detail.endsAt' => ({required Object time}) => 'النهاية في ${time}',
 			'startup.failedTitle' => 'PlezyNG لا يمكن أن تبدأ',
 			'startup.failedBody' => 'حدث شيء خاطئ أثناء بدء التشغيل، وتحدد التفاصيل أدناه ما فشلت.',
-			'startup.failedBodyRepairable' => 'يتم تدمير ملف إعدادات PlezyNG الذي تم حفظه ويجب إعادة بناءه قبل أن يبدأ PlezyNG.',
+			'startup.failedBodyRepairable' => 'ملف إعدادات PlezyNG المحفوظ تالف ويجب إعادة إنشائه قبل بدء التطبيق. لن تفيد إعادة المحاولة؛ اختر إصلاح التخزين.',
 			'startup.phaseLabel' => 'خطوة',
 			'startup.showDetails' => 'عرض التفاصيل',
 			'startup.hideDetails' => 'إخفاء التفاصيل',
@@ -5623,10 +5623,10 @@ extension on TranslationsAr {
 			'startup.uploadDetails' => 'تحميل التفاصيل',
 			'startup.repairStorage' => 'إصلاح التخزين',
 			'startup.repairTitle' => 'إصلاح البيانات المخزنة؟',
-			'startup.repairBodyCommon' => 'يتم تدمير ملف الإعدادات في PlezyNG ولا يمكن قراءته.إصلاح إعادة تعيين كل إعداد إلى الافتراضي.',
-			'startup.repairBodyOneCredential' => 'يتم تدمير واحد من تسجيل الدخول الذي تم حفظه ولا يمكن قراءته.إصلاح يزيل فقط هذا واحد ؛ يتم ترك إعداداتك الأخرى وحدها.',
+			'startup.repairBodyCommon' => 'ملف إعدادات PlezyNG تالف ولا يمكن قراءته. تؤدي عملية الإصلاح إلى إعادة جميع الإعدادات إلى قيمها الافتراضية.',
+			'startup.repairBodyOneCredential' => 'تلفت بيانات إحدى عمليات تسجيل الدخول المحفوظة ولا يمكن قراءتها. يحذف الإصلاح هذه البيانات فقط، وتبقى إعداداتك الأخرى دون تغيير.',
 			'startup.repairBodySignInsKept' => 'يجب أن تبقى خادماتك وملفاتك الشخصية مسجلة.',
-			'startup.repairBodySignInsLost' => 'لا يمكن استرداد المفتاح الذي يحمي تسجيلاتك المحفوظة من هذا الملف، لذلك ستحتاج إلى تسجيل الدخول إلى كل خادم وملف تعريف مرة أخرى.',
+			'startup.repairBodySignInsLost' => 'لا يمكن استعادة المفتاح الذي يحمي بيانات تسجيل الدخول المحفوظة من هذا الملف، لذلك ستحتاج إلى تسجيل الدخول إلى كل خادم وملف شخصي مجددًا. لن يتأثر أي شيء على خادم الوسائط.',
 			'startup.repairBodySessionsUncertain' => 'تُحفظ بيانات خدمات التتبع (MAL وAniList وSimkl وTrakt) وSeerr بشكل منفصل، وقد تبقى أو تُفقد. سيُطلعك PlezyNG على البيانات التي احتفظ بها بالضبط.',
 			'startup.repairConfirm' => 'إصلاح',
 			'startup.repairSucceeded' => 'التخزين إصلاح',
@@ -5636,9 +5636,9 @@ extension on TranslationsAr {
 			'startup.repairFailed' => 'إصلاح فشل',
 			'startup.repairKeptSignIns' => 'لا يزال الخوادم والملفات الشخصية الخاصة بك مسجلة.',
 			'startup.repairLostSignIns' => 'لا يمكن استرداد المفتاح الذي يحمي تسجيلاتك المحفوظة.سوف تحتاج إلى تسجيل الدخول إلى كل خادم وملف تعريف مرة أخرى.',
-			'startup.repairLostSessions' => 'فقدت اتصال واحد على الأقل أو اتصال Seerr ويجب إعادة الاتصال به.',
+			'startup.repairLostSessions' => 'فُقد اتصال واحد على الأقل بخدمة تتبّع أو بخدمة Seerr، ويجب إعادة الاتصال به.',
 			'startup.backupTitle' => 'تم الحفاظ على نسخة من الملف المتضرر',
-			'startup.backupWarning' => 'يحتوي على شهادات تسجيل الدخول الخاصة بك. لا تقوم بتحميلها أو مشاركتها.',
+			'startup.backupWarning' => 'تحتوي هذه النسخة على بيانات تسجيل الدخول الخاصة بك. لا ترفعها أو تشاركها.',
 			'startup.deleteBackup' => 'حذف النسخة',
 			'startup.backupDeleted' => 'نسخة حذف',
 			'startup.previousFailureTitle' => 'PlezyNG فشل في البدء للمرة الأخيرة',
@@ -5917,7 +5917,7 @@ extension on TranslationsAr {
 			'collections.collection' => 'مجموعة',
 			'collections.empty' => 'المجموعة فارغة',
 			'collections.deleteCollection' => 'حذف المجموعة',
-			'collections.deleteConfirm' => ({required Object title}) => 'إزالة "${title}"؟ هذا لا يمكن أن يكون مفقودًا.',
+			'collections.deleteConfirm' => ({required Object title}) => 'حذف «${title}»؟ لا يمكن التراجع عن هذا الإجراء.',
 			'collections.deleted' => 'جمع محذوف',
 			'collections.deleteFailed' => 'فشل في حذف المجموعة',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'لم يتم إزالة المجموعة: ${error}',
@@ -6437,7 +6437,7 @@ extension on TranslationsAr {
 			'performanceOverlay.p7Conversion' => 'P7 كونف',
 			'performanceOverlay.sampleRate' => 'معدل العينة',
 			'performanceOverlay.pixelFormat' => 'بيكسل Fmt',
-			'performanceOverlay.hwFormat' => 'م م م م م م',
+			'performanceOverlay.hwFormat' => 'تنسيق العتاد',
 			'performanceOverlay.matrix' => 'ماتريكس',
 			'performanceOverlay.primaries' => 'الأوائل',
 			'performanceOverlay.transfer' => 'نقل',
@@ -6626,7 +6626,7 @@ extension on TranslationsAr {
 			'seerr.quickConnectUnsupported' => 'هذا المثال لا يدعم Quick Connect.إنه يحتاج إلى Seerr 3.4 أو أحدث.',
 			'seerr.notInitialized' => 'هذه الحالة Seerr لم تكتمل إعدادات أول تشغيل',
 			'seerr.noPlexTokenForReauth' => 'رقم Plex توكن متاح للتسجيل مرة أخرى',
-			'seerr.noStoredCredentials' => 'لا توجد شهادات متوفرة للتسجيل مرة أخرى',
+			'seerr.noStoredCredentials' => 'لا تتوفر بيانات تسجيل دخول محفوظة لتسجيل الدخول مجددًا',
 			'seerr.signInRejected' => 'تم رفض التسجيل',
 			'seerr.noSessionCookie' => 'لم تصدر شركة Seerr كوكيز الجلسة',
 			'seerr.freshCookieRejected' => 'سييرر يرفض الكوكيز الجلسة الجديدة',
@@ -6732,7 +6732,7 @@ extension on TranslationsAr {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'اتصل مباشرة باستخدام IP المحلي أو URL. اتصل ${name}.',
 			'addServer.insecureTitle' => 'اتصال غير مشفر',
 			'addServer.insecureDescription' => ({required Object url}) => 'يستخدم ${url} بروتوكول HTTP. قد يتمكن أشخاص على الشبكة من قراءة كلمة مرورك ورموز الوصول والوسائط أو تغييرها. استخدم HTTPS عند توفره. لا تتابع إلا إذا كنت تثق بهذه الشبكة وتقبل هذه المخاطرة.',
-			'addServer.allowHttp' => 'السماح HTTP',
+			'addServer.allowHttp' => 'السماح باستخدام HTTP',
 			'addServer.httpsRequired' => 'استخدام HTTPS أو يسمح صراحة بتوصيل غير مشفر.',
 			'watchLink.serverUnavailable' => 'لم أتمكن من الوصول إلى خادم Plex لهذا الرابط.',
 			'watchLink.notFound' => 'لم أتمكن من العثور على هذا العرض أو الفيلم على خادمات Plex الخاصة بك.',

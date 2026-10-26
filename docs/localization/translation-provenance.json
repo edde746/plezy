@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSnapshot": "../../lib/i18n/source_snapshot.json",
-  "reviewStatus": "AI-assisted drafts and retained upstream translations; native-speaker approval has not been verified. Structural coverage is not a fluency measure.",
+  "reviewStatus": "AI-assisted drafts and retained upstream translations, with an independent AI language QA pass documented in LANGUAGE_QA.md. The report records semantic sample coverage and corrections; it does not certify every message or native fluency. Native-speaker approval has not been verified.",
   "locales": {
     "ar": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "a134115b1a484d4543ceeaec4b0f416e8023d40bd16ed1307d42b27f30256e26",
+      "catalogSha256": "d08bf8a26dadc8d1396414760458919b6cebcf1061387832404b1064d8c94550",
       "sourceCounts": {
+        "independent-ai-qa-correction": 24,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -247,7 +248,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2072,
+        "m2m100-draft": 2048,
         "nonlinguistic": 55,
         "targeted-ai-review": 373,
         "unicode-cldr-generated": 4
@@ -257,10 +258,11 @@
     "az": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "63496ed69fd96b4efadaf7c5a91778fae50e2e349a09e7cb17b6bfa71ce4887f",
+      "catalogSha256": "0a7d1d935b4c966db630c68ebed90efeafdb2a8b6d4a85f129b920e71df67656",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 515,
+        "independent-ai-qa-correction": 34,
+        "m2m100-draft": 481,
         "nonlinguistic": 49,
         "targeted-ai-review": 21,
         "translation-memory": 43,
@@ -271,10 +273,11 @@
     "bg": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "7817db2c97f41e7ccbbcdec570aafe68b0dec2c24663507224eea8a1a6b882d1",
+      "catalogSha256": "b0d2fcb417a6964ef3312fb9910a877b26503a5472003e60c6fe25035882b1e2",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 522,
+        "existing": 2234,
+        "independent-ai-qa-correction": 22,
+        "m2m100-draft": 501,
         "nonlinguistic": 49,
         "targeted-ai-review": 13,
         "translation-memory": 44,
@@ -285,8 +288,9 @@
     "bn": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "dbd0f0aecd0d105eea7e05df9e077ff9dc30cf34939147209debc6748a3eceac",
+      "catalogSha256": "29b3426b50d13c9d89497cbd93eb04c9d1f028023d52191eb42cc3ae3d7ffe5e",
       "sourceCounts": {
+        "independent-ai-qa-correction": 61,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -357,7 +361,7 @@
         "jellyfin-web:Guide": 1,
         "jellyfin-web:HeaderApp": 1,
         "jellyfin-web:HeaderAudioBooks": 1,
-        "m2m100-draft": 2611,
+        "m2m100-draft": 2550,
         "nonlinguistic": 58,
         "targeted-ai-review": 76,
         "unicode-cldr-generated": 4
@@ -367,8 +371,9 @@
     "cs": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "429989f33514ab254b56276b75be312dfa7b382d2979644786ff070e8a64f5c1",
+      "catalogSha256": "f87fd7284a9dee478efbb79162a544bcea7d6549bddb26a468cb5bb10f3fde0a",
       "sourceCounts": {
+        "independent-ai-qa-correction": 49,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Albums": 1,
@@ -599,7 +604,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2353,
+        "m2m100-draft": 2304,
         "nonlinguistic": 57,
         "targeted-ai-review": 94,
         "unicode-cldr-generated": 4
@@ -609,10 +614,11 @@
     "da": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "e03d2337e89039484ce69be9de2e11d003b659ab098a504ec8a3f1e4089841b8",
+      "catalogSha256": "5164cd5cad5794fbe8266dbcb69f9736d56cc8510af350a635972fea6e20762c",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 518,
+        "existing": 2234,
+        "independent-ai-qa-correction": 22,
+        "m2m100-draft": 497,
         "nonlinguistic": 49,
         "targeted-ai-review": 22,
         "translation-memory": 39,
@@ -623,10 +629,11 @@
     "de": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "8a303cccb4e13e64caa422608fcf0e0cb7fae9c7c77ed6525d4410bb0e43aabc",
+      "catalogSha256": "83e447b2997abf8636e509fb5895e38bf97f3b7ca498c2ac6666fa11303f140f",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 516,
+        "existing": 2234,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 497,
         "nonlinguistic": 49,
         "targeted-ai-review": 24,
         "translation-memory": 39,
@@ -637,19 +644,21 @@
     "en": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "05527fef0ecacc9eb74335b2291b09c2d02cf7c83d68fab038501fd19d2069ca",
+      "catalogSha256": "263e647eb51673cd07d3f2c3a6cab53b6d137fd6e6063158c390ea8a11559e42",
       "sourceCounts": {
-        "source-english": 2867
+        "source-ai-qa-correction": 1,
+        "source-english": 2866
       },
       "detail": "provenance/en.json"
     },
     "es": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "14a839bc3a8848031f23ed8c052e516d1182e1c38fac3eed0f69937c645ff72b",
+      "catalogSha256": "fad7fede2bc05fba01dff58981eafe6239b7fd44c2bdd0ab650813c0ad30b4a3",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 524,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 504,
         "nonlinguistic": 49,
         "targeted-ai-review": 14,
         "translation-memory": 41,
@@ -904,8 +913,9 @@
     "fa": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "aba54b6b4c656553bbd6745d079f1a4d433ff916a2978cfb13dfdd16ce16b7bf",
+      "catalogSha256": "60fe45c0cbf53ff94f84cf77baa047c2efea7611509fa920691cc027b21f1bf6",
       "sourceCounts": {
+        "independent-ai-qa-correction": 58,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -1128,7 +1138,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2389,
+        "m2m100-draft": 2331,
         "mixed": 1,
         "nonlinguistic": 57,
         "targeted-ai-review": 66,
@@ -1139,10 +1149,11 @@
     "fr": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "a75d7301244c0fd9d36ef1912e92e5d0528efc96839813d7a00d2b0f347885a6",
+      "catalogSha256": "c37df79b583d58ad822ee2823b738da3378cd6820a7b211bb5286bfa811320be",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 520,
+        "independent-ai-qa-correction": 21,
+        "m2m100-draft": 499,
         "nonlinguistic": 49,
         "targeted-ai-review": 20,
         "translation-memory": 39,
@@ -1385,8 +1396,9 @@
     "he": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "d41861384301cd5ef1c81bd66b92432a857db05cb45e25c8a3f3bb9199988832",
+      "catalogSha256": "9977e3c827b92d420ac678630ae34f3bd7dba356c4d5851a8ab4e038b46538e6",
       "sourceCounts": {
+        "independent-ai-qa-correction": 67,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -1625,7 +1637,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2362,
+        "m2m100-draft": 2295,
         "mixed": 1,
         "nonlinguistic": 57,
         "targeted-ai-review": 70,
@@ -1636,8 +1648,9 @@
     "hi": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "c270013ee9ae5c2cc665c69f9fa7bec17fc69a93bdee65ddda403e6f294fd123",
+      "catalogSha256": "7249824008a0218d76668b8bd13009c35678bd8ac4911d2f5921a9c30c4858c4",
       "sourceCounts": {
+        "independent-ai-qa-correction": 43,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -1695,7 +1708,7 @@
         "jellyfin-web:Normal": 2,
         "jellyfin-web:Playlists": 2,
         "jellyfin-web:Unknown": 2,
-        "m2m100-draft": 2647,
+        "m2m100-draft": 2604,
         "nonlinguistic": 58,
         "targeted-ai-review": 53,
         "unicode-cldr-generated": 4
@@ -1705,10 +1718,11 @@
     "hu": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "75f3ae3d56aeed8ff43d71a17f0bdafc890046ad0e4fdca4bda18f3bb628fb65",
+      "catalogSha256": "30844f3c92bf8bce3abd9575277f384a6f53bd7f6bf30e83e935b2cff42552d8",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 517,
+        "independent-ai-qa-correction": 19,
+        "m2m100-draft": 498,
         "nonlinguistic": 49,
         "targeted-ai-review": 18,
         "translation-memory": 44,
@@ -1719,8 +1733,9 @@
     "id": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "27d7de1ae8a34f00f8c5aee794d3f14472365704e715f351219bb1c037d8b2da",
+      "catalogSha256": "5d6085519281cae88069024e0b8e07140d7f6444c7f0ad2af770bb1b71424192",
       "sourceCounts": {
+        "independent-ai-qa-correction": 45,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Albums": 1,
@@ -1938,7 +1953,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2373,
+        "m2m100-draft": 2328,
         "mixed": 3,
         "nonlinguistic": 57,
         "targeted-ai-review": 91,
@@ -1949,10 +1964,11 @@
     "it": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "8b9195c6e9bace59ce0767790d956ec4d1df00c4f64370a9a08451630c9344db",
+      "catalogSha256": "1a3c6e420910ad1531a1b7035131ee25f9b8f84fc77ab609a3b9ed4ee9798f3e",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 526,
+        "existing": 2234,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 507,
         "nonlinguistic": 49,
         "targeted-ai-review": 15,
         "translation-memory": 38,
@@ -1963,11 +1979,12 @@
     "ja": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "a038abb9e5b05d8287e865ee7f1ab12dcb0536f69ea25236eda8b4a430a6bb0b",
+      "catalogSha256": "dc93a986916acdb1cd45da2501f47a5a0bd8f103edacbc53cdc0226779f2f06b",
       "sourceCounts": {
         "existing": 2223,
-        "m2m100-draft": 517,
-        "mixed": 12,
+        "independent-ai-qa-correction": 46,
+        "m2m100-draft": 474,
+        "mixed": 9,
         "nonlinguistic": 49,
         "targeted-ai-review": 18,
         "translation-memory": 44,
@@ -1978,10 +1995,11 @@
     "kk": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "912695660290b315550e7be4e4270f3ff7ebdc0642453e110c49b05489e85a98",
+      "catalogSha256": "fe3ed21b4632fcf336f6948827ab36a5d24f5cc82a64842494920fe96cb6b483",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 481,
+        "existing": 2232,
+        "independent-ai-qa-correction": 32,
+        "m2m100-draft": 452,
         "mixed": 1,
         "nonlinguistic": 49,
         "targeted-ai-review": 53,
@@ -1993,11 +2011,12 @@
     "ko": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "b1a01f5f7cd6657db0f2323b9a80329540716f792896e2e71ee8e0074c75b899",
+      "catalogSha256": "ef7205bfc6892099545531dfad230b7aa6bbff16ab55f527acbf754b6710a0ce",
       "sourceCounts": {
         "existing": 2223,
-        "m2m100-draft": 519,
-        "mixed": 12,
+        "independent-ai-qa-correction": 53,
+        "m2m100-draft": 469,
+        "mixed": 9,
         "nonlinguistic": 49,
         "targeted-ai-review": 16,
         "translation-memory": 44,
@@ -2008,8 +2027,9 @@
     "ms": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "9cdb771a4b4669980478c18480c60b595c57740ee2bab137f82eabe1358a533e",
+      "catalogSha256": "bbbc17d54d2415d699837c4403bf89bd494325e75fb5cd1c13514609cf19be63",
       "sourceCounts": {
+        "independent-ai-qa-correction": 51,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Albums": 1,
@@ -2082,7 +2102,7 @@
         "jellyfin-web:QuickConnect": 1,
         "jellyfin-web:Rate": 2,
         "jellyfin-web:Settings": 3,
-        "m2m100-draft": 2611,
+        "m2m100-draft": 2560,
         "mixed": 2,
         "nonlinguistic": 55,
         "targeted-ai-review": 75,
@@ -2093,10 +2113,11 @@
     "nb": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "067eafdd7ad79bba8a55216a75abb6e8cf6ba8a9d4f53e1dc1dcf96447700f7b",
+      "catalogSha256": "24d6e6e7dd4a2ea91a9ef3b59b409b880e35aabce4f694d2161188852ce792f9",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 513,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 493,
         "nonlinguistic": 49,
         "targeted-ai-review": 25,
         "translation-memory": 41,
@@ -2107,10 +2128,11 @@
     "nl": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "463f51dd447ff1adc25d3e10f37b0949fc7bd27758a68dd412e8b83fbfd22ad6",
+      "catalogSha256": "144935888cc6550090b107f663783e4d130c2d7ee68196d048c77d480bebc718",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 511,
+        "independent-ai-qa-correction": 19,
+        "m2m100-draft": 492,
         "nonlinguistic": 49,
         "targeted-ai-review": 29,
         "translation-memory": 39,
@@ -2121,10 +2143,11 @@
     "pl": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "7d93ec454e21bc150ab9a50dff59ea0e8d69250cc5c23a0b547ac916ce94999d",
+      "catalogSha256": "e5c94ffeebc5ffbee14ff763514cb4f4e0ffe4d3a67505aa20961e50bd7d7dcd",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 512,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 492,
         "mixed": 1,
         "nonlinguistic": 49,
         "targeted-ai-review": 23,
@@ -2136,10 +2159,11 @@
     "pt": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "2e95163d76e0df0ab73b161dd0b346798c4a0e06ec8d7acf8aabf250e2cfcdb1",
+      "catalogSha256": "16715b29f3e05ff0dc699c2a23d2716d56167d59a6a74006fb61564761f3163e",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 519,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 499,
         "nonlinguistic": 49,
         "targeted-ai-review": 17,
         "translation-memory": 43,
@@ -2646,10 +2670,11 @@
     "ru": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "9c60bc72b4abccddd6ee1e9e7fa7d51bbb71e4d21a1aacf65a41e84cc378e871",
+      "catalogSha256": "fc190b92454e1721d569adf921ae8f225034956629a4ee84125ed87e07b5a86b",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 519,
+        "independent-ai-qa-correction": 18,
+        "m2m100-draft": 501,
         "nonlinguistic": 49,
         "targeted-ai-review": 16,
         "translation-memory": 44,
@@ -2660,10 +2685,11 @@
     "sv": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "24db95041402045b13444cce047bcdd4cd2cd6a9abe55f8ef9f08b5d8b94c3b5",
+      "catalogSha256": "bcf1265a32f46015385e57556a9fdf46c502d165aa134c387fa8e8899a292893",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 520,
+        "independent-ai-qa-correction": 18,
+        "m2m100-draft": 502,
         "nonlinguistic": 49,
         "targeted-ai-review": 18,
         "translation-memory": 41,
@@ -2674,8 +2700,9 @@
     "th": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "772f35c20d91991e6d7297976b1978170f1d5e0a78d93972e97d04d08db30b34",
+      "catalogSha256": "2b0f36a95be40f8108b11259aab938b1249cb84e6f98a5d645953e0d4c5566e5",
       "sourceCounts": {
+        "independent-ai-qa-correction": 57,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -2766,7 +2793,7 @@
         "jellyfin-web:TabOther": 2,
         "jellyfin-web:TabServer": 1,
         "jellyfin-web:TabUpcoming": 1,
-        "m2m100-draft": 2592,
+        "m2m100-draft": 2535,
         "nonlinguistic": 58,
         "targeted-ai-review": 59,
         "unicode-cldr-generated": 4
@@ -2776,10 +2803,11 @@
     "tr": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "5c460a3a83928a28aeb23a1fe59f60a3b2a55d4663bd22e1469eac0f5e538aa4",
+      "catalogSha256": "f7d5faa9ecceddd1a80cb79c8798ef96637fafa17569f67eb827a52e378d471a",
       "sourceCounts": {
         "existing": 2235,
-        "m2m100-draft": 518,
+        "independent-ai-qa-correction": 20,
+        "m2m100-draft": 498,
         "nonlinguistic": 49,
         "targeted-ai-review": 18,
         "translation-memory": 43,
@@ -2790,8 +2818,9 @@
     "uk": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "ccf342946b1ad71767e1fd382f499fb942f5034363aa3b3e3dce50fac2232eb8",
+      "catalogSha256": "ba399dcd5e98b10c78a0d7544605aa96f27c96ac918b62271d01a2692e4f416c",
       "sourceCounts": {
+        "independent-ai-qa-correction": 55,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Album": 1,
@@ -3033,7 +3062,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2361,
+        "m2m100-draft": 2306,
         "mixed": 1,
         "nonlinguistic": 57,
         "targeted-ai-review": 68,
@@ -3044,10 +3073,11 @@
     "uz": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "5a20011a2ee39815c94b6fba076356bba34c7f96c54507af1241aab9f110e214",
+      "catalogSha256": "486ac30cedec5896250a29de008be107284e09ace20cce98ce8c867b5fe934e4",
       "sourceCounts": {
-        "existing": 2235,
-        "m2m100-draft": 488,
+        "existing": 2231,
+        "independent-ai-qa-correction": 64,
+        "m2m100-draft": 428,
         "nonlinguistic": 49,
         "targeted-ai-review": 48,
         "translation-memory": 43,
@@ -3058,8 +3088,9 @@
     "vi": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "be68a74b9b90480d7e6a85322e66aad23aca546b1c53c14af4330ec487e72e5b",
+      "catalogSha256": "cc4d6f59b2185ce1678a824ed02d98c54243e0fe6857d922bff0c2f1b825aec5",
       "sourceCounts": {
+        "independent-ai-qa-correction": 53,
         "jellyfin-web:Actor": 1,
         "jellyfin-web:Add": 1,
         "jellyfin-web:Albums": 1,
@@ -3298,7 +3329,7 @@
         "jellyfin-web:Whitelist": 1,
         "jellyfin-web:Writer": 2,
         "jellyfin-web:Yes": 2,
-        "m2m100-draft": 2333,
+        "m2m100-draft": 2280,
         "nonlinguistic": 57,
         "targeted-ai-review": 102,
         "unicode-cldr-generated": 4
@@ -3308,11 +3339,12 @@
     "zh": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "373f593a7e52011b4d0ccb5783abc5e98a1d35e62e27c94882212cfbc0e5a241",
+      "catalogSha256": "b2c9b1b1afb4c81a9bc49893fa15e20f58a0a88435f210afecd010a32447abf5",
       "sourceCounts": {
         "existing": 2223,
-        "m2m100-draft": 519,
-        "mixed": 12,
+        "independent-ai-qa-correction": 73,
+        "m2m100-draft": 449,
+        "mixed": 9,
         "nonlinguistic": 49,
         "targeted-ai-review": 16,
         "translation-memory": 44,
@@ -3323,12 +3355,13 @@
     "zh-Hant": {
       "messagesInFile": 2867,
       "inherits": null,
-      "catalogSha256": "1252949075794e90cd09217136077e7fc8879ffa089afb591b404ba5b1db25e6",
+      "catalogSha256": "74c70cb65a0011a4d70ab55130e20e1dda7e44b772610e0fc35bf924d5ea1bf2",
       "sourceCounts": {
         "existing": 2223,
-        "m2m100-draft": 81,
-        "m2m100-draft+opencc-s2twp": 438,
-        "mixed": 12,
+        "independent-ai-qa-correction": 73,
+        "m2m100-draft": 68,
+        "m2m100-draft+opencc-s2twp": 381,
+        "mixed": 9,
         "nonlinguistic": 49,
         "targeted-ai-review": 16,
         "translation-memory": 44,
@@ -3336,5 +3369,6 @@
       },
       "detail": "provenance/zh-Hant.json"
     }
-  }
+  },
+  "independentAiQaReport": "LANGUAGE_QA.md"
 }

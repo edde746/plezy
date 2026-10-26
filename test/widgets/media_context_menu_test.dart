@@ -456,7 +456,7 @@ void main() {
       expect(
         find.descendant(
           of: dialog,
-          matching: find.text(t.mediaMenu.confirmDeleteTarget(title: 'Breaking Bad · S1 E2 · Cat in the Bag')),
+          matching: find.text(t.mediaMenu.confirmDeleteTarget(title: 'Breaking Bad · S1E2 · Cat in the Bag')),
         ),
         findsOneWidget,
         reason: 'the confirmation must name the episode; displayTitle would render only "Breaking Bad"',
@@ -562,7 +562,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
-      expect(find.textContaining('S1 E3'), findsOneWidget);
+      expect(find.textContaining('S1E3'), findsOneWidget);
 
       await tester.tap(find.text(t.mediaMenu.deleteEpisodeConfirm));
       await tester.pumpAndSettle();
@@ -774,7 +774,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
-      expect(find.textContaining('S1 E3'), findsOneWidget);
+      expect(find.textContaining('S1E3'), findsOneWidget);
     });
 
     testWidgets('flags an unverified scope when the sibling lookup fails, and still deletes', (tester) async {

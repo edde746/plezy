@@ -1072,10 +1072,10 @@ class _Translations$accessibility$tr extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Daha güçlü metin, çıkışlar ve ışık veya karanlık yüzeylerde odak göstergeleri.';
 	@override String get interaction => 'Hareket ve etkileşim';
 	@override String get reduceMotion => 'hareketleri azaltmak';
-	@override String get reduceMotionHint => 'Konforu, sayfa geçişleri ve dekoratif efektleri tutun.';
+	@override String get reduceMotionHint => 'Odak göstergesi hareketini, sayfa geçişlerini ve dekoratif efektleri durdurun.';
 	@override String get largeTargets => 'Daha büyük dokunmatik hedefler';
 	@override String get largeTargetsHint => 'Paylaşılan kontroller dokunmatik ve yardımcı navigasyon için daha fazla yer verir.';
-	@override String get navigationHint => 'Kontroller arasında hareket etmek için Tab ve Shift+Tab\'ı kullanın, Etkinleştirmek için Giriş veya Uzay ve Kaçmak veya Kapatmak için Geri Dönüş.';
+	@override String get navigationHint => 'Kontroller arasında geçiş yapmak için Tab ve Shift+Tab, etkinleştirmek için Enter veya boşluk tuşu, kapatmak için Escape veya Geri düğmesini kullanın. Kitap açıkken yakınlaştırma ve okuma tercihleri kullanılabilir.';
 }
 
 // Path: tooltips
@@ -2742,7 +2742,7 @@ class _Translations$addServer$tr extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Doğrudan yerel IP veya URL kullanılarak bağlanın. ${name}\'e bağlanın';
 	@override String get insecureTitle => 'Şifrelenmemiş bağlantı';
 	@override String insecureDescription({required Object url}) => '${url} HTTP kullanıyor. Ağdaki kişiler parolanızı, belirteçlerinizi ve medya içeriklerinizi okuyabilir veya değiştirebilir. Mümkün olduğunda HTTPS kullanın. Yalnızca bu ağa güveniyorsanız ve riski kabul ediyorsanız devam edin.';
-	@override String get allowHttp => 'Yorumlar HTTP';
+	@override String get allowHttp => 'HTTP\'ye izin ver';
 	@override String get httpsRequired => 'HTTPS veya açıkça şifrelenmemiş bir bağlantı sağlar.';
 }
 
@@ -2879,8 +2879,8 @@ class _Translations$platform$tr extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG yerel ağınızda medya sunucularınıza ve oynatma cihazlarına bağlanır.';
-	@override String get locationPermission => 'PlezyNG, yerel ağınızı tespit etmek ve medya sunucularınıza bağlanmak için iOS\'nin yerel erişimi gerektiğinde kullanır.';
-	@override String get photoLibraryPermission => 'Fotoğraf kütüphanenizden medya sanat eserleri olarak kullanmak için resimleri seçin.';
+	@override String get locationPermission => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.';
+	@override String get photoLibraryPermission => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.';
 	@override String get cameraPermission => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.';
 }
 
@@ -2915,7 +2915,7 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get save => 'Kaydet';
 	@override String get close => 'Kapat';
 	@override String get removeSource => 'Kaynak bağlantısı';
-	@override String get disconnectMessage => 'Bu kaynağı bağlayın? indirilmiş dosyalar ve okuma ve dinleme geçmişiniz bu cihazda kalacaktır.';
+	@override String get disconnectMessage => 'Bu kaynağın bağlantısı kesilsin mi? İndirilen dosyalar ile okuma ve dinleme geçmişiniz bu cihazda kalacaktır.';
 	@override String get localFolder => 'Seçim Dosyası';
 	@override String get empty => 'Henüz burada bir şey yok';
 	@override String get emptyHint => 'Bir kaynağı ekleyin veya bir kitap, ses kitabı, müzik veya video ithal edin.';
@@ -2988,7 +2988,7 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get paper => 'Kâğıt';
 	@override String get sepia => 'Sepia için';
 	@override String get night => 'Gece';
-	@override String get readAloud => 'Bu sayfayı okuma açın';
+	@override String get readAloud => 'Bu sayfayı sesli oku';
 	@override String get readAlong => 'Okumaya devam et';
 	@override String get stopReading => 'Anlatım durdur';
 	@override String get searchBook => 'Kitap arama';
@@ -2996,7 +2996,7 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get previousPage => 'Önceki Sayfa';
 	@override String get nextPage => 'Sonraki Sayfa';
 	@override String page({required Object number}) => 'Sayfa ${number}';
-	@override String get externalBlocked => 'Kitap bağlantıları okuyucuda devre dışı bırakılır.';
+	@override String get externalBlocked => 'Okuyucuda kitapların dış bağlantıları devre dışıdır.';
 	@override String get loading => 'Açılım...';
 	@override String get narrator => 'Öykücü';
 	@override String get audio => 'Ses';
@@ -3044,11 +3044,11 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get singlePage => 'Tek Sayfa';
 	@override String get twoPages => '2 sayfa';
 	@override String get readingDirection => 'Okuma Yönü';
-	@override String get leftToRight => 'Sağdan sağdan';
-	@override String get rightToLeft => 'Doğru bırakma';
+	@override String get leftToRight => 'Soldan sağa';
+	@override String get rightToLeft => 'Sağdan sola';
 	@override String get letterSpacing => 'Mektuplar uzay';
 	@override String get wordSpacing => 'Sözcükler uzay';
-	@override String get readerControlsHelp => 'Sayfa genişletmek için çekiş veya zoom kontrolü kullanın. sayfa çekiş. Ctrl/ ⁇  + veya − zoom ayarlanır; Ctrl/ ⁇  0 yeniden düzenlenir. Page Up ve Page Down sayfa döndürür.';
+	@override String get readerControlsHelp => 'Sayfaları büyütmek için iki parmağınızı birbirinden uzaklaştırın veya yakınlaştırma kontrollerini kullanın. Sayfayı kaydırmak için sürükleyin. Ctrl/⌘ ile + veya − yakınlaştırmayı ayarlar; Ctrl/⌘ ile 0 sıfırlar. Page Up ve Page Down sayfaları çevirir.';
 	@override String get imagePage => 'Komik Sayfa';
 	@override String get resetReader => 'Okuma tercihlerini yeniden düzenleyin';
 	@override String get zoom => 'Yakınlaştırma';
@@ -3077,23 +3077,23 @@ class _Translations$lending$tr extends Translations$lending$en {
 	@override String get search => 'Kitaplar ve yazarları arıyorum';
 	@override String get catalogue => 'Katalog';
 	@override String get loans => 'Kredi';
-	@override String get holds => 'tutar';
+	@override String get holds => 'Ayırtmalar';
 	@override String get signIn => 'Kütüphanenizle giriş yapın';
 	@override String get waiting => 'Bu yazıyı tarayıcınızda bitirip buraya geri dönün.';
 	@override String get cancel => 'İptal';
 	@override String get disconnect => 'Kütüphaneyi kaldırın';
-	@override String get disconnectMessage => 'Bu profilt bu kütüphaneyi kaldırın? kredi ve kütüphanenizle kalma tutar.';
+	@override String get disconnectMessage => 'Bu kütüphane bu profilden kaldırılsın mı? Ödünç aldıklarınız ve ayırtmalarınız kütüphanede kalır.';
 	@override String get getBook => 'Kitap alın';
 	@override String get checkAvailability => 'Kullanılabilirliği kontrol edin';
 	@override String get available => 'Borçlanmak için kullanılabilir';
 	@override String get unavailable => 'Şu anda mevcut değil';
-	@override String get borrow => 'borçlanma';
-	@override String get placeHold => 'yer tut';
+	@override String get borrow => 'Ödünç al';
+	@override String get placeHold => 'Ayırt';
 	@override String get returnBook => 'Erken Dönüş';
-	@override String get cancelHold => 'iptal tutma';
+	@override String get cancelHold => 'Ayırtmayı iptal et';
 	@override String get confirmBorrow => 'Kütüphaneden bu başlıkları ödünç alabilir misiniz?';
-	@override String get confirmReturn => 'Bu başlık şimdi geri dönmek için? devam etmek için tekrar borç almak gerekebilir.';
-	@override String get confirmCancelHold => 'Bu başlıkta tutun mu?';
+	@override String get confirmReturn => 'Bu eser şimdi iade edilsin mi? Devam etmek için yeniden ödünç almanız gerekebilir.';
+	@override String get confirmCancelHold => 'Bu eser için ayırtmanız iptal edilsin mi?';
 	@override String get email => 'E-posta bildirim tutun';
 	@override String due({required Object date}) => 'Şekil ${date}';
 	@override String queue({required Object position}) => 'Yorumlar ${position}';
@@ -3111,8 +3111,8 @@ class _Translations$lending$tr extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Libby\'nin bütünleşmesi yolunda. Libby\'deki kütüphanenizi, bağlantılarını bitirirken kullanabilirsiniz.';
 	@override String get suspendHold => 'Durdurma tutma';
 	@override String get resumeHold => 'Resim tut';
-	@override String get suspendMessage => 'Yerinizi düz tutun ve bir sonraki okuyucu bu kopyasını ödünç almasına izin verin?';
-	@override String get resumeMessage => 'Bu tutumu yeniden yapın, böylece kütüphaneniz size bir sonraki mevcut kopyasını sunabilir mi?';
+	@override String get suspendMessage => 'Sıradaki yeriniz korunsun ve sonraki okuyucu bu kopyayı ödünç alsın mı? Ayırtmayı daha sonra sürdürebilirsiniz.';
+	@override String get resumeMessage => 'Kütüphanenin size sıradaki uygun kopyayı sunabilmesi için bu ayırtma sürdürülsün mü?';
 	@override String get editEmail => 'E-posta bildirim değişikliği';
 }
 
@@ -4971,10 +4971,10 @@ extension on TranslationsTr {
 			'accessibility.highContrastHint' => 'Daha güçlü metin, çıkışlar ve ışık veya karanlık yüzeylerde odak göstergeleri.',
 			'accessibility.interaction' => 'Hareket ve etkileşim',
 			'accessibility.reduceMotion' => 'hareketleri azaltmak',
-			'accessibility.reduceMotionHint' => 'Konforu, sayfa geçişleri ve dekoratif efektleri tutun.',
+			'accessibility.reduceMotionHint' => 'Odak göstergesi hareketini, sayfa geçişlerini ve dekoratif efektleri durdurun.',
 			'accessibility.largeTargets' => 'Daha büyük dokunmatik hedefler',
 			'accessibility.largeTargetsHint' => 'Paylaşılan kontroller dokunmatik ve yardımcı navigasyon için daha fazla yer verir.',
-			'accessibility.navigationHint' => 'Kontroller arasında hareket etmek için Tab ve Shift+Tab\'ı kullanın, Etkinleştirmek için Giriş veya Uzay ve Kaçmak veya Kapatmak için Geri Dönüş.',
+			'accessibility.navigationHint' => 'Kontroller arasında geçiş yapmak için Tab ve Shift+Tab, etkinleştirmek için Enter veya boşluk tuşu, kapatmak için Escape veya Geri düğmesini kullanın. Kitap açıkken yakınlaştırma ve okuma tercihleri kullanılabilir.',
 			'tooltips.shufflePlay' => 'Karışık oynat',
 			'tooltips.playTrailer' => 'Fragmanı oynat',
 			'tooltips.markAsWatched' => 'İzlendi olarak işaretle',
@@ -6644,7 +6644,7 @@ extension on TranslationsTr {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Doğrudan yerel IP veya URL kullanılarak bağlanın. ${name}\'e bağlanın',
 			'addServer.insecureTitle' => 'Şifrelenmemiş bağlantı',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP kullanıyor. Ağdaki kişiler parolanızı, belirteçlerinizi ve medya içeriklerinizi okuyabilir veya değiştirebilir. Mümkün olduğunda HTTPS kullanın. Yalnızca bu ağa güveniyorsanız ve riski kabul ediyorsanız devam edin.',
-			'addServer.allowHttp' => 'Yorumlar HTTP',
+			'addServer.allowHttp' => 'HTTP\'ye izin ver',
 			'addServer.httpsRequired' => 'HTTPS veya açıkça şifrelenmemiş bir bağlantı sağlar.',
 			'watchLink.serverUnavailable' => 'Bu bağlantı için Plex sunucusuna ulaşamıyorum.',
 			'watchLink.notFound' => 'Bu gösteriyi veya filmi Plex sunucularınızda bulamazdım.',
@@ -6756,8 +6756,8 @@ extension on TranslationsTr {
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Her satırın kahraman ayarlarını devre dışı bırakır ve kahraman satırlarının varlığından önce olduğu gibi tek bir döner bannerı yukarıya getirir.',
 			'platform.localNetworkPermission' => 'PlezyNG yerel ağınızda medya sunucularınıza ve oynatma cihazlarına bağlanır.',
-			'platform.locationPermission' => 'PlezyNG, yerel ağınızı tespit etmek ve medya sunucularınıza bağlanmak için iOS\'nin yerel erişimi gerektiğinde kullanır.',
-			'platform.photoLibraryPermission' => 'Fotoğraf kütüphanenizden medya sanat eserleri olarak kullanmak için resimleri seçin.',
+			'platform.locationPermission' => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.',
+			'platform.photoLibraryPermission' => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.',
 			'platform.cameraPermission' => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.',
 			'fileSources.title' => 'Dosyalar ve kitaplar',
 			'fileSources.subtitle' => 'Okumak, dinlemek ve kendi dosyalarınızdan izlemek.',
@@ -6783,7 +6783,7 @@ extension on TranslationsTr {
 			'fileSources.save' => 'Kaydet',
 			'fileSources.close' => 'Kapat',
 			'fileSources.removeSource' => 'Kaynak bağlantısı',
-			'fileSources.disconnectMessage' => 'Bu kaynağı bağlayın? indirilmiş dosyalar ve okuma ve dinleme geçmişiniz bu cihazda kalacaktır.',
+			'fileSources.disconnectMessage' => 'Bu kaynağın bağlantısı kesilsin mi? İndirilen dosyalar ile okuma ve dinleme geçmişiniz bu cihazda kalacaktır.',
 			'fileSources.localFolder' => 'Seçim Dosyası',
 			'fileSources.empty' => 'Henüz burada bir şey yok',
 			'fileSources.emptyHint' => 'Bir kaynağı ekleyin veya bir kitap, ses kitabı, müzik veya video ithal edin.',
@@ -6853,7 +6853,7 @@ extension on TranslationsTr {
 			'fileSources.paper' => 'Kâğıt',
 			'fileSources.sepia' => 'Sepia için',
 			'fileSources.night' => 'Gece',
-			'fileSources.readAloud' => 'Bu sayfayı okuma açın',
+			'fileSources.readAloud' => 'Bu sayfayı sesli oku',
 			'fileSources.readAlong' => 'Okumaya devam et',
 			'fileSources.stopReading' => 'Anlatım durdur',
 			'fileSources.searchBook' => 'Kitap arama',
@@ -6861,7 +6861,7 @@ extension on TranslationsTr {
 			'fileSources.previousPage' => 'Önceki Sayfa',
 			'fileSources.nextPage' => 'Sonraki Sayfa',
 			'fileSources.page' => ({required Object number}) => 'Sayfa ${number}',
-			'fileSources.externalBlocked' => 'Kitap bağlantıları okuyucuda devre dışı bırakılır.',
+			'fileSources.externalBlocked' => 'Okuyucuda kitapların dış bağlantıları devre dışıdır.',
 			'fileSources.loading' => 'Açılım...',
 			'fileSources.narrator' => 'Öykücü',
 			'fileSources.audio' => 'Ses',
@@ -6909,11 +6909,11 @@ extension on TranslationsTr {
 			'fileSources.singlePage' => 'Tek Sayfa',
 			'fileSources.twoPages' => '2 sayfa',
 			'fileSources.readingDirection' => 'Okuma Yönü',
-			'fileSources.leftToRight' => 'Sağdan sağdan',
-			'fileSources.rightToLeft' => 'Doğru bırakma',
+			'fileSources.leftToRight' => 'Soldan sağa',
+			'fileSources.rightToLeft' => 'Sağdan sola',
 			'fileSources.letterSpacing' => 'Mektuplar uzay',
 			'fileSources.wordSpacing' => 'Sözcükler uzay',
-			'fileSources.readerControlsHelp' => 'Sayfa genişletmek için çekiş veya zoom kontrolü kullanın. sayfa çekiş. Ctrl/ ⁇  + veya − zoom ayarlanır; Ctrl/ ⁇  0 yeniden düzenlenir. Page Up ve Page Down sayfa döndürür.',
+			'fileSources.readerControlsHelp' => 'Sayfaları büyütmek için iki parmağınızı birbirinden uzaklaştırın veya yakınlaştırma kontrollerini kullanın. Sayfayı kaydırmak için sürükleyin. Ctrl/⌘ ile + veya − yakınlaştırmayı ayarlar; Ctrl/⌘ ile 0 sıfırlar. Page Up ve Page Down sayfaları çevirir.',
 			'fileSources.imagePage' => 'Komik Sayfa',
 			'fileSources.resetReader' => 'Okuma tercihlerini yeniden düzenleyin',
 			'fileSources.zoom' => 'Yakınlaştırma',
@@ -6933,23 +6933,23 @@ extension on TranslationsTr {
 			'lending.search' => 'Kitaplar ve yazarları arıyorum',
 			'lending.catalogue' => 'Katalog',
 			'lending.loans' => 'Kredi',
-			'lending.holds' => 'tutar',
+			'lending.holds' => 'Ayırtmalar',
 			'lending.signIn' => 'Kütüphanenizle giriş yapın',
 			'lending.waiting' => 'Bu yazıyı tarayıcınızda bitirip buraya geri dönün.',
 			'lending.cancel' => 'İptal',
 			'lending.disconnect' => 'Kütüphaneyi kaldırın',
-			'lending.disconnectMessage' => 'Bu profilt bu kütüphaneyi kaldırın? kredi ve kütüphanenizle kalma tutar.',
+			'lending.disconnectMessage' => 'Bu kütüphane bu profilden kaldırılsın mı? Ödünç aldıklarınız ve ayırtmalarınız kütüphanede kalır.',
 			'lending.getBook' => 'Kitap alın',
 			'lending.checkAvailability' => 'Kullanılabilirliği kontrol edin',
 			'lending.available' => 'Borçlanmak için kullanılabilir',
 			'lending.unavailable' => 'Şu anda mevcut değil',
-			'lending.borrow' => 'borçlanma',
-			'lending.placeHold' => 'yer tut',
+			'lending.borrow' => 'Ödünç al',
+			'lending.placeHold' => 'Ayırt',
 			'lending.returnBook' => 'Erken Dönüş',
-			'lending.cancelHold' => 'iptal tutma',
+			'lending.cancelHold' => 'Ayırtmayı iptal et',
 			'lending.confirmBorrow' => 'Kütüphaneden bu başlıkları ödünç alabilir misiniz?',
-			'lending.confirmReturn' => 'Bu başlık şimdi geri dönmek için? devam etmek için tekrar borç almak gerekebilir.',
-			'lending.confirmCancelHold' => 'Bu başlıkta tutun mu?',
+			'lending.confirmReturn' => 'Bu eser şimdi iade edilsin mi? Devam etmek için yeniden ödünç almanız gerekebilir.',
+			'lending.confirmCancelHold' => 'Bu eser için ayırtmanız iptal edilsin mi?',
 			'lending.email' => 'E-posta bildirim tutun',
 			'lending.due' => ({required Object date}) => 'Şekil ${date}',
 			'lending.queue' => ({required Object position}) => 'Yorumlar ${position}',
@@ -6967,8 +6967,8 @@ extension on TranslationsTr {
 			'lending.comingSoonDescription' => 'Libby\'nin bütünleşmesi yolunda. Libby\'deki kütüphanenizi, bağlantılarını bitirirken kullanabilirsiniz.',
 			'lending.suspendHold' => 'Durdurma tutma',
 			'lending.resumeHold' => 'Resim tut',
-			'lending.suspendMessage' => 'Yerinizi düz tutun ve bir sonraki okuyucu bu kopyasını ödünç almasına izin verin?',
-			'lending.resumeMessage' => 'Bu tutumu yeniden yapın, böylece kütüphaneniz size bir sonraki mevcut kopyasını sunabilir mi?',
+			'lending.suspendMessage' => 'Sıradaki yeriniz korunsun ve sonraki okuyucu bu kopyayı ödünç alsın mı? Ayırtmayı daha sonra sürdürebilirsiniz.',
+			'lending.resumeMessage' => 'Kütüphanenin size sıradaki uygun kopyayı sunabilmesi için bu ayırtma sürdürülsün mü?',
 			'lending.editEmail' => 'E-posta bildirim değişikliği',
 			_ => null,
 		};

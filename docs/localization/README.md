@@ -51,6 +51,11 @@ review. Native-speaker review remains necessary, especially for long description
 media terminology and accessibility announcements. Do not label these new
 catalogs professionally translated or native-reviewed without that review.
 
+An independent AI language QA pass is recorded in [LANGUAGE_QA.md](LANGUAGE_QA.md).
+It separates semantic sample review from automated scans, records before/after
+corrections, and documents the review limits. Its coverage applies to the
+catalog snapshot named in the report; it is not approval of every message.
+
 `sources.json` records source blob identifiers, model provenance and licenses.
 `translation-provenance.json` records message origins and review status;
 `coverage.json` is a reproducible structural report. Bundled attribution appears

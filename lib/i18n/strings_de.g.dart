@@ -523,7 +523,7 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Diese Datei ist kein gültiger PlezyNG-Einstellungsexport';
 	@override String get importSettingsNoUser => 'Vor dem Import bitte anmelden';
 	@override String get cloudBackup => 'Cloud-Sicherung';
-	@override String get cloudBackupDescription => 'Backup von Portable-Einstellungen auf eine Endstelle WebDAV über HTTPS. Serververbindungen und -kreditials bleiben auf diesem Gerät.';
+	@override String get cloudBackupDescription => 'Sichere übertragbare Einstellungen über HTTPS an einer WebDAV-Adresse. Serververbindungen und Anmeldedaten bleiben auf diesem Gerät.';
 	@override String get cloudBackupUrl => 'WebDAV JSON Datei URL';
 	@override String get cloudBackupUsername => 'Benutzername';
 	@override String get cloudBackupPassword => 'Passwort';
@@ -983,7 +983,7 @@ class _Translations$mediaMenu$de extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => '„${title}“ dauerhaft von deinem Server löschen?';
 	@override String get deleteMultipleWarning => 'Dies umfasst alle Episoden und deren Dateien.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n,
-		one: 'Dies löscht alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Folge darin sowie ihre Datei.',
+		one: 'Dies löscht die ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} enthaltene Folge und ihre Datei.',
 		other: 'Dies löscht alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Folgen darin sowie ihre Dateien.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n,
@@ -1072,10 +1072,10 @@ class _Translations$accessibility$de extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Stärkeres Text, Auszeichnungen und Fokusindikatoren auf leichten oder dunklen Oberflächen.';
 	@override String get interaction => 'Bewegung und Interaktion';
 	@override String get reduceMotion => 'Bewegung reduzieren';
-	@override String get reduceMotionHint => 'Halten Sie den Fokus, die Seitenübergänge und die dekorativen Effekte immer noch.';
+	@override String get reduceMotionHint => 'Animationen der Fokusanzeige, Seitenübergänge und dekorative Effekte anhalten.';
 	@override String get largeTargets => 'Großer Touch-Ziel';
 	@override String get largeTargetsHint => 'Geben Sie den gemeinsamen Kontroll mehr Platz für Berührung und assistive Navigation.';
-	@override String get navigationHint => 'Verwenden Sie Tab und Shift+Tab, um zwischen den Kontrollstellen zu bewegen, Enter oder Space zu aktivieren und Escape oder Back to close.';
+	@override String get navigationHint => 'Mit Tab und Shift+Tab wechselst du zwischen Bedienelementen, mit Enter oder der Leertaste aktivierst du sie, und mit Escape oder Zurück schließt du sie. Wenn ein Buch geöffnet ist, kannst du den Zoom und die Leseeinstellungen anpassen.';
 }
 
 // Path: tooltips
@@ -2742,7 +2742,7 @@ class _Translations$addServer$de extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Verbindet Sie direkt mit lokaler IP oder URL. Verbindet Sie zu ${name}.';
 	@override String get insecureTitle => 'Unschlüsselte Verbindung';
 	@override String insecureDescription({required Object url}) => '${url} verwendet HTTP. Personen im Netzwerk können dein Passwort, deine Tokens und deine Medien lesen oder verändern. Verwende nach Möglichkeit HTTPS. Fahre nur fort, wenn du diesem Netzwerk vertraust und das Risiko akzeptierst.';
-	@override String get allowHttp => 'Erlaubnis HTTP';
+	@override String get allowHttp => 'HTTP erlauben';
 	@override String get httpsRequired => 'Verwenden Sie HTTPS oder erlauben Sie ausdrücklich eine unschlüsselte Verbindung.';
 }
 
@@ -2880,8 +2880,8 @@ class _Translations$platform$de extends Translations$platform$en {
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG verbindet sich mit Ihren Medien-Server und Playback-Geräten auf Ihrem lokalen Netzwerk.';
 	@override String get locationPermission => 'PlezyNG verwendet Standortzugang, wenn iOS es benötigt, um Ihr lokales Netzwerk zu erkennen und mit Ihren Medien-Server zu verbinden.';
-	@override String get photoLibraryPermission => 'Wählen Sie Bilder aus Ihrer Fotobibliothek als Medienkunstwerk zu verwenden.';
-	@override String get cameraPermission => 'Scannen Sie QR-Codes, um eine Companion Remote zu kombinieren.';
+	@override String get photoLibraryPermission => 'Wähle Bilder aus deiner Fotomediathek aus, um sie als Mediencover und andere Medienbilder zu verwenden.';
+	@override String get cameraPermission => 'QR-Codes scannen, um eine Companion Remote zu koppeln.';
 }
 
 // Path: fileSources
@@ -2915,7 +2915,7 @@ class _Translations$fileSources$de extends Translations$fileSources$en {
 	@override String get save => 'Speichern';
 	@override String get close => 'Schließen';
 	@override String get removeSource => 'Abschließen Quelle';
-	@override String get disconnectMessage => 'Die heruntergeladenen Dateien und Ihre Les- und Hörenhistorie bleiben auf diesem Gerät.';
+	@override String get disconnectMessage => 'Verbindung zu dieser Quelle trennen? Heruntergeladene Dateien sowie dein Lese- und Hörverlauf bleiben auf diesem Gerät.';
 	@override String get localFolder => 'Wählen Sie die Folder';
 	@override String get empty => 'Hier ist noch nichts';
 	@override String get emptyHint => 'Ein Quell hinzufügen oder ein Buch, Audiobook, Musik oder Video importieren.';
@@ -2988,7 +2988,7 @@ class _Translations$fileSources$de extends Translations$fileSources$en {
 	@override String get paper => 'Papier';
 	@override String get sepia => 'Sepia';
 	@override String get night => 'Nacht';
-	@override String get readAloud => 'Lesen Sie diese Seite auf dem Hülle';
+	@override String get readAloud => 'Diese Seite vorlesen';
 	@override String get readAlong => 'Lesen Sie weiter';
 	@override String get stopReading => 'Stoppen Sie mit Narration';
 	@override String get searchBook => 'Suche in Buch';
@@ -3045,10 +3045,10 @@ class _Translations$fileSources$de extends Translations$fileSources$en {
 	@override String get twoPages => 'Zwei Seiten';
 	@override String get readingDirection => 'Lesen Richtung';
 	@override String get leftToRight => 'links nach rechts';
-	@override String get rightToLeft => 'Recht auf Verlassen';
+	@override String get rightToLeft => 'Von rechts nach links';
 	@override String get letterSpacing => 'Brief Spazier';
 	@override String get wordSpacing => 'Spazierend Wort';
-	@override String get readerControlsHelp => 'Pinch oder verwenden Sie Zoom-Controller, um Seiten zu erweitern. Drücken Sie auf den Panel. Ctrl/ ⁇  + oder − justiert Zoom; Ctrl/ ⁇  0 reset es. Page Up und Page Down drehen Seiten.';
+	@override String get readerControlsHelp => 'Ziehe zwei Finger auseinander oder nutze die Zoom-Steuerung, um Seiten zu vergrößern. Ziehe die Seite, um sie zu verschieben. Ctrl/⌘ mit + oder − ändert den Zoom; Ctrl/⌘ mit 0 setzt ihn zurück. Page Up und Page Down blättern um.';
 	@override String get imagePage => 'Komikseite';
 	@override String get resetReader => 'Lesen Preferenzen wiederherstellen';
 	@override String get zoom => 'Zoom';
@@ -3077,23 +3077,23 @@ class _Translations$lending$de extends Translations$lending$en {
 	@override String get search => 'Suche nach Büchern und Autoren';
 	@override String get catalogue => 'Katalog';
 	@override String get loans => 'Darlehen';
-	@override String get holds => 'Halt';
+	@override String get holds => 'Vormerkungen';
 	@override String get signIn => 'Anmeldung mit Ihrer Bibliothek';
 	@override String get waiting => 'Beenden Sie die Anmeldung in Ihrem Browser und dann zurück.';
 	@override String get cancel => 'Abbrechen';
 	@override String get disconnect => 'Bibliothek entfernen';
-	@override String get disconnectMessage => 'Entfernen Sie diese Bibliothek aus diesem Profil? Ihre Darlehen und halten Sie Ihren Aufenthalt mit Ihrer Bibliothek.';
+	@override String get disconnectMessage => 'Diese Bibliothek aus diesem Profil entfernen? Deine Ausleihen und Vormerkungen bleiben bei der Bibliothek erhalten.';
 	@override String get getBook => 'Buch bekommen';
 	@override String get checkAvailability => 'Überprüfen Sie Verfügbarkeit';
 	@override String get available => 'zur Verfügung zum Darlehen';
 	@override String get unavailable => 'Aktuell unzugänglich';
-	@override String get borrow => 'Lohn';
-	@override String get placeHold => 'Platz halten';
+	@override String get borrow => 'Ausleihen';
+	@override String get placeHold => 'Vormerken';
 	@override String get returnBook => 'früh zurück';
-	@override String get cancelHold => 'Ablehnung Hold';
+	@override String get cancelHold => 'Vormerkung stornieren';
 	@override String get confirmBorrow => 'Löhnen Sie diesen Titel aus Ihrer Bibliothek?';
 	@override String get confirmReturn => 'Geben Sie diesen Titel jetzt zurück? Sie müssen es vielleicht erneut leihen, um weiterzuführen.';
-	@override String get confirmCancelHold => 'Holen Sie sich Ihre Haltung auf diesem Titel?';
+	@override String get confirmCancelHold => 'Deine Vormerkung für diesen Titel stornieren?';
 	@override String get email => 'E-Mail Nachricht halten';
 	@override String due({required Object date}) => 'Die Anzahl ${date}';
 	@override String queue({required Object position}) => 'Position ${position} in der Linie';
@@ -3111,8 +3111,8 @@ class _Translations$lending$de extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Sie können Ihre Bibliothek in Libby verwenden, während wir sie verbinden.';
 	@override String get suspendHold => 'Halt aufhören';
 	@override String get resumeHold => 'Resume halten';
-	@override String get suspendMessage => 'Halten Sie Ihre Stelle in der Linie und lassen Sie den nächsten Leser diese Kopie leihen?';
-	@override String get resumeMessage => 'Wiederholen Sie diese Haltung, damit Ihre Bibliothek Ihnen die nächste verfügbare Kopie anbietet kann?';
+	@override String get suspendMessage => 'Deinen Platz in der Warteschlange behalten und den nächsten Leser dieses Exemplar ausleihen lassen? Du kannst die Vormerkung später fortsetzen.';
+	@override String get resumeMessage => 'Diese Vormerkung fortsetzen, damit dir die Bibliothek das nächste verfügbare Exemplar anbieten kann?';
 	@override String get editEmail => 'Änderung der E-Mail-Nachricht';
 }
 
@@ -3501,7 +3501,7 @@ class _Translations$libraries$selection$de extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} ausgewählt';
 	@override String get actions => 'Auswahl Aktionen';
 	@override String get confirmDescendants => 'Dies ändert alle Episoden in den ausgewählten Shows und Jahreszeiten.';
-	@override String get confirmUnwatched => 'Dies klärt auch den Playback-Vorgang für die ausgewählten Elemente.';
+	@override String get confirmUnwatched => 'Dabei wird auch der Wiedergabefortschritt der ausgewählten Elemente gelöscht.';
 	@override String confirmCount({required Object count}) => 'Auswählte Artikel: ${count}.';
 	@override String completed({required Object count}) => 'Aktualisierte Artikel: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Aktualisiert ${succeeded}; versagt ${failed}. Versagtes Produkt bleibt ausgewählt.';
@@ -4453,7 +4453,7 @@ extension on TranslationsDe {
 			'settings.importSettingsInvalidFile' => 'Diese Datei ist kein gültiger PlezyNG-Einstellungsexport',
 			'settings.importSettingsNoUser' => 'Vor dem Import bitte anmelden',
 			'settings.cloudBackup' => 'Cloud-Sicherung',
-			'settings.cloudBackupDescription' => 'Backup von Portable-Einstellungen auf eine Endstelle WebDAV über HTTPS. Serververbindungen und -kreditials bleiben auf diesem Gerät.',
+			'settings.cloudBackupDescription' => 'Sichere übertragbare Einstellungen über HTTPS an einer WebDAV-Adresse. Serververbindungen und Anmeldedaten bleiben auf diesem Gerät.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON Datei URL',
 			'settings.cloudBackupUsername' => 'Benutzername',
 			'settings.cloudBackupPassword' => 'Passwort',
@@ -4908,7 +4908,7 @@ extension on TranslationsDe {
 			'mediaMenu.deleteAnyway' => 'Trotzdem löschen',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '„${title}“ dauerhaft von deinem Server löschen?',
 			'mediaMenu.deleteMultipleWarning' => 'Dies umfasst alle Episoden und deren Dateien.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Dies löscht alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Folge darin sowie ihre Datei.', other: 'Dies löscht alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Folgen darin sowie ihre Dateien.', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Dies löscht die ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} enthaltene Folge und ihre Datei.', other: 'Dies löscht alle ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Folgen darin sowie ihre Dateien.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Dieses Element ist als ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Datei gespeichert, die gelöscht wird.', other: 'Dieses Element ist über ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Dateien verteilt gespeichert, die alle gelöscht werden.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} weitere Folge ist in derselben Datei gespeichert und wird ebenfalls gelöscht:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} weitere Folgen sind in derselben Datei gespeichert und werden ebenfalls gelöscht:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG konnte nicht prüfen, welche Dateien dadurch entfernt werden. Es könnte also mehr gelöscht werden als das oben genannte Element. Brich ab und versuche es erneut, oder lösche trotzdem.',
@@ -4971,10 +4971,10 @@ extension on TranslationsDe {
 			'accessibility.highContrastHint' => 'Stärkeres Text, Auszeichnungen und Fokusindikatoren auf leichten oder dunklen Oberflächen.',
 			'accessibility.interaction' => 'Bewegung und Interaktion',
 			'accessibility.reduceMotion' => 'Bewegung reduzieren',
-			'accessibility.reduceMotionHint' => 'Halten Sie den Fokus, die Seitenübergänge und die dekorativen Effekte immer noch.',
+			'accessibility.reduceMotionHint' => 'Animationen der Fokusanzeige, Seitenübergänge und dekorative Effekte anhalten.',
 			'accessibility.largeTargets' => 'Großer Touch-Ziel',
 			'accessibility.largeTargetsHint' => 'Geben Sie den gemeinsamen Kontroll mehr Platz für Berührung und assistive Navigation.',
-			'accessibility.navigationHint' => 'Verwenden Sie Tab und Shift+Tab, um zwischen den Kontrollstellen zu bewegen, Enter oder Space zu aktivieren und Escape oder Back to close.',
+			'accessibility.navigationHint' => 'Mit Tab und Shift+Tab wechselst du zwischen Bedienelementen, mit Enter oder der Leertaste aktivierst du sie, und mit Escape oder Zurück schließt du sie. Wenn ein Buch geöffnet ist, kannst du den Zoom und die Leseeinstellungen anpassen.',
 			'tooltips.shufflePlay' => 'Zufallswiedergabe',
 			'tooltips.playTrailer' => 'Trailer abspielen',
 			'tooltips.markAsWatched' => 'Als gesehen markieren',
@@ -5499,7 +5499,7 @@ extension on TranslationsDe {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} ausgewählt',
 			'libraries.selection.actions' => 'Auswahl Aktionen',
 			'libraries.selection.confirmDescendants' => 'Dies ändert alle Episoden in den ausgewählten Shows und Jahreszeiten.',
-			'libraries.selection.confirmUnwatched' => 'Dies klärt auch den Playback-Vorgang für die ausgewählten Elemente.',
+			'libraries.selection.confirmUnwatched' => 'Dabei wird auch der Wiedergabefortschritt der ausgewählten Elemente gelöscht.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Auswählte Artikel: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Aktualisierte Artikel: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Aktualisiert ${succeeded}; versagt ${failed}. Versagtes Produkt bleibt ausgewählt.',
@@ -6644,7 +6644,7 @@ extension on TranslationsDe {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Verbindet Sie direkt mit lokaler IP oder URL. Verbindet Sie zu ${name}.',
 			'addServer.insecureTitle' => 'Unschlüsselte Verbindung',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} verwendet HTTP. Personen im Netzwerk können dein Passwort, deine Tokens und deine Medien lesen oder verändern. Verwende nach Möglichkeit HTTPS. Fahre nur fort, wenn du diesem Netzwerk vertraust und das Risiko akzeptierst.',
-			'addServer.allowHttp' => 'Erlaubnis HTTP',
+			'addServer.allowHttp' => 'HTTP erlauben',
 			'addServer.httpsRequired' => 'Verwenden Sie HTTPS oder erlauben Sie ausdrücklich eine unschlüsselte Verbindung.',
 			'watchLink.serverUnavailable' => 'Ich konnte nicht auf einen Server Plex für diesen Link erreichen.',
 			'watchLink.notFound' => 'Ich konnte diese Show oder Film nicht auf Ihren Server Plex finden.',
@@ -6757,8 +6757,8 @@ extension on TranslationsDe {
 			'homeLayout.resetHeroButtonDescription' => 'Sie dreht die Heldinstellung jeder Reihe ab und bringt die einzige Rotation Banner wieder oben, wie vor der Hero-Rennen existiert.',
 			'platform.localNetworkPermission' => 'PlezyNG verbindet sich mit Ihren Medien-Server und Playback-Geräten auf Ihrem lokalen Netzwerk.',
 			'platform.locationPermission' => 'PlezyNG verwendet Standortzugang, wenn iOS es benötigt, um Ihr lokales Netzwerk zu erkennen und mit Ihren Medien-Server zu verbinden.',
-			'platform.photoLibraryPermission' => 'Wählen Sie Bilder aus Ihrer Fotobibliothek als Medienkunstwerk zu verwenden.',
-			'platform.cameraPermission' => 'Scannen Sie QR-Codes, um eine Companion Remote zu kombinieren.',
+			'platform.photoLibraryPermission' => 'Wähle Bilder aus deiner Fotomediathek aus, um sie als Mediencover und andere Medienbilder zu verwenden.',
+			'platform.cameraPermission' => 'QR-Codes scannen, um eine Companion Remote zu koppeln.',
 			'fileSources.title' => 'Dateien und Bücher',
 			'fileSources.subtitle' => 'Lesen, hören und aus Ihren eigenen Dateien beobachten.',
 			'fileSources.add' => 'Quelle hinzufügen',
@@ -6783,7 +6783,7 @@ extension on TranslationsDe {
 			'fileSources.save' => 'Speichern',
 			'fileSources.close' => 'Schließen',
 			'fileSources.removeSource' => 'Abschließen Quelle',
-			'fileSources.disconnectMessage' => 'Die heruntergeladenen Dateien und Ihre Les- und Hörenhistorie bleiben auf diesem Gerät.',
+			'fileSources.disconnectMessage' => 'Verbindung zu dieser Quelle trennen? Heruntergeladene Dateien sowie dein Lese- und Hörverlauf bleiben auf diesem Gerät.',
 			'fileSources.localFolder' => 'Wählen Sie die Folder',
 			'fileSources.empty' => 'Hier ist noch nichts',
 			'fileSources.emptyHint' => 'Ein Quell hinzufügen oder ein Buch, Audiobook, Musik oder Video importieren.',
@@ -6853,7 +6853,7 @@ extension on TranslationsDe {
 			'fileSources.paper' => 'Papier',
 			'fileSources.sepia' => 'Sepia',
 			'fileSources.night' => 'Nacht',
-			'fileSources.readAloud' => 'Lesen Sie diese Seite auf dem Hülle',
+			'fileSources.readAloud' => 'Diese Seite vorlesen',
 			'fileSources.readAlong' => 'Lesen Sie weiter',
 			'fileSources.stopReading' => 'Stoppen Sie mit Narration',
 			'fileSources.searchBook' => 'Suche in Buch',
@@ -6910,10 +6910,10 @@ extension on TranslationsDe {
 			'fileSources.twoPages' => 'Zwei Seiten',
 			'fileSources.readingDirection' => 'Lesen Richtung',
 			'fileSources.leftToRight' => 'links nach rechts',
-			'fileSources.rightToLeft' => 'Recht auf Verlassen',
+			'fileSources.rightToLeft' => 'Von rechts nach links',
 			'fileSources.letterSpacing' => 'Brief Spazier',
 			'fileSources.wordSpacing' => 'Spazierend Wort',
-			'fileSources.readerControlsHelp' => 'Pinch oder verwenden Sie Zoom-Controller, um Seiten zu erweitern. Drücken Sie auf den Panel. Ctrl/ ⁇  + oder − justiert Zoom; Ctrl/ ⁇  0 reset es. Page Up und Page Down drehen Seiten.',
+			'fileSources.readerControlsHelp' => 'Ziehe zwei Finger auseinander oder nutze die Zoom-Steuerung, um Seiten zu vergrößern. Ziehe die Seite, um sie zu verschieben. Ctrl/⌘ mit + oder − ändert den Zoom; Ctrl/⌘ mit 0 setzt ihn zurück. Page Up und Page Down blättern um.',
 			'fileSources.imagePage' => 'Komikseite',
 			'fileSources.resetReader' => 'Lesen Preferenzen wiederherstellen',
 			'fileSources.zoom' => 'Zoom',
@@ -6933,23 +6933,23 @@ extension on TranslationsDe {
 			'lending.search' => 'Suche nach Büchern und Autoren',
 			'lending.catalogue' => 'Katalog',
 			'lending.loans' => 'Darlehen',
-			'lending.holds' => 'Halt',
+			'lending.holds' => 'Vormerkungen',
 			'lending.signIn' => 'Anmeldung mit Ihrer Bibliothek',
 			'lending.waiting' => 'Beenden Sie die Anmeldung in Ihrem Browser und dann zurück.',
 			'lending.cancel' => 'Abbrechen',
 			'lending.disconnect' => 'Bibliothek entfernen',
-			'lending.disconnectMessage' => 'Entfernen Sie diese Bibliothek aus diesem Profil? Ihre Darlehen und halten Sie Ihren Aufenthalt mit Ihrer Bibliothek.',
+			'lending.disconnectMessage' => 'Diese Bibliothek aus diesem Profil entfernen? Deine Ausleihen und Vormerkungen bleiben bei der Bibliothek erhalten.',
 			'lending.getBook' => 'Buch bekommen',
 			'lending.checkAvailability' => 'Überprüfen Sie Verfügbarkeit',
 			'lending.available' => 'zur Verfügung zum Darlehen',
 			'lending.unavailable' => 'Aktuell unzugänglich',
-			'lending.borrow' => 'Lohn',
-			'lending.placeHold' => 'Platz halten',
+			'lending.borrow' => 'Ausleihen',
+			'lending.placeHold' => 'Vormerken',
 			'lending.returnBook' => 'früh zurück',
-			'lending.cancelHold' => 'Ablehnung Hold',
+			'lending.cancelHold' => 'Vormerkung stornieren',
 			'lending.confirmBorrow' => 'Löhnen Sie diesen Titel aus Ihrer Bibliothek?',
 			'lending.confirmReturn' => 'Geben Sie diesen Titel jetzt zurück? Sie müssen es vielleicht erneut leihen, um weiterzuführen.',
-			'lending.confirmCancelHold' => 'Holen Sie sich Ihre Haltung auf diesem Titel?',
+			'lending.confirmCancelHold' => 'Deine Vormerkung für diesen Titel stornieren?',
 			'lending.email' => 'E-Mail Nachricht halten',
 			'lending.due' => ({required Object date}) => 'Die Anzahl ${date}',
 			'lending.queue' => ({required Object position}) => 'Position ${position} in der Linie',
@@ -6967,8 +6967,8 @@ extension on TranslationsDe {
 			'lending.comingSoonDescription' => 'Sie können Ihre Bibliothek in Libby verwenden, während wir sie verbinden.',
 			'lending.suspendHold' => 'Halt aufhören',
 			'lending.resumeHold' => 'Resume halten',
-			'lending.suspendMessage' => 'Halten Sie Ihre Stelle in der Linie und lassen Sie den nächsten Leser diese Kopie leihen?',
-			'lending.resumeMessage' => 'Wiederholen Sie diese Haltung, damit Ihre Bibliothek Ihnen die nächste verfügbare Kopie anbietet kann?',
+			'lending.suspendMessage' => 'Deinen Platz in der Warteschlange behalten und den nächsten Leser dieses Exemplar ausleihen lassen? Du kannst die Vormerkung später fortsetzen.',
+			'lending.resumeMessage' => 'Diese Vormerkung fortsetzen, damit dir die Bibliothek das nächste verfügbare Exemplar anbieten kann?',
 			'lending.editEmail' => 'Änderung der E-Mail-Nachricht',
 			_ => null,
 		};

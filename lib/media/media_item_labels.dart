@@ -1,16 +1,19 @@
+import '../i18n/presentation_formats.dart';
 import '../utils/formatters.dart';
 import 'media_item.dart';
 import 'media_kind.dart';
 
 String formatQueueItemSubtitle(MediaItem item) {
   final grandparentTitle = item.grandparentTitle;
-  if (grandparentTitle != null && item.parentIndex != null && item.index != null) {
-    return '$grandparentTitle \u00b7 S${item.parentIndex}E${item.index}';
+  final episodeLabel = formatSeasonEpisodeLabel(item.parentIndex, item.index);
+  if (grandparentTitle != null && episodeLabel != null) {
+    return toBulletedString([grandparentTitle, episodeLabel]);
   }
   if (grandparentTitle != null) return grandparentTitle;
   if (item.year != null) {
+    final year = formatDecimal(item.year!, maximumDecimals: 0);
     final edition = item.editionTitle;
-    return edition != null ? '${item.year} \u00b7 $edition' : '${item.year}';
+    return edition != null ? toBulletedString([year, edition]) : year;
   }
   return item.kind.label;
 }

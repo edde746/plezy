@@ -1,7 +1,7 @@
 {
   "locale": "en",
   "inherits": null,
-  "catalogSha256": "05527fef0ecacc9eb74335b2291b09c2d02cf7c83d68fab038501fd19d2069ca",
+  "catalogSha256": "263e647eb51673cd07d3f2c3a6cab53b6d137fd6e6063158c390ea8a11559e42",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "source-english",
@@ -817,7 +817,7 @@
     "mediaMenu.deleteAnyway": "source-english",
     "mediaMenu.confirmDeleteTarget": "source-english",
     "mediaMenu.deleteMultipleWarning": "source-english",
-    "mediaMenu.deleteEpisodeCountWarning": "source-english",
+    "mediaMenu.deleteEpisodeCountWarning": "source-ai-qa-correction",
     "mediaMenu.deleteMultiPartWarning": "source-english",
     "mediaMenu.deleteSharedFileHeading": "source-english",
     "mediaMenu.deleteScopeUnverifiedProbeFailed": "source-english",
@@ -2871,5 +2871,9 @@
     "lending.resumeMessage": "source-english",
     "lending.editEmail": "source-english",
     "fileSources.googleDrive": "source-english"
-  }
+  },
+  "beforeIndependentQaCorrection": {
+    "mediaMenu.deleteEpisodeCountWarning": "source-english"
+  },
+  "independentAiQaReport": "../LANGUAGE_QA.md"
 }

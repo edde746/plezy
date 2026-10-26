@@ -523,7 +523,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Ez a fájl nem érvényes PlezyNG-beállításexport';
 	@override String get importSettingsNoUser => 'Jelentkezz be a beállítások importálása előtt';
 	@override String get cloudBackup => 'Felhőalapú biztonsági mentés';
-	@override String get cloudBackupDescription => 'A hordozható beállítások biztonsági mentése a WebDAV végpontra a HTTPS-nél.A szerverkapcsolatok és a hitelesítések ezen a készüléken maradnak.';
+	@override String get cloudBackupDescription => 'Készíts biztonsági másolatot az átvihető beállításokról egy WebDAV-címre HTTPS-en keresztül. A szerverkapcsolatok és a bejelentkezési adatok ezen az eszközön maradnak.';
 	@override String get cloudBackupUrl => 'WebDAV JSON fájl URL';
 	@override String get cloudBackupUsername => 'Felhasználónév';
 	@override String get cloudBackupPassword => 'Jelszó';
@@ -1072,10 +1072,10 @@ class _Translations$accessibility$hu extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Erősebb szöveg, kiemelkedések és a fényes vagy sötét felületeken lévő figyelemfelkeltő mutatók.';
 	@override String get interaction => 'Mozgás és interakció';
 	@override String get reduceMotion => 'Mozgás csökkentése';
-	@override String get reduceMotionHint => 'Tartsa a fókusz, az oldal átmenet és a dekoratív hatások marad.';
+	@override String get reduceMotionHint => 'Állítsd le a fókuszjelző mozgását, az oldalátmeneteket és a díszítő animációkat.';
 	@override String get largeTargets => 'Nagyabb érintkezési célok';
 	@override String get largeTargetsHint => 'A megosztott vezérlők több helyet biztosítanak a hozzáféréshez és a segéd navigációhoz.';
-	@override String get navigationHint => 'Használja a Táb és a Shift+Tab-t a vezérlők között mozgatni, a Be vagy a Térkép aktiválására, és a Menekülés vagy Vissza zárásra.';
+	@override String get navigationHint => 'A Tab és a Shift+Tab billentyűkkel léphetsz a vezérlők között, az Enter vagy a szóköz aktiválja őket, az Escape vagy a Vissza pedig bezár. Megnyitott könyvnél a nagyítás és az olvasási beállítások is elérhetők.';
 }
 
 // Path: tooltips
@@ -2742,7 +2742,7 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Kapcsolat közvetlenül a helyi IP vagy URL használatával. Kapcsolatok a ${name}.';
 	@override String get insecureTitle => 'titkosítatlan kapcsolat';
 	@override String insecureDescription({required Object url}) => 'A(z) ${url} HTTP-t használ. A hálózaton mások elolvashatják vagy módosíthatják a jelszavát, a tokenjeit és a médiatartalmait. Ha elérhető, használjon HTTPS-t. Csak akkor folytassa, ha megbízik ebben a hálózatban és elfogadja a kockázatot.';
-	@override String get allowHttp => 'Szállás HTTP';
+	@override String get allowHttp => 'HTTP engedélyezése';
 	@override String get httpsRequired => 'Használja a HTTPS vagy kifejezetten engedélyezi a titkosított kapcsolatot.';
 }
 
@@ -2879,8 +2879,8 @@ class _Translations$platform$hu extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'A PlezyNG a helyi hálózaton keresztül csatlakozik a média szerverekhez és a lejátszó eszközökhöz.';
-	@override String get locationPermission => 'A PlezyNG a helyszíni hozzáférést használja, amikor a iOS azt igényli a helyi hálózat észleléséhez és a média szerverekhez való csatlakozáshoz.';
-	@override String get photoLibraryPermission => 'Válassza ki a fotókönyvtárból származó képeket, hogy média művészeti munkaként használják.';
+	@override String get locationPermission => 'A PlezyNG akkor használja a helyadatokhoz való hozzáférést, ha az iOS ezt megköveteli a helyi hálózat felismeréséhez és a médiaszerverekhez való csatlakozáshoz.';
+	@override String get photoLibraryPermission => 'Válassz képeket a fotókönyvtáradból a médiatartalmak borítóképeihez és illusztrációihoz.';
 	@override String get cameraPermission => 'QR kódok szkennelése a Companion Remote párosításához.';
 }
 
@@ -2915,7 +2915,7 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get save => 'Mentés';
 	@override String get close => 'Bezárás';
 	@override String get removeSource => 'Kapcsolatfelvétel forrás';
-	@override String get disconnectMessage => 'Letöltött fájlok és az olvasási és hallgatási története ezen a készüléken marad.';
+	@override String get disconnectMessage => 'Leválasztod ezt a forrást? A letöltött fájlok, valamint az olvasási és hallgatási előzmények ezen az eszközön maradnak.';
 	@override String get localFolder => 'Válassza ki a mappa';
 	@override String get empty => 'Még nincs itt semmi';
 	@override String get emptyHint => 'Hozzon hozzá forrást vagy importáljon egy könyvet, audiókönyvet, zenét vagy videót.';
@@ -2988,7 +2988,7 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get paper => 'Papír';
 	@override String get sepia => 'Sepia';
 	@override String get night => 'éjszaka';
-	@override String get readAloud => 'Olvassa el ezt az oldalt hallottan';
+	@override String get readAloud => 'Az oldal felolvasása';
 	@override String get readAlong => 'Olvass tovább';
 	@override String get stopReading => 'A narráció megállítása';
 	@override String get searchBook => 'Keresés a könyvben';
@@ -3045,10 +3045,10 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get twoPages => 'Két oldal';
 	@override String get readingDirection => 'Olvasási irány';
 	@override String get leftToRight => 'Balra a jobbra';
-	@override String get rightToLeft => 'Jogos a távozás';
+	@override String get rightToLeft => 'Jobbról balra';
 	@override String get letterSpacing => 'levél spacing';
 	@override String get wordSpacing => 'Szavak spacing';
-	@override String get readerControlsHelp => 'A lapok bővítéséhez nyomja meg vagy használja a zoom-vezérlőket. nyomja meg a lapot. Ctrl/ ⁇  + vagy − módosítja a zoomot; Ctrl/ ⁇  0 újraindítja a lapot; Page Up és Page Down oldalakat.';
+	@override String get readerControlsHelp => 'Két ujj széthúzásával vagy a nagyítási vezérlőkkel nagyíthatod az oldalakat. Húzással mozgathatod az oldalt. A Ctrl/⌘ és + vagy − módosítja a nagyítást; a Ctrl/⌘ és 0 visszaállítja azt. A Page Up és Page Down lapoz.';
 	@override String get imagePage => 'Komikus oldal';
 	@override String get resetReader => 'Újraindítás olvasási preferenciák';
 	@override String get zoom => 'Nagyítás';
@@ -3077,23 +3077,23 @@ class _Translations$lending$hu extends Translations$lending$en {
 	@override String get search => 'Könyvek és szerzők keresése';
 	@override String get catalogue => 'Katalógus';
 	@override String get loans => 'kölcsönök';
-	@override String get holds => 'tartsa';
+	@override String get holds => 'Előjegyzések';
 	@override String get signIn => 'Jelentkezzen be a könyvtárával';
 	@override String get waiting => 'Véget ért a regisztráció a böngészőben, majd térj vissza ide.';
 	@override String get cancel => 'Mégse';
 	@override String get disconnect => 'Könyvtár eltávolítása';
-	@override String get disconnectMessage => 'Távolítsa el ezt a könyvtárat ebből a profilból? a kölcsönök és a tartás a könyvtár.';
+	@override String get disconnectMessage => 'Eltávolítod ezt a könyvtárat ebből a profilból? A kölcsönzéseid és előjegyzéseid megmaradnak a könyvtárnál.';
 	@override String get getBook => 'Könyvet kap';
 	@override String get checkAvailability => 'Ellenőrizze a rendelkezésre állást';
 	@override String get available => 'Elérhető kölcsönzéshez';
 	@override String get unavailable => 'Jelenleg nem elérhető';
-	@override String get borrow => 'kölcsön';
-	@override String get placeHold => 'hely tartani';
+	@override String get borrow => 'Kölcsönzés';
+	@override String get placeHold => 'Előjegyzés';
 	@override String get returnBook => 'Korai visszatérés';
-	@override String get cancelHold => 'Megtagadása Hold';
+	@override String get cancelHold => 'Előjegyzés törlése';
 	@override String get confirmBorrow => 'Ezt a címet kölcsönözzétek a könyvtárból?';
 	@override String get confirmReturn => 'Vissza kell adnia ezt a címet most? lehet, hogy újra kölcsönözni, hogy folytassa.';
-	@override String get confirmCancelHold => 'Eltávolítod a titkádat?';
+	@override String get confirmCancelHold => 'Törlöd a címre vonatkozó előjegyzésedet?';
 	@override String get email => 'Hajtsa az értesítést e-mail';
 	@override String due({required Object date}) => 'Személyi ${date}';
 	@override String queue({required Object position}) => '${position} pozíció a sorban';
@@ -3111,8 +3111,8 @@ class _Translations$lending$hu extends Translations$lending$en {
 	@override String get comingSoonDescription => 'A Libby integráció a maga módján van.A Libby könyvtárát használhatja, miközben befejezzük a kapcsolatot.';
 	@override String get suspendHold => 'Megszakított tartás';
 	@override String get resumeHold => 'Összefoglaló tartsa';
-	@override String get suspendMessage => 'Tartsa a helyét sorban, és hagyja, hogy a következő olvasó kölcsönözze ezt a példányt?';
-	@override String get resumeMessage => 'Ismételje meg ezt a tartalmat, hogy a könyvtár a következő elérhető másolatot kínálja?';
+	@override String get suspendMessage => 'Megtartod a helyedet a sorban, és átengeded ezt a példányt a következő olvasónak? Az előjegyzést később folytathatod.';
+	@override String get resumeMessage => 'Folytatod ezt az előjegyzést, hogy a könyvtár felajánlhassa a következő elérhető példányt?';
 	@override String get editEmail => 'Változtassuk meg az értesítés e-mail';
 }
 
@@ -3501,7 +3501,7 @@ class _Translations$libraries$selection$hu extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} kiválasztva';
 	@override String get actions => 'Választási akciók';
 	@override String get confirmDescendants => 'Ez megváltoztatja az összes epizódot a kiválasztott előadásokban és szezonokban.';
-	@override String get confirmUnwatched => 'Ez is tisztázza a lejátszás előrehaladását a kiválasztott elemekhez.';
+	@override String get confirmUnwatched => 'Ez a kiválasztott elemek lejátszási előrehaladását is törli.';
 	@override String confirmCount({required Object count}) => 'Válogatott elemek: ${count}.';
 	@override String completed({required Object count}) => 'Aktualizált elemek: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Aktualizált ${succeeded}; nem sikerült ${failed}. A nem sikerült elemeket továbbra is kiválasztották.';
@@ -4453,7 +4453,7 @@ extension on TranslationsHu {
 			'settings.importSettingsInvalidFile' => 'Ez a fájl nem érvényes PlezyNG-beállításexport',
 			'settings.importSettingsNoUser' => 'Jelentkezz be a beállítások importálása előtt',
 			'settings.cloudBackup' => 'Felhőalapú biztonsági mentés',
-			'settings.cloudBackupDescription' => 'A hordozható beállítások biztonsági mentése a WebDAV végpontra a HTTPS-nél.A szerverkapcsolatok és a hitelesítések ezen a készüléken maradnak.',
+			'settings.cloudBackupDescription' => 'Készíts biztonsági másolatot az átvihető beállításokról egy WebDAV-címre HTTPS-en keresztül. A szerverkapcsolatok és a bejelentkezési adatok ezen az eszközön maradnak.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON fájl URL',
 			'settings.cloudBackupUsername' => 'Felhasználónév',
 			'settings.cloudBackupPassword' => 'Jelszó',
@@ -4971,10 +4971,10 @@ extension on TranslationsHu {
 			'accessibility.highContrastHint' => 'Erősebb szöveg, kiemelkedések és a fényes vagy sötét felületeken lévő figyelemfelkeltő mutatók.',
 			'accessibility.interaction' => 'Mozgás és interakció',
 			'accessibility.reduceMotion' => 'Mozgás csökkentése',
-			'accessibility.reduceMotionHint' => 'Tartsa a fókusz, az oldal átmenet és a dekoratív hatások marad.',
+			'accessibility.reduceMotionHint' => 'Állítsd le a fókuszjelző mozgását, az oldalátmeneteket és a díszítő animációkat.',
 			'accessibility.largeTargets' => 'Nagyabb érintkezési célok',
 			'accessibility.largeTargetsHint' => 'A megosztott vezérlők több helyet biztosítanak a hozzáféréshez és a segéd navigációhoz.',
-			'accessibility.navigationHint' => 'Használja a Táb és a Shift+Tab-t a vezérlők között mozgatni, a Be vagy a Térkép aktiválására, és a Menekülés vagy Vissza zárásra.',
+			'accessibility.navigationHint' => 'A Tab és a Shift+Tab billentyűkkel léphetsz a vezérlők között, az Enter vagy a szóköz aktiválja őket, az Escape vagy a Vissza pedig bezár. Megnyitott könyvnél a nagyítás és az olvasási beállítások is elérhetők.',
 			'tooltips.shufflePlay' => 'Véletlenszerű lejátszás',
 			'tooltips.playTrailer' => 'Előzetes lejátszása',
 			'tooltips.markAsWatched' => 'Megjelölés megtekintettként',
@@ -5499,7 +5499,7 @@ extension on TranslationsHu {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} kiválasztva',
 			'libraries.selection.actions' => 'Választási akciók',
 			'libraries.selection.confirmDescendants' => 'Ez megváltoztatja az összes epizódot a kiválasztott előadásokban és szezonokban.',
-			'libraries.selection.confirmUnwatched' => 'Ez is tisztázza a lejátszás előrehaladását a kiválasztott elemekhez.',
+			'libraries.selection.confirmUnwatched' => 'Ez a kiválasztott elemek lejátszási előrehaladását is törli.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Válogatott elemek: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Aktualizált elemek: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Aktualizált ${succeeded}; nem sikerült ${failed}. A nem sikerült elemeket továbbra is kiválasztották.',
@@ -6644,7 +6644,7 @@ extension on TranslationsHu {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Kapcsolat közvetlenül a helyi IP vagy URL használatával. Kapcsolatok a ${name}.',
 			'addServer.insecureTitle' => 'titkosítatlan kapcsolat',
 			'addServer.insecureDescription' => ({required Object url}) => 'A(z) ${url} HTTP-t használ. A hálózaton mások elolvashatják vagy módosíthatják a jelszavát, a tokenjeit és a médiatartalmait. Ha elérhető, használjon HTTPS-t. Csak akkor folytassa, ha megbízik ebben a hálózatban és elfogadja a kockázatot.',
-			'addServer.allowHttp' => 'Szállás HTTP',
+			'addServer.allowHttp' => 'HTTP engedélyezése',
 			'addServer.httpsRequired' => 'Használja a HTTPS vagy kifejezetten engedélyezi a titkosított kapcsolatot.',
 			'watchLink.serverUnavailable' => 'Nem tudtam elérni a Plex szervert erre a linkre.',
 			'watchLink.notFound' => 'Nem találtam ezt a show-t vagy filmet a Plex szervereken.',
@@ -6756,8 +6756,8 @@ extension on TranslationsHu {
 			'homeLayout.on' => 'A',
 			'homeLayout.resetHeroButtonDescription' => 'A hős állításait minden sorban törli le, és visszahozza az egyetlen forgó banneret a tetején, mint az előző sorban.',
 			'platform.localNetworkPermission' => 'A PlezyNG a helyi hálózaton keresztül csatlakozik a média szerverekhez és a lejátszó eszközökhöz.',
-			'platform.locationPermission' => 'A PlezyNG a helyszíni hozzáférést használja, amikor a iOS azt igényli a helyi hálózat észleléséhez és a média szerverekhez való csatlakozáshoz.',
-			'platform.photoLibraryPermission' => 'Válassza ki a fotókönyvtárból származó képeket, hogy média művészeti munkaként használják.',
+			'platform.locationPermission' => 'A PlezyNG akkor használja a helyadatokhoz való hozzáférést, ha az iOS ezt megköveteli a helyi hálózat felismeréséhez és a médiaszerverekhez való csatlakozáshoz.',
+			'platform.photoLibraryPermission' => 'Válassz képeket a fotókönyvtáradból a médiatartalmak borítóképeihez és illusztrációihoz.',
 			'platform.cameraPermission' => 'QR kódok szkennelése a Companion Remote párosításához.',
 			'fileSources.title' => 'Fájlok és könyvek',
 			'fileSources.subtitle' => 'Olvasson, hallgasson és figyelj a saját fájlokat.',
@@ -6783,7 +6783,7 @@ extension on TranslationsHu {
 			'fileSources.save' => 'Mentés',
 			'fileSources.close' => 'Bezárás',
 			'fileSources.removeSource' => 'Kapcsolatfelvétel forrás',
-			'fileSources.disconnectMessage' => 'Letöltött fájlok és az olvasási és hallgatási története ezen a készüléken marad.',
+			'fileSources.disconnectMessage' => 'Leválasztod ezt a forrást? A letöltött fájlok, valamint az olvasási és hallgatási előzmények ezen az eszközön maradnak.',
 			'fileSources.localFolder' => 'Válassza ki a mappa',
 			'fileSources.empty' => 'Még nincs itt semmi',
 			'fileSources.emptyHint' => 'Hozzon hozzá forrást vagy importáljon egy könyvet, audiókönyvet, zenét vagy videót.',
@@ -6853,7 +6853,7 @@ extension on TranslationsHu {
 			'fileSources.paper' => 'Papír',
 			'fileSources.sepia' => 'Sepia',
 			'fileSources.night' => 'éjszaka',
-			'fileSources.readAloud' => 'Olvassa el ezt az oldalt hallottan',
+			'fileSources.readAloud' => 'Az oldal felolvasása',
 			'fileSources.readAlong' => 'Olvass tovább',
 			'fileSources.stopReading' => 'A narráció megállítása',
 			'fileSources.searchBook' => 'Keresés a könyvben',
@@ -6910,10 +6910,10 @@ extension on TranslationsHu {
 			'fileSources.twoPages' => 'Két oldal',
 			'fileSources.readingDirection' => 'Olvasási irány',
 			'fileSources.leftToRight' => 'Balra a jobbra',
-			'fileSources.rightToLeft' => 'Jogos a távozás',
+			'fileSources.rightToLeft' => 'Jobbról balra',
 			'fileSources.letterSpacing' => 'levél spacing',
 			'fileSources.wordSpacing' => 'Szavak spacing',
-			'fileSources.readerControlsHelp' => 'A lapok bővítéséhez nyomja meg vagy használja a zoom-vezérlőket. nyomja meg a lapot. Ctrl/ ⁇  + vagy − módosítja a zoomot; Ctrl/ ⁇  0 újraindítja a lapot; Page Up és Page Down oldalakat.',
+			'fileSources.readerControlsHelp' => 'Két ujj széthúzásával vagy a nagyítási vezérlőkkel nagyíthatod az oldalakat. Húzással mozgathatod az oldalt. A Ctrl/⌘ és + vagy − módosítja a nagyítást; a Ctrl/⌘ és 0 visszaállítja azt. A Page Up és Page Down lapoz.',
 			'fileSources.imagePage' => 'Komikus oldal',
 			'fileSources.resetReader' => 'Újraindítás olvasási preferenciák',
 			'fileSources.zoom' => 'Nagyítás',
@@ -6933,23 +6933,23 @@ extension on TranslationsHu {
 			'lending.search' => 'Könyvek és szerzők keresése',
 			'lending.catalogue' => 'Katalógus',
 			'lending.loans' => 'kölcsönök',
-			'lending.holds' => 'tartsa',
+			'lending.holds' => 'Előjegyzések',
 			'lending.signIn' => 'Jelentkezzen be a könyvtárával',
 			'lending.waiting' => 'Véget ért a regisztráció a böngészőben, majd térj vissza ide.',
 			'lending.cancel' => 'Mégse',
 			'lending.disconnect' => 'Könyvtár eltávolítása',
-			'lending.disconnectMessage' => 'Távolítsa el ezt a könyvtárat ebből a profilból? a kölcsönök és a tartás a könyvtár.',
+			'lending.disconnectMessage' => 'Eltávolítod ezt a könyvtárat ebből a profilból? A kölcsönzéseid és előjegyzéseid megmaradnak a könyvtárnál.',
 			'lending.getBook' => 'Könyvet kap',
 			'lending.checkAvailability' => 'Ellenőrizze a rendelkezésre állást',
 			'lending.available' => 'Elérhető kölcsönzéshez',
 			'lending.unavailable' => 'Jelenleg nem elérhető',
-			'lending.borrow' => 'kölcsön',
-			'lending.placeHold' => 'hely tartani',
+			'lending.borrow' => 'Kölcsönzés',
+			'lending.placeHold' => 'Előjegyzés',
 			'lending.returnBook' => 'Korai visszatérés',
-			'lending.cancelHold' => 'Megtagadása Hold',
+			'lending.cancelHold' => 'Előjegyzés törlése',
 			'lending.confirmBorrow' => 'Ezt a címet kölcsönözzétek a könyvtárból?',
 			'lending.confirmReturn' => 'Vissza kell adnia ezt a címet most? lehet, hogy újra kölcsönözni, hogy folytassa.',
-			'lending.confirmCancelHold' => 'Eltávolítod a titkádat?',
+			'lending.confirmCancelHold' => 'Törlöd a címre vonatkozó előjegyzésedet?',
 			'lending.email' => 'Hajtsa az értesítést e-mail',
 			'lending.due' => ({required Object date}) => 'Személyi ${date}',
 			'lending.queue' => ({required Object position}) => '${position} pozíció a sorban',
@@ -6967,8 +6967,8 @@ extension on TranslationsHu {
 			'lending.comingSoonDescription' => 'A Libby integráció a maga módján van.A Libby könyvtárát használhatja, miközben befejezzük a kapcsolatot.',
 			'lending.suspendHold' => 'Megszakított tartás',
 			'lending.resumeHold' => 'Összefoglaló tartsa',
-			'lending.suspendMessage' => 'Tartsa a helyét sorban, és hagyja, hogy a következő olvasó kölcsönözze ezt a példányt?',
-			'lending.resumeMessage' => 'Ismételje meg ezt a tartalmat, hogy a könyvtár a következő elérhető másolatot kínálja?',
+			'lending.suspendMessage' => 'Megtartod a helyedet a sorban, és átengeded ezt a példányt a következő olvasónak? Az előjegyzést később folytathatod.',
+			'lending.resumeMessage' => 'Folytatod ezt az előjegyzést, hogy a könyvtár felajánlhassa a következő elérhető példányt?',
 			'lending.editEmail' => 'Változtassuk meg az értesítés e-mail',
 			_ => null,
 		};

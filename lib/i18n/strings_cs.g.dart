@@ -197,7 +197,7 @@ class _Translations$auth$cs extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Čekáme na schválení...';
 	@override String get quickConnectCancel => 'Zrušit';
 	@override String get quickConnectExpired => 'Platnost rychlého připojení vypršela. Zkuste to znovu.';
-	@override String get localDataRecoveryRequired => 'PlezyNG nemohl bezpečně obnovit místní přihlášky a přehrávače dat.';
+	@override String get localDataRecoveryRequired => 'PlezyNG nedokázalo bezpečně obnovit místní přihlašovací údaje a čekající údaje o přehrávání. Přihlaste se znovu.';
 	@override String get pinCheckRejected => 'Ček PIN Plex byl zamítnut';
 	@override String get connectToDirectPlex => 'Připojte se k místnímu serveru Plex';
 }
@@ -794,7 +794,7 @@ class _Translations$themeEditor$cs extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$cs contrast = _Translations$themeEditor$contrast$cs._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, pod doporučeným ${minimum}:1';
 	@override String get discardTitle => 'Chybí se změny?';
-	@override String get discardMessage => 'Vaše nezapomenuté změny barvy budou ztraceny.';
+	@override String get discardMessage => 'Neuložené změny barev budou ztraceny.';
 	@override String get discard => 'Diskuze';
 	@override String previewCardTitle({required Object number}) => 'Článek ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => 'Zbývá ${minutes} min';
@@ -984,22 +984,28 @@ class _Translations$mediaMenu$cs extends Translations$mediaMenu$en {
 	@override String get deleteShowConfirm => 'Odstranění show';
 	@override String get deleteMovieConfirm => 'Odstranit film';
 	@override String get deleteAnyway => 'Odstranit v každém';
-	@override String confirmDeleteTarget({required Object title}) => 'Stále odstranit ${title} z vašeho serveru?';
+	@override String confirmDeleteTarget({required Object title}) => 'Trvale smazat ${title} ze serveru?';
 	@override String get deleteMultipleWarning => 'To zahrnuje všechny epizody a jejich soubory.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
-		one: 'To odstraní všechny ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody v něm, a jeho soubor.',
-		other: 'To odstraní všech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod v něm, a jejich soubory.',
+		one: 'Tím se smaže ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizoda v této položce i její soubor.',
+		few: 'Tím se smažou všechny ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody v této položce i jejich soubory.',
+		many: 'Tím se smažou všechny epizody v této položce (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) i jejich soubory.',
+		other: 'Tím se smaže všech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod v této položce i jejich soubory.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
-		one: 'Tento položka je uložena jako soubor ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, který bude vymazán.',
-		other: 'Tento položka je uložena v souborech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, a všechny z nich budou vymazány.',
+		one: 'Tato položka je uložena v ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souboru, který bude smazán.',
+		few: 'Tato položka je uložena ve ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souborech a všechny budou smazány.',
+		many: 'Tato položka je uložena v souborech (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}), které budou všechny smazány.',
+		other: 'Tato položka je uložena v ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souborech a všechny budou smazány.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ostatní epizody jsou uloženy ve stejném souboru a budou také vymazány:',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Ostatní epizody jsou uloženy ve stejném souboru a budou také vymazány:',
+		one: 'Ve stejném souboru je uložena ještě ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizoda, která bude také smazána:',
+		few: 'Ve stejném souboru jsou uloženy ještě ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody, které budou také smazány:',
+		many: 'Další epizody ve stejném souboru (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) budou také smazány:',
+		other: 'Ve stejném souboru je uloženo dalších ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod, které budou také smazány:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG nemohl zkontrolovat, které soubory to bude odstranit, takže to může odstranit více než položky uvedené výše.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Váš server neposkytl údaje o souboru pro tento položka, takže PlezyNG nemůže zkontrolovat, které soubory to bude odstranit.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG nedokázalo ověřit, které soubory budou odstraněny, takže může smazat více než výše uvedenou položku. Akci zrušte a zkuste to znovu, nebo pokračujte ve smazání.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Server neposkytl podrobnosti o souborech této položky, takže PlezyNG nemůže ověřit, které soubory budou odstraněny. Může být smazáno více než výše uvedená položka.';
 	@override String get mediaDeletedSuccessfully => 'Media objekt byl úspěšně odstraněn';
 	@override String get mediaFailedToDelete => 'Nedokázal odstranit mediální položku';
 	@override String get rate => 'Hodnocení';
@@ -1036,8 +1042,8 @@ class _Translations$accessibility$cs extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'Zhlédnuto';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} % zobrazených';
-	@override String get mediaCardUnwatched => 'Nepřehlédnutí';
-	@override String get tapToPlay => 'Tape se hrát';
+	@override String get mediaCardUnwatched => 'nezhlédnuto';
+	@override String get tapToPlay => 'Klepnutím přehrajete';
 	@override String get decrease => 'Snížení';
 	@override String get increase => 'Zvýšení';
 	@override String decreaseValue({required Object label}) => 'Ztráta ${label}';
@@ -1049,7 +1055,7 @@ class _Translations$accessibility$cs extends Translations$accessibility$en {
 	@override String get expandText => 'Rozšířte text';
 	@override String get collapseText => 'Zkrachovaný text';
 	@override String get alphabetNavigation => 'Alphabetní navigace';
-	@override String get alphabetScrollHint => 'Zvedněte nahoru nebo dolů, abyste se přesunuli dopisem';
+	@override String get alphabetScrollHint => 'Přejetím nahoru nebo dolů se pohybujete podle písmen';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Řádek ${row} z ${rowCount}, sloupec ${column} z ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Růž ${row} z ${rowCount}';
 	@override String get autoScrollPlay => 'Hrajte si Auto-Scroll';
@@ -1073,13 +1079,13 @@ class _Translations$accessibility$cs extends Translations$accessibility$en {
 	@override String get preview => 'Přečtěte si, poslouchejte a sledujte ve svém vlastním tempu.';
 	@override String get boldText => 'Rozhraní text';
 	@override String get highContrast => 'Vysoký kontrast';
-	@override String get highContrastHint => 'Silnější text, výtahy a ukazatele zaměření na světlé nebo tmavé povrchy.';
+	@override String get highContrastHint => 'Výraznější text, obrysy a indikátory zaměření na světlém i tmavém pozadí.';
 	@override String get interaction => 'Pohyb a interakce';
 	@override String get reduceMotion => 'Snížení pohybu';
-	@override String get reduceMotionHint => 'Udržujte pozornost, přechody stránek a dekorativní efekty stále.';
+	@override String get reduceMotionHint => 'Zastaví pohyb indikátoru zaměření, přechody stránek a dekorativní efekty.';
 	@override String get largeTargets => 'větší cíle dotyku';
 	@override String get largeTargetsHint => 'Dáváme sdíleným ovládacím prvkům více prostoru pro dotyk a asistenční navigaci.';
-	@override String get navigationHint => 'Použijte tabulku a tabulku Shift+Tab, abyste se pohybovali mezi kontrolami, Enter nebo Space k aktivování a Escape nebo Back to close.';
+	@override String get navigationHint => 'Mezi ovládacími prvky se přesouvejte klávesami Tab a Shift+Tab, aktivujte je klávesou Enter nebo mezerníkem a zavírejte klávesou Escape nebo tlačítkem Zpět. Při otevřené knize je dostupné přiblížení a nastavení čtení.';
 }
 
 // Path: tooltips
@@ -1522,7 +1528,7 @@ class _Translations$discover$cs extends Translations$discover$en {
 	@override String get recentlyAdded => 'Nedávno přidáno';
 	@override String recentlyAddedIn({required Object library}) => 'Nedávno přidáno v ${library}';
 	@override String latestAlbumsIn({required Object library}) => 'Nejnovější album v ${library}';
-	@override String recentlyPlayedIn({required Object library}) => 'Předchozí Předchozí Předchozí Předchozí Předchozí Předchozí Předchozí ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Nedávno přehráno v knihovně ${library}';
 	@override String mostPlayedIn({required Object library}) => 'Nejvíce hrají v ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Přehled';
@@ -1706,7 +1712,7 @@ class _Translations$startup$cs extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG nemohl začít';
 	@override String get failedBody => 'Něco se během start-upu zhroutilo. podrobnosti níže identifikují to, co selžilo.';
-	@override String get failedBodyRepairable => 'Úložný soubor PlezyNG je poškozen a musí být obnoven, než může PlezyNG začít.';
+	@override String get failedBodyRepairable => 'Uložený soubor nastavení PlezyNG je poškozený a před spuštěním aplikace je nutné jej znovu vytvořit. Další pokus nepomůže — zvolte opravu úložiště.';
 	@override String get phaseLabel => 'Krok';
 	@override String get showDetails => 'Zobrazit detaily';
 	@override String get hideDetails => 'skryte detaily';
@@ -1717,8 +1723,8 @@ class _Translations$startup$cs extends Translations$startup$en {
 	@override String get repairTitle => 'Opravy uložených dat?';
 	@override String get repairBodyCommon => 'Soubor nastavení PlezyNG je poškozen a nelze ho přečíst. opravy obnoví každé nastavení na své výchozí.';
 	@override String get repairBodyOneCredential => 'Jeden uložený sign-in je poškozen a nemůže být přečten. opravy odstraní pouze ten jeden; vaše ostatní nastavení jsou ponechány samy.';
-	@override String get repairBodySignInsKept => 'Vaše servery a profily by měly zůstat podepsány.';
-	@override String get repairBodySignInsLost => 'Klíč k ochraně vaše uložené sign-ins nelze zotavit z tohoto souboru, takže budete muset přihlásit se na každý server a profil znovu.';
+	@override String get repairBodySignInsKept => 'Přihlášení k vašim serverům a profilům by mělo zůstat zachováno.';
+	@override String get repairBodySignInsLost => 'Klíč chránící uložené přihlašovací údaje nelze z tohoto souboru obnovit, takže se budete muset znovu přihlásit ke každému serveru a profilu. Na mediálním serveru se nic nezmění.';
 	@override String get repairBodySessionsUncertain => 'Údaje služeb MAL, AniList, Simkl, Trakt a Seerr se ukládají samostatně a mohou, ale nemusí zůstat zachovány. PlezyNG vám přesně sdělí, co zachovalo.';
 	@override String get repairConfirm => 'Opravy';
 	@override String get repairSucceeded => 'Úložné opravy';
@@ -1726,11 +1732,11 @@ class _Translations$startup$cs extends Translations$startup$en {
 	@override String get restartRequiredBody => 'Vaše data byla opravena, ale PlezyNG je může použít až po novém spuštění. Zavřete PlezyNG a znovu jej otevřete.';
 	@override String get quitPlezy => 'Zpět PlezyNG';
 	@override String get repairFailed => 'Oprava selhala';
-	@override String get repairKeptSignIns => 'Vaše servery a profily jsou stále podepsány.';
-	@override String get repairLostSignIns => 'Klíč k ochraně uložených signálů by nemohl být obnoven. budete muset přihlásit se na každý server a profil znovu.';
+	@override String get repairKeptSignIns => 'K serverům a profilům jste stále přihlášeni.';
+	@override String get repairLostSignIns => 'Klíč chránící uložené přihlašovací údaje se nepodařilo obnovit. Budete se muset znovu přihlásit ke každému serveru a profilu.';
 	@override String get repairLostSessions => 'Nejméně jeden tracker nebo spojení Seerr bylo ztraceno a musí být znovu připojeno.';
 	@override String get backupTitle => 'Kopie poškozeného souboru byla zachována';
-	@override String get backupWarning => 'Obsahuje vaše přihlašovací povědomí.Nepodílejte nebo sdílejte.';
+	@override String get backupWarning => 'Obsahuje vaše přihlašovací údaje. Nenahrávejte ji ani ji nesdílejte.';
 	@override String get deleteBackup => 'Vymazat kopii';
 	@override String get backupDeleted => 'Kopie je vymazána.';
 	@override String get previousFailureTitle => 'PlezyNG neuspěl naposledy';
@@ -1931,7 +1937,7 @@ class _Translations$collections$cs extends Translations$collections$en {
 	@override String get collection => 'Kolekce';
 	@override String get empty => 'Kolekce je prázdná';
 	@override String get deleteCollection => 'Odstranit kolekci';
-	@override String deleteConfirm({required Object title}) => 'Odstranit „${title}“?Toto nemůže být vynecháno.';
+	@override String deleteConfirm({required Object title}) => 'Smazat „${title}“? Tuto akci nelze vrátit zpět.';
 	@override String get deleted => 'Kolekce odstraněna';
 	@override String get deleteFailed => 'Neschopnost odstranit sbírku';
 	@override String deleteFailedWithError({required Object error}) => 'Neschopné odstranit sbírku: ${error}';
@@ -2927,7 +2933,7 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get source => 'Zdroj';
 	@override String get name => 'Jméno';
 	@override String get endpoint => 'server URL';
-	@override String get root => 'Předpověď nebo předpověď';
+	@override String get root => 'Složka nebo předpona';
 	@override String get username => 'Uživatelské jméno';
 	@override String get password => 'Heslo';
 	@override String get token => 'API token';
@@ -2943,7 +2949,7 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get save => 'Uložit';
 	@override String get close => 'Zavřít';
 	@override String get removeSource => 'Odstranění zdroje';
-	@override String get disconnectMessage => 'Stáhnuté soubory a vaše čtení a historie poslouchání zůstávají na tomto zařízení.';
+	@override String get disconnectMessage => 'Odpojit tento zdroj? Stažené soubory a historie čtení a poslechu zůstanou v tomto zařízení.';
 	@override String get localFolder => 'Vyberte složku';
 	@override String get empty => 'Nic zde zatím';
 	@override String get emptyHint => 'Přidejte zdroj nebo importujte knihu, audioknihu, hudbu nebo video.';
@@ -3007,20 +3013,20 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get lineHeight => 'Řádkování';
 	@override String get margin => 'Margín';
 	@override String get font => 'Typové';
-	@override String get serif => 'Seriál';
-	@override String get sans => 'Bez seriálu';
-	@override String get mono => 'Monopoly';
+	@override String get serif => 'Patkové písmo';
+	@override String get sans => 'Bezpatkové písmo';
+	@override String get mono => 'Neproporcionální písmo';
 	@override String get columns => 'Kolony';
 	@override String get scroll => 'Sklíč vertikálně';
-	@override String get justify => 'Ospravedlnění textu';
+	@override String get justify => 'Zarovnat text do bloku';
 	@override String get readerTheme => 'Pohled stránky';
 	@override String get appTheme => 'Sledujte téma aplikace';
 	@override String get paper => 'Papír';
 	@override String get sepia => 'Sepi';
 	@override String get night => 'Noční';
-	@override String get readAloud => 'Čtěte tuto stránku v hloubce';
+	@override String get readAloud => 'Přečíst tuto stránku nahlas';
 	@override String get readAlong => 'Číst dál';
-	@override String get stopReading => 'Přestaňte narázovat';
+	@override String get stopReading => 'Zastavit předčítání';
 	@override String get searchBook => 'Vyhledávání v knize';
 	@override String get noMatches => 'Žádné zápasy';
 	@override String get previousPage => 'Předchozí stránka';
@@ -3052,7 +3058,7 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get none => 'Žádný';
 	@override String get fullscreen => 'Celá obrazovka';
 	@override String get syncLocation => 'Progress sync folder (volitelné)';
-	@override String get syncLocationHint => 'Poskytnutá složka WebDAV pro PlezyNG stát. Používá podmíněné písemnosti; média zůstávají nezměněny.';
+	@override String get syncLocationHint => 'Vyhrazená složka WebDAV pro stav aplikace PlezyNG. Zápis probíhá podmíněně; mediální soubory zůstávají beze změny.';
 	@override String get audiobooks => 'Audioknihy';
 	@override String get comics => 'Komiksy';
 	@override String get scan => 'Skenování knih a médií';
@@ -3078,9 +3084,9 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get rightToLeft => 'Zprava doleva';
 	@override String get letterSpacing => 'Dopis k prostoru';
 	@override String get wordSpacing => 'Slovo spacing';
-	@override String get readerControlsHelp => 'Připínat nebo použít zoomové ovládací prvky pro rozšíření stránek. Přejít na panelu. Ctrl/ ⁇  + nebo − upravuje zoom; Ctrl/ ⁇  0 to resetuje. Page Up a Page Down otočí stránky.';
+	@override String get readerControlsHelp => 'Stránky zvětšíte roztažením dvou prstů nebo pomocí ovládání přiblížení. Tažením stránku posunete. Ctrl/⌘ s + nebo − upravuje přiblížení; Ctrl/⌘ s 0 ho obnoví. Page Up a Page Down otáčejí stránky.';
 	@override String get imagePage => 'Komiksová stránka';
-	@override String get resetReader => 'Recenze čtení preferencí';
+	@override String get resetReader => 'Obnovit výchozí nastavení čtení';
 	@override String get zoom => 'Přiblížit';
 	@override String get useFiles => 'Použijte soubory a knihy';
 	@override String get cancelScan => 'Zrušit skenování';
@@ -3099,36 +3105,36 @@ class _Translations$lending$cs extends Translations$lending$en {
 	@override String get other => 'Další knihovna';
 	@override String get libraryName => 'Název knihovny';
 	@override String get libraryUrl => 'knihovny WEB';
-	@override String get libraryUrlHint => 'Použijte katalog nebo stránku přihlášky.';
+	@override String get libraryUrlHint => 'Použijte katalog své knihovny nebo její přihlašovací stránku.';
 	@override String get intro => 'Půjčte si knihu z knihovny, držte si knihy v blízkosti.';
-	@override String get handoff => 'Zaregistrujte se, půjčujte a čtěte bezpečně s vlastním servisem vaší knihovny.';
+	@override String get handoff => 'Přihlaste se, vypůjčujte si knihy a bezpečně čtěte prostřednictvím služby své knihovny.';
 	@override String get openService => 'otevřená knihovna';
 	@override String get findLibrary => 'Najít knihovnu';
 	@override String get search => 'Vyhledávání knih a autorů';
 	@override String get catalogue => 'Katalog';
 	@override String get loans => 'půjčky';
-	@override String get holds => 'Držte';
+	@override String get holds => 'Rezervace';
 	@override String get signIn => 'Přihlaste se k vaší knihovně';
 	@override String get waiting => 'Přihlaste se do svého prohlížeče a pak se vrátíte.';
 	@override String get cancel => 'Zrušit';
 	@override String get disconnect => 'Odstranit knihovnu';
-	@override String get disconnectMessage => 'Odstranit tuto knihovnu z tohoto profilu? Vaše půjčky a držet pobyt s vaší knihovnou.';
+	@override String get disconnectMessage => 'Odebrat tuto knihovnu z tohoto profilu? Vaše výpůjčky a rezervace zůstanou u knihovny.';
 	@override String get getBook => 'Získejte knihu';
 	@override String get checkAvailability => 'Zkontrolujte dostupnost';
 	@override String get available => 'Dostupné k půjčování';
 	@override String get unavailable => 'V současné době nedostupné';
-	@override String get borrow => 'půjčka';
-	@override String get placeHold => 'Místo držet';
+	@override String get borrow => 'Vypůjčit';
+	@override String get placeHold => 'Rezervovat';
 	@override String get returnBook => 'Zpět brzy';
-	@override String get cancelHold => 'Zrušit držení';
+	@override String get cancelHold => 'Zrušit rezervaci';
 	@override String get confirmBorrow => 'Půjčujete si tento titul z vaší knihovny?';
-	@override String get confirmReturn => 'Zpět na tuto stránku?Možná budete muset půjčit znovu, abyste pokračovali.';
-	@override String get confirmCancelHold => 'Odstraňujete svůj titul?';
+	@override String get confirmReturn => 'Vrátit tento titul nyní? Abyste mohli pokračovat, možná si jej budete muset znovu vypůjčit.';
+	@override String get confirmCancelHold => 'Zrušit rezervaci tohoto titulu?';
 	@override String get email => 'Udržujte e-mail oznámení';
-	@override String due({required Object date}) => 'Důvod ${date}';
+	@override String due({required Object date}) => 'Vrátit do ${date}';
 	@override String queue({required Object position}) => 'Pozice ${position} v čáru';
 	@override String get empty => 'Zatím tu žádné tituly.';
-	@override String get openLibraryNote => 'Prozkoumejte katalog otevřené knihovny. možnosti čtení a půjčky jsou zobrazeny na stránce každého titulu.';
+	@override String get openLibraryNote => 'Procházejte katalog Open Library. Možnosti čtení a vypůjčení jsou uvedeny na stránce každého titulu.';
 	@override String get more => 'Naložte více';
 	@override String get gateway => 'knihovny sign-in';
 	@override String get gatewayHint => 'Zajištěno vaší knihovnou nebo správcem PlezyNG.';
@@ -3139,10 +3145,10 @@ class _Translations$lending$cs extends Translations$lending$en {
 	@override String get continueService => 'Pokračovat ve službě';
 	@override String get comingSoon => 'In-app půjčka · Brzy přijde';
 	@override String get comingSoonDescription => 'Libby integrace je na cestě.Můžete použít vaši knihovnu v Libby, zatímco my dokončujeme připojení.';
-	@override String get suspendHold => 'Zastavení držení';
-	@override String get resumeHold => 'Recenze držet';
-	@override String get suspendMessage => 'Udržujte své místo v řadě a nechte další čtenář půjčit tuto kopii?';
-	@override String get resumeMessage => 'Přehodnotit tuto držení, aby vám vaše knihovna mohla nabídnout další dostupnou kopii?';
+	@override String get suspendHold => 'Pozastavit rezervaci';
+	@override String get resumeHold => 'Obnovit rezervaci';
+	@override String get suspendMessage => 'Ponechat si místo ve frontě a nechat dalšího čtenáře vypůjčit si tento výtisk? Rezervaci můžete později obnovit.';
+	@override String get resumeMessage => 'Obnovit rezervaci, aby vám knihovna mohla nabídnout další dostupný výtisk?';
 	@override String get editEmail => 'Změna e-mailu oznámení';
 }
 
@@ -3531,7 +3537,7 @@ class _Translations$libraries$selection$cs extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} vybráno';
 	@override String get actions => 'Výběr akcí';
 	@override String get confirmDescendants => 'To se mění všechny epizody ve vybraných show a sezónách.';
-	@override String get confirmUnwatched => 'To také zjednodušuje vývoj playback pro vybrané položky.';
+	@override String get confirmUnwatched => 'Tím se také vymaže průběh přehrávání vybraných položek.';
 	@override String confirmCount({required Object count}) => 'Vybrané položky: ${count}.';
 	@override String completed({required Object count}) => 'Aktualizované položky: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Aktualizováno ${succeeded}; selhaly ${failed}. selhaly položky zůstávají vybrány.';
@@ -4187,7 +4193,7 @@ extension on TranslationsCs {
 			'auth.quickConnectWaiting' => 'Čekáme na schválení...',
 			'auth.quickConnectCancel' => 'Zrušit',
 			'auth.quickConnectExpired' => 'Platnost rychlého připojení vypršela. Zkuste to znovu.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG nemohl bezpečně obnovit místní přihlášky a přehrávače dat.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG nedokázalo bezpečně obnovit místní přihlašovací údaje a čekající údaje o přehrávání. Přihlaste se znovu.',
 			'auth.pinCheckRejected' => 'Ček PIN Plex byl zamítnut',
 			'auth.connectToDirectPlex' => 'Připojte se k místnímu serveru Plex',
 			'common.cancel' => 'Zrušit',
@@ -4756,7 +4762,7 @@ extension on TranslationsCs {
 			'themeEditor.contrast.labelOnAccent' => 'Tisková značka na akcentě',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, pod doporučeným ${minimum}:1',
 			'themeEditor.discardTitle' => 'Chybí se změny?',
-			'themeEditor.discardMessage' => 'Vaše nezapomenuté změny barvy budou ztraceny.',
+			'themeEditor.discardMessage' => 'Neuložené změny barev budou ztraceny.',
 			'themeEditor.discard' => 'Diskuze',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'Článek ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => 'Zbývá ${minutes} min',
@@ -4938,13 +4944,13 @@ extension on TranslationsCs {
 			'mediaMenu.deleteShowConfirm' => 'Odstranění show',
 			'mediaMenu.deleteMovieConfirm' => 'Odstranit film',
 			'mediaMenu.deleteAnyway' => 'Odstranit v každém',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Stále odstranit ${title} z vašeho serveru?',
+			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Trvale smazat ${title} ze serveru?',
 			'mediaMenu.deleteMultipleWarning' => 'To zahrnuje všechny epizody a jejich soubory.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'To odstraní všechny ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody v něm, a jeho soubor.', other: 'To odstraní všech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod v něm, a jejich soubory.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Tento položka je uložena jako soubor ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, který bude vymazán.', other: 'Tento položka je uložena v souborech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, a všechny z nich budou vymazány.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ostatní epizody jsou uloženy ve stejném souboru a budou také vymazány:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Ostatní epizody jsou uloženy ve stejném souboru a budou také vymazány:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG nemohl zkontrolovat, které soubory to bude odstranit, takže to může odstranit více než položky uvedené výše.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Váš server neposkytl údaje o souboru pro tento položka, takže PlezyNG nemůže zkontrolovat, které soubory to bude odstranit.',
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Tím se smaže ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizoda v této položce i její soubor.', few: 'Tím se smažou všechny ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody v této položce i jejich soubory.', many: 'Tím se smažou všechny epizody v této položce (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) i jejich soubory.', other: 'Tím se smaže všech ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod v této položce i jejich soubory.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Tato položka je uložena v ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souboru, který bude smazán.', few: 'Tato položka je uložena ve ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souborech a všechny budou smazány.', many: 'Tato položka je uložena v souborech (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}), které budou všechny smazány.', other: 'Tato položka je uložena v ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} souborech a všechny budou smazány.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Ve stejném souboru je uložena ještě ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizoda, která bude také smazána:', few: 'Ve stejném souboru jsou uloženy ještě ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizody, které budou také smazány:', many: 'Další epizody ve stejném souboru (počet: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) budou také smazány:', other: 'Ve stejném souboru je uloženo dalších ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} epizod, které budou také smazány:', ), 
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG nedokázalo ověřit, které soubory budou odstraněny, takže může smazat více než výše uvedenou položku. Akci zrušte a zkuste to znovu, nebo pokračujte ve smazání.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Server neposkytl podrobnosti o souborech této položky, takže PlezyNG nemůže ověřit, které soubory budou odstraněny. Může být smazáno více než výše uvedená položka.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media objekt byl úspěšně odstraněn',
 			'mediaMenu.mediaFailedToDelete' => 'Nedokázal odstranit mediální položku',
 			'mediaMenu.rate' => 'Hodnocení',
@@ -4963,8 +4969,8 @@ extension on TranslationsCs {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'Zhlédnuto',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} % zobrazených',
-			'accessibility.mediaCardUnwatched' => 'Nepřehlédnutí',
-			'accessibility.tapToPlay' => 'Tape se hrát',
+			'accessibility.mediaCardUnwatched' => 'nezhlédnuto',
+			'accessibility.tapToPlay' => 'Klepnutím přehrajete',
 			'accessibility.decrease' => 'Snížení',
 			'accessibility.increase' => 'Zvýšení',
 			'accessibility.decreaseValue' => ({required Object label}) => 'Ztráta ${label}',
@@ -4976,7 +4982,7 @@ extension on TranslationsCs {
 			'accessibility.expandText' => 'Rozšířte text',
 			'accessibility.collapseText' => 'Zkrachovaný text',
 			'accessibility.alphabetNavigation' => 'Alphabetní navigace',
-			'accessibility.alphabetScrollHint' => 'Zvedněte nahoru nebo dolů, abyste se přesunuli dopisem',
+			'accessibility.alphabetScrollHint' => 'Přejetím nahoru nebo dolů se pohybujete podle písmen',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Řádek ${row} z ${rowCount}, sloupec ${column} z ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Růž ${row} z ${rowCount}',
 			'accessibility.autoScrollPlay' => 'Hrajte si Auto-Scroll',
@@ -5000,13 +5006,13 @@ extension on TranslationsCs {
 			'accessibility.preview' => 'Přečtěte si, poslouchejte a sledujte ve svém vlastním tempu.',
 			'accessibility.boldText' => 'Rozhraní text',
 			'accessibility.highContrast' => 'Vysoký kontrast',
-			'accessibility.highContrastHint' => 'Silnější text, výtahy a ukazatele zaměření na světlé nebo tmavé povrchy.',
+			'accessibility.highContrastHint' => 'Výraznější text, obrysy a indikátory zaměření na světlém i tmavém pozadí.',
 			'accessibility.interaction' => 'Pohyb a interakce',
 			'accessibility.reduceMotion' => 'Snížení pohybu',
-			'accessibility.reduceMotionHint' => 'Udržujte pozornost, přechody stránek a dekorativní efekty stále.',
+			'accessibility.reduceMotionHint' => 'Zastaví pohyb indikátoru zaměření, přechody stránek a dekorativní efekty.',
 			'accessibility.largeTargets' => 'větší cíle dotyku',
 			'accessibility.largeTargetsHint' => 'Dáváme sdíleným ovládacím prvkům více prostoru pro dotyk a asistenční navigaci.',
-			'accessibility.navigationHint' => 'Použijte tabulku a tabulku Shift+Tab, abyste se pohybovali mezi kontrolami, Enter nebo Space k aktivování a Escape nebo Back to close.',
+			'accessibility.navigationHint' => 'Mezi ovládacími prvky se přesouvejte klávesami Tab a Shift+Tab, aktivujte je klávesou Enter nebo mezerníkem a zavírejte klávesou Escape nebo tlačítkem Zpět. Při otevřené knize je dostupné přiblížení a nastavení čtení.',
 			'tooltips.shufflePlay' => 'Shuffle hraje',
 			'tooltips.playTrailer' => 'Hrajte trailer',
 			'tooltips.markAsWatched' => 'Mark jako sledovaný',
@@ -5374,7 +5380,7 @@ extension on TranslationsCs {
 			'discover.recentlyAdded' => 'Nedávno přidáno',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Nedávno přidáno v ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Nejnovější album v ${library}',
-			'discover.recentlyPlayedIn' => ({required Object library}) => 'Předchozí Předchozí Předchozí Předchozí Předchozí Předchozí Předchozí ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Nedávno přehráno v knihovně ${library}',
 			'discover.mostPlayedIn' => ({required Object library}) => 'Nejvíce hrají v ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Přehled',
@@ -5531,7 +5537,7 @@ extension on TranslationsCs {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} vybráno',
 			'libraries.selection.actions' => 'Výběr akcí',
 			'libraries.selection.confirmDescendants' => 'To se mění všechny epizody ve vybraných show a sezónách.',
-			'libraries.selection.confirmUnwatched' => 'To také zjednodušuje vývoj playback pro vybrané položky.',
+			'libraries.selection.confirmUnwatched' => 'Tím se také vymaže průběh přehrávání vybraných položek.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Vybrané položky: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Aktualizované položky: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Aktualizováno ${succeeded}; selhaly ${failed}. selhaly položky zůstávají vybrány.',
@@ -5558,7 +5564,7 @@ extension on TranslationsCs {
 			'detail.endsAt' => ({required Object time}) => 'Končí na ${time}',
 			'startup.failedTitle' => 'PlezyNG nemohl začít',
 			'startup.failedBody' => 'Něco se během start-upu zhroutilo. podrobnosti níže identifikují to, co selžilo.',
-			'startup.failedBodyRepairable' => 'Úložný soubor PlezyNG je poškozen a musí být obnoven, než může PlezyNG začít.',
+			'startup.failedBodyRepairable' => 'Uložený soubor nastavení PlezyNG je poškozený a před spuštěním aplikace je nutné jej znovu vytvořit. Další pokus nepomůže — zvolte opravu úložiště.',
 			'startup.phaseLabel' => 'Krok',
 			'startup.showDetails' => 'Zobrazit detaily',
 			'startup.hideDetails' => 'skryte detaily',
@@ -5569,8 +5575,8 @@ extension on TranslationsCs {
 			'startup.repairTitle' => 'Opravy uložených dat?',
 			'startup.repairBodyCommon' => 'Soubor nastavení PlezyNG je poškozen a nelze ho přečíst. opravy obnoví každé nastavení na své výchozí.',
 			'startup.repairBodyOneCredential' => 'Jeden uložený sign-in je poškozen a nemůže být přečten. opravy odstraní pouze ten jeden; vaše ostatní nastavení jsou ponechány samy.',
-			'startup.repairBodySignInsKept' => 'Vaše servery a profily by měly zůstat podepsány.',
-			'startup.repairBodySignInsLost' => 'Klíč k ochraně vaše uložené sign-ins nelze zotavit z tohoto souboru, takže budete muset přihlásit se na každý server a profil znovu.',
+			'startup.repairBodySignInsKept' => 'Přihlášení k vašim serverům a profilům by mělo zůstat zachováno.',
+			'startup.repairBodySignInsLost' => 'Klíč chránící uložené přihlašovací údaje nelze z tohoto souboru obnovit, takže se budete muset znovu přihlásit ke každému serveru a profilu. Na mediálním serveru se nic nezmění.',
 			'startup.repairBodySessionsUncertain' => 'Údaje služeb MAL, AniList, Simkl, Trakt a Seerr se ukládají samostatně a mohou, ale nemusí zůstat zachovány. PlezyNG vám přesně sdělí, co zachovalo.',
 			'startup.repairConfirm' => 'Opravy',
 			'startup.repairSucceeded' => 'Úložné opravy',
@@ -5578,11 +5584,11 @@ extension on TranslationsCs {
 			'startup.restartRequiredBody' => 'Vaše data byla opravena, ale PlezyNG je může použít až po novém spuštění. Zavřete PlezyNG a znovu jej otevřete.',
 			'startup.quitPlezy' => 'Zpět PlezyNG',
 			'startup.repairFailed' => 'Oprava selhala',
-			'startup.repairKeptSignIns' => 'Vaše servery a profily jsou stále podepsány.',
-			'startup.repairLostSignIns' => 'Klíč k ochraně uložených signálů by nemohl být obnoven. budete muset přihlásit se na každý server a profil znovu.',
+			'startup.repairKeptSignIns' => 'K serverům a profilům jste stále přihlášeni.',
+			'startup.repairLostSignIns' => 'Klíč chránící uložené přihlašovací údaje se nepodařilo obnovit. Budete se muset znovu přihlásit ke každému serveru a profilu.',
 			'startup.repairLostSessions' => 'Nejméně jeden tracker nebo spojení Seerr bylo ztraceno a musí být znovu připojeno.',
 			'startup.backupTitle' => 'Kopie poškozeného souboru byla zachována',
-			'startup.backupWarning' => 'Obsahuje vaše přihlašovací povědomí.Nepodílejte nebo sdílejte.',
+			'startup.backupWarning' => 'Obsahuje vaše přihlašovací údaje. Nenahrávejte ji ani ji nesdílejte.',
 			'startup.deleteBackup' => 'Vymazat kopii',
 			'startup.backupDeleted' => 'Kopie je vymazána.',
 			'startup.previousFailureTitle' => 'PlezyNG neuspěl naposledy',
@@ -5861,7 +5867,7 @@ extension on TranslationsCs {
 			'collections.collection' => 'Kolekce',
 			'collections.empty' => 'Kolekce je prázdná',
 			'collections.deleteCollection' => 'Odstranit kolekci',
-			'collections.deleteConfirm' => ({required Object title}) => 'Odstranit „${title}“?Toto nemůže být vynecháno.',
+			'collections.deleteConfirm' => ({required Object title}) => 'Smazat „${title}“? Tuto akci nelze vrátit zpět.',
 			'collections.deleted' => 'Kolekce odstraněna',
 			'collections.deleteFailed' => 'Neschopnost odstranit sbírku',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Neschopné odstranit sbírku: ${error}',
@@ -6799,7 +6805,7 @@ extension on TranslationsCs {
 			'fileSources.source' => 'Zdroj',
 			'fileSources.name' => 'Jméno',
 			'fileSources.endpoint' => 'server URL',
-			'fileSources.root' => 'Předpověď nebo předpověď',
+			'fileSources.root' => 'Složka nebo předpona',
 			'fileSources.username' => 'Uživatelské jméno',
 			'fileSources.password' => 'Heslo',
 			'fileSources.token' => 'API token',
@@ -6815,7 +6821,7 @@ extension on TranslationsCs {
 			'fileSources.save' => 'Uložit',
 			'fileSources.close' => 'Zavřít',
 			'fileSources.removeSource' => 'Odstranění zdroje',
-			'fileSources.disconnectMessage' => 'Stáhnuté soubory a vaše čtení a historie poslouchání zůstávají na tomto zařízení.',
+			'fileSources.disconnectMessage' => 'Odpojit tento zdroj? Stažené soubory a historie čtení a poslechu zůstanou v tomto zařízení.',
 			'fileSources.localFolder' => 'Vyberte složku',
 			'fileSources.empty' => 'Nic zde zatím',
 			'fileSources.emptyHint' => 'Přidejte zdroj nebo importujte knihu, audioknihu, hudbu nebo video.',
@@ -6874,20 +6880,20 @@ extension on TranslationsCs {
 			'fileSources.lineHeight' => 'Řádkování',
 			'fileSources.margin' => 'Margín',
 			'fileSources.font' => 'Typové',
-			'fileSources.serif' => 'Seriál',
-			'fileSources.sans' => 'Bez seriálu',
-			'fileSources.mono' => 'Monopoly',
+			'fileSources.serif' => 'Patkové písmo',
+			'fileSources.sans' => 'Bezpatkové písmo',
+			'fileSources.mono' => 'Neproporcionální písmo',
 			'fileSources.columns' => 'Kolony',
 			'fileSources.scroll' => 'Sklíč vertikálně',
-			'fileSources.justify' => 'Ospravedlnění textu',
+			'fileSources.justify' => 'Zarovnat text do bloku',
 			'fileSources.readerTheme' => 'Pohled stránky',
 			'fileSources.appTheme' => 'Sledujte téma aplikace',
 			'fileSources.paper' => 'Papír',
 			'fileSources.sepia' => 'Sepi',
 			'fileSources.night' => 'Noční',
-			'fileSources.readAloud' => 'Čtěte tuto stránku v hloubce',
+			'fileSources.readAloud' => 'Přečíst tuto stránku nahlas',
 			'fileSources.readAlong' => 'Číst dál',
-			'fileSources.stopReading' => 'Přestaňte narázovat',
+			'fileSources.stopReading' => 'Zastavit předčítání',
 			'fileSources.searchBook' => 'Vyhledávání v knize',
 			'fileSources.noMatches' => 'Žádné zápasy',
 			'fileSources.previousPage' => 'Předchozí stránka',
@@ -6919,7 +6925,7 @@ extension on TranslationsCs {
 			'fileSources.none' => 'Žádný',
 			'fileSources.fullscreen' => 'Celá obrazovka',
 			'fileSources.syncLocation' => 'Progress sync folder (volitelné)',
-			'fileSources.syncLocationHint' => 'Poskytnutá složka WebDAV pro PlezyNG stát. Používá podmíněné písemnosti; média zůstávají nezměněny.',
+			'fileSources.syncLocationHint' => 'Vyhrazená složka WebDAV pro stav aplikace PlezyNG. Zápis probíhá podmíněně; mediální soubory zůstávají beze změny.',
 			'fileSources.audiobooks' => 'Audioknihy',
 			'fileSources.comics' => 'Komiksy',
 			'fileSources.scan' => 'Skenování knih a médií',
@@ -6945,9 +6951,9 @@ extension on TranslationsCs {
 			'fileSources.rightToLeft' => 'Zprava doleva',
 			'fileSources.letterSpacing' => 'Dopis k prostoru',
 			'fileSources.wordSpacing' => 'Slovo spacing',
-			'fileSources.readerControlsHelp' => 'Připínat nebo použít zoomové ovládací prvky pro rozšíření stránek. Přejít na panelu. Ctrl/ ⁇  + nebo − upravuje zoom; Ctrl/ ⁇  0 to resetuje. Page Up a Page Down otočí stránky.',
+			'fileSources.readerControlsHelp' => 'Stránky zvětšíte roztažením dvou prstů nebo pomocí ovládání přiblížení. Tažením stránku posunete. Ctrl/⌘ s + nebo − upravuje přiblížení; Ctrl/⌘ s 0 ho obnoví. Page Up a Page Down otáčejí stránky.',
 			'fileSources.imagePage' => 'Komiksová stránka',
-			'fileSources.resetReader' => 'Recenze čtení preferencí',
+			'fileSources.resetReader' => 'Obnovit výchozí nastavení čtení',
 			'fileSources.zoom' => 'Přiblížit',
 			'fileSources.useFiles' => 'Použijte soubory a knihy',
 			'fileSources.cancelScan' => 'Zrušit skenování',
@@ -6957,36 +6963,36 @@ extension on TranslationsCs {
 			'lending.other' => 'Další knihovna',
 			'lending.libraryName' => 'Název knihovny',
 			'lending.libraryUrl' => 'knihovny WEB',
-			'lending.libraryUrlHint' => 'Použijte katalog nebo stránku přihlášky.',
+			'lending.libraryUrlHint' => 'Použijte katalog své knihovny nebo její přihlašovací stránku.',
 			'lending.intro' => 'Půjčte si knihu z knihovny, držte si knihy v blízkosti.',
-			'lending.handoff' => 'Zaregistrujte se, půjčujte a čtěte bezpečně s vlastním servisem vaší knihovny.',
+			'lending.handoff' => 'Přihlaste se, vypůjčujte si knihy a bezpečně čtěte prostřednictvím služby své knihovny.',
 			'lending.openService' => 'otevřená knihovna',
 			'lending.findLibrary' => 'Najít knihovnu',
 			'lending.search' => 'Vyhledávání knih a autorů',
 			'lending.catalogue' => 'Katalog',
 			'lending.loans' => 'půjčky',
-			'lending.holds' => 'Držte',
+			'lending.holds' => 'Rezervace',
 			'lending.signIn' => 'Přihlaste se k vaší knihovně',
 			'lending.waiting' => 'Přihlaste se do svého prohlížeče a pak se vrátíte.',
 			'lending.cancel' => 'Zrušit',
 			'lending.disconnect' => 'Odstranit knihovnu',
-			'lending.disconnectMessage' => 'Odstranit tuto knihovnu z tohoto profilu? Vaše půjčky a držet pobyt s vaší knihovnou.',
+			'lending.disconnectMessage' => 'Odebrat tuto knihovnu z tohoto profilu? Vaše výpůjčky a rezervace zůstanou u knihovny.',
 			'lending.getBook' => 'Získejte knihu',
 			'lending.checkAvailability' => 'Zkontrolujte dostupnost',
 			'lending.available' => 'Dostupné k půjčování',
 			'lending.unavailable' => 'V současné době nedostupné',
-			'lending.borrow' => 'půjčka',
-			'lending.placeHold' => 'Místo držet',
+			'lending.borrow' => 'Vypůjčit',
+			'lending.placeHold' => 'Rezervovat',
 			'lending.returnBook' => 'Zpět brzy',
-			'lending.cancelHold' => 'Zrušit držení',
+			'lending.cancelHold' => 'Zrušit rezervaci',
 			'lending.confirmBorrow' => 'Půjčujete si tento titul z vaší knihovny?',
-			'lending.confirmReturn' => 'Zpět na tuto stránku?Možná budete muset půjčit znovu, abyste pokračovali.',
-			'lending.confirmCancelHold' => 'Odstraňujete svůj titul?',
+			'lending.confirmReturn' => 'Vrátit tento titul nyní? Abyste mohli pokračovat, možná si jej budete muset znovu vypůjčit.',
+			'lending.confirmCancelHold' => 'Zrušit rezervaci tohoto titulu?',
 			'lending.email' => 'Udržujte e-mail oznámení',
-			'lending.due' => ({required Object date}) => 'Důvod ${date}',
+			'lending.due' => ({required Object date}) => 'Vrátit do ${date}',
 			'lending.queue' => ({required Object position}) => 'Pozice ${position} v čáru',
 			'lending.empty' => 'Zatím tu žádné tituly.',
-			'lending.openLibraryNote' => 'Prozkoumejte katalog otevřené knihovny. možnosti čtení a půjčky jsou zobrazeny na stránce každého titulu.',
+			'lending.openLibraryNote' => 'Procházejte katalog Open Library. Možnosti čtení a vypůjčení jsou uvedeny na stránce každého titulu.',
 			'lending.more' => 'Naložte více',
 			'lending.gateway' => 'knihovny sign-in',
 			'lending.gatewayHint' => 'Zajištěno vaší knihovnou nebo správcem PlezyNG.',
@@ -6997,10 +7003,10 @@ extension on TranslationsCs {
 			'lending.continueService' => 'Pokračovat ve službě',
 			'lending.comingSoon' => 'In-app půjčka · Brzy přijde',
 			'lending.comingSoonDescription' => 'Libby integrace je na cestě.Můžete použít vaši knihovnu v Libby, zatímco my dokončujeme připojení.',
-			'lending.suspendHold' => 'Zastavení držení',
-			'lending.resumeHold' => 'Recenze držet',
-			'lending.suspendMessage' => 'Udržujte své místo v řadě a nechte další čtenář půjčit tuto kopii?',
-			'lending.resumeMessage' => 'Přehodnotit tuto držení, aby vám vaše knihovna mohla nabídnout další dostupnou kopii?',
+			'lending.suspendHold' => 'Pozastavit rezervaci',
+			'lending.resumeHold' => 'Obnovit rezervaci',
+			'lending.suspendMessage' => 'Ponechat si místo ve frontě a nechat dalšího čtenáře vypůjčit si tento výtisk? Rezervaci můžete později obnovit.',
+			'lending.resumeMessage' => 'Obnovit rezervaci, aby vám knihovna mohla nabídnout další dostupný výtisk?',
 			'lending.editEmail' => 'Změna e-mailu oznámení',
 			_ => null,
 		};

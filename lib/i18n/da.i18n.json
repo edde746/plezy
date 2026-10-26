@@ -392,7 +392,7 @@
     "importSettingsInvalidFile": "Denne fil er ikke en gyldig eksport af PlezyNG-indstillinger",
     "importSettingsNoUser": "Log ind før import af indstillinger",
     "cloudBackup": "Sikkerhedskopi i skyen",
-    "cloudBackupDescription": "Backup bærbare indstillinger til en slutpunkt WebDAV over HTTPS. serverforbindelser og akkrediteringer forbliver på denne enhed.",
+    "cloudBackupDescription": "Sikkerhedskopiér indstillinger, der kan overføres, til en WebDAV-adresse via HTTPS. Serverforbindelser og loginoplysninger bliver på denne enhed.",
     "cloudBackupUrl": "WebDAV JSON fil URL",
     "cloudBackupUsername": "Brugernavn",
     "cloudBackupPassword": "Adgangskode",
@@ -862,7 +862,7 @@
     "confirmDeleteTarget": "Slet ${title} permanent fra din server?",
     "deleteMultipleWarning": "Dette inkluderer alle episoder og deres filer.",
     "deleteEpisodeCountWarning": {
-      "one": "Dette sletter alle ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode i den og dens fil.",
+      "one": "Dette sletter ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode i elementet og dens fil.",
       "other": "Dette sletter alle ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episoder i den og deres filer."
     },
     "deleteMultiPartWarning": {
@@ -937,10 +937,10 @@
     "highContrastHint": "Stærkere tekst, udskrifter og fokusindikatorer på lys eller mørke overflader.",
     "interaction": "Motion og interaktion",
     "reduceMotion": "Reduktion af bevægelsen",
-    "reduceMotionHint": "Hold fokus, sideovergangen og dekorative effekter stadig.",
+    "reduceMotionHint": "Stop bevægelse i fokusmarkeringer, sideovergange og dekorative effekter.",
     "largeTargets": "Større touch mål",
     "largeTargetsHint": "Giv delte kontroller mere plads til touch og assistive navigation.",
-    "navigationHint": "Brug Tab og Shift+Tab til at flytte mellem kontrol, Enter eller Space til at aktivere, og Escape eller Back til at lukke."
+    "navigationHint": "Brug Tab og Shift+Tab til at flytte mellem kontrolelementer, Enter eller mellemrum til at aktivere og Escape eller Tilbage til at lukke. Zoom og læseindstillinger er tilgængelige, når en bog er åben."
   },
   "tooltips": {
     "shufflePlay": "Afspil tilfældigt",
@@ -1526,7 +1526,7 @@
       "selectedCount": "${count} valgt",
       "actions": "Valg af handlinger",
       "confirmDescendants": "Dette ændrer alle episoder i de udvalgte shows og sæsoner.",
-      "confirmUnwatched": "Dette gør også klar for spillebevægelsen for de udvalgte elementer.",
+      "confirmUnwatched": "Dette nulstiller også afspilningsforløbet for de valgte elementer.",
       "confirmCount": "Vælgede elementer: ${count}.",
       "completed": "Aktualiseret produkt: ${count}.",
       "partialFailure": "Opdateret ${succeeded}; mislykkede ${failed}. mislykkedes elementer forbliver valgt."
@@ -2817,7 +2817,7 @@
     "connectDirectPlexCardSubtitleScoped": "Forbinder direkte ved hjælp af lokal IP eller URL. Forbinder til ${name}.",
     "insecureTitle": "Uencryptet forbindelse",
     "insecureDescription": "$url bruger HTTP. Andre på netværket kan læse eller ændre din adgangskode, dine tokens og dine medier. Brug HTTPS, når det er muligt. Fortsæt kun, hvis du stoler på netværket og accepterer risikoen.",
-    "allowHttp": "Tilladelse HTTP",
+    "allowHttp": "Tillad HTTP",
     "httpsRequired": "Brug HTTPS eller udtrykkeligt tillade en ikke-krypteret forbindelse."
   },
   "watchLink": {
@@ -2932,10 +2932,10 @@
     "resetHeroButtonDescription": "Det afbryder hver række af hjertesæt og bringer den ene roterende banner tilbage til toppen, som før hjertesæt eksisterede."
   },
   "platform": {
-    "localNetworkPermission": "PlezyNG forbinder til dine medie- og playback-enheder på dit lokale netværk.",
-    "locationPermission": "PlezyNG bruger lokationsindgang, når iOS kræver det for at opdage dit lokale netværk og tilslutte sig dine medie servere.",
-    "photoLibraryPermission": "Vælg billeder fra din fotobibliotek til at bruge som medie kunstværk.",
-    "cameraPermission": "Skan QR-koder til at parere en Companion Remote."
+    "localNetworkPermission": "PlezyNG opretter forbindelse til dine medieservere og afspilningsenheder på dit lokale netværk.",
+    "locationPermission": "PlezyNG bruger adgang til lokalitet, når iOS kræver det for at finde dit lokale netværk og oprette forbindelse til dine medieservere.",
+    "photoLibraryPermission": "Vælg billeder fra dit fotobibliotek til omslag og andre mediebilleder.",
+    "cameraPermission": "Scan QR-koder for at parre en Companion Remote."
   },
   "fileSources": {
     "title": "Filer og bøger",
@@ -2962,7 +2962,7 @@
     "save": "Gem",
     "close": "Luk",
     "removeSource": "Diskonneck kilde",
-    "disconnectMessage": "Downloadede filer og din læsnings- og lyttehistorie vil forblive på denne enhed.",
+    "disconnectMessage": "Afbryd forbindelsen til denne kilde? Downloadede filer og din læse- og lyttehistorik bliver på denne enhed.",
     "localFolder": "Vælg mappe",
     "empty": "Der er ikke noget her endnu",
     "emptyHint": "Tilføj en kilde eller import en bog, audiobook, musik eller video.",
@@ -3035,7 +3035,7 @@
     "paper": "Papir",
     "sepia": "Sæb",
     "night": "Nattedagen",
-    "readAloud": "Læs denne side i høj grad",
+    "readAloud": "Læs denne side højt",
     "readAlong": "Læs videre",
     "stopReading": "Stop med narration",
     "searchBook": "Søg i bogen",
@@ -3091,11 +3091,11 @@
     "singlePage": "Enkel side",
     "twoPages": "To sider",
     "readingDirection": "Læs retning",
-    "leftToRight": "Til højre",
-    "rightToLeft": "Retten til at forlade",
+    "leftToRight": "Fra venstre mod højre",
+    "rightToLeft": "Fra højre mod venstre",
     "letterSpacing": "Brev til spænder",
     "wordSpacing": "Ord spænder",
-    "readerControlsHelp": "Tryk eller brug zoomkontroller til at udvide sider. tryk til pan. Ctrl/ ⁇  + eller − justerer zoom; Ctrl/ ⁇  0 genopretter det. Page Up og Page Down slår sider.",
+    "readerControlsHelp": "Spred to fingre, eller brug zoomknapperne til at forstørre sider. Træk for at flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nulstiller den. Page Up og Page Down skifter side.",
     "imagePage": "Comic side",
     "resetReader": "Gennemføre læsning præferencer",
     "zoom": "Zoom",
@@ -3122,18 +3122,18 @@
     "waiting": "Endte med at logge ind i din browser, og så vende tilbage her.",
     "cancel": "Annuller",
     "disconnect": "Fjern biblioteket",
-    "disconnectMessage": "Fjern denne bibliotek fra denne profil? dine lån og holdes ophold med din bibliotek.",
+    "disconnectMessage": "Fjern dette bibliotek fra denne profil? Dine lån og reservationer bliver hos biblioteket.",
     "getBook": "Få bogen",
     "checkAvailability": "Tjek tilgængelighed",
     "available": "Tilgængelig til låne",
     "unavailable": "Foreløbig ikke tilgængelig",
     "borrow": "Lån",
-    "placeHold": "Stedet holdes",
+    "placeHold": "Reserver",
     "returnBook": "Tilbage tidligt",
-    "cancelHold": "Afbestill hold",
+    "cancelHold": "Annuller reservation",
     "confirmBorrow": "Lån denne titel fra din bibliotek?",
-    "confirmReturn": "Du kan have brug for at låne det igen for at fortsætte.",
-    "confirmCancelHold": "Vil du fjerne din hold på denne titel?",
+    "confirmReturn": "Aflever denne titel nu? Du kan blive nødt til at låne den igen for at fortsætte.",
+    "confirmCancelHold": "Annuller din reservation af denne titel?",
     "email": "Hold meddelelse e-mail",
     "due": "af $date",
     "queue": "Position $position i linje",
@@ -3151,8 +3151,8 @@
     "comingSoonDescription": "Du kan bruge din bibliotek i Libby, mens vi slutter med at forbinde det.",
     "suspendHold": "Slutte hold",
     "resumeHold": "Resumé hold",
-    "suspendMessage": "Hold din plads i linje og lad den næste læsere låne denne kopi? Du kan genoptage holdningen senere.",
-    "resumeMessage": "Gør denne holding genop, så din bibliotek kan tilbyde dig den næste tilgængelige kopi?",
+    "suspendMessage": "Behold din plads i køen, og lad den næste læser låne dette eksemplar? Du kan genoptage reservationen senere.",
+    "resumeMessage": "Genoptag denne reservation, så biblioteket kan tilbyde dig det næste ledige eksemplar?",
     "editEmail": "Ændre meddelelse e-mail"
   }
 }

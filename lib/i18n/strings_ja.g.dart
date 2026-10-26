@@ -521,7 +521,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'このファイルは有効なPlezyの設定エクスポートではありません';
 	@override String get importSettingsNoUser => '設定をインポートする前にサインインしてください';
 	@override String get cloudBackup => 'クラウドバックアップ';
-	@override String get cloudBackupDescription => '携帯設定を WebDAV 端末にバックアップします HTTPS. サーバー接続および認証はこのデバイスに残ります。';
+	@override String get cloudBackupDescription => '移行可能な設定をHTTPS経由でWebDAVの接続先にバックアップします。サーバー接続と認証情報はこのデバイスに残ります。';
 	@override String get cloudBackupUrl => 'WebDAV JSON ファイル URL';
 	@override String get cloudBackupUsername => 'ユーザー名';
 	@override String get cloudBackupPassword => 'パスワード';
@@ -981,15 +981,15 @@ class _Translations$mediaMenu$ja extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'サーバーから「${title}」を完全に削除しますか？';
 	@override String get deleteMultipleWarning => 'すべてのエピソードとそのファイルが含まれます。';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
-		one: 'このファイルは、そのすべての${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードとそのファイルを削除します。',
+		one: '含まれる${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}件のエピソードとそのファイルが削除されます。',
 		other: '中の全${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードとそのファイルが削除されます。',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
-		one: 'この項目は、${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ファイルとして保存され、削除されます。',
+		one: 'このアイテムは${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}個のファイルに保存されており、そのファイルが削除されます。',
 		other: 'このアイテムは${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}個のファイルにまたがって保存されており、すべて削除されます。',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 他のエピソードは同じファイルに保存され、削除されます:',
+		one: '同じファイルに保存されている他の${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}件のエピソードも削除されます：',
 		other: '同じファイルに保存されている他の${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードも削除されます：',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'Plezyは削除対象のファイルを確認できなかったため、上記のアイテム以上に削除される可能性があります。キャンセルして再試行するか、それでも削除してください。';
@@ -1067,13 +1067,13 @@ class _Translations$accessibility$ja extends Translations$accessibility$en {
 	@override String get preview => '次のストーリーを見つけて、自分のペースで読んで、聞き、観る。';
 	@override String get boldText => 'ハードインターフェイス テキスト';
 	@override String get highContrast => '高い対比';
-	@override String get highContrastHint => 'より強力なテキスト、出力、光または暗い表面に焦点指標。';
+	@override String get highContrastHint => '明るい背景でも暗い背景でも、文字や輪郭線、フォーカス表示を見やすくします。';
 	@override String get interaction => '動きと相互作用';
 	@override String get reduceMotion => '動きを減らす';
-	@override String get reduceMotionHint => '焦点、ページの移行、装飾効果を保持し続ける。';
+	@override String get reduceMotionHint => 'フォーカス表示、ページ切り替え、装飾効果の動きを止めます。';
 	@override String get largeTargets => 'タッチターゲットの拡大';
-	@override String get largeTargetsHint => '共有コントロールにより多くのタッチとアシスタブナビゲーションのためのスペースを与える。';
-	@override String get navigationHint => 'タブと Shift+Tab を使用してコントロールの間を移動し、エントリーまたはスペースを有効にするために、エクスポートまたは戻って閉じるために。';
+	@override String get largeTargetsHint => '共通の操作ボタンの領域を広げ、タッチ操作や支援技術による操作をしやすくします。';
+	@override String get navigationHint => 'TabとShift+Tabで操作項目を移動し、EnterまたはSpaceで実行、Escapeまたは戻るボタンで閉じます。本を開いている間は、拡大率や読書設定を変更できます。';
 }
 
 // Path: tooltips
@@ -2738,7 +2738,7 @@ class _Translations$addServer$ja extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => '地元のIPまたはURLを使用して直接接続します. ${name} に接続します。';
 	@override String get insecureTitle => '未暗号化の接続';
 	@override String insecureDescription({required Object url}) => '${url} は HTTP を使用しています。ネットワーク上の第三者がパスワード、トークン、メディアを読み取ったり改ざんしたりする可能性があります。利用できる場合は HTTPS を使用してください。このネットワークを信頼し、リスクを受け入れる場合のみ続行してください。';
-	@override String get allowHttp => '許可 HTTP';
+	@override String get allowHttp => 'HTTPを許可';
 	@override String get httpsRequired => 'HTTPS を使用するか、暗号化されていない接続を明示的に許可するか。';
 }
 
@@ -2875,9 +2875,9 @@ class _Translations$platform$ja extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG は、地元のネットワーク上のメディアサーバーおよび再生デバイスに接続します。';
-	@override String get locationPermission => 'PlezyNG は、iOS がその場所のネットワークを検出し、メディアサーバーに接続するために必要な場所のアクセスを使用します。';
-	@override String get photoLibraryPermission => '写真図書館から画像を選択してメディア芸術として使用します。';
-	@override String get cameraPermission => 'QRコードをスキャンして、Companion Remoteをカップルにする。';
+	@override String get locationPermission => 'PlezyNGは、ローカルネットワークを検出してメディアサーバーに接続するためにiOSが必要とする場合、位置情報へのアクセスを使用します。';
+	@override String get photoLibraryPermission => '写真ライブラリから、メディアのアートワークに使う画像を選択します。';
+	@override String get cameraPermission => 'QRコードをスキャンしてCompanion Remoteをペアリングします。';
 }
 
 // Path: fileSources
@@ -2950,7 +2950,7 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get useRemote => '他のデバイスを使う';
 	@override String get history => '位置歴史';
 	@override String get groupAudio => 'ひとつのオーディオブックとして聴く';
-	@override String get groupHint => 'このフォルダーに現在アップロードされているオーディオファイルを組み合わせる。';
+	@override String get groupHint => 'このフォルダーで現在読み込まれている音声ファイルをまとめます。先にすべてのページを読み込んでください。';
 	@override String get order => 'ファイル 注文';
 	@override String get moveUp => '移動アップ';
 	@override String get moveDown => 'ダウン移動';
@@ -2972,26 +2972,26 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get lineHeight => 'スペースライン';
 	@override String get margin => 'マルギン';
 	@override String get font => 'タイプフェイス';
-	@override String get serif => 'シリフ';
-	@override String get sans => 'シリフなし';
+	@override String get serif => 'セリフ体';
+	@override String get sans => 'サンセリフ体';
 	@override String get mono => 'モノスペース';
 	@override String get columns => 'コラム';
 	@override String get scroll => '垂直にスクロール';
-	@override String get justify => 'テキストの正当化';
+	@override String get justify => '両端揃え';
 	@override String get readerTheme => 'ページの出演';
 	@override String get appTheme => 'アプリテーマのフォロー';
 	@override String get paper => 'ペーパー';
 	@override String get sepia => 'セピア';
 	@override String get night => '夜の';
-	@override String get readAloud => '読むこのページは、大声で';
-	@override String get readAlong => '続きを読む';
-	@override String get stopReading => 'ストレッチ ストレート';
+	@override String get readAloud => 'このページを読み上げる';
+	@override String get readAlong => '音声に合わせて読む';
+	@override String get stopReading => '読み上げを停止';
 	@override String get searchBook => '検索・本';
 	@override String get noMatches => '試合なし';
 	@override String get previousPage => '前ページ';
 	@override String get nextPage => '次のページ';
 	@override String page({required Object number}) => 'ページ ${number}';
-	@override String get externalBlocked => '読者に外部の本リンクが無効です。';
+	@override String get externalBlocked => 'リーダーでは、本の外部リンクは無効になっています。';
 	@override String get loading => '開...';
 	@override String get narrator => '講演者';
 	@override String get audio => '音声';
@@ -3002,14 +3002,14 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get confirmDelete => '選択したオフラインコピーを削除しますか？読書・再生位置とメモは保持されます。';
 	@override String get errorAuthentication => '再びこのソースを再接続するためにサインインします。';
 	@override String get errorPermission => 'この情報源は、要求されたファイルへのアクセスを許可しませんでした。';
-	@override String get errorUnavailable => '再度試してみるか、オフラインコピーを開くか。';
-	@override String get errorUnsupported => 'このフォーマットまたは接続は、このデバイスでサポートされていません。';
+	@override String get errorUnavailable => 'ソースを利用できません。再試行するか、オフラインコピーを開いてください。';
+	@override String get errorUnsupported => 'この形式または接続は、このデバイスではサポートされていません。ソースの設定ガイドを確認してください。';
 	@override String get errorInvalidData => 'このファイルまたはサーバーの回答は安全に読み取れない。';
 	@override String get errorCancelled => '作戦はキャンセルされました。';
-	@override String get errorConflict => 'ポジションが変更されたセッションで、ポジションを選択するために項目を再開します。';
+	@override String get errorConflict => '別のセッションで読書・再生位置が変更されました。位置を選ぶには、アイテムを開き直してください。';
 	@override String get signIn => 'サインイン';
 	@override String get reconnect => '再接続';
-	@override String get folderHelp => 'ソースの根から始めるために白いままにします. S3 URL にはバケットが含まれています。';
+	@override String get folderHelp => '空欄にするとソースのルートから開始します。S3のURLにはバケット名が含まれます。';
 	@override String get preferences => '優先順位';
 	@override String get timePosition => '位置';
 	@override String get audioTrack => '音声トラック';
@@ -3039,11 +3039,11 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get singlePage => '単一ページ';
 	@override String get twoPages => '2ページ';
 	@override String get readingDirection => '読書方向';
-	@override String get leftToRight => '左向き右';
-	@override String get rightToLeft => '右離れ';
+	@override String get leftToRight => '左から右';
+	@override String get rightToLeft => '右から左';
 	@override String get letterSpacing => 'スペース 手紙';
 	@override String get wordSpacing => 'スペース語';
-	@override String get readerControlsHelp => 'ページを拡大するために、スイムコントロールを使用するか、スイームコントローを使用するか。 ページをスイムする Ctrl/ ⁇  + or − スイムを調整するか、 Ctrl/ ⁇  0 が再設定するか、ページアップとページダウンがページを変換するか。';
+	@override String get readerControlsHelp => 'ピンチ操作または拡大・縮小ボタンでページを拡大できます。ドラッグして表示位置を移動します。Ctrl/⌘と+または−で拡大率を調整し、Ctrl/⌘と0でリセットします。Page UpとPage Downでページをめくります。';
 	@override String get imagePage => '漫画ページ';
 	@override String get resetReader => '読み取りの好みを再設定';
 	@override String get zoom => 'ズーム';
@@ -3065,32 +3065,32 @@ class _Translations$lending$ja extends Translations$lending$en {
 	@override String get libraryName => '図書館名';
 	@override String get libraryUrl => '図書館サイト';
 	@override String get libraryUrlHint => '図書館のカタログまたはサインインページを使用します。';
-	@override String get intro => '図書館から借りて、本を閉じる。';
-	@override String get handoff => '登録、貸し出し、図書館のサービスで安全に読む。';
+	@override String get intro => '図書館から借りて、本をいつも身近に。';
+	@override String get handoff => '図書館のサービスでサインインし、本を借りて安全に読めます。';
 	@override String get openService => 'オープン図書館';
 	@override String get findLibrary => '図書館を見つける';
 	@override String get search => '書籍と著者を検索';
 	@override String get catalogue => 'カタログ';
 	@override String get loans => '貸し出し';
-	@override String get holds => 'ハンドル';
+	@override String get holds => '予約';
 	@override String get signIn => '図書館で登録する';
 	@override String get waiting => 'ブラウザでサインインを終了し、ここに戻ります。';
 	@override String get cancel => 'キャンセル';
 	@override String get disconnect => '図書館削除';
-	@override String get disconnectMessage => 'このプロフィールからこの図書館を削除する? あなたの貸し出しとあなたの図書館と滞在を保持します。';
+	@override String get disconnectMessage => 'このプロフィールからこの図書館を削除しますか？貸出中の本と予約は図書館に残ります。';
 	@override String get getBook => '書籍を取得';
 	@override String get checkAvailability => '利用可能性チェック';
 	@override String get available => '貸し出し利用可能';
 	@override String get unavailable => '現在利用できない';
-	@override String get borrow => '借金';
-	@override String get placeHold => '場所 持つ';
-	@override String get returnBook => '早めに戻る';
-	@override String get cancelHold => 'キャンセル 持続';
+	@override String get borrow => '借りる';
+	@override String get placeHold => '予約する';
+	@override String get returnBook => '期限前に返却';
+	@override String get cancelHold => '予約を取り消す';
 	@override String get confirmBorrow => '図書館からこのタイトルを借りる?';
-	@override String get confirmReturn => 'もう一度借りるのか? もう一度借るのか?';
-	@override String get confirmCancelHold => 'このタイトルを削除する?';
+	@override String get confirmReturn => 'この本を今すぐ返却しますか？続きを利用するには、もう一度借りる必要がある場合があります。';
+	@override String get confirmCancelHold => 'この本の予約を取り消しますか？';
 	@override String get email => 'メール 通知';
-	@override String due({required Object date}) => 'ドイツ ${date}';
+	@override String due({required Object date}) => '返却期限：${date}';
 	@override String queue({required Object position}) => 'ポジション ${position} ライン';
 	@override String get empty => 'まだタイトルは無い。';
 	@override String get openLibraryNote => 'Open Library のカタログを検索する. 読書および貸し出しのオプションは、各タイトルのページに表示されます。';
@@ -3099,15 +3099,15 @@ class _Translations$lending$ja extends Translations$lending$en {
 	@override String get gatewayHint => '図書館または管理者 PlezyNG によって提供されます。';
 	@override String get advanced => '図書館統合';
 	@override String get loadLibraries => '図書館を選択';
-	@override String get expired => 'この貸付は終了しました。';
+	@override String get expired => 'この本の貸出期間は終了しました。';
 	@override String get updated => '図書館更新';
 	@override String get continueService => 'サービスを継続';
 	@override String get comingSoon => 'イン・アプリ・貸し出し · すぐに来る';
-	@override String get comingSoonDescription => 'リビーの図書館を使用するには、リビーに接続するのを終わらせる。';
-	@override String get suspendHold => '停止 持続';
-	@override String get resumeHold => 'リズム 持つ';
-	@override String get suspendMessage => 'あなたの場所を順番に保ち、次の読者がこのコピーを借りるようにしてくださいか? 後で保管を再開できます。';
-	@override String get resumeMessage => 'このコピーを再編して、図書館が次のコピーを提供できるようになるのでしょうか。';
+	@override String get comingSoonDescription => 'Libbyとの連携機能を準備中です。連携が完了するまでは、Libbyで図書館を利用できます。';
+	@override String get suspendHold => '予約を一時停止';
+	@override String get resumeHold => '予約を再開';
+	@override String get suspendMessage => '順番を維持したまま、次の読者にこの本を貸し出しますか？予約は後で再開できます。';
+	@override String get resumeMessage => '予約を再開して、次に利用可能な本の案内を図書館から受け取りますか？';
 	@override String get editEmail => 'メール通知の変更';
 }
 
@@ -3496,7 +3496,7 @@ class _Translations$libraries$selection$ja extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count}件選択';
 	@override String get actions => '選択行動';
 	@override String get confirmDescendants => 'これは、選択されたショーやシーズンのすべてのエピソードを変更します。';
-	@override String get confirmUnwatched => 'これはまた、選択されたアイテムの再生の進歩を明確にします。';
+	@override String get confirmUnwatched => '選択したアイテムの再生状況もリセットされます。';
 	@override String confirmCount({required Object count}) => '選ばれた項目: ${count}';
 	@override String completed({required Object count}) => '更新項目: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => '更新 ${succeeded}; 失敗 ${failed}. 失敗した項目は選択されます。';
@@ -3524,7 +3524,7 @@ class _Translations$explore$mdblistShelves$ja extends Translations$explore$mdbli
 	@override String get unavailable => 'このリストは利用できません. 設定でそのシールを取り戻すか削除します。';
 	@override String get rateLimited => '申請の制限はMDBList 達成されました 後で撤回してください。';
 	@override String get loadFailed => '接続をチェックしてリトリを確認する';
-	@override String get saveFailed => '⁇ を保存できなかったので、お返しください。';
+	@override String get saveFailed => 'シェルフを保存できませんでした。もう一度お試しください。';
 	@override String get accountChanged => 'アカウントまたはプロフィールが変更されました. これらの設定を再開します。';
 	@override String get settingsUnreadable => '保存されたシートは読み取れないので、リストを再度選択して、これらの設定を置き換える。';
 }
@@ -4448,7 +4448,7 @@ extension on TranslationsJa {
 			'settings.importSettingsInvalidFile' => 'このファイルは有効なPlezyの設定エクスポートではありません',
 			'settings.importSettingsNoUser' => '設定をインポートする前にサインインしてください',
 			'settings.cloudBackup' => 'クラウドバックアップ',
-			'settings.cloudBackupDescription' => '携帯設定を WebDAV 端末にバックアップします HTTPS. サーバー接続および認証はこのデバイスに残ります。',
+			'settings.cloudBackupDescription' => '移行可能な設定をHTTPS経由でWebDAVの接続先にバックアップします。サーバー接続と認証情報はこのデバイスに残ります。',
 			'settings.cloudBackupUrl' => 'WebDAV JSON ファイル URL',
 			'settings.cloudBackupUsername' => 'ユーザー名',
 			'settings.cloudBackupPassword' => 'パスワード',
@@ -4903,9 +4903,9 @@ extension on TranslationsJa {
 			'mediaMenu.deleteAnyway' => 'それでも削除',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'サーバーから「${title}」を完全に削除しますか？',
 			'mediaMenu.deleteMultipleWarning' => 'すべてのエピソードとそのファイルが含まれます。',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: 'このファイルは、そのすべての${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードとそのファイルを削除します。', other: '中の全${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードとそのファイルが削除されます。', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: 'この項目は、${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ファイルとして保存され、削除されます。', other: 'このアイテムは${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}個のファイルにまたがって保存されており、すべて削除されます。', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 他のエピソードは同じファイルに保存され、削除されます:', other: '同じファイルに保存されている他の${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードも削除されます：', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '含まれる${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}件のエピソードとそのファイルが削除されます。', other: '中の全${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードとそのファイルが削除されます。', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: 'このアイテムは${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}個のファイルに保存されており、そのファイルが削除されます。', other: 'このアイテムは${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}個のファイルにまたがって保存されており、すべて削除されます。', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '同じファイルに保存されている他の${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}件のエピソードも削除されます：', other: '同じファイルに保存されている他の${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}エピソードも削除されます：', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezyは削除対象のファイルを確認できなかったため、上記のアイテム以上に削除される可能性があります。キャンセルして再試行するか、それでも削除してください。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'サーバーがこのアイテムのファイル情報を提供しなかったため、Plezyは削除対象のファイルを確認できません。上記のアイテム以上に削除される可能性があります。',
 			'mediaMenu.mediaDeletedSuccessfully' => 'メディアアイテムを正常に削除しました',
@@ -4963,13 +4963,13 @@ extension on TranslationsJa {
 			'accessibility.preview' => '次のストーリーを見つけて、自分のペースで読んで、聞き、観る。',
 			'accessibility.boldText' => 'ハードインターフェイス テキスト',
 			'accessibility.highContrast' => '高い対比',
-			'accessibility.highContrastHint' => 'より強力なテキスト、出力、光または暗い表面に焦点指標。',
+			'accessibility.highContrastHint' => '明るい背景でも暗い背景でも、文字や輪郭線、フォーカス表示を見やすくします。',
 			'accessibility.interaction' => '動きと相互作用',
 			'accessibility.reduceMotion' => '動きを減らす',
-			'accessibility.reduceMotionHint' => '焦点、ページの移行、装飾効果を保持し続ける。',
+			'accessibility.reduceMotionHint' => 'フォーカス表示、ページ切り替え、装飾効果の動きを止めます。',
 			'accessibility.largeTargets' => 'タッチターゲットの拡大',
-			'accessibility.largeTargetsHint' => '共有コントロールにより多くのタッチとアシスタブナビゲーションのためのスペースを与える。',
-			'accessibility.navigationHint' => 'タブと Shift+Tab を使用してコントロールの間を移動し、エントリーまたはスペースを有効にするために、エクスポートまたは戻って閉じるために。',
+			'accessibility.largeTargetsHint' => '共通の操作ボタンの領域を広げ、タッチ操作や支援技術による操作をしやすくします。',
+			'accessibility.navigationHint' => 'TabとShift+Tabで操作項目を移動し、EnterまたはSpaceで実行、Escapeまたは戻るボタンで閉じます。本を開いている間は、拡大率や読書設定を変更できます。',
 			'tooltips.shufflePlay' => 'シャッフル再生',
 			'tooltips.playTrailer' => '予告編を再生',
 			'tooltips.markAsWatched' => '視聴済みにする',
@@ -5494,7 +5494,7 @@ extension on TranslationsJa {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count}件選択',
 			'libraries.selection.actions' => '選択行動',
 			'libraries.selection.confirmDescendants' => 'これは、選択されたショーやシーズンのすべてのエピソードを変更します。',
-			'libraries.selection.confirmUnwatched' => 'これはまた、選択されたアイテムの再生の進歩を明確にします。',
+			'libraries.selection.confirmUnwatched' => '選択したアイテムの再生状況もリセットされます。',
 			'libraries.selection.confirmCount' => ({required Object count}) => '選ばれた項目: ${count}',
 			'libraries.selection.completed' => ({required Object count}) => '更新項目: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => '更新 ${succeeded}; 失敗 ${failed}. 失敗した項目は選択されます。',
@@ -5572,7 +5572,7 @@ extension on TranslationsJa {
 			'explore.mdblistShelves.unavailable' => 'このリストは利用できません. 設定でそのシールを取り戻すか削除します。',
 			'explore.mdblistShelves.rateLimited' => '申請の制限はMDBList 達成されました 後で撤回してください。',
 			'explore.mdblistShelves.loadFailed' => '接続をチェックしてリトリを確認する',
-			'explore.mdblistShelves.saveFailed' => '⁇ を保存できなかったので、お返しください。',
+			'explore.mdblistShelves.saveFailed' => 'シェルフを保存できませんでした。もう一度お試しください。',
 			'explore.mdblistShelves.accountChanged' => 'アカウントまたはプロフィールが変更されました. これらの設定を再開します。',
 			'explore.mdblistShelves.settingsUnreadable' => '保存されたシートは読み取れないので、リストを再度選択して、これらの設定を置き換える。',
 			'explore.title' => '見つける',
@@ -6639,7 +6639,7 @@ extension on TranslationsJa {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => '地元のIPまたはURLを使用して直接接続します. ${name} に接続します。',
 			'addServer.insecureTitle' => '未暗号化の接続',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} は HTTP を使用しています。ネットワーク上の第三者がパスワード、トークン、メディアを読み取ったり改ざんしたりする可能性があります。利用できる場合は HTTPS を使用してください。このネットワークを信頼し、リスクを受け入れる場合のみ続行してください。',
-			'addServer.allowHttp' => '許可 HTTP',
+			'addServer.allowHttp' => 'HTTPを許可',
 			'addServer.httpsRequired' => 'HTTPS を使用するか、暗号化されていない接続を明示的に許可するか。',
 			'watchLink.serverUnavailable' => 'このリンクのために Plex サーバーにアクセスできませんでした。',
 			'watchLink.notFound' => 'この番組または映画が Plex サーバーで見つかりませんでした。',
@@ -6751,9 +6751,9 @@ extension on TranslationsJa {
 			'homeLayout.on' => 'で',
 			'homeLayout.resetHeroButtonDescription' => '各行のヒーロー設定を切り離し、ヒーローラインが存在する前にあったように、上に単一の回転バナーを返します。',
 			'platform.localNetworkPermission' => 'PlezyNG は、地元のネットワーク上のメディアサーバーおよび再生デバイスに接続します。',
-			'platform.locationPermission' => 'PlezyNG は、iOS がその場所のネットワークを検出し、メディアサーバーに接続するために必要な場所のアクセスを使用します。',
-			'platform.photoLibraryPermission' => '写真図書館から画像を選択してメディア芸術として使用します。',
-			'platform.cameraPermission' => 'QRコードをスキャンして、Companion Remoteをカップルにする。',
+			'platform.locationPermission' => 'PlezyNGは、ローカルネットワークを検出してメディアサーバーに接続するためにiOSが必要とする場合、位置情報へのアクセスを使用します。',
+			'platform.photoLibraryPermission' => '写真ライブラリから、メディアのアートワークに使う画像を選択します。',
+			'platform.cameraPermission' => 'QRコードをスキャンしてCompanion Remoteをペアリングします。',
 			'fileSources.title' => 'ファイルと本',
 			'fileSources.subtitle' => '読んで、聴いて、自分のファイルから見て',
 			'fileSources.add' => '源を追加',
@@ -6817,7 +6817,7 @@ extension on TranslationsJa {
 			'fileSources.useRemote' => '他のデバイスを使う',
 			'fileSources.history' => '位置歴史',
 			'fileSources.groupAudio' => 'ひとつのオーディオブックとして聴く',
-			'fileSources.groupHint' => 'このフォルダーに現在アップロードされているオーディオファイルを組み合わせる。',
+			'fileSources.groupHint' => 'このフォルダーで現在読み込まれている音声ファイルをまとめます。先にすべてのページを読み込んでください。',
 			'fileSources.order' => 'ファイル 注文',
 			'fileSources.moveUp' => '移動アップ',
 			'fileSources.moveDown' => 'ダウン移動',
@@ -6837,26 +6837,26 @@ extension on TranslationsJa {
 			'fileSources.lineHeight' => 'スペースライン',
 			'fileSources.margin' => 'マルギン',
 			'fileSources.font' => 'タイプフェイス',
-			'fileSources.serif' => 'シリフ',
-			'fileSources.sans' => 'シリフなし',
+			'fileSources.serif' => 'セリフ体',
+			'fileSources.sans' => 'サンセリフ体',
 			'fileSources.mono' => 'モノスペース',
 			'fileSources.columns' => 'コラム',
 			'fileSources.scroll' => '垂直にスクロール',
-			'fileSources.justify' => 'テキストの正当化',
+			'fileSources.justify' => '両端揃え',
 			'fileSources.readerTheme' => 'ページの出演',
 			'fileSources.appTheme' => 'アプリテーマのフォロー',
 			'fileSources.paper' => 'ペーパー',
 			'fileSources.sepia' => 'セピア',
 			'fileSources.night' => '夜の',
-			'fileSources.readAloud' => '読むこのページは、大声で',
-			'fileSources.readAlong' => '続きを読む',
-			'fileSources.stopReading' => 'ストレッチ ストレート',
+			'fileSources.readAloud' => 'このページを読み上げる',
+			'fileSources.readAlong' => '音声に合わせて読む',
+			'fileSources.stopReading' => '読み上げを停止',
 			'fileSources.searchBook' => '検索・本',
 			'fileSources.noMatches' => '試合なし',
 			'fileSources.previousPage' => '前ページ',
 			'fileSources.nextPage' => '次のページ',
 			'fileSources.page' => ({required Object number}) => 'ページ ${number}',
-			'fileSources.externalBlocked' => '読者に外部の本リンクが無効です。',
+			'fileSources.externalBlocked' => 'リーダーでは、本の外部リンクは無効になっています。',
 			'fileSources.loading' => '開...',
 			'fileSources.narrator' => '講演者',
 			'fileSources.audio' => '音声',
@@ -6867,14 +6867,14 @@ extension on TranslationsJa {
 			'fileSources.confirmDelete' => '選択したオフラインコピーを削除しますか？読書・再生位置とメモは保持されます。',
 			'fileSources.errorAuthentication' => '再びこのソースを再接続するためにサインインします。',
 			'fileSources.errorPermission' => 'この情報源は、要求されたファイルへのアクセスを許可しませんでした。',
-			'fileSources.errorUnavailable' => '再度試してみるか、オフラインコピーを開くか。',
-			'fileSources.errorUnsupported' => 'このフォーマットまたは接続は、このデバイスでサポートされていません。',
+			'fileSources.errorUnavailable' => 'ソースを利用できません。再試行するか、オフラインコピーを開いてください。',
+			'fileSources.errorUnsupported' => 'この形式または接続は、このデバイスではサポートされていません。ソースの設定ガイドを確認してください。',
 			'fileSources.errorInvalidData' => 'このファイルまたはサーバーの回答は安全に読み取れない。',
 			'fileSources.errorCancelled' => '作戦はキャンセルされました。',
-			'fileSources.errorConflict' => 'ポジションが変更されたセッションで、ポジションを選択するために項目を再開します。',
+			'fileSources.errorConflict' => '別のセッションで読書・再生位置が変更されました。位置を選ぶには、アイテムを開き直してください。',
 			'fileSources.signIn' => 'サインイン',
 			'fileSources.reconnect' => '再接続',
-			'fileSources.folderHelp' => 'ソースの根から始めるために白いままにします. S3 URL にはバケットが含まれています。',
+			'fileSources.folderHelp' => '空欄にするとソースのルートから開始します。S3のURLにはバケット名が含まれます。',
 			'fileSources.preferences' => '優先順位',
 			'fileSources.timePosition' => '位置',
 			'fileSources.audioTrack' => '音声トラック',
@@ -6904,11 +6904,11 @@ extension on TranslationsJa {
 			'fileSources.singlePage' => '単一ページ',
 			'fileSources.twoPages' => '2ページ',
 			'fileSources.readingDirection' => '読書方向',
-			'fileSources.leftToRight' => '左向き右',
-			'fileSources.rightToLeft' => '右離れ',
+			'fileSources.leftToRight' => '左から右',
+			'fileSources.rightToLeft' => '右から左',
 			'fileSources.letterSpacing' => 'スペース 手紙',
 			'fileSources.wordSpacing' => 'スペース語',
-			'fileSources.readerControlsHelp' => 'ページを拡大するために、スイムコントロールを使用するか、スイームコントローを使用するか。 ページをスイムする Ctrl/ ⁇  + or − スイムを調整するか、 Ctrl/ ⁇  0 が再設定するか、ページアップとページダウンがページを変換するか。',
+			'fileSources.readerControlsHelp' => 'ピンチ操作または拡大・縮小ボタンでページを拡大できます。ドラッグして表示位置を移動します。Ctrl/⌘と+または−で拡大率を調整し、Ctrl/⌘と0でリセットします。Page UpとPage Downでページをめくります。',
 			'fileSources.imagePage' => '漫画ページ',
 			'fileSources.resetReader' => '読み取りの好みを再設定',
 			'fileSources.zoom' => 'ズーム',
@@ -6921,32 +6921,32 @@ extension on TranslationsJa {
 			'lending.libraryName' => '図書館名',
 			'lending.libraryUrl' => '図書館サイト',
 			'lending.libraryUrlHint' => '図書館のカタログまたはサインインページを使用します。',
-			'lending.intro' => '図書館から借りて、本を閉じる。',
-			'lending.handoff' => '登録、貸し出し、図書館のサービスで安全に読む。',
+			'lending.intro' => '図書館から借りて、本をいつも身近に。',
+			'lending.handoff' => '図書館のサービスでサインインし、本を借りて安全に読めます。',
 			'lending.openService' => 'オープン図書館',
 			'lending.findLibrary' => '図書館を見つける',
 			'lending.search' => '書籍と著者を検索',
 			'lending.catalogue' => 'カタログ',
 			'lending.loans' => '貸し出し',
-			'lending.holds' => 'ハンドル',
+			'lending.holds' => '予約',
 			'lending.signIn' => '図書館で登録する',
 			'lending.waiting' => 'ブラウザでサインインを終了し、ここに戻ります。',
 			'lending.cancel' => 'キャンセル',
 			'lending.disconnect' => '図書館削除',
-			'lending.disconnectMessage' => 'このプロフィールからこの図書館を削除する? あなたの貸し出しとあなたの図書館と滞在を保持します。',
+			'lending.disconnectMessage' => 'このプロフィールからこの図書館を削除しますか？貸出中の本と予約は図書館に残ります。',
 			'lending.getBook' => '書籍を取得',
 			'lending.checkAvailability' => '利用可能性チェック',
 			'lending.available' => '貸し出し利用可能',
 			'lending.unavailable' => '現在利用できない',
-			'lending.borrow' => '借金',
-			'lending.placeHold' => '場所 持つ',
-			'lending.returnBook' => '早めに戻る',
-			'lending.cancelHold' => 'キャンセル 持続',
+			'lending.borrow' => '借りる',
+			'lending.placeHold' => '予約する',
+			'lending.returnBook' => '期限前に返却',
+			'lending.cancelHold' => '予約を取り消す',
 			'lending.confirmBorrow' => '図書館からこのタイトルを借りる?',
-			'lending.confirmReturn' => 'もう一度借りるのか? もう一度借るのか?',
-			'lending.confirmCancelHold' => 'このタイトルを削除する?',
+			'lending.confirmReturn' => 'この本を今すぐ返却しますか？続きを利用するには、もう一度借りる必要がある場合があります。',
+			'lending.confirmCancelHold' => 'この本の予約を取り消しますか？',
 			'lending.email' => 'メール 通知',
-			'lending.due' => ({required Object date}) => 'ドイツ ${date}',
+			'lending.due' => ({required Object date}) => '返却期限：${date}',
 			'lending.queue' => ({required Object position}) => 'ポジション ${position} ライン',
 			'lending.empty' => 'まだタイトルは無い。',
 			'lending.openLibraryNote' => 'Open Library のカタログを検索する. 読書および貸し出しのオプションは、各タイトルのページに表示されます。',
@@ -6955,15 +6955,15 @@ extension on TranslationsJa {
 			'lending.gatewayHint' => '図書館または管理者 PlezyNG によって提供されます。',
 			'lending.advanced' => '図書館統合',
 			'lending.loadLibraries' => '図書館を選択',
-			'lending.expired' => 'この貸付は終了しました。',
+			'lending.expired' => 'この本の貸出期間は終了しました。',
 			'lending.updated' => '図書館更新',
 			'lending.continueService' => 'サービスを継続',
 			'lending.comingSoon' => 'イン・アプリ・貸し出し · すぐに来る',
-			'lending.comingSoonDescription' => 'リビーの図書館を使用するには、リビーに接続するのを終わらせる。',
-			'lending.suspendHold' => '停止 持続',
-			'lending.resumeHold' => 'リズム 持つ',
-			'lending.suspendMessage' => 'あなたの場所を順番に保ち、次の読者がこのコピーを借りるようにしてくださいか? 後で保管を再開できます。',
-			'lending.resumeMessage' => 'このコピーを再編して、図書館が次のコピーを提供できるようになるのでしょうか。',
+			'lending.comingSoonDescription' => 'Libbyとの連携機能を準備中です。連携が完了するまでは、Libbyで図書館を利用できます。',
+			'lending.suspendHold' => '予約を一時停止',
+			'lending.resumeHold' => '予約を再開',
+			'lending.suspendMessage' => '順番を維持したまま、次の読者にこの本を貸し出しますか？予約は後で再開できます。',
+			'lending.resumeMessage' => '予約を再開して、次に利用可能な本の案内を図書館から受け取りますか？',
 			'lending.editEmail' => 'メール通知の変更',
 			_ => null,
 		};
