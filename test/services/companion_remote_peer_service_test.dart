@@ -73,7 +73,6 @@ void main() {
     );
     expect(host.isConnected, isFalse);
   });
-
   test('auth precondition error uses the active locale', () async {
     await LocaleSettings.setLocale(AppLocale.bg);
     addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
