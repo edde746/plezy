@@ -12,8 +12,11 @@ export class ComicReader extends HTMLElement {
           #stage{min-height:100%;display:flex;justify-content:center;align-items:center;gap:0;direction:ltr}
           #stage.strip{display:block;min-height:0;position:relative}figure{margin:0;flex-shrink:0;position:relative;overflow:hidden}
           img{display:block;max-width:none;user-select:none;-webkit-user-drag:none}figure.split img{position:absolute;top:0}
-          button{font:inherit;color:inherit;background:var(--reader-bg);border:1px solid currentColor;border-radius:12px;padding:16px;min-height:48px;cursor:pointer}
-          button:focus-visible{outline:2px solid currentColor;outline-offset:2px}.error{display:flex;align-items:center;justify-content:center}
+          button{font:inherit;color:inherit;background:transparent;border:0;border-radius:24px;padding:10px 14px;min-width:48px;min-height:48px;cursor:pointer}
+          button:hover{background:color-mix(in srgb,var(--reader-text) 10%,transparent)}
+          button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+          .error{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+          .error-message{display:block;width:100%;max-width:32rem;overflow-wrap:anywhere}
           .strip figure{margin-inline:auto}.strip img{width:100%;height:100%;object-fit:contain}
           #status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
         </style><div id="viewport" tabindex="0"><div id="stage"></div></div><div id="status" role="status" aria-live="polite"></div>`;
@@ -180,10 +183,14 @@ export class ComicReader extends HTMLElement {
         };
         img.onerror=()=>{
             if(!figure.isConnected)return;
+            const message=document.createElement('span');
+            message.className='error-message';
+            message.setAttribute('role','alert');
+            message.textContent=this.options.labels?.error??'';
             const retry=document.createElement('button');retry.textContent=this.options.labels?.retry??this.options.labels?.error??'';
             retry.setAttribute('aria-label',`${retry.textContent} · ${img.alt}`);
-            retry.onclick=()=>{figure.classList.remove('error');figure.replaceChildren();this.load(figure);};
-            figure.classList.add('error');figure.replaceChildren(retry);
+            retry.onclick=()=>{this.viewport.focus({preventScroll:true});figure.classList.remove('error');figure.replaceChildren();this.load(figure);};
+            figure.classList.add('error');figure.replaceChildren(message,retry);
         };
         img.src=this.resource(page.name);figure.append(img);
     }

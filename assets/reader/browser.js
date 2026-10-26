@@ -52,6 +52,9 @@ function showContents(start=0){
         b.append(img,caption);b.onclick=()=>{window.publication.page(i+1);dialog.close();};grid.append(b);
     }
     content.append(grid);
+    // show() opens the dialog before its lazy contents are appended, so move
+    // initial focus from the Close action into the page list explicitly.
+    grid.querySelector('button')?.focus();
     const previous=document.createElement('button'),next=document.createElement('button');
     previous.textContent=labels.prev;previous.disabled=start===0;previous.onclick=()=>showContents(Math.max(0,start-8));
     next.textContent=labels.next;next.disabled=end===toc.length;next.onclick=()=>showContents(end);
