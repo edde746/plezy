@@ -154,7 +154,7 @@ class PublicationDownloads {
       try {
         int? available;
         try {
-          available = await DiskUsage.freeSpace(directory.path);
+          available = await DiskUsage.freeSpace(directory.path).timeout(const Duration(seconds: 3));
         } on Object {
           throw const SourceException(SourceFailure.storageUnavailable);
         }
