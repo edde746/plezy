@@ -92,6 +92,7 @@ class PerformanceStats {
   final int? dvAvgRpuConversionUs;
   final int? dvAvgSampleProcessingUs;
   final int? dvSourceProfile;
+  final String? dvSourceLayers;
   final String? dvPlaybackPath;
 
   /// Android mpv's Dolby Vision route; ExoPlayer reports [dvPlaybackPath] instead.
@@ -146,6 +147,7 @@ class PerformanceStats {
     this.dvAvgRpuConversionUs,
     this.dvAvgSampleProcessingUs,
     this.dvSourceProfile,
+    this.dvSourceLayers,
     this.dvPlaybackPath,
     this.dvRoute,
     this.appMemoryBytes,
@@ -310,7 +312,12 @@ class PerformanceStats {
 
   String get dvConversionFormatted => dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC';
 
-  String get dvSourceProfileFormatted => dvSourceProfile == null ? t.common.notAvailable : 'P$dvSourceProfile';
+  String get dvSourceProfileFormatted {
+    final profile = dvSourceProfile;
+    if (profile == null) return t.common.notAvailable;
+    final layers = dvSourceLayers;
+    return layers == null ? 'P$profile' : 'P$profile · source $layers';
+  }
 
   /// Format Dolby Vision playback path. mpv's base layer is named by the
   /// transfer it decodes to, so a P8.1 fallback reads as HDR10 (#2534).

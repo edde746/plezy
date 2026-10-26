@@ -71,6 +71,9 @@ class MediaDisplayCriteria {
   final int? doviProfile;
   final int? doviLevel;
   final int? doviCompatibilityId;
+  final bool? doviBaseLayerPresent;
+  final bool? doviEnhancementLayerPresent;
+  final bool? doviRpuPresent;
   final String? transfer;
   final String? primaries;
   final String? matrix;
@@ -82,6 +85,9 @@ class MediaDisplayCriteria {
     this.doviProfile,
     this.doviLevel,
     this.doviCompatibilityId,
+    this.doviBaseLayerPresent,
+    this.doviEnhancementLayerPresent,
+    this.doviRpuPresent,
     this.transfer,
     this.primaries,
     this.matrix,
@@ -94,6 +100,9 @@ class MediaDisplayCriteria {
     Object? doviProfile,
     Object? doviLevel,
     Object? doviCompatibilityId,
+    Object? doviBaseLayerPresent,
+    Object? doviEnhancementLayerPresent,
+    Object? doviRpuPresent,
     Object? transfer,
     Object? primaries,
     Object? matrix,
@@ -105,6 +114,9 @@ class MediaDisplayCriteria {
       doviProfile: flexibleInt(doviProfile),
       doviLevel: flexibleInt(doviLevel),
       doviCompatibilityId: flexibleInt(doviCompatibilityId),
+      doviBaseLayerPresent: flexibleBoolNullable(doviBaseLayerPresent),
+      doviEnhancementLayerPresent: flexibleBoolNullable(doviEnhancementLayerPresent),
+      doviRpuPresent: flexibleBoolNullable(doviRpuPresent),
       transfer: _stringOrNull(transfer),
       primaries: _stringOrNull(primaries),
       matrix: _stringOrNull(matrix),

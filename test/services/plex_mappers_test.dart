@@ -174,7 +174,7 @@ void main() {
   test('display criteria maps each Plex color metadata class', () {
     final cases = <({Map<String, dynamic> stream, MediaDisplayColorType type, MediaDisplayColorTags tags})>[
       (
-        stream: {'DOVIProfile': 5, 'DOVIPresent': 1},
+        stream: {'DOVIProfile': 5, 'DOVIPresent': 1, 'DOVIBLPresent': 1, 'DOVIELPresent': 0, 'DOVIRPUPresent': 1},
         type: MediaDisplayColorType.dolbyVision,
         tags: (transfer: null, primaries: null, matrix: null),
       ),
@@ -205,6 +205,11 @@ void main() {
         testCase.tags,
         reason: testCase.type.name,
       );
+      if (testCase.stream['DOVIProfile'] == 5) {
+        expect(criteria.doviBaseLayerPresent, isTrue);
+        expect(criteria.doviEnhancementLayerPresent, isFalse);
+        expect(criteria.doviRpuPresent, isTrue);
+      }
     }
   });
 

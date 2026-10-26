@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../i18n/strings.g.dart';
+import '../../../../media/media_display_criteria.dart';
 import '../../../../mpv/mpv.dart';
 import '../../../../widgets/app_icon.dart';
 import 'performance_stats.dart';
@@ -25,8 +26,15 @@ class PlayerPerformanceOverlay extends StatefulWidget {
   /// Whether the server is transcoding this stream, or null when the stream
   /// has no server play method (live TV, offline playback).
   final bool? isTranscoding;
+  final MediaDisplayCriteria? sourceDisplayCriteria;
 
-  const PlayerPerformanceOverlay({super.key, required this.player, required this.active, this.isTranscoding});
+  const PlayerPerformanceOverlay({
+    super.key,
+    required this.player,
+    required this.active,
+    this.isTranscoding,
+    this.sourceDisplayCriteria,
+  });
 
   @override
   State<PlayerPerformanceOverlay> createState() => _PlayerPerformanceOverlayState();
@@ -39,7 +47,11 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
   @override
   void initState() {
     super.initState();
-    _statsService = PerformanceStatsService(widget.player);
+    _statsService = PerformanceStatsService(
+      widget.player,
+      sourceDisplayCriteria: widget.sourceDisplayCriteria,
+      isTranscoding: widget.isTranscoding,
+    );
     _statsService.statsStream.listen((stats) {
       if (mounted) {
         setState(() {
@@ -53,6 +65,13 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
   @override
   void didUpdateWidget(PlayerPerformanceOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.sourceDisplayCriteria != oldWidget.sourceDisplayCriteria ||
+        widget.isTranscoding != oldWidget.isTranscoding) {
+      _statsService.updateSourceMetadata(
+        displayCriteria: widget.sourceDisplayCriteria,
+        isTranscoding: widget.isTranscoding,
+      );
+    }
     if (widget.active == oldWidget.active) return;
     // The last values stay on the card while it fades out; only the polling
     // stops.
