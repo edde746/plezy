@@ -10,6 +10,7 @@ import '../../discovery/discovery_choice.dart';
 import '../../discovery/discovery_store.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -374,7 +375,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final subtitle = [
       item.parentTitle,
       item.albumArtistTitle,
-      item.year?.toString(),
+      if (item.year != null) formatDecimal(item.year!, maximumDecimals: 0),
       if (item.libraryTitle != null) item.libraryTitle,
     ].whereType<String>().where((value) => value.trim().isNotEmpty).toSet().join(' · ');
     return DiscoveryChoice(
@@ -383,7 +384,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       title: title,
       subtitle: subtitle,
       reason: library.title.isNotEmpty
-          ? t.discover.findNext.libraryReason(library: library.title)
+          ? t.discover.findNext.libraryReason(library: isolateDisplayText(library.title))
           : t.discover.findNext.ownedReason,
       summary: item.summary ?? '',
       durationMs: duration,
@@ -420,7 +421,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       type: DiscoveryChoiceType.video,
       title: title,
       subtitle: sourceLabel,
-      reason: t.discover.findNext.sourceReason(source: sourceLabel),
+      reason: t.discover.findNext.sourceReason(source: isolateDisplayText(sourceLabel)),
       summary: item.overview ?? '',
       durationMs: item.kind == MediaKind.movie ? media.durationMs : null,
       totalDurationMs: item.kind == MediaKind.movie ? media.durationMs : null,
@@ -496,7 +497,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       type: type,
       title: entry.title.trim(),
       subtitle: subtitle,
-      reason: t.discover.findNext.sourceReason(source: source.name),
+      reason: t.discover.findNext.sourceReason(source: isolateDisplayText(source.name)),
       summary: entry.description,
       durationMs: unitDuration,
       totalDurationMs: totalDuration,
@@ -643,12 +644,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 children: [
                   for (final item in <int?>[null, 20, 45, 90])
                     ChoiceChip(
-                      label: Text(switch (item) {
-                        null => t.discover.findNext.anyTime,
-                        20 => t.discover.findNext.twentyMinutes,
-                        45 => t.discover.findNext.fortyFiveMinutes,
-                        _ => t.discover.findNext.ninetyMinutes,
-                      }),
+                      label: Text(
+                        localizeDecimalDigits(switch (item) {
+                          null => t.discover.findNext.anyTime,
+                          20 => t.discover.findNext.twentyMinutes,
+                          45 => t.discover.findNext.fortyFiveMinutes,
+                          _ => t.discover.findNext.ninetyMinutes,
+                        }),
+                      ),
                       selected: item == maxMinutes,
                       onSelected: (_) => setSheetState(() => maxMinutes = item),
                     ),
@@ -1226,11 +1229,11 @@ class _FindNextScreenState extends State<FindNextScreen> {
         );
 
         final titleStyle = isTv ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall;
-        final title = Text(choice.title, textAlign: textAlignment, style: titleStyle);
+        final title = Text(isolateDisplayText(choice.title), textAlign: textAlignment, style: titleStyle);
         final subtitle = choice.subtitle.isEmpty
             ? null
             : Text(
-                choice.subtitle,
+                isolateDisplayText(choice.subtitle),
                 textAlign: textAlignment,
                 style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               );
@@ -1455,7 +1458,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       45 => t.discover.findNext.fortyFiveMinutes,
       _ => t.discover.findNext.ninetyMinutes,
     };
-    final filterLabel = '${_familyLabel(_family)} · $durationLabel';
+    final filterLabel = '${_familyLabel(_family)} · ${localizeDecimalDigits(durationLabel)}';
     final matching = _choices.where(_matchesFilters).toList(growable: false);
     final noMatches = _choices.isNotEmpty && matching.isEmpty;
     final allSeen = matching.isNotEmpty && matching.every((choice) => _state.seen.contains(choice.id));
@@ -1469,11 +1472,11 @@ class _FindNextScreenState extends State<FindNextScreen> {
             icon: const AppIcon(Symbols.tune_rounded),
           ),
           IconButton(
-            tooltip: t.discover.findNext.savedCount(count: '${savedChoices.length}'),
+            tooltip: t.discover.findNext.savedCount(count: formatCount(savedChoices.length)),
             onPressed: profileChanged || _loading ? null : _openSaved,
             icon: Badge(
               isLabelVisible: savedChoices.isNotEmpty,
-              label: Text('${savedChoices.length}'),
+              label: Text(formatCount(savedChoices.length)),
               child: const AppIcon(Symbols.bookmarks_rounded),
             ),
           ),
@@ -1664,11 +1667,11 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
                 final choice = savedChoices[index];
                 return ListTile(
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
-                  title: Text(choice.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
                     [
                       _localizedChoiceType(choice),
-                      choice.subtitle,
+                      isolateDisplayText(choice.subtitle),
                       choice.durationMs == null ? null : formatDurationTextual(choice.durationMs!),
                     ].whereType<String>().where((value) => value.isNotEmpty).join(' · '),
                     maxLines: 2,

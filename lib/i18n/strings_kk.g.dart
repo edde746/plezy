@@ -104,6 +104,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$kk fileSources = _Translations$fileSources$kk._(_root);
 	@override late final _Translations$lending$kk lending = _Translations$lending$kk._(_root);
 	@override late final _Translations$audiobook$kk audiobook = _Translations$audiobook$kk._(_root);
+	@override late final _Translations$sourceSetup$kk sourceSetup = _Translations$sourceSetup$kk._(_root);
 }
 
 // Path: app
@@ -3057,6 +3058,12 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get useFiles => 'Бірінші мезгіл файлы және книги';
 	@override String get cancelScan => 'Сұрақтық Сұрағы';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Мысалы: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ қалтаны енгізіңіз.';
+	@override String get smbFolderHelp => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
+	@override String get smbDomain => 'Домен (міндетті емес)';
+	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
+	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
 }
 
 // Path: lending
@@ -3140,7 +3147,7 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 1 адамды құрайды және 1 адамды құрайды.';
 	@override String get syncReconnect => 'Серіктің бір-бірімен бір-бірімен';
 	@override String lastSynced({required Object time}) => 'Қазіргі таңда ${time}';
-	@override String get syncPrivacy => 'Біздің өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін';
+	@override String get syncPrivacy => 'Тек шифрланған оқу мен тыңдау барысы және жазбалар сақталады. Аудио және электрондық кітап файлдары, аккаунт токендері мен құпиясөздер серверге жіберілмейді. Google Drive және OneDrive қолданбаға арналған сақтау орнын, ал Dropbox PlezyNG Sync орнын пайдаланады. Синхрондауды қосқанда қосымша жазу рұқсаты сұралуы мүмкін. Синхрондау қосулы кезде оқу мен тыңдау барысы осы сақтау орны арқылы синхрондалады; сервердегі барыс бөлек қалады. Синхрондауды өшірсеңіз де, жергілікті тарих пен қашықтағы күй деректері сақталады.';
 	@override String get syncConflicts => 'Ақпараттың арнайы серверлерде сақталуы';
 	@override String get conflictHelp => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.';
 	@override String syncDevice({required Object device}) => 'Өнімдер ${device}';
@@ -3176,6 +3183,109 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get statusFinished => 'Өткен';
 	@override String get goToTime => 'Қазіргі уақытта';
 	@override String get timeHelp => 'Өнімдер: 1 минут, 1 минут, 1 секунды';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$kk extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Сақталған сервер сертификаты';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export сияқты NFS URL мекенжайын енгізіңіз.';
+	@override String get dlnaNone => 'DLNA серверлері табылмады. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.';
+	@override String get dlnaServers => 'DLNA медиа серверлері';
+	@override String get dlnaUnavailable => 'Бұл желіде DLNA іздеу қолжетімсіз. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.';
+	@override String get dlnaSearching => 'Жергілікті желіден DLNA серверлері ізделуде';
+	@override String get networkSearching => 'Жергілікті желіден ізделуде…';
+	@override String get dlnaDiscover => 'DLNA серверлерін табу';
+	@override String get dlnaHelp => 'Іздеу жергілікті желідегі multicast таратылымына байланысты. Сервер көрінбесе, жоғарыда оның құрылғы сипаттамасының URL мекенжайын енгізіңіз.';
+	@override String get dlnaRoot => 'DLNA нысанының ID мәні; құрылғының түбірін пайдалану үшін бос қалдырыңыз.';
+	@override String get passwordOrKey => 'Құпиясөз енгізіңіз немесе төменде жеке кілт қосыңыз.';
+	@override String get sshFingerprint => 'SSH хост кілтінің SHA256 ізі';
+	@override String get sshFingerprintHelp => 'Оны сервер әкімшісімен тексеріңіз. Серверде ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub пәрменін орындап, SHA256 мәнін пайдаланыңыз.';
+	@override String get sshFingerprintKeep => 'Қазір бекітілген ізді сақтау үшін бос қалдырыңыз немесе сервердің жаңа ізін енгізіңіз.';
+	@override String get sshAuthentication => 'Ашық кілтпен SSH аутентификациясы';
+	@override String get sshAuthenticationHelp => 'Міндетті емес; құпиясөзбен аутентификация да қолданылады.';
+	@override String get privateKey => 'Жеке кілт (PEM немесе OpenSSH пішімі)';
+	@override String get privateKeyPassphrase => 'Жеке кілттің құпиясөз тіркесі';
+	@override String get nfsMountPort => 'NFS mount қызметінің TCP порты';
+	@override String get nfsMountPortHelp => 'Әдепкі: 20048';
+	@override String get nfsUserId => 'NFS пайдаланушы ID мәні (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Әдепкі: 1000. NAS-тағы NFS ортақ ресурсы рұқсат ететін ID мәнін пайдаланыңыз.';
+	@override String get nfsGroupId => 'NFS тобының ID мәні (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Әдепкі: 1000. NAS-тағы NFS ортақ ресурсы рұқсат ететін топ ID мәнін пайдаланыңыз.';
+	@override String get nfsEncryption => 'Шифрланған NFS талап ету (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'NFS пен mount қызметі үшін TLS 1.3 талап етіледі. NAS мұны қолдамаса, қосылым қабылданбайды.';
+	@override String get nfsTrustCertificate => 'Теңшелетін NFS CA немесе сервер сертификаты (PEM, міндетті емес)';
+	@override String get nfsTrustHelp => 'Осы құрылғы сенетін сертификаттар үшін бос қалдырыңыз. Қажет болса, жеке CA сертификатын немесе өзі қол қойған сервер сертификатын қосыңыз; ондағы атаулар NFS URL мекенжайындағы хостқа сәйкес болуы керек.';
+	@override String get nfsTrustInvalid => 'PEM пішіміндегі CA немесе сервер сертификатын пайдаланыңыз. Жеке кілтті қоспаңыз.';
+	@override String get addTrustCertificate => 'Теңшелетін сенім сертификатын қосу';
+	@override String get replaceTrustCertificate => 'Сақталған теңшелетін сертификатты ауыстыру';
+	@override String get nfsTlsHelp => 'RPC-with-TLS әдеттегі NFS және mount қызметінің порттарын пайдаланады және NAS-та RFC 9289 қолдауын талап етеді. TLS 1.3 қажет. Хост атауы немесе IP мекенжайы сертификатқа сәйкес болуы керек. Шифрланған арнада да AUTH_SYS UID/GID қолданылады.';
+	@override String get clientCertificate => 'Клиент сертификаты (міндетті емес)';
+	@override String get clientCertificateHelp => 'NAS-қа осы клиентті аутентификациялауға мүмкіндік береді; AUTH_SYS ID мәндері әлі де NAS-тағы NFS ортақ ресурсының ережелеріне тәуелді.';
+	@override String get savedIdentity => 'Сақталған клиенттің сәйкестендіру деректері пайдаланылады.';
+	@override String get replaceIdentity => 'Сақталған клиенттің сәйкестендіру деректерін ауыстыру';
+	@override String get chooseIdentity => 'PKCS#12 клиент сәйкестендіру деректерін таңдау';
+	@override String get identityPassphrase => 'Клиент сәйкестендіру деректерінің құпиясөз тіркесі';
+	@override String get identityPassphraseHelp => 'Файлда құпиясөз тіркесі болмаса, бос қалдырыңыз.';
+	@override String get removeIdentity => 'Сақталған клиенттің сәйкестендіру деректерін жою';
+	@override String get identityStorageHelp => 'Клиенттің сәйкестендіру деректері дереккөздің шифрланған кіру деректері қоймасында сақталады. Сақталған деректерді қалдыру үшін бұл бөлімді өзгертпеңіз.';
+	@override String get nfsLimitations => 'TCP арқылы тек оқуға арналған NFSv3. RPC-with-TLS болмаса, NFS трафигі шифрланбайды. NAS таңдалған AUTH_SYS ID мәндеріне және арнайы артықшылықты қажет етпейтін клиент порттарына рұқсат етуі керек (көбіне «insecure» экспорт параметрі деп аталады). NFSv4 пен UDP-ге қолдау көрсетілмейді.';
+	@override String get nfsSetupHelp => 'NFS орнату анықтамасы';
+	@override String get nfsSetupHint => 'Қосылым ашылмаса, осы параметрлерді тексеріңіз.';
+	@override String get nfsSetupDetails => 'TCP арқылы NFSv3 ортақ ресурсын пайдаланыңыз. Шифрлау талап етілсе, NFS қызметі де, mount қызметі де RPC-with-TLS қолдауы керек. Осы құрылғы сенетін сервер сертификаты үшін теңшелетін сертификат өрісін бос қалдырыңыз немесе NAS CA сертификатын не өзі қол қойған сертификатты қосыңыз. Сертификаттағы атау қосылу нүктесінің хостына сәйкес болуы керек. NAS өзара TLS талап етсе, оның PKCS#12 клиент сәйкестендіру деректерін қосыңыз. Соңында ортақ ресурс бапталған AUTH_SYS UID/GID мәндеріне және клиент порттарының ережелеріне рұқсат ететінін тексеріңіз.';
+	@override String get ftpHelp => 'FTP пассивті режимді пайдаланады. Шифрланбаған FTP үшін ftp://, TLS кейін арнайы пәрменмен қосылатын режим үшін ftpes://, ал TLS үшін ftps:// пайдаланыңыз (990 портында TLS бірден іске қосылады, басқа порттарда арнайы пәрменмен қосылады).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Жеке бейнелер үшін қосымша субтитр іздеу.';
+	@override String get apiKey => 'API кілті';
+	@override String get optionalUsername => 'Тіркелгінің пайдаланушы аты (міндетті емес)';
+	@override String get optionalPassword => 'Тіркелгі құпиясөзі (міндетті емес)';
+	@override String get subtitlePrivacy => 'opensubtitles.com сайтынан API кілтін алыңыз. Іздеу бейне атауын және қолжетімді IMDb/TMDB ID мәндерін жібереді, бірақ бейнефайлды ешқашан жібермейді. Кілт пен қосымша тіркелгі деректері осы дереккөзбен бірге шифрланады.';
+	@override String get automaticMetadata => 'Бейненің автоматты онлайн метадеректері';
+	@override String get metadataPrivacy => 'Тек файл атауындағы атауды/жылды және эпизод нөмірлерін немесе NFO ID мәнін жібереді; медиа файлдар мен кіру деректерін ешқашан жібермейді. NFO өрістері басымдығын сақтайды.';
+	@override String get nfsEncryptionFailure => 'Шифрланған NFS үшін NAS-тың екі қызметінде де RFC 9289 және TLS 1.3 қолдауын, сертификат атауын және ортақ ресурстың UID/GID мәндерін тексеріңіз. PlezyNG бұл қосылымды шифрлаусыз қайта жасамайды.';
+	@override String get sourceConnecting => 'Дереккөзге қосылуда';
+	@override String get metadataSearchPrivacy => 'Бұл атау іздеуі Trakt қызметіне жіберіледі. Енгізген атауыңыз жіберіледі, бейне не дереккөздің кіру деректері жіберілмейді.';
+	@override String get chooseMatch => 'Сәйкес нәтижені таңдау';
+	@override String get metadataMatchHelp => 'Таңдамас бұрын атауы мен жылын тексеріңіз. Trakt ізделген атауды алады; бейне өз дереккөзінде қалады.';
+	@override String get metadataNoMatches => 'Онлайн сәйкес атаулар табылмады. Басқа атауды байқап көріңіз.';
+	@override String get metadataSearch => 'Онлайн метадеректерді іздеу';
+	@override String get metadataLoading => 'Онлайн фильмдер мен сериалдар туралы мәліметтер ізделуде…';
+	@override String get metadataFromTrakt => 'Trakt қызметінен онлайн метадеректер';
+	@override String get metadataNoAutomaticMatch => 'Атауға автоматты сәйкестік табылмады. Сәйкес нәтижені таңдау үшін атауды іздеңіз.';
+	@override String get metadataFailed => 'Онлайн метадеректер жүктелмеді. Ойнату мен жергілікті мәліметтер әлі де қолжетімді.';
+	@override String get videoDetailsLoading => 'Бейне мәліметтері жүктелуде';
+	@override String get subtitleKeyRequired => 'OpenSubtitles API кілті қажет';
+	@override String get subtitleKeyHelp => 'Осы файл дереккөзін өңдеп, қосымша субтитр параметрлеріне OpenSubtitles API кілтін қосыңыз.';
+	@override String get subtitleSearchFailed => 'Субтитр іздеу сәтсіз аяқталды. API кілтін, қосылымды және қызметке қолжетімділікті тексеріңіз.';
+	@override String get subtitleApplyFailed => 'Бұл субтитр жүктелмеді немесе қолданылмады. Қосылымды тексеріп, басқа нәтижені таңдаңыз.';
+	@override String get subtitleSearch => 'OpenSubtitles қызметінен іздеу';
+	@override String get subtitleSearchPrivacy => 'Іздеу атауды және қолжетімді IMDb/TMDB ID мәндерін пайдаланады. Бейнефайл өз дереккөзінде қалады. Таңдамас бұрын тілді, мәжбүрлі субтитрлер не есту қабілеті шектеулі адамдарға арналған субтитрлер белгілерін және бағасын тексеріңіз.';
+	@override String get movieOrShow => 'Фильм немесе сериал';
+	@override String get subtitleTitleHint => 'Нәтижелерді нақтылау үшін атауын енгізіңіз';
+	@override String get subtitleLanguage => 'Субтитр тілі';
+	@override String get subtitleSearching => 'OpenSubtitles қызметінен ізделуде';
+	@override String get subtitleNoMatches => 'Сәйкес субтитрлер табылмады. Басқа атауды немесе тілді байқап көріңіз.';
+	@override String get downloadSubtitle => 'Субтитрді жүктеп алу';
+	@override String get subtitle => 'Субтитр';
+	@override String get nfsTlsRequired => 'RPC-with-TLS қажет';
+	@override String get nfsUnencrypted => 'Шифрланбаған NFS';
+	@override String get tlsEncrypted => 'TLS арқылы шифрланған';
+	@override String get ftpPlain => 'Шифрланбаған FTP';
+	@override String get sshPinned => 'SSH шифрланған · хост кілті бекітілген';
+	@override String get smbEncrypted => 'SMB3 шифрлауы қосулы';
+	@override String get smbUnencrypted => 'SMB3 шифрлауы өшірулі';
+	@override String get httpUnencrypted => 'Тасымалдау шифрлауы жоқ HTTP';
+	@override String get checkEndpointSecurity => 'Қосылу нүктесінің қауіпсіздігін тексеру';
+	@override String fieldRequired({required Object label}) => 'Міндетті өріс: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label} үшін ${min} мен ${max} арасындағы мәнді енгізіңіз.';
+	@override String replaceFile({required Object name}) => '${name} ауыстыру';
+	@override String selectedIdentity({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Бағасы: ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Субтитр жүктелуде: ${title}';
 }
 
 // Path: appIcon.names
@@ -3429,48 +3539,48 @@ class _Translations$discover$findNext$kk extends Translations$discover$findNext$
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Қазіргі таңда бүкіл';
-	@override String get open => 'Қазіргі таңда бүкіл';
-	@override String get anyTime => 'Қазіргі уақытта';
-	@override String get timeAvailable => 'Қанша дейін қандай болады?';
-	@override String get filters => 'Қазіргі уақытта';
-	@override String get watch => 'Өткен';
-	@override String get listen => 'Өткен';
-	@override String get read => 'Жүктеу';
-	@override String finishable({required Object duration}) => 'Қазіргі таңда ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Ауыз ${duration}';
-	@override String nextUnit({required Object duration}) => 'Алдыңғы главасы · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} Үздік';
-	@override String get timingVaries => 'Өнімдер мен';
-	@override String get notNow => 'Қазіргі уақытта';
-	@override String get swipeHint => 'Ауыз іші шырышты қабығы мен шырышты қабығы';
-	@override String get saved => 'Пікірлер мен';
-	@override String savedCount({required Object count}) => 'Жүзілік қанағаттанды · ${count}';
-	@override String get undo => 'Өткен';
-	@override String get details => 'Өнімдер';
-	@override String get noPicks => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыс';
-	@override String get noPicksHint => 'Бібліотекасы қосыңыз немесе медиа ресурсы қосыңыз.';
-	@override String get noMatches => 'Ауыз ішінен қайта';
-	@override String get noMatchesHint => 'Өзі сүйікті жарысы, басқа да басқа да жарысы.';
-	@override String get allDone => 'Өзі сүйікті айтылады';
-	@override String get allDoneHint => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
-	@override String get refresh => 'Ауыз іші шығыңыз';
-	@override String sourceReason({required Object source}) => 'Қазіргі уақытта ${source}';
-	@override String libraryReason({required Object library}) => 'Қазіргі уақытта ${library}';
-	@override String get ownedReason => 'Бібліотекасы мен';
-	@override String get liveNow => 'Қазіргі таңда';
-	@override String get watchLive => 'Жыныс жасуша';
-	@override String get filterAnything => 'Қандай';
-	@override String get filterWatch => 'Өткен';
-	@override String get filterListen => 'Өткен';
-	@override String get filterRead => 'Жүктеу';
-	@override String get twentyMinutes => '20 минут';
-	@override String get fortyFiveMinutes => '45 минут';
-	@override String get ninetyMinutes => '90 минут';
-	@override String get apply => 'Қатысушы';
-	@override String get openFailed => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.';
-	@override String get changeFailed => 'Қанша біріктір мен біріктір мен біріктір мен біріктір мен біріктір.';
-	@override String get savedLimit => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get title => 'Келесі таңдауыңызды табыңыз';
+	@override String get open => 'Келесі таңдауыңызды табыңыз';
+	@override String get anyTime => 'Уақыт шектеусіз';
+	@override String get timeAvailable => 'Қанша уақытыңыз бар?';
+	@override String get filters => 'Осы сәтке лайық нұсқаны таңдаңыз';
+	@override String get watch => 'Көру';
+	@override String get listen => 'Тыңдау';
+	@override String get read => 'Оқу';
+	@override String finishable({required Object duration}) => '${duration} ішінде аяқтауға болады';
+	@override String aboutDuration({required Object duration}) => 'Шамамен ${duration}';
+	@override String nextUnit({required Object duration}) => 'Келесі тарау · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Барлығы ${duration}';
+	@override String get timingVaries => 'Ұзақтығы өзгеруі мүмкін';
+	@override String get notNow => 'Қазір емес';
+	@override String get swipeHint => 'Сырғытыңыз немесе төмендегі түймелерді пайдаланыңыз';
+	@override String get saved => 'Сақталған ұсыныстар';
+	@override String savedCount({required Object count}) => 'Сақталған ұсыныстар · ${count}';
+	@override String get undo => 'Соңғы әрекетті болдырмау';
+	@override String get details => 'Толық ақпарат';
+	@override String get noPicks => 'Әзірге таңдауға ештеңе жоқ';
+	@override String get noPicksHint => 'Бастау үшін кітапханаға қосылыңыз немесе медиа көзін қосыңыз.';
+	@override String get noMatches => 'Қазіргі уақытыңызға сай нұсқа жоқ';
+	@override String get noMatchesHint => 'Басқа медиа түрін таңдаңыз немесе көбірек уақыт бөліңіз.';
+	@override String get allDone => 'Барлық ұсыныстарды қарап шықтыңыз';
+	@override String get allDoneHint => 'Осы нұсқаларды қайта көру үшін жаңа топтаманы бастаңыз.';
+	@override String get refresh => 'Басқа топтама табу';
+	@override String sourceReason({required Object source}) => 'Дереккөз: ${source}';
+	@override String libraryReason({required Object library}) => 'Кітапхана: ${library}';
+	@override String get ownedReason => 'Кітапханаңыздан';
+	@override String get liveNow => 'Қазір көрсетіліп жатыр';
+	@override String get watchLive => 'Тікелей эфирді көру';
+	@override String get filterAnything => 'Кез келгені';
+	@override String get filterWatch => 'Көру';
+	@override String get filterListen => 'Тыңдау';
+	@override String get filterRead => 'Оқу';
+	@override String get twentyMinutes => '20 мин';
+	@override String get fortyFiveMinutes => '45 мин';
+	@override String get ninetyMinutes => '90 мин';
+	@override String get apply => 'Қолдану';
+	@override String get openFailed => 'Бұл нұсқа енді қолжетімді емес. Қайта тексеру үшін жаңартыңыз.';
+	@override String get changeFailed => 'Бұл өзгерісті сақтау мүмкін болмады. Қайталап көріңіз.';
+	@override String get savedLimit => 'Сақталған ұсыныстар тізімі толы. Басқасын сақтау үшін бір ұсынысты алып тастаңыз.';
 }
 
 // Path: discover.person
@@ -5460,48 +5570,48 @@ extension on TranslationsKk {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'М${season}Б${episode}',
 			'discover.overview' => 'Сипаттамасы',
 			'discover.cast' => 'Актерлер',
-			'discover.findNext.title' => 'Қазіргі таңда бүкіл',
-			'discover.findNext.open' => 'Қазіргі таңда бүкіл',
-			'discover.findNext.anyTime' => 'Қазіргі уақытта',
-			'discover.findNext.timeAvailable' => 'Қанша дейін қандай болады?',
-			'discover.findNext.filters' => 'Қазіргі уақытта',
-			'discover.findNext.watch' => 'Өткен',
-			'discover.findNext.listen' => 'Өткен',
-			'discover.findNext.read' => 'Жүктеу',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Қазіргі таңда ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Ауыз ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Алдыңғы главасы · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Үздік',
-			'discover.findNext.timingVaries' => 'Өнімдер мен',
-			'discover.findNext.notNow' => 'Қазіргі уақытта',
-			'discover.findNext.swipeHint' => 'Ауыз іші шырышты қабығы мен шырышты қабығы',
-			'discover.findNext.saved' => 'Пікірлер мен',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Жүзілік қанағаттанды · ${count}',
-			'discover.findNext.undo' => 'Өткен',
-			'discover.findNext.details' => 'Өнімдер',
-			'discover.findNext.noPicks' => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыс',
-			'discover.findNext.noPicksHint' => 'Бібліотекасы қосыңыз немесе медиа ресурсы қосыңыз.',
-			'discover.findNext.noMatches' => 'Ауыз ішінен қайта',
-			'discover.findNext.noMatchesHint' => 'Өзі сүйікті жарысы, басқа да басқа да жарысы.',
-			'discover.findNext.allDone' => 'Өзі сүйікті айтылады',
-			'discover.findNext.allDoneHint' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
-			'discover.findNext.refresh' => 'Ауыз іші шығыңыз',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'Қазіргі уақытта ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'Қазіргі уақытта ${library}',
-			'discover.findNext.ownedReason' => 'Бібліотекасы мен',
-			'discover.findNext.liveNow' => 'Қазіргі таңда',
-			'discover.findNext.watchLive' => 'Жыныс жасуша',
-			'discover.findNext.filterAnything' => 'Қандай',
-			'discover.findNext.filterWatch' => 'Өткен',
-			'discover.findNext.filterListen' => 'Өткен',
-			'discover.findNext.filterRead' => 'Жүктеу',
-			'discover.findNext.twentyMinutes' => '20 минут',
-			'discover.findNext.fortyFiveMinutes' => '45 минут',
-			'discover.findNext.ninetyMinutes' => '90 минут',
-			'discover.findNext.apply' => 'Қатысушы',
-			'discover.findNext.openFailed' => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.',
-			'discover.findNext.changeFailed' => 'Қанша біріктір мен біріктір мен біріктір мен біріктір мен біріктір.',
-			'discover.findNext.savedLimit' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'discover.findNext.title' => 'Келесі таңдауыңызды табыңыз',
+			'discover.findNext.open' => 'Келесі таңдауыңызды табыңыз',
+			'discover.findNext.anyTime' => 'Уақыт шектеусіз',
+			'discover.findNext.timeAvailable' => 'Қанша уақытыңыз бар?',
+			'discover.findNext.filters' => 'Осы сәтке лайық нұсқаны таңдаңыз',
+			'discover.findNext.watch' => 'Көру',
+			'discover.findNext.listen' => 'Тыңдау',
+			'discover.findNext.read' => 'Оқу',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration} ішінде аяқтауға болады',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Шамамен ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Келесі тарау · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Барлығы ${duration}',
+			'discover.findNext.timingVaries' => 'Ұзақтығы өзгеруі мүмкін',
+			'discover.findNext.notNow' => 'Қазір емес',
+			'discover.findNext.swipeHint' => 'Сырғытыңыз немесе төмендегі түймелерді пайдаланыңыз',
+			'discover.findNext.saved' => 'Сақталған ұсыныстар',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Сақталған ұсыныстар · ${count}',
+			'discover.findNext.undo' => 'Соңғы әрекетті болдырмау',
+			'discover.findNext.details' => 'Толық ақпарат',
+			'discover.findNext.noPicks' => 'Әзірге таңдауға ештеңе жоқ',
+			'discover.findNext.noPicksHint' => 'Бастау үшін кітапханаға қосылыңыз немесе медиа көзін қосыңыз.',
+			'discover.findNext.noMatches' => 'Қазіргі уақытыңызға сай нұсқа жоқ',
+			'discover.findNext.noMatchesHint' => 'Басқа медиа түрін таңдаңыз немесе көбірек уақыт бөліңіз.',
+			'discover.findNext.allDone' => 'Барлық ұсыныстарды қарап шықтыңыз',
+			'discover.findNext.allDoneHint' => 'Осы нұсқаларды қайта көру үшін жаңа топтаманы бастаңыз.',
+			'discover.findNext.refresh' => 'Басқа топтама табу',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Дереккөз: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Кітапхана: ${library}',
+			'discover.findNext.ownedReason' => 'Кітапханаңыздан',
+			'discover.findNext.liveNow' => 'Қазір көрсетіліп жатыр',
+			'discover.findNext.watchLive' => 'Тікелей эфирді көру',
+			'discover.findNext.filterAnything' => 'Кез келгені',
+			'discover.findNext.filterWatch' => 'Көру',
+			'discover.findNext.filterListen' => 'Тыңдау',
+			'discover.findNext.filterRead' => 'Оқу',
+			'discover.findNext.twentyMinutes' => '20 мин',
+			'discover.findNext.fortyFiveMinutes' => '45 мин',
+			'discover.findNext.ninetyMinutes' => '90 мин',
+			'discover.findNext.apply' => 'Қолдану',
+			'discover.findNext.openFailed' => 'Бұл нұсқа енді қолжетімді емес. Қайта тексеру үшін жаңартыңыз.',
+			'discover.findNext.changeFailed' => 'Бұл өзгерісті сақтау мүмкін болмады. Қайталап көріңіз.',
+			'discover.findNext.savedLimit' => 'Сақталған ұсыныстар тізімі толы. Басқасын сақтау үшін бір ұсынысты алып тастаңыз.',
 			'discover.extras' => 'Трейлерлер мен қосымшалар',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -7075,6 +7185,12 @@ extension on TranslationsKk {
 			'fileSources.useFiles' => 'Бірінші мезгіл файлы және книги',
 			'fileSources.cancelScan' => 'Сұрақтық Сұрағы',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Мысалы: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ қалтаны енгізіңіз.',
+			'fileSources.smbFolderHelp' => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
+			'fileSources.smbDomain' => 'Домен (міндетті емес)',
+			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
+			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
 			'lending.title' => 'Публикалық библиотекасы',
 			'lending.add' => 'Бібліотекасы көшіру',
 			'lending.other' => 'Бібліотеканың басқа',
@@ -7140,7 +7256,7 @@ extension on TranslationsKk {
 			'audiobook.syncSourceDisconnect' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.syncReconnect' => 'Серіктің бір-бірімен бір-бірімен',
 			'audiobook.lastSynced' => ({required Object time}) => 'Қазіргі таңда ${time}',
-			'audiobook.syncPrivacy' => 'Біздің өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін, өнімдерін',
+			'audiobook.syncPrivacy' => 'Тек шифрланған оқу мен тыңдау барысы және жазбалар сақталады. Аудио және электрондық кітап файлдары, аккаунт токендері мен құпиясөздер серверге жіберілмейді. Google Drive және OneDrive қолданбаға арналған сақтау орнын, ал Dropbox PlezyNG Sync орнын пайдаланады. Синхрондауды қосқанда қосымша жазу рұқсаты сұралуы мүмкін. Синхрондау қосулы кезде оқу мен тыңдау барысы осы сақтау орны арқылы синхрондалады; сервердегі барыс бөлек қалады. Синхрондауды өшірсеңіз де, жергілікті тарих пен қашықтағы күй деректері сақталады.',
 			'audiobook.syncConflicts' => 'Ақпараттың арнайы серверлерде сақталуы',
 			'audiobook.conflictHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Өнімдер ${device}',
@@ -7176,6 +7292,100 @@ extension on TranslationsKk {
 			'audiobook.statusFinished' => 'Өткен',
 			'audiobook.goToTime' => 'Қазіргі уақытта',
 			'audiobook.timeHelp' => 'Өнімдер: 1 минут, 1 минут, 1 секунды',
+			'sourceSetup.savedCertificate' => 'Сақталған сервер сертификаты',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export сияқты NFS URL мекенжайын енгізіңіз.',
+			'sourceSetup.dlnaNone' => 'DLNA серверлері табылмады. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.',
+			'sourceSetup.dlnaServers' => 'DLNA медиа серверлері',
+			'sourceSetup.dlnaUnavailable' => 'Бұл желіде DLNA іздеу қолжетімсіз. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.',
+			'sourceSetup.dlnaSearching' => 'Жергілікті желіден DLNA серверлері ізделуде',
+			'sourceSetup.networkSearching' => 'Жергілікті желіден ізделуде…',
+			'sourceSetup.dlnaDiscover' => 'DLNA серверлерін табу',
+			'sourceSetup.dlnaHelp' => 'Іздеу жергілікті желідегі multicast таратылымына байланысты. Сервер көрінбесе, жоғарыда оның құрылғы сипаттамасының URL мекенжайын енгізіңіз.',
+			'sourceSetup.dlnaRoot' => 'DLNA нысанының ID мәні; құрылғының түбірін пайдалану үшін бос қалдырыңыз.',
+			'sourceSetup.passwordOrKey' => 'Құпиясөз енгізіңіз немесе төменде жеке кілт қосыңыз.',
+			'sourceSetup.sshFingerprint' => 'SSH хост кілтінің SHA256 ізі',
+			'sourceSetup.sshFingerprintHelp' => 'Оны сервер әкімшісімен тексеріңіз. Серверде ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub пәрменін орындап, SHA256 мәнін пайдаланыңыз.',
+			'sourceSetup.sshFingerprintKeep' => 'Қазір бекітілген ізді сақтау үшін бос қалдырыңыз немесе сервердің жаңа ізін енгізіңіз.',
+			'sourceSetup.sshAuthentication' => 'Ашық кілтпен SSH аутентификациясы',
+			'sourceSetup.sshAuthenticationHelp' => 'Міндетті емес; құпиясөзбен аутентификация да қолданылады.',
+			'sourceSetup.privateKey' => 'Жеке кілт (PEM немесе OpenSSH пішімі)',
+			'sourceSetup.privateKeyPassphrase' => 'Жеке кілттің құпиясөз тіркесі',
+			'sourceSetup.nfsMountPort' => 'NFS mount қызметінің TCP порты',
+			'sourceSetup.nfsMountPortHelp' => 'Әдепкі: 20048',
+			'sourceSetup.nfsUserId' => 'NFS пайдаланушы ID мәні (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Әдепкі: 1000. NAS-тағы NFS ортақ ресурсы рұқсат ететін ID мәнін пайдаланыңыз.',
+			'sourceSetup.nfsGroupId' => 'NFS тобының ID мәні (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Әдепкі: 1000. NAS-тағы NFS ортақ ресурсы рұқсат ететін топ ID мәнін пайдаланыңыз.',
+			'sourceSetup.nfsEncryption' => 'Шифрланған NFS талап ету (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS пен mount қызметі үшін TLS 1.3 талап етіледі. NAS мұны қолдамаса, қосылым қабылданбайды.',
+			'sourceSetup.nfsTrustCertificate' => 'Теңшелетін NFS CA немесе сервер сертификаты (PEM, міндетті емес)',
+			'sourceSetup.nfsTrustHelp' => 'Осы құрылғы сенетін сертификаттар үшін бос қалдырыңыз. Қажет болса, жеке CA сертификатын немесе өзі қол қойған сервер сертификатын қосыңыз; ондағы атаулар NFS URL мекенжайындағы хостқа сәйкес болуы керек.',
+			'sourceSetup.nfsTrustInvalid' => 'PEM пішіміндегі CA немесе сервер сертификатын пайдаланыңыз. Жеке кілтті қоспаңыз.',
+			'sourceSetup.addTrustCertificate' => 'Теңшелетін сенім сертификатын қосу',
+			'sourceSetup.replaceTrustCertificate' => 'Сақталған теңшелетін сертификатты ауыстыру',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS әдеттегі NFS және mount қызметінің порттарын пайдаланады және NAS-та RFC 9289 қолдауын талап етеді. TLS 1.3 қажет. Хост атауы немесе IP мекенжайы сертификатқа сәйкес болуы керек. Шифрланған арнада да AUTH_SYS UID/GID қолданылады.',
+			'sourceSetup.clientCertificate' => 'Клиент сертификаты (міндетті емес)',
+			'sourceSetup.clientCertificateHelp' => 'NAS-қа осы клиентті аутентификациялауға мүмкіндік береді; AUTH_SYS ID мәндері әлі де NAS-тағы NFS ортақ ресурсының ережелеріне тәуелді.',
+			'sourceSetup.savedIdentity' => 'Сақталған клиенттің сәйкестендіру деректері пайдаланылады.',
+			'sourceSetup.replaceIdentity' => 'Сақталған клиенттің сәйкестендіру деректерін ауыстыру',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 клиент сәйкестендіру деректерін таңдау',
+			'sourceSetup.identityPassphrase' => 'Клиент сәйкестендіру деректерінің құпиясөз тіркесі',
+			'sourceSetup.identityPassphraseHelp' => 'Файлда құпиясөз тіркесі болмаса, бос қалдырыңыз.',
+			'sourceSetup.removeIdentity' => 'Сақталған клиенттің сәйкестендіру деректерін жою',
+			'sourceSetup.identityStorageHelp' => 'Клиенттің сәйкестендіру деректері дереккөздің шифрланған кіру деректері қоймасында сақталады. Сақталған деректерді қалдыру үшін бұл бөлімді өзгертпеңіз.',
+			'sourceSetup.nfsLimitations' => 'TCP арқылы тек оқуға арналған NFSv3. RPC-with-TLS болмаса, NFS трафигі шифрланбайды. NAS таңдалған AUTH_SYS ID мәндеріне және арнайы артықшылықты қажет етпейтін клиент порттарына рұқсат етуі керек (көбіне «insecure» экспорт параметрі деп аталады). NFSv4 пен UDP-ге қолдау көрсетілмейді.',
+			'sourceSetup.nfsSetupHelp' => 'NFS орнату анықтамасы',
+			'sourceSetup.nfsSetupHint' => 'Қосылым ашылмаса, осы параметрлерді тексеріңіз.',
+			'sourceSetup.nfsSetupDetails' => 'TCP арқылы NFSv3 ортақ ресурсын пайдаланыңыз. Шифрлау талап етілсе, NFS қызметі де, mount қызметі де RPC-with-TLS қолдауы керек. Осы құрылғы сенетін сервер сертификаты үшін теңшелетін сертификат өрісін бос қалдырыңыз немесе NAS CA сертификатын не өзі қол қойған сертификатты қосыңыз. Сертификаттағы атау қосылу нүктесінің хостына сәйкес болуы керек. NAS өзара TLS талап етсе, оның PKCS#12 клиент сәйкестендіру деректерін қосыңыз. Соңында ортақ ресурс бапталған AUTH_SYS UID/GID мәндеріне және клиент порттарының ережелеріне рұқсат ететінін тексеріңіз.',
+			'sourceSetup.ftpHelp' => 'FTP пассивті режимді пайдаланады. Шифрланбаған FTP үшін ftp://, TLS кейін арнайы пәрменмен қосылатын режим үшін ftpes://, ал TLS үшін ftps:// пайдаланыңыз (990 портында TLS бірден іске қосылады, басқа порттарда арнайы пәрменмен қосылады).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Жеке бейнелер үшін қосымша субтитр іздеу.',
+			'sourceSetup.apiKey' => 'API кілті',
+			'sourceSetup.optionalUsername' => 'Тіркелгінің пайдаланушы аты (міндетті емес)',
+			'sourceSetup.optionalPassword' => 'Тіркелгі құпиясөзі (міндетті емес)',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com сайтынан API кілтін алыңыз. Іздеу бейне атауын және қолжетімді IMDb/TMDB ID мәндерін жібереді, бірақ бейнефайлды ешқашан жібермейді. Кілт пен қосымша тіркелгі деректері осы дереккөзбен бірге шифрланады.',
+			'sourceSetup.automaticMetadata' => 'Бейненің автоматты онлайн метадеректері',
+			'sourceSetup.metadataPrivacy' => 'Тек файл атауындағы атауды/жылды және эпизод нөмірлерін немесе NFO ID мәнін жібереді; медиа файлдар мен кіру деректерін ешқашан жібермейді. NFO өрістері басымдығын сақтайды.',
+			'sourceSetup.nfsEncryptionFailure' => 'Шифрланған NFS үшін NAS-тың екі қызметінде де RFC 9289 және TLS 1.3 қолдауын, сертификат атауын және ортақ ресурстың UID/GID мәндерін тексеріңіз. PlezyNG бұл қосылымды шифрлаусыз қайта жасамайды.',
+			'sourceSetup.sourceConnecting' => 'Дереккөзге қосылуда',
+			'sourceSetup.metadataSearchPrivacy' => 'Бұл атау іздеуі Trakt қызметіне жіберіледі. Енгізген атауыңыз жіберіледі, бейне не дереккөздің кіру деректері жіберілмейді.',
+			'sourceSetup.chooseMatch' => 'Сәйкес нәтижені таңдау',
+			'sourceSetup.metadataMatchHelp' => 'Таңдамас бұрын атауы мен жылын тексеріңіз. Trakt ізделген атауды алады; бейне өз дереккөзінде қалады.',
+			'sourceSetup.metadataNoMatches' => 'Онлайн сәйкес атаулар табылмады. Басқа атауды байқап көріңіз.',
+			'sourceSetup.metadataSearch' => 'Онлайн метадеректерді іздеу',
+			'sourceSetup.metadataLoading' => 'Онлайн фильмдер мен сериалдар туралы мәліметтер ізделуде…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt қызметінен онлайн метадеректер',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Атауға автоматты сәйкестік табылмады. Сәйкес нәтижені таңдау үшін атауды іздеңіз.',
+			'sourceSetup.metadataFailed' => 'Онлайн метадеректер жүктелмеді. Ойнату мен жергілікті мәліметтер әлі де қолжетімді.',
+			'sourceSetup.videoDetailsLoading' => 'Бейне мәліметтері жүктелуде',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API кілті қажет',
+			'sourceSetup.subtitleKeyHelp' => 'Осы файл дереккөзін өңдеп, қосымша субтитр параметрлеріне OpenSubtitles API кілтін қосыңыз.',
+			'sourceSetup.subtitleSearchFailed' => 'Субтитр іздеу сәтсіз аяқталды. API кілтін, қосылымды және қызметке қолжетімділікті тексеріңіз.',
+			'sourceSetup.subtitleApplyFailed' => 'Бұл субтитр жүктелмеді немесе қолданылмады. Қосылымды тексеріп, басқа нәтижені таңдаңыз.',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles қызметінен іздеу',
+			'sourceSetup.subtitleSearchPrivacy' => 'Іздеу атауды және қолжетімді IMDb/TMDB ID мәндерін пайдаланады. Бейнефайл өз дереккөзінде қалады. Таңдамас бұрын тілді, мәжбүрлі субтитрлер не есту қабілеті шектеулі адамдарға арналған субтитрлер белгілерін және бағасын тексеріңіз.',
+			'sourceSetup.movieOrShow' => 'Фильм немесе сериал',
+			'sourceSetup.subtitleTitleHint' => 'Нәтижелерді нақтылау үшін атауын енгізіңіз',
+			'sourceSetup.subtitleLanguage' => 'Субтитр тілі',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles қызметінен ізделуде',
+			'sourceSetup.subtitleNoMatches' => 'Сәйкес субтитрлер табылмады. Басқа атауды немесе тілді байқап көріңіз.',
+			'sourceSetup.downloadSubtitle' => 'Субтитрді жүктеп алу',
+			'sourceSetup.subtitle' => 'Субтитр',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS қажет',
+			'sourceSetup.nfsUnencrypted' => 'Шифрланбаған NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS арқылы шифрланған',
+			'sourceSetup.ftpPlain' => 'Шифрланбаған FTP',
+			'sourceSetup.sshPinned' => 'SSH шифрланған · хост кілті бекітілген',
+			'sourceSetup.smbEncrypted' => 'SMB3 шифрлауы қосулы',
+			'sourceSetup.smbUnencrypted' => 'SMB3 шифрлауы өшірулі',
+			'sourceSetup.httpUnencrypted' => 'Тасымалдау шифрлауы жоқ HTTP',
+			'sourceSetup.checkEndpointSecurity' => 'Қосылу нүктесінің қауіпсіздігін тексеру',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Міндетті өріс: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} үшін ${min} мен ${max} арасындағы мәнді енгізіңіз.',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} ауыстыру',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Бағасы: ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Субтитр жүктелуде: ${title}',
 			_ => null,
 		};
 	}

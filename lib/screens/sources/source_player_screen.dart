@@ -85,10 +85,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('OpenSubtitles API key required'),
-          content: const Text(
-            'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
-          ),
+          title: Text(t.sourceSetup.subtitleKeyRequired),
+          content: Text(t.sourceSetup.subtitleKeyHelp),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),

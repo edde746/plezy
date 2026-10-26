@@ -11,7 +11,6 @@ import '../../i18n/strings.g.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/bounded_web_socket.dart';
 import '../../utils/serial_future_queue.dart';
 import '../../utils/web_socket_connect.dart';
 import '../base_peer_service.dart';

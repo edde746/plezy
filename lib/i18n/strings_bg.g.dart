@@ -104,6 +104,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$bg fileSources = _Translations$fileSources$bg._(_root);
 	@override late final _Translations$lending$bg lending = _Translations$lending$bg._(_root);
 	@override late final _Translations$audiobook$bg audiobook = _Translations$audiobook$bg._(_root);
+	@override late final _Translations$sourceSetup$bg sourceSetup = _Translations$sourceSetup$bg._(_root);
 }
 
 // Path: app
@@ -3057,6 +3058,12 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get useFiles => 'Използвайте файлове и книги';
 	@override String get cancelScan => 'Отмяна на сканира';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Въведете SMB сървър и една споделена папка.';
+	@override String get smbFolderHelp => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.';
+	@override String get smbDomain => 'Домейн (незадължително)';
+	@override String get smbEncryption => 'Шифроване на SMB3 връзката';
+	@override String get smbEncryptionHint => 'Използвайте SMB3 шифроване, когато NAS го поддържа.';
 }
 
 // Path: lending
@@ -3176,6 +3183,109 @@ class _Translations$audiobook$bg extends Translations$audiobook$en {
 	@override String get statusFinished => 'Завършен';
 	@override String get goToTime => 'Отидете в времето';
 	@override String get timeHelp => 'Време: минути: секунди или минути: секунди';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$bg extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Запазен сертификат на сървъра';
+	@override String get nfsEndpointInvalid => 'Въведете NFS URL, например nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Не са намерени DLNA сървъри. Въведете ръчно URL адреса на описанието на устройството.';
+	@override String get dlnaServers => 'DLNA медийни сървъри';
+	@override String get dlnaUnavailable => 'Откриването на DLNA не е достъпно в тази мрежа. Въведете ръчно URL адреса на описанието на устройството.';
+	@override String get dlnaSearching => 'Търсене на DLNA сървъри в локалната мрежа';
+	@override String get networkSearching => 'Търсене в локалната мрежа…';
+	@override String get dlnaDiscover => 'Откриване на DLNA сървъри';
+	@override String get dlnaHelp => 'Откриването зависи от multicast в локалната мрежа. Ако не се появи сървър, въведете по-горе URL адреса на описанието на устройството му.';
+	@override String get dlnaRoot => 'ID на DLNA обект; оставете празно, за да използвате корена на устройството.';
+	@override String get passwordOrKey => 'Въведете парола или добавете частен ключ по-долу.';
+	@override String get sshFingerprint => 'SHA256 отпечатък на SSH ключа на хоста';
+	@override String get sshFingerprintHelp => 'Проверете го с администратора на сървъра. На сървъра изпълнете ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub и използвайте стойността SHA256.';
+	@override String get sshFingerprintKeep => 'Оставете празно, за да запазите фиксирания отпечатък, или въведете нов отпечатък на сървъра.';
+	@override String get sshAuthentication => 'SSH удостоверяване с публичен ключ';
+	@override String get sshAuthenticationHelp => 'Незадължително; поддържа се и удостоверяване с парола.';
+	@override String get privateKey => 'Частен ключ (формат PEM или OpenSSH)';
+	@override String get privateKeyPassphrase => 'Паролна фраза на частния ключ';
+	@override String get nfsMountPort => 'TCP порт на услугата за монтиране на NFS';
+	@override String get nfsMountPortHelp => 'По подразбиране: 20048';
+	@override String get nfsUserId => 'Потребителски ID за NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'По подразбиране: 1000. Използвайте ID, разрешен от NFS експорта на NAS.';
+	@override String get nfsGroupId => 'ID на група за NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'По подразбиране: 1000. Използвайте ID на група, разрешен от NFS експорта на NAS.';
+	@override String get nfsEncryption => 'Изискване на шифрован NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Изискване на TLS 1.3 за NFS и услугата за монтиране. Ако NAS не го поддържа, връзката се отказва.';
+	@override String get nfsTrustCertificate => 'Персонализиран NFS CA или сертификат на сървъра (PEM, незадължително)';
+	@override String get nfsTrustHelp => 'Оставете празно за сертификатите, на които това устройство се доверява. При нужда добавете сертификат от частен CA или самоподписан сертификат на сървъра; имената в него трябва да съответстват на хоста в NFS URL адреса.';
+	@override String get nfsTrustInvalid => 'Използвайте сертификат на CA или сървър във формат PEM. Не включвайте частен ключ.';
+	@override String get addTrustCertificate => 'Добавяне на персонализиран доверен сертификат';
+	@override String get replaceTrustCertificate => 'Замяна на запазения персонализиран сертификат';
+	@override String get nfsTlsHelp => 'RPC-with-TLS използва обичайните портове на NFS и услугата за монтиране и изисква NAS да поддържа RFC 9289. Изисква се TLS 1.3. Името на хоста или IP адресът трябва да съответства на сертификата. AUTH_SYS UID/GID продължават да важат в шифрования канал.';
+	@override String get clientCertificate => 'Клиентски сертификат (незадължително)';
+	@override String get clientCertificateHelp => 'Позволява на NAS да удостовери този клиент; ID на AUTH_SYS все още зависят от правилата на NFS експорта на NAS.';
+	@override String get savedIdentity => 'Ще се използва запазена клиентска самоличност.';
+	@override String get replaceIdentity => 'Замяна на запазената клиентска самоличност';
+	@override String get chooseIdentity => 'Избор на клиентска самоличност PKCS#12';
+	@override String get identityPassphrase => 'Паролна фраза на клиентската самоличност';
+	@override String get identityPassphraseHelp => 'Оставете празно, ако файлът няма паролна фраза.';
+	@override String get removeIdentity => 'Премахване на запазената клиентска самоличност';
+	@override String get identityStorageHelp => 'Клиентските самоличности се пазят в шифрованото хранилище за идентификационни данни на източника. Не променяйте този раздел, за да запазите съхранената самоличност.';
+	@override String get nfsLimitations => 'NFSv3 през TCP, само за четене. Без RPC-with-TLS трафикът NFS е нешифрован. NAS трябва да разрешава избраните ID на AUTH_SYS и непривилегированите клиентски портове (често чрез опцията за експорт „insecure“). NFSv4 и UDP не се поддържат.';
+	@override String get nfsSetupHelp => 'Помощ за настройване на NFS';
+	@override String get nfsSetupHint => 'Проверете тези настройки, ако връзката не се установява.';
+	@override String get nfsSetupDetails => 'Използвайте NFSv3 експорт през TCP. Когато се изисква шифроване, услугите NFS и за монтиране трябва и двете да поддържат RPC-with-TLS. Оставете персонализирания сертификат празен за сървърен сертификат, на който устройството се доверява, или добавете CA сертификата или самоподписания сертификат на NAS. Името в сертификата трябва да съответства на хоста на крайната точка. Ако NAS изисква взаимно TLS удостоверяване, добавете неговата клиентска самоличност PKCS#12. Накрая потвърдете, че експортът разрешава зададените AUTH_SYS UID/GID и правилата за клиентските портове.';
+	@override String get ftpHelp => 'FTP използва пасивен режим. Използвайте ftp:// за нешифрован FTP, ftpes:// за явен TLS или ftps:// за TLS (неявен на порт 990; явен на останалите портове).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Незадължително търсене на субтитри за отделни видеоклипове.';
+	@override String get apiKey => 'API ключ';
+	@override String get optionalUsername => 'Потребителско име на акаунта (незадължително)';
+	@override String get optionalPassword => 'Парола на акаунта (незадължително)';
+	@override String get subtitlePrivacy => 'Вземете API ключ от opensubtitles.com. Търсенето изпраща заглавието на видеото и наличните IMDb/TMDB ID, никога видеофайла. Ключът и незадължителните данни за вход се шифроват заедно с този източник.';
+	@override String get automaticMetadata => 'Автоматични онлайн метаданни за видео';
+	@override String get metadataPrivacy => 'Изпращат се само заглавие/година от името на файла и номера на епизоди или NFO ID, никога медийни файлове или данни за вход. Полетата NFO запазват предимство.';
+	@override String get nfsEncryptionFailure => 'За шифрован NFS проверете поддръжката на RFC 9289 и TLS 1.3 от двете NAS услуги, името в сертификата и UID/GID на експорта. PlezyNG няма да опита тази връзка отново без шифроване.';
+	@override String get sourceConnecting => 'Свързване с източника';
+	@override String get metadataSearchPrivacy => 'Това търсене на заглавие се изпраща до Trakt. Изпраща се въведеното заглавие, а не видеото или данните за вход в източника.';
+	@override String get chooseMatch => 'Избор на съвпадение';
+	@override String get metadataMatchHelp => 'Проверете заглавието и годината, преди да изберете. Trakt получава търсеното заглавие; видеото остава в своя източник.';
+	@override String get metadataNoMatches => 'Не са намерени съвпадащи заглавия онлайн. Опитайте друго заглавие.';
+	@override String get metadataSearch => 'Търсене на онлайн метаданни';
+	@override String get metadataLoading => 'Търсене на онлайн информация за филми и сериали…';
+	@override String get metadataFromTrakt => 'Онлайн метаданни от Trakt';
+	@override String get metadataNoAutomaticMatch => 'Не е намерено автоматично съвпадение на заглавието. Потърсете заглавието, за да изберете съвпадение.';
+	@override String get metadataFailed => 'Онлайн метаданните не можаха да се заредят. Възпроизвеждането и локалната информация остават достъпни.';
+	@override String get videoDetailsLoading => 'Зареждане на информация за видеото';
+	@override String get subtitleKeyRequired => 'Необходим е API ключ за OpenSubtitles';
+	@override String get subtitleKeyHelp => 'Редактирайте този файлов източник и добавете API ключ за OpenSubtitles в незадължителните настройки за субтитри.';
+	@override String get subtitleSearchFailed => 'Търсенето на субтитри е неуспешно. Проверете API ключа, връзката и достъпа до услугата.';
+	@override String get subtitleApplyFailed => 'Тези субтитри не можаха да се изтеглят или приложат. Проверете връзката и опитайте друг резултат.';
+	@override String get subtitleSearch => 'Търсене в OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Търсенето използва заглавието и наличните IMDb/TMDB ID. Видеофайлът остава в своя източник. Преди избор проверете езика, означенията за принудителни субтитри или субтитри за хора с увреден слух и оценката.';
+	@override String get movieOrShow => 'Филм или сериал';
+	@override String get subtitleTitleHint => 'Въведете заглавие, за да уточните резултатите';
+	@override String get subtitleLanguage => 'Език на субтитрите';
+	@override String get subtitleSearching => 'Търсене в OpenSubtitles';
+	@override String get subtitleNoMatches => 'Не са намерени съответстващи субтитри. Опитайте друго заглавие или език.';
+	@override String get downloadSubtitle => 'Изтегляне на субтитри';
+	@override String get subtitle => 'Субтитри';
+	@override String get nfsTlsRequired => 'Изисква се RPC-with-TLS';
+	@override String get nfsUnencrypted => 'Нешифрован NFS';
+	@override String get tlsEncrypted => 'Шифровано с TLS';
+	@override String get ftpPlain => 'Нешифрован FTP';
+	@override String get sshPinned => 'Шифрован SSH · фиксиран ключ на хоста';
+	@override String get smbEncrypted => 'SMB3 шифроването е включено';
+	@override String get smbUnencrypted => 'SMB3 шифроването е изключено';
+	@override String get httpUnencrypted => 'HTTP без шифроване на преноса';
+	@override String get checkEndpointSecurity => 'Проверка на сигурността на крайната точка';
+	@override String fieldRequired({required Object label}) => 'Задължително поле: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'За „${label}“ въведете стойност от ${min} до ${max}.';
+	@override String replaceFile({required Object name}) => 'Замяна на ${name}';
+	@override String selectedIdentity({required Object name}) => 'Избрана клиентска самоличност: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Оценка ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Изтегляне на субтитри: ${title}';
 }
 
 // Path: appIcon.names
@@ -3429,48 +3539,48 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Намерете следващия си';
-	@override String get open => 'Намерете следващия си';
-	@override String get anyTime => 'по всяко време';
-	@override String get timeAvailable => 'Колко време имате?';
-	@override String get filters => 'Изберете момента';
-	@override String get watch => 'Гледай';
-	@override String get listen => 'Слушайте';
-	@override String get read => 'Прочетете';
-	@override String finishable({required Object duration}) => 'Завършване в ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Относно ${duration}';
-	@override String nextUnit({required Object duration}) => 'Следваща статия · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} Общо';
-	@override String get timingVaries => 'Времето варира';
+	@override String get title => 'Открийте следващото си любимо заглавие';
+	@override String get open => 'Открийте следващото си любимо заглавие';
+	@override String get anyTime => 'Без ограничение';
+	@override String get timeAvailable => 'С колко време разполагате?';
+	@override String get filters => 'Изберете според момента';
+	@override String get watch => 'Гледане';
+	@override String get listen => 'Слушане';
+	@override String get read => 'Четене';
+	@override String finishable({required Object duration}) => 'Можете да завършите за ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Около ${duration}';
+	@override String nextUnit({required Object duration}) => 'Следваща глава · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Общо ${duration}';
+	@override String get timingVaries => 'Продължителността варира';
 	@override String get notNow => 'Не сега';
-	@override String get swipeHint => 'Свържете или използвайте бутоните по-долу';
-	@override String get saved => 'Спасени пикове';
-	@override String savedCount({required Object count}) => 'Спасени пикове · ${count}';
-	@override String get undo => 'идо';
+	@override String get swipeHint => 'Плъзнете или използвайте бутоните отдолу';
+	@override String get saved => 'Запазени предложения';
+	@override String savedCount({required Object count}) => 'Запазени предложения · ${count}';
+	@override String get undo => 'Отмяна';
 	@override String get details => 'Подробности';
-	@override String get noPicks => 'Няма какво да изберем още';
-	@override String get noPicksHint => 'Свържете библиотека или добавете източник на медии, за да започнете.';
-	@override String get noMatches => 'Нищо не отговаря на този момент';
-	@override String get noMatchesHint => 'Опитайте друг формат или си дайте повече време.';
-	@override String get allDone => 'Всички сте заловени';
-	@override String get allDoneHint => 'Започнете нова смес, за да видите отново тези опции.';
-	@override String get refresh => 'Намерете още микс';
-	@override String sourceReason({required Object source}) => 'от ${source}';
-	@override String libraryReason({required Object library}) => 'от ${library}';
-	@override String get ownedReason => 'От твоята библиотека';
-	@override String get liveNow => 'В момента';
+	@override String get noPicks => 'Все още няма предложения';
+	@override String get noPicksHint => 'Свържете библиотека или добавете медиен източник, за да започнете.';
+	@override String get noMatches => 'Няма подходящо предложение за момента';
+	@override String get noMatchesHint => 'Опитайте друг вид медия или отделете повече време.';
+	@override String get allDone => 'Разгледахте всички предложения';
+	@override String get allDoneHint => 'Започнете нова подборка, за да видите тези предложения отново.';
+	@override String get refresh => 'Намерете друга подборка';
+	@override String sourceReason({required Object source}) => 'От ${source}';
+	@override String libraryReason({required Object library}) => 'От ${library}';
+	@override String get ownedReason => 'От вашата библиотека';
+	@override String get liveNow => 'В ефир сега';
 	@override String get watchLive => 'Гледайте на живо';
 	@override String get filterAnything => 'Всичко';
-	@override String get filterWatch => 'Гледай';
-	@override String get filterListen => 'Слушайте';
-	@override String get filterRead => 'Прочетете';
-	@override String get twentyMinutes => '20 минути';
-	@override String get fortyFiveMinutes => '45 минути';
-	@override String get ninetyMinutes => '90 минути';
+	@override String get filterWatch => 'Гледане';
+	@override String get filterListen => 'Слушане';
+	@override String get filterRead => 'Четене';
+	@override String get twentyMinutes => '20 мин';
+	@override String get fortyFiveMinutes => '45 мин';
+	@override String get ninetyMinutes => '90 мин';
 	@override String get apply => 'Прилагане';
-	@override String get openFailed => 'Тази опция вече не е на разположение. пренасочете, за да проверите отново.';
-	@override String get changeFailed => 'Не мога да спасявам тази промяна. опитайте отново.';
-	@override String get savedLimit => 'Спасените пикове са пълни. Премахнете един избор, за да спестите друг.';
+	@override String get openFailed => 'Това предложение вече не е налично. Обновете, за да проверите отново.';
+	@override String get changeFailed => 'Промяната не можа да бъде запазена. Опитайте отново.';
+	@override String get savedLimit => 'Списъкът със запазени предложения е пълен. Премахнете едно, за да запазите друго.';
 }
 
 // Path: discover.person
@@ -5460,48 +5570,48 @@ extension on TranslationsBg {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'Актьори',
-			'discover.findNext.title' => 'Намерете следващия си',
-			'discover.findNext.open' => 'Намерете следващия си',
-			'discover.findNext.anyTime' => 'по всяко време',
-			'discover.findNext.timeAvailable' => 'Колко време имате?',
-			'discover.findNext.filters' => 'Изберете момента',
-			'discover.findNext.watch' => 'Гледай',
-			'discover.findNext.listen' => 'Слушайте',
-			'discover.findNext.read' => 'Прочетете',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Завършване в ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Относно ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Следваща статия · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Общо',
-			'discover.findNext.timingVaries' => 'Времето варира',
+			'discover.findNext.title' => 'Открийте следващото си любимо заглавие',
+			'discover.findNext.open' => 'Открийте следващото си любимо заглавие',
+			'discover.findNext.anyTime' => 'Без ограничение',
+			'discover.findNext.timeAvailable' => 'С колко време разполагате?',
+			'discover.findNext.filters' => 'Изберете според момента',
+			'discover.findNext.watch' => 'Гледане',
+			'discover.findNext.listen' => 'Слушане',
+			'discover.findNext.read' => 'Четене',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Можете да завършите за ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Около ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Следваща глава · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Общо ${duration}',
+			'discover.findNext.timingVaries' => 'Продължителността варира',
 			'discover.findNext.notNow' => 'Не сега',
-			'discover.findNext.swipeHint' => 'Свържете или използвайте бутоните по-долу',
-			'discover.findNext.saved' => 'Спасени пикове',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Спасени пикове · ${count}',
-			'discover.findNext.undo' => 'идо',
+			'discover.findNext.swipeHint' => 'Плъзнете или използвайте бутоните отдолу',
+			'discover.findNext.saved' => 'Запазени предложения',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Запазени предложения · ${count}',
+			'discover.findNext.undo' => 'Отмяна',
 			'discover.findNext.details' => 'Подробности',
-			'discover.findNext.noPicks' => 'Няма какво да изберем още',
-			'discover.findNext.noPicksHint' => 'Свържете библиотека или добавете източник на медии, за да започнете.',
-			'discover.findNext.noMatches' => 'Нищо не отговаря на този момент',
-			'discover.findNext.noMatchesHint' => 'Опитайте друг формат или си дайте повече време.',
-			'discover.findNext.allDone' => 'Всички сте заловени',
-			'discover.findNext.allDoneHint' => 'Започнете нова смес, за да видите отново тези опции.',
-			'discover.findNext.refresh' => 'Намерете още микс',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'от ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'от ${library}',
-			'discover.findNext.ownedReason' => 'От твоята библиотека',
-			'discover.findNext.liveNow' => 'В момента',
+			'discover.findNext.noPicks' => 'Все още няма предложения',
+			'discover.findNext.noPicksHint' => 'Свържете библиотека или добавете медиен източник, за да започнете.',
+			'discover.findNext.noMatches' => 'Няма подходящо предложение за момента',
+			'discover.findNext.noMatchesHint' => 'Опитайте друг вид медия или отделете повече време.',
+			'discover.findNext.allDone' => 'Разгледахте всички предложения',
+			'discover.findNext.allDoneHint' => 'Започнете нова подборка, за да видите тези предложения отново.',
+			'discover.findNext.refresh' => 'Намерете друга подборка',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'От ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'От ${library}',
+			'discover.findNext.ownedReason' => 'От вашата библиотека',
+			'discover.findNext.liveNow' => 'В ефир сега',
 			'discover.findNext.watchLive' => 'Гледайте на живо',
 			'discover.findNext.filterAnything' => 'Всичко',
-			'discover.findNext.filterWatch' => 'Гледай',
-			'discover.findNext.filterListen' => 'Слушайте',
-			'discover.findNext.filterRead' => 'Прочетете',
-			'discover.findNext.twentyMinutes' => '20 минути',
-			'discover.findNext.fortyFiveMinutes' => '45 минути',
-			'discover.findNext.ninetyMinutes' => '90 минути',
+			'discover.findNext.filterWatch' => 'Гледане',
+			'discover.findNext.filterListen' => 'Слушане',
+			'discover.findNext.filterRead' => 'Четене',
+			'discover.findNext.twentyMinutes' => '20 мин',
+			'discover.findNext.fortyFiveMinutes' => '45 мин',
+			'discover.findNext.ninetyMinutes' => '90 мин',
 			'discover.findNext.apply' => 'Прилагане',
-			'discover.findNext.openFailed' => 'Тази опция вече не е на разположение. пренасочете, за да проверите отново.',
-			'discover.findNext.changeFailed' => 'Не мога да спасявам тази промяна. опитайте отново.',
-			'discover.findNext.savedLimit' => 'Спасените пикове са пълни. Премахнете един избор, за да спестите друг.',
+			'discover.findNext.openFailed' => 'Това предложение вече не е налично. Обновете, за да проверите отново.',
+			'discover.findNext.changeFailed' => 'Промяната не можа да бъде запазена. Опитайте отново.',
+			'discover.findNext.savedLimit' => 'Списъкът със запазени предложения е пълен. Премахнете едно, за да запазите друго.',
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',
@@ -7075,6 +7185,12 @@ extension on TranslationsBg {
 			'fileSources.useFiles' => 'Използвайте файлове и книги',
 			'fileSources.cancelScan' => 'Отмяна на сканира',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Въведете SMB сървър и една споделена папка.',
+			'fileSources.smbFolderHelp' => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.',
+			'fileSources.smbDomain' => 'Домейн (незадължително)',
+			'fileSources.smbEncryption' => 'Шифроване на SMB3 връзката',
+			'fileSources.smbEncryptionHint' => 'Използвайте SMB3 шифроване, когато NAS го поддържа.',
 			'lending.title' => 'Публични библиотеки',
 			'lending.add' => 'Добавете библиотека',
 			'lending.other' => 'Друга библиотека',
@@ -7176,6 +7292,100 @@ extension on TranslationsBg {
 			'audiobook.statusFinished' => 'Завършен',
 			'audiobook.goToTime' => 'Отидете в времето',
 			'audiobook.timeHelp' => 'Време: минути: секунди или минути: секунди',
+			'sourceSetup.savedCertificate' => 'Запазен сертификат на сървъра',
+			'sourceSetup.nfsEndpointInvalid' => 'Въведете NFS URL, например nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Не са намерени DLNA сървъри. Въведете ръчно URL адреса на описанието на устройството.',
+			'sourceSetup.dlnaServers' => 'DLNA медийни сървъри',
+			'sourceSetup.dlnaUnavailable' => 'Откриването на DLNA не е достъпно в тази мрежа. Въведете ръчно URL адреса на описанието на устройството.',
+			'sourceSetup.dlnaSearching' => 'Търсене на DLNA сървъри в локалната мрежа',
+			'sourceSetup.networkSearching' => 'Търсене в локалната мрежа…',
+			'sourceSetup.dlnaDiscover' => 'Откриване на DLNA сървъри',
+			'sourceSetup.dlnaHelp' => 'Откриването зависи от multicast в локалната мрежа. Ако не се появи сървър, въведете по-горе URL адреса на описанието на устройството му.',
+			'sourceSetup.dlnaRoot' => 'ID на DLNA обект; оставете празно, за да използвате корена на устройството.',
+			'sourceSetup.passwordOrKey' => 'Въведете парола или добавете частен ключ по-долу.',
+			'sourceSetup.sshFingerprint' => 'SHA256 отпечатък на SSH ключа на хоста',
+			'sourceSetup.sshFingerprintHelp' => 'Проверете го с администратора на сървъра. На сървъра изпълнете ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub и използвайте стойността SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Оставете празно, за да запазите фиксирания отпечатък, или въведете нов отпечатък на сървъра.',
+			'sourceSetup.sshAuthentication' => 'SSH удостоверяване с публичен ключ',
+			'sourceSetup.sshAuthenticationHelp' => 'Незадължително; поддържа се и удостоверяване с парола.',
+			'sourceSetup.privateKey' => 'Частен ключ (формат PEM или OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Паролна фраза на частния ключ',
+			'sourceSetup.nfsMountPort' => 'TCP порт на услугата за монтиране на NFS',
+			'sourceSetup.nfsMountPortHelp' => 'По подразбиране: 20048',
+			'sourceSetup.nfsUserId' => 'Потребителски ID за NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'По подразбиране: 1000. Използвайте ID, разрешен от NFS експорта на NAS.',
+			'sourceSetup.nfsGroupId' => 'ID на група за NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'По подразбиране: 1000. Използвайте ID на група, разрешен от NFS експорта на NAS.',
+			'sourceSetup.nfsEncryption' => 'Изискване на шифрован NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Изискване на TLS 1.3 за NFS и услугата за монтиране. Ако NAS не го поддържа, връзката се отказва.',
+			'sourceSetup.nfsTrustCertificate' => 'Персонализиран NFS CA или сертификат на сървъра (PEM, незадължително)',
+			'sourceSetup.nfsTrustHelp' => 'Оставете празно за сертификатите, на които това устройство се доверява. При нужда добавете сертификат от частен CA или самоподписан сертификат на сървъра; имената в него трябва да съответстват на хоста в NFS URL адреса.',
+			'sourceSetup.nfsTrustInvalid' => 'Използвайте сертификат на CA или сървър във формат PEM. Не включвайте частен ключ.',
+			'sourceSetup.addTrustCertificate' => 'Добавяне на персонализиран доверен сертификат',
+			'sourceSetup.replaceTrustCertificate' => 'Замяна на запазения персонализиран сертификат',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS използва обичайните портове на NFS и услугата за монтиране и изисква NAS да поддържа RFC 9289. Изисква се TLS 1.3. Името на хоста или IP адресът трябва да съответства на сертификата. AUTH_SYS UID/GID продължават да важат в шифрования канал.',
+			'sourceSetup.clientCertificate' => 'Клиентски сертификат (незадължително)',
+			'sourceSetup.clientCertificateHelp' => 'Позволява на NAS да удостовери този клиент; ID на AUTH_SYS все още зависят от правилата на NFS експорта на NAS.',
+			'sourceSetup.savedIdentity' => 'Ще се използва запазена клиентска самоличност.',
+			'sourceSetup.replaceIdentity' => 'Замяна на запазената клиентска самоличност',
+			'sourceSetup.chooseIdentity' => 'Избор на клиентска самоличност PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Паролна фраза на клиентската самоличност',
+			'sourceSetup.identityPassphraseHelp' => 'Оставете празно, ако файлът няма паролна фраза.',
+			'sourceSetup.removeIdentity' => 'Премахване на запазената клиентска самоличност',
+			'sourceSetup.identityStorageHelp' => 'Клиентските самоличности се пазят в шифрованото хранилище за идентификационни данни на източника. Не променяйте този раздел, за да запазите съхранената самоличност.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 през TCP, само за четене. Без RPC-with-TLS трафикът NFS е нешифрован. NAS трябва да разрешава избраните ID на AUTH_SYS и непривилегированите клиентски портове (често чрез опцията за експорт „insecure“). NFSv4 и UDP не се поддържат.',
+			'sourceSetup.nfsSetupHelp' => 'Помощ за настройване на NFS',
+			'sourceSetup.nfsSetupHint' => 'Проверете тези настройки, ако връзката не се установява.',
+			'sourceSetup.nfsSetupDetails' => 'Използвайте NFSv3 експорт през TCP. Когато се изисква шифроване, услугите NFS и за монтиране трябва и двете да поддържат RPC-with-TLS. Оставете персонализирания сертификат празен за сървърен сертификат, на който устройството се доверява, или добавете CA сертификата или самоподписания сертификат на NAS. Името в сертификата трябва да съответства на хоста на крайната точка. Ако NAS изисква взаимно TLS удостоверяване, добавете неговата клиентска самоличност PKCS#12. Накрая потвърдете, че експортът разрешава зададените AUTH_SYS UID/GID и правилата за клиентските портове.',
+			'sourceSetup.ftpHelp' => 'FTP използва пасивен режим. Използвайте ftp:// за нешифрован FTP, ftpes:// за явен TLS или ftps:// за TLS (неявен на порт 990; явен на останалите портове).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Незадължително търсене на субтитри за отделни видеоклипове.',
+			'sourceSetup.apiKey' => 'API ключ',
+			'sourceSetup.optionalUsername' => 'Потребителско име на акаунта (незадължително)',
+			'sourceSetup.optionalPassword' => 'Парола на акаунта (незадължително)',
+			'sourceSetup.subtitlePrivacy' => 'Вземете API ключ от opensubtitles.com. Търсенето изпраща заглавието на видеото и наличните IMDb/TMDB ID, никога видеофайла. Ключът и незадължителните данни за вход се шифроват заедно с този източник.',
+			'sourceSetup.automaticMetadata' => 'Автоматични онлайн метаданни за видео',
+			'sourceSetup.metadataPrivacy' => 'Изпращат се само заглавие/година от името на файла и номера на епизоди или NFO ID, никога медийни файлове или данни за вход. Полетата NFO запазват предимство.',
+			'sourceSetup.nfsEncryptionFailure' => 'За шифрован NFS проверете поддръжката на RFC 9289 и TLS 1.3 от двете NAS услуги, името в сертификата и UID/GID на експорта. PlezyNG няма да опита тази връзка отново без шифроване.',
+			'sourceSetup.sourceConnecting' => 'Свързване с източника',
+			'sourceSetup.metadataSearchPrivacy' => 'Това търсене на заглавие се изпраща до Trakt. Изпраща се въведеното заглавие, а не видеото или данните за вход в източника.',
+			'sourceSetup.chooseMatch' => 'Избор на съвпадение',
+			'sourceSetup.metadataMatchHelp' => 'Проверете заглавието и годината, преди да изберете. Trakt получава търсеното заглавие; видеото остава в своя източник.',
+			'sourceSetup.metadataNoMatches' => 'Не са намерени съвпадащи заглавия онлайн. Опитайте друго заглавие.',
+			'sourceSetup.metadataSearch' => 'Търсене на онлайн метаданни',
+			'sourceSetup.metadataLoading' => 'Търсене на онлайн информация за филми и сериали…',
+			'sourceSetup.metadataFromTrakt' => 'Онлайн метаданни от Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Не е намерено автоматично съвпадение на заглавието. Потърсете заглавието, за да изберете съвпадение.',
+			'sourceSetup.metadataFailed' => 'Онлайн метаданните не можаха да се заредят. Възпроизвеждането и локалната информация остават достъпни.',
+			'sourceSetup.videoDetailsLoading' => 'Зареждане на информация за видеото',
+			'sourceSetup.subtitleKeyRequired' => 'Необходим е API ключ за OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'Редактирайте този файлов източник и добавете API ключ за OpenSubtitles в незадължителните настройки за субтитри.',
+			'sourceSetup.subtitleSearchFailed' => 'Търсенето на субтитри е неуспешно. Проверете API ключа, връзката и достъпа до услугата.',
+			'sourceSetup.subtitleApplyFailed' => 'Тези субтитри не можаха да се изтеглят или приложат. Проверете връзката и опитайте друг резултат.',
+			'sourceSetup.subtitleSearch' => 'Търсене в OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Търсенето използва заглавието и наличните IMDb/TMDB ID. Видеофайлът остава в своя източник. Преди избор проверете езика, означенията за принудителни субтитри или субтитри за хора с увреден слух и оценката.',
+			'sourceSetup.movieOrShow' => 'Филм или сериал',
+			'sourceSetup.subtitleTitleHint' => 'Въведете заглавие, за да уточните резултатите',
+			'sourceSetup.subtitleLanguage' => 'Език на субтитрите',
+			'sourceSetup.subtitleSearching' => 'Търсене в OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Не са намерени съответстващи субтитри. Опитайте друго заглавие или език.',
+			'sourceSetup.downloadSubtitle' => 'Изтегляне на субтитри',
+			'sourceSetup.subtitle' => 'Субтитри',
+			'sourceSetup.nfsTlsRequired' => 'Изисква се RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'Нешифрован NFS',
+			'sourceSetup.tlsEncrypted' => 'Шифровано с TLS',
+			'sourceSetup.ftpPlain' => 'Нешифрован FTP',
+			'sourceSetup.sshPinned' => 'Шифрован SSH · фиксиран ключ на хоста',
+			'sourceSetup.smbEncrypted' => 'SMB3 шифроването е включено',
+			'sourceSetup.smbUnencrypted' => 'SMB3 шифроването е изключено',
+			'sourceSetup.httpUnencrypted' => 'HTTP без шифроване на преноса',
+			'sourceSetup.checkEndpointSecurity' => 'Проверка на сигурността на крайната точка',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Задължително поле: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'За „${label}“ въведете стойност от ${min} до ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Замяна на ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Избрана клиентска самоличност: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Оценка ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Изтегляне на субтитри: ${title}',
 			_ => null,
 		};
 	}

@@ -27,18 +27,22 @@ import '../lending/public_libraries_screen.dart';
 String sourceTransportLabel(FileSource source) {
   final type = sourceKindName(source.kind);
   final scheme = Uri.tryParse(source.endpoint)?.scheme.toLowerCase();
-  return switch (source.kind) {
+  final transport = switch (source.kind) {
     FileSourceKind.nfs =>
-      '$type · ${source.options['rpcTls'] == 'required' ? 'RPC-with-TLS required' : 'Unencrypted NFS'}',
-    FileSourceKind.ftp =>
-      '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
-    FileSourceKind.sftp => '$type · SSH encrypted · host key pinned',
+      source.options['rpcTls'] == 'required' ? t.sourceSetup.nfsTlsRequired : t.sourceSetup.nfsUnencrypted,
+    FileSourceKind.ftp => scheme == 'ftpes' || scheme == 'ftps' ? t.sourceSetup.tlsEncrypted : t.sourceSetup.ftpPlain,
+    FileSourceKind.sftp => t.sourceSetup.sshPinned,
     FileSourceKind.smb =>
-      '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption on' : 'SMB3 encryption off'}',
+      source.options['encryptSmb'] == 'true' ? t.sourceSetup.smbEncrypted : t.sourceSetup.smbUnencrypted,
     FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna =>
-      '$type · ${scheme == 'https' ? 'HTTPS' : scheme == 'http' ? 'HTTP without transport encryption' : 'Check endpoint security'}',
-    _ => type,
+      scheme == 'https'
+          ? 'HTTPS'
+          : scheme == 'http'
+          ? t.sourceSetup.httpUnencrypted
+          : t.sourceSetup.checkEndpointSecurity,
+    _ => null,
   };
+  return transport == null ? type : '$type · $transport';
 }
 
 class SourcesScreen extends StatefulWidget {

@@ -103,6 +103,8 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$platform$zh platform = Translations$platform$zh.internal(_root);
 	@override late final Translations$fileSources$zh fileSources = Translations$fileSources$zh.internal(_root);
 	@override late final Translations$lending$zh lending = Translations$lending$zh.internal(_root);
+	@override late final Translations$audiobook$zh audiobook = Translations$audiobook$zh.internal(_root);
+	@override late final Translations$sourceSetup$zh sourceSetup = Translations$sourceSetup$zh.internal(_root);
 }
 
 // Path: app
@@ -1519,6 +1521,7 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
+	@override late final Translations$discover$findNext$zh findNext = Translations$discover$findNext$zh.internal(_root);
 	@override String get extras => '预告片与花絮';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
@@ -3050,6 +3053,12 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get useFiles => '使用文件和书籍';
 	@override String get cancelScan => '取消扫描';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => '示例：smb://nas/Movies';
+	@override String get smbEndpointInvalid => '请输入 SMB 服务器和一个共享文件夹。';
+	@override String get smbFolderHelp => '留空以使用整个共享文件夹，或输入其中的某个文件夹。';
+	@override String get smbDomain => '域（可选）';
+	@override String get smbEncryption => '加密 SMB3 连接';
+	@override String get smbEncryptionHint => '当 NAS 支持时，使用 SMB3 加密。';
 }
 
 // Path: lending
@@ -3109,6 +3118,169 @@ class Translations$lending$zh extends Translations$lending$en {
 	@override String get suspendMessage => '要保留排队位置，让下一位读者先借阅此副本吗？您可以稍后恢复预约。';
 	@override String get resumeMessage => '要恢复此预约，以便图书馆为您提供下一份可借阅的副本吗？';
 	@override String get editEmail => '更改通知电子邮件';
+}
+
+// Path: audiobook
+class Translations$audiobook$zh extends Translations$audiobook$en {
+	Translations$audiobook$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get syncTitle => '阅读与倾听Sync';
+	@override String get syncHelp => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。';
+	@override String get addSyncSource => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。';
+	@override String get syncDestination => '同步存储帐户';
+	@override String get syncFolder => '同步文件夹或预定';
+	@override String get syncFolderHelp => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。';
+	@override String get syncCode => '个人同步代码';
+	@override String get syncCodeHelp => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。';
+	@override String get showCode => '显示或隐藏同步代码';
+	@override String get newSyncCode => '创建一个新的同步代码';
+	@override String get saveSync => '保存和同步';
+	@override String get disableSync => '在此设备上关闭同步';
+	@override String get syncSourceDisconnect => '移除此来源会关闭此设备上的阅读和收听同步。加密的同步文件仍会保留在存储服务提供商处。';
+	@override String get syncReconnect => '重新连接存储帐户';
+	@override String lastSynced({required Object time}) => '上一篇: ${time}';
+	@override String get syncPrivacy => '仅存储加密的进度和笔记。音频文件、电子书文件、账号令牌和密码不会上传。Google Drive 和 OneDrive 使用应用专用存储空间；Dropbox 使用 PlezyNG Sync。启用同步时，可能会请求额外的写入权限。启用后，进度同步由此存储目标负责，服务器进度保持独立。关闭同步后，本地历史记录和远程状态仍会保留。';
+	@override String get syncConflicts => '选择重定向的地方';
+	@override String get conflictHelp => '这些更改是分别独立做出的。请选择要保留的进度位置或书签版本。时间戳较新或进度百分比较高的版本不会自动优先保留。';
+	@override String syncDevice({required Object device}) => '裝置 ${device}';
+	@override String get syncUnknownDevice => '未知设备';
+	@override String get deletedBookmark => '删除图标';
+	@override String get finished => '结束';
+	@override String readingPosition({required Object percent}) => '阅读 · ${percent}%';
+	@override String get chapterTimeline => '第四章 进展';
+	@override String get bookTimeline => '全书进展';
+	@override String bookRemaining({required Object time}) => '本书剩余时间：${time}';
+	@override String chapterRemaining({required Object time}) => '此分類上一篇: ${time}';
+	@override String get unknownRemaining => '全部时间可用,当部分被播放时';
+	@override String get undoSeek => '最后寻找';
+	@override String get customSpeed => '定制播放速度';
+	@override String get speedHelp => '选择速度从 0.25× 到 4×。';
+	@override String get apply => '應用';
+	@override String get customSleep => '定制睡眠时间';
+	@override String get sleepMinutes => '时间(1 - 1440)';
+	@override String sleepChapters({required Object count}) => '播放完${count}章后停止';
+	@override String get extendSleep => '添加5分钟';
+	@override String sleepRemaining({required Object time}) => '睡眠时间: ${time}';
+	@override String get useDefaults => '使用这些听力控制器为新书';
+	@override String get librarySort => '各式各样的书籍';
+	@override String get sortTitle => '标题';
+	@override String get sortAuthor => '作者';
+	@override String get sortNarrator => '讲话者';
+	@override String get sortSeries => '系列命令';
+	@override String get sortRecent => '最近开放';
+	@override String get statusFilter => '阅读状态';
+	@override String get statusAll => '所有书籍';
+	@override String get statusNew => '没有开始';
+	@override String get statusProgress => '进展';
+	@override String get statusFinished => '结束';
+	@override String get goToTime => '走到时间';
+	@override String get timeHelp => '时间: 分钟: 秒或 分钟: 秒';
+}
+
+// Path: sourceSetup
+class Translations$sourceSetup$zh extends Translations$sourceSetup$en {
+	Translations$sourceSetup$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => '已保存的服务器证书';
+	@override String get nfsEndpointInvalid => '请输入 NFS 地址，例如 nfs://nas:2049/export。';
+	@override String get dlnaNone => '未找到 DLNA 服务器。请手动输入设备描述文件的地址。';
+	@override String get dlnaServers => 'DLNA 媒体服务器';
+	@override String get dlnaUnavailable => '无法在此网络上发现 DLNA 设备。请手动输入设备描述文件的地址。';
+	@override String get dlnaSearching => '正在本地网络中搜索 DLNA 服务器';
+	@override String get networkSearching => '正在搜索本地网络…';
+	@override String get dlnaDiscover => '发现 DLNA 服务器';
+	@override String get dlnaHelp => '设备发现需要本地网络支持组播。如果没有找到服务器，请在上方输入设备描述文件的地址。';
+	@override String get dlnaRoot => 'DLNA 对象 ID；留空以使用设备根目录。';
+	@override String get passwordOrKey => '请输入密码，或在下方添加私钥。';
+	@override String get sshFingerprint => 'SSH 主机密钥 SHA256 指纹';
+	@override String get sshFingerprintHelp => '请向服务器管理员核实。在服务器上运行 ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub，并使用显示的 SHA256 值。';
+	@override String get sshFingerprintKeep => '留空以保留当前固定的指纹，或输入新的服务器指纹。';
+	@override String get sshAuthentication => 'SSH 公钥认证';
+	@override String get sshAuthenticationHelp => '可选；也支持密码认证。';
+	@override String get privateKey => '私钥（PEM 或 OpenSSH 格式）';
+	@override String get privateKeyPassphrase => '私钥口令';
+	@override String get nfsMountPort => 'NFS 挂载服务 TCP 端口';
+	@override String get nfsMountPortHelp => '默认值：20048';
+	@override String get nfsUserId => 'NFS 用户 ID（AUTH_SYS）';
+	@override String get nfsUserIdHelp => '默认值：1000。请使用 NAS 导出配置允许的用户 ID。';
+	@override String get nfsGroupId => 'NFS 组 ID（AUTH_SYS）';
+	@override String get nfsGroupIdHelp => '默认值：1000。请使用 NAS 导出配置允许的组 ID。';
+	@override String get nfsEncryption => '要求加密 NFS 连接（RPC-with-TLS）';
+	@override String get nfsEncryptionHelp => '要求 NFS 和挂载服务使用 TLS 1.3。如果 NAS 不支持，将拒绝连接。';
+	@override String get nfsTrustCertificate => '自定义 NFS CA 或服务器证书（PEM，可选）';
+	@override String get nfsTrustHelp => '使用此设备信任的证书时请留空。需要时可添加私有 CA 或自签名服务器证书；证书中的名称必须与 NFS 地址的主机名匹配。';
+	@override String get nfsTrustInvalid => '请使用 PEM 格式的 CA 或服务器证书。不要包含私钥。';
+	@override String get addTrustCertificate => '添加自定义信任证书';
+	@override String get replaceTrustCertificate => '替换已保存的自定义证书';
+	@override String get nfsTlsHelp => 'RPC-with-TLS 使用常规 NFS 和挂载服务端口，并要求 NAS 支持 RFC 9289。必须使用 TLS 1.3。主机名或 IP 地址必须与证书匹配。加密通道内仍需使用 AUTH_SYS UID/GID。';
+	@override String get clientCertificate => '客户端证书（可选）';
+	@override String get clientCertificateHelp => '允许 NAS 验证此客户端的身份；AUTH_SYS ID 仍受 NAS 导出策略约束。';
+	@override String get savedIdentity => '将使用已保存的客户端身份凭据。';
+	@override String get replaceIdentity => '替换已保存的客户端身份凭据';
+	@override String get chooseIdentity => '选择 PKCS#12 客户端身份凭据';
+	@override String get identityPassphrase => '客户端身份凭据口令';
+	@override String get identityPassphraseHelp => '如果文件没有口令，请留空。';
+	@override String get removeIdentity => '移除已保存的客户端身份凭据';
+	@override String get identityStorageHelp => '客户端身份凭据保存在加密的来源凭据存储中。保持此部分不变，即可保留已保存的身份凭据。';
+	@override String get nfsLimitations => '以只读方式通过 TCP 使用 NFSv3。不使用 RPC-with-TLS 时，NFS 流量不会加密。NAS 必须允许所选 AUTH_SYS ID 和非特权客户端端口（导出选项通常称为“insecure”）。不支持 NFSv4 和 UDP。';
+	@override String get nfsSetupHelp => 'NFS 设置帮助';
+	@override String get nfsSetupHint => '如果无法建立连接，请检查这些设置。';
+	@override String get nfsSetupDetails => '请使用通过 TCP 提供的 NFSv3 导出。要求加密时，NFS 服务和挂载服务必须都支持 RPC-with-TLS。如果服务器证书受此设备信任，自定义证书可留空；否则请添加 NAS 的 CA 或自签名证书。证书名称必须与端点中的主机名匹配。如果 NAS 要求双向 TLS，请添加其 PKCS#12 客户端身份凭据。最后，确认导出配置允许所设的 AUTH_SYS UID/GID 和客户端端口策略。';
+	@override String get ftpHelp => 'FTP 使用被动模式。未加密的 FTP 使用 ftp://，显式 TLS 使用 ftpes://；ftps:// 使用 TLS（端口 990 为隐式 TLS，其他端口为显式 TLS）。';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => '为独立视频提供可选的字幕搜索。';
+	@override String get apiKey => 'API 密钥';
+	@override String get optionalUsername => '账户用户名（可选）';
+	@override String get optionalPassword => '账户密码（可选）';
+	@override String get subtitlePrivacy => '请从 opensubtitles.com 获取 API 密钥。搜索会发送视频标题和可用的 IMDb/TMDB ID，绝不会发送视频文件。密钥和可选的账户凭据会随此来源加密保存。';
+	@override String get automaticMetadata => '自动获取在线视频元数据';
+	@override String get metadataPrivacy => '仅发送文件名中的标题、年份和集数，或 NFO ID，绝不发送媒体文件或凭据。NFO 字段始终优先。';
+	@override String get nfsEncryptionFailure => '对于加密 NFS，请检查 NAS 的两项服务是否支持 RFC 9289 和 TLS 1.3，并核对证书名称以及导出 UID/GID。PlezyNG 不会在不加密的情况下重试此连接。';
+	@override String get sourceConnecting => '正在连接来源';
+	@override String get metadataSearchPrivacy => '此标题搜索由 Trakt 处理。只会发送您输入的标题，不会发送视频或来源凭据。';
+	@override String get chooseMatch => '选择匹配结果';
+	@override String get metadataMatchHelp => '选择前请核对标题和年份。Trakt 会收到搜索标题；视频文件会保留在原来源中。';
+	@override String get metadataNoMatches => '未找到在线标题匹配结果。请尝试其他标题。';
+	@override String get metadataSearch => '搜索在线元数据';
+	@override String get metadataLoading => '正在查询在线电影和剧集信息…';
+	@override String get metadataFromTrakt => '来自 Trakt 的在线元数据';
+	@override String get metadataNoAutomaticMatch => '未找到自动匹配的标题。请搜索标题并选择匹配结果。';
+	@override String get metadataFailed => '无法加载在线元数据。仍可播放媒体和查看本地信息。';
+	@override String get videoDetailsLoading => '正在加载视频信息';
+	@override String get subtitleKeyRequired => '需要 OpenSubtitles API 密钥';
+	@override String get subtitleKeyHelp => '请编辑此文件来源，在可选的字幕设置中添加 OpenSubtitles API 密钥。';
+	@override String get subtitleSearchFailed => '字幕搜索失败。请检查 API 密钥、网络连接和服务访问权限。';
+	@override String get subtitleApplyFailed => '无法下载或应用此字幕。请检查连接并尝试其他结果。';
+	@override String get subtitleSearch => '搜索 OpenSubtitles';
+	@override String get subtitleSearchPrivacy => '搜索会使用标题和可用的 IMDb/TMDB ID。视频文件会保留在原来源中。选择前请核对语言、强制字幕或听障字幕标记以及评分。';
+	@override String get movieOrShow => '电影或剧集';
+	@override String get subtitleTitleHint => '输入标题以缩小结果范围';
+	@override String get subtitleLanguage => '字幕语言';
+	@override String get subtitleSearching => '正在搜索 OpenSubtitles';
+	@override String get subtitleNoMatches => '未找到匹配的字幕。请尝试其他标题或语言。';
+	@override String get downloadSubtitle => '下载字幕';
+	@override String get subtitle => '字幕';
+	@override String get nfsTlsRequired => '要求 RPC-with-TLS';
+	@override String get nfsUnencrypted => '未加密的 NFS';
+	@override String get tlsEncrypted => '已启用 TLS 加密';
+	@override String get ftpPlain => '未加密的 FTP';
+	@override String get sshPinned => 'SSH 加密 · 主机密钥已固定';
+	@override String get smbEncrypted => 'SMB3 加密已开启';
+	@override String get smbUnencrypted => 'SMB3 加密已关闭';
+	@override String get httpUnencrypted => 'HTTP 无传输加密';
+	@override String get checkEndpointSecurity => '请检查端点安全性';
+	@override String fieldRequired({required Object label}) => '请填写${label}。';
+	@override String integerRange({required Object min, required Object max, required Object label}) => '请输入 ${min} 至 ${max} 之间的${label}。';
+	@override String replaceFile({required Object name}) => '替换 ${name}';
+	@override String selectedIdentity({required Object name}) => '已选客户端身份凭据：${name}';
+	@override String subtitleRating({required Object rating}) => '评分 ${rating}';
+	@override String subtitleDownloading({required Object title}) => '正在下载字幕：${title}';
 }
 
 // Path: appIcon.names
@@ -3353,6 +3525,57 @@ class Translations$accountPreferences$mediaReviewsOptions$zh extends Translation
 	@override String get usersOnly => '仅用户';
 	@override String get criticsOnly => '仅影评人';
 	@override String get nobody => '隐藏';
+}
+
+// Path: discover.findNext
+class Translations$discover$findNext$zh extends Translations$discover$findNext$en {
+	Translations$discover$findNext$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '发现下一个心头好';
+	@override String get open => '发现下一个心头好';
+	@override String get anyTime => '不限时长';
+	@override String get timeAvailable => '你有多少时间？';
+	@override String get filters => '选出此刻想做的事';
+	@override String get watch => '观看';
+	@override String get listen => '聆听';
+	@override String get read => '阅读';
+	@override String finishable({required Object duration}) => '${duration}内可完成';
+	@override String aboutDuration({required Object duration}) => '约${duration}';
+	@override String nextUnit({required Object duration}) => '下一章 · ${duration}';
+	@override String totalDuration({required Object duration}) => '共${duration}';
+	@override String get timingVaries => '时长可能有所不同';
+	@override String get notNow => '暂时跳过';
+	@override String get swipeHint => '滑动卡片，或使用下方按钮';
+	@override String get saved => '已保存的推荐';
+	@override String savedCount({required Object count}) => '已保存的推荐 · ${count}';
+	@override String get undo => '撤销';
+	@override String get details => '详情';
+	@override String get noPicks => '暂时没有可选内容';
+	@override String get noPicksHint => '连接媒体库或添加媒体来源即可开始。';
+	@override String get noMatches => '没有适合此刻的内容';
+	@override String get noMatchesHint => '试试其他内容类型，或留出更多时间。';
+	@override String get allDone => '你已浏览全部推荐';
+	@override String get allDoneHint => '换一组推荐，就能再次看到这些选项。';
+	@override String get refresh => '寻找另一组推荐';
+	@override String sourceReason({required Object source}) => '来自${source}';
+	@override String libraryReason({required Object library}) => '来自${library}';
+	@override String get ownedReason => '来自你的媒体库';
+	@override String get liveNow => '正在播出';
+	@override String get watchLive => '观看直播';
+	@override String get filterAnything => '不限类型';
+	@override String get filterWatch => '观看';
+	@override String get filterListen => '聆听';
+	@override String get filterRead => '阅读';
+	@override String get twentyMinutes => '20分钟';
+	@override String get fortyFiveMinutes => '45分钟';
+	@override String get ninetyMinutes => '90分钟';
+	@override String get apply => '应用';
+	@override String get openFailed => '此内容已不可用。刷新后再次查看。';
+	@override String get changeFailed => '无法保存此次更改，请重试。';
+	@override String get savedLimit => '已保存的推荐列表已满。请先移除一条推荐，再保存其他推荐。';
 }
 
 // Path: discover.person
@@ -5342,6 +5565,48 @@ extension on TranslationsZh {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
+			'discover.findNext.title' => '发现下一个心头好',
+			'discover.findNext.open' => '发现下一个心头好',
+			'discover.findNext.anyTime' => '不限时长',
+			'discover.findNext.timeAvailable' => '你有多少时间？',
+			'discover.findNext.filters' => '选出此刻想做的事',
+			'discover.findNext.watch' => '观看',
+			'discover.findNext.listen' => '聆听',
+			'discover.findNext.read' => '阅读',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration}内可完成',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '约${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => '下一章 · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '共${duration}',
+			'discover.findNext.timingVaries' => '时长可能有所不同',
+			'discover.findNext.notNow' => '暂时跳过',
+			'discover.findNext.swipeHint' => '滑动卡片，或使用下方按钮',
+			'discover.findNext.saved' => '已保存的推荐',
+			'discover.findNext.savedCount' => ({required Object count}) => '已保存的推荐 · ${count}',
+			'discover.findNext.undo' => '撤销',
+			'discover.findNext.details' => '详情',
+			'discover.findNext.noPicks' => '暂时没有可选内容',
+			'discover.findNext.noPicksHint' => '连接媒体库或添加媒体来源即可开始。',
+			'discover.findNext.noMatches' => '没有适合此刻的内容',
+			'discover.findNext.noMatchesHint' => '试试其他内容类型，或留出更多时间。',
+			'discover.findNext.allDone' => '你已浏览全部推荐',
+			'discover.findNext.allDoneHint' => '换一组推荐，就能再次看到这些选项。',
+			'discover.findNext.refresh' => '寻找另一组推荐',
+			'discover.findNext.sourceReason' => ({required Object source}) => '来自${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => '来自${library}',
+			'discover.findNext.ownedReason' => '来自你的媒体库',
+			'discover.findNext.liveNow' => '正在播出',
+			'discover.findNext.watchLive' => '观看直播',
+			'discover.findNext.filterAnything' => '不限类型',
+			'discover.findNext.filterWatch' => '观看',
+			'discover.findNext.filterListen' => '聆听',
+			'discover.findNext.filterRead' => '阅读',
+			'discover.findNext.twentyMinutes' => '20分钟',
+			'discover.findNext.fortyFiveMinutes' => '45分钟',
+			'discover.findNext.ninetyMinutes' => '90分钟',
+			'discover.findNext.apply' => '应用',
+			'discover.findNext.openFailed' => '此内容已不可用。刷新后再次查看。',
+			'discover.findNext.changeFailed' => '无法保存此次更改，请重试。',
+			'discover.findNext.savedLimit' => '已保存的推荐列表已满。请先移除一条推荐，再保存其他推荐。',
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -5586,6 +5851,8 @@ extension on TranslationsZh {
 			'explore.rows.popularShows' => '人气剧集',
 			'explore.rows.trendingAnime' => '热门动画',
 			'explore.rows.suggestedAnime' => '推荐动画',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.airingAnime' => '热门连载动画',
 			'explore.rows.popularAnime' => '最受欢迎动画',
 			'explore.rows.trending' => '近期热门',
@@ -5628,8 +5895,6 @@ extension on TranslationsZh {
 			'explore.badge.processing' => '处理中',
 			'explore.badge.declined' => '已拒绝',
 			'explore.badge.requestFailed' => '请求失败',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.requested4k' => '已请求 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '已有 ${available}/${total} 季',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '第 ${episode} 集将在 ${duration} 后播出',
@@ -6100,6 +6365,8 @@ extension on TranslationsZh {
 			'downloads.unwatchedOnly' => '仅未观看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量…',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.customAmountAny' => '每個數量(每個數...',
 			'downloads.randomEpisodes' => '随机事件',
 			'downloads.includeSpecials' => '包含特别篇',
@@ -6142,8 +6409,6 @@ extension on TranslationsZh {
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器：${server} • ${status}',
 			'downloads.syncRuleAvailable' => '可用',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleOffline' => '离线',
 			'downloads.syncRuleSignInRequired' => '需要登录',
 			'downloads.syncRuleAccessDenied' => '访问被拒绝',
@@ -6614,6 +6879,8 @@ extension on TranslationsZh {
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',
@@ -6656,8 +6923,6 @@ extension on TranslationsZh {
 			'homeLayout.resetToast' => '主页重新设置到原始Plezy英雄配置',
 			'homeLayout.resetHeroTitle' => '重定向英雄配置到存储Plezy?',
 			'homeLayout.resetHeroBody' => '关闭所有内容行的焦点横幅设置，并恢复首页顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行的顺序和显示状态不受影响。',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => '取消家居序列?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} 将被删除,此不能被删除。',
 			'homeLayout.sync' => '同步',
@@ -6915,6 +7180,12 @@ extension on TranslationsZh {
 			'fileSources.useFiles' => '使用文件和书籍',
 			'fileSources.cancelScan' => '取消扫描',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => '示例：smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => '请输入 SMB 服务器和一个共享文件夹。',
+			'fileSources.smbFolderHelp' => '留空以使用整个共享文件夹，或输入其中的某个文件夹。',
+			'fileSources.smbDomain' => '域（可选）',
+			'fileSources.smbEncryption' => '加密 SMB3 连接',
+			'fileSources.smbEncryptionHint' => '当 NAS 支持时，使用 SMB3 加密。',
 			'lending.title' => '公共图书馆',
 			'lending.add' => '添加图书馆',
 			'lending.other' => '另一家图书馆',
@@ -6965,6 +7236,151 @@ extension on TranslationsZh {
 			'lending.suspendMessage' => '要保留排队位置，让下一位读者先借阅此副本吗？您可以稍后恢复预约。',
 			'lending.resumeMessage' => '要恢复此预约，以便图书馆为您提供下一份可借阅的副本吗？',
 			'lending.editEmail' => '更改通知电子邮件',
+			'audiobook.syncTitle' => '阅读与倾听Sync',
+			'audiobook.syncHelp' => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。',
+			'audiobook.addSyncSource' => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。',
+			'audiobook.syncDestination' => '同步存储帐户',
+			'audiobook.syncFolder' => '同步文件夹或预定',
+			'audiobook.syncFolderHelp' => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。',
+			'audiobook.syncCode' => '个人同步代码',
+			'audiobook.syncCodeHelp' => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。',
+			'audiobook.showCode' => '显示或隐藏同步代码',
+			'audiobook.newSyncCode' => '创建一个新的同步代码',
+			'audiobook.saveSync' => '保存和同步',
+			'audiobook.disableSync' => '在此设备上关闭同步',
+			'audiobook.syncSourceDisconnect' => '移除此来源会关闭此设备上的阅读和收听同步。加密的同步文件仍会保留在存储服务提供商处。',
+			'audiobook.syncReconnect' => '重新连接存储帐户',
+			'audiobook.lastSynced' => ({required Object time}) => '上一篇: ${time}',
+			'audiobook.syncPrivacy' => '仅存储加密的进度和笔记。音频文件、电子书文件、账号令牌和密码不会上传。Google Drive 和 OneDrive 使用应用专用存储空间；Dropbox 使用 PlezyNG Sync。启用同步时，可能会请求额外的写入权限。启用后，进度同步由此存储目标负责，服务器进度保持独立。关闭同步后，本地历史记录和远程状态仍会保留。',
+			'audiobook.syncConflicts' => '选择重定向的地方',
+			'audiobook.conflictHelp' => '这些更改是分别独立做出的。请选择要保留的进度位置或书签版本。时间戳较新或进度百分比较高的版本不会自动优先保留。',
+			'audiobook.syncDevice' => ({required Object device}) => '裝置 ${device}',
+			'audiobook.syncUnknownDevice' => '未知设备',
+			'audiobook.deletedBookmark' => '删除图标',
+			'audiobook.finished' => '结束',
+			'audiobook.readingPosition' => ({required Object percent}) => '阅读 · ${percent}%',
+			'audiobook.chapterTimeline' => '第四章 进展',
+			'audiobook.bookTimeline' => '全书进展',
+			'audiobook.bookRemaining' => ({required Object time}) => '本书剩余时间：${time}',
+			'audiobook.chapterRemaining' => ({required Object time}) => '此分類上一篇: ${time}',
+			'audiobook.unknownRemaining' => '全部时间可用,当部分被播放时',
+			'audiobook.undoSeek' => '最后寻找',
+			'audiobook.customSpeed' => '定制播放速度',
+			'audiobook.speedHelp' => '选择速度从 0.25× 到 4×。',
+			'audiobook.apply' => '應用',
+			'audiobook.customSleep' => '定制睡眠时间',
+			'audiobook.sleepMinutes' => '时间(1 - 1440)',
+			'audiobook.sleepChapters' => ({required Object count}) => '播放完${count}章后停止',
+			'audiobook.extendSleep' => '添加5分钟',
+			'audiobook.sleepRemaining' => ({required Object time}) => '睡眠时间: ${time}',
+			'audiobook.useDefaults' => '使用这些听力控制器为新书',
+			'audiobook.librarySort' => '各式各样的书籍',
+			'audiobook.sortTitle' => '标题',
+			'audiobook.sortAuthor' => '作者',
+			'audiobook.sortNarrator' => '讲话者',
+			'audiobook.sortSeries' => '系列命令',
+			'audiobook.sortRecent' => '最近开放',
+			'audiobook.statusFilter' => '阅读状态',
+			'audiobook.statusAll' => '所有书籍',
+			'audiobook.statusNew' => '没有开始',
+			'audiobook.statusProgress' => '进展',
+			'audiobook.statusFinished' => '结束',
+			'audiobook.goToTime' => '走到时间',
+			'audiobook.timeHelp' => '时间: 分钟: 秒或 分钟: 秒',
+			'sourceSetup.savedCertificate' => '已保存的服务器证书',
+			'sourceSetup.nfsEndpointInvalid' => '请输入 NFS 地址，例如 nfs://nas:2049/export。',
+			'sourceSetup.dlnaNone' => '未找到 DLNA 服务器。请手动输入设备描述文件的地址。',
+			'sourceSetup.dlnaServers' => 'DLNA 媒体服务器',
+			'sourceSetup.dlnaUnavailable' => '无法在此网络上发现 DLNA 设备。请手动输入设备描述文件的地址。',
+			'sourceSetup.dlnaSearching' => '正在本地网络中搜索 DLNA 服务器',
+			'sourceSetup.networkSearching' => '正在搜索本地网络…',
+			'sourceSetup.dlnaDiscover' => '发现 DLNA 服务器',
+			'sourceSetup.dlnaHelp' => '设备发现需要本地网络支持组播。如果没有找到服务器，请在上方输入设备描述文件的地址。',
+			'sourceSetup.dlnaRoot' => 'DLNA 对象 ID；留空以使用设备根目录。',
+			'sourceSetup.passwordOrKey' => '请输入密码，或在下方添加私钥。',
+			'sourceSetup.sshFingerprint' => 'SSH 主机密钥 SHA256 指纹',
+			'sourceSetup.sshFingerprintHelp' => '请向服务器管理员核实。在服务器上运行 ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub，并使用显示的 SHA256 值。',
+			'sourceSetup.sshFingerprintKeep' => '留空以保留当前固定的指纹，或输入新的服务器指纹。',
+			'sourceSetup.sshAuthentication' => 'SSH 公钥认证',
+			'sourceSetup.sshAuthenticationHelp' => '可选；也支持密码认证。',
+			'sourceSetup.privateKey' => '私钥（PEM 或 OpenSSH 格式）',
+			'sourceSetup.privateKeyPassphrase' => '私钥口令',
+			'sourceSetup.nfsMountPort' => 'NFS 挂载服务 TCP 端口',
+			'sourceSetup.nfsMountPortHelp' => '默认值：20048',
+			'sourceSetup.nfsUserId' => 'NFS 用户 ID（AUTH_SYS）',
+			'sourceSetup.nfsUserIdHelp' => '默认值：1000。请使用 NAS 导出配置允许的用户 ID。',
+			'sourceSetup.nfsGroupId' => 'NFS 组 ID（AUTH_SYS）',
+			'sourceSetup.nfsGroupIdHelp' => '默认值：1000。请使用 NAS 导出配置允许的组 ID。',
+			'sourceSetup.nfsEncryption' => '要求加密 NFS 连接（RPC-with-TLS）',
+			'sourceSetup.nfsEncryptionHelp' => '要求 NFS 和挂载服务使用 TLS 1.3。如果 NAS 不支持，将拒绝连接。',
+			'sourceSetup.nfsTrustCertificate' => '自定义 NFS CA 或服务器证书（PEM，可选）',
+			'sourceSetup.nfsTrustHelp' => '使用此设备信任的证书时请留空。需要时可添加私有 CA 或自签名服务器证书；证书中的名称必须与 NFS 地址的主机名匹配。',
+			'sourceSetup.nfsTrustInvalid' => '请使用 PEM 格式的 CA 或服务器证书。不要包含私钥。',
+			'sourceSetup.addTrustCertificate' => '添加自定义信任证书',
+			'sourceSetup.replaceTrustCertificate' => '替换已保存的自定义证书',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS 使用常规 NFS 和挂载服务端口，并要求 NAS 支持 RFC 9289。必须使用 TLS 1.3。主机名或 IP 地址必须与证书匹配。加密通道内仍需使用 AUTH_SYS UID/GID。',
+			'sourceSetup.clientCertificate' => '客户端证书（可选）',
+			'sourceSetup.clientCertificateHelp' => '允许 NAS 验证此客户端的身份；AUTH_SYS ID 仍受 NAS 导出策略约束。',
+			'sourceSetup.savedIdentity' => '将使用已保存的客户端身份凭据。',
+			'sourceSetup.replaceIdentity' => '替换已保存的客户端身份凭据',
+			'sourceSetup.chooseIdentity' => '选择 PKCS#12 客户端身份凭据',
+			'sourceSetup.identityPassphrase' => '客户端身份凭据口令',
+			'sourceSetup.identityPassphraseHelp' => '如果文件没有口令，请留空。',
+			'sourceSetup.removeIdentity' => '移除已保存的客户端身份凭据',
+			'sourceSetup.identityStorageHelp' => '客户端身份凭据保存在加密的来源凭据存储中。保持此部分不变，即可保留已保存的身份凭据。',
+			'sourceSetup.nfsLimitations' => '以只读方式通过 TCP 使用 NFSv3。不使用 RPC-with-TLS 时，NFS 流量不会加密。NAS 必须允许所选 AUTH_SYS ID 和非特权客户端端口（导出选项通常称为“insecure”）。不支持 NFSv4 和 UDP。',
+			'sourceSetup.nfsSetupHelp' => 'NFS 设置帮助',
+			'sourceSetup.nfsSetupHint' => '如果无法建立连接，请检查这些设置。',
+			'sourceSetup.nfsSetupDetails' => '请使用通过 TCP 提供的 NFSv3 导出。要求加密时，NFS 服务和挂载服务必须都支持 RPC-with-TLS。如果服务器证书受此设备信任，自定义证书可留空；否则请添加 NAS 的 CA 或自签名证书。证书名称必须与端点中的主机名匹配。如果 NAS 要求双向 TLS，请添加其 PKCS#12 客户端身份凭据。最后，确认导出配置允许所设的 AUTH_SYS UID/GID 和客户端端口策略。',
+			'sourceSetup.ftpHelp' => 'FTP 使用被动模式。未加密的 FTP 使用 ftp://，显式 TLS 使用 ftpes://；ftps:// 使用 TLS（端口 990 为隐式 TLS，其他端口为显式 TLS）。',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => '为独立视频提供可选的字幕搜索。',
+			'sourceSetup.apiKey' => 'API 密钥',
+			'sourceSetup.optionalUsername' => '账户用户名（可选）',
+			'sourceSetup.optionalPassword' => '账户密码（可选）',
+			'sourceSetup.subtitlePrivacy' => '请从 opensubtitles.com 获取 API 密钥。搜索会发送视频标题和可用的 IMDb/TMDB ID，绝不会发送视频文件。密钥和可选的账户凭据会随此来源加密保存。',
+			'sourceSetup.automaticMetadata' => '自动获取在线视频元数据',
+			'sourceSetup.metadataPrivacy' => '仅发送文件名中的标题、年份和集数，或 NFO ID，绝不发送媒体文件或凭据。NFO 字段始终优先。',
+			'sourceSetup.nfsEncryptionFailure' => '对于加密 NFS，请检查 NAS 的两项服务是否支持 RFC 9289 和 TLS 1.3，并核对证书名称以及导出 UID/GID。PlezyNG 不会在不加密的情况下重试此连接。',
+			'sourceSetup.sourceConnecting' => '正在连接来源',
+			'sourceSetup.metadataSearchPrivacy' => '此标题搜索由 Trakt 处理。只会发送您输入的标题，不会发送视频或来源凭据。',
+			'sourceSetup.chooseMatch' => '选择匹配结果',
+			'sourceSetup.metadataMatchHelp' => '选择前请核对标题和年份。Trakt 会收到搜索标题；视频文件会保留在原来源中。',
+			'sourceSetup.metadataNoMatches' => '未找到在线标题匹配结果。请尝试其他标题。',
+			'sourceSetup.metadataSearch' => '搜索在线元数据',
+			'sourceSetup.metadataLoading' => '正在查询在线电影和剧集信息…',
+			'sourceSetup.metadataFromTrakt' => '来自 Trakt 的在线元数据',
+			'sourceSetup.metadataNoAutomaticMatch' => '未找到自动匹配的标题。请搜索标题并选择匹配结果。',
+			'sourceSetup.metadataFailed' => '无法加载在线元数据。仍可播放媒体和查看本地信息。',
+			'sourceSetup.videoDetailsLoading' => '正在加载视频信息',
+			'sourceSetup.subtitleKeyRequired' => '需要 OpenSubtitles API 密钥',
+			'sourceSetup.subtitleKeyHelp' => '请编辑此文件来源，在可选的字幕设置中添加 OpenSubtitles API 密钥。',
+			'sourceSetup.subtitleSearchFailed' => '字幕搜索失败。请检查 API 密钥、网络连接和服务访问权限。',
+			'sourceSetup.subtitleApplyFailed' => '无法下载或应用此字幕。请检查连接并尝试其他结果。',
+			'sourceSetup.subtitleSearch' => '搜索 OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => '搜索会使用标题和可用的 IMDb/TMDB ID。视频文件会保留在原来源中。选择前请核对语言、强制字幕或听障字幕标记以及评分。',
+			'sourceSetup.movieOrShow' => '电影或剧集',
+			'sourceSetup.subtitleTitleHint' => '输入标题以缩小结果范围',
+			'sourceSetup.subtitleLanguage' => '字幕语言',
+			'sourceSetup.subtitleSearching' => '正在搜索 OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => '未找到匹配的字幕。请尝试其他标题或语言。',
+			'sourceSetup.downloadSubtitle' => '下载字幕',
+			'sourceSetup.subtitle' => '字幕',
+			'sourceSetup.nfsTlsRequired' => '要求 RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => '未加密的 NFS',
+			'sourceSetup.tlsEncrypted' => '已启用 TLS 加密',
+			'sourceSetup.ftpPlain' => '未加密的 FTP',
+			'sourceSetup.sshPinned' => 'SSH 加密 · 主机密钥已固定',
+			'sourceSetup.smbEncrypted' => 'SMB3 加密已开启',
+			'sourceSetup.smbUnencrypted' => 'SMB3 加密已关闭',
+			'sourceSetup.httpUnencrypted' => 'HTTP 无传输加密',
+			'sourceSetup.checkEndpointSecurity' => '请检查端点安全性',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '请填写${label}。',
+			'sourceSetup.integerRange' => ({required Object min, required Object max, required Object label}) => '请输入 ${min} 至 ${max} 之间的${label}。',
+			'sourceSetup.replaceFile' => ({required Object name}) => '替换 ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => '已选客户端身份凭据：${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => '评分 ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => '正在下载字幕：${title}',
 			_ => null,
 		};
 	}

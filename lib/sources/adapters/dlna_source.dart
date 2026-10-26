@@ -37,10 +37,9 @@ class DlnaSourceAdapter extends SourceAdapter {
     final endpoint = _endpoint;
     final xml = await transport.text('GET', endpoint, limit: 2 * 1024 * 1024);
     final document = XmlDocument.parse(xml);
-    final baseText = _descendants(document)
-        .where((element) => element.name.local == 'URLBase')
-        .map((element) => element.innerText.trim())
-        .firstOrNull;
+    final baseText = _descendants(
+      document,
+    ).where((element) => element.name.local == 'URLBase').map((element) => element.innerText.trim()).firstOrNull;
     final base = baseText == null || baseText.isEmpty ? endpoint : endpoint.resolve(baseText);
     _validateSameHost(base);
     for (final service in _descendants(document).where((element) => element.name.local == 'service')) {
@@ -79,10 +78,9 @@ class DlnaSourceAdapter extends SourceAdapter {
     return null;
   }
 
-  static String? _descendantText(XmlNode parent, String localName) => _descendants(parent)
-      .where((element) => element.name.local == localName)
-      .map((element) => element.innerText.trim())
-      .firstOrNull;
+  static String? _descendantText(XmlNode parent, String localName) => _descendants(
+    parent,
+  ).where((element) => element.name.local == localName).map((element) => element.innerText.trim()).firstOrNull;
 
   static String _xmlEscape(String value) => value
       .replaceAll('&', '&amp;')
@@ -94,7 +92,8 @@ class DlnaSourceAdapter extends SourceAdapter {
   Future<_DlnaBrowseResult> _browse(String objectId, {required bool metadata, int start = 0}) async {
     final service = await _getService();
     final flag = metadata ? 'BrowseMetadata' : 'BrowseDirectChildren';
-    final body = '''
+    final body =
+        '''
 <?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="$_soapEnvelopeNs" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   <s:Body>
@@ -111,18 +110,14 @@ class DlnaSourceAdapter extends SourceAdapter {
     final response = await transport.text(
       'POST',
       service.control,
-      headers: {
-        'Content-Type': 'text/xml; charset="utf-8"',
-        'SOAPAction': '"${service.type}#Browse"',
-      },
+      headers: {'Content-Type': 'text/xml; charset="utf-8"', 'SOAPAction': '"${service.type}#Browse"'},
       body: body,
       limit: 4 * 1024 * 1024,
     );
     final soap = XmlDocument.parse(response);
-    final resultXml = _descendants(soap)
-        .where((element) => element.name.local == 'Result')
-        .map((element) => element.innerText)
-        .firstOrNull;
+    final resultXml = _descendants(
+      soap,
+    ).where((element) => element.name.local == 'Result').map((element) => element.innerText).firstOrNull;
     if (resultXml == null || resultXml.isEmpty) throw const SourceException(SourceFailure.invalidData);
     final didl = XmlDocument.parse(resultXml);
     final rows = <_DlnaObject>[];
@@ -145,7 +140,7 @@ class DlnaSourceAdapter extends SourceAdapter {
               .firstOrNull ??
           '',
     );
-    return _DlnaBrowseResult(rows, returned ?? rows.length, total);
+    return _DlnaBrowseResult(rows, returned ?? rows.length, total ?? returned ?? rows.length);
   }
 
   _DlnaObject? _parseObject(XmlElement element, _DlnaService service) {
@@ -175,10 +170,15 @@ class DlnaSourceAdapter extends SourceAdapter {
     }
     resources.sort((a, b) => (b.size ?? 0).compareTo(a.size ?? 0));
     final mediaClass = (_descendantText(element, 'class') ?? '').toLowerCase();
-    final preferred = resources.where((resource) =>
-      resource.kind == SourceItemKind.video || resource.kind == SourceItemKind.music ||
-      mediaClass.contains('video') && resource.mimeType.startsWith('video/') ||
-      mediaClass.contains('audio') && resource.mimeType.startsWith('audio/')).firstOrNull;
+    final preferred = resources
+        .where(
+          (resource) =>
+              resource.kind == SourceItemKind.video ||
+              resource.kind == SourceItemKind.music ||
+              mediaClass.contains('video') && resource.mimeType.startsWith('video/') ||
+              mediaClass.contains('audio') && resource.mimeType.startsWith('audio/'),
+        )
+        .firstOrNull;
     if (preferred == null) return null;
     final kind = mediaClass.contains('video') || preferred.kind == SourceItemKind.video
         ? SourceItemKind.video
@@ -203,7 +203,7 @@ class DlnaSourceAdapter extends SourceAdapter {
     final hours = int.tryParse(match[1]!) ?? 0;
     final minutes = int.tryParse(match[2]!) ?? 0;
     final seconds = int.tryParse(match[3]!) ?? 0;
-    final fraction = match[4] == null ? 0 : int.parse((match[4]! + '000').substring(0, 3));
+    final fraction = match[4] == null ? 0 : int.parse(('${match[4]!}000').substring(0, 3));
     return ((hours * 3600 + minutes * 60 + seconds) * 1000) + fraction;
   }
 
@@ -231,7 +231,11 @@ class DlnaSourceAdapter extends SourceAdapter {
 
   Future<_DlnaResource> _resource(String objectId) async {
     final result = await _browse(objectId, metadata: true);
-    final resource = result.objects.where((item) => item.entry.id == objectId).map((item) => item.resource).whereType<_DlnaResource>().firstOrNull;
+    final resource = result.objects
+        .where((item) => item.entry.id == objectId)
+        .map((item) => item.resource)
+        .whereType<_DlnaResource>()
+        .firstOrNull;
     if (resource == null) throw const SourceException(SourceFailure.unsupported);
     return resource;
   }
@@ -246,11 +250,7 @@ class DlnaSourceAdapter extends SourceAdapter {
   Future<int?> contentSize(PublicationFile file) async => file.size ?? (await _resource(file.id)).size;
 
   @override
-  Future<SourceByteStream?> openContent(
-    PublicationFile file, {
-    required int offset,
-    required int length,
-  }) async => null;
+  Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async => null;
 }
 
 class _DlnaService {

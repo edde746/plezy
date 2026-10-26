@@ -357,5 +357,6 @@
     "fileSources.minutes": "unicode-cldr-generated",
     "lending.cancel": "jellyfin-web:ButtonCancel",
     "fileSources.googleDrive": "nonlinguistic"
-  }
+  },
+  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md"
 }

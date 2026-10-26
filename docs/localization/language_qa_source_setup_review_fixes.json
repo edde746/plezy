@@ -1,0 +1,465 @@
+{
+  "schemaVersion": 1,
+  "baseline": "Unpublished authoring drafts for the 94-message sourceSetup namespace; not historical published-message corrections.",
+  "independentReviewLocales": [
+    "ar",
+    "bn",
+    "fa",
+    "he",
+    "hi",
+    "ja",
+    "ko",
+    "zh",
+    "zh-Hant"
+  ],
+  "selfReviewLocales": [
+    "az",
+    "bg",
+    "cs",
+    "da",
+    "de",
+    "es",
+    "fr",
+    "hu",
+    "id",
+    "it",
+    "kk",
+    "ms",
+    "nb",
+    "nl",
+    "pl",
+    "pt",
+    "ru",
+    "sv",
+    "th",
+    "tr",
+    "uk",
+    "uz",
+    "vi"
+  ],
+  "fixes": [
+    {
+      "locale": "az",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP passiv rejimdən istifadə edir. Şifrələnməmiş FTP üçün ftp://, açıq şəkildə başladılan TLS üçün ftpes:// və ya TLS üçün ftps:// istifadə edin (990 portunda gizli şəkildə başladılır, digər portlarda açıq şəkildə başladılır).",
+      "corrected": "FTP passiv rejimdən istifadə edir. Şifrələnməmiş FTP üçün ftp://, ayrıca əmrlə TLS-ə keçid üçün ftpes://, TLS üçün isə ftps:// istifadə edin (990 portunda TLS dərhal başlayır, digər portlarda ayrıca əmrlə başladılır).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "bn",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP প্যাসিভ মোড ব্যবহার করে। এনক্রিপশন ছাড়া FTP-এর জন্য ftp://, স্পষ্ট TLS-এর জন্য ftpes://, অথবা TLS-এর জন্য ftps:// ব্যবহার করুন (পোর্ট 990-এ অন্তর্নিহিত TLS; অন্য পোর্টে স্পষ্ট TLS)।",
+      "corrected": "FTP প্যাসিভ মোড ব্যবহার করে। এনক্রিপশন ছাড়া FTP-এর জন্য ftp://, আলাদা কমান্ড দিয়ে TLS চালু করতে ftpes://, অথবা TLS-এর জন্য ftps:// ব্যবহার করুন (পোর্ট 990-এ TLS সঙ্গে সঙ্গে চালু হয়; অন্য পোর্টে আলাদা কমান্ড দিয়ে চালু হয়)।",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "bn",
+      "key": "sourceSetup.nfsTrustHelp",
+      "english": "Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.",
+      "original": "এই ডিভাইসের বিশ্বস্ত সার্টিফিকেটের জন্য ফাঁকা রাখুন। প্রয়োজনে ব্যক্তিগত CA বা স্বাক্ষরকারী ও ধারক একই এমন সার্ভার সার্টিফিকেট যোগ করুন; এর নামগুলো NFS URL-এর হোস্টের সঙ্গে মিলতে হবে।",
+      "corrected": "এই ডিভাইসের বিশ্বস্ত সার্টিফিকেটের জন্য ফাঁকা রাখুন। প্রয়োজনে ব্যক্তিগত CA বা স্ব-স্বাক্ষরিত সার্ভার সার্টিফিকেট যোগ করুন; এর নামগুলো NFS URL-এর হোস্টের সঙ্গে মিলতে হবে।",
+      "reason": "Use the clear technical term for a self-signed certificate, consistent with the setup help.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "de",
+      "key": "sourceSetup.removeIdentity",
+      "english": "Remove any saved client identity",
+      "original": "Alle gespeicherten Clientidentitäten entfernen",
+      "corrected": "Gespeicherte Clientidentität entfernen",
+      "reason": "Match the single saved client identity being removed.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "fa",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP از حالت غیرفعال استفاده می‌کند. برای FTP بدون رمزگذاری از ftp://، برای TLS صریح از ftpes:// و برای TLS از ftps:// استفاده کنید (TLS ضمنی روی درگاه 990 و صریح روی سایر درگاه‌ها).",
+      "corrected": "FTP از حالت پسیو (Passive) استفاده می‌کند. برای FTP بدون رمزگذاری از ftp://، برای فعال‌سازی TLS با فرمان جداگانه از ftpes:// و برای TLS از ftps:// استفاده کنید (روی درگاه 990، TLS بلافاصله آغاز می‌شود؛ روی سایر درگاه‌ها با فرمان جداگانه فعال می‌شود).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "fa",
+      "key": "sourceSetup.nfsEncryptionHelp",
+      "english": "Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.",
+      "original": "TLS 1.3 را برای NFS و سرویس اتصال الزامی می‌کند. اگر NAS پشتیبانی نکند، اتصال رد می‌شود.",
+      "corrected": "TLS 1.3 را برای NFS و سرویس mount الزامی می‌کند. اگر NAS پشتیبانی نکند، اتصال رد می‌شود.",
+      "reason": "Name the NFS mount service explicitly instead of a generic connection service.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "fa",
+      "key": "sourceSetup.nfsMountPort",
+      "english": "NFS mount service TCP port",
+      "original": "درگاه TCP سرویس اتصال NFS",
+      "corrected": "درگاه TCP سرویس mount NFS",
+      "reason": "Name the NFS mount service explicitly instead of a generic connection service.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "fa",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "از یک اشتراک NFSv3 روی TCP استفاده کنید. اگر رمزگذاری الزامی است، NFS و سرویس اتصال باید هر دو از RPC-with-TLS پشتیبانی کنند. برای گواهی سروری که این دستگاه به آن اعتماد دارد، گواهی سفارشی را خالی بگذارید؛ یا گواهی CA یا خودامضای NAS را اضافه کنید. نام گواهی باید با میزبان نشانی اتصال مطابقت داشته باشد. اگر NAS به TLS متقابل نیاز دارد، هویت کارخواه PKCS#12 آن را اضافه کنید. در پایان، تأیید کنید که تنظیمات اشتراک، AUTH_SYS UID/GID تعیین‌شده و سیاست درگاه‌های کارخواه را مجاز می‌داند.",
+      "corrected": "از یک اشتراک NFSv3 روی TCP استفاده کنید. اگر رمزگذاری الزامی است، NFS و سرویس mount باید هر دو از RPC-with-TLS پشتیبانی کنند. برای گواهی سروری که این دستگاه به آن اعتماد دارد، گواهی سفارشی را خالی بگذارید؛ یا گواهی CA یا خودامضای NAS را اضافه کنید. نام گواهی باید با میزبان نشانی اتصال مطابقت داشته باشد. اگر NAS به TLS متقابل نیاز دارد، هویت کارخواه PKCS#12 آن را اضافه کنید. در پایان، تأیید کنید که تنظیمات اشتراک، AUTH_SYS UID/GID تعیین‌شده و سیاست درگاه‌های کارخواه را مجاز می‌داند.",
+      "reason": "Name the NFS mount service explicitly instead of a generic connection service.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "fa",
+      "key": "sourceSetup.nfsTlsHelp",
+      "english": "RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.",
+      "original": "RPC-with-TLS از درگاه‌های معمول NFS و سرویس اتصال استفاده می‌کند و به پشتیبانی NAS از RFC 9289 نیاز دارد. TLS 1.3 الزامی است. نام میزبان یا IP باید با گواهی مطابقت داشته باشد. AUTH_SYS UID/GID در کانال رمزگذاری‌شده نیز اعمال می‌شوند.",
+      "corrected": "RPC-with-TLS از درگاه‌های معمول NFS و سرویس mount استفاده می‌کند و به پشتیبانی NAS از RFC 9289 نیاز دارد. TLS 1.3 الزامی است. نام میزبان یا IP باید با گواهی مطابقت داشته باشد. AUTH_SYS UID/GID در کانال رمزگذاری‌شده نیز اعمال می‌شوند.",
+      "reason": "Name the NFS mount service explicitly instead of a generic connection service.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "he",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP משתמש במצב פסיבי. עבור FTP ללא הצפנה יש להשתמש ב־ftp://, עבור TLS מפורש ב־ftpes://, או ב־ftps:// עבור TLS (מרומז ביציאה 990; מפורש ביציאות אחרות).",
+      "corrected": "FTP משתמש במצב פסיבי. עבור FTP ללא הצפנה יש להשתמש ב־ftp://, להפעלת TLS באמצעות פקודה נפרדת ב־ftpes://, או ב־ftps:// עבור TLS (ביציאה 990, TLS מתחיל מיד; ביציאות אחרות הוא מופעל באמצעות פקודה נפרדת).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "he",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "יש להשתמש בייצוא NFSv3 דרך TCP. כשנדרשת הצפנה, גם שירות NFS וגם שירות העיגון חייבים לתמוך ב־RPC-with-TLS. אם התקן זה נותן אמון באישור השרת, יש להשאיר את האישור המותאם האישי ריק; אחרת, יש להוסיף אישור CA או אישור בחתימה עצמית של ה־NAS. שם האישור חייב להתאים למארח שבכתובת החיבור. אם ה־NAS דורש TLS הדדי, יש להוסיף את פרטי זיהוי הלקוח שלו בפורמט PKCS#12. לבסוף, יש לוודא שהייצוא מאפשר את מזהי AUTH_SYS UID/GID שהוגדרו ואת מדיניות יציאות הלקוח.",
+      "corrected": "יש להשתמש בייצוא NFSv3 דרך TCP. כשנדרשת הצפנה, גם שירות NFS וגם שירות העיגון חייבים לתמוך ב־RPC-with-TLS. אם התקן זה נותן אמון באישור השרת, יש להשאיר את האישור המותאם אישית ריק; אחרת, יש להוסיף אישור CA או אישור בחתימה עצמית של ה־NAS. שם האישור חייב להתאים למארח שבכתובת החיבור. אם ה־NAS דורש TLS הדדי, יש להוסיף את פרטי זיהוי הלקוח שלו בפורמט PKCS#12. לבסוף, יש לוודא שהייצוא מאפשר את מזהי AUTH_SYS UID/GID שהוגדרו ואת מדיניות יציאות הלקוח.",
+      "reason": "Repair the Hebrew adjective construction for a custom certificate.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "he",
+      "key": "sourceSetup.replaceTrustCertificate",
+      "english": "Replace saved custom certificate",
+      "original": "החלפת האישור המותאם האישי השמור",
+      "corrected": "החלפת האישור המותאם אישית השמור",
+      "reason": "Repair the Hebrew adjective construction for a custom certificate.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "hu",
+      "key": "sourceSetup.clientCertificate",
+      "english": "Client certificate (optional)",
+      "original": "Kli tanúsítványa (nem kötelező)",
+      "corrected": "Kliens tanúsítványa (nem kötelező)",
+      "reason": "Repair a truncated Hungarian client label.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "id",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "Gunakan ekspor NFSv3 melalui TCP. Jika enkripsi diwajibkan, layanan NFS dan mount harus sama-sama mendukung RPC-with-TLS. Kosongkan sertifikat khusus untuk sertifikat server yang dipercaya perangkat ini, atau tambahkan sertifikat CA NAS atau sertifikat yang ditandatangani sendiri. Nama pada sertifikat harus cocok dengan host titik akhir. Jika NAS meminta TLS timbal balik, tambahkan identitas klien PKCS#12-nya. Terakhir, pastikan ekspor mengizinkan AUTH_SYS UID/GID yang dikonfigurasi dan kebijakan port klien.",
+      "corrected": "Gunakan ekspor NFSv3 melalui TCP. Jika enkripsi diwajibkan, layanan NFS dan mount harus sama-sama mendukung RPC-with-TLS. Kosongkan sertifikat khusus untuk sertifikat server yang dipercaya perangkat ini, atau tambahkan sertifikat CA NAS atau sertifikat yang ditandatangani sendiri. Nama pada sertifikat harus cocok dengan host titik akhir. Jika NAS meminta autentikasi TLS dua arah, tambahkan identitas klien PKCS#12-nya. Terakhir, pastikan ekspor mengizinkan AUTH_SYS UID/GID yang dikonfigurasi dan kebijakan port klien.",
+      "reason": "Make the mutual-authentication meaning of TLS explicit.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "it",
+      "key": "sourceSetup.fieldRequired",
+      "english": "${label} is required.",
+      "original": "${label} è obbligatorio.",
+      "corrected": "Campo obbligatorio: ${label}.",
+      "reason": "Use an invariant field-label construction without assuming the interpolated label gender.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.chooseIdentity",
+      "english": "Choose PKCS#12 client identity",
+      "original": "PKCS#12 クライアント ID を選択",
+      "corrected": "PKCS#12 クライアント認証情報 を選択",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP はパッシブモードを使用します。通常の FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。",
+      "corrected": "FTP はパッシブモードを使用します。暗号化されていない FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。",
+      "reason": "State explicitly that plain FTP is unencrypted.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.identityPassphrase",
+      "english": "Client identity passphrase",
+      "original": "クライアント ID のパスフレーズ",
+      "corrected": "クライアント認証情報 のパスフレーズ",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.identityStorageHelp",
+      "english": "Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.",
+      "original": "クライアント ID は、ソースの暗号化された認証情報ストアに保存されます。保存済みの ID を維持するには、このセクションを変更しないでください。",
+      "corrected": "クライアント認証情報 は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報 を維持するには、このセクションを変更しないでください。",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier. Keep the saved client-credential terminology consistent.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント ID を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。",
+      "corrected": "TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報 を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.removeIdentity",
+      "english": "Remove any saved client identity",
+      "original": "保存済みのクライアント ID を削除",
+      "corrected": "保存済みのクライアント認証情報 を削除",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.replaceIdentity",
+      "english": "Replace saved client identity",
+      "original": "保存済みのクライアント ID を置き換え",
+      "corrected": "保存済みのクライアント認証情報 を置き換え",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.savedIdentity",
+      "english": "A saved client identity will be used.",
+      "original": "保存済みのクライアント ID を使用します。",
+      "corrected": "保存済みのクライアント認証情報 を使用します。",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ja",
+      "key": "sourceSetup.selectedIdentity",
+      "english": "Selected client identity: ${name}",
+      "original": "選択したクライアント ID: ${name}",
+      "corrected": "選択したクライアント認証情報: ${name}",
+      "reason": "Clarify PKCS#12 client credentials rather than a numeric identifier.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP пассивті режимді пайдаланады. Шифрланбаған FTP үшін ftp://, айқын TLS үшін ftpes:// немесе TLS үшін ftps:// пайдаланыңыз (990 портында жасырын түрде, басқа порттарда айқын түрде іске қосылады).",
+      "corrected": "FTP пассивті режимді пайдаланады. Шифрланбаған FTP үшін ftp://, TLS кейін арнайы пәрменмен қосылатын режим үшін ftpes://, ал TLS үшін ftps:// пайдаланыңыз (990 портында TLS бірден іске қосылады, басқа порттарда арнайы пәрменмен қосылады).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.nfsEncryptionHelp",
+      "english": "Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.",
+      "original": "NFS пен тіркеу қызметі үшін TLS 1.3 талап етіледі. NAS мұны қолдамаса, қосылым қабылданбайды.",
+      "corrected": "NFS пен mount қызметі үшін TLS 1.3 талап етіледі. NAS мұны қолдамаса, қосылым қабылданбайды.",
+      "reason": "Identify the NFS mount service precisely; the draft could mean registration.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.nfsLimitations",
+      "english": "Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.",
+      "original": "TCP арқылы тек оқуға арналған NFSv3. RPC-with-TLS болмаса, NFS трафигі шифрланбайды. NAS таңдалған AUTH_SYS ID мәндеріне және арнайы артықшылықты қажет етпейтін клиент порттарына рұқсат етуі керек (көбіне «insecure» экспорт параметрі деп аталады). NFSv4 пен UDP қолдау көрсетілмейді.",
+      "corrected": "TCP арқылы тек оқуға арналған NFSv3. RPC-with-TLS болмаса, NFS трафигі шифрланбайды. NAS таңдалған AUTH_SYS ID мәндеріне және арнайы артықшылықты қажет етпейтін клиент порттарына рұқсат етуі керек (көбіне «insecure» экспорт параметрі деп аталады). NFSv4 пен UDP-ге қолдау көрсетілмейді.",
+      "reason": "Repair case agreement in the unsupported-protocol statement.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.nfsMountPort",
+      "english": "NFS mount service TCP port",
+      "original": "NFS тіркеу қызметінің TCP порты",
+      "corrected": "NFS mount қызметінің TCP порты",
+      "reason": "Identify the NFS mount service precisely; the draft could mean registration.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "TCP арқылы NFSv3 ортақ ресурсын пайдаланыңыз. Шифрлау талап етілсе, NFS қызметі де, тіркеу қызметі де RPC-with-TLS қолдауы керек. Осы құрылғы сенетін сервер сертификаты үшін теңшелетін сертификат өрісін бос қалдырыңыз немесе NAS CA сертификатын не өзі қол қойған сертификатты қосыңыз. Сертификаттағы атау қосылу нүктесінің хостына сәйкес болуы керек. NAS өзара TLS талап етсе, оның PKCS#12 клиент сәйкестендіру деректерін қосыңыз. Соңында ортақ ресурс бапталған AUTH_SYS UID/GID мәндеріне және клиент порттарының ережелеріне рұқсат ететінін тексеріңіз.",
+      "corrected": "TCP арқылы NFSv3 ортақ ресурсын пайдаланыңыз. Шифрлау талап етілсе, NFS қызметі де, mount қызметі де RPC-with-TLS қолдауы керек. Осы құрылғы сенетін сервер сертификаты үшін теңшелетін сертификат өрісін бос қалдырыңыз немесе NAS CA сертификатын не өзі қол қойған сертификатты қосыңыз. Сертификаттағы атау қосылу нүктесінің хостына сәйкес болуы керек. NAS өзара TLS талап етсе, оның PKCS#12 клиент сәйкестендіру деректерін қосыңыз. Соңында ортақ ресурс бапталған AUTH_SYS UID/GID мәндеріне және клиент порттарының ережелеріне рұқсат ететінін тексеріңіз.",
+      "reason": "Identify the NFS mount service precisely; the draft could mean registration.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "kk",
+      "key": "sourceSetup.nfsTlsHelp",
+      "english": "RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.",
+      "original": "RPC-with-TLS әдеттегі NFS және тіркеу қызметінің порттарын пайдаланады және NAS-та RFC 9289 қолдауын талап етеді. TLS 1.3 қажет. Хост атауы немесе IP мекенжайы сертификатқа сәйкес болуы керек. Шифрланған арнада да AUTH_SYS UID/GID қолданылады.",
+      "corrected": "RPC-with-TLS әдеттегі NFS және mount қызметінің порттарын пайдаланады және NAS-та RFC 9289 қолдауын талап етеді. TLS 1.3 қажет. Хост атауы немесе IP мекенжайы сертификатқа сәйкес болуы керек. Шифрланған арнада да AUTH_SYS UID/GID қолданылады.",
+      "reason": "Identify the NFS mount service precisely; the draft could mean registration.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.chooseIdentity",
+      "english": "Choose PKCS#12 client identity",
+      "original": "PKCS#12 클라이언트 ID 인증 정보 선택",
+      "corrected": "PKCS#12 클라이언트 인증 정보 선택",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP는 수동 모드를 사용합니다. 일반 FTP에는 ftp://, 명시적 TLS에는 ftpes://를 사용하세요. ftps://도 TLS를 사용하며, 포트 990에서는 암시적 TLS를, 다른 포트에서는 명시적 TLS를 사용합니다.",
+      "corrected": "FTP는 패시브 모드를 사용합니다. 암호화되지 않은 FTP에는 ftp://, 명시적 TLS에는 ftpes://를 사용하세요. ftps://도 TLS를 사용하며, 포트 990에서는 암시적 TLS를, 다른 포트에서는 명시적 TLS를 사용합니다.",
+      "reason": "Use the FTP passive-mode term, avoiding the manual-mode reading. State explicitly that plain FTP is unencrypted.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.identityPassphrase",
+      "english": "Client identity passphrase",
+      "original": "클라이언트 ID 인증 정보 암호문",
+      "corrected": "클라이언트 인증 정보 암호 구문",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID. Passphrase is a secret phrase; the draft term meant ciphertext.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.identityPassphraseHelp",
+      "english": "Leave blank if the file has no passphrase.",
+      "original": "파일에 암호문이 없으면 비워 두세요.",
+      "corrected": "파일에 암호 구문이 없으면 비워 두세요.",
+      "reason": "Passphrase is a secret phrase; the draft term meant ciphertext.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.identityStorageHelp",
+      "english": "Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.",
+      "original": "클라이언트 ID 인증 정보는 암호화된 소스 자격 증명 저장소에 저장됩니다. 저장된 인증 정보를 유지하려면 이 섹션을 변경하지 마세요.",
+      "corrected": "클라이언트 인증 정보는 암호화된 소스 자격 증명 저장소에 저장됩니다. 저장된 인증 정보를 유지하려면 이 섹션을 변경하지 마세요.",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "TCP 기반 NFSv3 내보내기를 사용하세요. 암호화가 필수인 경우 NFS와 마운트 서비스가 모두 RPC-with-TLS를 지원해야 합니다. 이 장치에서 서버 인증서를 신뢰하면 사용자 지정 인증서를 비워 두세요. 그렇지 않으면 NAS CA 또는 자체 서명 인증서를 추가하세요. 인증서 이름은 엔드포인트의 호스트와 일치해야 합니다. NAS가 상호 TLS를 요구하면 해당 PKCS#12 클라이언트 ID 인증 정보를 추가하세요. 마지막으로 내보내기 설정이 지정한 AUTH_SYS UID/GID와 클라이언트 포트 정책을 허용하는지 확인하세요.",
+      "corrected": "TCP 기반 NFSv3 내보내기를 사용하세요. 암호화가 필수인 경우 NFS와 마운트 서비스가 모두 RPC-with-TLS를 지원해야 합니다. 이 장치에서 서버 인증서를 신뢰하면 사용자 지정 인증서를 비워 두세요. 그렇지 않으면 NAS CA 또는 자체 서명 인증서를 추가하세요. 인증서 이름은 엔드포인트의 호스트와 일치해야 합니다. NAS가 상호 TLS를 요구하면 해당 PKCS#12 클라이언트 인증 정보를 추가하세요. 마지막으로 내보내기 설정이 지정한 AUTH_SYS UID/GID와 클라이언트 포트 정책을 허용하는지 확인하세요.",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.privateKeyPassphrase",
+      "english": "Private key passphrase",
+      "original": "개인 키 암호문",
+      "corrected": "개인 키 암호 구문",
+      "reason": "Passphrase is a secret phrase; the draft term meant ciphertext.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.removeIdentity",
+      "english": "Remove any saved client identity",
+      "original": "저장된 클라이언트 ID 인증 정보 제거",
+      "corrected": "저장된 클라이언트 인증 정보 제거",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.replaceIdentity",
+      "english": "Replace saved client identity",
+      "original": "저장된 클라이언트 ID 인증 정보 교체",
+      "corrected": "저장된 클라이언트 인증 정보 교체",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.savedIdentity",
+      "english": "A saved client identity will be used.",
+      "original": "저장된 클라이언트 ID 인증 정보를 사용합니다.",
+      "corrected": "저장된 클라이언트 인증 정보를 사용합니다.",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ko",
+      "key": "sourceSetup.selectedIdentity",
+      "english": "Selected client identity: ${name}",
+      "original": "선택한 클라이언트 ID 인증 정보: ${name}",
+      "corrected": "선택한 클라이언트 인증 정보: ${name}",
+      "reason": "Clarify certificate credentials rather than implying a numeric client ID.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "ms",
+      "key": "sourceSetup.nfsSetupDetails",
+      "english": "Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.",
+      "original": "Gunakan perkongsian NFSv3 melalui TCP. Jika penyulitan diwajibkan, perkhidmatan NFS dan lekap mesti kedua-duanya menyokong RPC-with-TLS. Biarkan sijil tersuai kosong untuk sijil pelayan yang dipercayai oleh peranti ini, atau tambah sijil CA NAS atau sijil yang ditandatangani sendiri. Nama dalam sijil mesti sepadan dengan hos titik akhir. Jika NAS memerlukan TLS bersama, tambah identiti klien PKCS#12-nya. Akhir sekali, pastikan perkongsian membenarkan AUTH_SYS UID/GID yang dikonfigurasi serta dasar port klien.",
+      "corrected": "Gunakan perkongsian NFSv3 melalui TCP. Jika penyulitan diwajibkan, perkhidmatan NFS dan lekap mesti kedua-duanya menyokong RPC-with-TLS. Biarkan sijil tersuai kosong untuk sijil pelayan yang dipercayai oleh peranti ini, atau tambah sijil CA NAS atau sijil yang ditandatangani sendiri. Nama dalam sijil mesti sepadan dengan hos titik akhir. Jika NAS memerlukan pengesahan TLS dua hala, tambah identiti klien PKCS#12-nya. Akhir sekali, pastikan perkongsian membenarkan AUTH_SYS UID/GID yang dikonfigurasi serta dasar port klien.",
+      "reason": "Express mutual TLS authentication, not shared TLS.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "pt",
+      "key": "sourceSetup.fieldRequired",
+      "english": "${label} is required.",
+      "original": "${label} é obrigatório.",
+      "corrected": "Campo obrigatório: ${label}.",
+      "reason": "Use an invariant field-label construction without assuming the interpolated label gender.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "tr",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP pasif kip kullanır. Şifresiz FTP için ftp://, açık TLS için ftpes:// veya TLS için ftps:// kullanın (990 numaralı bağlantı noktasında örtük; diğer bağlantı noktalarında açık).",
+      "corrected": "FTP pasif kip kullanır. Şifresiz FTP için ftp://, TLS’nin ayrı bir komutla başlatıldığı bağlantılar için ftpes:// veya TLS için ftps:// kullanın (990 numaralı bağlantı noktasında TLS hemen başlar; diğer bağlantı noktalarında ayrı bir komutla başlatılır).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "uz",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP passiv rejimdan foydalanadi. Shifrlanmagan FTP uchun ftp://, aniq ishga tushiriladigan TLS uchun ftpes:// yoki TLS uchun ftps:// dan foydalaning (990 portida yashirin tarzda, boshqa portlarda aniq ishga tushiriladi).",
+      "corrected": "FTP passiv rejimdan foydalanadi. Shifrlanmagan FTP uchun ftp://, TLS alohida buyruq bilan yoqiladigan rejim uchun ftpes:// yoki TLS uchun ftps:// dan foydalaning (990 portida TLS darhol boshlanadi; boshqa portlarda alohida buyruq bilan yoqiladi).",
+      "reason": "Explain explicit TLS as a separate command and implicit TLS as starting immediately; preserve passive mode, unencrypted ftp://, ftpes://, ftps:// and the port-990 distinction.",
+      "reviewType": "author-self-review"
+    },
+    {
+      "locale": "zh",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP 使用被动模式。普通 FTP 使用 ftp://，显式 TLS 使用 ftpes://；ftps:// 使用 TLS（端口 990 为隐式 TLS，其他端口为显式 TLS）。",
+      "corrected": "FTP 使用被动模式。未加密的 FTP 使用 ftp://，显式 TLS 使用 ftpes://；ftps:// 使用 TLS（端口 990 为隐式 TLS，其他端口为显式 TLS）。",
+      "reason": "State explicitly that plain FTP is unencrypted.",
+      "reviewType": "independent-agent-review"
+    },
+    {
+      "locale": "zh-Hant",
+      "key": "sourceSetup.ftpHelp",
+      "english": "FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).",
+      "original": "FTP 使用被動模式。一般 FTP 使用 ftp://，明確 TLS 使用 ftpes://；ftps:// 使用 TLS（連接埠 990 為隱含 TLS，其他連接埠為明確 TLS）。",
+      "corrected": "FTP 使用被動模式。未加密的 FTP 使用 ftp://，明確 TLS 使用 ftpes://；ftps:// 使用 TLS（連接埠 990 為隱含 TLS，其他連接埠為明確 TLS）。",
+      "reason": "State explicitly that plain FTP is unencrypted.",
+      "reviewType": "independent-agent-review"
+    }
+  ]
+}

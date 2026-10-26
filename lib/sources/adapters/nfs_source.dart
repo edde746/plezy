@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart' show sha256;
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
@@ -27,12 +26,10 @@ class NfsSourceAdapter extends SourceAdapter {
 
   Future<SecurityContext> _createRpcTlsContext() async {
     final certificatePem = source.options['rpcTlsServerCertificatePem']?.trim() ?? '';
-    final context = SecurityContext(withTrustedRoots: true)
-      ..minimumTlsProtocolVersion = TlsProtocolVersion.tls1_3;
+    final context = SecurityContext(withTrustedRoots: true)..minimumTlsProtocolVersion = TlsProtocolVersion.tls1_3;
     try {
       if (certificatePem.isNotEmpty) {
-        if (!certificatePem.contains('-----BEGIN CERTIFICATE-----') ||
-            certificatePem.contains('PRIVATE KEY')) {
+        if (!certificatePem.contains('-----BEGIN CERTIFICATE-----') || certificatePem.contains('PRIVATE KEY')) {
           throw const SourceException(SourceFailure.invalidData);
         }
 
@@ -125,7 +122,7 @@ class NfsSourceAdapter extends SourceAdapter {
     if (parts.any((part) => part == '.' || part == '..' || part.contains('\u0000'))) {
       throw const SourceException(SourceFailure.permission);
     }
-    return parts.isEmpty ? '/' : '/' + parts.join('/');
+    return parts.isEmpty ? '/' : '/${parts.join('/')}';
   }
 
   String get _root {
@@ -134,7 +131,7 @@ class NfsSourceAdapter extends SourceAdapter {
       throw const SourceException(SourceFailure.permission);
     }
     if (input.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
-    final normalized = p.posix.normalize(input.startsWith('/') ? input : '/' + input);
+    final normalized = p.posix.normalize(input.startsWith('/') ? input : '/$input');
     if (normalized.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
     return normalized == '.' ? '/' : normalized;
   }
@@ -147,15 +144,20 @@ class NfsSourceAdapter extends SourceAdapter {
     if (raw.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
     final normalized = p.posix.normalize(raw);
     final root = _root;
-    if (root != '/' && normalized != root && !normalized.startsWith(root.endsWith('/') ? root : root + '/')) {
+    if (root != '/' && normalized != root && !normalized.startsWith(root.endsWith('/') ? root : '$root/')) {
       throw const SourceException(SourceFailure.permission);
     }
     return normalized;
   }
 
   String _child(String parent, String name) {
-    if (name.isEmpty || name == '.' || name == '..' || name.contains('/') ||
-        name.contains('\u0000') || name.contains('\r') || name.contains('\n')) {
+    if (name.isEmpty ||
+        name == '.' ||
+        name == '..' ||
+        name.contains('/') ||
+        name.contains('\u0000') ||
+        name.contains('\r') ||
+        name.contains('\n')) {
       throw const SourceException(SourceFailure.permission);
     }
     return _path(p.posix.join(_path(parent), name));
@@ -178,14 +180,7 @@ class NfsSourceAdapter extends SourceAdapter {
   Future<List<int>> _mountExport() async {
     final endpoint = _endpoint;
     final args = _XdrWriter()..string(_exportPath);
-    final response = await _rpc(
-      endpoint.host,
-      _mountPort,
-      _mountProgram,
-      _mountVersion,
-      1,
-      args.take(),
-    );
+    final response = await _rpc(endpoint.host, _mountPort, _mountProgram, _mountVersion, 1, args.take());
     final reader = _XdrReader(response);
     final status = reader.uint32();
     if (status != 0) throw _nfsError(status);
@@ -200,14 +195,7 @@ class NfsSourceAdapter extends SourceAdapter {
     return handle;
   }
 
-  Future<Uint8List> _rpc(
-    String host,
-    int port,
-    int program,
-    int version,
-    int procedure,
-    Uint8List arguments,
-  ) async {
+  Future<Uint8List> _rpc(String host, int port, int program, int version, int procedure, Uint8List arguments) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
     Socket? socket;
     _RpcWireReader? wire;
@@ -215,13 +203,7 @@ class NfsSourceAdapter extends SourceAdapter {
       final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
       socket = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
       if (securityContext != null) {
-        socket = await _upgradeRpcTls(
-          socket,
-          host,
-          program,
-          version,
-          securityContext,
-        );
+        socket = await _upgradeRpcTls(socket, host, program, version, securityContext);
       }
       final random = math.Random.secure();
       final xid = random.nextInt(0xffffffff);
@@ -273,13 +255,7 @@ class NfsSourceAdapter extends SourceAdapter {
     }
   }
 
-  Future<Socket> _upgradeRpcTls(
-    Socket socket,
-    String host,
-    int program,
-    int version,
-    SecurityContext context,
-  ) async {
+  Future<Socket> _upgradeRpcTls(Socket socket, String host, int program, int version, SecurityContext context) async {
     final xid = math.Random.secure().nextInt(0xffffffff);
     final probe = _XdrWriter()
       ..uint32(xid)
@@ -323,8 +299,7 @@ class NfsSourceAdapter extends SourceAdapter {
       // Cancelling it afterwards would also stop reads from the TLS socket.
       transferredToTls = true;
       try {
-        return await SecureSocket.secure(socket, host: host, context: context)
-            .timeout(const Duration(seconds: 15));
+        return await SecureSocket.secure(socket, host: host, context: context).timeout(const Duration(seconds: 15));
       } on SourceException {
         rethrow;
       } on Object {
@@ -335,16 +310,13 @@ class NfsSourceAdapter extends SourceAdapter {
     }
   }
 
-  SourceException _nfsError(int status) => SourceException(
-    switch (status) {
-      1 || 2 || 13 || 30 => SourceFailure.permission,
-      5 || 6 || 70 || 71 || 10001 => SourceFailure.unavailable,
-      22 || 10003 || 10005 => SourceFailure.invalidData,
-      10004 => SourceFailure.unsupported,
-      _ => SourceFailure.unavailable,
-    },
-    status: status,
-  );
+  SourceException _nfsError(int status) => SourceException(switch (status) {
+    1 || 2 || 13 || 30 => SourceFailure.permission,
+    5 || 6 || 70 || 71 || 10001 => SourceFailure.unavailable,
+    22 || 10003 || 10005 => SourceFailure.invalidData,
+    10004 => SourceFailure.unsupported,
+    _ => SourceFailure.unavailable,
+  }, status: status);
 
   Future<({List<int> handle, _NfsAttributes? attributes})> _lookup(List<int> directory, String name) async {
     if (name.isEmpty || name == '.' || name == '..' || name.contains('/') || name.contains('\u0000')) {
@@ -372,7 +344,7 @@ class NfsSourceAdapter extends SourceAdapter {
     final parts = normalized.split('/').where((part) => part.isNotEmpty);
     var current = '';
     for (final part in parts) {
-      current = current.isEmpty ? '/' + part : current + '/' + part;
+      current = current.isEmpty ? '/$part' : '$current/$part';
       final existing = _handles[current];
       if (existing != null) {
         handle = existing;
@@ -532,32 +504,36 @@ class NfsSourceAdapter extends SourceAdapter {
       final kind = isDirectory ? SourceItemKind.folder : classifySourceFile(row.name, lookupMimeType(row.name) ?? '');
       if (kind == SourceItemKind.unknown) continue;
       final size = row.attributes?.size;
-      final revision = row.attributes == null
-          ? null
-          : (size?.toString() ?? '') + ':' + row.attributes!.modifiedSeconds.toString();
-      entries.add(SourceEntry(
-        sourceId: source.id,
-        id: path,
-        title: row.name,
-        kind: kind,
-        parentId: directory,
-        files: isDirectory ? const [] : [
-          PublicationFile(
-            id: path,
-            name: row.name,
-            mimeType: lookupMimeType(row.name) ?? '',
-            size: size,
-            revision: revision,
-          ),
-        ],
-      ));
+      final revision = row.attributes == null ? null : '${size?.toString() ?? ''}:${row.attributes!.modifiedSeconds}';
+      entries.add(
+        SourceEntry(
+          sourceId: source.id,
+          id: path,
+          title: row.name,
+          kind: kind,
+          parentId: directory,
+          files: isDirectory
+              ? const []
+              : [
+                  PublicationFile(
+                    id: path,
+                    name: row.name,
+                    mimeType: lookupMimeType(row.name) ?? '',
+                    size: size,
+                    revision: revision,
+                  ),
+                ],
+        ),
+      );
     }
-    entries.sort((a, b) => a.isFolder == b.isFolder
-        ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-        : a.isFolder ? -1 : 1);
-    final next = page.eof || page.cookie == cookie
-        ? null
-        : page.cookie.toString() + ':' + base64Url.encode(page.verifier);
+    entries.sort(
+      (a, b) => a.isFolder == b.isFolder
+          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+          : a.isFolder
+          ? -1
+          : 1,
+    );
+    final next = page.eof || page.cookie == cookie ? null : '${page.cookie}:${base64Url.encode(page.verifier)}';
     return SourcePage(entries, next: next);
   }
 
@@ -622,7 +598,7 @@ class NfsSourceAdapter extends SourceAdapter {
         verifier = page.verifier;
       }
       VideoNfoMetadata? metadata;
-      for (final name in [stem.toLowerCase() + '.nfo', filename.toLowerCase() + '.nfo']) {
+      for (final name in ['${stem.toLowerCase()}.nfo', '${filename.toLowerCase()}.nfo']) {
         final row = siblings[name];
         if (row == null || row.attributes?.type != _regularFile || row.handle.isEmpty) continue;
         final bytes = await _readWhole(row.handle, row.attributes!.size, 1024 * 1024);
@@ -633,16 +609,20 @@ class NfsSourceAdapter extends SourceAdapter {
       String? poster;
       const extensions = ['jpg', 'jpeg', 'png', 'webp'];
       final names = <String>[
-        for (final ext in extensions) stem.toLowerCase() + '-poster.' + ext,
-        for (final ext in extensions) stem.toLowerCase() + '.' + ext,
-        for (final ext in extensions) 'poster.' + ext,
-        for (final ext in extensions) 'cover.' + ext,
-        for (final ext in extensions) 'folder.' + ext,
+        for (final ext in extensions) '${stem.toLowerCase()}-poster.$ext',
+        for (final ext in extensions) '${stem.toLowerCase()}.$ext',
+        for (final ext in extensions) 'poster.$ext',
+        for (final ext in extensions) 'cover.$ext',
+        for (final ext in extensions) 'folder.$ext',
       ];
       for (final name in names) {
         final row = siblings[name];
-        if (row == null || row.attributes?.type != _regularFile || row.attributes!.size <= 0 ||
-            row.attributes!.size > 8 * 1024 * 1024) continue;
+        if (row == null ||
+            row.attributes?.type != _regularFile ||
+            row.attributes!.size <= 0 ||
+            row.attributes!.size > 8 * 1024 * 1024) {
+          continue;
+        }
         poster = _child(directory, row.name);
         break;
       }
@@ -665,8 +645,7 @@ class NfsSourceAdapter extends SourceAdapter {
   }
 
   @override
-  Future<ContentLease> resolve(PublicationFile file) async =>
-      throw const SourceException(SourceFailure.unsupported);
+  Future<ContentLease> resolve(PublicationFile file) async => throw const SourceException(SourceFailure.unsupported);
 
   @override
   Future<int?> contentSize(PublicationFile file) async {
@@ -687,11 +666,7 @@ class NfsSourceAdapter extends SourceAdapter {
   }
 
   @override
-  Future<SourceByteStream?> openContent(
-    PublicationFile file, {
-    required int offset,
-    required int length,
-  }) async {
+  Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async {
     if (offset < 0 || length < 0) throw const SourceException(SourceFailure.invalidData);
     final handle = await _handleForPath(file.id);
     final attributes = await _getAttributes(handle);
@@ -742,12 +717,8 @@ class _NfsDirectoryPage {
 class _XdrWriter {
   final BytesBuilder _builder = BytesBuilder(copy: false);
 
-  void uint32(int value) => _builder.add([
-    (value >> 24) & 0xff,
-    (value >> 16) & 0xff,
-    (value >> 8) & 0xff,
-    value & 0xff,
-  ]);
+  void uint32(int value) =>
+      _builder.add([(value >> 24) & 0xff, (value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff]);
 
   void uint64(int value) {
     uint32((value >> 32) & 0xffffffff);
@@ -785,10 +756,8 @@ class _XdrReader {
 
   int uint32() {
     _need(4);
-    final result = (_bytes[_offset] << 24) |
-        (_bytes[_offset + 1] << 16) |
-        (_bytes[_offset + 2] << 8) |
-        _bytes[_offset + 3];
+    final result =
+        (_bytes[_offset] << 24) | (_bytes[_offset + 1] << 16) | (_bytes[_offset + 2] << 8) | _bytes[_offset + 3];
     _offset += 4;
     return result;
   }
@@ -812,8 +781,7 @@ class _XdrReader {
     return fixed(length);
   }
 
-  String string({required int maxLength}) =>
-      utf8.decode(opaque(maxLength: maxLength), allowMalformed: true);
+  String string({required int maxLength}) => utf8.decode(opaque(maxLength: maxLength), allowMalformed: true);
 
   Uint8List remaining() {
     final result = Uint8List.fromList(_bytes.sublist(_offset));

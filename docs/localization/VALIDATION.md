@@ -1,9 +1,44 @@
 # Localization validation — 2026-10-26
 
-The implementation covers 37 locale choices and 2,867 logical messages, including
-the merged books, cloud-source, lending and accessibility features.
+The implementation covers 37 locale choices and 3,060 logical messages, including
+discovery, books, cloud sources, lending, source setup and subtitle search.
+This follow-up uses main `027059a836f62dc6aab7212eef9d1935273188e8` as its fixed
+integration baseline.
 
-## Completed checks
+## Follow-up verification
+
+- Full Flutter analysis: no issues.
+- Slang regenerated from the frozen catalogs. All 37 resolved catalogs contain
+  3,060 logical messages with valid placeholders and current English hashes.
+- All 37 provenance files match the catalog hashes, exact message keys and
+  recorded origin counts. Native-resource and localized-quantity freshness
+  checks passed without changes. Translation hygiene reports zero unused keys;
+  the hardcoded-English check and formatting of 30 changed Dart files passed.
+- All 296 tests passed in the final single-worker run, including locale and
+  regional formatting, source adapters and layouts, real Chromium readers,
+  localized destructive dialogs, detail sheets, focus and TV input behavior,
+  Arabic subtitle search at 200% text, service language codes, and Trakt title/ID
+  lookup arrays. The earlier concurrent run stalled after 91 passes without a
+  reported test failure; it was stopped and replaced by this complete run.
+- The integration QA scan verifies all current catalog hashes, 4,656 exact
+  reviewed locale/message values, the original 1,218 corrections and 82 further
+  catalog corrections. The historical projection reproduces all 37 original
+  published-input hashes. Forty-seven source-setup draft refinements are tracked
+  separately, before those new translations entered the catalogs.
+- The current scan covers 110,160 resolved non-English message pairs and finds
+  zero corruption, repeated-word runs or checked opposite-label collisions.
+  Its 23 short-translation candidates are explicitly adjudicated; compressed
+  Chinese labels are not treated as mistranslations merely for being short.
+
+The [integration QA report](LANGUAGE_QA_INTEGRATION.md) distinguishes independent
+review of root-authored wording from authored/self-reviewed additions. These
+checks do not certify every message as fluent or native-reviewed.
+
+## Earlier implementation validation
+
+The following results belong to the earlier implementation and language-review
+snapshots. They remain useful history; their overlapping counts are not added to
+the current follow-up suite.
 
 - Full Flutter analysis: no issues.
 - Analysis was repeated after the final main integration with no issues. A focused
