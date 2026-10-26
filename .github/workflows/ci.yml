@@ -249,6 +249,13 @@ jobs:
         working-directory: android
         run: ./gradlew :app:lintDebug
 
+      - name: Verify Games embedded manifests and cancellation patches
+        run: python3 -m unittest discover -s scripts/games -p 'test_*.py'
+
+      - name: Build embedded Moonlight and Steam Android modules
+        working-directory: android
+        run: ./gradlew :moonlight:assembleDebug :steam:assembleDebug --stacktrace
+
   native-format:
     name: Native Formatting
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
@@ -302,7 +309,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev liblzma-dev \
             libstdc++-12-dev libmpv-dev libepoxy-dev libcurl4-openssl-dev libevdev-dev \
-            libwayland-dev libegl-dev
+            libwayland-dev libegl-dev libvulkan-dev mesa-vulkan-drivers
 
       - name: Prepare Flutter Linux configuration
         run: |
@@ -339,6 +346,30 @@ jobs:
         run: |
           ctest --test-dir build/linux-native-${{ matrix.sanitizer }} \
             --output-on-failure --no-tests=error
+
+      - name: Prepare pinned Steam sources
+        if: matrix.sanitizer == 'address'
+        run: python3 scripts/games/prepare_steam.py
+
+      - name: Configure Steam transport tests with sanitizers
+        if: matrix.sanitizer == 'address'
+        run: |
+          cmake -S native/games/steam -B build/games-steam-tests \
+            -DPLEZY_STEAM_TESTS=ON -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+
+      - name: Build Steam transport tests
+        if: matrix.sanitizer == 'address'
+        run: cmake --build build/games-steam-tests --parallel 2
+
+      - name: Run Steam transport and adapter tests
+        if: matrix.sanitizer == 'address'
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build/games-steam-tests --output-on-failure
 
   apple-native-test:
     name: Apple native reliability (${{ matrix.platform }})
