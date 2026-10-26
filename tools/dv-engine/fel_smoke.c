@@ -69,6 +69,21 @@ int test_fel_residual(void) {
   float baseline[VALUES], actual[VALUES], reference[VALUES];
   if (!render(renderer, gpu, &input, &output, baseline)) goto cleanup;
 
+  // A declared FEL stream with a missing EL must fail the render and retain
+  // libplacebo's sampling error. It must not silently report a successful BL.
+  struct pl_frame missing = frame(NULL);
+  input.enhancement_layer = &missing;
+  metadata.nlq_active = true;
+  const bool missing_el_rendered = pl_render_image(renderer, &input, &output, &pl_render_default_params);
+  if (missing_el_rendered || !(pl_renderer_get_errors(renderer).errors & PL_RENDER_ERR_SAMPLING)) {
+    fputs("Missing FEL layer was not rejected\n", stderr);
+    goto cleanup;
+  }
+  puts("Missing FEL layer was rejected");
+  pl_renderer_reset_errors(renderer, NULL);
+  input.enhancement_layer = NULL;
+  metadata.nlq_active = false;
+
   // LINEAR_DZ vectors: zero, both signs, threshold, both clamp directions.
   // Expected residuals are explicit values, not computed by a copy of GLSL.
   const struct {

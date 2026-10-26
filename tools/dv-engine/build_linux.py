@@ -41,11 +41,14 @@ def build(work: Path, jobs: int):
     provenance = {"lock": lock, "platform": platform.platform(), "commands": [], "sources": {}}
     env = os.environ.copy()
     env.update({
+        "HOME": str(work / "home"),
+        "XDG_CACHE_HOME": str(work / "home/cache"),
         "PKG_CONFIG_PATH": str(prefix / "lib/pkgconfig"),
         "LD_LIBRARY_PATH": str(prefix / "lib"),
         "LC_ALL": "C.UTF-8",
         "GIT_TERMINAL_PROMPT": "0",
     })
+    (work / "home/cache").mkdir(parents=True)
 
     def execute(args, *, cwd=None, capture=False):
         provenance["commands"].append(list(map(str, args)))
@@ -83,6 +86,7 @@ def build(work: Path, jobs: int):
         "--enable-shared", "--disable-static", "--enable-pic", "--enable-gpl",
         "--enable-version3", "--disable-autodetect", "--enable-gnutls",
         "--enable-libdav1d", "--enable-vaapi", "--enable-libdrm",
+        "--enable-decoder=png",
         "--enable-bsf=dovi_split", "--disable-doc", "--disable-debug",
     ], cwd=ffmpeg_build)
     execute(["make", f"-j{jobs}"], cwd=ffmpeg_build)
@@ -135,8 +139,18 @@ def build(work: Path, jobs: int):
     execute([smoke, work / "smoke.ppm"])
     provenance["surfaceless_gles_render_smoke"] = "passed-software-mesa"
     provenance["synthetic_fel_vectors"] = "passed-zero-positive-negative-threshold-clamping"
-    execute(["meson", "test", "-C", mpv_build, "--print-errorlogs", "--no-rebuild", "--timeout-multiplier=3"])
-    execute(["meson", "test", "-C", placebo_build, "--print-errorlogs", "--no-rebuild", "--timeout-multiplier=3"])
+    test_results = {}
+    for name, build_dir in (("mpv", mpv_build), ("libplacebo", placebo_build)):
+        try:
+            execute(["meson", "test", "-C", build_dir, "--print-errorlogs", "--no-rebuild", "--timeout-multiplier=3"])
+            test_results[name] = "passed"
+        except subprocess.CalledProcessError as exc:
+            test_results[name] = f"failed-exit-{exc.returncode}"
+    if any(result != "passed" for result in test_results.values()):
+        provenance["unit_tests"] = test_results
+        (prefix / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+        raise SystemExit(f"Upstream test failure: {test_results}")
+    provenance["unit_tests"] = test_results
 
     # Ship source identities and corresponding source, including locked submodules.
     notices = prefix / "sources"
@@ -148,6 +162,10 @@ def build(work: Path, jobs: int):
     for name in ("engine.lock.json", "README.md", "run.py"):
         shutil.copy2(HERE / name, prefix / name)
     shutil.copytree(HERE / "patches", prefix / "patches")
+    integration_source = notices / "integration"
+    integration_source.mkdir()
+    for name in ("Dockerfile", "build_linux.py", "engine_features.c", "fel_smoke.c", "render_smoke.c"):
+        shutil.copy2(HERE / name, integration_source / name)
     (prefix / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     artifact = work / f"plezyng-dv-experimental-{platform.machine()}.tar.xz"
     with tarfile.open(artifact, "w:xz") as archive:

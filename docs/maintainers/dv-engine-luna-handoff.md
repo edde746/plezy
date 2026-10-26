@@ -27,11 +27,18 @@ are needed. Do not merge or ship an unqualified engine as the production default
   were preserved, including Apple CI result-bundle diagnostics and changelog).
 - First engine commit: `f49c13bbae736d67f63d1997b35f2fbf18ac4db8`.
 - First build: [Actions run 40269374234](https://github.com/snapetech-org/PlezyNG/actions/runs/40269374234),
-  job `121398660530`. Last observed: container build **passed**, engine build
-  **in progress**. Re-read its final status/logs; no completed engine result is claimed.
-- This handoff commit adds the Linux app selector, lab, research, synthetic FEL
-  vectors and a compositor failure patch. It uses `[skip ci]` to preserve the
-  running first build. **The first run does not test these later additions.**
+  job `121398660530`, completed **failure**. Source fetch, FFmpeg/libplacebo/mpv
+  compilation, feature probe and GLES `opengl-next` red-frame decode/render/readback
+  all passed. 14/16 mpv tests passed. The two failures both loaded mpv's PNG fixture;
+  the build had omitted the PNG decoder. This stopped the script before libplacebo's
+  test suite and artifact packaging. Logs: [job logs](https://github.com/snapetech-org/PlezyNG/actions/runs/40269374234).
+- Commit `f6624522f29f7cc3a306031a3393a8e6a2d75d75` added the Linux app selector,
+  lab, synthetic FEL vectors and compositor failure patch with `[skip ci]` to
+  preserve the first run. **That failed run did not test these later additions.**
+- Current build script enables PNG, sets writable cache paths, runs both upstream
+  test suites even if one fails, records results, and blocks packaging on any failure.
+  The synthetic FEL test also injects a missing EL and requires libplacebo to reject
+  it. This current branch state still needs a fresh Actions run.
 - No PR, merge, release, installation, driver change or physical-device test has
   been performed. Production `mpv-build.lock.json` remains unchanged.
 - The local workspace was a sparse materialization, not a complete git checkout.
