@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -19,6 +20,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/provider_mark.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import '../sources/source_widgets.dart';
@@ -280,12 +282,13 @@ class _SignInDialogState extends State<_SignInDialog> {
     title: Text(t.lending.signIn),
     content: Text(t.lending.waiting),
     actions: [
-      TextButton(
+      DialogActionButton(
+        autofocus: true,
         onPressed: () {
           widget.service.cancelAuthorization();
           Navigator.pop(context);
         },
-        child: Text(t.lending.cancel),
+        label: t.lending.cancel,
       ),
     ],
   );
@@ -384,12 +387,12 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                   ],
                   Text(t.lending.handoff),
                   const SizedBox(height: 24),
-                  TextField(
+                  FocusableTextField(
                     controller: _name,
                     decoration: InputDecoration(labelText: t.lending.libraryName),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  FocusableTextField(
                     controller: _url,
                     keyboardType: TextInputType.url,
                     autocorrect: false,
@@ -416,7 +419,7 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                       title: Text(t.lending.advanced),
                       tilePadding: EdgeInsets.zero,
                       children: [
-                        TextField(
+                        FocusableTextField(
                           controller: _gateway,
                           autocorrect: false,
                           decoration: InputDecoration(labelText: t.lending.gateway, helperText: t.lending.gatewayHint),
@@ -570,7 +573,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                   ),
                 ),
               if (_shelf == 'catalogue')
-                TextField(
+                FocusableTextField(
                   controller: _search,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _load(),
@@ -717,18 +720,20 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(t.lending.placeHold),
-          content: TextField(
+          content: FocusableTextField(
             controller: controller,
+            autofocus: true,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(labelText: t.lending.email),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t.lending.cancel)),
-            FilledButton(
+            DialogActionButton(onPressed: () => Navigator.pop(ctx), label: t.lending.cancel),
+            DialogActionButton(
               onPressed: () {
                 if (controller.text.contains('@')) Navigator.pop(ctx, controller.text.trim());
               },
-              child: Text(t.lending.placeHold),
+              label: t.lending.placeHold,
+              isPrimary: true,
             ),
           ],
         ),
@@ -834,21 +839,23 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                         context: context,
                                         builder: (ctx) => AlertDialog(
                                           title: Text(t.lending.editEmail),
-                                          content: TextField(
+                                          content: FocusableTextField(
                                             controller: input,
+                                            autofocus: true,
                                             keyboardType: TextInputType.emailAddress,
                                             decoration: InputDecoration(labelText: t.lending.email),
                                           ),
                                           actions: [
-                                            TextButton(
+                                            DialogActionButton(
                                               onPressed: () => Navigator.pop(ctx),
-                                              child: Text(t.lending.cancel),
+                                              label: t.lending.cancel,
                                             ),
-                                            FilledButton(
+                                            DialogActionButton(
                                               onPressed: () {
                                                 if (input.text.contains('@')) Navigator.pop(ctx, input.text.trim());
                                               },
-                                              child: Text(t.fileSources.save),
+                                              label: t.fileSources.save,
+                                              isPrimary: true,
                                             ),
                                           ],
                                         ),
