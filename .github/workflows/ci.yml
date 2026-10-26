@@ -1,14 +1,8 @@
 # ng-runner-policy: private-jit-only-v1
 name: CI - Sanity Checks
 
+# Validation is opt-in: choose a ref from Actions and dispatch this workflow.
 on:
-  push:
-    branches:
-      - main
-  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       build_linux_packages:
