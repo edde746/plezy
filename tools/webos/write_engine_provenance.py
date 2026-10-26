@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -29,12 +30,25 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def write(archive: Path, engine: Path, snapshot: Path, destination: Path, epoch: int) -> dict[str, object]:
+def write(
+    archive: Path,
+    engine: Path,
+    snapshot: Path,
+    normalization_record: Path,
+    destination: Path,
+    epoch: int,
+) -> dict[str, object]:
     try:
         lock = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ProvenanceError(f"cannot read compatibility lock: {exc}") from exc
     artifacts = lock["lgArtifacts"]
+    if normalization_record.is_symlink() or not normalization_record.is_file():
+        raise ProvenanceError("normalization provenance must be a regular non-symlink file")
+    try:
+        normalization = json.loads(normalization_record.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ProvenanceError(f"cannot read normalization provenance: {exc}") from exc
     hashes = {
         "engineArchiveSha256": sha256(archive),
         "engineLibrarySha256": sha256(engine),
@@ -47,6 +61,30 @@ def write(archive: Path, engine: Path, snapshot: Path, destination: Path, epoch:
     }
     if hashes != expected:
         raise ProvenanceError("built engine outputs do not match the reviewed artifact hashes")
+    expected_normalization = {
+        "format",
+        "referenceArchiveSha256",
+        "objcopySha256",
+        "removedSections",
+        "rawEngineSha256",
+        "rawGenSnapshotSha256",
+        "normalizedEngineSha256",
+        "normalizedGenSnapshotSha256",
+    }
+    if not isinstance(normalization, dict) or set(normalization) != expected_normalization:
+        raise ProvenanceError("normalization provenance has an unexpected schema")
+    build = lock["engineBuild"]
+    raw_hashes = (normalization["rawEngineSha256"], normalization["rawGenSnapshotSha256"])
+    if (
+        normalization["format"] != 1
+        or normalization["referenceArchiveSha256"] != artifacts["engineArchiveSha256"]
+        or normalization["objcopySha256"] != build["ndkTools"]["objcopy"]["sha256"]
+        or normalization["removedSections"] != ["libflutter_engine.so:.comment"]
+        or normalization["normalizedEngineSha256"] != hashes["engineLibrarySha256"]
+        or normalization["normalizedGenSnapshotSha256"] != hashes["genSnapshotSha256"]
+        or any(not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None for value in raw_hashes)
+    ):
+        raise ProvenanceError("normalization provenance does not match the validated engine build")
     record = {
         "format": 1,
         "sourceDateEpoch": epoch,
@@ -55,7 +93,8 @@ def write(archive: Path, engine: Path, snapshot: Path, destination: Path, epoch:
         "engineRevision": lock["sdk"]["engineRevision"],
         "dartRevision": lock["sdk"]["dartRevision"],
         "skiaRevision": lock["sdk"]["skiaRevision"],
-        "ndkMetadataRevision": lock["engineBuild"]["ndkMetadataRevision"],
+        "ndkMetadataRevision": build["ndkMetadataRevision"],
+        "normalization": normalization,
         **hashes,
     }
     if destination.is_symlink() or destination.exists():
@@ -78,11 +117,19 @@ def main() -> int:
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--engine", type=Path, required=True)
     parser.add_argument("--snapshot", type=Path, required=True)
+    parser.add_argument("--normalization-record", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-date-epoch", type=int, required=True)
     args = parser.parse_args()
     try:
-        print(json.dumps(write(args.archive, args.engine, args.snapshot, args.output, args.source_date_epoch), indent=2))
+        print(json.dumps(write(
+            args.archive,
+            args.engine,
+            args.snapshot,
+            args.normalization_record,
+            args.output,
+            args.source_date_epoch,
+        ), indent=2))
     except (OSError, KeyError, TypeError, ProvenanceError) as exc:
         print(f"webOS engine provenance failed: {exc}", file=sys.stderr)
         return 1
