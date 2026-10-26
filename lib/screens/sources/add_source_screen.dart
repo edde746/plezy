@@ -28,11 +28,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   FileSourceKind _kind = FileSourceKind.webdav;
   bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = true;
   bool _discoveringDlna = false;
-  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks, PublicationShelf.videos};
+  Set<PublicationShelf> _shelves = defaultPublicationShelves(FileSourceKind.webdav);
+  bool _shelvesCustomized = false;
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
   bool get oauth => const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(_kind);
+
   @override
   void initState() {
     super.initState();
@@ -46,8 +48,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
       _onlineMetadata = old.options['onlineMetadata'] != 'false';
+      final defaultShelves = defaultPublicationShelves(old.kind).map((s) => s.name).join(',');
       _shelves = PublicationShelf.values
-          .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
+          .where((s) => (old.options['shelves'] ?? defaultShelves).split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
       field('region').text = old.options['region'] ?? '';
@@ -63,7 +66,15 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     super.dispose();
   }
 
-  Widget input(String key, String label, {bool secret = false, bool required = false, String? hint, int maxLines = 1, FormFieldValidator<String>? validator}) => Padding(
+  Widget input(
+    String key,
+    String label, {
+    bool secret = false,
+    bool required = false,
+    String? hint,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: TextFormField(
       controller: field(key),
@@ -242,19 +253,36 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           : (kind) => setState(() {
                               _kind = kind!;
                               if (kind == FileSourceKind.dlna) _allowHttp = true;
+                              if (!_shelvesCustomized) _shelves = defaultPublicationShelves(_kind);
                             }),
                     ),
                     const SizedBox(height: 24),
                     input('name', t.fileSources.name),
                     if (!oauth && _kind != FileSourceKind.local)
-                      input('endpoint', t.fileSources.endpoint, required: true, hint: switch (_kind) {
-                        FileSourceKind.smb => 'smb://nas/Movies',
-                        FileSourceKind.ftp => 'ftp://nas:21',
-                        FileSourceKind.sftp => 'sftp://nas:22',
-                        FileSourceKind.nfs => 'nfs://nas:2049/export',
-                        FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
-                        _ => null,
-                      }),
+                      input(
+                        'endpoint',
+                        t.fileSources.endpoint,
+                        required: true,
+                        hint: switch (_kind) {
+                          FileSourceKind.smb => t.fileSources.smbEndpointHint,
+                          FileSourceKind.ftp => 'ftp://nas:21',
+                          FileSourceKind.sftp => 'sftp://nas:22',
+                          FileSourceKind.nfs => 'nfs://nas:2049/export',
+                          FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
+                          _ => null,
+                        },
+                        validator: _kind == FileSourceKind.smb
+                            ? (value) {
+                                if (value?.trim().isNotEmpty != true) return t.fileSources.endpoint;
+                                try {
+                                  validateSmbSourceEndpoint(value!.trim());
+                                  return null;
+                                } on SourceException {
+                                  return t.fileSources.smbEndpointInvalid;
+                                }
+                              }
+                            : null,
+                      ),
                     if (_kind == FileSourceKind.dlna) ...[
                       OutlinedButton.icon(
                         onPressed: _busy || _discoveringDlna ? null : _discoverDlna,
@@ -284,11 +312,19 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       input(
                         'root',
                         t.fileSources.root,
-                        hint: _kind == FileSourceKind.dlna
-                            ? 'DLNA object ID; blank uses the device root.'
-                            : t.fileSources.folderHelp,
+                        hint: switch (_kind) {
+                          FileSourceKind.dlna => 'DLNA object ID; blank uses the device root.',
+                          FileSourceKind.smb => t.fileSources.smbFolderHelp,
+                          _ => t.fileSources.folderHelp,
+                        },
                       ),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb, FileSourceKind.ftp, FileSourceKind.sftp}.contains(_kind)) ...[
+                    if (const {
+                      FileSourceKind.webdav,
+                      FileSourceKind.opds,
+                      FileSourceKind.smb,
+                      FileSourceKind.ftp,
+                      FileSourceKind.sftp,
+                    }.contains(_kind)) ...[
                       input('username', t.fileSources.username, required: _kind == FileSourceKind.sftp && widget.existing == null),
                       input(
                         'password',
@@ -300,7 +336,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                   : 'Enter a password or add a private key below.'
                             : null,
                       ),
-                      if (_kind == FileSourceKind.smb) input('domain', 'Domain (optional)'),
+                      if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
                     if (_kind == FileSourceKind.sftp) ...[
                       input('hostKeyFingerprint', 'SSH host key SHA256 fingerprint', required: widget.existing == null,
                         hint: widget.existing == null
@@ -335,8 +371,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       if (_kind == FileSourceKind.smb)
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Encrypt SMB3 connection'),
-                          subtitle: const Text('Use SMB3 encryption when the NAS supports it.'),
+                          title: Text(t.fileSources.smbEncryption),
+                          subtitle: Text(t.fileSources.smbEncryptionHint),
                           value: _encryptSmb,
                           onChanged: _busy ? null : (value) => setState(() => _encryptSmb = value),
                         ),
@@ -425,6 +461,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             onSelected: _busy
                                 ? null
                                 : (selected) => setState(() {
+                                    _shelvesCustomized = true;
                                     selected ? _shelves.add(shelf) : _shelves.remove(shelf);
                                   }),
                           ),

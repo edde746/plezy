@@ -7194,11 +7194,23 @@ class Translations$fileSources$en {
 	/// en: 'Server URL'
 	String get endpoint => 'Server URL';
 
+	/// en: 'Example: smb://nas/Movies'
+	String get smbEndpointHint => 'Example: smb://nas/Movies';
+
+	/// en: 'Enter an SMB server and one share.'
+	String get smbEndpointInvalid => 'Enter an SMB server and one share.';
+
 	/// en: 'Folder or prefix'
 	String get root => 'Folder or prefix';
 
+	/// en: 'Leave blank to use the whole share, or enter a folder within it.'
+	String get smbFolderHelp => 'Leave blank to use the whole share, or enter a folder within it.';
+
 	/// en: 'Username'
 	String get username => 'Username';
+
+	/// en: 'Domain (optional)'
+	String get smbDomain => 'Domain (optional)';
 
 	/// en: 'Password'
 	String get password => 'Password';
@@ -7226,6 +7238,12 @@ class Translations$fileSources$en {
 
 	/// en: 'Allow unencrypted HTTP on a trusted network'
 	String get allowHttp => 'Allow unencrypted HTTP on a trusted network';
+
+	/// en: 'Encrypt SMB3 connection'
+	String get smbEncryption => 'Encrypt SMB3 connection';
+
+	/// en: 'Use SMB3 encryption when the NAS supports it.'
+	String get smbEncryptionHint => 'Use SMB3 encryption when the NAS supports it.';
 
 	/// en: 'Connect'
 	String get connect => 'Connect';
@@ -12868,8 +12886,12 @@ extension on Translations {
 			'fileSources.source' => 'Source',
 			'fileSources.name' => 'Name',
 			'fileSources.endpoint' => 'Server URL',
+			'fileSources.smbEndpointHint' => 'Example: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Enter an SMB server and one share.',
 			'fileSources.root' => 'Folder or prefix',
+			'fileSources.smbFolderHelp' => 'Leave blank to use the whole share, or enter a folder within it.',
 			'fileSources.username' => 'Username',
+			'fileSources.smbDomain' => 'Domain (optional)',
 			'fileSources.password' => 'Password',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Access key ID',
@@ -12879,6 +12901,8 @@ extension on Translations {
 			'fileSources.clientId' => 'OAuth client ID',
 			'fileSources.clientSecret' => 'OAuth client secret (desktop Google only)',
 			'fileSources.allowHttp' => 'Allow unencrypted HTTP on a trusted network',
+			'fileSources.smbEncryption' => 'Encrypt SMB3 connection',
+			'fileSources.smbEncryptionHint' => 'Use SMB3 encryption when the NAS supports it.',
 			'fileSources.connect' => 'Connect',
 			'fileSources.cancel' => 'Cancel',
 			'fileSources.save' => 'Save',

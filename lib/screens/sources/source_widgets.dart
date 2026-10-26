@@ -219,7 +219,7 @@ class SourcePosterCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            entry.title,
+            entry.displayTitle,
             style: Theme.of(context).textTheme.titleSmall,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
