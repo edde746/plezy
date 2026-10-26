@@ -75,6 +75,58 @@ class PublicationDownloads {
     }
   }
 
+  /// Accounts for picker copies created before imports were stored in the
+  /// download ledger. This is idempotent and only inspects the app-owned
+  /// per-profile imports directory; links and unrecognized files are ignored.
+  Future<void> reconcileImportedFiles(String profile, FileSource source) async {
+    if (source.profileId != profile ||
+        source.id.isEmpty ||
+        source.kind != FileSourceKind.local ||
+        source.options['imported'] != 'true') {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final profileRoot = p.join(directory.path, sourceDigest(profile));
+    final importsRoot = p.join(profileRoot, 'imports');
+    final importDirectory = Directory(importsRoot);
+    if (!await importDirectory.exists()) return;
+    await for (final entity in importDirectory.list(followLinks: false)) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      if (classifySourceFile(name) == SourceItemKind.unknown) continue;
+      final id = p.relative(entity.path, from: importsRoot);
+      if (id.isEmpty || id == '.' || !p.isWithin(importsRoot, entity.path)) continue;
+      final stat = await entity.stat();
+      if (stat.type != FileSystemEntityType.file || stat.size <= 0) continue;
+      final file = PublicationFile(
+        id: id,
+        name: name,
+        mimeType: '',
+        size: stat.size,
+        revision: '${stat.modified.microsecondsSinceEpoch}:${stat.size}',
+      );
+      final recordKey = key(source.id, file);
+      final existing = await repository.download(profile, recordKey);
+      if (existing != null &&
+          existing['complete'] == 1 &&
+          existing['fingerprint'] == file.fingerprint &&
+          existing['path'] == entity.path &&
+          existing['bytes'] == stat.size) {
+        continue;
+      }
+      await repository.recordDownload(
+        profile,
+        recordKey,
+        entity.path,
+        file.fingerprint,
+        stat.size,
+        reservedBytes: stat.size,
+        sourceId: source.id,
+        file: file,
+        label: name,
+      );
+    }
+  }
+
   Future<File> download(
     String profile,
     SourceAdapter adapter,
