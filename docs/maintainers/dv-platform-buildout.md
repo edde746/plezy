@@ -307,8 +307,8 @@ Priority testing handoff:
    pivots, nonlinear mapping, clipping, filter edges and precision, then set
    reference_pixels only after defining the error budget and validating the
    P7-to-spec mapping.
-6. **Remaining adapters:** restore and verify the retired private Windows route
-   before D3D11/Vulkan builds; Android vendor/native capability qualification and
+6. **Remaining adapters:** complete and verify restoration of the existing
+   private Windows route before D3D11/Vulkan builds; Android vendor/native capability qualification and
    an optional portable compositor; webOS compatible native/companion versions;
    Linux CB1 output experiments only on exact supported
    DRM/driver/HDMI paths. Native DV signaling and reference display mapping each
