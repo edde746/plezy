@@ -4,12 +4,12 @@
 
 ### Added
 
-- Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.
 - Use the new nested-triangle PlezyNG artwork as the default app icon across platforms and in store listings.
+- Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a public privacy notice and link to it from the app's About screen.
-- Add ebooks, comics and multipart audiobooks with reading preferences, zoom, notes, offline editions and separate progress; connect local files, OPDS, Audiobookshelf, Google Drive, OneDrive, Dropbox, WebDAV and S3-compatible storage.
+- Add ebooks, comics and multipart audiobooks with reading preferences, zoom, bookmarks/notes, offline editions, chapter-aware controls and encrypted cross-device state sync; connect local files, OPDS, Audiobookshelf, Google Drive, OneDrive, Dropbox, WebDAV and S3-compatible storage.
 - Add public-library discovery and service handoffs, with OverDrive/Libby circulation prepared behind a default-off Coming soon release flag.
 - Add app-wide accessibility preferences for text size, bold text, contrast, reduced motion and larger shared controls; improve keyboard slider navigation and reader affordances.
 - Add configurable skipping for Plex-detected commercial markers, six original animated visualizer styles, and opt-in loudness-aware music fades.
@@ -69,11 +69,11 @@
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
 - Refresh package and store descriptions to explain PlezyNG's Plex client features.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
-- Record the current Google Play foreground-service demo links and release-run results in the channel guide.
 - Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
 - Fix music fade gain handling across track transitions and avoid visualizer profile requests before the active track is ready.
+- Record the current Google Play foreground-service demo links and release-run results in the channel guide.
 
 ### Fixed
 

@@ -39,6 +39,24 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   int get durationMs => 36000000;
   @override
+  int get timelineStartMs => 0;
+  @override
+  int get timelineEndMs => durationMs;
+  @override
+  int? get bookRemainingMs => durationMs - positionMs;
+  @override
+  int? get chapterRemainingMs => null;
+  @override
+  bool get chapterTimeline => false;
+  @override
+  int get currentFilePositionMs => positionMs;
+  @override
+  bool get hasCompleteTimeline => true;
+  @override
+  bool get canUndoSeek => false;
+  @override
+  DateTime? get sleepDeadline => null;
+  @override
   double get speed => 1;
   @override
   bool get sleepEnabled => false;

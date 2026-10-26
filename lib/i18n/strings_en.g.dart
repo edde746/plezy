@@ -102,6 +102,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
+	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
 }
 
 // Path: app
@@ -7761,6 +7762,168 @@ class Translations$lending$en {
 	String get editEmail => 'Change notification email';
 }
 
+// Path: audiobook
+class Translations$audiobook$en {
+	Translations$audiobook$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Reading & listening sync'
+	String get syncTitle => 'Reading & listening sync';
+
+	/// en: 'Keep reading positions, listening positions, completion state, bookmarks and notes across your devices. Choose an attached storage account and use the same sync code on each device. Reading and listening remain separate.'
+	String get syncHelp => 'Keep reading positions, listening positions, completion state, bookmarks and notes across your devices. Choose an attached storage account and use the same sync code on each device. Reading and listening remain separate.';
+
+	/// en: 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.'
+	String get addSyncSource => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.';
+
+	/// en: 'Sync storage account'
+	String get syncDestination => 'Sync storage account';
+
+	/// en: 'Sync folder or prefix'
+	String get syncFolder => 'Sync folder or prefix';
+
+	/// en: 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.'
+	String get syncFolderHelp => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.';
+
+	/// en: 'Private sync code'
+	String get syncCode => 'Private sync code';
+
+	/// en: 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.'
+	String get syncCodeHelp => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.';
+
+	/// en: 'Show or hide sync code'
+	String get showCode => 'Show or hide sync code';
+
+	/// en: 'Create a new sync code'
+	String get newSyncCode => 'Create a new sync code';
+
+	/// en: 'Save and sync'
+	String get saveSync => 'Save and sync';
+
+	/// en: 'Turn off sync on this device'
+	String get disableSync => 'Turn off sync on this device';
+
+	/// en: 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.'
+	String get syncSourceDisconnect => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.';
+
+	/// en: 'Reconnect storage account'
+	String get syncReconnect => 'Reconnect storage account';
+
+	/// en: 'Last synced at $time'
+	String lastSynced({required Object time}) => 'Last synced at ${time}';
+
+	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.';
+
+	/// en: 'Choose where to resume'
+	String get syncConflicts => 'Choose where to resume';
+
+	/// en: 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.'
+	String get conflictHelp => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.';
+
+	/// en: 'Device $device'
+	String syncDevice({required Object device}) => 'Device ${device}';
+
+	/// en: 'unknown device'
+	String get syncUnknownDevice => 'unknown device';
+
+	/// en: 'Deleted bookmark'
+	String get deletedBookmark => 'Deleted bookmark';
+
+	/// en: 'Finished'
+	String get finished => 'Finished';
+
+	/// en: 'Reading · $percent%'
+	String readingPosition({required Object percent}) => 'Reading · ${percent}%';
+
+	/// en: 'Chapter progress'
+	String get chapterTimeline => 'Chapter progress';
+
+	/// en: 'Whole book progress'
+	String get bookTimeline => 'Whole book progress';
+
+	/// en: 'Book: $time left'
+	String bookRemaining({required Object time}) => 'Book: ${time} left';
+
+	/// en: 'Chapter: $time left'
+	String chapterRemaining({required Object time}) => 'Chapter: ${time} left';
+
+	/// en: 'Total time available as parts are played'
+	String get unknownRemaining => 'Total time available as parts are played';
+
+	/// en: 'Undo last seek'
+	String get undoSeek => 'Undo last seek';
+
+	/// en: 'Custom playback speed'
+	String get customSpeed => 'Custom playback speed';
+
+	/// en: 'Choose a speed from 0.25× to 4×.'
+	String get speedHelp => 'Choose a speed from 0.25× to 4×.';
+
+	/// en: 'Apply'
+	String get apply => 'Apply';
+
+	/// en: 'Custom sleep timer'
+	String get customSleep => 'Custom sleep timer';
+
+	/// en: 'Minutes (1–1440)'
+	String get sleepMinutes => 'Minutes (1–1440)';
+
+	/// en: 'Stop after $count chapters'
+	String sleepChapters({required Object count}) => 'Stop after ${count} chapters';
+
+	/// en: 'Add 5 minutes'
+	String get extendSleep => 'Add 5 minutes';
+
+	/// en: 'Sleep timer: $time'
+	String sleepRemaining({required Object time}) => 'Sleep timer: ${time}';
+
+	/// en: 'Use these listening controls for new books'
+	String get useDefaults => 'Use these listening controls for new books';
+
+	/// en: 'Sort books'
+	String get librarySort => 'Sort books';
+
+	/// en: 'Title'
+	String get sortTitle => 'Title';
+
+	/// en: 'Author'
+	String get sortAuthor => 'Author';
+
+	/// en: 'Narrator'
+	String get sortNarrator => 'Narrator';
+
+	/// en: 'Series order'
+	String get sortSeries => 'Series order';
+
+	/// en: 'Recently opened'
+	String get sortRecent => 'Recently opened';
+
+	/// en: 'Reading status'
+	String get statusFilter => 'Reading status';
+
+	/// en: 'All books'
+	String get statusAll => 'All books';
+
+	/// en: 'Not started'
+	String get statusNew => 'Not started';
+
+	/// en: 'In progress'
+	String get statusProgress => 'In progress';
+
+	/// en: 'Finished'
+	String get statusFinished => 'Finished';
+
+	/// en: 'Go to time'
+	String get goToTime => 'Go to time';
+
+	/// en: 'Hours:minutes:seconds, or minutes:seconds'
+	String get timeHelp => 'Hours:minutes:seconds, or minutes:seconds';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -12668,6 +12831,57 @@ extension on Translations {
 			'lending.suspendMessage' => 'Keep your place in line and let the next reader borrow this copy? You can resume the hold later.',
 			'lending.resumeMessage' => 'Resume this hold so your library can offer you the next available copy?',
 			'lending.editEmail' => 'Change notification email',
+			'audiobook.syncTitle' => 'Reading & listening sync',
+			'audiobook.syncHelp' => 'Keep reading positions, listening positions, completion state, bookmarks and notes across your devices. Choose an attached storage account and use the same sync code on each device. Reading and listening remain separate.',
+			'audiobook.addSyncSource' => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.',
+			'audiobook.syncDestination' => 'Sync storage account',
+			'audiobook.syncFolder' => 'Sync folder or prefix',
+			'audiobook.syncFolderHelp' => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.',
+			'audiobook.syncCode' => 'Private sync code',
+			'audiobook.syncCodeHelp' => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.',
+			'audiobook.showCode' => 'Show or hide sync code',
+			'audiobook.newSyncCode' => 'Create a new sync code',
+			'audiobook.saveSync' => 'Save and sync',
+			'audiobook.disableSync' => 'Turn off sync on this device',
+			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
+			'audiobook.syncReconnect' => 'Reconnect storage account',
+			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
+			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.',
+			'audiobook.syncConflicts' => 'Choose where to resume',
+			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
+			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
+			'audiobook.syncUnknownDevice' => 'unknown device',
+			'audiobook.deletedBookmark' => 'Deleted bookmark',
+			'audiobook.finished' => 'Finished',
+			'audiobook.readingPosition' => ({required Object percent}) => 'Reading · ${percent}%',
+			'audiobook.chapterTimeline' => 'Chapter progress',
+			'audiobook.bookTimeline' => 'Whole book progress',
+			'audiobook.bookRemaining' => ({required Object time}) => 'Book: ${time} left',
+			'audiobook.chapterRemaining' => ({required Object time}) => 'Chapter: ${time} left',
+			'audiobook.unknownRemaining' => 'Total time available as parts are played',
+			'audiobook.undoSeek' => 'Undo last seek',
+			'audiobook.customSpeed' => 'Custom playback speed',
+			'audiobook.speedHelp' => 'Choose a speed from 0.25× to 4×.',
+			'audiobook.apply' => 'Apply',
+			'audiobook.customSleep' => 'Custom sleep timer',
+			'audiobook.sleepMinutes' => 'Minutes (1–1440)',
+			'audiobook.sleepChapters' => ({required Object count}) => 'Stop after ${count} chapters',
+			'audiobook.extendSleep' => 'Add 5 minutes',
+			'audiobook.sleepRemaining' => ({required Object time}) => 'Sleep timer: ${time}',
+			'audiobook.useDefaults' => 'Use these listening controls for new books',
+			'audiobook.librarySort' => 'Sort books',
+			'audiobook.sortTitle' => 'Title',
+			'audiobook.sortAuthor' => 'Author',
+			'audiobook.sortNarrator' => 'Narrator',
+			'audiobook.sortSeries' => 'Series order',
+			'audiobook.sortRecent' => 'Recently opened',
+			'audiobook.statusFilter' => 'Reading status',
+			'audiobook.statusAll' => 'All books',
+			'audiobook.statusNew' => 'Not started',
+			'audiobook.statusProgress' => 'In progress',
+			'audiobook.statusFinished' => 'Finished',
+			'audiobook.goToTime' => 'Go to time',
+			'audiobook.timeHelp' => 'Hours:minutes:seconds, or minutes:seconds',
 			_ => null,
 		};
 	}
