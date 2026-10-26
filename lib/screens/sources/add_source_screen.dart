@@ -102,16 +102,29 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'syncRoot': field('syncRoot').text.trim(),
         },
       );
-      final credentialKeys = switch (_kind) {
-        FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
-        FileSourceKind.smb => const ['username', 'password', 'domain'],
-        FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
-        FileSourceKind.audiobookshelf => const ['token'],
-        _ => const <String>[],
-      };
+      final credentialKeys = [
+        ...switch (_kind) {
+          FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
+          FileSourceKind.smb || FileSourceKind.ftp => const ['username', 'password'],
+          FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
+          FileSourceKind.audiobookshelf => const ['token'],
+          _ => const <String>[],
+        },
+        'openSubtitlesApiKey',
+        'openSubtitlesUsername',
+        'openSubtitlesPassword',
+      ];
       Map<String, String> credentials;
       if (oauth) {
-        credentials = await controller.oauth.authorize(source, clientSecret: field('clientSecret').text);
+        final previous = widget.existing == null
+            ? const <String, String>{}
+            : await controller.repository.credentials(widget.existing!);
+        credentials = {
+          ...previous,
+          ...await controller.oauth.authorize(source, clientSecret: field('clientSecret').text),
+          for (final key in ['openSubtitlesApiKey', 'openSubtitlesUsername', 'openSubtitlesPassword'])
+            if (field(key).text.isNotEmpty) key: field(key).text,
+        };
       } else {
         credentials = {
           if (widget.existing != null) ...await controller.repository.credentials(widget.existing!),
@@ -168,7 +181,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               ),
                             ),
                       ],
-                      onChanged: _busy || widget.existing != null ? null : (kind) => setState(() => _kind = kind!),
+                      onChanged: _busy || widget.existing != null
+                          ? null
+                          : (kind) => setState(() {
+                              _kind = kind!;
+                              if (kind == FileSourceKind.dlna) _allowHttp = true;
+                            }),
                     ),
                     const SizedBox(height: 24),
                     input('name', t.fileSources.name),
@@ -177,7 +195,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         'endpoint',
                         t.fileSources.endpoint,
                         required: true,
-                        hint: _kind == FileSourceKind.smb ? 'smb://nas/Movies' : null,
+                        hint: switch (_kind) {
+                          FileSourceKind.smb => 'smb://nas/Movies',
+                          FileSourceKind.ftp => 'ftp://nas:21',
+                          FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
+                          _ => null,
+                        },
                       ),
                     if (_kind == FileSourceKind.local) ...[
                       input('root', t.fileSources.root, required: true),
@@ -191,11 +214,30 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         child: Text(t.fileSources.localFolder),
                       ),
                     ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
-                      input('root', t.fileSources.root, hint: t.fileSources.folderHelp),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb}.contains(_kind)) ...[
+                      input(
+                        'root',
+                        t.fileSources.root,
+                        hint: _kind == FileSourceKind.dlna
+                            ? 'DLNA object ID; blank uses the device root.'
+                            : t.fileSources.folderHelp,
+                      ),
+                    if (const {
+                      FileSourceKind.webdav,
+                      FileSourceKind.opds,
+                      FileSourceKind.smb,
+                      FileSourceKind.ftp,
+                    }.contains(_kind)) ...[
                       input('username', t.fileSources.username),
                       input('password', t.fileSources.password, secret: true),
                       if (_kind == FileSourceKind.smb) input('domain', 'Domain (optional)'),
+                      if (_kind == FileSourceKind.ftp)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'FTP uses passive mode. Use ftp:// for plain FTP or ftps:// for TLS (implicit on port 990).',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
                       if (_kind == FileSourceKind.smb)
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -213,6 +255,24 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       input('secretKey', t.fileSources.secretKey, secret: true, required: widget.existing == null),
                       input('sessionToken', t.fileSources.sessionToken, secret: true),
                     ],
+                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text('OpenSubtitles'),
+                        subtitle: const Text('Optional subtitle search for standalone videos.'),
+                        children: [
+                          input('openSubtitlesApiKey', 'API key', secret: true),
+                          input('openSubtitlesUsername', 'Account username (optional)'),
+                          input('openSubtitlesPassword', 'Account password (optional)', secret: true),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              'Get an API key from opensubtitles.com. The key and optional account credentials are encrypted with this source.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
                     if (oauth)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
@@ -223,7 +283,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (!oauth && _kind != FileSourceKind.local && _kind != FileSourceKind.smb)
+                    if (const {
+                      FileSourceKind.webdav,
+                      FileSourceKind.opds,
+                      FileSourceKind.s3,
+                      FileSourceKind.audiobookshelf,
+                      FileSourceKind.dlna,
+                    }.contains(_kind))
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),

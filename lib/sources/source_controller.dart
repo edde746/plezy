@@ -10,6 +10,8 @@ import 'package:uuid/uuid.dart';
 
 import 'adapters/audiobookshelf_source.dart';
 import 'adapters/cloud_sources.dart';
+import 'adapters/dlna_source.dart';
+import 'adapters/ftp_source.dart';
 import 'adapters/local_source.dart';
 import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
@@ -24,6 +26,33 @@ import 'publication_shelf.dart';
 import 'sync/publication_sync.dart';
 import 'sync/sync_store.dart';
 import 'sync/sync_document.dart';
+
+Uri? _trustedOnlinePosterUri(String? value) {
+  final uri = Uri.tryParse(value ?? '');
+  final host = uri?.host.toLowerCase();
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      host == null ||
+      !(host == 'trakt.tv' || host.endsWith('.trakt.tv')) ||
+      uri.userInfo.isNotEmpty) {
+    return null;
+  }
+  return uri;
+}
+
+Uri? _trustedOnlineTrailerUri(String? value) {
+  final uri = Uri.tryParse(value ?? '');
+  final host = uri?.host.toLowerCase();
+  if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) return null;
+  if (host == 'youtu.be' ||
+      host == 'youtube.com' ||
+      host.endsWith('.youtube.com') ||
+      host == 'vimeo.com' ||
+      host.endsWith('.vimeo.com')) {
+    return uri;
+  }
+  return null;
+}
 
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
@@ -168,6 +197,27 @@ class SourceController extends ChangeNotifier {
       ]),
     );
     return entry.copyWith(syncIdentity: identity);
+  }
+
+  SourceEntry _applyCachedOnlineMetadata(SourceEntry fresh, SourceEntry? cached) {
+    if (fresh.kind != SourceItemKind.video ||
+        cached == null ||
+        cached.kind != SourceItemKind.video ||
+        cached.onlineMetadataProvider == null) {
+      return fresh;
+    }
+    return fresh.copyWith(
+      onlineTitle: cached.onlineTitle,
+      description: fresh.description.isNotEmpty ? fresh.description : cached.description,
+      releaseYear: fresh.releaseYear ?? cached.releaseYear,
+      rating: fresh.rating ?? cached.rating,
+      genres: fresh.genres.isNotEmpty ? fresh.genres : cached.genres,
+      identifiers: {...cached.identifiers, ...fresh.identifiers},
+      onlinePosterUrl: cached.onlinePosterUrl,
+      trailerUrl: cached.trailerUrl,
+      cast: cached.cast,
+      onlineMetadataProvider: cached.onlineMetadataProvider,
+    );
   }
 
   SourceAdapter? _stateAdapter(SourceEntry entry, PublicationProgress progress) {
@@ -323,6 +373,8 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
         FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
+        FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
+        FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };
@@ -337,7 +389,12 @@ class SourceController extends ChangeNotifier {
     if (fileSource == null) throw const SourceException(SourceFailure.authentication);
     final page = await adapter(source).browse(parent: parent, cursor: cursor, query: query);
     requireSession(epoch);
-    final entries = page.entries.map((entry) => _withSyncIdentity(fileSource, entry)).toList();
+    final entries = <SourceEntry>[];
+    for (final entry in page.entries) {
+      final fresh = _withSyncIdentity(fileSource, entry);
+      final cached = fresh.kind == SourceItemKind.video ? await repository.entryById(profile, source, fresh.id) : null;
+      entries.add(_applyCachedOnlineMetadata(fresh, cached));
+    }
     await repository.cacheEntries(profile, entries);
     shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
@@ -349,10 +406,58 @@ class SourceController extends ChangeNotifier {
     final epoch = generation, profile = profileId!;
     final fileSource = sources.where((item) => item.id == entry.sourceId).firstOrNull;
     if (fileSource == null) throw const SourceException(SourceFailure.authentication);
-    final result = _withSyncIdentity(fileSource, await adapter(entry.sourceId).hydrate(entry));
+    final fresh = _withSyncIdentity(fileSource, await adapter(entry.sourceId).hydrate(entry));
+    final cached = fresh.kind == SourceItemKind.video
+        ? await repository.entryById(profile, entry.sourceId, fresh.id)
+        : null;
+    final result = _applyCachedOnlineMetadata(fresh, cached);
     requireSession(epoch);
     await repository.cacheEntries(profile, [result]);
     return result;
+  }
+
+  Future<void> saveOnlineMetadata(
+    SourceEntry entry, {
+    required String title,
+    String? overview,
+    int? releaseYear,
+    double? rating,
+    List<String> genres = const [],
+    Map<String, String> identifiers = const {},
+    String? posterUrl,
+    String? trailerUrl,
+    List<String> cast = const [],
+    required String provider,
+  }) async {
+    await ready;
+    requireSession();
+    final profile = profileId!;
+    final epoch = generation;
+    final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (source == null || entry.kind != SourceItemKind.video || title.trim().isEmpty) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final poster = _trustedOnlinePosterUri(posterUrl)?.toString();
+    final trailer = _trustedOnlineTrailerUri(trailerUrl)?.toString();
+    final matched = _withSyncIdentity(
+      source,
+      entry.copyWith(
+        onlineTitle: title.trim(),
+        description: entry.description.isNotEmpty ? entry.description : overview,
+        releaseYear: entry.releaseYear ?? releaseYear,
+        rating: entry.rating ?? rating,
+        genres: entry.genres.isNotEmpty ? entry.genres : genres,
+        identifiers: {...entry.identifiers, ...identifiers},
+        onlinePosterUrl: poster,
+        trailerUrl: trailer,
+        cast: cast.take(20).toList(growable: false),
+        onlineMetadataProvider: provider,
+      ),
+    );
+    await repository.cacheEntries(profile, [matched]);
+    requireSession(epoch);
+    unawaited(_covers.remove(sourceKey(profile, entry.key))?.then<void>((_) {}, onError: (Object _) {}));
+    _notify();
   }
 
   Future<File> content(SourceEntry entry, PublicationFile file, {void Function(int, int?)? onProgress}) async {
@@ -377,7 +482,7 @@ class SourceController extends ChangeNotifier {
           downloads.directory.path,
           sourceDigest(profile),
           'covers',
-          '${sourceDigest('${entry.key}:${entry.coverId ?? ''}')}.png',
+          '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
         ),
       );
       if (await file.exists()) return file;
@@ -389,7 +494,8 @@ class SourceController extends ChangeNotifier {
           requireSession(epoch);
           return await saveCover(entry, Uint8List.fromList(directBytes), profile: profile);
         }
-        final lease = await provider.cover(entry);
+        final posterUri = _trustedOnlinePosterUri(entry.onlinePosterUrl);
+        final lease = await provider.cover(entry) ?? (posterUri == null ? null : ContentLease(posterUri));
         if (lease == null) return null;
         final response = await provider.transport.send('GET', lease.uri, headers: lease.headers, redirects: true);
         SourceTransport.check(response.statusCode);
@@ -418,7 +524,12 @@ class SourceController extends ChangeNotifier {
     requireSession(epoch);
     if (owner != profileId || image == null) throw const SourceException(SourceFailure.cancelled);
     final file = File(
-      p.join(downloads.directory.path, sourceDigest(owner), 'covers', '${sourceDigest(entry.key)}.png'),
+      p.join(
+        downloads.directory.path,
+        sourceDigest(owner),
+        'covers',
+        '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
+      ),
     );
     await file.parent.create(recursive: true);
     await file.writeAsBytes(image.buffer.asUint8List(), flush: true);

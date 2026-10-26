@@ -36,6 +36,8 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.dropbox => 'Dropbox',
   FileSourceKind.webdav => 'WebDAV / Nextcloud',
   FileSourceKind.smb => 'SMB / NAS',
+  FileSourceKind.ftp => 'FTP / FTPS',
+  FileSourceKind.dlna => 'DLNA / UPnP',
   FileSourceKind.s3 => 'S3',
   FileSourceKind.opds => 'OPDS',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
@@ -153,7 +155,11 @@ class _SourceCoverState extends State<SourceCover> {
   @override
   void didUpdateWidget(covariant SourceCover old) {
     super.didUpdateWidget(old);
-    if (old.entry.key != widget.entry.key) _cover = context.read<SourceController?>()?.cover(widget.entry);
+    if (old.entry.key != widget.entry.key ||
+        old.entry.coverId != widget.entry.coverId ||
+        old.entry.onlinePosterUrl != widget.entry.onlinePosterUrl) {
+      _cover = context.read<SourceController?>()?.cover(widget.entry);
+    }
   }
 
   @override
