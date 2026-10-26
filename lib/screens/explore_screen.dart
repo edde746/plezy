@@ -318,6 +318,8 @@ class ExploreScreenState extends State<ExploreScreen>
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
             if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
+            FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
+            // Append this action so existing TV and keyboard focus positions stay stable.
             FocusableAction(
               icon: Symbols.auto_awesome_rounded,
               tooltip: t.discover.findNext.open,
@@ -326,7 +328,6 @@ class ExploreScreenState extends State<ExploreScreen>
                 MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
               ),
             ),
-            FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
           ],
         ),
       ],
@@ -547,14 +548,6 @@ class ExploreScreenState extends State<ExploreScreen>
             spacing: 4,
             actions: [
               if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
-              FocusableAction(
-                icon: Symbols.auto_awesome_rounded,
-                tooltip: t.discover.findNext.open,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
-                ),
-              ),
               if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
                   debugLabel: 'ExploreSourceSwitcher',
@@ -583,6 +576,15 @@ class ExploreScreenState extends State<ExploreScreen>
                 iconColor: foregroundColor,
                 tooltip: t.common.refresh,
                 onPressed: () => unawaited(_explore.load()),
+              ),
+              // Keep the new destination after existing toolbar actions in the TV focus order.
+              FocusableAction(
+                icon: Symbols.auto_awesome_rounded,
+                tooltip: t.discover.findNext.open,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
+                ),
               ),
             ],
           ),
