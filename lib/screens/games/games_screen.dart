@@ -525,7 +525,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Account games are for reference. Play games from a paired computer’s library.'),
+              child: Text('Choose an account game to play through a matching shortcut on a paired Steam computer.'),
             ),
           ),
           if (!state.steamCatalogAvailable)
