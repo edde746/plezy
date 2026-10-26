@@ -7,6 +7,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
@@ -40,11 +41,15 @@ class TranslationsIt extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$it app = _Translations$app$it._(_root);
+	@override late final _Translations$cast$it cast = _Translations$cast$it._(_root);
+	@override late final _Translations$automation$it automation = _Translations$automation$it._(_root);
+	@override late final _Translations$notifications$it notifications = _Translations$notifications$it._(_root);
 	@override late final _Translations$appIcon$it appIcon = _Translations$appIcon$it._(_root);
 	@override late final _Translations$auth$it auth = _Translations$auth$it._(_root);
 	@override late final _Translations$common$it common = _Translations$common$it._(_root);
 	@override late final _Translations$screens$it screens = _Translations$screens$it._(_root);
 	@override late final _Translations$update$it update = _Translations$update$it._(_root);
+	@override late final _Translations$appAccess$it appAccess = _Translations$appAccess$it._(_root);
 	@override late final _Translations$settings$it settings = _Translations$settings$it._(_root);
 	@override late final _Translations$themeEditor$it themeEditor = _Translations$themeEditor$it._(_root);
 	@override late final _Translations$search$it search = _Translations$search$it._(_root);
@@ -70,6 +75,7 @@ class TranslationsIt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$it serverSelection = _Translations$serverSelection$it._(_root);
 	@override late final _Translations$hubDetail$it hubDetail = _Translations$hubDetail$it._(_root);
 	@override late final _Translations$logs$it logs = _Translations$logs$it._(_root);
+	@override late final _Translations$detail$it detail = _Translations$detail$it._(_root);
 	@override late final _Translations$startup$it startup = _Translations$startup$it._(_root);
 	@override late final _Translations$licenses$it licenses = _Translations$licenses$it._(_root);
 	@override late final _Translations$navigation$it navigation = _Translations$navigation$it._(_root);
@@ -92,7 +98,12 @@ class TranslationsIt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$it seerr = _Translations$seerr$it._(_root);
 	@override late final _Translations$services$it services = _Translations$services$it._(_root);
 	@override late final _Translations$addServer$it addServer = _Translations$addServer$it._(_root);
+	@override late final _Translations$watchLink$it watchLink = _Translations$watchLink$it._(_root);
 	@override late final _Translations$homeLayout$it homeLayout = _Translations$homeLayout$it._(_root);
+	@override late final _Translations$platform$it platform = _Translations$platform$it._(_root);
+	@override late final _Translations$fileSources$it fileSources = _Translations$fileSources$it._(_root);
+	@override late final _Translations$lending$it lending = _Translations$lending$it._(_root);
+	@override late final _Translations$audiobook$it audiobook = _Translations$audiobook$it._(_root);
 }
 
 // Path: app
@@ -105,6 +116,48 @@ class _Translations$app$it extends Translations$app$en {
 	@override String get title => 'PlezyNG';
 }
 
+// Path: cast
+class _Translations$cast$it extends Translations$cast$en {
+	_Translations$cast$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Cattura a un dispositivo';
+	@override String get searching => 'Cercare i dispositivi di cast...';
+	@override String connectedTo({required Object device}) => 'Connetto a ${device}';
+	@override String get device => 'Dispositivi di Cast';
+	@override String get readyToCast => 'Pronte a lanciare';
+	@override String get subtitle => 'Sottotitoli';
+	@override String get serverNotAvailable => 'Il server dei media non è disponibile.';
+	@override String get stopCasting => 'smettere di casting';
+	@override String get castToDevice => 'Cattura per il dispositivo';
+	@override String get noEpisodeAvailable => 'Non ci sono episodi disponibili per essere lanciati.';
+	@override String get startFailed => 'Non è possibile iniziare la casta. controllare il server e provare di nuovo.';
+}
+
+// Path: automation
+class _Translations$automation$it extends Translations$automation$en {
+	_Translations$automation$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Non c’è sessione video attiva da controllare.';
+	@override String get profileNotFound => 'Questo profilo Plezy non è stato trovato.';
+}
+
+// Path: notifications
+class _Translations$notifications$it extends Translations$notifications$en {
+	_Translations$notifications$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Nuovo episodio';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
 // Path: appIcon
 class _Translations$appIcon$it extends Translations$appIcon$en {
 	_Translations$appIcon$it._(TranslationsIt root) : this._root = root, super.internal(root);
@@ -115,6 +168,8 @@ class _Translations$appIcon$it extends Translations$appIcon$en {
 	@override String get title => 'Icona dell\'app';
 	@override String get defaultIcon => 'Predefinita';
 	@override String get current => 'Icona attuale';
+	@override String get locked => 'L’accesso a vita richiesto';
+	@override String get lockedHint => 'Inizia il tuo tentativo di 7 giorni o disattivare PlezyNG per tutta la vita per utilizzare icone alternative.';
 	@override String get changeFailed => 'Impossibile cambiare l\'icona dell\'app';
 	@override String get launcherHint => 'La nuova icona appare nella schermata Home quando esci da PlezyNG.';
 	@override String get tvLauncherHint => 'Il nuovo banner appare quando esci da PlezyNG. Android TV potrebbe continuare a mostrare quello precedente fino al riavvio del televisore.';
@@ -145,6 +200,7 @@ class _Translations$auth$it extends Translations$auth$en {
 	@override String get quickConnectExpired => 'Quick Connect scaduto. Riprova.';
 	@override String get localDataRecoveryRequired => 'PlezyNG non è riuscito a recuperare in sicurezza i dati locali di accesso e delle riproduzioni in sospeso. Accedi di nuovo.';
 	@override String get pinCheckRejected => 'La verifica del PIN Plex è stata rifiutata';
+	@override String get connectToDirectPlex => 'Connessione al server locale Plex';
 }
 
 // Path: common
@@ -237,6 +293,37 @@ class _Translations$update$it extends Translations$update$en {
 	@override String get checkFailed => 'Impossibile controllare gli aggiornamenti';
 }
 
+// Path: appAccess
+class _Translations$appAccess$it extends Translations$appAccess$en {
+	_Translations$appAccess$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Prova ogni funzione gratuita per 7 giorni';
+	@override String get description => 'Inizia un test di sette giorni con accesso completo a ogni funzione PlezyNG. non ci sono costi durante il test e non ci sono abbonamenti. Dopo il test, un acquisto di vita al prezzo del tuo negozio rilascia PlezyNG per tutta la vita.';
+	@override String get trialEndedDescription => 'Rimuovere ogni funzionalità in PlezyNG per tutta la vita con un acquisto al prezzo del tuo negozio.';
+	@override String get startTrial => 'Inizia il mio trial gratuito di 7 giorni';
+	@override String get trialActive => 'Il tuo test di 7 giorni è attivo.';
+	@override String get trialEnded => 'Il processo di 7 giorni è finito';
+	@override String get trialStartFailed => 'Non potevo salvare il test su questo dispositivo. si prega di provare di nuovo.';
+	@override String get lifetimeTitle => 'PlezyNG disattivato per la vita';
+	@override String get lifetimeBody => 'Grazie! avete accesso a tutti i PlezyNG funzionalità.';
+	@override String get manageTitle => 'PlezyNG accesso a vita';
+	@override String get manageDescription => 'Prova ogni funzionalità gratuita per 7 giorni, poi disattivare tutto per tutta la vita con un solo pagamento al prezzo del tuo negozio.';
+	@override String buy({required Object price}) => 'Rimuovere ogni funzionalità per ${price}';
+	@override String get loadingPrice => 'Il prezzo del negozio...';
+	@override String get retryPrice => 'Il prezzo di ritorno';
+	@override String get restore => 'Ristrutturazione acquisto per tutta la vita';
+	@override String get pending => 'L\'acquisto è in attesa di pagamento o approvazione.L\'accesso a tempo pieno si distacca non appena il negozio lo completa.';
+	@override String get storeUnavailable => 'Verificare che si è iscritti al negozio e gli acquisti sono consentiti su questo dispositivo.';
+	@override String get productNotFound => 'Il disattivatore di vita PlezyNG non è ancora disponibile in questo negozio.';
+	@override String get productQueryFailed => 'Non poteva caricare il prezzo del negozio. verificare la connessione e provare di nuovo.';
+	@override String get purchaseFailed => 'L’acquisto non è andato via, prova di nuovo.';
+	@override String get restoreFailed => 'Non potevo raggiungere il negozio per ripristinare l\'acquisto. prova di nuovo.';
+	@override String get nothingToRestore => 'N. PlezyNG acquisto a vita è stato trovato per questo account del negozio.';
+}
+
 // Path: settings
 class _Translations$settings$it extends Translations$settings$en {
 	_Translations$settings$it._(TranslationsIt root) : this._root = root, super.internal(root);
@@ -247,9 +334,14 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get title => 'Impostazioni';
 	@override String get supportDeveloper => 'Supporta PlezyNG';
 	@override String get supportDeveloperDescription => 'Fai una donazione per sostenere lo sviluppo';
+	@override String get lifetimeAccess => 'PlezyNG accesso a vita';
 	@override String get language => 'Lingua';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Aspetto';
+	@override String get detailPage => 'Pagina dettagliata';
+	@override String get themeSongsEnabled => 'Gioca canzoni di tema';
+	@override String get themeSongsEnabledDescription => 'Gioca canzoni di tema disponibili mentre guarda i dettagli dei media.';
+	@override String get themeSongVolume => 'Il volume della canzone';
 	@override String get videoPlayback => 'Riproduzione video';
 	@override String get videoPlaybackDescription => 'Configura il comportamento di riproduzione';
 	@override String get advanced => 'Avanzate';
@@ -286,7 +378,24 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get gridView => 'Griglia';
 	@override String get listView => 'Elenco';
 	@override String get showHeroSection => 'Mostra sezione in evidenza';
+	@override String get showHomeBackdrop => 'Home Artica Artica Artico Artica Arta';
+	@override String get showHomeBackdropDescription => 'Mostra grandi opere d\'arte dietro le linee di casa';
+	@override String get contentScreensaverEnabled => 'ScreenSaver di contenuti';
+	@override String get contentScreensaverEnabledDescription => 'Mostra l\'arte a schermo pieno dopo che l\'app è stata idle';
+	@override String get contentScreensaverDelay => 'Inizia il screensaver dopo';
+	@override String get contentScreensaverLibraries => 'Screensaver biblioteche';
 	@override String get contentScreensaverLibrariesDescription => 'Scegli quali librerie forniscono le immagini per lo screensaver. Se non ne selezioni nessuna, verranno usate le immagini di tutte le librerie.';
+	@override String get contentScreensaverAllLibraries => 'Tutte le biblioteche';
+	@override String contentScreensaverSelectedLibraries({required Object count}) => '${count} biblioteche selezionate';
+	@override String get contentScreensaverNoLibraries => 'Non sono disponibili biblioteche multimediali collegate.';
+	@override String get contentScreensaverDismissHint => 'Premere qualsiasi pulsante o tappa per rimuovere';
+	@override String get newEpisodeNotifications => 'Nuove notizie di episodio';
+	@override String get newEpisodeNotificationsDescription => 'Allarme quando un nuovo episodio viene aggiunto a un show che si è catturato. controlla mentre Plezy è aperto.';
+	@override String get continueWatchingRowSize => 'Continua a guardare la dimensione della linea';
+	@override String continueWatchingRowSizeValue({required Object label}) => '${label} carte';
+	@override String get rowSizeCompact => 'Compatta';
+	@override String get rowSizeStandard => 'Standard';
+	@override String get rowSizeLarge => 'Grande';
 	@override String get continueWatchingAction => 'Azione per Continua a guardare';
 	@override String get continueWatchingPlay => 'Riproduci';
 	@override String get continueWatchingDetails => 'Apri dettagli';
@@ -331,8 +440,15 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get playbackBufferLarge => 'Grande';
 	@override String get playbackBufferExtraLarge => 'Extra grande';
 	@override String get playbackBufferDescription => 'Bufferizza di più contro connessioni instabili. Limitato anche dalla dimensione del buffer.';
+	@override String get streamBufferSize => 'Dimensioni Buffer';
+	@override String streamBufferSizeValue({required Object size}) => '${size} MB';
+	@override String get streamBufferSizeDescription => 'Quanto video da caricare in avanti quando si gioca direttamente. i transcodi si fermeranno al buffer transcodico del server. 0 = Auto';
+	@override String get streamBufferSizeExoNote => 'Rimpiazzare Playback Buffer quando impostato, cappellato a metà del limite di memoria dell\'app';
+	@override String get streamBufferMegabytes => 'Megabiti';
 	@override String get defaultQualityTitle => 'Qualità predefinita';
 	@override String get cellularQualityTitle => 'Qualità predefinita sulla rete mobile';
+	@override String get remoteQualityTitle => 'Qualità di Remote Streaming';
+	@override String get remoteQualitySameAsDefault => 'Come la qualità default';
 	@override String get cellularQualitySameAsDefault => 'Come la qualità predefinita';
 	@override String get directPlayCoveredQuality => 'Riproduci i video più piccoli in qualità originale';
 	@override String get directPlayCoveredQualityDescription => 'Riproduci direttamente i video già entro il limite di qualità invece di transcodificarli';
@@ -345,10 +461,24 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get smallSkipDuration => 'Salto breve';
 	@override String get largeSkipDuration => 'Salto lungo';
 	@override String get rewindOnResume => 'Riavvolgimento alla ripresa';
-	@override String secondsUnit({required Object seconds}) => '${seconds} secondi';
+	@override String secondsUnit({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(seconds,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondo',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondi',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondi',
+	);
 	@override String get defaultSleepTimer => 'Timer spegnimento predefinito';
-	@override String minutesUnit({required Object minutes}) => '${minutes} minuti';
+	@override String minutesUnit({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(minutes,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuto',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuti',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuti',
+	);
 	@override String get rememberTrackSelections => 'Ricorda la selezione delle tracce per ogni serie o film';
+	@override String get chooseTracksBeforePlayback => 'Scegli audio e sottotitoli prima di riprodurre';
+	@override String get chooseTracksBeforePlaybackDescription => 'Selezionare le tracce audio e sottotitoli prima che ogni video inizia.';
+	@override String get alwaysShowSubtitlesOnDevice => 'Mostra sempre i sottotitoli su questo dispositivo';
+	@override String get alwaysShowSubtitlesOnDeviceDescription => 'Quando il server non ha alcun sottotitolo selezionato, selezionare una traccia localmente.';
+	@override String get autoDownloadPreferredSubtitle => 'Il libro di Fethch mantiene i sottotitoli preferiti';
+	@override String get autoDownloadPreferredSubtitleDescription => 'Selezionare un sottotitolo disponibile nella lingua preferita localmente. se non esiste, chiedi al server di ottenere uno quando supportato.';
 	@override String get rememberTrackSelectionsDescription => 'Ricorda le scelte di audio e sottotitoli per ogni titolo';
 	@override String get rememberTrackSelectionsBackendRule => 'Plex salva ogni scelta sul server per ogni file; Jellyfin attiva anche l\'opzione Ricorda selezioni dell\'account; Emby non è supportato';
 	@override String get followServerTrackSelections => 'Usa le tracce selezionate sul server per ogni episodio';
@@ -395,6 +525,17 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get importSettingsSuccess => 'Impostazioni importate';
 	@override String get importSettingsInvalidFile => 'Questo file non è un\'esportazione PlezyNG valida';
 	@override String get importSettingsNoUser => 'Accedi prima di importare le impostazioni';
+	@override String get cloudBackup => 'Cloud Backup di sicurezza';
+	@override String get cloudBackupDescription => 'Backup delle impostazioni portatili a un punto di fine WebDAV su HTTPS. le connessioni del server e le credenziali rimangono su questo dispositivo.';
+	@override String get cloudBackupUrl => 'WebDAV URL del file JSON';
+	@override String get cloudBackupUsername => 'Nome utente';
+	@override String get cloudBackupPassword => 'Password';
+	@override String get cloudBackupSaved => 'Cloud backup destinazione salvata';
+	@override String get cloudBackupNow => 'Ritorno adesso';
+	@override String get cloudBackupComplete => 'Settings Backup upload';
+	@override String get cloudBackupRestore => 'Ristrutturazione Backup';
+	@override String get cloudBackupRestoreConfirm => 'Questo sostituirà le impostazioni portatili in questo dispositivo.';
+	@override String get cloudBackupRestored => 'Impostazioni ripristinate dal cloud backup';
 	@override String get shortcutsReset => 'Scorciatoie ripristinate alle impostazioni predefinite';
 	@override String get resetShortcutsConfirm => 'Le scorciatoie personalizzate verranno sostituite con quelle predefinite. Continuare?';
 	@override String get about => 'Informazioni';
@@ -414,6 +555,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Avvia automaticamente l\'episodio successivo quando termina quello in riproduzione';
 	@override String get shuffleStartsFromBeginning => 'La riproduzione casuale inizia dall\'inizio';
 	@override String get shuffleStartsFromBeginningDescription => 'Avvia ogni episodio dall\'inizio durante la riproduzione casuale invece di riprenderlo';
+	@override String get plexCinemaPreRoll => 'Utilizzare il server cinema intros';
+	@override String get plexCinemaPreRollDescription => 'Gioca configurati Plex pre-roll o Jellyfin e Emby intros prima che un film inizia.';
 	@override String get playNextCountdown => 'Conto alla rovescia del successivo';
 	@override String get playNextCountdownImmediate => 'Riproduci subito';
 	@override String get skipIntroMode => 'Salta intro';
@@ -424,17 +567,38 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get skipCreditsModeOffDescription => 'Riproduci i titoli di coda normalmente senza pulsante di salto';
 	@override String get skipCreditsModeButtonDescription => 'Mostra un pulsante di salto quando iniziano i titoli di coda';
 	@override String get skipCreditsModeAutoDescription => 'Salta automaticamente i titoli di coda e riproduci l\'episodio successivo';
+	@override String get skipAdsMode => 'Scopri gli annunci';
+	@override String get skipAdsModeOffDescription => 'Gioca gli annunci rilevati normalmente senza un pulsante di scappamento';
+	@override String get skipAdsModeButtonDescription => 'Mostra un pulsante di scappamento quando Plex rileva un annuncio';
+	@override String get skipAdsModeAutoDescription => 'Scarica gli annunci rilevati automaticamente dopo il ritardo di seguito';
+	@override String get musicPlayback => 'Il musicale playback';
+	@override String get musicSweetFades => 'dolci fati';
+	@override String get musicSweetFadesDescription => 'La musica è in arrivo quando Plex ha dati di rumore.';
 	@override String get skipMarkerModeOff => 'Disattivato';
 	@override String get skipMarkerModeButton => 'Mostra pulsante';
 	@override String get skipMarkerModeAuto => 'Automatico';
 	@override String get forceSkipMarkerFallback => 'Forza i marcatori di ripiego';
 	@override String get forceSkipMarkerFallbackDescription => 'Usa i modelli dei titoli dei capitoli anche quando Plex dispone di marcatori';
+	@override String get theIntroDbFallback => 'Utilizzare TheIntroDB come un fallback intro';
+	@override String get theIntroDbFallbackDescription => 'Utilizzare le date della comunità solo quando il server non ha un intro marker.';
 	@override String get autoSkipDelay => 'Ritardo del salto automatico';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Attendi ${seconds} secondi prima del salto automatico';
 	@override String get introPattern => 'Modello del marcatore della sigla iniziale';
 	@override String get introPatternDescription => 'Espressione regolare per individuare i marcatori della sigla iniziale nei titoli dei capitoli';
 	@override String get creditsPattern => 'Modello del marcatore dei titoli di coda';
 	@override String get creditsPatternDescription => 'Espressione regolare per individuare i marcatori dei titoli di coda nei titoli dei capitoli';
+	@override String get prerolls => 'Prerotti';
+	@override String get playPrerollsBeforeMovies => 'Gioca i preloli prima dei film';
+	@override String get playPrerollsBeforeMoviesDescription => 'Gioca un clip casuale dalla tua selezione qui sotto prima di ogni film.';
+	@override String get prerollLibrary => 'Libreria di Preroll';
+	@override String get prerollLibraryNotSet => 'Non impostato';
+	@override String get prerollLibraryNoneFound => 'Non sono state trovate biblioteche sui tuoi server.';
+	@override String get prerollSelection => 'I preloni selezionati';
+	@override String get prerollSelectionPickLibraryFirst => 'Scegli una biblioteca prima';
+	@override String get prerollSelectionNoneSelected => 'Nessun preludio selezionato';
+	@override String prerollSelectionCount({required Object count}) => '${count} selezionati';
+	@override String get prerollItemPicker => 'Selezionare i preroli';
+	@override String get prerollItemPickerLoadFailed => 'Non potevo caricare gli articoli da questa biblioteca.';
 	@override String get invalidRegex => 'Espressione regolare non valida';
 	@override String get regex => 'Espressione regolare';
 	@override String get downloads => 'Download';
@@ -452,6 +616,12 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get downloadOnWifiOnlyDescription => 'Impedisci i download quando si utilizza la rete dati cellulare';
 	@override String get autoRemoveWatchedDownloads => 'Rimuovi automaticamente i download visti';
 	@override String get autoRemoveWatchedDownloadsDescription => 'Elimina automaticamente i download già visti';
+	@override String get autoDownloadContinueWatching => 'Auto-Download Continua a guardare';
+	@override String get autoDownloadContinueWatchingDescription => 'Mantenere gli articoli sul vostro foglio di guardare continuo scaricati, e rimuoverli una volta che lasciano il foglio';
+	@override String get downloadQuality => 'Scarica la qualità';
+	@override String get downloadQualityDescription => 'Plex prepara una copia convertita nella sua scatola di download. Jellyfin e Emby transcode mentre il file scarica; trasferimenti interrotti potrebbero essere necessari per riavviare.';
+	@override String get askDownloadQualityEachTime => 'Scegliere la qualità per ogni download';
+	@override String get askDownloadQualityEachTimeDescription => 'Mostra il picker di qualità prima di scorrere ogni download video';
 	@override String get cellularDownloadBlocked => 'I download sono bloccati sulla rete mobile. Usa il Wi-Fi o modifica l\'impostazione.';
 	@override String get maxVolume => 'Volume massimo consentito';
 	@override String get maxVolumeDescription => 'Consenti di aumentare il volume oltre il 100% per i contenuti con audio basso';
@@ -538,8 +708,13 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Mostra le etichette della barra di navigazione';
 	@override String get showNavBarLabelsDescription => 'Mostra le etichette di testo sotto le icone della barra di navigazione';
 	@override String get startupSection => 'Sezione di avvio';
+	@override String get preferredServer => 'Servizio preferito';
+	@override String get preferredServerDescription => 'Priorizzare i risultati di questo server, mantenendo a disposizione ogni server collegato.';
+	@override String get preferredServerAutomatic => 'Automatico';
 	@override String get showExploreTab => 'Mostra la scheda Esplora';
 	@override String get showExploreTabDescription => 'Visualizza la scheda Esplora con contenuti di Esplora di Plex e dei tracker collegati';
+	@override String get hideEmptyLibraries => 'Chiudere le librerie vuote';
+	@override String get hideEmptyLibrariesDescription => 'Rimuovere le biblioteche con un numero di elementi riportati dal server di zero dalla navigazione.';
 	@override String get liveTvDefaultFavorites => 'Apri sui canali preferiti';
 	@override String get liveTvDefaultFavoritesDescription => 'Mostra solo i canali preferiti quando apri la TV in diretta';
 	@override String get general => 'Generali';
@@ -566,6 +741,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get gestureVolumeSwipeDescription => 'Scorri verso l\'alto o il basso sul bordo destro per regolare il volume';
 	@override String get gesturePinchToZoom => 'Pizzica per lo zoom';
 	@override String get gesturePinchToZoomDescription => 'Pizzica il video per ingrandire o ridurre';
+	@override String get gestureSeekSwipe => 'Cerca il Swipe';
+	@override String get gestureSeekSwipeDescription => 'Spostare a sinistra o a destra ovunque nel video per cercare; rilasciare per saltare';
 	@override String get rememberBrightnessLevel => 'Ricorda il livello di luminosità';
 	@override String get rememberBrightnessLevelDescription => 'Avvia la riproduzione con la luminosità impostata dall\'ultimo scorrimento';
 	@override String get controls => 'Controlli';
@@ -580,6 +757,12 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Per libreria';
 	@override String get playerScopeTitle => 'Per serie o film';
 	@override String get exportDialogTitle => 'Esporta le impostazioni di PlezyNG';
+	@override String get followSystem => 'Usa la lingua di sistema';
+	@override String get followAppLanguage => 'Come la lingua dell’interfaccia';
+	@override String get regionFormat => 'Formati regionali';
+	@override String get regionFormatDescription => 'Scegli come visualizzare date, numeri e unità di misura.';
+	@override String get metadataLanguage => 'Lingua dei metadati';
+	@override String get metadataLanguageDescription => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.';
 }
 
 // Path: themeEditor
@@ -595,6 +778,8 @@ class _Translations$themeEditor$it extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Non ancora creato';
 	@override String get editCustom => 'Modifica tema personalizzato';
 	@override String get editCustomDescription => 'Scegli tu ogni colore';
+	@override String get locked => 'L’accesso a vita richiesto';
+	@override String get savedLocked => 'Salvataggio - disponibile con accesso a vita';
 	@override String get title => 'Tema personalizzato';
 	@override String get startFrom => 'Parti da';
 	@override String get startFromDescription => 'Copia tutti i colori da un altro tema';
@@ -801,16 +986,16 @@ class _Translations$mediaMenu$it extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'Eliminare definitivamente ${title} dal tuo server?';
 	@override String get deleteMultipleWarning => 'Sono inclusi tutti gli episodi e i relativi file.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: 'Questo elimina tutti i ${n} episodio in essa contenuto e il relativo file.',
-		other: 'Questo elimina tutti i ${n} episodi in essa contenuti e i relativi file.',
+		one: 'Questo elimina tutti i ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodio in essa contenuto e il relativo file.',
+		other: 'Questo elimina tutti i ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodi in essa contenuti e i relativi file.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: 'Questo elemento è archiviato in ${n} file, che verrà eliminato.',
-		other: 'Questo elemento è archiviato in ${n} file, e tutti verranno eliminati.',
+		one: 'Questo elemento è archiviato in ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, che verrà eliminato.',
+		other: 'Questo elemento è archiviato in ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, e tutti verranno eliminati.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} altro episodio è archiviato nello stesso file e verrà eliminato anche lui:',
-		other: '${n} altri episodi sono archiviati nello stesso file e verranno eliminati anche loro:',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} altro episodio è archiviato nello stesso file e verrà eliminato anche lui:',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} altri episodi sono archiviati nello stesso file e verranno eliminati anche loro:',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG non ha potuto verificare quali file rimuoverà, quindi potrebbe eliminare più di quanto indicato sopra. Annulla e riprova, oppure elimina comunque.';
 	@override String get deleteScopeUnverifiedNoFileInfo => 'Il tuo server non ha fornito i dettagli del file per questo elemento, quindi PlezyNG non può verificare quali file rimuoverà. Potrebbe eliminare più di quanto indicato sopra.';
@@ -871,6 +1056,29 @@ class _Translations$accessibility$it extends Translations$accessibility$en {
 	@override String get hueShort => 'T';
 	@override String get saturationShort => 'S';
 	@override String get valueShort => 'V';
+	@override String get red => 'Il rosso';
+	@override String get green => 'verde';
+	@override String get blue => 'blu';
+	@override String get redShort => 'R';
+	@override String get greenShort => 'G';
+	@override String get blueShort => 'B';
+	@override String get colorModeHsv => 'Il HSV';
+	@override String get colorModeRgb => 'RGB';
+	@override String get title => 'accessibilità';
+	@override String get summary => 'testo, contrasto, movimento e controlli';
+	@override String get systemHint => 'Le impostazioni di accessibilità del dispositivo si applicano sempre.Queste opzioni aggiungono ajustamenti nel corso di PlezyNG.';
+	@override String get readability => 'Leggi e visibilità';
+	@override String get textSize => 'Dimensioni aggiuntive del testo';
+	@override String get preview => 'Leggi, ascolta e guarda al tuo ritmo.';
+	@override String get boldText => 'Interfaccia testo';
+	@override String get highContrast => 'Il contrasto elevato';
+	@override String get highContrastHint => 'Testo più forte, indicatori di rilievo e di focalizzazione sulle superfici luminose o scuri.';
+	@override String get interaction => 'Movimento e interazione';
+	@override String get reduceMotion => 'Ridurre il movimento';
+	@override String get reduceMotionHint => 'Mantenere il focus, le transizioni di pagina e gli effetti decorativi ancora.';
+	@override String get largeTargets => 'obiettivi touch più grandi';
+	@override String get largeTargetsHint => 'Gioca i controlli condivisi più spazio per la navigazione a touch e assistive.';
+	@override String get navigationHint => 'Utilizzare Tab e Shift+Tab per muoversi tra i controlli, Enter o Space per attivare, e Escape o Back to close. Le preferenze di zoom e di lettura del lettore sono disponibili mentre un libro è aperto.';
 }
 
 // Path: tooltips
@@ -903,6 +1111,10 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} strati',
+	);
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Sottotitoli';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -939,6 +1151,8 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Riattiva audio';
 	@override String get settingsButton => 'Impostazioni di riproduzione';
 	@override String get tracksButton => 'Audio e sottotitoli';
+	@override String get trackSelectionTitle => 'Scegliere le tracce prima del playback';
+	@override String get trackSelectionAuto => 'Selezione automatica';
 	@override String get chaptersButton => 'Capitoli';
 	@override String get versionQualityButton => 'Versione e qualità';
 	@override String get versionColumnHeader => 'Versione';
@@ -973,6 +1187,8 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Nessun elemento in coda';
 	@override String get noAudioDevicesAvailable => 'Nessun dispositivo audio disponibile';
 	@override String get searchSubtitles => 'Cerca sottotitoli';
+	@override String get loadSubtitleFile => 'Il file subtitle è ...';
+	@override String get subtitleLoadFailed => 'Non è stato possibile caricare il file subtitle';
 	@override String get language => 'Lingua';
 	@override String get noSubtitlesFound => 'Nessun sottotitolo trovato';
 	@override String get subtitleDownloaded => 'Sottotitolo scaricato';
@@ -981,6 +1197,7 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Cerca lingue...';
 	@override String get skipIntro => 'Salta intro';
 	@override String get skipCredits => 'Salta titoli';
+	@override String get skipAds => 'Scopri gli annunci';
 	@override String get nextEpisode => 'Episodio successivo';
 	@override String subtitleTrack({required Object n}) => 'Traccia ${n}';
 	@override String subtitleFile({required Object name}) => 'Sottotitolo ${name}';
@@ -1003,8 +1220,8 @@ class _Translations$messages$it extends Translations$messages$en {
 	@override String get markedAsUnwatchedOffline => 'Segnato come non visto (verrà sincronizzato quando torni online)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Rimosso automaticamente: ${title}';
 	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: 'Rimosso automaticamente ${n} download già visto',
-		other: 'Rimossi automaticamente ${n} download già visti',
+		one: 'Rimosso automaticamente ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download già visto',
+		other: 'Rimossi automaticamente ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download già visti',
 	);
 	@override String get removedFromContinueWatching => 'Rimosso da Continua a guardare';
 	@override String errorLoading({required Object error}) => 'Errore: ${error}';
@@ -1076,6 +1293,7 @@ class _Translations$subtitlingStyling$it extends Translations$subtitlingStyling$
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override String get previewSample => 'Il rapido fucile marrone salta sopra il cane lazo';
 	@override String get text => 'Testo';
 	@override String get border => 'Bordo';
 	@override String get background => 'Sfondo';
@@ -1171,6 +1389,9 @@ class _Translations$profiles$it extends Translations$profiles$en {
 	@override String deleteProfileMessage({required Object displayName}) => 'Rimuovi ${displayName} e le relative connessioni. I server resteranno disponibili.';
 	@override String get profileNameLabel => 'Nome profilo';
 	@override String get pinProtectionLabel => 'Protezione PIN';
+	@override String get copyAutomationLink => 'Copia il link di automatizzazione Android';
+	@override String get copyAutomationLinkDescription => 'Selezionare questo profilo da un\'intenzione o automatizzazione Android.';
+	@override String get automationLinkCopied => 'Il link di automatizzazione del profilo è copiato.';
 	@override String get pinManagedByPlex => 'PIN gestito da Plex. Modifica su plex.tv.';
 	@override String get noPinSetEditOnPlex => 'Nessun PIN impostato. Per richiederne uno, modifica l\'utente Home su plex.tv.';
 	@override String get setPin => 'Imposta PIN';
@@ -1212,6 +1433,10 @@ class _Translations$profiles$it extends Translations$profiles$en {
 	@override String get continueButton => 'Continua';
 	@override String get pinsDontMatch => 'I PIN non corrispondono';
 	@override String get tokenIdentityMismatch => 'Il token del profilo Plex è stato associato a un server imprevisto';
+	@override String get settingsLocked => 'Le impostazioni sono bloccate per questo profilo.';
+	@override String get unlockSettings => 'Sviluppo di disattivazione';
+	@override String get showExploreForProfile => 'Mostra Scopri per questo profilo';
+	@override String get showExploreForProfileDescription => 'Aprire per rimuovere Explore dalla navigazione di questo profilo.';
 }
 
 // Path: connections
@@ -1299,6 +1524,7 @@ class _Translations$discover$it extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Attori';
+	@override late final _Translations$discover$findNext$it findNext = _Translations$discover$findNext$it._(_root);
 	@override String get extras => 'Trailer ed extra';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Valutazione';
@@ -1309,8 +1535,8 @@ class _Translations$discover$it extends Translations$discover$en {
 	@override String minutesLeft({required Object minutes}) => '${minutes} minuti rimanenti';
 	@override String get moreLikeThis => 'Altri contenuti simili';
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} titolo',
-		other: '${n} titoli',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titolo',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titoli',
 	);
 	@override late final _Translations$discover$person$it person = _Translations$discover$person$it._(_root);
 }
@@ -1350,6 +1576,8 @@ class _Translations$libraries$it extends Translations$libraries$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override String get playRandomMovie => 'Gioca un film casuale';
+	@override String get randomPickFailed => 'Non si può scegliere un film casuale da questa biblioteca.';
 	@override String get title => 'Librerie';
 	@override String get fallbackTitle => 'Libreria';
 	@override String get scanLibraryFiles => 'Scansiona i file della libreria';
@@ -1411,6 +1639,7 @@ class _Translations$about$it extends Translations$about$en {
 	@override String versionLabel({required Object version}) => 'Versione ${version}';
 	@override String get appDescription => 'Un elegante client Plex, Jellyfin ed Emby per Flutter';
 	@override String get viewLicensesDescription => 'Visualizza le licenze delle librerie di terze parti';
+	@override String get privacyPolicy => 'Informativa sulla privacy';
 }
 
 // Path: serverSelection
@@ -1449,6 +1678,19 @@ class _Translations$logs$it extends Translations$logs$en {
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
 	@override String get uploadLogs => 'Carica log';
+	@override String get saveLogs => 'Salva i file in file';
+	@override String logsSaved({required Object path}) => 'I registri salvati a ${path}';
+	@override String get saveLogsFailed => 'Non poteva salvare il file di log.';
+}
+
+// Path: detail
+class _Translations$detail$it extends Translations$detail$en {
+	_Translations$detail$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Termina alle ${time}';
 }
 
 // Path: startup
@@ -1523,13 +1765,14 @@ class _Translations$explore$it extends Translations$explore$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override late final _Translations$explore$mdblistShelves$it mdblistShelves = _Translations$explore$mdblistShelves$it._(_root);
 	@override String get title => 'Esplora';
 	@override String get selectSource => 'Seleziona fonte';
 	@override late final _Translations$explore$rows$it rows = _Translations$explore$rows$it._(_root);
 	@override late final _Translations$explore$status$it status = _Translations$explore$status$it._(_root);
 	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} episodio',
-		other: '${n} episodi',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodio',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodi',
 	);
 	@override String get cast => 'Attori';
 	@override String get characters => 'Personaggi';
@@ -1543,8 +1786,8 @@ class _Translations$explore$it extends Translations$explore$en {
 	@override String get inTheseLibraries => 'In queste librerie';
 	@override String get checkingLibrary => 'Ricerca nella tua libreria...';
 	@override String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: 'Impossibile controllare ${n} server',
-		other: 'Impossibile controllare ${n} server',
+		one: 'Impossibile controllare ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server',
+		other: 'Impossibile controllare ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server',
 	);
 	@override String get emptyTitle => 'Ancora niente qui';
 	@override String emptyMessage({required Object source}) => 'Le sezioni di ${source} appariranno qui quando saranno disponibili dei contenuti.';
@@ -1563,8 +1806,8 @@ class _Translations$explore$it extends Translations$explore$en {
 	@override String broadcastWithZone({required Object day, required Object time, required Object timezone}) => 'Va in onda ${day} alle ${time} ${timezone}';
 	@override late final _Translations$explore$detail$it detail = _Translations$explore$detail$it._(_root);
 	@override String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} risultato',
-		other: '${n} risultati',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} risultato',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} risultati',
 	);
 }
 
@@ -1584,11 +1827,18 @@ class _Translations$liveTv$it extends Translations$liveTv$en {
 	@override String get noPrograms => 'Nessun dato di programma disponibile';
 	@override String get liveStreamFailed => 'Streaming in diretta non riuscito';
 	@override String get unknownProgram => 'Programma sconosciuto';
+	@override String get timelineLiveProgram => 'Programma dal vivo (il ripristino può essere fuori dal programma)';
+	@override String get timelineBuffer => 'TIME TIME di Buffer';
+	@override String get timelineUnavailable => 'TIME INCOSPOSIBILE';
+	@override String get timelineEstimated => 'Il Playback stimato';
+	@override String get timelinePending => 'Per la ricerca';
+	@override String get timelineStale => 'Il calendario può essere esaurito';
 	@override String get unknownHub => 'Sconosciuto';
 	@override String get unknownError => 'Errore sconosciuto';
 	@override String channelNumber({required Object number}) => 'Canale ${number}';
 	@override String get unknownChannel => 'Canale sconosciuto';
 	@override String get live => 'IN DIRETTA';
+	@override String get premiereBadge => 'Nuovo';
 	@override String get reloadGuide => 'Ricarica la guida';
 	@override String get searchGuide => 'Cerca nella guida';
 	@override String get searchHint => 'Cerca canali e programmi';
@@ -1707,8 +1957,10 @@ class _Translations$playlists$it extends Translations$playlists$en {
 	@override String get delete => 'Elimina playlist';
 	@override String get removeItem => 'Rimuovi dalla playlist';
 	@override String get smartPlaylist => 'Playlist intelligente';
-	@override String itemCount({required Object count}) => '${count} elementi';
-	@override String get oneItem => '1 elemento';
+	@override String itemCount({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(count,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} elemento',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} elementi',
+	);
 	@override String get emptyPlaylist => 'Questa playlist è vuota';
 	@override String get deleteConfirm => 'Eliminare playlist?';
 	@override String deleteMessage({required Object name}) => 'Sei sicuro di voler eliminare "${name}"?';
@@ -1740,18 +1992,34 @@ class _Translations$music$it extends Translations$music$en {
 	@override String get addToQueue => 'Aggiungi alla coda';
 	@override String discNumber({required Object n}) => 'Disco ${n}';
 	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} brano',
-		other: '${n} brani',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} brano',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} brani',
 	);
 	@override String get nowPlaying => 'In riproduzione';
 	@override String playingFrom({required Object title}) => 'Riproduzione da ${title}';
 	@override String get queue => 'Coda';
 	@override String get clearQueue => 'Svuota la coda';
 	@override String get lyrics => 'Testo';
+	@override String get visualizer => 'Visualizzatore';
+	@override String get visualizerProfileLoading => 'Leggi il track analysis...';
+	@override String get visualizerAmbientMotion => 'Movimento Ambientale';
+	@override String get visualizerPlexLoudness => 'Plex suono';
+	@override String get visualizerPreviousPreset => 'Articolo precedenteStyle visivo';
+	@override String get visualizerNextPreset => 'Next Stile visivo';
+	@override String get visualizerPresetAurora => 'Aurora';
+	@override String get visualizerPresetBloom => 'Il blu';
+	@override String get visualizerPresetOrbitals => 'orbitali';
+	@override String get visualizerPresetPrism => 'Prism';
+	@override String get visualizerPresetTunnel => 'Il tunnel';
+	@override String get visualizerPresetTrackMap => 'Mappa di traccia';
 	@override String get noLyrics => 'Nessun testo disponibile';
 	@override String get sleepTimer => 'Timer di spegnimento';
 	@override String get sleepTimerEndOfTrack => 'Fine del brano';
-	@override String sleepTimerMinutes({required Object n}) => '${n} minuti';
+	@override String sleepTimerMinutes({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuto',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuti',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuti',
+	);
 	@override String get stopPlayback => 'Interrompi riproduzione';
 	@override String get previousTrack => 'Brano precedente';
 	@override String get nextTrack => 'Brano successivo';
@@ -1841,8 +2109,8 @@ class _Translations$watchTogether$it extends Translations$watchTogether$en {
 	@override String get offsetPlusSecond => '+1 s';
 	@override String get participants => 'Partecipanti';
 	@override String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} partecipante',
-		other: '${n} partecipanti',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} partecipante',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} partecipanti',
 	);
 	@override String get hostBadge => 'HOST';
 	@override String nameYou({required Object name}) => '${name} (tu)';
@@ -1937,6 +2205,8 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get unwatchedOnly => 'Solo non visti';
 	@override String nextNUnwatched({required Object count}) => 'Prossimi ${count} episodi non visti';
 	@override String get customAmount => 'Quantità personalizzata...';
+	@override String get customAmountAny => 'Quanti sono i vari (quanti sono i)';
+	@override String get randomEpisodes => 'Episodi casuali';
 	@override String get includeSpecials => 'Includi gli speciali';
 	@override String get howManyEpisodes => 'Quanti episodi?';
 	@override String get invalidEpisodeCount => 'Inserisci un numero di episodi valido.';
@@ -1956,6 +2226,9 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get syncRuleCleanupBusy => 'Le regole di sincronizzazione sono in fase di aggiornamento. Riprova tra un momento.';
 	@override String get syncRuleCleanupUnavailable => 'Non è stato possibile identificare in sicurezza i download associati. Riconnetti il server e riprova, oppure rimuovi la regola senza eliminare i download.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nuovi episodi sincronizzati per ${title}';
+	@override String get syncNow => 'Sincolo ora';
+	@override String get downloadsUpToDate => 'Le scaricazioni sono aggiornate';
+	@override String syncComplete({required Object queued, required Object removed}) => 'Sincronizzazione completa · ${queued} quued, ${removed} rimosso';
 	@override String get activeSyncRules => 'Regole di sincronizzazione';
 	@override String get reviewOrphanFiles => 'Rivedi i download orfani';
 	@override String get orphanReviewTitle => 'Rivedi i download orfani';
@@ -1988,10 +2261,29 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get unknownSeason => 'Stagione sconosciuta';
 	@override String get unknownAlbum => 'Album sconosciuto';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} completati';
+	@override String storageUsed({required Object size}) => 'Storage utilizzato: ${size}';
+	@override String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download',
+	);
+	@override String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} mostra',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} mostri',
+	);
+	@override String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} film',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} film',
+	);
+	@override String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album',
+	);
 	@override String get errorFileNotFound => 'File non trovato (404)';
 	@override String get errorDownloadNotAllowed => 'Download non consentito dal server (403)';
 	@override String get errorDownloadFailed => 'Download non riuscito';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download non riuscito: ${reason}';
+	@override String get convertingOnServer => 'Convertire il server...';
+	@override String convertingOnServerPercent({required Object percent}) => 'Conversione sul server · ${percent}%';
 	@override String errorHttpStatus({required Object status}) => 'Download non riuscito (HTTP ${status})';
 	@override String errorPostProcessing({required Object reason}) => 'Post-elaborazione non riuscita: ${reason}';
 	@override String get reasonFileNotSaved => 'non è stato possibile salvare il file su questo dispositivo';
@@ -2072,6 +2364,13 @@ class _Translations$videoSettings$it extends Translations$videoSettings$en {
 	@override String get audioOutputSurround => 'Surround';
 	@override String get audioOutputSpatial => 'Audio spaziale';
 	@override String get audioOutputStereo => 'Stereo';
+	@override String get audioEqualizer => 'Audio equalizzatore';
+	@override String get audioEqualizerDescription => 'Aggiungere cinque bande di frequenza per questo dispositivo. disponibile su mpv; un EQ attivo decode audio e disabilita la corrispondenza.';
+	@override String get audioEqualizerFlat => 'Neutro';
+	@override String get audioEqualizerActive => 'Personalizzato';
+	@override String get audioEqualizerSaveFailed => 'Non poteva salvare le impostazioni di equalizzatore audio.';
+	@override String get backgroundVideoAudio => 'Video audio di background';
+	@override String get backgroundVideoAudioDescription => 'Mantenere il video audio riprodotto quando si lascia il lettore; l\'immagine è nascosta fino a quando non si ritorna. Android utilizza una notifica di riproduzione dei media.';
 	@override String get audioNormalization => 'Normalizza il volume';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva';
 }
@@ -2124,6 +2423,7 @@ class _Translations$performanceOverlay$it extends Translations$performanceOverla
 	@override String get cacheLimit => 'Limite cache';
 	@override String get speed => 'Velocità';
 	@override String get player => 'Lettore';
+	@override String get playMethod => 'Metodo di gioco';
 	@override String get memory => 'Memoria';
 	@override String get uiFps => 'FPS UI';
 	@override String get fps => 'FPS';
@@ -2436,6 +2736,39 @@ class _Translations$addServer$it extends Translations$addServer$en {
 	@override String redirectDifferentHost({required Object product}) => 'Il server ha reindirizzato a un host diverso. Inserisci direttamente l\'URL finale del server ${product}.';
 	@override String get redirectInsecure => 'Il server ha reindirizzato da HTTPS a un URL non sicuro';
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Il server ha reindirizzato a un URL non supportato. Inserisci direttamente l\'URL finale del server ${product}.';
+	@override String get directPlexServerUrl => 'URL del server Plex';
+	@override String get directPlexServerUrlHelper => 'Inserisci l\'IP locale e il port del tuo server di media Plex .';
+	@override String get directPlexServerUrlHint => 'http://192.168.1.100:32400';
+	@override String get plexToken => 'Plex Token (opzionale)';
+	@override String get plexTokenHelper => 'Lascia vuoto se l\'accesso senza auth è consentito su questo server.';
+	@override String get plexTokenRequired => 'Si prega di inserire il tuo token Plex (X-Plex-Token).';
+	@override String get connectDirectPlexCard => 'Plex Media Server (diretto / locale)';
+	@override String get connectDirectPlexCardSubtitle => 'Connettiti direttamente utilizzando IP o URL locali senza account plex.tv.';
+	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connettiti direttamente utilizzando IP locale o URL. Connettiti a ${name}.';
+	@override String get insecureTitle => 'Connessione non crittografata';
+	@override String insecureDescription({required Object url}) => '${url} usa HTTP. Altre persone sulla rete potrebbero leggere o modificare la password, i token e i contenuti multimediali. Usa HTTPS quando disponibile. Continua solo se ti fidi di questa rete e accetti il rischio.';
+	@override String get allowHttp => 'Permesso di usare HTTP';
+	@override String get httpsRequired => 'Utilizzare HTTPS o consentere esplicitamente una connessione non crittografata.';
+}
+
+// Path: watchLink
+class _Translations$watchLink$it extends Translations$watchLink$en {
+	_Translations$watchLink$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get serverUnavailable => 'Non potevo raggiungere un server Plex per questo link.';
+	@override String get notFound => 'Non potevo trovare questo spettacolo o film sui tuoi server Plex.';
+	@override String get ambiguous => 'Questo link corrisponde agli elementi su più di un server. Aggiungi un server al link.';
+	@override String get plexOnly => 'I link di monitoraggio supportano attualmente solo i server Plex.';
+	@override String get unsupportedItem => 'I link di guardare possono aprire solo un programma o un film.';
+	@override String get menuItem => 'Visualizza il link';
+	@override String get dialogTitle => 'Guarda il link';
+	@override String get dialogShowHint => 'Aprire questo link gioca il prossimo episodio. Aggiungi &mode=shuffle alla fine per giocare lo spettacolo su shuffle.';
+	@override String get dialogMovieHint => 'Aprire questo link gioca il film.';
+	@override String get copy => 'Copia';
+	@override String get copied => 'Link copia';
 }
 
 // Path: homeLayout
@@ -2445,101 +2778,408 @@ class _Translations$homeLayout$it extends Translations$homeLayout$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Home layout';
-	@override String get resetToast => 'Home reset to the original Plezy hero layout';
-	@override String get resetHeroTitle => 'Reset hero layout to stock Plezy?';
-	@override String get resetHeroBody => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.';
-	@override String get removeRowTitle => 'Remove Home row?';
-	@override String removeRowBody({required Object title}) => '${title} will be deleted. This can\'t be undone.';
-	@override String get sync => 'Sync';
-	@override String get syncAccountTitle => 'Sync layout with your Plex account';
-	@override String get syncAccountOn => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.';
-	@override String get syncAccountOff => 'Off: this device keeps its own layout.';
-	@override String get syncNow => 'Sync now';
-	@override String get plexHomeManager => 'Plex Home manager';
-	@override String get managePlexRows => 'Manage Plex rows in Plezy';
-	@override String get managePlexRowsDescription => 'Open to organize the Home-selected rows';
-	@override String get organizeHomeRows => 'Organize Home rows';
-	@override String organizeHomeRowsDescription({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove';
-	@override String organizeLibraryRows({required Object library}) => 'Organize ${library} rows';
-	@override String organizeLibraryRowsDescription({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide';
-	@override String get renderAsHero => 'Render as a hero card';
-	@override String get heroOnlySingleCollection => 'Only available when this row resolves to a single collection\'s actual titles';
-	@override String get hero => 'Hero';
-	@override String get autoSlide => 'Auto-slide';
-	@override String get autoSlideDescription => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.';
-	@override String get autoSlideEditDescription => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.';
-	@override String get enableHeroFirst => 'Enable Hero first';
-	@override String get showOnHome => 'Show on Home screen';
+	@override String get title => 'Home Layout';
+	@override String get resetToast => 'Home Ristrutturazione all\'originale layout Plezy';
+	@override String get resetHeroTitle => 'Ristrutturare il layout del eroe al stock Plezy?';
+	@override String get resetHeroBody => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotativo al top di Home, come prima che le riga eroe esistessero.';
+	@override String get removeRowTitle => 'Rimuovere la linea di casa?';
+	@override String removeRowBody({required Object title}) => '${title} sarà cancellato. non può essere negato.';
+	@override String get sync => 'Sincolo';
+	@override String get syncAccountTitle => 'Sincronti il layout con il tuo account Plex';
+	@override String get syncAccountOn => 'In: questo dispositivo condivide ordine di ordine, righe, Hero e Auto-slide con gli altri dispositivi.';
+	@override String get syncAccountOff => 'Off: questo dispositivo mantiene il suo layout.';
+	@override String get syncNow => 'Sincolo ora';
+	@override String get plexHomeManager => 'Plex Direttore di casa';
+	@override String get managePlexRows => 'Gestione Plex righe in Plezy';
+	@override String get managePlexRowsDescription => 'Aperto per organizzare le righe selezionate in casa';
+	@override String get organizeHomeRows => 'Organizzare le linee di casa';
+	@override String organizeHomeRowsDescription({required Object n}) => '${n} righe: movimento, eroe, auto-slide, rimozione';
+	@override String organizeLibraryRows({required Object library}) => 'Organizzare ${library} righe';
+	@override String organizeLibraryRowsDescription({required Object n}) => 'Continua a guardare + ${n} righe: movimento, Biblioteca, Home, Eroe, Auto-slide';
+	@override String get renderAsHero => 'Render come carta di eroe';
+	@override String get heroOnlySingleCollection => 'Disponibile solo quando questa fila si risolve ai titoli reali di una singola collezione';
+	@override String get hero => 'Eroe';
+	@override String get autoSlide => 'Auto-Slide';
+	@override String get autoSlideDescription => 'Arrows (PC) e d-pad (TV) sempre funzionano e riavviano il timer.';
+	@override String get autoSlideEditDescription => 'Spegne: si muove solo quando si fa clic su una pistola (PC) o premere sinistra/diretta sul remote (TV).';
+	@override String get enableHeroFirst => 'Permettere il primo eroe';
+	@override String get showOnHome => 'Mostra su Home Screen';
 	@override String get home => 'Home';
-	@override String get removeFromHome => 'Remove from Home';
-	@override String get selectRowsFirst => 'Select Home rows below first.';
-	@override String plexManagedRows({required Object n}) => '${n} Plex-managed rows';
-	@override String get continueWatching => 'Continue Watching';
-	@override String get continueWatchingLibraryDescription => 'This library\'s own resume-progress row';
-	@override String get continueWatchingHomeDescription => 'The resume-progress row shown on Home';
-	@override String get library => 'Library';
-	@override String get showInRecommended => 'Show in Library Recommended';
-	@override String get customPlexRow => 'Custom Plex row';
-	@override String get heroNeedsLibrary => 'Check Library first — Hero needs somewhere to show';
-	@override String get heroNeedsSurface => 'Check Library or Home first — Hero needs somewhere to show';
-	@override String get removeHub => 'Remove Hub';
-	@override String get noPlexRows => 'No Plex-managed rows returned for this library.';
-	@override String get openDetails => 'Open details';
-	@override String get heroCards => 'Hero cards';
-	@override String get tapHeroCard => 'Tapping a hero card';
-	@override String get tvPlayFocus => 'TV remote: highlight Play button';
-	@override String get tvPlayFocusDescription => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.';
-	@override String get tvWrap => 'TV remote: loop hero cards';
-	@override String get tvWrapDescription => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.';
-	@override String get castOnHero => 'Cast on hero banners';
-	@override String get castOnHeroDescription => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.';
-	@override String get customRows => 'Custom rows';
-	@override String get loading => 'Loading home layout…';
-	@override String get noCustomRows => 'No custom rows yet';
-	@override String get addRowHint => 'Use Add Home row to create one.';
-	@override String get addHomeRow => 'Add Home row';
-	@override String get addHomeRowDescription => 'Choose a category; the new row is added to Organizer automatically';
-	@override String get removeRow => 'Remove row';
-	@override String get recentlyAdded => 'Recently Added';
-	@override String get recentlyReleased => 'Recently Released';
-	@override String get movieCollections => 'Movie Collections';
-	@override String get showCollections => 'Show Collections';
-	@override String get rowTitle => 'Row title';
-	@override String get content => 'Content';
-	@override String get showThisRowIn => 'Show this row in:';
-	@override String get libraryRecommended => 'Library Recommended';
-	@override String get heroCard => 'Hero card';
-	@override String get heroCardDescription => 'Shows as one full-width rotating card instead of a poster shelf.';
-	@override String get heroUnavailableDescription => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.';
-	@override String get librariesSelection => 'Libraries (leave all unchecked to include every library)';
-	@override String get librariesMergedDescription => 'Every library checked here is merged into this one row.';
-	@override String get movieCollectionsSelection => 'Movie collections (leave all unchecked for every selected library)';
-	@override String get showCollectionsSelection => 'Show collections (leave all unchecked for every selected library)';
-	@override String get collectionRowsDescription => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.';
-	@override String get allCollections => 'All collections';
-	@override String get noRowsHere => 'No rows here yet.';
-	@override String get hideWatchedRows => 'Hide watched items in rows';
-	@override String get hideWatchedRowsDescription => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.';
-	@override String get untitledCollection => 'Untitled collection';
-	@override String get moveRowHint => 'Up/Down: move row · Select: drop it here · Back: cancel';
-	@override String get organizeRowsHint => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done';
-	@override String get layoutNavDescription => 'Choose rows, libraries, and collection categories';
-	@override String get editHomeRow => 'Edit Home row';
-	@override String get resetHeroButton => 'Reset hero layout to stock Plezy';
-	@override String get reorderingUnlocked => 'Reordering unlocked';
-	@override String get reorderingLocked => 'Reordering locked';
-	@override String get rowsCanBeDragged => 'Rows can be dragged — tap the lock to prevent that';
-	@override String get tapLockToDrag => 'Tap the lock to drag rows';
-	@override String customRowLabel({required Object title}) => 'Custom: ${title}';
+	@override String get removeFromHome => 'Rimuovere da casa';
+	@override String get selectRowsFirst => 'Selezionare le linee di casa sotto prima.';
+	@override String plexManagedRows({required Object n}) => '${n} Plex righe gestite';
+	@override String get continueWatching => 'Continua a guardare';
+	@override String get continueWatchingLibraryDescription => 'La linea di ritorno di questa biblioteca';
+	@override String get continueWatchingHomeDescription => 'La riga di progresso di ritorno mostrata a casa';
+	@override String get nextUpHomeDescription => 'La prossima sequenza di episodi non osservati mostrata separatamente su Home';
+	@override String get library => 'Libreria';
+	@override String get showInRecommended => 'Mostra in Biblioteca raccomandata';
+	@override String get customPlexRow => 'Modello di guida Plex';
+	@override String get heroNeedsLibrary => 'Scopri la biblioteca prima - Hero ha bisogno di qualche parte per mostrare';
+	@override String get heroNeedsSurface => 'Scopri la biblioteca o la casa prima - il protagonista ha bisogno di qualche parte per mostrare';
+	@override String get removeHub => 'Rimuovere Hub';
+	@override String get noPlexRows => 'N. Plex rami gestiti restituiti per questa biblioteca.';
+	@override String get openDetails => 'Dettagli aperti';
+	@override String get heroCards => 'Carte di eroe';
+	@override String get tapHeroCard => 'Scopri una carta di eroe';
+	@override String get tvPlayFocus => 'Remote TV: il pulsante di gioco';
+	@override String get tvPlayFocusDescription => 'D-pad down si ferma sul pulsante Play prima di muoversi alla prossima riga.';
+	@override String get tvWrap => 'Remote TV: carte di eroe di loop';
+	@override String get tvWrapDescription => 'Direttamente sulla ultima carta va di nuovo alla prima. Off si ferma alla ultima carta. La sinistra sulla prima carta va sempre alla barra laterale.';
+	@override String get castOnHero => 'Il cast su banner';
+	@override String get castOnHeroDescription => 'Mostra il cast lungo il fondo di un banner eroico. fuori conserva solo il titolo e il sintesi.';
+	@override String get customRows => 'Riflessioni personalizzate';
+	@override String get loading => 'Il layout di casa...';
+	@override String get noCustomRows => 'Non ci sono ancora linee';
+	@override String get addRowHint => 'Utilizzare Add Home row per creare uno.';
+	@override String get addHomeRow => 'Aggiungi Home Rue';
+	@override String get addHomeRowDescription => 'Selezionare una categoria; la nuova linea viene aggiunta automaticamente all\'Organizzatore';
+	@override String get removeRow => 'Rimuovere la linea';
+	@override String get recentlyAdded => 'Aggiunti di recente';
+	@override String get recentlyReleased => 'Rilasciato di recente';
+	@override String get movieCollections => 'Film Collezioni';
+	@override String get showCollections => 'Mostra le collezioni';
+	@override String get rowTitle => 'Titolo Row';
+	@override String get content => 'contenuto';
+	@override String get showThisRowIn => 'Mostra questa riga in:';
+	@override String get libraryRecommended => 'Biblioteca raccomandata';
+	@override String get heroCard => 'Carta di eroe';
+	@override String get heroCardDescription => 'Mostra come una carta di rotazione a larghezza completa invece di un poster shelf.';
+	@override String get heroUnavailableDescription => 'Disponibile solo quando questa fila si risolve ai titoli reali di una singola collezione - con più di una collezione selezionata non c\'è nessun titolo da girare.';
+	@override String get librariesSelection => 'Librerie (solo non controllate per includere ogni biblioteca)';
+	@override String get librariesMergedDescription => 'Ogni biblioteca che si verifica qui è unita in questa una fila.';
+	@override String get movieCollectionsSelection => 'Collezioni di film (solo non controllate per ogni biblioteca selezionata)';
+	@override String get showCollectionsSelection => 'Mostra collezioni (solo non controllate per ogni biblioteca selezionata)';
+	@override String get collectionRowsDescription => 'Se esattamente una collezione si compie, i suoi titoli si mostrano direttamente nella fila.Se più di una collezione, ogni collezione si mostra come un unico poster - premere per aprire quella collezione.';
+	@override String get allCollections => 'Tutte le collezioni';
+	@override String get noRowsHere => 'Non ci sono ancora linee.';
+	@override String get hideWatchedRows => 'Scopri gli oggetti osservati in serie';
+	@override String get hideWatchedRowsDescription => 'Titoli completamente guardati lasciare Home e biblioteca Raggiunta raccomandata.';
+	@override String get untitledCollection => 'Collezione senza titolo';
+	@override String get moveRowHint => 'Up/Down: spostare la linea · Selezionare: lasciarlo qui · Ritorno: cancellare';
+	@override String get organizeRowsHint => 'Selezionare una riga (o tenere Selezionare): spostarlo · Sinistra/Destra: opzioni di riga · Ritorno: fatto';
+	@override String get layoutNavDescription => 'Scegliere le righe, le biblioteche e le categorie di raccolta';
+	@override String get editHomeRow => 'Edit Home Ronde';
+	@override String get resetHeroButton => 'Ristrutturare il layout del eroe in stock Plezy';
+	@override String get reorderingUnlocked => 'Ristrutturazione disattivata';
+	@override String get reorderingLocked => 'Ristrutturazione chiusa';
+	@override String get rowsCanBeDragged => 'Le corde possono essere tracciate - tappa il blocco per evitare che';
+	@override String get tapLockToDrag => 'Toccare il blocco per tirare le righe';
+	@override String customRowLabel({required Object title}) => 'Numero di lavoro: ${title}';
 	@override String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
-	@override String get hide => 'Hide';
-	@override String get remove => 'Remove';
-	@override String get libraryResumeRow => 'This library\'s resume row';
-	@override String get pressAgainToDelete => 'Press again to delete';
+	@override String get hide => 'Nascondi';
+	@override String get remove => 'Rimuovi';
+	@override String get libraryResumeRow => 'La rivista della biblioteca è';
+	@override String get pressAgainToDelete => 'Premere di nuovo per cancellare';
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
-	@override String get on => 'On';
-	@override String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
+	@override String get on => 'di';
+	@override String get resetHeroButtonDescription => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotante in cima, come prima che le riga eroe esistessero.';
+}
+
+// Path: platform
+class _Translations$platform$it extends Translations$platform$en {
+	_Translations$platform$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get localNetworkPermission => 'PlezyNG connette ai tuoi server multimediali e dispositivi di riproduzione sulla tua rete locale.';
+	@override String get locationPermission => 'PlezyNG utilizza l\'accesso alla localizzazione quando iOS lo richiede per rilevare la tua rete locale e connetterti ai tuoi server multimediali.';
+	@override String get photoLibraryPermission => 'Scegli le immagini dalla tua biblioteca fotografica per essere utilizzate come opere d\'arte multimediale.';
+	@override String get cameraPermission => 'Scansione QR per unirsi a un Companion Remote.';
+}
+
+// Path: fileSources
+class _Translations$fileSources$it extends Translations$fileSources$en {
+	_Translations$fileSources$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Fili e libri';
+	@override String get subtitle => 'Leggi, ascolta e guarda dai tuoi file.';
+	@override String get add => 'Aggiungi fonte';
+	@override String get importFiles => 'Importazione file';
+	@override String get localFiles => 'su questo dispositivo';
+	@override String get source => 'Fonte';
+	@override String get name => 'Nome';
+	@override String get endpoint => 'URL del server';
+	@override String get root => 'Foldere o prefix';
+	@override String get username => 'Nome utente';
+	@override String get password => 'Password';
+	@override String get token => 'API Toccano';
+	@override String get accessKey => 'ID chiave di accesso';
+	@override String get secretKey => 'Key di accesso segreto';
+	@override String get sessionToken => 'Il token sessione (opzionale)';
+	@override String get region => 'Regione';
+	@override String get clientId => 'ID client di OAuth';
+	@override String get clientSecret => 'OAuth client secret (solo Google desktop)';
+	@override String get allowHttp => 'Consenti HTTP non crittografato su una rete attendibile';
+	@override String get connect => 'Connetti';
+	@override String get cancel => 'Annulla';
+	@override String get save => 'Salva';
+	@override String get close => 'Chiudi';
+	@override String get removeSource => 'Sconnetti fonte';
+	@override String get disconnectMessage => 'I file scaricati e la tua storia di lettura e ascolto rimarranno su questo dispositivo.';
+	@override String get localFolder => 'Scegliamo la cartella';
+	@override String get empty => 'Ancora niente qui';
+	@override String get emptyHint => 'Aggiungi una fonte o importare un libro, un libro audio, musica o video.';
+	@override String get search => 'Cerca questo folder';
+	@override String get searchCached => 'La ricerca della biblioteca salvata';
+	@override String get refresh => 'Aggiorna';
+	@override String get loadMore => 'Carica di più';
+	@override String get offline => 'Disponibile offline';
+	@override String get download => 'Rimanere offline';
+	@override String get removeDownload => 'Rimuovere offline copia';
+	@override String get continueReading => 'Continua a leggere';
+	@override String get continueListening => 'Continua ad ascoltare';
+	@override String get continueWatching => 'Continua a guardare';
+	@override String get read => 'Leggi';
+	@override String get listen => 'Ascolta';
+	@override String get play => 'Riproduci';
+	@override String get pause => 'Pausa';
+	@override String get stop => 'Interrompi';
+	@override String get startOver => 'Inizia il';
+	@override String get finished => 'Terminato';
+	@override String get markFinished => 'Marco finito';
+	@override String get markUnfinished => 'Marchio Infinito';
+	@override String get editions => 'Edizioni e file';
+	@override String get chapters => 'Capitoli';
+	@override String get bookmarks => 'Note e note';
+	@override String get bookmark => 'Aggiungi Bookmark';
+	@override String get highlight => 'L’accento';
+	@override String get note => 'Nota';
+	@override String get delete => 'Elimina';
+	@override String get export => 'Notizie di esportazione';
+	@override String get exported => 'Notizie esportate';
+	@override String get sync => 'Sincolo Progresso';
+	@override String get synced => 'Progresso sintetizzato';
+	@override String get conflict => 'Un altro dispositivo ha una posizione diversa. scegliere dove continuare.';
+	@override String get useLocal => 'Utilizzare questo dispositivo';
+	@override String get useRemote => 'Utilizzare altri dispositivi';
+	@override String get history => 'Storia della posizione';
+	@override String get groupAudio => 'Ascoltare come un libro audio';
+	@override String get groupHint => 'Combina i file audio attualmente caricati in questa cartella. caricare tutte le pagine prima.';
+	@override String get order => 'Ordine di file';
+	@override String get moveUp => 'Move in alto';
+	@override String get moveDown => 'Move verso il basso';
+	@override String get speed => 'velocità di playback';
+	@override String get sleep => 'Timer di spegnimento';
+	@override String get sleepOff => 'Disattivato';
+	@override String get endChapter => 'La fine del capitolo';
+	@override String minutes({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(count,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuto',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuti',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuti',
+	);
+	@override String get skipBack => 'Scoppia indietro';
+	@override String get skipForward => 'Scomparsa in avanti';
+	@override String get smartRewind => 'Il ritorno intelligente dopo una pausa';
+	@override String get playbackOptions => 'Opzioni di ascolto';
+	@override String remaining({required Object time}) => '${time} rimanente';
+	@override String get contents => 'contenuto';
+	@override String get readerSettings => 'Leggi le impostazioni';
+	@override String get fontSize => 'Testo di dimensioni';
+	@override String get lineHeight => 'Linee di spazzatura';
+	@override String get margin => 'Margini';
+	@override String get font => 'Tipo di faccia';
+	@override String get serif => 'serif';
+	@override String get sans => 'Senza serif';
+	@override String get mono => 'Monospacio';
+	@override String get columns => 'Colonne';
+	@override String get scroll => 'Scorrere verticalmente';
+	@override String get justify => 'giustificare il testo';
+	@override String get readerTheme => 'Apparire pagina';
+	@override String get appTheme => 'Seguire app tema';
+	@override String get paper => 'Carta';
+	@override String get sepia => 'Setti';
+	@override String get night => 'Notte';
+	@override String get readAloud => 'Leggi questa pagina a AUD';
+	@override String get readAlong => 'Leggi tutto';
+	@override String get stopReading => 'smettere di narrazione';
+	@override String get searchBook => 'La ricerca nel libro';
+	@override String get noMatches => 'Nessun match';
+	@override String get previousPage => 'Pagina precedente';
+	@override String get nextPage => 'Pagina successiva';
+	@override String page({required Object number}) => 'Pagina ${number}';
+	@override String get externalBlocked => 'I link esterni del libro sono disabilitati nel lettore.';
+	@override String get loading => 'Apertura...';
+	@override String get narrator => 'narratore';
+	@override String get audio => 'Audio';
+	@override String get video => 'Video';
+	@override String get ebooks => 'ebook';
+	@override String get all => 'Tutto';
+	@override String get downloads => 'Fili di Offline';
+	@override String get confirmDelete => 'Rimuovere la copia offline selezionata? la tua posizione e le note rimarranno.';
+	@override String get errorAuthentication => 'Iscriviti di nuovo per riconnettere questa fonte.';
+	@override String get errorPermission => 'Questa fonte non ha fornito accesso al file richiesto.';
+	@override String get errorUnavailable => 'La fonte non è disponibile. prova di nuovo, o apri una copia offline.';
+	@override String get errorUnsupported => 'Questo formato o connessione non è supportato su questo dispositivo.Vedi la guida di impostazione della fonte.';
+	@override String get errorInvalidData => 'Questo file o risposta del server non può essere letto in modo sicuro.';
+	@override String get errorCancelled => 'L’operazione è stata annullata.';
+	@override String get errorConflict => 'La posizione è cambiata in un\'altra sessione. riaprirlo per selezionare una posizione.';
+	@override String get signIn => 'Accedi';
+	@override String get reconnect => 'Riconnetti';
+	@override String get folderHelp => 'Lascia la riga per iniziare alla radice sorgente. URL S3 includono il bucket.';
+	@override String get preferences => 'Preferenze';
+	@override String get timePosition => 'Posizione';
+	@override String get audioTrack => 'Audio trazione';
+	@override String get subtitleTrack => 'Il sottotitolo traggio';
+	@override String get none => 'Nessuno';
+	@override String get fullscreen => 'schermo completo';
+	@override String get syncLocation => 'Fornitura di Progress Sync (opzionale)';
+	@override String get syncLocationHint => 'Una cartella dedicata WebDAV per PlezyNG stato. utilizza scrittura condizionale; i media rimangono invariati.';
+	@override String get audiobooks => 'Audiobochi';
+	@override String get comics => 'Comiche';
+	@override String get scan => 'Scansione dei libri e dei media';
+	@override String get browserReader => 'Il lettore aperto';
+	@override String get browserReaderHelp => 'Il lettore è aperto nel tuo browser. Mantenere aperto PlezyNG per salvare il tuo posto e note.';
+	@override String get on => 'di';
+	@override String get advancedSetup => 'App di registrazione';
+	@override String get microsoftSignIn => 'Iscriviti con Microsoft';
+	@override String get zoomIn => 'Ingrandisci';
+	@override String get zoomOut => 'Zoom fuori';
+	@override String get fitPage => 'Pagina adeguata';
+	@override String get fitWidth => 'adeguato larghezza';
+	@override String get actualSize => 'Dimensioni attuali';
+	@override String get goToPage => 'Vai alla pagina';
+	@override String get goToSection => 'Vai al capitolo';
+	@override String pageRange({required Object count}) => 'Inserisci un numero da 1 a ${count}';
+	@override String get pageLayout => 'Il layout della pagina';
+	@override String get automatic => 'Automatico';
+	@override String get singlePage => 'Una pagina unica';
+	@override String get twoPages => 'Due pagine';
+	@override String get readingDirection => 'La direzione di lettura';
+	@override String get leftToRight => 'A sinistra a destra';
+	@override String get rightToLeft => 'Diritto a lasciare';
+	@override String get letterSpacing => 'Lettera spazzatura';
+	@override String get wordSpacing => 'Parola spazzatura';
+	@override String get readerControlsHelp => 'Pinch o utilizza i controlli zoom per ingrandire le pagine. scorrere in pan. Ctrl/ ⁇  + o − regola lo zoom; Ctrl/ ⁇  0 lo ristabili.';
+	@override String get imagePage => 'Pagina Comica';
+	@override String get resetReader => 'Ristrutturare le preferenze di lettura';
+	@override String get zoom => 'Zoom';
+	@override String get useFiles => 'Utilizzare file e libri';
+	@override String get cancelScan => 'Cancelare la scansione';
+	@override String get googleDrive => 'Google Drive';
+}
+
+// Path: lending
+class _Translations$lending$it extends Translations$lending$en {
+	_Translations$lending$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Librerie pubbliche';
+	@override String get add => 'Aggiungi una biblioteca';
+	@override String get other => 'Un’altra biblioteca';
+	@override String get libraryName => 'Nome della biblioteca';
+	@override String get libraryUrl => 'Sito della Biblioteca';
+	@override String get libraryUrlHint => 'Utilizzare il catalogo della tua biblioteca o la pagina di iscrizione.';
+	@override String get intro => 'Prendi il tuo libro dalla tua biblioteca, tenete i vostri libri chiusi.';
+	@override String get handoff => 'Iscriviti, prestiti e leggi in modo sicuro con il servizio della tua biblioteca.';
+	@override String get openService => 'Biblioteca aperta';
+	@override String get findLibrary => 'Trova una biblioteca';
+	@override String get search => 'Cerca libri e autori';
+	@override String get catalogue => 'Cataloghi';
+	@override String get loans => 'Prestiti';
+	@override String get holds => 'Togliere';
+	@override String get signIn => 'Iscriviti con la tua biblioteca';
+	@override String get waiting => 'Finite la registrazione nel vostro browser, poi tornate qui.';
+	@override String get cancel => 'Annulla';
+	@override String get disconnect => 'Rimuovere la biblioteca';
+	@override String get disconnectMessage => 'Rimuovere questa biblioteca da questo profilo? i tuoi prestiti e mantiene il soggiorno con la tua biblioteca.';
+	@override String get getBook => 'Ottieni il libro';
+	@override String get checkAvailability => 'Verifica disponibilità';
+	@override String get available => 'Disponibile per prestito';
+	@override String get unavailable => 'attualmente inutilizzabile';
+	@override String get borrow => 'Prestito';
+	@override String get placeHold => 'Il posto è tenuto';
+	@override String get returnBook => 'Il ritorno presto';
+	@override String get cancelHold => 'Cancellato Hold';
+	@override String get confirmBorrow => 'Prendi questo titolo dalla tua biblioteca?';
+	@override String get confirmReturn => 'Ritorna questo titolo ora? Potresti averlo bisogno di prestare di nuovo per continuare.';
+	@override String get confirmCancelHold => 'Rimuovere il tuo titolo?';
+	@override String get email => 'Tenere presente la notifica email';
+	@override String due({required Object date}) => 'Il numero di persone ${date}';
+	@override String queue({required Object position}) => 'Posizione ${position} in linea';
+	@override String get empty => 'Non ci sono titoli ancora.';
+	@override String get openLibraryNote => 'Scopri il catalogo della Open Library. Le opzioni di lettura e di prestito sono visualizzate sulla pagina di ogni titolo.';
+	@override String get more => 'Carica di più';
+	@override String get gateway => 'Libreria di iscrizione al servizio';
+	@override String get gatewayHint => 'Fornite dalla vostra biblioteca o dall\'amministratore PlezyNG.';
+	@override String get advanced => 'Integrazione della biblioteca';
+	@override String get loadLibraries => 'Scegli la tua biblioteca';
+	@override String get expired => 'Il prestito è scaduto.';
+	@override String get updated => 'Biblioteca aggiornata';
+	@override String get continueService => 'Continua a servire';
+	@override String get comingSoon => 'In-app prestito · Presto arriva';
+	@override String get comingSoonDescription => 'Puoi usare la tua biblioteca in Libby mentre finisci connetendola.';
+	@override String get suspendHold => 'Sospensione di tenere';
+	@override String get resumeHold => 'Riflessioni di Hold';
+	@override String get suspendMessage => 'Mantenere il vostro posto in linea e lasciare che il prossimo lettore prendi questa copia?';
+	@override String get resumeMessage => 'Rispondere questo contenuto in modo che la tua biblioteca possa offrire la prossima copia disponibile?';
+	@override String get editEmail => 'Modifica di notifica email';
+}
+
+// Path: audiobook
+class _Translations$audiobook$it extends Translations$audiobook$en {
+	_Translations$audiobook$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get syncTitle => 'Leggere e ascoltare Sync';
+	@override String get syncHelp => 'Mantenere le posizioni di lettura, le posizioni di ascolto, lo stato di completamento, i caratteri e le note attraverso i dispositivi. Scegli un account di archiviazione allegato e usi lo stesso codice di sincronizzazione su ciascun dispositivo. La lettura e l\'ascolto rimangono separati.';
+	@override String get addSyncSource => 'Aggiungi Google Drive, OneDrive, Dropbox, WebDAV o S3 in file e libri prima.';
+	@override String get syncDestination => 'L’account di storage sincronizzato';
+	@override String get syncFolder => 'Sincronizzazione mappa o prefix';
+	@override String get syncFolderHelp => 'Utilizzare una cartella esistente separata all\'interno della tua fonte WebDAV, o un prefix S3 dedicato.';
+	@override String get syncCode => 'Codice di sincronizzazione privata';
+	@override String get syncCodeHelp => 'Crea un codice sul tuo primo dispositivo, quindi inserisci quel codice sui tuoi altri dispositivi. Mantenere una copia privata: è la chiave per lo stato crittografato. Utilizzare un codice diverso per ciascuna persona.';
+	@override String get showCode => 'Mostra o nascondere il codice di sincronizzazione';
+	@override String get newSyncCode => 'Creare un nuovo codice di sincronizzazione';
+	@override String get saveSync => 'Salvare e sincronizzare';
+	@override String get disableSync => 'Disattivare la sincronizzazione su questo dispositivo';
+	@override String get syncSourceDisconnect => 'Rimuovere questa fonte si disattiverà la lettura e l\'ascolto di sincronizzazione qui. i file di sincronizzazione crittografati rimarranno nel fornitore.';
+	@override String get syncReconnect => 'Ripristinare l’account di storage';
+	@override String lastSynced({required Object time}) => 'Ultimo sincronizzato su ${time}';
+	@override String get syncPrivacy => 'Solo i progressi e le note crittografati vengono memorizzati. file audio e ebook, tokens di account e password non vengono caricati. Google Drive e OneDrive utilizzano lo storage app; Dropbox utilizza PlezyNG Sync. Per consentire la sincronizzazione può richiedere un accesso aggiuntivo di scrittura. Mentre è attivato, questa destinazione possiede la sincronizzazione del progresso; il progresso del server rimane separato.';
+	@override String get syncConflicts => 'Scegliamo dove riprendere';
+	@override String get conflictHelp => 'Questi cambiamenti sono stati effettuati in modo indipendente. Scegli la posizione o la versione di bookmark per mantenere. Un timestamp successivo o un percentuale superiore non vince automaticamente.';
+	@override String syncDevice({required Object device}) => 'Dispositivo ${device}';
+	@override String get syncUnknownDevice => 'Dispositivi sconosciuti';
+	@override String get deletedBookmark => 'Bookmark cancellato';
+	@override String get finished => 'finito';
+	@override String readingPosition({required Object percent}) => 'Leggi · ${percent}%';
+	@override String get chapterTimeline => 'Capitolo Progresso';
+	@override String get bookTimeline => 'Tutto il libro Progresso';
+	@override String bookRemaining({required Object time}) => 'Il tempo rimanente in questo libro: ${time}';
+	@override String chapterRemaining({required Object time}) => 'Il tempo rimanente in questo capitolo: ${time}';
+	@override String get unknownRemaining => 'Tempo totale disponibile quando le parti vengono giocate';
+	@override String get undoSeek => 'L’ultima ricerca';
+	@override String get customSpeed => 'Velocità di playback personalizzata';
+	@override String get speedHelp => 'Scegli una velocità da 0,25× a 4×.';
+	@override String get apply => 'Applicazione';
+	@override String get customSleep => 'Tempo di sonno personalizzato';
+	@override String get sleepMinutes => 'Il tempo (1-440 minuti)';
+	@override String sleepChapters({required Object count}) => 'Smetti dopo ${count} capitoli';
+	@override String get extendSleep => 'Aggiungi 5 minuti';
+	@override String sleepRemaining({required Object time}) => 'Tempo di sonno: ${time}';
+	@override String get useDefaults => 'Utilizzare questi controlli di ascolto per nuovi libri';
+	@override String get librarySort => 'Libri di sorta';
+	@override String get sortTitle => 'Titolo';
+	@override String get sortAuthor => 'Autore';
+	@override String get sortNarrator => 'narratore';
+	@override String get sortSeries => 'Serie Ordine';
+	@override String get sortRecent => 'Recentemente aperto';
+	@override String get statusFilter => 'Lo stato di lettura';
+	@override String get statusAll => 'Tutti i libri';
+	@override String get statusNew => 'Non è iniziato';
+	@override String get statusProgress => 'Il progresso';
+	@override String get statusFinished => 'finito';
+	@override String get goToTime => 'Vai al tempo';
+	@override String get timeHelp => 'ore: minuti: secondi o minuti: secondi';
 }
 
 // Path: appIcon.names
@@ -2581,8 +3221,8 @@ class _Translations$common$ratingSource$it extends Translations$common$ratingSou
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get critic => 'Critici';
-	@override String get audience => 'Pubblico';
+	@override String get critic => 'Critics';
+	@override String get audience => 'Audience';
 	@override String get imdb => 'IMDb';
 	@override String get tmdb => 'TMDB';
 	@override String get rottenTomatoes => 'Rotten Tomatoes';
@@ -2590,8 +3230,8 @@ class _Translations$common$ratingSource$it extends Translations$common$ratingSou
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get trakt => 'Trakt';
-	@override String get rottenTomatoesCritic => 'Critici di Rotten Tomatoes';
-	@override String get rottenTomatoesAudience => 'Pubblico di Rotten Tomatoes';
+	@override String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+	@override String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
 	@override String get metacritic => 'Metacritic';
 	@override String get letterboxd => 'Letterboxd';
 }
@@ -2682,6 +3322,8 @@ class _Translations$hotkeys$actions$it extends Translations$hotkeys$actions$en {
 	@override String get shaderToggle => 'Attiva/disattiva shader';
 	@override String get skipMarker => 'Salta intro/titoli di coda';
 	@override String get screenshot => 'Cattura schermata';
+	@override String get framePrevious => 'Precedente Frame';
+	@override String get frameNext => 'Prossimo Frame';
 }
 
 // Path: videoControls.pipErrors
@@ -2782,6 +3424,57 @@ class _Translations$accountPreferences$mediaReviewsOptions$it extends Translatio
 	@override String get usersOnly => 'Solo utenti';
 	@override String get criticsOnly => 'Solo critici';
 	@override String get nobody => 'Nascoste';
+}
+
+// Path: discover.findNext
+class _Translations$discover$findNext$it extends Translations$discover$findNext$en {
+	_Translations$discover$findNext$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trova il tuo prossimo';
+	@override String get open => 'Trova il tuo prossimo';
+	@override String get anyTime => 'In ogni momento';
+	@override String get timeAvailable => 'Quanto tempo hai?';
+	@override String get filters => 'Scegli il momento';
+	@override String get watch => 'Guardate';
+	@override String get listen => 'Ascolta';
+	@override String get read => 'Leggi';
+	@override String finishable({required Object duration}) => 'Sito ufficiale di ${duration}';
+	@override String aboutDuration({required Object duration}) => 'di ${duration}';
+	@override String nextUnit({required Object duration}) => 'Articolo successivo ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} totale';
+	@override String get timingVaries => 'Il tempo varia';
+	@override String get notNow => 'Non ora';
+	@override String get swipeHint => 'Scorrere o usare i pulsanti qui sotto';
+	@override String get saved => 'Piccoli salvati';
+	@override String savedCount({required Object count}) => 'Sviluppo di ${count}';
+	@override String get undo => 'e non';
+	@override String get details => 'i dettagli';
+	@override String get noPicks => 'Niente da scegliere finora';
+	@override String get noPicksHint => 'Connettiti una biblioteca o aggiungi una fonte di media per iniziare.';
+	@override String get noMatches => 'Niente si adatta a questo momento';
+	@override String get noMatchesHint => 'Prova un altro formato o darti più tempo.';
+	@override String get allDone => 'Siete tutti catturati';
+	@override String get allDoneHint => 'Inizia un mix fresco per vedere di nuovo queste scelte.';
+	@override String get refresh => 'Trova un altro mix';
+	@override String sourceReason({required Object source}) => 'da ${source}';
+	@override String libraryReason({required Object library}) => 'da ${library}';
+	@override String get ownedReason => 'dalla tua biblioteca';
+	@override String get liveNow => 'adesso';
+	@override String get watchLive => 'Guardate al vivo';
+	@override String get filterAnything => 'Tutto ciò';
+	@override String get filterWatch => 'Guardate';
+	@override String get filterListen => 'Ascolta';
+	@override String get filterRead => 'Leggi';
+	@override String get twentyMinutes => '20 minuti';
+	@override String get fortyFiveMinutes => '45 minuti';
+	@override String get ninetyMinutes => '90 minuti';
+	@override String get apply => 'Applicazione';
+	@override String get openFailed => 'Questa opzione non è più disponibile. rinfrescare per controllare di nuovo.';
+	@override String get changeFailed => 'Non riesco a risparmiare questo cambiamento, prova di nuovo.';
+	@override String get savedLimit => 'I picchi salvati sono pieni. rimuovere una selezione per salvare un\'altra.';
 }
 
 // Path: discover.person
@@ -2921,14 +3614,41 @@ class _Translations$libraries$selection$it extends Translations$libraries$select
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get selectItems => 'Select items';
-	@override String selectedCount({required Object count}) => '${count} selected';
-	@override String get actions => 'Selection actions';
-	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
-	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
-	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
-	@override String completed({required Object count}) => 'Items updated: ${count}.';
-	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
+	@override String get selectItems => 'Selezionare gli oggetti';
+	@override String selectedCount({required Object count}) => '${count} selezionati';
+	@override String get actions => 'azioni di selezione';
+	@override String get confirmDescendants => 'Questo cambia tutti gli episodi nei spettacoli e nelle stagioni selezionate.';
+	@override String get confirmUnwatched => 'Questo anche chiarisce il progresso di riproduzione per gli articoli selezionati.';
+	@override String confirmCount({required Object count}) => 'I prodotti selezionati: ${count}.';
+	@override String completed({required Object count}) => 'Articoli aggiornati: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Aggiornato ${succeeded}; fallito ${failed}. gli articoli falliti rimangono selezionati.';
+}
+
+// Path: explore.mdblistShelves
+class _Translations$explore$mdblistShelves$it extends Translations$explore$mdblistShelves$en {
+	_Translations$explore$mdblistShelves$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get manage => 'Gestione esplora le scale';
+	@override String get manageDescription => 'Scegli e organizzi elenchi dal tuo account MDBList';
+	@override String get description => 'Scegli le liste di film e TV pubbliche dal tuo account MDBList. Crea o copia le liste su MDBList, poi ristrutturare.';
+	@override String get selected => 'Le scale selezionate';
+	@override String get available => 'Elenco dei conti disponibili';
+	@override String get noLists => 'Non sono stati restituiti film pubblici o elenchi televisivi. Creare o copiare un elenco su MDBList, poi rinfrescare.';
+	@override String get displayName => 'Nome di display Shelf';
+	@override String get nameHint => 'Lascia la lista di fonti per utilizzare il nome della lista di fondi.';
+	@override String get add => 'Aggiungi Shelf';
+	@override String get save => 'Salva le scale';
+	@override String moveUp({required Object title}) => 'Move ${title} in alto';
+	@override String moveDown({required Object title}) => 'Rimuovere ${title}';
+	@override String get unavailable => 'Questo elenco non è disponibile. rimuovere o rimuovere la sua scheda nelle impostazioni.';
+	@override String get rateLimited => 'Il limite di richiesta MDBList è stato raggiunto. si prega di ritirarsi in seguito.';
+	@override String get loadFailed => 'Non si possono caricare le strisce. controllare la connessione e ritorno.';
+	@override String get saveFailed => 'Non riesco a salvare le scale, per favore, ritiro.';
+	@override String get accountChanged => 'Il profilo o l\'account è cambiato.Riavvi queste impostazioni.';
+	@override String get settingsUnreadable => 'Le schede salvate non possono essere lette. selezionare nuovamente le liste per sostituire queste impostazioni.';
 }
 
 // Path: explore.rows
@@ -3014,8 +3734,8 @@ class _Translations$explore$stats$it extends Translations$explore$stats$en {
 	@override String favorited({required Object n}) => '${n} preferiti';
 	@override String dropRate({required Object percent}) => '${percent} lo ha abbandonato';
 	@override String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: '${n} commento',
-		other: '${n} commenti',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} commento',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} commenti',
 	);
 	@override String votes({required Object n}) => '${n} voti';
 	@override String watching({required Object n}) => '${n} lo stanno guardando';
@@ -3136,8 +3856,8 @@ class _Translations$explore$detail$it extends Translations$explore$detail$en {
 	@override String get ratings => 'Valutazioni';
 	@override String get schedule => 'Programmazione';
 	@override String recommendedByUsers({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n,
-		one: 'Consigliato da ${n} utente',
-		other: 'Consigliato da ${n} utenti',
+		one: 'Consigliato da ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} utente',
+		other: 'Consigliato da ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} utenti',
 	);
 	@override String recommendedBy({required Object who}) => 'Consigliato da ${who}';
 	@override String favoritedBy({required Object who}) => 'Preferito da ${who}';
@@ -3336,6 +4056,13 @@ class _Translations$companionRemote$pairing$it extends Translations$companionRem
 	@override String get sessionNotFound => 'Dispositivo non trovato. Assicurati che PlezyNG sia in esecuzione sull\'host.';
 	@override String get authFailed => 'Autenticazione non riuscita. Entrambi i dispositivi devono usare lo stesso account Plex.';
 	@override String failedToConnect({required Object error}) => 'Connessione non riuscita: ${error}';
+	@override String get codeTitle => 'Codice di coppia';
+	@override String get codeDescription => 'Inserisci il codice mostrato nella Companion Remote sul dispositivo ospitante. entrambi i dispositivi devono utilizzare una versione che supporta la coppia sicura.';
+	@override String get codeInvalid => 'Inserisci tutte le 32 lettere e i numeri dal codice ospitante.';
+	@override String get updateRequired => 'Aggiornare entrambi i dispositivi a una versione che supporta la coppia sicura.';
+	@override String get hostDescription => 'Inserisci questo codice una volta su ogni remote.Mantenere privato: consente il controllo di questo profilo.';
+	@override String get resetCode => 'Ristrutturazione di codice di coppia';
+	@override String get resetDescription => 'Disconnetti tutti i remoti e crea un nuovo codice. Ogni remote dovrà coppia di nuovo.';
 }
 
 // Path: companionRemote.remote
@@ -3484,9 +4211,26 @@ extension on TranslationsIt {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
+			'cast.chooseDevice' => 'Cattura a un dispositivo',
+			'cast.searching' => 'Cercare i dispositivi di cast...',
+			'cast.connectedTo' => ({required Object device}) => 'Connetto a ${device}',
+			'cast.device' => 'Dispositivi di Cast',
+			'cast.readyToCast' => 'Pronte a lanciare',
+			'cast.subtitle' => 'Sottotitoli',
+			'cast.serverNotAvailable' => 'Il server dei media non è disponibile.',
+			'cast.stopCasting' => 'smettere di casting',
+			'cast.castToDevice' => 'Cattura per il dispositivo',
+			'cast.noEpisodeAvailable' => 'Non ci sono episodi disponibili per essere lanciati.',
+			'cast.startFailed' => 'Non è possibile iniziare la casta. controllare il server e provare di nuovo.',
+			'automation.noActivePlayback' => 'Non c’è sessione video attiva da controllare.',
+			'automation.profileNotFound' => 'Questo profilo Plezy non è stato trovato.',
+			'notifications.newEpisodeTitle' => 'Nuovo episodio',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Icona dell\'app',
 			'appIcon.defaultIcon' => 'Predefinita',
 			'appIcon.current' => 'Icona attuale',
+			'appIcon.locked' => 'L’accesso a vita richiesto',
+			'appIcon.lockedHint' => 'Inizia il tuo tentativo di 7 giorni o disattivare PlezyNG per tutta la vita per utilizzare icone alternative.',
 			'appIcon.changeFailed' => 'Impossibile cambiare l\'icona dell\'app',
 			'appIcon.launcherHint' => 'La nuova icona appare nella schermata Home quando esci da PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Il nuovo banner appare quando esci da PlezyNG. Android TV potrebbe continuare a mostrare quello precedente fino al riavvio del televisore.',
@@ -3530,6 +4274,7 @@ extension on TranslationsIt {
 			'auth.quickConnectExpired' => 'Quick Connect scaduto. Riprova.',
 			'auth.localDataRecoveryRequired' => 'PlezyNG non è riuscito a recuperare in sicurezza i dati locali di accesso e delle riproduzioni in sospeso. Accedi di nuovo.',
 			'auth.pinCheckRejected' => 'La verifica del PIN Plex è stata rifiutata',
+			'auth.connectToDirectPlex' => 'Connessione al server locale Plex',
 			'common.cancel' => 'Annulla',
 			'common.save' => 'Salva',
 			'common.close' => 'Chiudi',
@@ -3576,8 +4321,8 @@ extension on TranslationsIt {
 			'common.fullscreen' => 'Schermo intero',
 			'common.exitFullscreen' => 'Esci dalla modalità a schermo intero',
 			'common.pressBackAgainToExit' => 'Premi di nuovo Indietro per uscire',
-			'common.ratingSource.critic' => 'Critici',
-			'common.ratingSource.audience' => 'Pubblico',
+			'common.ratingSource.critic' => 'Critics',
+			'common.ratingSource.audience' => 'Audience',
 			'common.ratingSource.imdb' => 'IMDb',
 			'common.ratingSource.tmdb' => 'TMDB',
 			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
@@ -3585,8 +4330,8 @@ extension on TranslationsIt {
 			'common.ratingSource.mal' => 'MyAnimeList',
 			'common.ratingSource.anilist' => 'AniList',
 			'common.ratingSource.trakt' => 'Trakt',
-			'common.ratingSource.rottenTomatoesCritic' => 'Critici di Rotten Tomatoes',
-			'common.ratingSource.rottenTomatoesAudience' => 'Pubblico di Rotten Tomatoes',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
 			'common.ratingSource.metacritic' => 'Metacritic',
 			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/D',
@@ -3616,12 +4361,39 @@ extension on TranslationsIt {
 			'update.viewRelease' => 'Visualizza note di rilascio',
 			'update.latestVersion' => 'La versione installata è l\'ultima disponibile',
 			'update.checkFailed' => 'Impossibile controllare gli aggiornamenti',
+			'appAccess.title' => 'Prova ogni funzione gratuita per 7 giorni',
+			'appAccess.description' => 'Inizia un test di sette giorni con accesso completo a ogni funzione PlezyNG. non ci sono costi durante il test e non ci sono abbonamenti. Dopo il test, un acquisto di vita al prezzo del tuo negozio rilascia PlezyNG per tutta la vita.',
+			'appAccess.trialEndedDescription' => 'Rimuovere ogni funzionalità in PlezyNG per tutta la vita con un acquisto al prezzo del tuo negozio.',
+			'appAccess.startTrial' => 'Inizia il mio trial gratuito di 7 giorni',
+			'appAccess.trialActive' => 'Il tuo test di 7 giorni è attivo.',
+			'appAccess.trialEnded' => 'Il processo di 7 giorni è finito',
+			'appAccess.trialStartFailed' => 'Non potevo salvare il test su questo dispositivo. si prega di provare di nuovo.',
+			'appAccess.lifetimeTitle' => 'PlezyNG disattivato per la vita',
+			'appAccess.lifetimeBody' => 'Grazie! avete accesso a tutti i PlezyNG funzionalità.',
+			'appAccess.manageTitle' => 'PlezyNG accesso a vita',
+			'appAccess.manageDescription' => 'Prova ogni funzionalità gratuita per 7 giorni, poi disattivare tutto per tutta la vita con un solo pagamento al prezzo del tuo negozio.',
+			'appAccess.buy' => ({required Object price}) => 'Rimuovere ogni funzionalità per ${price}',
+			'appAccess.loadingPrice' => 'Il prezzo del negozio...',
+			'appAccess.retryPrice' => 'Il prezzo di ritorno',
+			'appAccess.restore' => 'Ristrutturazione acquisto per tutta la vita',
+			'appAccess.pending' => 'L\'acquisto è in attesa di pagamento o approvazione.L\'accesso a tempo pieno si distacca non appena il negozio lo completa.',
+			'appAccess.storeUnavailable' => 'Verificare che si è iscritti al negozio e gli acquisti sono consentiti su questo dispositivo.',
+			'appAccess.productNotFound' => 'Il disattivatore di vita PlezyNG non è ancora disponibile in questo negozio.',
+			'appAccess.productQueryFailed' => 'Non poteva caricare il prezzo del negozio. verificare la connessione e provare di nuovo.',
+			'appAccess.purchaseFailed' => 'L’acquisto non è andato via, prova di nuovo.',
+			'appAccess.restoreFailed' => 'Non potevo raggiungere il negozio per ripristinare l\'acquisto. prova di nuovo.',
+			'appAccess.nothingToRestore' => 'N. PlezyNG acquisto a vita è stato trovato per questo account del negozio.',
 			'settings.title' => 'Impostazioni',
 			'settings.supportDeveloper' => 'Supporta PlezyNG',
 			'settings.supportDeveloperDescription' => 'Fai una donazione per sostenere lo sviluppo',
+			'settings.lifetimeAccess' => 'PlezyNG accesso a vita',
 			'settings.language' => 'Lingua',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Aspetto',
+			'settings.detailPage' => 'Pagina dettagliata',
+			'settings.themeSongsEnabled' => 'Gioca canzoni di tema',
+			'settings.themeSongsEnabledDescription' => 'Gioca canzoni di tema disponibili mentre guarda i dettagli dei media.',
+			'settings.themeSongVolume' => 'Il volume della canzone',
 			'settings.videoPlayback' => 'Riproduzione video',
 			'settings.videoPlaybackDescription' => 'Configura il comportamento di riproduzione',
 			'settings.advanced' => 'Avanzate',
@@ -3658,7 +4430,24 @@ extension on TranslationsIt {
 			'settings.gridView' => 'Griglia',
 			'settings.listView' => 'Elenco',
 			'settings.showHeroSection' => 'Mostra sezione in evidenza',
+			'settings.showHomeBackdrop' => 'Home Artica Artica Artico Artica Arta',
+			'settings.showHomeBackdropDescription' => 'Mostra grandi opere d\'arte dietro le linee di casa',
+			'settings.contentScreensaverEnabled' => 'ScreenSaver di contenuti',
+			'settings.contentScreensaverEnabledDescription' => 'Mostra l\'arte a schermo pieno dopo che l\'app è stata idle',
+			'settings.contentScreensaverDelay' => 'Inizia il screensaver dopo',
+			'settings.contentScreensaverLibraries' => 'Screensaver biblioteche',
 			'settings.contentScreensaverLibrariesDescription' => 'Scegli quali librerie forniscono le immagini per lo screensaver. Se non ne selezioni nessuna, verranno usate le immagini di tutte le librerie.',
+			'settings.contentScreensaverAllLibraries' => 'Tutte le biblioteche',
+			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} biblioteche selezionate',
+			'settings.contentScreensaverNoLibraries' => 'Non sono disponibili biblioteche multimediali collegate.',
+			'settings.contentScreensaverDismissHint' => 'Premere qualsiasi pulsante o tappa per rimuovere',
+			'settings.newEpisodeNotifications' => 'Nuove notizie di episodio',
+			'settings.newEpisodeNotificationsDescription' => 'Allarme quando un nuovo episodio viene aggiunto a un show che si è catturato. controlla mentre Plezy è aperto.',
+			'settings.continueWatchingRowSize' => 'Continua a guardare la dimensione della linea',
+			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} carte',
+			'settings.rowSizeCompact' => 'Compatta',
+			'settings.rowSizeStandard' => 'Standard',
+			'settings.rowSizeLarge' => 'Grande',
 			'settings.continueWatchingAction' => 'Azione per Continua a guardare',
 			'settings.continueWatchingPlay' => 'Riproduci',
 			'settings.continueWatchingDetails' => 'Apri dettagli',
@@ -3703,8 +4492,15 @@ extension on TranslationsIt {
 			'settings.playbackBufferLarge' => 'Grande',
 			'settings.playbackBufferExtraLarge' => 'Extra grande',
 			'settings.playbackBufferDescription' => 'Bufferizza di più contro connessioni instabili. Limitato anche dalla dimensione del buffer.',
+			'settings.streamBufferSize' => 'Dimensioni Buffer',
+			'settings.streamBufferSizeValue' => ({required Object size}) => '${size} MB',
+			'settings.streamBufferSizeDescription' => 'Quanto video da caricare in avanti quando si gioca direttamente. i transcodi si fermeranno al buffer transcodico del server. 0 = Auto',
+			'settings.streamBufferSizeExoNote' => 'Rimpiazzare Playback Buffer quando impostato, cappellato a metà del limite di memoria dell\'app',
+			'settings.streamBufferMegabytes' => 'Megabiti',
 			'settings.defaultQualityTitle' => 'Qualità predefinita',
 			'settings.cellularQualityTitle' => 'Qualità predefinita sulla rete mobile',
+			'settings.remoteQualityTitle' => 'Qualità di Remote Streaming',
+			'settings.remoteQualitySameAsDefault' => 'Come la qualità default',
 			'settings.cellularQualitySameAsDefault' => 'Come la qualità predefinita',
 			'settings.directPlayCoveredQuality' => 'Riproduci i video più piccoli in qualità originale',
 			'settings.directPlayCoveredQualityDescription' => 'Riproduci direttamente i video già entro il limite di qualità invece di transcodificarli',
@@ -3717,10 +4513,16 @@ extension on TranslationsIt {
 			'settings.smallSkipDuration' => 'Salto breve',
 			'settings.largeSkipDuration' => 'Salto lungo',
 			'settings.rewindOnResume' => 'Riavvolgimento alla ripresa',
-			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} secondi',
+			'settings.secondsUnit' => ({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(seconds, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondo', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondi', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} secondi', ), 
 			'settings.defaultSleepTimer' => 'Timer spegnimento predefinito',
-			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuti',
+			'settings.minutesUnit' => ({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(minutes, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuto', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuti', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minuti', ), 
 			'settings.rememberTrackSelections' => 'Ricorda la selezione delle tracce per ogni serie o film',
+			'settings.chooseTracksBeforePlayback' => 'Scegli audio e sottotitoli prima di riprodurre',
+			'settings.chooseTracksBeforePlaybackDescription' => 'Selezionare le tracce audio e sottotitoli prima che ogni video inizia.',
+			'settings.alwaysShowSubtitlesOnDevice' => 'Mostra sempre i sottotitoli su questo dispositivo',
+			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'Quando il server non ha alcun sottotitolo selezionato, selezionare una traccia localmente.',
+			'settings.autoDownloadPreferredSubtitle' => 'Il libro di Fethch mantiene i sottotitoli preferiti',
+			'settings.autoDownloadPreferredSubtitleDescription' => 'Selezionare un sottotitolo disponibile nella lingua preferita localmente. se non esiste, chiedi al server di ottenere uno quando supportato.',
 			'settings.rememberTrackSelectionsDescription' => 'Ricorda le scelte di audio e sottotitoli per ogni titolo',
 			'settings.rememberTrackSelectionsBackendRule' => 'Plex salva ogni scelta sul server per ogni file; Jellyfin attiva anche l\'opzione Ricorda selezioni dell\'account; Emby non è supportato',
 			'settings.followServerTrackSelections' => 'Usa le tracce selezionate sul server per ogni episodio',
@@ -3767,6 +4569,17 @@ extension on TranslationsIt {
 			'settings.importSettingsSuccess' => 'Impostazioni importate',
 			'settings.importSettingsInvalidFile' => 'Questo file non è un\'esportazione PlezyNG valida',
 			'settings.importSettingsNoUser' => 'Accedi prima di importare le impostazioni',
+			'settings.cloudBackup' => 'Cloud Backup di sicurezza',
+			'settings.cloudBackupDescription' => 'Backup delle impostazioni portatili a un punto di fine WebDAV su HTTPS. le connessioni del server e le credenziali rimangono su questo dispositivo.',
+			'settings.cloudBackupUrl' => 'WebDAV URL del file JSON',
+			'settings.cloudBackupUsername' => 'Nome utente',
+			'settings.cloudBackupPassword' => 'Password',
+			'settings.cloudBackupSaved' => 'Cloud backup destinazione salvata',
+			'settings.cloudBackupNow' => 'Ritorno adesso',
+			'settings.cloudBackupComplete' => 'Settings Backup upload',
+			'settings.cloudBackupRestore' => 'Ristrutturazione Backup',
+			'settings.cloudBackupRestoreConfirm' => 'Questo sostituirà le impostazioni portatili in questo dispositivo.',
+			'settings.cloudBackupRestored' => 'Impostazioni ripristinate dal cloud backup',
 			'settings.shortcutsReset' => 'Scorciatoie ripristinate alle impostazioni predefinite',
 			'settings.resetShortcutsConfirm' => 'Le scorciatoie personalizzate verranno sostituite con quelle predefinite. Continuare?',
 			'settings.about' => 'Informazioni',
@@ -3786,6 +4599,8 @@ extension on TranslationsIt {
 			'settings.autoPlayNextEpisodeDescription' => 'Avvia automaticamente l\'episodio successivo quando termina quello in riproduzione',
 			'settings.shuffleStartsFromBeginning' => 'La riproduzione casuale inizia dall\'inizio',
 			'settings.shuffleStartsFromBeginningDescription' => 'Avvia ogni episodio dall\'inizio durante la riproduzione casuale invece di riprenderlo',
+			'settings.plexCinemaPreRoll' => 'Utilizzare il server cinema intros',
+			'settings.plexCinemaPreRollDescription' => 'Gioca configurati Plex pre-roll o Jellyfin e Emby intros prima che un film inizia.',
 			'settings.playNextCountdown' => 'Conto alla rovescia del successivo',
 			'settings.playNextCountdownImmediate' => 'Riproduci subito',
 			'settings.skipIntroMode' => 'Salta intro',
@@ -3796,17 +4611,38 @@ extension on TranslationsIt {
 			'settings.skipCreditsModeOffDescription' => 'Riproduci i titoli di coda normalmente senza pulsante di salto',
 			'settings.skipCreditsModeButtonDescription' => 'Mostra un pulsante di salto quando iniziano i titoli di coda',
 			'settings.skipCreditsModeAutoDescription' => 'Salta automaticamente i titoli di coda e riproduci l\'episodio successivo',
+			'settings.skipAdsMode' => 'Scopri gli annunci',
+			'settings.skipAdsModeOffDescription' => 'Gioca gli annunci rilevati normalmente senza un pulsante di scappamento',
+			'settings.skipAdsModeButtonDescription' => 'Mostra un pulsante di scappamento quando Plex rileva un annuncio',
+			'settings.skipAdsModeAutoDescription' => 'Scarica gli annunci rilevati automaticamente dopo il ritardo di seguito',
+			'settings.musicPlayback' => 'Il musicale playback',
+			'settings.musicSweetFades' => 'dolci fati',
+			'settings.musicSweetFadesDescription' => 'La musica è in arrivo quando Plex ha dati di rumore.',
 			'settings.skipMarkerModeOff' => 'Disattivato',
 			'settings.skipMarkerModeButton' => 'Mostra pulsante',
 			'settings.skipMarkerModeAuto' => 'Automatico',
 			'settings.forceSkipMarkerFallback' => 'Forza i marcatori di ripiego',
 			'settings.forceSkipMarkerFallbackDescription' => 'Usa i modelli dei titoli dei capitoli anche quando Plex dispone di marcatori',
+			'settings.theIntroDbFallback' => 'Utilizzare TheIntroDB come un fallback intro',
+			'settings.theIntroDbFallbackDescription' => 'Utilizzare le date della comunità solo quando il server non ha un intro marker.',
 			'settings.autoSkipDelay' => 'Ritardo del salto automatico',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Attendi ${seconds} secondi prima del salto automatico',
 			'settings.introPattern' => 'Modello del marcatore della sigla iniziale',
 			'settings.introPatternDescription' => 'Espressione regolare per individuare i marcatori della sigla iniziale nei titoli dei capitoli',
 			'settings.creditsPattern' => 'Modello del marcatore dei titoli di coda',
 			'settings.creditsPatternDescription' => 'Espressione regolare per individuare i marcatori dei titoli di coda nei titoli dei capitoli',
+			'settings.prerolls' => 'Prerotti',
+			'settings.playPrerollsBeforeMovies' => 'Gioca i preloli prima dei film',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Gioca un clip casuale dalla tua selezione qui sotto prima di ogni film.',
+			'settings.prerollLibrary' => 'Libreria di Preroll',
+			'settings.prerollLibraryNotSet' => 'Non impostato',
+			'settings.prerollLibraryNoneFound' => 'Non sono state trovate biblioteche sui tuoi server.',
+			'settings.prerollSelection' => 'I preloni selezionati',
+			'settings.prerollSelectionPickLibraryFirst' => 'Scegli una biblioteca prima',
+			'settings.prerollSelectionNoneSelected' => 'Nessun preludio selezionato',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} selezionati',
+			'settings.prerollItemPicker' => 'Selezionare i preroli',
+			'settings.prerollItemPickerLoadFailed' => 'Non potevo caricare gli articoli da questa biblioteca.',
 			'settings.invalidRegex' => 'Espressione regolare non valida',
 			'settings.regex' => 'Espressione regolare',
 			'settings.downloads' => 'Download',
@@ -3824,6 +4660,12 @@ extension on TranslationsIt {
 			'settings.downloadOnWifiOnlyDescription' => 'Impedisci i download quando si utilizza la rete dati cellulare',
 			'settings.autoRemoveWatchedDownloads' => 'Rimuovi automaticamente i download visti',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Elimina automaticamente i download già visti',
+			'settings.autoDownloadContinueWatching' => 'Auto-Download Continua a guardare',
+			'settings.autoDownloadContinueWatchingDescription' => 'Mantenere gli articoli sul vostro foglio di guardare continuo scaricati, e rimuoverli una volta che lasciano il foglio',
+			'settings.downloadQuality' => 'Scarica la qualità',
+			'settings.downloadQualityDescription' => 'Plex prepara una copia convertita nella sua scatola di download. Jellyfin e Emby transcode mentre il file scarica; trasferimenti interrotti potrebbero essere necessari per riavviare.',
+			'settings.askDownloadQualityEachTime' => 'Scegliere la qualità per ogni download',
+			'settings.askDownloadQualityEachTimeDescription' => 'Mostra il picker di qualità prima di scorrere ogni download video',
 			'settings.cellularDownloadBlocked' => 'I download sono bloccati sulla rete mobile. Usa il Wi-Fi o modifica l\'impostazione.',
 			'settings.maxVolume' => 'Volume massimo consentito',
 			'settings.maxVolumeDescription' => 'Consenti di aumentare il volume oltre il 100% per i contenuti con audio basso',
@@ -3880,6 +4722,8 @@ extension on TranslationsIt {
 			'settings.dvConversionDv81Description' => 'Forza la conversione RPU diretta al profilo Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Rimuove i livelli RPU/EL di Dolby Vision e riproduce il video come semplice HEVC',
 			'settings.disableDolbyVision' => 'Disattiva Dolby Vision',
+			_ => null,
+		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Riproduci il livello HDR10 o HLG del file al posto di Dolby Vision, se presente',
 			'settings.hdrSdrConversion' => 'Conversione da HDR a SDR',
 			'settings.hdrSdrConversionDescription' => 'Scegli cosa converte i video HDR quando lo schermo non può mostrare l\'HDR.',
@@ -3910,8 +4754,13 @@ extension on TranslationsIt {
 			'settings.showNavBarLabels' => 'Mostra le etichette della barra di navigazione',
 			'settings.showNavBarLabelsDescription' => 'Mostra le etichette di testo sotto le icone della barra di navigazione',
 			'settings.startupSection' => 'Sezione di avvio',
+			'settings.preferredServer' => 'Servizio preferito',
+			'settings.preferredServerDescription' => 'Priorizzare i risultati di questo server, mantenendo a disposizione ogni server collegato.',
+			'settings.preferredServerAutomatic' => 'Automatico',
 			'settings.showExploreTab' => 'Mostra la scheda Esplora',
 			'settings.showExploreTabDescription' => 'Visualizza la scheda Esplora con contenuti di Esplora di Plex e dei tracker collegati',
+			'settings.hideEmptyLibraries' => 'Chiudere le librerie vuote',
+			'settings.hideEmptyLibrariesDescription' => 'Rimuovere le biblioteche con un numero di elementi riportati dal server di zero dalla navigazione.',
 			'settings.liveTvDefaultFavorites' => 'Apri sui canali preferiti',
 			'settings.liveTvDefaultFavoritesDescription' => 'Mostra solo i canali preferiti quando apri la TV in diretta',
 			'settings.general' => 'Generali',
@@ -3938,6 +4787,8 @@ extension on TranslationsIt {
 			'settings.gestureVolumeSwipeDescription' => 'Scorri verso l\'alto o il basso sul bordo destro per regolare il volume',
 			'settings.gesturePinchToZoom' => 'Pizzica per lo zoom',
 			'settings.gesturePinchToZoomDescription' => 'Pizzica il video per ingrandire o ridurre',
+			'settings.gestureSeekSwipe' => 'Cerca il Swipe',
+			'settings.gestureSeekSwipeDescription' => 'Spostare a sinistra o a destra ovunque nel video per cercare; rilasciare per saltare',
 			'settings.rememberBrightnessLevel' => 'Ricorda il livello di luminosità',
 			'settings.rememberBrightnessLevelDescription' => 'Avvia la riproduzione con la luminosità impostata dall\'ultimo scorrimento',
 			'settings.controls' => 'Controlli',
@@ -3952,12 +4803,20 @@ extension on TranslationsIt {
 			'settings.playerScopeLibrary' => 'Per libreria',
 			'settings.playerScopeTitle' => 'Per serie o film',
 			'settings.exportDialogTitle' => 'Esporta le impostazioni di PlezyNG',
+			'settings.followSystem' => 'Usa la lingua di sistema',
+			'settings.followAppLanguage' => 'Come la lingua dell’interfaccia',
+			'settings.regionFormat' => 'Formati regionali',
+			'settings.regionFormatDescription' => 'Scegli come visualizzare date, numeri e unità di misura.',
+			'settings.metadataLanguage' => 'Lingua dei metadati',
+			'settings.metadataLanguageDescription' => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.',
 			'themeEditor.builtIn' => 'Integrati',
 			'themeEditor.presets' => 'Preimpostati',
 			'themeEditor.custom' => 'Personalizzato',
 			'themeEditor.customEmpty' => 'Non ancora creato',
 			'themeEditor.editCustom' => 'Modifica tema personalizzato',
 			'themeEditor.editCustomDescription' => 'Scegli tu ogni colore',
+			'themeEditor.locked' => 'L’accesso a vita richiesto',
+			'themeEditor.savedLocked' => 'Salvataggio - disponibile con accesso a vita',
 			'themeEditor.title' => 'Tema personalizzato',
 			'themeEditor.startFrom' => 'Parti da',
 			'themeEditor.startFromDescription' => 'Copia tutti i colori da un altro tema',
@@ -3995,8 +4854,6 @@ extension on TranslationsIt {
 			'search.people' => 'Persone',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Imposta una scorciatoia per ${actionName}',
 			'hotkeys.clearShortcut' => 'Elimina scorciatoia',
-			_ => null,
-		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Nessuna scorciatoia impostata',
 			'hotkeys.currentShortcut' => 'Scorciatoia attuale:',
 			'hotkeys.pressToRecord' => 'Seleziona per registrare una scorciatoia',
@@ -4028,6 +4885,8 @@ extension on TranslationsIt {
 			'hotkeys.actions.shaderToggle' => 'Attiva/disattiva shader',
 			'hotkeys.actions.skipMarker' => 'Salta intro/titoli di coda',
 			'hotkeys.actions.screenshot' => 'Cattura schermata',
+			'hotkeys.actions.framePrevious' => 'Precedente Frame',
+			'hotkeys.actions.frameNext' => 'Prossimo Frame',
 			'fileInfo.title' => 'Info sul file',
 			'fileInfo.overview' => 'Panoramica',
 			'fileInfo.video' => 'Video',
@@ -4166,9 +5025,9 @@ extension on TranslationsIt {
 			'mediaMenu.deleteAnyway' => 'Elimina comunque',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Eliminare definitivamente ${title} dal tuo server?',
 			'mediaMenu.deleteMultipleWarning' => 'Sono inclusi tutti gli episodi e i relativi file.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Questo elimina tutti i ${n} episodio in essa contenuto e il relativo file.', other: 'Questo elimina tutti i ${n} episodi in essa contenuti e i relativi file.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Questo elemento è archiviato in ${n} file, che verrà eliminato.', other: 'Questo elemento è archiviato in ${n} file, e tutti verranno eliminati.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} altro episodio è archiviato nello stesso file e verrà eliminato anche lui:', other: '${n} altri episodi sono archiviati nello stesso file e verranno eliminati anche loro:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Questo elimina tutti i ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodio in essa contenuto e il relativo file.', other: 'Questo elimina tutti i ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodi in essa contenuti e i relativi file.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Questo elemento è archiviato in ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, che verrà eliminato.', other: 'Questo elemento è archiviato in ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, e tutti verranno eliminati.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} altro episodio è archiviato nello stesso file e verrà eliminato anche lui:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} altri episodi sono archiviati nello stesso file e verranno eliminati anche loro:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG non ha potuto verificare quali file rimuoverà, quindi potrebbe eliminare più di quanto indicato sopra. Annulla e riprova, oppure elimina comunque.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Il tuo server non ha fornito i dettagli del file per questo elemento, quindi PlezyNG non può verificare quali file rimuoverà. Potrebbe eliminare più di quanto indicato sopra.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimediale eliminato correttamente',
@@ -4210,11 +5069,35 @@ extension on TranslationsIt {
 			'accessibility.hueShort' => 'T',
 			'accessibility.saturationShort' => 'S',
 			'accessibility.valueShort' => 'V',
+			'accessibility.red' => 'Il rosso',
+			'accessibility.green' => 'verde',
+			'accessibility.blue' => 'blu',
+			'accessibility.redShort' => 'R',
+			'accessibility.greenShort' => 'G',
+			'accessibility.blueShort' => 'B',
+			'accessibility.colorModeHsv' => 'Il HSV',
+			'accessibility.colorModeRgb' => 'RGB',
+			'accessibility.title' => 'accessibilità',
+			'accessibility.summary' => 'testo, contrasto, movimento e controlli',
+			'accessibility.systemHint' => 'Le impostazioni di accessibilità del dispositivo si applicano sempre.Queste opzioni aggiungono ajustamenti nel corso di PlezyNG.',
+			'accessibility.readability' => 'Leggi e visibilità',
+			'accessibility.textSize' => 'Dimensioni aggiuntive del testo',
+			'accessibility.preview' => 'Leggi, ascolta e guarda al tuo ritmo.',
+			'accessibility.boldText' => 'Interfaccia testo',
+			'accessibility.highContrast' => 'Il contrasto elevato',
+			'accessibility.highContrastHint' => 'Testo più forte, indicatori di rilievo e di focalizzazione sulle superfici luminose o scuri.',
+			'accessibility.interaction' => 'Movimento e interazione',
+			'accessibility.reduceMotion' => 'Ridurre il movimento',
+			'accessibility.reduceMotionHint' => 'Mantenere il focus, le transizioni di pagina e gli effetti decorativi ancora.',
+			'accessibility.largeTargets' => 'obiettivi touch più grandi',
+			'accessibility.largeTargetsHint' => 'Gioca i controlli condivisi più spazio per la navigazione a touch e assistive.',
+			'accessibility.navigationHint' => 'Utilizzare Tab e Shift+Tab per muoversi tra i controlli, Enter o Space per attivare, e Escape o Back to close. Le preferenze di zoom e di lettura del lettore sono disponibili mentre un libro è aperto.',
 			'tooltips.shufflePlay' => 'Riproduzione casuale',
 			'tooltips.playTrailer' => 'Riproduci trailer',
 			'tooltips.markAsWatched' => 'Segna come visto',
 			'tooltips.markAsUnwatched' => 'Segna come non visto',
 			'audioTracks.track' => ({required Object n}) => 'Traccia audio ${n}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} strati', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Sottotitoli',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -4251,6 +5134,8 @@ extension on TranslationsIt {
 			'videoControls.unmuteButton' => 'Riattiva audio',
 			'videoControls.settingsButton' => 'Impostazioni di riproduzione',
 			'videoControls.tracksButton' => 'Audio e sottotitoli',
+			'videoControls.trackSelectionTitle' => 'Scegliere le tracce prima del playback',
+			'videoControls.trackSelectionAuto' => 'Selezione automatica',
 			'videoControls.chaptersButton' => 'Capitoli',
 			'videoControls.versionQualityButton' => 'Versione e qualità',
 			'videoControls.versionColumnHeader' => 'Versione',
@@ -4292,6 +5177,8 @@ extension on TranslationsIt {
 			'videoControls.noQueueItems' => 'Nessun elemento in coda',
 			'videoControls.noAudioDevicesAvailable' => 'Nessun dispositivo audio disponibile',
 			'videoControls.searchSubtitles' => 'Cerca sottotitoli',
+			'videoControls.loadSubtitleFile' => 'Il file subtitle è ...',
+			'videoControls.subtitleLoadFailed' => 'Non è stato possibile caricare il file subtitle',
 			'videoControls.language' => 'Lingua',
 			'videoControls.noSubtitlesFound' => 'Nessun sottotitolo trovato',
 			'videoControls.subtitleDownloaded' => 'Sottotitolo scaricato',
@@ -4300,6 +5187,7 @@ extension on TranslationsIt {
 			'videoControls.searchLanguages' => 'Cerca lingue...',
 			'videoControls.skipIntro' => 'Salta intro',
 			'videoControls.skipCredits' => 'Salta titoli',
+			'videoControls.skipAds' => 'Scopri gli annunci',
 			'videoControls.nextEpisode' => 'Episodio successivo',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Traccia ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Sottotitolo ${name}',
@@ -4312,7 +5200,7 @@ extension on TranslationsIt {
 			'messages.markedAsWatchedOffline' => 'Segnato come visto (verrà sincronizzato quando torni online)',
 			'messages.markedAsUnwatchedOffline' => 'Segnato come non visto (verrà sincronizzato quando torni online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Rimosso automaticamente: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Rimosso automaticamente ${n} download già visto', other: 'Rimossi automaticamente ${n} download già visti', ), 
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Rimosso automaticamente ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download già visto', other: 'Rimossi automaticamente ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download già visti', ), 
 			'messages.removedFromContinueWatching' => 'Rimosso da Continua a guardare',
 			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			'messages.searchPartialResults' => 'Non è stato possibile cercare in alcuni server multimediali. Vengono mostrati i risultati disponibili.',
@@ -4348,6 +5236,8 @@ extension on TranslationsIt {
 			'messages.seasonsLoadFailed' => 'Impossibile caricare le stagioni',
 			'messages.noEpisodesFound' => 'Nessun episodio trovato nella prima stagione',
 			'messages.noEpisodesFoundGeneral' => 'Nessun episodio trovato',
+			_ => null,
+		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Impossibile caricare gli episodi',
 			'messages.noResultsFound' => 'Nessun risultato',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Timer di spegnimento impostato su ${label}',
@@ -4374,6 +5264,7 @@ extension on TranslationsIt {
 			'messages.streamSelectionFailed' => 'Impossibile applicare i flussi selezionati',
 			'messages.trackSelectionNotRemembered' => 'Questa scelta di traccia vale solo per la riproduzione corrente.',
 			'messages.serverUnavailableForProfile' => 'Nessun server disponibile per il profilo attivo',
+			'subtitlingStyling.previewSample' => 'Il rapido fucile marrone salta sopra il cane lazo',
 			'subtitlingStyling.text' => 'Testo',
 			'subtitlingStyling.border' => 'Bordo',
 			'subtitlingStyling.background' => 'Sfondo',
@@ -4442,6 +5333,9 @@ extension on TranslationsIt {
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Rimuovi ${displayName} e le relative connessioni. I server resteranno disponibili.',
 			'profiles.profileNameLabel' => 'Nome profilo',
 			'profiles.pinProtectionLabel' => 'Protezione PIN',
+			'profiles.copyAutomationLink' => 'Copia il link di automatizzazione Android',
+			'profiles.copyAutomationLinkDescription' => 'Selezionare questo profilo da un\'intenzione o automatizzazione Android.',
+			'profiles.automationLinkCopied' => 'Il link di automatizzazione del profilo è copiato.',
 			'profiles.pinManagedByPlex' => 'PIN gestito da Plex. Modifica su plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'Nessun PIN impostato. Per richiederne uno, modifica l\'utente Home su plex.tv.',
 			'profiles.setPin' => 'Imposta PIN',
@@ -4483,6 +5377,10 @@ extension on TranslationsIt {
 			'profiles.continueButton' => 'Continua',
 			'profiles.pinsDontMatch' => 'I PIN non corrispondono',
 			'profiles.tokenIdentityMismatch' => 'Il token del profilo Plex è stato associato a un server imprevisto',
+			'profiles.settingsLocked' => 'Le impostazioni sono bloccate per questo profilo.',
+			'profiles.unlockSettings' => 'Sviluppo di disattivazione',
+			'profiles.showExploreForProfile' => 'Mostra Scopri per questo profilo',
+			'profiles.showExploreForProfileDescription' => 'Aprire per rimuovere Explore dalla navigazione di questo profilo.',
 			'connections.sectionTitle' => 'Connessioni',
 			'connections.addConnection' => 'Aggiungi connessione',
 			'connections.addConnectionSubtitleNoProfile' => 'Accedi con Plex o collega un server Jellyfin o Emby',
@@ -4509,8 +5407,6 @@ extension on TranslationsIt {
 			'accountPreferences.groups.libraryDisplay' => 'Libreria',
 			'accountPreferences.groups.personalMedia' => 'Media personali',
 			'accountPreferences.preferredAudioLanguage' => 'Lingua audio preferita',
-			_ => null,
-		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Scegli l\'audio in base alla lingua',
 			'accountPreferences.autoSelectAudioDescription' => 'Se disattivata, viene mantenuta la traccia audio che il file indica come predefinita.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Lingua dei sottotitoli preferita',
@@ -4568,6 +5464,48 @@ extension on TranslationsIt {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
+			'discover.findNext.title' => 'Trova il tuo prossimo',
+			'discover.findNext.open' => 'Trova il tuo prossimo',
+			'discover.findNext.anyTime' => 'In ogni momento',
+			'discover.findNext.timeAvailable' => 'Quanto tempo hai?',
+			'discover.findNext.filters' => 'Scegli il momento',
+			'discover.findNext.watch' => 'Guardate',
+			'discover.findNext.listen' => 'Ascolta',
+			'discover.findNext.read' => 'Leggi',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Sito ufficiale di ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'di ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Articolo successivo ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totale',
+			'discover.findNext.timingVaries' => 'Il tempo varia',
+			'discover.findNext.notNow' => 'Non ora',
+			'discover.findNext.swipeHint' => 'Scorrere o usare i pulsanti qui sotto',
+			'discover.findNext.saved' => 'Piccoli salvati',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Sviluppo di ${count}',
+			'discover.findNext.undo' => 'e non',
+			'discover.findNext.details' => 'i dettagli',
+			'discover.findNext.noPicks' => 'Niente da scegliere finora',
+			'discover.findNext.noPicksHint' => 'Connettiti una biblioteca o aggiungi una fonte di media per iniziare.',
+			'discover.findNext.noMatches' => 'Niente si adatta a questo momento',
+			'discover.findNext.noMatchesHint' => 'Prova un altro formato o darti più tempo.',
+			'discover.findNext.allDone' => 'Siete tutti catturati',
+			'discover.findNext.allDoneHint' => 'Inizia un mix fresco per vedere di nuovo queste scelte.',
+			'discover.findNext.refresh' => 'Trova un altro mix',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'da ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'da ${library}',
+			'discover.findNext.ownedReason' => 'dalla tua biblioteca',
+			'discover.findNext.liveNow' => 'adesso',
+			'discover.findNext.watchLive' => 'Guardate al vivo',
+			'discover.findNext.filterAnything' => 'Tutto ciò',
+			'discover.findNext.filterWatch' => 'Guardate',
+			'discover.findNext.filterListen' => 'Ascolta',
+			'discover.findNext.filterRead' => 'Leggi',
+			'discover.findNext.twentyMinutes' => '20 minuti',
+			'discover.findNext.fortyFiveMinutes' => '45 minuti',
+			'discover.findNext.ninetyMinutes' => '90 minuti',
+			'discover.findNext.apply' => 'Applicazione',
+			'discover.findNext.openFailed' => 'Questa opzione non è più disponibile. rinfrescare per controllare di nuovo.',
+			'discover.findNext.changeFailed' => 'Non riesco a risparmiare questo cambiamento, prova di nuovo.',
+			'discover.findNext.savedLimit' => 'I picchi salvati sono pieni. rimuovere una selezione per salvare un\'altra.',
 			'discover.extras' => 'Trailer ed extra',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Valutazione',
@@ -4577,7 +5515,7 @@ extension on TranslationsIt {
 			'discover.tvShow' => 'Serie TV',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} minuti rimanenti',
 			'discover.moreLikeThis' => 'Altri contenuti simili',
-			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} titolo', other: '${n} titoli', ), 
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titolo', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titoli', ), 
 			'discover.person.born' => 'Data di nascita',
 			'discover.person.died' => 'Data di morte',
 			'discover.person.birthplace' => 'Luogo di nascita',
@@ -4602,6 +5540,8 @@ extension on TranslationsIt {
 			'errors.reasonServerError' => 'il server ha segnalato un errore',
 			'errors.reasonCancelled' => 'la richiesta è stata annullata',
 			'errors.reasonUnexpected' => 'si è verificato un errore imprevisto',
+			'libraries.playRandomMovie' => 'Gioca un film casuale',
+			'libraries.randomPickFailed' => 'Non si può scegliere un film casuale da questa biblioteca.',
 			'libraries.title' => 'Librerie',
 			'libraries.fallbackTitle' => 'Libreria',
 			'libraries.scanLibraryFiles' => 'Scansiona i file della libreria',
@@ -4714,19 +5654,20 @@ extension on TranslationsIt {
 			'libraries.advancedFilters.dateLastYear' => 'Ultimo anno',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Più di ${count} giorni fa',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Più di un anno fa',
-			'libraries.selection.selectItems' => 'Select items',
-			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
-			'libraries.selection.actions' => 'Selection actions',
-			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
-			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
-			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
-			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
-			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
+			'libraries.selection.selectItems' => 'Selezionare gli oggetti',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selezionati',
+			'libraries.selection.actions' => 'azioni di selezione',
+			'libraries.selection.confirmDescendants' => 'Questo cambia tutti gli episodi nei spettacoli e nelle stagioni selezionate.',
+			'libraries.selection.confirmUnwatched' => 'Questo anche chiarisce il progresso di riproduzione per gli articoli selezionati.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'I prodotti selezionati: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Articoli aggiornati: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Aggiornato ${succeeded}; fallito ${failed}. gli articoli falliti rimangono selezionati.',
 			'about.title' => 'Informazioni',
 			'about.openSourceLicenses' => 'Licenze open source',
 			'about.versionLabel' => ({required Object version}) => 'Versione ${version}',
 			'about.appDescription' => 'Un elegante client Plex, Jellyfin ed Emby per Flutter',
 			'about.viewLicensesDescription' => 'Visualizza le licenze delle librerie di terze parti',
+			'about.privacyPolicy' => 'Informativa sulla privacy',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nessun server trovato per ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Impossibile caricare i server: ${error}',
 			'serverSelection.noValidServers' => 'Nessun server utilizzabile trovato per questo account',
@@ -4738,6 +5679,10 @@ extension on TranslationsIt {
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
 			'logs.uploadLogs' => 'Carica log',
+			'logs.saveLogs' => 'Salva i file in file',
+			'logs.logsSaved' => ({required Object path}) => 'I registri salvati a ${path}',
+			'logs.saveLogsFailed' => 'Non poteva salvare il file di log.',
+			'detail.endsAt' => ({required Object time}) => 'Termina alle ${time}',
 			'startup.failedTitle' => 'PlezyNG non ha potuto avviarsi',
 			'startup.failedBody' => 'Si è verificato un errore durante l\'avvio. I dettagli seguenti indicano cosa non ha funzionato.',
 			'startup.failedBodyRepairable' => 'Il file delle impostazioni salvate di PlezyNG è danneggiato e deve essere ricostruito prima che PlezyNG possa avviarsi. Riprovare non servirà: scegli Ripara storage.',
@@ -4776,6 +5721,24 @@ extension on TranslationsIt {
 			'navigation.downloads' => 'Download',
 			'navigation.liveTv' => 'Diretta',
 			'navigation.explore' => 'Esplora',
+			'explore.mdblistShelves.manage' => 'Gestione esplora le scale',
+			'explore.mdblistShelves.manageDescription' => 'Scegli e organizzi elenchi dal tuo account MDBList',
+			'explore.mdblistShelves.description' => 'Scegli le liste di film e TV pubbliche dal tuo account MDBList. Crea o copia le liste su MDBList, poi ristrutturare.',
+			'explore.mdblistShelves.selected' => 'Le scale selezionate',
+			'explore.mdblistShelves.available' => 'Elenco dei conti disponibili',
+			'explore.mdblistShelves.noLists' => 'Non sono stati restituiti film pubblici o elenchi televisivi. Creare o copiare un elenco su MDBList, poi rinfrescare.',
+			'explore.mdblistShelves.displayName' => 'Nome di display Shelf',
+			'explore.mdblistShelves.nameHint' => 'Lascia la lista di fonti per utilizzare il nome della lista di fondi.',
+			'explore.mdblistShelves.add' => 'Aggiungi Shelf',
+			'explore.mdblistShelves.save' => 'Salva le scale',
+			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} in alto',
+			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Rimuovere ${title}',
+			'explore.mdblistShelves.unavailable' => 'Questo elenco non è disponibile. rimuovere o rimuovere la sua scheda nelle impostazioni.',
+			'explore.mdblistShelves.rateLimited' => 'Il limite di richiesta MDBList è stato raggiunto. si prega di ritirarsi in seguito.',
+			'explore.mdblistShelves.loadFailed' => 'Non si possono caricare le strisce. controllare la connessione e ritorno.',
+			'explore.mdblistShelves.saveFailed' => 'Non riesco a salvare le scale, per favore, ritiro.',
+			'explore.mdblistShelves.accountChanged' => 'Il profilo o l\'account è cambiato.Riavvi queste impostazioni.',
+			'explore.mdblistShelves.settingsUnreadable' => 'Le schede salvate non possono essere lette. selezionare nuovamente le liste per sostituire queste impostazioni.',
 			'explore.title' => 'Esplora',
 			'explore.selectSource' => 'Seleziona fonte',
 			'explore.rows.watchlist' => 'Lista da guardare',
@@ -4787,6 +5750,8 @@ extension on TranslationsIt {
 			'explore.rows.popularShows' => 'Serie TV popolari',
 			'explore.rows.trendingAnime' => 'Anime di tendenza',
 			'explore.rows.suggestedAnime' => 'Anime suggeriti',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Migliori anime in onda',
 			'explore.rows.popularAnime' => 'Anime più popolari',
 			'explore.rows.trending' => 'Di tendenza',
@@ -4796,7 +5761,7 @@ extension on TranslationsIt {
 			'explore.status.ended' => 'Conclusa',
 			'explore.status.canceled' => 'Cancellata',
 			'explore.status.upcoming' => 'In arrivo',
-			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} episodio', other: '${n} episodi', ), 
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodio', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodi', ), 
 			'explore.cast' => 'Attori',
 			'explore.characters' => 'Personaggi',
 			'explore.addToWatchlist' => 'Aggiungi alla lista da guardare',
@@ -4808,7 +5773,7 @@ extension on TranslationsIt {
 			'explore.notInLibrary' => 'Non è nella tua libreria',
 			'explore.inTheseLibraries' => 'In queste librerie',
 			'explore.checkingLibrary' => 'Ricerca nella tua libreria...',
-			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Impossibile controllare ${n} server', other: 'Impossibile controllare ${n} server', ), 
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Impossibile controllare ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server', other: 'Impossibile controllare ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server', ), 
 			'explore.emptyTitle' => 'Ancora niente qui',
 			'explore.emptyMessage' => ({required Object source}) => 'Le sezioni di ${source} appariranno qui quando saranno disponibili dei contenuti.',
 			'explore.searchHint' => ({required Object source}) => 'Cerca su ${source}',
@@ -4845,7 +5810,7 @@ extension on TranslationsIt {
 			'explore.stats.planning' => ({required Object n}) => '${n} hanno in programma di guardarlo',
 			'explore.stats.favorited' => ({required Object n}) => '${n} preferiti',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} lo ha abbandonato',
-			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} commento', other: '${n} commenti', ), 
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} commento', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} commenti', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} voti',
 			'explore.stats.watching' => ({required Object n}) => '${n} lo stanno guardando',
 			'explore.stats.completed' => ({required Object n}) => '${n} completati',
@@ -4912,14 +5877,14 @@ extension on TranslationsIt {
 			'explore.detail.crew' => 'Cast tecnico',
 			'explore.detail.ratings' => 'Valutazioni',
 			'explore.detail.schedule' => 'Programmazione',
-			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Consigliato da ${n} utente', other: 'Consigliato da ${n} utenti', ), 
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Consigliato da ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} utente', other: 'Consigliato da ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} utenti', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Consigliato da ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Preferito da ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} non ancora in onda',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Consigliato dal ${percent} degli spettatori',
 			'explore.detail.relatedTitles' => 'Titoli correlati',
 			'explore.detail.background' => 'Contesto',
-			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} risultato', other: '${n} risultati', ), 
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} risultato', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} risultati', ), 
 			'liveTv.title' => 'TV in diretta',
 			'liveTv.guide' => 'Guida',
 			'liveTv.noChannels' => 'Nessun canale disponibile',
@@ -4929,11 +5894,18 @@ extension on TranslationsIt {
 			'liveTv.noPrograms' => 'Nessun dato di programma disponibile',
 			'liveTv.liveStreamFailed' => 'Streaming in diretta non riuscito',
 			'liveTv.unknownProgram' => 'Programma sconosciuto',
+			'liveTv.timelineLiveProgram' => 'Programma dal vivo (il ripristino può essere fuori dal programma)',
+			'liveTv.timelineBuffer' => 'TIME TIME di Buffer',
+			'liveTv.timelineUnavailable' => 'TIME INCOSPOSIBILE',
+			'liveTv.timelineEstimated' => 'Il Playback stimato',
+			'liveTv.timelinePending' => 'Per la ricerca',
+			'liveTv.timelineStale' => 'Il calendario può essere esaurito',
 			'liveTv.unknownHub' => 'Sconosciuto',
 			'liveTv.unknownError' => 'Errore sconosciuto',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canale ${number}',
 			'liveTv.unknownChannel' => 'Canale sconosciuto',
 			'liveTv.live' => 'IN DIRETTA',
+			'liveTv.premiereBadge' => 'Nuovo',
 			'liveTv.reloadGuide' => 'Ricarica la guida',
 			'liveTv.searchGuide' => 'Cerca nella guida',
 			'liveTv.searchHint' => 'Cerca canali e programmi',
@@ -5023,8 +5995,6 @@ extension on TranslationsIt {
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
-			_ => null,
-		} ?? switch (path) {
 			'collections.addedToCollection' => 'Elemento aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Impossibile aggiungere l\'elemento alla raccolta',
 			'collections.created' => 'Raccolta creata',
@@ -5043,8 +6013,7 @@ extension on TranslationsIt {
 			'playlists.delete' => 'Elimina playlist',
 			'playlists.removeItem' => 'Rimuovi dalla playlist',
 			'playlists.smartPlaylist' => 'Playlist intelligente',
-			'playlists.itemCount' => ({required Object count}) => '${count} elementi',
-			'playlists.oneItem' => '1 elemento',
+			'playlists.itemCount' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} elemento', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} elementi', ), 
 			'playlists.emptyPlaylist' => 'Questa playlist è vuota',
 			'playlists.deleteConfirm' => 'Eliminare playlist?',
 			'playlists.deleteMessage' => ({required Object name}) => 'Sei sicuro di voler eliminare "${name}"?',
@@ -5066,16 +6035,28 @@ extension on TranslationsIt {
 			'music.playNext' => 'Riproduci come prossimo',
 			'music.addToQueue' => 'Aggiungi alla coda',
 			'music.discNumber' => ({required Object n}) => 'Disco ${n}',
-			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} brano', other: '${n} brani', ), 
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} brano', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} brani', ), 
 			'music.nowPlaying' => 'In riproduzione',
 			'music.playingFrom' => ({required Object title}) => 'Riproduzione da ${title}',
 			'music.queue' => 'Coda',
 			'music.clearQueue' => 'Svuota la coda',
 			'music.lyrics' => 'Testo',
+			'music.visualizer' => 'Visualizzatore',
+			'music.visualizerProfileLoading' => 'Leggi il track analysis...',
+			'music.visualizerAmbientMotion' => 'Movimento Ambientale',
+			'music.visualizerPlexLoudness' => 'Plex suono',
+			'music.visualizerPreviousPreset' => 'Articolo precedenteStyle visivo',
+			'music.visualizerNextPreset' => 'Next Stile visivo',
+			'music.visualizerPresetAurora' => 'Aurora',
+			'music.visualizerPresetBloom' => 'Il blu',
+			'music.visualizerPresetOrbitals' => 'orbitali',
+			'music.visualizerPresetPrism' => 'Prism',
+			'music.visualizerPresetTunnel' => 'Il tunnel',
+			'music.visualizerPresetTrackMap' => 'Mappa di traccia',
 			'music.noLyrics' => 'Nessun testo disponibile',
 			'music.sleepTimer' => 'Timer di spegnimento',
 			'music.sleepTimerEndOfTrack' => 'Fine del brano',
-			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minuti',
+			'music.sleepTimerMinutes' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuto', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuti', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minuti', ), 
 			'music.stopPlayback' => 'Interrompi riproduzione',
 			'music.previousTrack' => 'Brano precedente',
 			'music.nextTrack' => 'Brano successivo',
@@ -5157,7 +6138,7 @@ extension on TranslationsIt {
 			'watchTogether.offsetPlusTenth' => '+100 ms',
 			'watchTogether.offsetPlusSecond' => '+1 s',
 			'watchTogether.participants' => 'Partecipanti',
-			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${n} partecipante', other: '${n} partecipanti', ), 
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} partecipante', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} partecipanti', ), 
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.nameYou' => ({required Object name}) => '${name} (tu)',
 			'watchTogether.playerIdle' => 'Inattivo',
@@ -5283,6 +6264,10 @@ extension on TranslationsIt {
 			'downloads.unwatchedOnly' => 'Solo non visti',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Prossimi ${count} episodi non visti',
 			'downloads.customAmount' => 'Quantità personalizzata...',
+			_ => null,
+		} ?? switch (path) {
+			'downloads.customAmountAny' => 'Quanti sono i vari (quanti sono i)',
+			'downloads.randomEpisodes' => 'Episodi casuali',
 			'downloads.includeSpecials' => 'Includi gli speciali',
 			'downloads.howManyEpisodes' => 'Quanti episodi?',
 			'downloads.invalidEpisodeCount' => 'Inserisci un numero di episodi valido.',
@@ -5302,6 +6287,9 @@ extension on TranslationsIt {
 			'downloads.syncRuleCleanupBusy' => 'Le regole di sincronizzazione sono in fase di aggiornamento. Riprova tra un momento.',
 			'downloads.syncRuleCleanupUnavailable' => 'Non è stato possibile identificare in sicurezza i download associati. Riconnetti il server e riprova, oppure rimuovi la regola senza eliminare i download.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nuovi episodi sincronizzati per ${title}',
+			'downloads.syncNow' => 'Sincolo ora',
+			'downloads.downloadsUpToDate' => 'Le scaricazioni sono aggiornate',
+			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sincronizzazione completa · ${queued} quued, ${removed} rimosso',
 			'downloads.activeSyncRules' => 'Regole di sincronizzazione',
 			'downloads.reviewOrphanFiles' => 'Rivedi i download orfani',
 			'downloads.orphanReviewTitle' => 'Rivedi i download orfani',
@@ -5360,10 +6348,17 @@ extension on TranslationsIt {
 			'downloads.unknownSeason' => 'Stagione sconosciuta',
 			'downloads.unknownAlbum' => 'Album sconosciuto',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completati',
+			'downloads.storageUsed' => ({required Object size}) => 'Storage utilizzato: ${size}',
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} mostra', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} mostri', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} film', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} film', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album', ), 
 			'downloads.errorFileNotFound' => 'File non trovato (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download non consentito dal server (403)',
 			'downloads.errorDownloadFailed' => 'Download non riuscito',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download non riuscito: ${reason}',
+			'downloads.convertingOnServer' => 'Convertire il server...',
+			'downloads.convertingOnServerPercent' => ({required Object percent}) => 'Conversione sul server · ${percent}%',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download non riuscito (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object reason}) => 'Post-elaborazione non riuscita: ${reason}',
 			'downloads.reasonFileNotSaved' => 'non è stato possibile salvare il file su questo dispositivo',
@@ -5417,6 +6412,13 @@ extension on TranslationsIt {
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo non trovato. Assicurati che PlezyNG sia in esecuzione sull\'host.',
 			'companionRemote.pairing.authFailed' => 'Autenticazione non riuscita. Entrambi i dispositivi devono usare lo stesso account Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Connessione non riuscita: ${error}',
+			'companionRemote.pairing.codeTitle' => 'Codice di coppia',
+			'companionRemote.pairing.codeDescription' => 'Inserisci il codice mostrato nella Companion Remote sul dispositivo ospitante. entrambi i dispositivi devono utilizzare una versione che supporta la coppia sicura.',
+			'companionRemote.pairing.codeInvalid' => 'Inserisci tutte le 32 lettere e i numeri dal codice ospitante.',
+			'companionRemote.pairing.updateRequired' => 'Aggiornare entrambi i dispositivi a una versione che supporta la coppia sicura.',
+			'companionRemote.pairing.hostDescription' => 'Inserisci questo codice una volta su ogni remote.Mantenere privato: consente il controllo di questo profilo.',
+			'companionRemote.pairing.resetCode' => 'Ristrutturazione di codice di coppia',
+			'companionRemote.pairing.resetDescription' => 'Disconnetti tutti i remoti e crea un nuovo codice. Ogni remote dovrà coppia di nuovo.',
 			'companionRemote.remote.disconnectConfirm' => 'Vuoi disconnetterti dalla sessione remota?',
 			'companionRemote.remote.reconnecting' => 'Riconnessione...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativo ${current} di 5',
@@ -5475,6 +6477,13 @@ extension on TranslationsIt {
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Audio spaziale',
 			'videoSettings.audioOutputStereo' => 'Stereo',
+			'videoSettings.audioEqualizer' => 'Audio equalizzatore',
+			'videoSettings.audioEqualizerDescription' => 'Aggiungere cinque bande di frequenza per questo dispositivo. disponibile su mpv; un EQ attivo decode audio e disabilita la corrispondenza.',
+			'videoSettings.audioEqualizerFlat' => 'Neutro',
+			'videoSettings.audioEqualizerActive' => 'Personalizzato',
+			'videoSettings.audioEqualizerSaveFailed' => 'Non poteva salvare le impostazioni di equalizzatore audio.',
+			'videoSettings.backgroundVideoAudio' => 'Video audio di background',
+			'videoSettings.backgroundVideoAudioDescription' => 'Mantenere il video audio riprodotto quando si lascia il lettore; l\'immagine è nascosta fino a quando non si ritorna. Android utilizza una notifica di riproduzione dei media.',
 			'videoSettings.audioNormalization' => 'Normalizza il volume',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva',
 			'performanceOverlay.color' => 'Colore',
@@ -5518,6 +6527,7 @@ extension on TranslationsIt {
 			'performanceOverlay.cacheLimit' => 'Limite cache',
 			'performanceOverlay.speed' => 'Velocità',
 			'performanceOverlay.player' => 'Lettore',
+			'performanceOverlay.playMethod' => 'Metodo di gioco',
 			'performanceOverlay.memory' => 'Memoria',
 			'performanceOverlay.uiFps' => 'FPS UI',
 			'performanceOverlay.fps' => 'FPS',
@@ -5537,8 +6547,6 @@ extension on TranslationsIt {
 			'externalPlayer.customPlayers' => 'Lettori personalizzati',
 			'externalPlayer.systemDefault' => 'Predefinito di sistema',
 			'externalPlayer.addCustomPlayer' => 'Aggiungi lettore personalizzato',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Nome del lettore',
 			'externalPlayer.playerNameHint' => 'Il mio lettore',
 			'externalPlayer.playerCommand' => 'Comando',
@@ -5770,6 +6778,8 @@ extension on TranslationsIt {
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',
 			'addServer.quickConnectNotJson' => 'La risposta di Quick Connect non era un JSON valido',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Nella risposta di Quick Connect manca un codice o un segreto',
 			'addServer.quickConnectPollRejected' => 'Il polling di Quick Connect è stato rifiutato dal server',
 			'addServer.serverTimedOut' => 'Il server non ha risposto in tempo',
@@ -5784,101 +6794,392 @@ extension on TranslationsIt {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'Il server ha reindirizzato a un host diverso. Inserisci direttamente l\'URL finale del server ${product}.',
 			'addServer.redirectInsecure' => 'Il server ha reindirizzato da HTTPS a un URL non sicuro',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Il server ha reindirizzato a un URL non supportato. Inserisci direttamente l\'URL finale del server ${product}.',
-			'homeLayout.title' => 'Home layout',
-			'homeLayout.resetToast' => 'Home reset to the original Plezy hero layout',
-			'homeLayout.resetHeroTitle' => 'Reset hero layout to stock Plezy?',
-			'homeLayout.resetHeroBody' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.',
-			'homeLayout.removeRowTitle' => 'Remove Home row?',
-			'homeLayout.removeRowBody' => ({required Object title}) => '${title} will be deleted. This can\'t be undone.',
-			'homeLayout.sync' => 'Sync',
-			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
-			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
-			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
-			'homeLayout.syncNow' => 'Sync now',
-			'homeLayout.plexHomeManager' => 'Plex Home manager',
-			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',
-			'homeLayout.managePlexRowsDescription' => 'Open to organize the Home-selected rows',
-			'homeLayout.organizeHomeRows' => 'Organize Home rows',
-			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove',
-			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organize ${library} rows',
-			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide',
-			'homeLayout.renderAsHero' => 'Render as a hero card',
-			'homeLayout.heroOnlySingleCollection' => 'Only available when this row resolves to a single collection\'s actual titles',
-			'homeLayout.hero' => 'Hero',
-			'homeLayout.autoSlide' => 'Auto-slide',
-			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
-			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
-			'homeLayout.enableHeroFirst' => 'Enable Hero first',
-			'homeLayout.showOnHome' => 'Show on Home screen',
+			'addServer.directPlexServerUrl' => 'URL del server Plex',
+			'addServer.directPlexServerUrlHelper' => 'Inserisci l\'IP locale e il port del tuo server di media Plex .',
+			'addServer.directPlexServerUrlHint' => 'http://192.168.1.100:32400',
+			'addServer.plexToken' => 'Plex Token (opzionale)',
+			'addServer.plexTokenHelper' => 'Lascia vuoto se l\'accesso senza auth è consentito su questo server.',
+			'addServer.plexTokenRequired' => 'Si prega di inserire il tuo token Plex (X-Plex-Token).',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (diretto / locale)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Connettiti direttamente utilizzando IP o URL locali senza account plex.tv.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connettiti direttamente utilizzando IP locale o URL. Connettiti a ${name}.',
+			'addServer.insecureTitle' => 'Connessione non crittografata',
+			'addServer.insecureDescription' => ({required Object url}) => '${url} usa HTTP. Altre persone sulla rete potrebbero leggere o modificare la password, i token e i contenuti multimediali. Usa HTTPS quando disponibile. Continua solo se ti fidi di questa rete e accetti il rischio.',
+			'addServer.allowHttp' => 'Permesso di usare HTTP',
+			'addServer.httpsRequired' => 'Utilizzare HTTPS o consentere esplicitamente una connessione non crittografata.',
+			'watchLink.serverUnavailable' => 'Non potevo raggiungere un server Plex per questo link.',
+			'watchLink.notFound' => 'Non potevo trovare questo spettacolo o film sui tuoi server Plex.',
+			'watchLink.ambiguous' => 'Questo link corrisponde agli elementi su più di un server. Aggiungi un server al link.',
+			'watchLink.plexOnly' => 'I link di monitoraggio supportano attualmente solo i server Plex.',
+			'watchLink.unsupportedItem' => 'I link di guardare possono aprire solo un programma o un film.',
+			'watchLink.menuItem' => 'Visualizza il link',
+			'watchLink.dialogTitle' => 'Guarda il link',
+			'watchLink.dialogShowHint' => 'Aprire questo link gioca il prossimo episodio. Aggiungi &mode=shuffle alla fine per giocare lo spettacolo su shuffle.',
+			'watchLink.dialogMovieHint' => 'Aprire questo link gioca il film.',
+			'watchLink.copy' => 'Copia',
+			'watchLink.copied' => 'Link copia',
+			'homeLayout.title' => 'Home Layout',
+			'homeLayout.resetToast' => 'Home Ristrutturazione all\'originale layout Plezy',
+			'homeLayout.resetHeroTitle' => 'Ristrutturare il layout del eroe al stock Plezy?',
+			'homeLayout.resetHeroBody' => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotativo al top di Home, come prima che le riga eroe esistessero.',
+			'homeLayout.removeRowTitle' => 'Rimuovere la linea di casa?',
+			'homeLayout.removeRowBody' => ({required Object title}) => '${title} sarà cancellato. non può essere negato.',
+			'homeLayout.sync' => 'Sincolo',
+			'homeLayout.syncAccountTitle' => 'Sincronti il layout con il tuo account Plex',
+			'homeLayout.syncAccountOn' => 'In: questo dispositivo condivide ordine di ordine, righe, Hero e Auto-slide con gli altri dispositivi.',
+			'homeLayout.syncAccountOff' => 'Off: questo dispositivo mantiene il suo layout.',
+			'homeLayout.syncNow' => 'Sincolo ora',
+			'homeLayout.plexHomeManager' => 'Plex Direttore di casa',
+			'homeLayout.managePlexRows' => 'Gestione Plex righe in Plezy',
+			'homeLayout.managePlexRowsDescription' => 'Aperto per organizzare le righe selezionate in casa',
+			'homeLayout.organizeHomeRows' => 'Organizzare le linee di casa',
+			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} righe: movimento, eroe, auto-slide, rimozione',
+			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organizzare ${library} righe',
+			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continua a guardare + ${n} righe: movimento, Biblioteca, Home, Eroe, Auto-slide',
+			'homeLayout.renderAsHero' => 'Render come carta di eroe',
+			'homeLayout.heroOnlySingleCollection' => 'Disponibile solo quando questa fila si risolve ai titoli reali di una singola collezione',
+			'homeLayout.hero' => 'Eroe',
+			'homeLayout.autoSlide' => 'Auto-Slide',
+			'homeLayout.autoSlideDescription' => 'Arrows (PC) e d-pad (TV) sempre funzionano e riavviano il timer.',
+			'homeLayout.autoSlideEditDescription' => 'Spegne: si muove solo quando si fa clic su una pistola (PC) o premere sinistra/diretta sul remote (TV).',
+			'homeLayout.enableHeroFirst' => 'Permettere il primo eroe',
+			'homeLayout.showOnHome' => 'Mostra su Home Screen',
 			'homeLayout.home' => 'Home',
-			'homeLayout.removeFromHome' => 'Remove from Home',
-			'homeLayout.selectRowsFirst' => 'Select Home rows below first.',
-			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex-managed rows',
-			'homeLayout.continueWatching' => 'Continue Watching',
-			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
-			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
-			'homeLayout.library' => 'Library',
-			'homeLayout.showInRecommended' => 'Show in Library Recommended',
-			'homeLayout.customPlexRow' => 'Custom Plex row',
-			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
-			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',
-			'homeLayout.removeHub' => 'Remove Hub',
-			'homeLayout.noPlexRows' => 'No Plex-managed rows returned for this library.',
-			'homeLayout.openDetails' => 'Open details',
-			'homeLayout.heroCards' => 'Hero cards',
-			'homeLayout.tapHeroCard' => 'Tapping a hero card',
-			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
-			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
-			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
-			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',
-			'homeLayout.castOnHero' => 'Cast on hero banners',
-			'homeLayout.castOnHeroDescription' => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.',
-			'homeLayout.customRows' => 'Custom rows',
-			'homeLayout.loading' => 'Loading home layout…',
-			'homeLayout.noCustomRows' => 'No custom rows yet',
-			'homeLayout.addRowHint' => 'Use Add Home row to create one.',
-			'homeLayout.addHomeRow' => 'Add Home row',
-			'homeLayout.addHomeRowDescription' => 'Choose a category; the new row is added to Organizer automatically',
-			'homeLayout.removeRow' => 'Remove row',
-			'homeLayout.recentlyAdded' => 'Recently Added',
-			'homeLayout.recentlyReleased' => 'Recently Released',
-			'homeLayout.movieCollections' => 'Movie Collections',
-			'homeLayout.showCollections' => 'Show Collections',
-			'homeLayout.rowTitle' => 'Row title',
-			'homeLayout.content' => 'Content',
-			'homeLayout.showThisRowIn' => 'Show this row in:',
-			'homeLayout.libraryRecommended' => 'Library Recommended',
-			'homeLayout.heroCard' => 'Hero card',
-			'homeLayout.heroCardDescription' => 'Shows as one full-width rotating card instead of a poster shelf.',
-			'homeLayout.heroUnavailableDescription' => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.',
-			'homeLayout.librariesSelection' => 'Libraries (leave all unchecked to include every library)',
-			'homeLayout.librariesMergedDescription' => 'Every library checked here is merged into this one row.',
-			'homeLayout.movieCollectionsSelection' => 'Movie collections (leave all unchecked for every selected library)',
-			'homeLayout.showCollectionsSelection' => 'Show collections (leave all unchecked for every selected library)',
-			'homeLayout.collectionRowsDescription' => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.',
-			'homeLayout.allCollections' => 'All collections',
-			'homeLayout.noRowsHere' => 'No rows here yet.',
-			'homeLayout.hideWatchedRows' => 'Hide watched items in rows',
-			'homeLayout.hideWatchedRowsDescription' => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.',
-			'homeLayout.untitledCollection' => 'Untitled collection',
-			'homeLayout.moveRowHint' => 'Up/Down: move row · Select: drop it here · Back: cancel',
-			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
-			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
-			'homeLayout.editHomeRow' => 'Edit Home row',
-			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
-			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
-			'homeLayout.reorderingLocked' => 'Reordering locked',
-			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',
-			'homeLayout.tapLockToDrag' => 'Tap the lock to drag rows',
-			'homeLayout.customRowLabel' => ({required Object title}) => 'Custom: ${title}',
+			'homeLayout.removeFromHome' => 'Rimuovere da casa',
+			'homeLayout.selectRowsFirst' => 'Selezionare le linee di casa sotto prima.',
+			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex righe gestite',
+			'homeLayout.continueWatching' => 'Continua a guardare',
+			'homeLayout.continueWatchingLibraryDescription' => 'La linea di ritorno di questa biblioteca',
+			'homeLayout.continueWatchingHomeDescription' => 'La riga di progresso di ritorno mostrata a casa',
+			'homeLayout.nextUpHomeDescription' => 'La prossima sequenza di episodi non osservati mostrata separatamente su Home',
+			'homeLayout.library' => 'Libreria',
+			'homeLayout.showInRecommended' => 'Mostra in Biblioteca raccomandata',
+			'homeLayout.customPlexRow' => 'Modello di guida Plex',
+			'homeLayout.heroNeedsLibrary' => 'Scopri la biblioteca prima - Hero ha bisogno di qualche parte per mostrare',
+			'homeLayout.heroNeedsSurface' => 'Scopri la biblioteca o la casa prima - il protagonista ha bisogno di qualche parte per mostrare',
+			'homeLayout.removeHub' => 'Rimuovere Hub',
+			'homeLayout.noPlexRows' => 'N. Plex rami gestiti restituiti per questa biblioteca.',
+			'homeLayout.openDetails' => 'Dettagli aperti',
+			'homeLayout.heroCards' => 'Carte di eroe',
+			'homeLayout.tapHeroCard' => 'Scopri una carta di eroe',
+			'homeLayout.tvPlayFocus' => 'Remote TV: il pulsante di gioco',
+			'homeLayout.tvPlayFocusDescription' => 'D-pad down si ferma sul pulsante Play prima di muoversi alla prossima riga.',
+			'homeLayout.tvWrap' => 'Remote TV: carte di eroe di loop',
+			'homeLayout.tvWrapDescription' => 'Direttamente sulla ultima carta va di nuovo alla prima. Off si ferma alla ultima carta. La sinistra sulla prima carta va sempre alla barra laterale.',
+			'homeLayout.castOnHero' => 'Il cast su banner',
+			'homeLayout.castOnHeroDescription' => 'Mostra il cast lungo il fondo di un banner eroico. fuori conserva solo il titolo e il sintesi.',
+			'homeLayout.customRows' => 'Riflessioni personalizzate',
+			'homeLayout.loading' => 'Il layout di casa...',
+			'homeLayout.noCustomRows' => 'Non ci sono ancora linee',
+			'homeLayout.addRowHint' => 'Utilizzare Add Home row per creare uno.',
+			'homeLayout.addHomeRow' => 'Aggiungi Home Rue',
+			'homeLayout.addHomeRowDescription' => 'Selezionare una categoria; la nuova linea viene aggiunta automaticamente all\'Organizzatore',
+			'homeLayout.removeRow' => 'Rimuovere la linea',
+			'homeLayout.recentlyAdded' => 'Aggiunti di recente',
+			'homeLayout.recentlyReleased' => 'Rilasciato di recente',
+			'homeLayout.movieCollections' => 'Film Collezioni',
+			'homeLayout.showCollections' => 'Mostra le collezioni',
+			'homeLayout.rowTitle' => 'Titolo Row',
+			'homeLayout.content' => 'contenuto',
+			'homeLayout.showThisRowIn' => 'Mostra questa riga in:',
+			'homeLayout.libraryRecommended' => 'Biblioteca raccomandata',
+			'homeLayout.heroCard' => 'Carta di eroe',
+			'homeLayout.heroCardDescription' => 'Mostra come una carta di rotazione a larghezza completa invece di un poster shelf.',
+			'homeLayout.heroUnavailableDescription' => 'Disponibile solo quando questa fila si risolve ai titoli reali di una singola collezione - con più di una collezione selezionata non c\'è nessun titolo da girare.',
+			'homeLayout.librariesSelection' => 'Librerie (solo non controllate per includere ogni biblioteca)',
+			'homeLayout.librariesMergedDescription' => 'Ogni biblioteca che si verifica qui è unita in questa una fila.',
+			'homeLayout.movieCollectionsSelection' => 'Collezioni di film (solo non controllate per ogni biblioteca selezionata)',
+			'homeLayout.showCollectionsSelection' => 'Mostra collezioni (solo non controllate per ogni biblioteca selezionata)',
+			'homeLayout.collectionRowsDescription' => 'Se esattamente una collezione si compie, i suoi titoli si mostrano direttamente nella fila.Se più di una collezione, ogni collezione si mostra come un unico poster - premere per aprire quella collezione.',
+			'homeLayout.allCollections' => 'Tutte le collezioni',
+			'homeLayout.noRowsHere' => 'Non ci sono ancora linee.',
+			'homeLayout.hideWatchedRows' => 'Scopri gli oggetti osservati in serie',
+			'homeLayout.hideWatchedRowsDescription' => 'Titoli completamente guardati lasciare Home e biblioteca Raggiunta raccomandata.',
+			'homeLayout.untitledCollection' => 'Collezione senza titolo',
+			'homeLayout.moveRowHint' => 'Up/Down: spostare la linea · Selezionare: lasciarlo qui · Ritorno: cancellare',
+			'homeLayout.organizeRowsHint' => 'Selezionare una riga (o tenere Selezionare): spostarlo · Sinistra/Destra: opzioni di riga · Ritorno: fatto',
+			'homeLayout.layoutNavDescription' => 'Scegliere le righe, le biblioteche e le categorie di raccolta',
+			'homeLayout.editHomeRow' => 'Edit Home Ronde',
+			'homeLayout.resetHeroButton' => 'Ristrutturare il layout del eroe in stock Plezy',
+			'homeLayout.reorderingUnlocked' => 'Ristrutturazione disattivata',
+			'homeLayout.reorderingLocked' => 'Ristrutturazione chiusa',
+			'homeLayout.rowsCanBeDragged' => 'Le corde possono essere tracciate - tappa il blocco per evitare che',
+			'homeLayout.tapLockToDrag' => 'Toccare il blocco per tirare le righe',
+			'homeLayout.customRowLabel' => ({required Object title}) => 'Numero di lavoro: ${title}',
 			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
-			'homeLayout.hide' => 'Hide',
-			'homeLayout.remove' => 'Remove',
-			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
-			'homeLayout.pressAgainToDelete' => 'Press again to delete',
+			'homeLayout.hide' => 'Nascondi',
+			'homeLayout.remove' => 'Rimuovi',
+			'homeLayout.libraryResumeRow' => 'La rivista della biblioteca è',
+			'homeLayout.pressAgainToDelete' => 'Premere di nuovo per cancellare',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
-			'homeLayout.on' => 'On',
-			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'homeLayout.on' => 'di',
+			'homeLayout.resetHeroButtonDescription' => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotante in cima, come prima che le riga eroe esistessero.',
+			'platform.localNetworkPermission' => 'PlezyNG connette ai tuoi server multimediali e dispositivi di riproduzione sulla tua rete locale.',
+			'platform.locationPermission' => 'PlezyNG utilizza l\'accesso alla localizzazione quando iOS lo richiede per rilevare la tua rete locale e connetterti ai tuoi server multimediali.',
+			'platform.photoLibraryPermission' => 'Scegli le immagini dalla tua biblioteca fotografica per essere utilizzate come opere d\'arte multimediale.',
+			'platform.cameraPermission' => 'Scansione QR per unirsi a un Companion Remote.',
+			'fileSources.title' => 'Fili e libri',
+			'fileSources.subtitle' => 'Leggi, ascolta e guarda dai tuoi file.',
+			'fileSources.add' => 'Aggiungi fonte',
+			'fileSources.importFiles' => 'Importazione file',
+			'fileSources.localFiles' => 'su questo dispositivo',
+			'fileSources.source' => 'Fonte',
+			'fileSources.name' => 'Nome',
+			'fileSources.endpoint' => 'URL del server',
+			'fileSources.root' => 'Foldere o prefix',
+			'fileSources.username' => 'Nome utente',
+			'fileSources.password' => 'Password',
+			'fileSources.token' => 'API Toccano',
+			'fileSources.accessKey' => 'ID chiave di accesso',
+			'fileSources.secretKey' => 'Key di accesso segreto',
+			'fileSources.sessionToken' => 'Il token sessione (opzionale)',
+			'fileSources.region' => 'Regione',
+			'fileSources.clientId' => 'ID client di OAuth',
+			'fileSources.clientSecret' => 'OAuth client secret (solo Google desktop)',
+			'fileSources.allowHttp' => 'Consenti HTTP non crittografato su una rete attendibile',
+			'fileSources.connect' => 'Connetti',
+			'fileSources.cancel' => 'Annulla',
+			'fileSources.save' => 'Salva',
+			'fileSources.close' => 'Chiudi',
+			'fileSources.removeSource' => 'Sconnetti fonte',
+			'fileSources.disconnectMessage' => 'I file scaricati e la tua storia di lettura e ascolto rimarranno su questo dispositivo.',
+			'fileSources.localFolder' => 'Scegliamo la cartella',
+			'fileSources.empty' => 'Ancora niente qui',
+			'fileSources.emptyHint' => 'Aggiungi una fonte o importare un libro, un libro audio, musica o video.',
+			'fileSources.search' => 'Cerca questo folder',
+			'fileSources.searchCached' => 'La ricerca della biblioteca salvata',
+			'fileSources.refresh' => 'Aggiorna',
+			'fileSources.loadMore' => 'Carica di più',
+			'fileSources.offline' => 'Disponibile offline',
+			'fileSources.download' => 'Rimanere offline',
+			'fileSources.removeDownload' => 'Rimuovere offline copia',
+			'fileSources.continueReading' => 'Continua a leggere',
+			'fileSources.continueListening' => 'Continua ad ascoltare',
+			'fileSources.continueWatching' => 'Continua a guardare',
+			'fileSources.read' => 'Leggi',
+			'fileSources.listen' => 'Ascolta',
+			'fileSources.play' => 'Riproduci',
+			'fileSources.pause' => 'Pausa',
+			'fileSources.stop' => 'Interrompi',
+			'fileSources.startOver' => 'Inizia il',
+			'fileSources.finished' => 'Terminato',
+			'fileSources.markFinished' => 'Marco finito',
+			'fileSources.markUnfinished' => 'Marchio Infinito',
+			'fileSources.editions' => 'Edizioni e file',
+			'fileSources.chapters' => 'Capitoli',
+			'fileSources.bookmarks' => 'Note e note',
+			'fileSources.bookmark' => 'Aggiungi Bookmark',
+			'fileSources.highlight' => 'L’accento',
+			'fileSources.note' => 'Nota',
+			'fileSources.delete' => 'Elimina',
+			'fileSources.export' => 'Notizie di esportazione',
+			'fileSources.exported' => 'Notizie esportate',
+			'fileSources.sync' => 'Sincolo Progresso',
+			'fileSources.synced' => 'Progresso sintetizzato',
+			'fileSources.conflict' => 'Un altro dispositivo ha una posizione diversa. scegliere dove continuare.',
+			'fileSources.useLocal' => 'Utilizzare questo dispositivo',
+			'fileSources.useRemote' => 'Utilizzare altri dispositivi',
+			'fileSources.history' => 'Storia della posizione',
+			'fileSources.groupAudio' => 'Ascoltare come un libro audio',
+			'fileSources.groupHint' => 'Combina i file audio attualmente caricati in questa cartella. caricare tutte le pagine prima.',
+			'fileSources.order' => 'Ordine di file',
+			'fileSources.moveUp' => 'Move in alto',
+			'fileSources.moveDown' => 'Move verso il basso',
+			'fileSources.speed' => 'velocità di playback',
+			'fileSources.sleep' => 'Timer di spegnimento',
+			'fileSources.sleepOff' => 'Disattivato',
+			'fileSources.endChapter' => 'La fine del capitolo',
+			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuto', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuti', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuti', ), 
+			'fileSources.skipBack' => 'Scoppia indietro',
+			'fileSources.skipForward' => 'Scomparsa in avanti',
+			'fileSources.smartRewind' => 'Il ritorno intelligente dopo una pausa',
+			'fileSources.playbackOptions' => 'Opzioni di ascolto',
+			'fileSources.remaining' => ({required Object time}) => '${time} rimanente',
+			'fileSources.contents' => 'contenuto',
+			'fileSources.readerSettings' => 'Leggi le impostazioni',
+			'fileSources.fontSize' => 'Testo di dimensioni',
+			'fileSources.lineHeight' => 'Linee di spazzatura',
+			'fileSources.margin' => 'Margini',
+			'fileSources.font' => 'Tipo di faccia',
+			'fileSources.serif' => 'serif',
+			'fileSources.sans' => 'Senza serif',
+			'fileSources.mono' => 'Monospacio',
+			'fileSources.columns' => 'Colonne',
+			'fileSources.scroll' => 'Scorrere verticalmente',
+			'fileSources.justify' => 'giustificare il testo',
+			'fileSources.readerTheme' => 'Apparire pagina',
+			'fileSources.appTheme' => 'Seguire app tema',
+			'fileSources.paper' => 'Carta',
+			'fileSources.sepia' => 'Setti',
+			'fileSources.night' => 'Notte',
+			'fileSources.readAloud' => 'Leggi questa pagina a AUD',
+			'fileSources.readAlong' => 'Leggi tutto',
+			'fileSources.stopReading' => 'smettere di narrazione',
+			'fileSources.searchBook' => 'La ricerca nel libro',
+			'fileSources.noMatches' => 'Nessun match',
+			'fileSources.previousPage' => 'Pagina precedente',
+			'fileSources.nextPage' => 'Pagina successiva',
+			'fileSources.page' => ({required Object number}) => 'Pagina ${number}',
+			'fileSources.externalBlocked' => 'I link esterni del libro sono disabilitati nel lettore.',
+			'fileSources.loading' => 'Apertura...',
+			'fileSources.narrator' => 'narratore',
+			'fileSources.audio' => 'Audio',
+			'fileSources.video' => 'Video',
+			'fileSources.ebooks' => 'ebook',
+			'fileSources.all' => 'Tutto',
+			'fileSources.downloads' => 'Fili di Offline',
+			'fileSources.confirmDelete' => 'Rimuovere la copia offline selezionata? la tua posizione e le note rimarranno.',
+			'fileSources.errorAuthentication' => 'Iscriviti di nuovo per riconnettere questa fonte.',
+			'fileSources.errorPermission' => 'Questa fonte non ha fornito accesso al file richiesto.',
+			'fileSources.errorUnavailable' => 'La fonte non è disponibile. prova di nuovo, o apri una copia offline.',
+			'fileSources.errorUnsupported' => 'Questo formato o connessione non è supportato su questo dispositivo.Vedi la guida di impostazione della fonte.',
+			'fileSources.errorInvalidData' => 'Questo file o risposta del server non può essere letto in modo sicuro.',
+			'fileSources.errorCancelled' => 'L’operazione è stata annullata.',
+			'fileSources.errorConflict' => 'La posizione è cambiata in un\'altra sessione. riaprirlo per selezionare una posizione.',
+			'fileSources.signIn' => 'Accedi',
+			'fileSources.reconnect' => 'Riconnetti',
+			'fileSources.folderHelp' => 'Lascia la riga per iniziare alla radice sorgente. URL S3 includono il bucket.',
+			'fileSources.preferences' => 'Preferenze',
+			'fileSources.timePosition' => 'Posizione',
+			'fileSources.audioTrack' => 'Audio trazione',
+			'fileSources.subtitleTrack' => 'Il sottotitolo traggio',
+			'fileSources.none' => 'Nessuno',
+			'fileSources.fullscreen' => 'schermo completo',
+			'fileSources.syncLocation' => 'Fornitura di Progress Sync (opzionale)',
+			'fileSources.syncLocationHint' => 'Una cartella dedicata WebDAV per PlezyNG stato. utilizza scrittura condizionale; i media rimangono invariati.',
+			'fileSources.audiobooks' => 'Audiobochi',
+			'fileSources.comics' => 'Comiche',
+			'fileSources.scan' => 'Scansione dei libri e dei media',
+			'fileSources.browserReader' => 'Il lettore aperto',
+			'fileSources.browserReaderHelp' => 'Il lettore è aperto nel tuo browser. Mantenere aperto PlezyNG per salvare il tuo posto e note.',
+			'fileSources.on' => 'di',
+			'fileSources.advancedSetup' => 'App di registrazione',
+			'fileSources.microsoftSignIn' => 'Iscriviti con Microsoft',
+			'fileSources.zoomIn' => 'Ingrandisci',
+			'fileSources.zoomOut' => 'Zoom fuori',
+			'fileSources.fitPage' => 'Pagina adeguata',
+			'fileSources.fitWidth' => 'adeguato larghezza',
+			'fileSources.actualSize' => 'Dimensioni attuali',
+			'fileSources.goToPage' => 'Vai alla pagina',
+			'fileSources.goToSection' => 'Vai al capitolo',
+			'fileSources.pageRange' => ({required Object count}) => 'Inserisci un numero da 1 a ${count}',
+			'fileSources.pageLayout' => 'Il layout della pagina',
+			'fileSources.automatic' => 'Automatico',
+			'fileSources.singlePage' => 'Una pagina unica',
+			'fileSources.twoPages' => 'Due pagine',
+			'fileSources.readingDirection' => 'La direzione di lettura',
+			'fileSources.leftToRight' => 'A sinistra a destra',
+			'fileSources.rightToLeft' => 'Diritto a lasciare',
+			'fileSources.letterSpacing' => 'Lettera spazzatura',
+			'fileSources.wordSpacing' => 'Parola spazzatura',
+			'fileSources.readerControlsHelp' => 'Pinch o utilizza i controlli zoom per ingrandire le pagine. scorrere in pan. Ctrl/ ⁇  + o − regola lo zoom; Ctrl/ ⁇  0 lo ristabili.',
+			'fileSources.imagePage' => 'Pagina Comica',
+			'fileSources.resetReader' => 'Ristrutturare le preferenze di lettura',
+			'fileSources.zoom' => 'Zoom',
+			'fileSources.useFiles' => 'Utilizzare file e libri',
+			'fileSources.cancelScan' => 'Cancelare la scansione',
+			'fileSources.googleDrive' => 'Google Drive',
+			'lending.title' => 'Librerie pubbliche',
+			'lending.add' => 'Aggiungi una biblioteca',
+			'lending.other' => 'Un’altra biblioteca',
+			'lending.libraryName' => 'Nome della biblioteca',
+			'lending.libraryUrl' => 'Sito della Biblioteca',
+			'lending.libraryUrlHint' => 'Utilizzare il catalogo della tua biblioteca o la pagina di iscrizione.',
+			'lending.intro' => 'Prendi il tuo libro dalla tua biblioteca, tenete i vostri libri chiusi.',
+			'lending.handoff' => 'Iscriviti, prestiti e leggi in modo sicuro con il servizio della tua biblioteca.',
+			'lending.openService' => 'Biblioteca aperta',
+			'lending.findLibrary' => 'Trova una biblioteca',
+			'lending.search' => 'Cerca libri e autori',
+			'lending.catalogue' => 'Cataloghi',
+			'lending.loans' => 'Prestiti',
+			'lending.holds' => 'Togliere',
+			'lending.signIn' => 'Iscriviti con la tua biblioteca',
+			'lending.waiting' => 'Finite la registrazione nel vostro browser, poi tornate qui.',
+			'lending.cancel' => 'Annulla',
+			'lending.disconnect' => 'Rimuovere la biblioteca',
+			'lending.disconnectMessage' => 'Rimuovere questa biblioteca da questo profilo? i tuoi prestiti e mantiene il soggiorno con la tua biblioteca.',
+			'lending.getBook' => 'Ottieni il libro',
+			'lending.checkAvailability' => 'Verifica disponibilità',
+			'lending.available' => 'Disponibile per prestito',
+			'lending.unavailable' => 'attualmente inutilizzabile',
+			'lending.borrow' => 'Prestito',
+			'lending.placeHold' => 'Il posto è tenuto',
+			'lending.returnBook' => 'Il ritorno presto',
+			'lending.cancelHold' => 'Cancellato Hold',
+			'lending.confirmBorrow' => 'Prendi questo titolo dalla tua biblioteca?',
+			'lending.confirmReturn' => 'Ritorna questo titolo ora? Potresti averlo bisogno di prestare di nuovo per continuare.',
+			'lending.confirmCancelHold' => 'Rimuovere il tuo titolo?',
+			'lending.email' => 'Tenere presente la notifica email',
+			'lending.due' => ({required Object date}) => 'Il numero di persone ${date}',
+			'lending.queue' => ({required Object position}) => 'Posizione ${position} in linea',
+			'lending.empty' => 'Non ci sono titoli ancora.',
+			'lending.openLibraryNote' => 'Scopri il catalogo della Open Library. Le opzioni di lettura e di prestito sono visualizzate sulla pagina di ogni titolo.',
+			'lending.more' => 'Carica di più',
+			'lending.gateway' => 'Libreria di iscrizione al servizio',
+			'lending.gatewayHint' => 'Fornite dalla vostra biblioteca o dall\'amministratore PlezyNG.',
+			'lending.advanced' => 'Integrazione della biblioteca',
+			'lending.loadLibraries' => 'Scegli la tua biblioteca',
+			'lending.expired' => 'Il prestito è scaduto.',
+			'lending.updated' => 'Biblioteca aggiornata',
+			'lending.continueService' => 'Continua a servire',
+			'lending.comingSoon' => 'In-app prestito · Presto arriva',
+			'lending.comingSoonDescription' => 'Puoi usare la tua biblioteca in Libby mentre finisci connetendola.',
+			'lending.suspendHold' => 'Sospensione di tenere',
+			'lending.resumeHold' => 'Riflessioni di Hold',
+			'lending.suspendMessage' => 'Mantenere il vostro posto in linea e lasciare che il prossimo lettore prendi questa copia?',
+			'lending.resumeMessage' => 'Rispondere questo contenuto in modo che la tua biblioteca possa offrire la prossima copia disponibile?',
+			'lending.editEmail' => 'Modifica di notifica email',
+			'audiobook.syncTitle' => 'Leggere e ascoltare Sync',
+			'audiobook.syncHelp' => 'Mantenere le posizioni di lettura, le posizioni di ascolto, lo stato di completamento, i caratteri e le note attraverso i dispositivi. Scegli un account di archiviazione allegato e usi lo stesso codice di sincronizzazione su ciascun dispositivo. La lettura e l\'ascolto rimangono separati.',
+			'audiobook.addSyncSource' => 'Aggiungi Google Drive, OneDrive, Dropbox, WebDAV o S3 in file e libri prima.',
+			'audiobook.syncDestination' => 'L’account di storage sincronizzato',
+			'audiobook.syncFolder' => 'Sincronizzazione mappa o prefix',
+			'audiobook.syncFolderHelp' => 'Utilizzare una cartella esistente separata all\'interno della tua fonte WebDAV, o un prefix S3 dedicato.',
+			'audiobook.syncCode' => 'Codice di sincronizzazione privata',
+			'audiobook.syncCodeHelp' => 'Crea un codice sul tuo primo dispositivo, quindi inserisci quel codice sui tuoi altri dispositivi. Mantenere una copia privata: è la chiave per lo stato crittografato. Utilizzare un codice diverso per ciascuna persona.',
+			'audiobook.showCode' => 'Mostra o nascondere il codice di sincronizzazione',
+			'audiobook.newSyncCode' => 'Creare un nuovo codice di sincronizzazione',
+			'audiobook.saveSync' => 'Salvare e sincronizzare',
+			'audiobook.disableSync' => 'Disattivare la sincronizzazione su questo dispositivo',
+			'audiobook.syncSourceDisconnect' => 'Rimuovere questa fonte si disattiverà la lettura e l\'ascolto di sincronizzazione qui. i file di sincronizzazione crittografati rimarranno nel fornitore.',
+			'audiobook.syncReconnect' => 'Ripristinare l’account di storage',
+			'audiobook.lastSynced' => ({required Object time}) => 'Ultimo sincronizzato su ${time}',
+			'audiobook.syncPrivacy' => 'Solo i progressi e le note crittografati vengono memorizzati. file audio e ebook, tokens di account e password non vengono caricati. Google Drive e OneDrive utilizzano lo storage app; Dropbox utilizza PlezyNG Sync. Per consentire la sincronizzazione può richiedere un accesso aggiuntivo di scrittura. Mentre è attivato, questa destinazione possiede la sincronizzazione del progresso; il progresso del server rimane separato.',
+			'audiobook.syncConflicts' => 'Scegliamo dove riprendere',
+			'audiobook.conflictHelp' => 'Questi cambiamenti sono stati effettuati in modo indipendente. Scegli la posizione o la versione di bookmark per mantenere. Un timestamp successivo o un percentuale superiore non vince automaticamente.',
+			'audiobook.syncDevice' => ({required Object device}) => 'Dispositivo ${device}',
+			'audiobook.syncUnknownDevice' => 'Dispositivi sconosciuti',
+			'audiobook.deletedBookmark' => 'Bookmark cancellato',
+			'audiobook.finished' => 'finito',
+			'audiobook.readingPosition' => ({required Object percent}) => 'Leggi · ${percent}%',
+			'audiobook.chapterTimeline' => 'Capitolo Progresso',
+			'audiobook.bookTimeline' => 'Tutto il libro Progresso',
+			'audiobook.bookRemaining' => ({required Object time}) => 'Il tempo rimanente in questo libro: ${time}',
+			'audiobook.chapterRemaining' => ({required Object time}) => 'Il tempo rimanente in questo capitolo: ${time}',
+			'audiobook.unknownRemaining' => 'Tempo totale disponibile quando le parti vengono giocate',
+			'audiobook.undoSeek' => 'L’ultima ricerca',
+			'audiobook.customSpeed' => 'Velocità di playback personalizzata',
+			'audiobook.speedHelp' => 'Scegli una velocità da 0,25× a 4×.',
+			'audiobook.apply' => 'Applicazione',
+			'audiobook.customSleep' => 'Tempo di sonno personalizzato',
+			'audiobook.sleepMinutes' => 'Il tempo (1-440 minuti)',
+			'audiobook.sleepChapters' => ({required Object count}) => 'Smetti dopo ${count} capitoli',
+			'audiobook.extendSleep' => 'Aggiungi 5 minuti',
+			'audiobook.sleepRemaining' => ({required Object time}) => 'Tempo di sonno: ${time}',
+			'audiobook.useDefaults' => 'Utilizzare questi controlli di ascolto per nuovi libri',
+			'audiobook.librarySort' => 'Libri di sorta',
+			'audiobook.sortTitle' => 'Titolo',
+			'audiobook.sortAuthor' => 'Autore',
+			'audiobook.sortNarrator' => 'narratore',
+			'audiobook.sortSeries' => 'Serie Ordine',
+			'audiobook.sortRecent' => 'Recentemente aperto',
+			'audiobook.statusFilter' => 'Lo stato di lettura',
+			'audiobook.statusAll' => 'Tutti i libri',
+			'audiobook.statusNew' => 'Non è iniziato',
+			'audiobook.statusProgress' => 'Il progresso',
+			'audiobook.statusFinished' => 'finito',
+			'audiobook.goToTime' => 'Vai al tempo',
+			'audiobook.timeHelp' => 'ore: minuti: secondi o minuti: secondi',
 			_ => null,
 		};
 	}

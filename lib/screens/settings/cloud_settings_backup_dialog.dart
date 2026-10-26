@@ -150,7 +150,7 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
                   ),
                   if (_message != null) ...[
                     const SizedBox(height: 12),
-                    Align(alignment: Alignment.centerLeft, child: Text(_message!)),
+                    Align(alignment: AlignmentDirectional.centerStart, child: Text(_message!)),
                   ],
                   if (_working) ...[const SizedBox(height: 12), const LinearProgressIndicator()],
                 ],

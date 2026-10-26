@@ -904,6 +904,33 @@ class PlezyActivity : FlutterActivity() {
       }
     }
 
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.edde746.plezy/app_locale")
+      .setMethodCallHandler { call, result ->
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+          result.success(null)
+        } else {
+          val manager = getSystemService(android.app.LocaleManager::class.java)
+          if (manager == null) {
+            result.success(null)
+            return@setMethodCallHandler
+          }
+          when (call.method) {
+            "getApplicationLocale" -> result.success(manager.applicationLocales.toLanguageTags())
+            "getSystemLocales" -> result.success(manager.systemLocales.toLanguageTags())
+            "setApplicationLocale" -> {
+              val tag = call.arguments as? String
+              if (tag == null || !Regex("^([a-z]{2,3}(-[A-Za-z0-9]{2,8})*)?$").matches(tag)) {
+                result.error("INVALID_LOCALE", "Invalid locale identifier", null)
+              } else {
+                manager.applicationLocales = android.os.LocaleList.forLanguageTags(tag)
+                result.success(null)
+              }
+            }
+            else -> result.notImplemented()
+          }
+        }
+      }
+
     val carChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAR_RESTRICTIONS_CHANNEL)
     carRestrictionsChannel = carChannel
     carChannel.setMethodCallHandler { call, result ->

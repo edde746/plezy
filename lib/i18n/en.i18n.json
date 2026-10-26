@@ -329,9 +329,15 @@
     "smallSkipDuration": "Small Skip Duration",
     "largeSkipDuration": "Large Skip Duration",
     "rewindOnResume": "Rewind on Resume",
-    "secondsUnit": "${seconds} seconds",
+    "secondsUnit(param=seconds)": {
+      "other": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} seconds",
+      "one": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} second"
+    },
     "defaultSleepTimer": "Default Sleep Timer",
-    "minutesUnit": "${minutes} minutes",
+    "minutesUnit(param=minutes)": {
+      "other": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
     "rememberTrackSelections": "Remember track selections per show/movie",
     "chooseTracksBeforePlayback": "Choose audio and subtitles before playback",
     "chooseTracksBeforePlaybackDescription": "Pick the source audio and subtitle tracks before each video starts.",
@@ -616,7 +622,13 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export PlezyNG settings"
+    "exportDialogTitle": "Export PlezyNG settings",
+    "followSystem": "Follow system",
+    "followAppLanguage": "Match interface language",
+    "regionFormat": "Regional formats",
+    "regionFormatDescription": "Choose how dates, numbers and measurements appear.",
+    "metadataLanguage": "Metadata language",
+    "metadataLanguageDescription": "Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate."
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -850,16 +862,16 @@
     "confirmDeleteTarget": "Permanently delete ${title} from your server?",
     "deleteMultipleWarning": "This includes all episodes and their files.",
     "deleteEpisodeCountWarning": {
-      "one": "This deletes all ${n} episode in it, and its file.",
-      "other": "This deletes all ${n} episodes in it, and their files."
+      "one": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode in it, and its file.",
+      "other": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes in it, and their files."
     },
     "deleteMultiPartWarning": {
-      "one": "This item is stored as ${n} file, which will be deleted.",
-      "other": "This item is stored across ${n} files, and all of them will be deleted."
+      "one": "This item is stored as ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} file, which will be deleted.",
+      "other": "This item is stored across ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} files, and all of them will be deleted."
     },
     "deleteSharedFileHeading": {
-      "one": "${n} other episode is stored in the same file and will be deleted too:",
-      "other": "${n} other episodes are stored in the same file and will be deleted too:"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episode is stored in the same file and will be deleted too:",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episodes are stored in the same file and will be deleted too:"
     },
     "deleteScopeUnverifiedProbeFailed": "PlezyNG could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.",
     "deleteScopeUnverifiedNoFileInfo": "Your server did not provide file details for this item, so PlezyNG cannot check which files this will remove. It may delete more than the item named above.",
@@ -941,8 +953,8 @@
   },
   "videoControls": {
     "frameCount": {
-      "one": "${n} frame",
-      "other": "${n} frames"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames"
     },
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
@@ -1052,8 +1064,8 @@
     "markedAsUnwatchedOffline": "Marked as unwatched (will sync when online)",
     "autoRemovedWatchedDownload": "Auto-removed: ${title}",
     "autoRemovedWatchedDownloads": {
-      "one": "Auto-removed ${n} watched download",
-      "other": "Auto-removed ${n} watched downloads"
+      "one": "Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched download",
+      "other": "Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched downloads"
     },
     "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
@@ -1396,8 +1408,8 @@
     "minutesLeft": "${minutes} min left",
     "moreLikeThis": "More Like This",
     "titleCount": {
-      "one": "${n} title",
-      "other": "${n} titles"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} title",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} titles"
     },
     "person": {
       "born": "Born",
@@ -1566,11 +1578,11 @@
   },
   "about": {
     "title": "About",
-    "privacyPolicy": "Privacy Policy",
     "openSourceLicenses": "Open Source Licenses",
     "versionLabel": "Version ${version}",
     "appDescription": "A beautiful Plex, Jellyfin, and Emby client for Flutter",
-    "viewLicensesDescription": "View licenses of third-party libraries"
+    "viewLicensesDescription": "View licenses of third-party libraries",
+    "privacyPolicy": "Privacy Policy"
   },
   "serverSelection": {
     "noServersFoundForAccount": "No servers found for ${username} (${email})",
@@ -1685,8 +1697,8 @@
       "upcoming": "Upcoming"
     },
     "episodeCount": {
-      "one": "${n} episode",
-      "other": "${n} episodes"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes"
     },
     "cast": "Cast",
     "characters": "Characters",
@@ -1700,8 +1712,8 @@
     "inTheseLibraries": "In these libraries",
     "checkingLibrary": "Checking your library...",
     "libraryCheckFailed": {
-      "one": "Couldn't check ${n} server",
-      "other": "Couldn't check ${n} servers"
+      "one": "Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} server",
+      "other": "Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} servers"
     },
     "emptyTitle": "Nothing here yet",
     "emptyMessage": "Rows from ${source} will appear here once they have content.",
@@ -1743,8 +1755,8 @@
       "favorited": "${n} favorites",
       "dropRate": "${percent} dropped it",
       "comments": {
-        "one": "${n} comment",
-        "other": "${n} comments"
+        "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comment",
+        "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comments"
       },
       "votes": "${n} votes",
       "watching": "${n} watching it",
@@ -1825,8 +1837,8 @@
       "ratings": "Ratings",
       "schedule": "Schedule",
       "recommendedByUsers": {
-        "one": "Recommended by ${n} user",
-        "other": "Recommended by ${n} users"
+        "one": "Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} user",
+        "other": "Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} users"
       },
       "recommendedBy": "Recommended by ${who}",
       "favoritedBy": "Favorited by ${who}",
@@ -1836,8 +1848,8 @@
       "background": "Background"
     },
     "totalResults": {
-      "one": "${n} result",
-      "other": "${n} results"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} result",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} results"
     }
   },
   "liveTv": {
@@ -1975,8 +1987,10 @@
     "delete": "Delete Playlist",
     "removeItem": "Remove from Playlist",
     "smartPlaylist": "Smart Playlist",
-    "itemCount": "${count} items",
-    "oneItem": "1 item",
+    "itemCount(param=count)": {
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} item",
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} items"
+    },
     "emptyPlaylist": "This playlist is empty",
     "deleteConfirm": "Delete Playlist?",
     "deleteMessage": "Are you sure you want to delete \"${name}\"?",
@@ -2001,8 +2015,8 @@
     "addToQueue": "Add to queue",
     "discNumber": "Disc ${n}",
     "trackCount": {
-      "one": "${n} track",
-      "other": "${n} tracks"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} track",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} tracks"
     },
     "nowPlaying": "Now Playing",
     "playingFrom": "Playing from ${title}",
@@ -2024,7 +2038,10 @@
     "noLyrics": "No lyrics available",
     "sleepTimer": "Sleep timer",
     "sleepTimerEndOfTrack": "End of track",
-    "sleepTimerMinutes": "${n} minutes",
+    "sleepTimerMinutes": {
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
     "stopPlayback": "Stop playback",
     "previousTrack": "Previous track",
     "nextTrack": "Next track",
@@ -2111,8 +2128,8 @@
     "offsetPlusSecond": "+1 s",
     "participants": "Participants",
     "participantCount": {
-      "one": "${n} participant",
-      "other": "${n} participants"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participant",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participants"
     },
     "hostBadge": "HOST",
     "nameYou": "${name} (You)",
@@ -2335,20 +2352,20 @@
     "completedOfTotal": "${completed}/${total} completed",
     "storageUsed": "Storage used: ${size}",
     "downloadCount": {
-      "one": "${n} download",
-      "other": "${n} downloads"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} download",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} downloads"
     },
     "showCount": {
-      "one": "${n} show",
-      "other": "${n} shows"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} show",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} shows"
     },
     "movieCount": {
-      "one": "${n} movie",
-      "other": "${n} movies"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movie",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movies"
     },
     "albumCount": {
-      "one": "${n} album",
-      "other": "${n} albums"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} album",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} albums"
     },
     "errorFileNotFound": "File not found (404)",
     "errorDownloadNotAllowed": "Download not allowed by the server (403)",
@@ -2958,13 +2975,18 @@
     "on": "On",
     "resetHeroButtonDescription": "Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept."
   },
+  "platform": {
+    "localNetworkPermission": "PlezyNG connects to your media servers and playback devices on your local network.",
+    "locationPermission": "PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.",
+    "photoLibraryPermission": "Choose images from your photo library to use as media artwork.",
+    "cameraPermission": "Scan QR codes to pair a Companion Remote."
+  },
   "fileSources": {
     "title": "Files and books",
     "subtitle": "Read, listen, and watch from your own files.",
     "add": "Add source",
     "importFiles": "Import files",
     "localFiles": "On this device",
-    "googleDrive": "Google Drive",
     "source": "Source",
     "name": "Name",
     "endpoint": "Server URL",
@@ -3031,7 +3053,10 @@
     "sleep": "Sleep timer",
     "sleepOff": "Off",
     "endChapter": "End of chapter",
-    "minutes": "${count} minutes",
+    "minutes(param=count)": {
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
     "skipBack": "Skip back",
     "skipForward": "Skip forward",
     "smartRewind": "Smart rewind after a pause",
@@ -3119,7 +3144,8 @@
     "resetReader": "Reset reading preferences",
     "zoom": "Zoom",
     "useFiles": "Use files and books",
-    "cancelScan": "Cancel scan"
+    "cancelScan": "Cancel scan",
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Public libraries",
@@ -3199,8 +3225,8 @@
     "readingPosition": "Reading · $percent%",
     "chapterTimeline": "Chapter progress",
     "bookTimeline": "Whole book progress",
-    "bookRemaining": "Book: $time left",
-    "chapterRemaining": "Chapter: $time left",
+    "bookRemaining": "Time remaining in this book: ${time}",
+    "chapterRemaining": "Time remaining in this chapter: ${time}",
     "unknownRemaining": "Total time available as parts are played",
     "undoSeek": "Undo last seek",
     "customSpeed": "Custom playback speed",

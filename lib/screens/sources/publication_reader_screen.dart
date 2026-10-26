@@ -15,6 +15,8 @@ import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../i18n/locale_preferences.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../focus/focusable_slider.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
@@ -205,6 +207,9 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       case 'engineReady':
         await _js('open', {
           'title': widget.entry.title,
+          'interfaceLocale': LocaleSettings.currentLocale.languageTag,
+          'formattingLocale': LocalePreferences.formattingLocaleName.replaceAll('_', '-'),
+          'interfaceDirection': Directionality.of(context) == TextDirection.rtl ? 'rtl' : 'ltr',
           'cfi': _progress?.locator?.cfi,
           'settings': readerSettings(),
           'iconStyle': {'fill': AppIconDefaults.fill, 'weight': AppIconDefaults.weight},
@@ -274,6 +279,8 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             'off': t.common.off,
             'error': t.fileSources.errorUnavailable,
             'disconnected': t.fileSources.errorCancelled,
+            'noMatches': t.fileSources.noMatches,
+            'pageRange': t.fileSources.pageRange(count: '{count}'),
           },
           'annotations': _annotations
               .where((a) => a.locator?.cfi != null)
@@ -494,7 +501,9 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   Future<void> _jumpToPage() async {
     if (_pages < 1) return;
-    final input = TextEditingController(text: '${pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1)}');
+    final input = TextEditingController(
+      text: formatDecimal(pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1), maximumDecimals: 0),
+    );
     final form = GlobalKey<FormState>();
     final page = await showDialog<int>(
       context: context,
@@ -506,14 +515,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             controller: input,
             autofocus: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(helperText: t.fileSources.pageRange(count: _pages)),
+            decoration: InputDecoration(helperText: t.fileSources.pageRange(count: formatCount(_pages))),
             validator: (value) {
-              final n = int.tryParse(value ?? '');
-              return n != null && n >= 1 && n <= _pages ? null : t.fileSources.pageRange(count: _pages);
+              final n = parseLocalizedInteger(value ?? '');
+              return n != null && n >= 1 && n <= _pages ? null : t.fileSources.pageRange(count: formatCount(_pages));
             },
             onFieldSubmitted: (_) {
-              if (form.currentState!.validate()) Navigator.pop(context, int.parse(input.text));
+              if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
           ),
         ),
@@ -521,7 +529,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
           FilledButton(
             onPressed: () {
-              if (form.currentState!.validate()) Navigator.pop(context, int.parse(input.text));
+              if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
             child: Text(t.fileSources.goToPage),
           ),
@@ -780,7 +788,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                   fraction: _pages > 0 ? page / _pages : 0,
                 );
                 _scheduleSave();
-                if (mounted) setState(() => _chapter = t.fileSources.page(number: page));
+                if (mounted) setState(() => _chapter = t.fileSources.page(number: formatCount(page)));
               },
               customizeContextMenuItems: (params, items) {
                 items.add(
@@ -989,7 +997,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                 child: Text(
                   [
                     _chapter,
-                    if (_progress != null) '${(_progress!.fraction * 100).round()}%',
+                    if (_progress != null) formatPercent(_progress!.fraction),
                   ].where((part) => part.isNotEmpty).join(' · '),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1002,8 +1010,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                 icon: const AppIcon(Symbols.zoom_out_rounded),
               ),
               IconButton(
-                tooltip:
-                    '${t.fileSources.zoomIn}${_viewZoom is num ? ' (${((_viewZoom as num) * 100).round()}%)' : ''}',
+                tooltip: '${t.fileSources.zoomIn}${_viewZoom is num ? ' (${formatPercent(_viewZoom as num)})' : ''}',
                 onPressed: _ready ? () => sourceAction(context, () => _zoom('in')) : null,
                 icon: const AppIcon(Symbols.zoom_in_rounded),
               ),
@@ -1150,7 +1157,7 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
               if (widget.search.isSearching) const LinearProgressIndicator(),
               for (var i = 0; i < widget.search.matches.length; i++)
                 SourceTile(
-                  title: t.fileSources.page(number: widget.search.matches[i].pageNumber),
+                  title: t.fileSources.page(number: formatCount(widget.search.matches[i].pageNumber)),
                   onTap: () async {
                     await widget.search.goToMatchOfIndex(i);
                     if (context.mounted) Navigator.pop(context);
@@ -1279,7 +1286,8 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
                     max: row.$4,
                     value: ((value[row.$1] as num?)?.toDouble() ?? row.$5).clamp(row.$3, row.$4),
                     semanticLabel: row.$2,
-                    semanticFormatterCallback: (v) => '${row.$2}: ${v.toStringAsFixed(row.$1 == 'fontSize' ? 0 : 2)}',
+                    semanticFormatterCallback: (v) =>
+                        '${row.$2}: ${formatDecimal(v, maximumDecimals: row.$1 == 'fontSize' ? 0 : 2)}',
                     onChanged: (v) => setState(() => value[row.$1] = v),
                     onChangeEnd: (v) => set(row.$1, v),
                   ),

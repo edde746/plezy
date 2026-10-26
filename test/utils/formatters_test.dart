@@ -130,10 +130,10 @@ void main() {
       const duration = Duration(hours: 1, minutes: 2);
 
       await LocaleSettings.setLocale(AppLocale.zh);
-      expect(formatDurationTextual(duration.inMilliseconds), '1小时 2分');
+      expect(formatDurationTextual(duration.inMilliseconds), '1小时2分钟');
 
       await LocaleSettings.setLocale(AppLocale.zhHant);
-      expect(formatDurationTextual(duration.inMilliseconds), '1小時 2分鐘');
+      expect(formatDurationTextual(duration.inMilliseconds), '1 小時2 分鐘');
     });
   });
 
@@ -164,8 +164,8 @@ void main() {
 
   group('formatSeasonEpisodeLabel', () {
     test('formats season and episode numbers', () {
-      expect(formatSeasonEpisodeLabel(1, 2), 'S1 E2');
-      expect(formatSeasonEpisodeLabel(0, 10), 'S0 E10');
+      expect(formatSeasonEpisodeLabel(1, 2), 'S1E2');
+      expect(formatSeasonEpisodeLabel(0, 10), 'S0E10');
     });
 
     test('requires both season and episode numbers', () {

@@ -1,3 +1,4 @@
+import '../../i18n/presentation_formats.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:unorm_dart/unorm_dart.dart' as unicode;
 
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -190,7 +192,14 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
   required String title,
   required List<DialogOption<T>> options,
   required T currentValue,
+  bool searchable = false,
 }) {
+  if (searchable) {
+    return showScopedDialog<DialogOption<T>>(
+      context: context,
+      builder: (_) => _SearchableSelectionDialog<T>(title: title, options: options, currentValue: currentValue),
+    );
+  }
   final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<DialogOption<T>>(
     context: context,
@@ -221,6 +230,117 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
       ),
     ),
   );
+}
+
+class _SearchableSelectionDialog<T> extends StatefulWidget {
+  final String title;
+  final List<DialogOption<T>> options;
+  final T currentValue;
+  const _SearchableSelectionDialog({required this.title, required this.options, required this.currentValue});
+  @override
+  State<_SearchableSelectionDialog<T>> createState() => _SearchableSelectionDialogState<T>();
+}
+
+class _SearchableSelectionDialogState<T> extends State<_SearchableSelectionDialog<T>> {
+  String _query = '';
+  final _controller = TextEditingController();
+  final _searchFocus = FocusNode(debugLabel: 'SelectionSearch');
+  final _firstResultFocus = FocusNode(debugLabel: 'SelectionFirstResult');
+  @override
+  void dispose() {
+    _controller.dispose();
+    _searchFocus.dispose();
+    _firstResultFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.options
+        .where(
+          (option) =>
+              _normalizeOptionSearch('${option.title} ${option.subtitle ?? ''} ${option.value}').contains(_query),
+        )
+        .toList();
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 440,
+        height: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom) * 0.6,
+        child: Column(
+          children: [
+            FocusableTextField(
+              controller: _controller,
+              focusNode: _searchFocus,
+              autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
+              tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+              onNavigateDown: filtered.isEmpty ? null : _firstResultFocus.requestFocus,
+              onSubmitted: filtered.isEmpty ? null : (_) => _firstResultFocus.requestFocus(),
+              textInputAction: TextInputAction.search,
+              onChanged: (value) => setState(() => _query = _normalizeOptionSearch(value)),
+              decoration: InputDecoration(
+                labelText: t.common.search,
+                prefixIcon: const AppIcon(Symbols.search_rounded),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: t.common.clear,
+                        icon: const AppIcon(Symbols.close_rounded),
+                        onPressed: () {
+                          _controller.clear();
+                          setState(() => _query = '');
+                          _searchFocus.requestFocus();
+                        },
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Text(t.messages.noResultsFound, textAlign: TextAlign.center),
+                      ),
+                    )
+                  : ScrollInkBoundary(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final option = filtered[index];
+                          final selected = option.value == widget.currentValue;
+                          return Semantics(
+                            key: ValueKey(option.value),
+                            checked: selected,
+                            inMutuallyExclusiveGroup: true,
+                            child: FocusableListTile(
+                              focusNode: index == 0 ? _firstResultFocus : null,
+                              dense: false,
+                              visualDensity: VisualDensity.standard,
+                              leading: AppIcon(
+                                selected
+                                    ? Symbols.radio_button_checked_rounded
+                                    : Symbols.radio_button_unchecked_rounded,
+                                color: selected ? Theme.of(context).colorScheme.primary : null,
+                              ),
+                              title: Text(option.title),
+                              subtitle: option.subtitle == null ? null : Text(option.subtitle!),
+                              selected: selected,
+                              onTap: () => _popDialogIfCurrent(context, option),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        DialogActionButton(onPressed: () => _popDialogIfCurrent<DialogOption<T>>(context), label: t.common.cancel),
+      ],
+    );
+  }
 }
 
 /// Shows a checkbox dialog with focusable rows and Save/Cancel. [onSave]
@@ -365,7 +485,10 @@ void _showNumericInputDialogTV({
           ),
           const SizedBox(height: 8),
           Text(
-            t.settings.durationHint(min: min, max: max),
+            t.settings.durationHint(
+              min: formatDecimal(min, maximumDecimals: 0),
+              max: formatDecimal(max, maximumDecimals: 0),
+            ),
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -393,7 +516,7 @@ void _showNumericInputDialogStandard({
   ValueChanged<int>? onPreview,
   VoidCallback? onPreviewEnd,
 }) {
-  final controller = TextEditingController(text: currentValue.toString());
+  final controller = TextEditingController(text: formatDecimal(currentValue, maximumDecimals: 0));
   String? errorText;
 
   _showSettingsInputDialog(
@@ -405,7 +528,10 @@ void _showNumericInputDialogStandard({
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: labelText,
-          hintText: t.settings.durationHint(min: min, max: max),
+          hintText: t.settings.durationHint(
+            min: formatDecimal(min, maximumDecimals: 0),
+            max: formatDecimal(max, maximumDecimals: 0),
+          ),
           errorText: errorText,
           suffixText: suffixText,
         ),
@@ -415,12 +541,16 @@ void _showNumericInputDialogStandard({
           saveFocusNode.requestFocus();
         },
         onChanged: (value) {
-          final parsed = int.tryParse(value);
+          final parsed = parseLocalizedInteger(value);
           setDialogState(() {
             if (parsed == null) {
               errorText = t.settings.validationErrorEnterNumber;
             } else if (parsed < min || parsed > max) {
-              errorText = t.settings.validationErrorDuration(min: min, max: max, unit: labelText.toLowerCase());
+              errorText = t.settings.validationErrorDuration(
+                min: formatDecimal(min, maximumDecimals: 0),
+                max: formatDecimal(max, maximumDecimals: 0),
+                unit: labelText.toLowerCase(),
+              );
             } else {
               errorText = null;
             }
@@ -431,7 +561,7 @@ void _showNumericInputDialogStandard({
       );
     },
     onSave: (_) async {
-      final parsed = int.tryParse(controller.text);
+      final parsed = parseLocalizedInteger(controller.text);
       if (parsed == null || parsed < min || parsed > max) return false;
       await onSave(parsed);
       return true;
@@ -621,3 +751,6 @@ void showRegexInputDialog({
     onDispose: controller.dispose,
   );
 }
+
+String _normalizeOptionSearch(String value) =>
+    unicode.nfkd(value.trim().toLowerCase()).replaceAll(RegExp(r'[\u0300-\u036f]'), '');

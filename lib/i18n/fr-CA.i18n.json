@@ -1,0 +1,493 @@
+{
+  "cast": {
+    "subtitle": "Sous-titres",
+    "castToDevice": "Diffuser sur l'appareil"
+  },
+  "appIcon": {
+    "defaultIcon": "Par défaut"
+  },
+  "auth": {
+    "quickConnect": "Connexion rapide",
+    "useQuickConnect": "Utiliser la connexion rapide",
+    "quickConnectCancel": "Annuler"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "save": "Sauvegarder",
+    "close": "Fermer",
+    "reset": "Réinitialiser",
+    "submit": "Soumettre",
+    "retry": "Réessayer",
+    "unknown": "Inconnu",
+    "refresh": "Rafraîchir",
+    "yes": "Oui",
+    "no": "Non",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "shuffle": "Lecture aléatoire",
+    "connect": "Connexion",
+    "disconnect": "Déconnecter",
+    "play": "Lire",
+    "resume": "Reprendre la lecture",
+    "error": "Erreur",
+    "search": "Rechercher",
+    "home": "Accueil",
+    "back": "Retour arrière",
+    "settings": "Paramètres",
+    "mute": "Muet",
+    "off": "Désactivé",
+    "fullscreen": "Plein écran",
+    "mediaKind": {
+      "movie": "Film",
+      "season": "Saison",
+      "episode": "Épisode",
+      "artist": "Artiste",
+      "track": "Piste",
+      "playlist": "Liste de lecture",
+      "folder": "Dossier"
+    }
+  },
+  "screens": {
+    "subtitleStyling": "Style des sous-titres",
+    "logs": "Journaux"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "theme": "Thème",
+    "advanced": "Avancé",
+    "systemTheme": "Système",
+    "listView": "Liste",
+    "contentScreensaverAllLibraries": "Toutes les médiathèques",
+    "rowSizeLarge": "Grand",
+    "continueWatchingPlay": "Lire",
+    "episodePlay": "Lire",
+    "playbackBufferLarge": "Grand",
+    "playbackBufferExtraLarge": "Très Grand",
+    "musicQualityTitle": "Qualité de la musique",
+    "subtitleStyling": "Style des sous-titres",
+    "cloudBackupUsername": "Nom d'utilisateur",
+    "cloudBackupPassword": "Mot de passe",
+    "skipMarkerModeOff": "Désactivé",
+    "downloads": "Téléchargement",
+    "audioChannelLimit": "Chaînes audio",
+    "audioChannelLimitStereo": "Stéréo",
+    "hdrSdrConversionDevice": "Appareil",
+    "hdrSdrConversionPlayer": "Joueur",
+    "deinterlaceOff": "Désactivé",
+    "deinterlaceVideo": "Vidéo",
+    "general": "Général",
+    "display": "Affichage",
+    "liveTv": "Télé en direct",
+    "player": "Joueur",
+    "quality": "Qualité",
+    "subtitles": "Sous-titres",
+    "controls": "Contrôles",
+    "scopePlaybackSpeed": "Vitesse de lecture",
+    "scopeAspectRatio": "Format de l'image",
+    "secondsUnit(param=seconds)": {
+      "one": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} seconde",
+      "other": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} secondes",
+      "many": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} secondes"
+    },
+    "minutesUnit(param=minutes)": {
+      "one": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute",
+      "other": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "many": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes"
+    }
+  },
+  "themeEditor": {
+    "custom": "Personnalisation",
+    "preview": "Prévisualisation",
+    "slots": {
+      "text": "Texte"
+    }
+  },
+  "search": {
+    "people": "Personnes"
+  },
+  "hotkeys": {
+    "actions": {
+      "chapterNext": "Prochain chapitre",
+      "chapterPrevious": "Chapitre précédent",
+      "episodeNext": "Épisode suivant"
+    }
+  },
+  "fileInfo": {
+    "overview": "Survol",
+    "video": "Vidéo",
+    "subtitles": "Sous-titres",
+    "lyrics": "Paroles",
+    "file": "Fichier",
+    "codecTag": "Balise de codec",
+    "resolution": "Résolution",
+    "bitrate": "Débit binaire",
+    "aspectRatio": "Format de l'image",
+    "profile": "Profil",
+    "level": "Niveau",
+    "bitDepth": "Profondeur de couleur",
+    "pixelFormat": "Format de pixel",
+    "colorSpace": "Espace colorimétrique",
+    "colorPrimaries": "Primaires colorimétriques",
+    "colorTransfer": "Transfert de couleur",
+    "interlaced": "Entrelacé",
+    "anamorphic": "Anamorphique",
+    "language": "Langue",
+    "channels": "Chaînes",
+    "sampleRate": "Taux d'échantillonnage",
+    "path": "Chemin",
+    "size": "Taille",
+    "container": "Conteneur",
+    "duration": "Durée",
+    "protocol": "Protocole",
+    "transcoding": "Transcodage",
+    "subtitlesOff": "Désactivé",
+    "flagDefault": "Par défaut",
+    "flagForced": "Forcé",
+    "flagExternal": "Externe"
+  },
+  "mediaMenu": {
+    "deleteEpisodeConfirm": "Supprimer l’épisode",
+    "rate": "Évaluer",
+    "playFromBeginning": "Lire depuis le début"
+  },
+  "rateSheet": {
+    "title": "Évaluer",
+    "server": "Serveur",
+    "favorite": "Favori"
+  },
+  "accessibility": {
+    "mediaCardWatched": "Vu",
+    "red": "Rouge",
+    "green": "Vert",
+    "blue": "Bleu"
+  },
+  "videoControls": {
+    "subtitlesLabel": "Sous-titres",
+    "stretch": "Étirer",
+    "playNext": "Lire le suivant",
+    "playButton": "Lire",
+    "nextButton": "Épisode suivant",
+    "previousChapterButton": "Chapitre précédent",
+    "nextChapterButton": "Prochain chapitre",
+    "muteButton": "Muet",
+    "unmuteButton": "Activer le son",
+    "qualityColumnHeader": "Qualité",
+    "aspectRatioButton": "Format de l'image",
+    "language": "Langue",
+    "nextEpisode": "Épisode suivant"
+  },
+  "messages": {
+    "noResultsFound": "Aucun résultat trouvé."
+  },
+  "subtitlingStyling": {
+    "text": "Texte",
+    "textColor": "Couleur du texte",
+    "bold": "Gras",
+    "renderResolutionScreen": "Résolution d'écran",
+    "renderResolutionVideo": "Résolution vidéo"
+  },
+  "mpvConfig": {
+    "deletePreset": "Supprimer"
+  },
+  "profiles": {
+    "delete": "Supprimer",
+    "signOut": "Se déconnecter",
+    "removePin": "Enlever",
+    "add": "Ajouter",
+    "connectionDefault": "Par défaut",
+    "removeConnection": "Enlever"
+  },
+  "accountPreferences": {
+    "preferredAudioLanguage": "Langue audio préférée",
+    "preferredSubtitleLanguage": "Langue de sous-titres préférée",
+    "watchedIndicatorOptions": {
+      "none": "Jamais"
+    }
+  },
+  "discover": {
+    "continueWatching": "Continuer à visionner",
+    "nextUp": "À suivre",
+    "recentlyAdded": "Récemment ajouté",
+    "overview": "Survol",
+    "director": "Réalisateur",
+    "directors": "Réalisateurs",
+    "movie": "Film",
+    "moreLikeThis": "Similaires"
+  },
+  "libraries": {
+    "title": "Médiathèques",
+    "scanLibrary": "Scanner la médiathèque",
+    "refreshMetadata": "Actualiser les métadonnées",
+    "resetFilters": "Réinitialiser les filtres",
+    "all": "Tout",
+    "sort": "Trier",
+    "sortBy": "Trier par",
+    "filters": "Filtres",
+    "folders": "Dossiers",
+    "tabs": {
+      "browse": "Parcourir",
+      "playlists": "Listes de lecture"
+    },
+    "groupings": {
+      "all": "Tout",
+      "movies": "Films",
+      "shows": "Séries Télé",
+      "seasons": "Saisons",
+      "episodes": "Épisodes",
+      "artists": "Artistes",
+      "tracks": "Pistes",
+      "folders": "Dossiers"
+    },
+    "filterCategories": {
+      "year": "Année",
+      "tag": "Étiquette",
+      "unplayed": "Non lu",
+      "favorites": "Favoris"
+    },
+    "sortLabels": {
+      "title": "Titre",
+      "dateAdded": "Date d'ajout",
+      "releaseDate": "Date de sortie",
+      "communityRating": "Évaluation de la communauté",
+      "datePlayed": "Date d'écoute",
+      "playCount": "Nombre de lectures",
+      "runtime": "Durée",
+      "premiereDate": "Date de l'avant-première",
+      "airTime": "Heure de diffusion",
+      "random": "Aléatoire",
+      "size": "Taille"
+    },
+    "advancedFilters": {
+      "yes": "Oui",
+      "no": "Non"
+    }
+  },
+  "hubDetail": {
+    "title": "Titre",
+    "dateAdded": "Date d'ajout"
+  },
+  "navigation": {
+    "libraries": "Médiathèques",
+    "downloads": "Téléchargement",
+    "liveTv": "Télé en direct"
+  },
+  "explore": {
+    "status": {
+      "ended": "Terminé",
+      "upcoming": "À venir"
+    },
+    "badge": {
+      "available": "Disponible"
+    },
+    "format": {
+      "tv": "Télé",
+      "movie": "Film",
+      "music": "Musique",
+      "other": "Autre"
+    },
+    "sourceMaterial": {
+      "novel": "Roman",
+      "musicRelease": "Musique",
+      "otherMedia": "Autre"
+    },
+    "creditRole": {
+      "actor": "Acteur",
+      "director": "Réalisateur",
+      "writer": "Scénariste",
+      "producer": "Producteur",
+      "creator": "Créateur",
+      "composer": "Compositeur(trice)"
+    },
+    "detail": {
+      "originalTitle": "Titre original",
+      "language": "Langue",
+      "ended": "Terminé",
+      "tags": "Étiquettes",
+      "schedule": "Planning"
+    }
+  },
+  "liveTv": {
+    "title": "Télé en direct",
+    "unknownHub": "Inconnu",
+    "live": "En direct",
+    "premiereBadge": "Nouveau",
+    "channelsSection": "Chaînes",
+    "programsSection": "Programmes",
+    "favorites": "Favoris",
+    "record": "Enregistrer",
+    "recordSeries": "Enregistrer la série",
+    "recordings": "Enregistrements",
+    "manageRecording": "Gérer l'enregistrement",
+    "cancelRecording": "Annuler l'enregistrement",
+    "recordingScheduled": "Enregistrement programmé.",
+    "editRuleAction": "Modifier"
+  },
+  "collections": {
+    "deleteCollection": "Supprimer la Collection",
+    "removeFromCollection": "Retirer de la collection"
+  },
+  "playlists": {
+    "title": "Listes de lecture",
+    "playlist": "Liste de lecture",
+    "delete": "Supprimer la Playlist",
+    "removeItem": "Retirer de la liste de lecture"
+  },
+  "music": {
+    "instantMix": "Mix instantané",
+    "playNext": "Lire le suivant",
+    "clearQueue": "Effacer la file d'attente",
+    "lyrics": "Paroles",
+    "stopPlayback": "Arrêter la lecture",
+    "previousTrack": "Piste précédente",
+    "nextTrack": "Prochaine piste",
+    "repeat": "Répéter",
+    "repeatAll": "Répéter tous",
+    "repeatOne": "Répéter ce média en boucle",
+    "discography": {
+      "live": "En direct"
+    },
+    "sleepTimerMinutes": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes"
+    }
+  },
+  "watchTogether": {
+    "removeRoom": "Enlever",
+    "hostBadge": "Hôte",
+    "playerIdle": "Inactif",
+    "remove": "Enlever"
+  },
+  "downloads": {
+    "title": "Téléchargement",
+    "tvShows": "Séries Télé",
+    "movies": "Films",
+    "music": "Musique",
+    "downloadNow": "Télécharger",
+    "downloadQueued": "Téléchargement en file d'attente.",
+    "deleteAll": "Tout supprimer",
+    "allEpisodes": "Tous les épisodes",
+    "syncRuleAvailable": "Disponible"
+  },
+  "companionRemote": {
+    "remote": {
+      "tabPlay": "Lire",
+      "tabMore": "Plus",
+      "tabLibraries": "Médiathèques",
+      "tabSearch": "Rechercher",
+      "tabDownloads": "Téléchargement",
+      "tabSettings": "Paramètres",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "stop": "Arrêt",
+      "volumeDown": "Bas",
+      "volumeUp": "Haut",
+      "fullscreen": "Plein écran",
+      "subtitles": "Sous-titres"
+    }
+  },
+  "videoSettings": {
+    "playbackSpeed": "Vitesse de lecture",
+    "hdrToneMappingPlayer": "Joueur",
+    "audioOutputStereo": "Stéréo",
+    "audioEqualizerActive": "Personnalisation"
+  },
+  "performanceOverlay": {
+    "app": "Application",
+    "sampleRate": "Taux d'échantillonnage",
+    "player": "Joueur",
+    "playMethod": "Méthode de lecture"
+  },
+  "externalPlayer": {
+    "off": "Désactivé"
+  },
+  "metadataEdit": {
+    "editMetadata": "Modifier",
+    "screenTitle": "Modifier les métadonnées",
+    "title": "Titre",
+    "sortTitle": "Titre de tri",
+    "originalTitle": "Titre original",
+    "releaseDate": "Date de sortie",
+    "tagline": "Slogan",
+    "poster": "Affiche",
+    "allEpisodes": "Tous les épisodes",
+    "never": "Jamais",
+    "seasons": "Saisons",
+    "hide": "Cacher",
+    "preferredAudioLanguage": "Langue audio préférée",
+    "preferredSubtitleLanguage": "Langue de sous-titres préférée",
+    "tags": "Étiquettes",
+    "director": "Réalisateur",
+    "writer": "Scénariste",
+    "producer": "Producteur"
+  },
+  "matchScreen": {
+    "titleHint": "Titre",
+    "yearHint": "Année",
+    "search": "Rechercher"
+  },
+  "seerr": {
+    "seasons": "Saisons",
+    "advancedOptions": "Avancé",
+    "tags": "Étiquettes",
+    "statusAvailable": "Disponible"
+  },
+  "services": {
+    "libraryFilter": {
+      "modeBlacklist": "Liste noire",
+      "libraries": "Médiathèques"
+    }
+  },
+  "addServer": {
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "signIn": "Se connecter"
+  },
+  "watchLink": {
+    "copy": "Copier"
+  },
+  "homeLayout": {
+    "home": "Accueil",
+    "continueWatching": "Continuer à visionner",
+    "recentlyAdded": "Récemment ajouté",
+    "hide": "Cacher",
+    "remove": "Enlever"
+  },
+  "fileSources": {
+    "name": "Nom",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "connect": "Connexion",
+    "cancel": "Annuler",
+    "save": "Sauvegarder",
+    "close": "Fermer",
+    "refresh": "Rafraîchir",
+    "continueReading": "Continuer la lecture",
+    "continueListening": "Reprendre l'écoute",
+    "continueWatching": "Continuer à visionner",
+    "play": "Lire",
+    "stop": "Arrêt",
+    "delete": "Supprimer",
+    "speed": "Vitesse de lecture",
+    "sleepOff": "Désactivé",
+    "fontSize": "Taille du texte",
+    "video": "Vidéo",
+    "all": "Tout",
+    "signIn": "Se connecter",
+    "none": "Aucun",
+    "fullscreen": "Plein écran",
+    "audiobooks": "Livres audio",
+    "leftToRight": "Gauche à droite",
+    "rightToLeft": "Droite à gauche",
+    "minutes(param=count)": {
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute",
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "many": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes"
+    },
+    "googleDrive": "Google Drive"
+  },
+  "lending": {
+    "cancel": "Annuler"
+  }
+}

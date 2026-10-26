@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
+import '../../utils/formatters.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -367,7 +368,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     title: p.mode == PublicationMode.reading
                         ? '${(p.fraction * 100).round()}%'
                         : sourceTime(p.positionMs),
-                    subtitle: DateTime.fromMillisecondsSinceEpoch(row['created'] as int).toLocal().toString(),
+                    subtitle: formatDateTime(DateTime.fromMillisecondsSinceEpoch(row['created'] as int)),
                     icon: Symbols.history_rounded,
                     index: index,
                     count: history.length,

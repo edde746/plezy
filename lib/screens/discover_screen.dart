@@ -886,9 +886,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           tooltip: t.watchTogether.title,
                         ),
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                          Positioned(
+                          PositionedDirectional(
                             top: 6,
-                            right: 6,
+                            end: 6,
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                               decoration: BoxDecoration(
@@ -919,9 +919,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           tooltip: t.companionRemote.title,
                         ),
                         if (companionRemote.isConnected)
-                          Positioned(
+                          PositionedDirectional(
                             top: 6,
-                            right: 6,
+                            end: 6,
                             child: Container(
                               width: 8,
                               height: 8,
@@ -1122,7 +1122,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           itemCount: 5,
                           itemBuilder: (context, index) {
                             return Container(
-                              margin: const EdgeInsets.only(right: 12),
+                              margin: const EdgeInsetsDirectional.only(end: 12),
                               width: 140,
                               decoration: BoxDecoration(
                                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1152,11 +1152,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       color: theme.scaffoldBackgroundColor,
       child: Stack(
         children: [
-          if (isTv) Positioned(top: topSpacerHeight, left: 0, right: 0, bottom: 0, child: scrollView) else scrollView,
+          if (isTv)
+            PositionedDirectional(top: topSpacerHeight, start: 0, end: 0, bottom: 0, child: scrollView)
+          else
+            scrollView,
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
-          Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
+          PositionedDirectional(top: 0, start: 0, end: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),
@@ -1266,9 +1269,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               icon: Symbols.movie_rounded,
             ),
           if (browseHubs.isNotEmpty)
-            Positioned(
-              left: 0,
-              right: 0,
+            PositionedDirectional(
+              start: 0,
+              end: 0,
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
@@ -1324,10 +1327,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // via d-pad) — never gated on transient input mode, which back-key
               // events, BT keyboards, and gamepads can flip on phones/desktop.
               if (!isTv)
-                Positioned(
+                PositionedDirectional(
                   bottom: 16,
-                  left: -26,
-                  right: 0,
+                  start: -26,
+                  end: 0,
                   // Centered on the same safe width as the hero item above it.
                   child: SafeArea(
                     top: false,
@@ -1471,10 +1474,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
           ),
           // Gradient Overlay - blends into scaffold background
-          Positioned(
+          PositionedDirectional(
             top: 0,
-            left: 0,
-            right: 0,
+            start: 0,
+            end: 0,
             bottom: -4, // Extend past stack bounds to ensure coverage
             child: Builder(
               builder: (context) {
@@ -1577,7 +1580,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // Content with responsive alignment. Compact trims the offset
               // but still clears the page indicator row (bottom 16, ~18 tall)
               // that sits over every handheld hero.
-              Positioned(
+              PositionedDirectional(
                 bottom: isTv
                     ? 88
                     : compact
@@ -1585,8 +1588,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     : isLargeScreen
                     ? 80
                     : 50,
-                left: 0,
-                right: isTv
+                start: 0,
+                end: isTv
                     ? screenWidth * 0.36
                     : isLargeScreen
                     ? 200
@@ -1606,7 +1609,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           : 24,
                     ),
                     child: Align(
-                      alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                      alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
@@ -1627,7 +1630,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   logoWidth: heroLogoWidth,
                                   available: constraints.maxWidth,
                                 ),
-                                alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                alignment: alignLeft
+                                    ? AlignmentDirectional.bottomStart.resolve(Directionality.of(context))
+                                    : Alignment.bottomCenter,
                                 // The hero scrim washes artwork toward the scaffold
                                 // background; light themes recolor light-toned logos.
                                 logoToneTarget: logoToneTargetFor(
@@ -1637,8 +1642,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fallbackBuilder: (context) => FittingTitleText(
                                   showName,
                                   style: heroTitleStyle,
-                                  textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                  textAlign: alignLeft ? TextAlign.start : TextAlign.center,
+                                  alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                                 ),
                               ),
                             ),
@@ -1658,7 +1663,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   fontSize: isTv ? 18 : 14,
                                   fontWeight: .w600,
                                 ),
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                               ),
                             ],
 
@@ -1669,7 +1674,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               RichText(
                                 maxLines: isTv ? 3 : 2,
                                 overflow: .ellipsis,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                                 text: TextSpan(
                                   style: TextStyle(
                                     color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1699,7 +1704,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
                                 maxLines: 2,
                                 overflow: .ellipsis,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,

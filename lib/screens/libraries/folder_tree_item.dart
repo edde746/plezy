@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:ui';
 import '../../media/ids.dart';
 
@@ -205,7 +206,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
       parts.add(formatDurationTextual(item.durationMs!));
     }
     if (item.rating != null) {
-      parts.add('★ ${item.rating!.toStringAsFixed(1)}');
+      parts.add('★ ${formatDecimal(item.rating!, minimumDecimals: 1, maximumDecimals: 1)}');
     }
 
     return parts.join(' · ');

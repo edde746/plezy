@@ -667,7 +667,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           return KeyEventResult.handled;
         }
       }
-      if (key.isLeftKey) {
+      if (key.isInlineStart(context)) {
         // Navigate left within columns
         if (_focusedColumn == 0 && _canMutatePlaylist) {
           // Go to drag handle (column 1)
@@ -681,7 +681,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           return KeyEventResult.handled;
         }
       }
-      if (key.isRightKey) {
+      if (key.isInlineEnd(context)) {
         // Navigate right within columns
         if (_focusedColumn == 0 && _canMutatePlaylist) {
           // Go to remove button (column 2)

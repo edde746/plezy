@@ -1551,7 +1551,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             if (key.isUpKey) {
               return KeyEventResult.handled; // consume — nothing above
             }
-            if (key.isLeftKey || key.isRightKey) {
+            if (key.isInlineStart(context) || key.isInlineEnd(context)) {
               return KeyEventResult.handled; // consume — single chip, nothing beside it (#1181)
             }
             return KeyEventResult.ignored;
@@ -2763,7 +2763,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               );
             }
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: MediaContextMenu(
                 key: contextMenuKey,
                 item: season,
@@ -2867,7 +2867,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!event.isActionable) return KeyEventResult.ignored;
 
     // LEFT: previous extra
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (_focusedExtraIndex > 0) {
         _focusedExtraIndex--;
         _focusedExtraIndexNotifier.value = _focusedExtraIndex;
@@ -2882,7 +2882,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     // RIGHT: next extra
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (_focusedExtraIndex < _extras!.length - 1) {
         _focusedExtraIndex++;
         _focusedExtraIndexNotifier.value = _focusedExtraIndex;
@@ -2977,7 +2977,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    if (key.isDownKey || key.isLeftKey || key.isRightKey || key.isSelectKey) {
+    if (key.isDownKey || key.isInlineStart(context) || key.isInlineEnd(context) || key.isSelectKey) {
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -5114,7 +5114,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   final cardKey = _extraCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
 
                   return Padding(
-                    padding: const EdgeInsets.only(right: 4),
+                    padding: const EdgeInsetsDirectional.only(end: 4),
                     child: FocusBuilders.buildLockedFocusWrapper(
                       context: context,
                       isFocused: isFocused,

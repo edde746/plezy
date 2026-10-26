@@ -61,13 +61,18 @@ final class _LibraryItemRow extends _LibraryNavRow {
 }
 
 /// SELECT activates the rail row, RIGHT hands off to the content area.
-KeyEventResult _handleRailItemKey(KeyEvent event, {required VoidCallback onSelect, VoidCallback? onNavigateRight}) {
+KeyEventResult _handleRailItemKey(
+  BuildContext context,
+  KeyEvent event, {
+  required VoidCallback onSelect,
+  VoidCallback? onNavigateRight,
+}) {
   if (event is! KeyDownEvent) return KeyEventResult.ignored;
   if (event.logicalKey.isSelectKey) {
     onSelect();
     return KeyEventResult.handled;
   }
-  if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
+  if (event.logicalKey.isInlineEnd(context) && onNavigateRight != null) {
     onNavigateRight();
     return KeyEventResult.handled;
   }
@@ -272,7 +277,7 @@ class NavigationRailItem extends StatelessWidget {
   Widget _buildExpandedLayout(BuildContext context, MonoTokens t, {required bool focused, required bool fixedHeight}) {
     return Container(
       constraints: fixedHeight ? null : BoxConstraints(minHeight: expandedHeight),
-      alignment: .centerLeft,
+      alignment: AlignmentDirectional.centerStart,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: fixedHeight ? 0 : 8),
       decoration: BoxDecoration(
         color: _indicatorColor(t, focused: focused, expansion: 1),
@@ -308,8 +313,8 @@ class NavigationRailItem extends StatelessWidget {
       height: lerpDouble(collapsedHeight, expandedHeight, expansion),
       child: Stack(
         children: [
-          Positioned(
-            left: indicatorLeft,
+          PositionedDirectional(
+            start: indicatorLeft,
             top: indicatorTop,
             child: Container(
               width: lerpDouble(collapsedPillWidth, expandedContentWidth, expansion),
@@ -320,8 +325,8 @@ class NavigationRailItem extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: 0,
+          PositionedDirectional(
+            start: 0,
             top: 0,
             child: SizedBox(
               width: expandedContentWidth,
@@ -332,8 +337,8 @@ class NavigationRailItem extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: iconLeft,
+          PositionedDirectional(
+            start: iconLeft,
             top: iconTop,
             child: SizedBox(
               width: iconSize,
@@ -369,7 +374,8 @@ class NavigationRailItem extends StatelessWidget {
         return Focus(
           focusNode: focusNode,
           autofocus: autofocus,
-          onKeyEvent: (node, event) => _handleRailItemKey(event, onSelect: onTap, onNavigateRight: onNavigateRight),
+          onKeyEvent: (node, event) =>
+              _handleRailItemKey(context, event, onSelect: onTap, onNavigateRight: onNavigateRight),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -377,7 +383,7 @@ class NavigationRailItem extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
               child: UnconstrainedBox(
-                alignment: .centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 constrainedAxis: Axis.vertical,
                 clipBehavior: Clip.hardEdge,
                 child: content,
@@ -1005,8 +1011,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                             // instead of pushing it.
                             borderRadius: isCollapsed
                                 ? BorderRadius.zero
-                                : BorderRadius.horizontal(
-                                    right: Radius.circular(_isFloatingPanel ? overlayCornerRadius : t.radiusLg),
+                                : BorderRadiusDirectional.horizontal(
+                                    end: Radius.circular(_isFloatingPanel ? overlayCornerRadius : t.radiusLg),
                                   ),
                             boxShadow: _isFloatingPanel
                                 ? [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 24)]
@@ -1503,7 +1509,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       builder: (context, _) => Focus(
         focusNode: focusNode,
         onKeyEvent: (node, event) =>
-            _handleRailItemKey(event, onSelect: onToggle, onNavigateRight: widget.onNavigateToContent),
+            _handleRailItemKey(context, event, onSelect: onToggle, onNavigateRight: widget.onNavigateToContent),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -1519,7 +1525,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               ),
               clipBehavior: Clip.hardEdge,
               child: UnconstrainedBox(
-                alignment: .centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 constrainedAxis: Axis.vertical,
                 clipBehavior: Clip.hardEdge,
                 child: SizedBox(

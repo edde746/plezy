@@ -2,6 +2,8 @@
 /// the attributed source name every backend mapper normalizes to.
 library;
 
+import 'package:plezy/i18n/presentation_formats.dart';
+
 import '../i18n/strings.g.dart';
 import '../models/catalog/catalog_item.dart';
 import '../widgets/catalog_source_logo.dart';
@@ -33,7 +35,7 @@ class RatingInfo {
 /// Returns null for keys with no brand badge (`critic`, `audience`); those
 /// stay labelled with their source name.
 RatingInfo? ratingInfoForSource(String source, double value) => switch (source) {
-  'imdb' => RatingInfo(_imdbAsset, value.toStringAsFixed(1), _imdbAspect),
+  'imdb' => RatingInfo(_imdbAsset, formatDecimal(value, minimumDecimals: 1, maximumDecimals: 1), _imdbAspect),
   'tmdb' => RatingInfo(_tmdbAsset, _percent(value), _tmdbAspect),
   'rottenTomatoes' || 'rottenTomatoesCritic' =>
     value >= _rottenTomatoesFresh
@@ -43,12 +45,28 @@ RatingInfo? ratingInfoForSource(String source, double value) => switch (source) 
     value >= _rottenTomatoesFresh
         ? RatingInfo(_rtUprightAsset, _percent(value), _rtUprightAspect)
         : RatingInfo(_rtSpilledAsset, _percent(value), _rtSpilledAspect),
-  'metacritic' => RatingInfo(_metacriticAsset, (value * 10).toStringAsFixed(0), _metacriticAspect),
-  'letterboxd' => RatingInfo(_letterboxdAsset, (value / 2).toStringAsFixed(1), _letterboxdAspect),
+  'metacritic' => RatingInfo(
+    _metacriticAsset,
+    formatDecimal((value * 10), minimumDecimals: 0, maximumDecimals: 0),
+    _metacriticAspect,
+  ),
+  'letterboxd' => RatingInfo(
+    _letterboxdAsset,
+    formatDecimal((value / 2), minimumDecimals: 1, maximumDecimals: 1),
+    _letterboxdAspect,
+  ),
   // The trackers' marks are their service logos, square viewBoxes.
   'trakt' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.trakt), _percent(value), 1),
-  'simkl' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.simkl), value.toStringAsFixed(1), 1),
-  'mal' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.mal), value.toStringAsFixed(2), 1),
+  'simkl' => RatingInfo(
+    catalogSourceLogoAsset(CatalogSourceId.simkl),
+    formatDecimal(value, minimumDecimals: 1, maximumDecimals: 1),
+    1,
+  ),
+  'mal' => RatingInfo(
+    catalogSourceLogoAsset(CatalogSourceId.mal),
+    formatDecimal(value, minimumDecimals: 2, maximumDecimals: 2),
+    1,
+  ),
   'anilist' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.anilist), _percent(value), 1),
   _ => null,
 };
@@ -98,4 +116,4 @@ const double _letterboxdAspect = 262 / 97;
 /// Ratings are normalized to a 0-10 scale; Rotten Tomatoes is a percentage.
 const double _rottenTomatoesFresh = 6.0;
 
-String _percent(double value) => '${(value * 10).toStringAsFixed(0)}%';
+String _percent(double value) => formatPercent(value / 10);

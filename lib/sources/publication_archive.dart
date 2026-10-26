@@ -284,8 +284,12 @@ class PublicationServer {
           charset: 'utf-8',
         );
         if (request.method != 'HEAD') response.write(value);
-      } else if (route == 'material-symbols.ttf') {
-        final font = await rootBundle.load('packages/material_symbols_icons/lib/fonts/MaterialSymbolsRounded.ttf');
+      } else if (route == 'material-symbols.ttf' || route == 'reader-ui.ttf' || route == 'reader-hangul.ttf') {
+        final font = await rootBundle.load(switch (route) {
+          'reader-ui.ttf' => 'assets/go-noto-current-regular.ttf',
+          'reader-hangul.ttf' => 'assets/go-noto-kurrent-hangul.ttf',
+          _ => 'packages/material_symbols_icons/lib/fonts/MaterialSymbolsRounded.ttf',
+        });
         response.headers.contentType = ContentType('font', 'ttf');
         response.contentLength = font.lengthInBytes;
         if (request.method != 'HEAD') response.add(font.buffer.asUint8List(font.offsetInBytes, font.lengthInBytes));

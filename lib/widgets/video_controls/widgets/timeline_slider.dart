@@ -421,14 +421,19 @@ class _TimelineSliderState extends State<TimelineSlider> {
                             : Size.zero,
                       ),
                     ),
-                    child: Slider(
-                      value: displayValue,
-                      min: 0.0,
-                      max: max,
-                      onChanged: _noopSliderChanged,
-                      activeColor: widget.showProgress ? Colors.white : Colors.transparent,
-                      thumbColor: widget.bufferedProgressColor ?? (widget.showProgress ? null : Colors.white),
-                      inactiveColor: Colors.transparent,
+                    // Time and chapter geometry run from left to right, as do
+                    // the physical scrub and seek controls in every locale.
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Slider(
+                        value: displayValue,
+                        min: 0.0,
+                        max: max,
+                        onChanged: _noopSliderChanged,
+                        activeColor: widget.showProgress ? Colors.white : Colors.transparent,
+                        thumbColor: widget.bufferedProgressColor ?? (widget.showProgress ? null : Colors.white),
+                        inactiveColor: Colors.transparent,
+                      ),
                     ),
                   ),
                 ),

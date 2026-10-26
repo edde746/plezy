@@ -219,7 +219,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                           child: Align(
                             alignment: .centerRight,
                             child: Container(
-                              margin: const EdgeInsets.only(right: 2),
+                              margin: const EdgeInsetsDirectional.only(end: 2),
                               width: _handleWidth,
                               height: _handleHeight,
                               decoration: BoxDecoration(

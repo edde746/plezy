@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'dart:async';
 import '../../../media/ids.dart';
 
@@ -13,7 +14,6 @@ import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/focus_theme.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/back_press.dart';
-import '../../../i18n/app_locale_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
@@ -1300,7 +1300,7 @@ class GuideTabState extends State<GuideTab>
     // Calendar arithmetic: across a DST change a day is 23 or 25 hours.
     if (target == DateTime(today.year, today.month, today.day + 1)) return t.liveTv.tomorrow;
 
-    return DateFormat('EEEE', LocaleSettings.currentLocale.intlLocaleName).format(target);
+    return DateFormat('EEEE', LocalePreferences.formattingLocaleName).format(target);
   }
 
   List<(String, int)> get _timeSlots => [

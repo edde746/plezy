@@ -138,7 +138,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
             if (visibleSuggestions.isNotEmpty) ...[
               const SizedBox(height: 12),
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 120),
                   child: SingleChildScrollView(

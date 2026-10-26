@@ -90,7 +90,7 @@ FocusOnKeyEventCallback dpadKeyHandler({
   VoidCallback? onSelect,
   bool trapHorizontalEdges = false,
 }) {
-  return (FocusNode _, KeyEvent event) {
+  return (FocusNode node, KeyEvent event) {
     // Select: one-shot activation (no repeat), must run before isActionable
     // filter so KeyUpEvent is also consumed.
     if (onSelect != null) {
@@ -109,14 +109,14 @@ FocusOnKeyEventCallback dpadKeyHandler({
       onDown();
       return KeyEventResult.handled;
     }
-    if (key.isLeftKey) {
+    if (node.context == null ? key.isLeftKey : key.isInlineStart(node.context!)) {
       if (onLeft != null) {
         onLeft();
         return KeyEventResult.handled;
       }
       if (trapHorizontalEdges) return KeyEventResult.handled;
     }
-    if (key.isRightKey) {
+    if (node.context == null ? key.isRightKey : key.isInlineEnd(node.context!)) {
       if (onRight != null) {
         onRight();
         return KeyEventResult.handled;

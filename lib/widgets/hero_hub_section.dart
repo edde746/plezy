@@ -1,3 +1,4 @@
+import '../i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -320,7 +321,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (_playButtonFocused) setState(() => _playButtonFocused = false);
       // Never wraps on TV: the first card hands Left to the sidebar so it
       // stays reachable from a hero row.
@@ -331,7 +332,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
       }
       return KeyEventResult.handled;
     }
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (_playButtonFocused) setState(() => _playButtonFocused = false);
       final atEnd = _currentIndex.value >= _items.length - 1;
       if (!atEnd || SettingsService.instance.read(SettingsService.tvHeroWrapAround)) {
@@ -498,9 +499,9 @@ class HeroHubSectionState extends State<HeroHubSection> {
               // Row name — multiple hero rows can be on screen at once, so
               // unlike the old single-hero-slot version there's otherwise no
               // way to tell which configured row a given card is showing.
-              Positioned(
+              PositionedDirectional(
                 top: MediaQuery.paddingOf(context).top + (isTv ? 20.0 : 16),
-                left: isTv ? 20.0 : 16,
+                start: isTv ? 20.0 : 16,
                 child: IgnorePointer(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -543,10 +544,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
                 ),
               // Nothing to page or pause with a single item.
               if (showPointerControls && _items.length > 1)
-                Positioned(
+                PositionedDirectional(
                   bottom: 16,
-                  left: widget.hub.heroAutoSlide ? -26 : 0,
-                  right: 0,
+                  start: widget.hub.heroAutoSlide ? -26 : 0,
+                  end: 0,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -592,7 +593,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                                             borderRadius: BorderRadius.circular(dotSize / 2),
                                           ),
                                           child: Align(
-                                            alignment: Alignment.centerLeft,
+                                            alignment: AlignmentDirectional.centerStart,
                                             child: Container(
                                               width: fillWidth,
                                               height: dotSize,
@@ -711,10 +712,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
             children: [
               // Backdrop art.
               if (widget.showBackdrop && heroArtPaths.isNotEmpty)
-                Positioned(
+                PositionedDirectional(
                   top: 0,
-                  left: 0,
-                  right: 0,
+                  start: 0,
+                  end: 0,
                   height: isTv ? artHeight : null,
                   bottom: isTv ? null : 0,
                   child: TweenAnimationBuilder<double>(
@@ -758,10 +759,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
                   ),
                 )
               else
-                Positioned(
+                PositionedDirectional(
                   top: 0,
-                  left: 0,
-                  right: 0,
+                  start: 0,
+                  end: 0,
                   height: isTv ? artHeight : null,
                   bottom: isTv ? null : 0,
                   child: ColoredBox(color: colorScheme.surfaceContainerHighest),
@@ -814,10 +815,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
       fit: StackFit.expand,
       clipBehavior: Clip.none,
       children: [
-        Positioned(
+        PositionedDirectional(
           top: 0,
-          left: 0,
-          right: 0,
+          start: 0,
+          end: 0,
           bottom: -4,
           child: IgnorePointer(
             child: Builder(
@@ -837,14 +838,14 @@ class HeroHubSectionState extends State<HeroHubSection> {
             ),
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           bottom: isTv
               ? 88
               : isLargeScreen
               ? 80
               : 50,
-          left: 0,
-          right: isTv
+          start: 0,
+          end: isTv
               ? screenWidth * 0.36
               : isLargeScreen
               ? 200
@@ -858,7 +859,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                   : 24,
             ),
             child: Align(
-              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+              alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity),
                 child: Column(
@@ -877,12 +878,14 @@ class HeroHubSectionState extends State<HeroHubSection> {
                             logoWidth: heroLogoWidth,
                             available: isTv ? TvLayoutConstants.heroContentMaxWidth : screenWidth,
                           ),
-                          alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                          alignment: alignLeft
+                              ? AlignmentDirectional.bottomStart.resolve(Directionality.of(context))
+                              : Alignment.bottomCenter,
                           fallbackBuilder: (context) => FittingTitleText(
                             showName,
                             style: heroTitleStyle,
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                            textAlign: alignLeft ? TextAlign.start : TextAlign.center,
+                            alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                           ),
                         ),
                       ),
@@ -896,7 +899,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                           fontSize: isTv ? 18 : 14,
                           fontWeight: FontWeight.w600,
                         ),
-                        textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                        textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                       ),
                     ],
                     if (!alignLeft) ...[const SizedBox(height: 20), _buildPlayButton(context, heroItem)],
@@ -906,7 +909,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                         heroItem.summary!,
                         maxLines: isTv ? 3 : 2,
                         overflow: TextOverflow.ellipsis,
-                        textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                        textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                         style: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: isTv ? 18 : 14,
@@ -965,7 +968,9 @@ class HeroHubSectionState extends State<HeroHubSection> {
                     AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
                     const SizedBox(width: 8),
                     Text(
-                      hasProgress ? '$minutesLeft min left' : t.common.play,
+                      hasProgress
+                          ? t.discover.minutesLeft(minutes: formatDecimal(minutesLeft, maximumDecimals: 0))
+                          : t.common.play,
                       style: TextStyle(color: foregroundColor, fontWeight: FontWeight.bold, fontSize: isTv ? 18 : 14),
                     ),
                   ],

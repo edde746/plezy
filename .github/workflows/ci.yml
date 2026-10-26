@@ -74,7 +74,11 @@ jobs:
         run: scripts/codegen.sh --check
 
       - name: Verify translation hygiene
-        run: python3 scripts/checks/clean_translations.py --check --strict
+        run: |
+          python3 scripts/checks/clean_translations.py --check --strict
+          python3 scripts/checks/check_localizations.py
+          python3 scripts/codegen/generate_localized_quantities.py --check
+          python3 scripts/codegen/generate_platform_locales.py --check
 
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh

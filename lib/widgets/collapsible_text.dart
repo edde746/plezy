@@ -157,7 +157,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
   Widget _buildBadge(BuildContext context) {
     final isSmall = widget.small;
     return Container(
-      margin: const EdgeInsets.only(left: 6),
+      margin: const EdgeInsetsDirectional.only(start: 6),
       padding: .symmetric(horizontal: isSmall ? 6 : 8, vertical: isSmall ? 0 : 2),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),

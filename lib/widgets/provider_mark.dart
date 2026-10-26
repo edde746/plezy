@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../i18n/strings.g.dart';
 import '../sources/source_models.dart';
 import 'app_icon.dart';
 
@@ -35,7 +36,7 @@ class FileSourceMark extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) => switch (kind) {
-    FileSourceKind.googleDrive => ProviderMark('google_drive.png', size: size, label: 'Google Drive'),
+    FileSourceKind.googleDrive => ProviderMark('google_drive.png', size: size, label: t.fileSources.googleDrive),
     FileSourceKind.oneDrive => ProviderMark('onedrive.svg', size: size, label: 'OneDrive'),
     FileSourceKind.dropbox => ProviderMark('dropbox.png', size: size, label: 'Dropbox'),
     FileSourceKind.local => AppIcon(Symbols.folder_open_rounded, size: size),

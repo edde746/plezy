@@ -668,7 +668,7 @@ void main() {
     final surface = _railSurfaceOpacity(tester).child! as AnimatedContainer;
     final surfaceDecoration = surface.decoration! as BoxDecoration;
     expect(
-      surfaceDecoration.borderRadius,
+      surfaceDecoration.borderRadius!.resolve(TextDirection.ltr),
       const BorderRadius.horizontal(right: Radius.circular(SideNavigationRailState.overlayCornerRadius)),
     );
     expect(surfaceDecoration.boxShadow, isNotEmpty);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../focus/focusable_slider.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_page.dart';
@@ -32,7 +33,7 @@ class AccessibilitySettingsScreen extends StatelessWidget {
                     max: 2,
                     divisions: 10,
                     semanticLabel: t.accessibility.textSize,
-                    semanticFormatterCallback: (v) => '${(v * 100).round()}%',
+                    semanticFormatterCallback: formatPercent,
                     onChanged: (v) => SettingsService.instance.write(SettingsService.accessibilityTextScale, v),
                   ),
                   Text(t.accessibility.preview),

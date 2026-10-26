@@ -75,7 +75,7 @@ class BottomSheetHeader extends StatelessWidget {
         width: 24,
         height: kMinInteractiveDimension,
         child: Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: ExcludeSemantics(child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor)),
         ),
       );

@@ -105,7 +105,7 @@ class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapM
                       child: Container(
                         color: Colors.transparent,
                         height: 90,
-                        padding: const EdgeInsets.only(right: 4),
+                        padding: const EdgeInsetsDirectional.only(end: 4),
                         alignment: .center,
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(2, 8, 6, 8),

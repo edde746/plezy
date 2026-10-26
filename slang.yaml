@@ -2,5 +2,7 @@ input_directory: lib/i18n
 input_file_pattern: .i18n.json
 output_directory: lib/i18n
 timestamp: false
+imports:
+  - 'package:plezy/i18n/locale_preferences.dart'
 # Use English for missing keys and empty translation placeholders.
 fallback_strategy: base_locale_empty_string

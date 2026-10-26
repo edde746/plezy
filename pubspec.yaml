@@ -219,6 +219,8 @@ flutter:
     - assets/licenses/AMSMB2_NOTICE.txt
     - assets/licenses/AMSMB2_MIT_LICENSE.txt
     - assets/licenses/libsmb2-LGPL-2.1.txt
+    - assets/licenses/Unicode.txt
+    - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg

@@ -635,11 +635,11 @@ class _RatingRow extends StatelessWidget {
         onKeyEvent: (_, event) {
           if (!enabled || !event.isActionable) return KeyEventResult.ignored;
           final key = event.logicalKey;
-          if (key.isLeftKey) {
+          if (key.isInlineStart(context)) {
             onDecrease();
             return KeyEventResult.handled;
           }
-          if (key.isRightKey) {
+          if (key.isInlineEnd(context)) {
             onIncrease();
             return KeyEventResult.handled;
           }

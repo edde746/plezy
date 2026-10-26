@@ -58,7 +58,22 @@ void main() {
   });
 }
 
-Map<String, dynamic> _decodeLocale(File file) => jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+Map<String, dynamic> _decodeLocale(File file) {
+  final value = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+  final catalog = jsonDecode(File('lib/i18n/locale_catalog.json').readAsStringSync()) as Map<String, dynamic>;
+  final tag = file.uri.pathSegments.last.replaceFirst('.i18n.json', '');
+  final parent = (catalog['regionalParents'] as Map<String, dynamic>)[tag] as String?;
+  if (parent == null) return value;
+  return _merge(_decodeLocale(File('lib/i18n/$parent.i18n.json')), value);
+}
+
+Map<String, dynamic> _merge(Map<String, dynamic> base, Map<String, dynamic> overrides) => {
+  ...base,
+  for (final entry in overrides.entries)
+    entry.key: entry.value is Map<String, dynamic> && base[entry.key] is Map<String, dynamic>
+        ? _merge(base[entry.key] as Map<String, dynamic>, entry.value as Map<String, dynamic>)
+        : entry.value,
+};
 
 Map<String, dynamic> _backgroundWarning(Map<String, dynamic> locale) =>
     (locale['downloads'] as Map<String, dynamic>)['backgroundWarning'] as Map<String, dynamic>;

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_slider.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/formatters.dart';
 import '../../mpv/mpv.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../sources/source_models.dart';
@@ -124,28 +125,32 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     mainAxisSize: MainAxisSize.min,
     children: [
       if (s.opening) const LinearProgressIndicator(),
-      FocusableSlider(
-        value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
-          s.timelineStartMs.toDouble(),
-          s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: FocusableSlider(
+          value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
+            s.timelineStartMs.toDouble(),
+            s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+          ),
+          min: s.timelineStartMs.toDouble(),
+          max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+          semanticLabel: t.fileSources.timePosition,
+          semanticFormatterCallback: (v) => formatDurationTextual(v.round(), abbreviated: false),
+          onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
+          onChangeEnd: s.timelineEndMs > s.timelineStartMs
+              ? (v) {
+                  setState(() => _dragPosition = null);
+                  unawaited(sourceAction(context, () => s.seek(v.round())));
+                }
+              : null,
         ),
-        min: s.timelineStartMs.toDouble(),
-        max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
-        semanticLabel: t.fileSources.timePosition,
-        semanticFormatterCallback: (v) => sourceTime(v.round()),
-        onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
-        onChangeEnd: s.timelineEndMs > s.timelineStartMs
-            ? (v) {
-                setState(() => _dragPosition = null);
-                unawaited(sourceAction(context, () => s.seek(v.round())));
-              }
-            : null,
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: SizedBox(
           width: double.infinity,
           child: Wrap(
+            textDirection: TextDirection.ltr,
             alignment: WrapAlignment.spaceBetween,
             spacing: 24,
             runSpacing: 8,
@@ -221,7 +226,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             entriesBuilder: (_) => [
               AppMenuItem(value: -1, label: t.audiobook.customSpeed),
               for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0])
-                AppMenuItem(value: rate, label: '$rate×', selected: rate == s.speed),
+                AppMenuItem(value: rate, label: formatPlaybackRate(rate), selected: rate == s.speed),
             ],
             onSelected: (rate) => sourceAction(context, () async {
               if (rate != -1) {
@@ -238,7 +243,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             }),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text('${s.speed}×', style: Theme.of(context).textTheme.labelLarge),
+              child: Text(formatPlaybackRate(s.speed), style: Theme.of(context).textTheme.labelLarge),
             ),
           ),
           AppMenuButton<int>(

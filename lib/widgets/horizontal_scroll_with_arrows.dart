@@ -121,9 +121,9 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     required VoidCallback onPressed,
     required bool canScroll,
   }) {
-    return Positioned(
-      left: position < 0 ? null : position,
-      right: position < 0 ? -position : null,
+    return PositionedDirectional(
+      start: position < 0 ? null : position,
+      end: position < 0 ? -position : null,
       top: 0,
       bottom: 0,
       child: Center(

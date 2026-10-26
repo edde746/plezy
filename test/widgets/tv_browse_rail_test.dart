@@ -409,6 +409,55 @@ void main() {
     await SettingsService.getInstance();
   });
 
+  testWidgets('RTL card order and leftward next navigation agree', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final manager = MultiServerManager();
+    final items = [
+      testMediaItem(id: 'rtl_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'First Movie'),
+      testMediaItem(id: 'rtl_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Second Movie'),
+    ];
+    final hub = MediaHub(id: 'rtl', title: 'Movies', type: 'movie', items: items, size: 2);
+    String? selected;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => testMultiServerProvider(manager),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            builder: (_, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                  onFocusedItemChanged: (item) => selected = item.id,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final cards = find.byType(MediaCard);
+    expect(cards, findsNWidgets(2));
+    expect(tester.getCenter(cards.at(0)).dx, greaterThan(tester.getCenter(cards.at(1)).dx));
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(selected, 'rtl_2');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(selected, 'rtl_1');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('semantic selection proxy stays fixed while animated rail selection changes', (tester) async {
     final semantics = tester.ensureSemantics();
     tester.view.devicePixelRatio = 1;
@@ -967,7 +1016,7 @@ void main() {
     // The border is drawn inside MediaCard around the poster only (#1278);
     // the title/year captions render below it, outside the focus rect.
     final focusDecoration = find.descendant(
-      of: find.ancestor(of: find.text('Visible Movie'), matching: find.byType(MediaCard)),
+      of: find.ancestor(of: find.textContaining('Visible Movie'), matching: find.byType(MediaCard)),
       matching: find.byWidgetPredicate((widget) {
         if (widget is! AnimatedContainer || widget.foregroundDecoration is! BoxDecoration) return false;
         return (widget.foregroundDecoration as BoxDecoration).border is Border;
@@ -978,7 +1027,7 @@ void main() {
     expect(find.text('2024'), findsOneWidget);
 
     final focusRect = tester.getRect(focusDecoration);
-    final titleRect = tester.getRect(find.text('Visible Movie'));
+    final titleRect = tester.getRect(find.textContaining('Visible Movie'));
     final subtitleRect = tester.getRect(find.text('2024'));
     expect(focusRect.bottom, lessThanOrEqualTo(titleRect.top));
     expect(focusRect.bottom, lessThanOrEqualTo(subtitleRect.top));
@@ -2395,8 +2444,8 @@ void main() {
     expect(railRect.height, allOf(greaterThan(0), lessThan(stackRect.height)));
     expect(railRect.bottom, stackRect.bottom);
     expect(railRect.width, stackRect.width);
-    expect(find.text('Movie'), findsOneWidget);
-    expect(tester.getRect(find.text('Movie')).bottom, lessThanOrEqualTo(railRect.bottom));
+    expect(find.textContaining('Movie'), findsOneWidget);
+    expect(tester.getRect(find.textContaining('Movie')).bottom, lessThanOrEqualTo(railRect.bottom));
   });
 
   testWidgets('background gradient stays full bleed beside pushed foreground', (tester) async {

@@ -1,0 +1,5 @@
+// Generated from lib/i18n; edit the source catalog.
+"NSLocalNetworkUsageDescription" = "يتصل PlezyNG بخوادم الوسائط وأجهزة التشغيل على شبكتك المحلية.";
+"NSLocationWhenInUseUsageDescription" = "يستخدم PlezyNG إذن الموقع عندما يتطلبه iOS للتعرف على شبكتك المحلية والاتصال بخوادم الوسائط.";
+"NSPhotoLibraryUsageDescription" = "اختر صورًا من مكتبة الصور لاستخدامها كصور للوسائط.";
+"NSCameraUsageDescription" = "امسح رموز QR لإقران جهاز تحكم مرافق.";

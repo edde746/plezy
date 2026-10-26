@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../utils/platform_detector.dart';
 import '../utils/text_measure_cache.dart';
 
-typedef _FitKey = (String, TextStyle, int, double, double, double, TextScaler, TextDirection);
+typedef _FitKey = (String, TextStyle, int, double, double, double, TextScaler, TextDirection, Locale?);
 
 /// Fitted font sizes per (text, style, maxLines, box, minFontSize, scaler,
 /// direction); see [FittingTitleText._fitFontSize]. Bounded and
@@ -35,7 +35,7 @@ class FittingTitleText extends StatelessWidget {
     this.maxLines = 2,
     this.overflow = TextOverflow.ellipsis,
     this.textAlign,
-    this.alignment = Alignment.centerLeft,
+    this.alignment = AlignmentDirectional.centerStart,
     this.minFontSize = 1,
   });
 
@@ -63,6 +63,7 @@ class FittingTitleText extends StatelessWidget {
               maxHeight: constraints.maxHeight,
               textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
               textScaler: MediaQuery.textScalerOf(context),
+              locale: Localizations.maybeLocaleOf(context),
             ),
           );
         }
@@ -101,6 +102,7 @@ class FittingTitleText extends StatelessWidget {
     required double maxHeight,
     required TextDirection textDirection,
     required TextScaler textScaler,
+    required Locale? locale,
   }) {
     final baseFontSize = style.fontSize ?? 14;
     if (baseFontSize <= minFontSize) return baseFontSize;
@@ -110,10 +112,11 @@ class FittingTitleText extends StatelessWidget {
       style: style,
       textScaler: textScaler,
       textDirection: textDirection,
+      locale: locale,
     );
     if (singleLine.width <= maxWidth + 0.1 && singleLine.height <= maxHeight + 0.1) return baseFontSize;
 
-    final key = (text, style, maxLines, maxWidth, maxHeight, minFontSize, textScaler, textDirection);
+    final key = (text, style, maxLines, maxWidth, maxHeight, minFontSize, textScaler, textDirection, locale);
     final cached = _fittedSizes[key];
     if (cached != null) return cached;
 
@@ -125,6 +128,7 @@ class FittingTitleText extends StatelessWidget {
       maxWidth: maxWidth,
       maxHeight: maxHeight,
       textDirection: textDirection,
+      locale: locale,
       textScaler: textScaler,
     );
     if (_fittedSizes.length >= _maxFittedEntries) _fittedSizes.remove(_fittedSizes.keys.first);
@@ -141,11 +145,13 @@ class FittingTitleText extends StatelessWidget {
     required double maxHeight,
     required TextDirection textDirection,
     required TextScaler textScaler,
+    required Locale? locale,
   }) {
     final painter = TextPainter(
       maxLines: maxLines,
       ellipsis: overflow == TextOverflow.ellipsis ? '\u2026' : null,
       textDirection: textDirection,
+      locale: locale,
       textScaler: textScaler,
       textAlign: textAlign ?? TextAlign.start,
     );

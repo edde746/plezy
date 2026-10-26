@@ -127,7 +127,7 @@ void main() {
     expect(find.bySemanticsLabel(t.fileSources.timePosition), findsOneWidget);
     final timeline = tester.getSemantics(find.byType(Slider)).getSemanticsData();
     expect(timeline.label, t.fileSources.timePosition);
-    expect(timeline.value, '1:00:00');
+    expect(timeline.value, '1 hour');
     expect(timeline.hasAction(SemanticsAction.increase), isTrue);
     expect(timeline.hasAction(SemanticsAction.decrease), isTrue);
 
