@@ -759,6 +759,7 @@ class NfsSourceAdapter extends SourceAdapter {
     }
     final elapsed = DateTime.now().difference(started);
     final seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    if (bytes != content.length) throw const SourceException(SourceFailure.invalidData);
     if (bytes == 0 || seconds <= 0) throw const SourceException(SourceFailure.unavailable);
     return (
       bytes: bytes,
