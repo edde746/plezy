@@ -218,13 +218,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         ],
       ),
     );
-    if (save != true || !mounted) return;
     final value = sharedId.text.trim();
+    sharedId.dispose();
+    if (save != true || !mounted) return;
     await sourceAction(
       context,
       () => controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value),
     );
-    sharedId.dispose();
   }
 
   Future<String?> _metadataSearchQuery() async {
