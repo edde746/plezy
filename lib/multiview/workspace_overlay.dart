@@ -239,6 +239,29 @@ class _WorkspaceWindow extends StatefulWidget {
 class _WorkspaceWindowState extends State<_WorkspaceWindow> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'multiview_window');
   Offset _lastLongPressOffset = Offset.zero;
+  bool _wasSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _WorkspaceWindow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.registration.descriptor.id;
+    final nextId = widget.registration.descriptor.id;
+    if (oldWidget.controller != widget.controller || oldId != nextId) {
+      oldWidget.controller.setSurfaceInputFocus(oldId, false);
+      _wasSelected = false;
+      _onFocusChanged();
+    }
+  }
+
+  void _onFocusChanged() {
+    widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, _focusNode.hasFocus);
+  }
 
   bool get _supportsDirectLongPressMove => switch (widget.registration.descriptor.kind) {
     MultiviewMediaKind.video ||
@@ -250,6 +273,8 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
 
   @override
   void dispose() {
+    widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, false);
+    _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     super.dispose();
   }
@@ -301,10 +326,15 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
     final moving = controller.positioningSessionId == id;
     final borderColor = selected ? tk.accent : tk.outline;
     final radius = widget.fullscreen ? 0.0 : tk.radiusLg;
-    if (selected && !_focusNode.hasFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && selected && !_focusNode.hasFocus) _focusNode.requestFocus();
-      });
+    if (selected != _wasSelected) {
+      _wasSelected = selected;
+      if (selected) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.controller.focusedSessionId == id && !_focusNode.hasFocus) {
+            _focusNode.requestFocus();
+          }
+        });
+      }
     }
 
     return Focus(
@@ -353,49 +383,53 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
             controller.resizeByPixels(id, const Offset(20, 12), widget.viewport, paneSize: widget.paneSize),
         onDecrease: () =>
             controller.resizeByPixels(id, const Offset(-20, -12), widget.viewport, paneSize: widget.paneSize),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tk.surface,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
-            boxShadow: widget.floating
-                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.38), blurRadius: 26, offset: const Offset(0, 12))]
-                : null,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius > 0 ? radius - 1 : 0),
-            child: Column(
-              children: [
-                _WorkspaceTitleBar(
-                  controller: controller,
-                  registration: registration,
-                  viewport: widget.viewport,
-                  floating: widget.floating,
-                  paneSize: widget.paneSize,
-                  fullscreen: widget.fullscreen,
-                  moving: moving,
-                  onMoveToggle: () {
-                    if (controller.positioningSessionId == id) {
-                      controller.finishPositioning();
-                    } else if (controller.beginPositioning(id)) {
-                      _focusNode.requestFocus();
-                    }
-                  },
-                ),
-                Expanded(
-                  child: SizedBox.expand(
-                    child: Listener(
-                      onPointerDown: (_) => controller.focus(id),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            controller.focus(id);
+            if (!_focusNode.hasFocus) _focusNode.requestFocus();
+          },
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: tk.surface,
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
+              boxShadow: widget.floating
+                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.38), blurRadius: 26, offset: const Offset(0, 12))]
+                  : null,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius > 0 ? radius - 1 : 0),
+              child: Column(
+                children: [
+                  _WorkspaceTitleBar(
+                    controller: controller,
+                    registration: registration,
+                    viewport: widget.viewport,
+                    floating: widget.floating,
+                    paneSize: widget.paneSize,
+                    fullscreen: widget.fullscreen,
+                    moving: moving,
+                    onMoveToggle: () {
+                      if (controller.positioningSessionId == id) {
+                        controller.finishPositioning();
+                      } else if (controller.beginPositioning(id)) {
+                        _focusNode.requestFocus();
+                      }
+                    },
+                  ),
+                  Expanded(
+                    child: SizedBox.expand(
                       child: _buildSurfaceWithMoveGestures(context, id, registration),
                     ),
                   ),
-                ),
-                if (widget.floating && !widget.fullscreen)
-                  _ResizeHandle(
-                    onResize: (delta) =>
-                        controller.resizeByPixels(id, delta, widget.viewport, paneSize: widget.paneSize),
-                  ),
-              ],
+                  if (widget.floating && !widget.fullscreen)
+                    _ResizeHandle(
+                      onResize: (delta) =>
+                          controller.resizeByPixels(id, delta, widget.viewport, paneSize: widget.paneSize),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

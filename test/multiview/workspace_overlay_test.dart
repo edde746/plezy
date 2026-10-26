@@ -10,16 +10,20 @@ WorkspaceSurfaceRegistration _registration({
   required String id,
   required String title,
   required MultiviewMediaKind kind,
+  bool acceptsInput = false,
+  WorkspaceOwnershipHandler? onInputOwnershipChanged,
 }) => WorkspaceSurfaceRegistration(
   descriptor: WorkspaceSessionDescriptor(
     id: id,
     kind: kind,
     title: title,
     hasVideo: kind == MultiviewMediaKind.video,
+    acceptsInput: acceptsInput,
     openedAt: DateTime.utc(2026, 1, 1),
   ),
   buildSurface: (_) => const ColoredBox(key: ValueKey('workspace_surface'), color: Colors.black),
   onRestore: () {},
+  onInputOwnershipChanged: onInputOwnershipChanged ?? (acceptsInput ? (_) {} : null),
 );
 
 Future<void> _mount(WidgetTester tester, MultiviewWorkspaceController controller) async {
@@ -102,6 +106,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.fullscreenSessionId, 'video');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('a route taking focus suspends and restores the gamepad input lease', (tester) async {
+    final controller = MultiviewWorkspaceController();
+    final gameInput = <bool>[];
+    controller.register(
+      _registration(
+        id: 'game',
+        title: 'Game',
+        kind: MultiviewMediaKind.game,
+        acceptsInput: true,
+        onInputOwnershipChanged: gameInput.add,
+      ),
+    );
+    await _mount(tester, controller);
+    await tester.pumpAndSettle();
+
+    expect(controller.inputSessionId, 'game');
+    expect(gameInput, [true]);
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+    final route = navigator.push<void>(
+      MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Blocking dialog'))),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.inputSessionId, isNull);
+    expect(gameInput, [true, false]);
+
+    navigator.pop();
+    await tester.pumpAndSettle();
+    await route;
+
+    expect(controller.inputSessionId, 'game');
+    expect(gameInput, [true, false, true]);
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();

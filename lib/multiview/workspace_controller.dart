@@ -60,6 +60,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
   final Map<String, WorkspacePlacement> _placements = {};
   final Set<String> _parkedSessionIds = <String>{};
   final Set<String> _restoredSessionIds = <String>{};
+  final Set<String> _focusedInputSurfaceIds = <String>{};
   String? _fullscreenSessionId;
   bool _sessionTrayVisible = false;
   String? _focusedSessionId;
@@ -216,6 +217,9 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (descriptor.acceptsInput) {
       if (_requestedInputSessionId == descriptor.id && _isVisible(descriptor.id)) {
         unawaited(_enqueueInputReconcile());
+      } else if (_requestedInputSessionId == null && _focusedSessionId == descriptor.id && _isVisible(descriptor.id)) {
+        _requestedInputSessionId = descriptor.id;
+        unawaited(_enqueueInputReconcile());
       } else {
         _queueInputRelease(descriptor.id, registration.onInputOwnershipChanged);
       }
@@ -235,6 +239,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
         (descriptor.acceptsInput && existing.onInputOwnershipChanged == null)) {
       return false;
     }
+    if (!descriptor.acceptsInput) _focusedInputSurfaceIds.remove(descriptor.id);
     _sessions[descriptor.id] = WorkspaceSurfaceRegistration(
       descriptor: descriptor,
       buildSurface: existing.buildSurface,
@@ -336,6 +341,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
   WorkspaceSurfaceRegistration? _remove(String id) {
     final registration = _sessions.remove(id);
     if (registration == null) return null;
+    _focusedInputSurfaceIds.remove(id);
     _parkedSessionIds.remove(id);
     _restoredSessionIds.remove(id);
     if (_fullscreenSessionId == id) _fullscreenSessionId = null;
@@ -502,6 +508,19 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     return _enqueueInputReconcile();
   }
 
+  /// Records whether an input-capable pane still owns Flutter focus.
+  ///
+  /// Raw gamepad streams bypass Flutter's route focus. Requiring the selected
+  /// pane's focus scope to remain active prevents an embedded game from
+  /// receiving controller input behind a dialog or another route.
+  void setSurfaceInputFocus(String id, bool focused) {
+    if (_sessions[id]?.descriptor.acceptsInput != true) return;
+    final shouldFocus = focused && _focusedSessionId == id && _isVisible(id);
+    final changed = shouldFocus ? _focusedInputSurfaceIds.add(id) : _focusedInputSurfaceIds.remove(id);
+    if (!changed || (_requestedInputSessionId != id && _inputSessionId != id)) return;
+    unawaited(_enqueueInputReconcile());
+  }
+
   Future<bool> _enqueueInputReconcile() {
     final completer = Completer<bool>();
     _inputQueue = _inputQueue
@@ -515,9 +534,20 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     return completer.future;
   }
 
+  String? _effectiveInputSessionId() {
+    final id = _requestedInputSessionId;
+    if (id == null ||
+        _positioningSessionId == id ||
+        !_focusedInputSurfaceIds.contains(id) ||
+        !_isVisible(id)) {
+      return null;
+    }
+    return id;
+  }
+
   Future<bool> _reconcileInputOwnership() async {
     if (_disposed) return false;
-    final targetId = _requestedInputSessionId;
+    final targetId = _effectiveInputSessionId();
     final target = targetId == null ? null : _sessions[targetId];
     if (targetId != null &&
         (target?.descriptor.acceptsInput != true ||
@@ -536,7 +566,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     try {
       if (previousHandler != null) await previousHandler(false);
       if (_disposed || revision != _inputRevision) return false;
-      if (_requestedInputSessionId != targetId) {
+      if (_effectiveInputSessionId() != targetId) {
         await _applyOwnershipSafely(targetHandler, false);
         await _restorePreviousInputOwner(previousId, previousHandler);
         return false;
@@ -546,7 +576,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
         await _applyOwnershipSafely(targetHandler, false);
         return false;
       }
-      if (_requestedInputSessionId != targetId) {
+      if (_effectiveInputSessionId() != targetId) {
         await _applyOwnershipSafely(targetHandler, false);
         await _restorePreviousInputOwner(previousId, previousHandler);
         return false;
@@ -571,6 +601,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
   Future<bool> _restorePreviousInputOwner(String? previousId, WorkspaceOwnershipHandler? previousHandler) async {
     final previousStillAvailable =
         previousId != null &&
+        _effectiveInputSessionId() == previousId &&
         _sessions[previousId]?.descriptor.acceptsInput == true &&
         !_parkedSessionIds.contains(previousId) &&
         !_restoredSessionIds.contains(previousId) &&
@@ -826,6 +857,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     _positioningSessionId = id;
     _placementBeforeMove = _placements[id];
     _focusedSessionId = id;
+    if (_requestedInputSessionId == id || _inputSessionId == id) unawaited(_enqueueInputReconcile());
     _publish();
     return true;
   }
@@ -839,6 +871,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     }
     _positioningSessionId = null;
     _placementBeforeMove = null;
+    if (_requestedInputSessionId == id || _inputSessionId == id) unawaited(_enqueueInputReconcile());
     _publish();
     return true;
   }
@@ -934,6 +967,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     _placements.clear();
     _parkedSessionIds.clear();
     _restoredSessionIds.clear();
+    _focusedInputSurfaceIds.clear();
     _fullscreenSessionId = null;
     _sessionTrayVisible = false;
     super.dispose();

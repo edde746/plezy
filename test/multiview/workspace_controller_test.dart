@@ -234,6 +234,11 @@ void main() {
       expect(controller.inputSessionId, isNull);
       expect(await controller.setAudibleSession('game'), isFalse);
       expect(await controller.setInputSession('video'), isFalse);
+      controller.focus('game');
+      controller.setSurfaceInputFocus('game', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, 'game');
+      expect(await controller.setInputSession(null), isTrue);
       expect(await controller.setInputSession('game'), isTrue);
       expect(await controller.setAudibleSession(null), isTrue);
 
@@ -262,20 +267,69 @@ void main() {
       controller.register(
         _registration(_descriptor('game', acceptsInput: true), onInputOwnershipChanged: gameInput.add),
       );
-      await controller.setInputSession('game');
+      controller.focus('game');
+      controller.setSurfaceInputFocus('game', true);
+      await Future<void>.delayed(Duration.zero);
       controller.register(_registration(_descriptor('video')));
       await Future<void>.delayed(Duration.zero);
 
       expect(controller.inputSessionId, 'game');
       controller.focus('video');
+      controller.setSurfaceInputFocus('game', false);
       await Future<void>.delayed(Duration.zero);
       expect(controller.inputSessionId, isNull);
 
       controller.focus('game');
+      controller.setSurfaceInputFocus('game', true);
       await Future<void>.delayed(Duration.zero);
       expect(controller.inputSessionId, 'game');
       expect(gameInput, [true, false, true]);
 
+      controller.dispose();
+    });
+
+    test('losing pane focus suspends its raw input lease and restoring focus reclaims it', () async {
+      final controller = MultiviewWorkspaceController();
+      final gameInput = <bool>[];
+      controller.register(
+        _registration(_descriptor('game', acceptsInput: true), onInputOwnershipChanged: gameInput.add),
+      );
+
+      controller.focus('game');
+      controller.setSurfaceInputFocus('game', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, 'game');
+
+      controller.setSurfaceInputFocus('game', false);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, isNull);
+
+      controller.setSurfaceInputFocus('game', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, 'game');
+      expect(gameInput, [true, false, true]);
+      controller.dispose();
+    });
+
+    test('move mode suspends gamepad ownership and restores it when positioning ends', () async {
+      final controller = MultiviewWorkspaceController();
+      final gameInput = <bool>[];
+      controller.register(
+        _registration(_descriptor('game', acceptsInput: true), onInputOwnershipChanged: gameInput.add),
+      );
+      controller.focus('game');
+      controller.setSurfaceInputFocus('game', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, 'game');
+
+      expect(controller.beginPositioning('game'), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, isNull);
+
+      expect(controller.finishPositioning(), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.inputSessionId, 'game');
+      expect(gameInput, [true, false, true]);
       controller.dispose();
     });
 
@@ -410,7 +464,8 @@ void main() {
           onInputOwnershipChanged: input.add,
         ),
       );
-      await controller.setInputSession('media');
+      controller.focus('media');
+      controller.setSurfaceInputFocus('media', true);
       await Future<void>.delayed(Duration.zero);
 
       expect(controller.audibleSessionId, 'media');

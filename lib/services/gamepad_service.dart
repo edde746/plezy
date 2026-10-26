@@ -25,6 +25,33 @@ void _logGamepadDiag(String message) {
   TextInputDiagnostics.log('GamepadService', message);
 }
 
+/// Receives the original controller event while an interactive workspace
+/// session owns gamepad input.
+typedef GamepadInputEventHandler = void Function(GamepadEvent event);
+
+/// Receives a native key event captured by an interactive workspace session.
+typedef WorkspaceNativeKeyEventHandler = void Function(KeyEvent event);
+
+/// Clears held controls in an interactive workspace session when its gamepad
+/// input is interrupted.
+typedef GamepadInputResetHandler = void Function(WorkspaceGameInputResetReason reason);
+
+/// Why a workspace gamepad adapter must release its held controls.
+enum WorkspaceGameInputResetReason {
+  leaseReleased,
+  windowFocusLost,
+  applicationInactive,
+  controllerDisconnected,
+}
+
+class _WorkspaceInputRegistration {
+  const _WorkspaceInputRegistration({required this.onEvent, this.onNativeKeyEvent, this.onReset});
+
+  final GamepadInputEventHandler onEvent;
+  final WorkspaceNativeKeyEventHandler? onNativeKeyEvent;
+  final GamepadInputResetHandler? onReset;
+}
+
 /// Suppresses synthetic gamepad key events when the OS has just delivered an
 /// equivalent native key event, which happens when Steam Input's desktop layout
 /// injects keyboard keys on Windows and Linux while the physical controller
@@ -131,7 +158,7 @@ bool isTvosEngineOwnedGamepadButton({required bool isAppleTV, required GamepadBu
 /// Listens to gamepad events from the `universal_gamepad` package and translates
 /// them into focus navigation actions and key events that integrate with the
 /// existing keyboard navigation system.
-class GamepadService with WindowListener {
+class GamepadService with WindowListener, WidgetsBindingObserver {
   static final Map<GamepadButton, LogicalKeyboardKey> _syntheticKeyByButton = {
     GamepadButton.dpadUp: LogicalKeyboardKey.arrowUp,
     GamepadButton.dpadDown: LogicalKeyboardKey.arrowDown,
@@ -171,6 +198,10 @@ class GamepadService with WindowListener {
   static GamepadService? _instance;
   StreamSubscription<GamepadEvent>? _subscription;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
+  final Map<Object, _WorkspaceInputRegistration> _workspaceInputHandlers = {};
+  final Map<LogicalKeyboardKey, DateTime> _workspaceRawKeyEvents = {};
+  final Set<LogicalKeyboardKey> _workspaceRawKeysHeld = {};
+  Object? _workspaceInputOwner;
 
   static final Map<Object, ({VoidCallback previous, VoidCallback next, bool Function() isActive})>
   _tabNavigationHandlers = {};
@@ -222,6 +253,7 @@ class GamepadService with WindowListener {
   final Set<GamepadButton> _suppressedButtons = {};
   bool _windowFocused = true;
   bool _nativeKeyHandlerRegistered = false;
+  bool _appLifecycleObserverRegistered = false;
   bool _nativeTextInputFocused = false;
 
   @visibleForTesting
@@ -230,18 +262,149 @@ class GamepadService with WindowListener {
   GamepadService._({GamepadDuplicateInputGuard? duplicateInputGuard})
     : _duplicateInputGuard = duplicateInputGuard ?? GamepadDuplicateInputGuard(enabled: _steamInputInjectsKeys);
 
-  /// Steam Input emulates keyboard keys alongside the physical controller on
-  /// these platforms; macOS reads gamepads through GameController and is not
-  /// affected.
-  static bool _steamInputInjectsKeys() => Platform.isWindows || Platform.isLinux;
+  /// Steam Input can emit keyboard keys alongside controller events on
+  /// Windows and Linux; macOS reads gamepads through GameController.
+  @visibleForTesting
+  static bool? debugSteamInputInjectsKeys;
+
+  static bool _steamInputInjectsKeys() => debugSteamInputInjectsKeys ?? (Platform.isWindows || Platform.isLinux);
 
   /// Standalone instance for tests; never wired to the platform stream.
   @visibleForTesting
   factory GamepadService.forTesting({GamepadDuplicateInputGuard? duplicateInputGuard}) = GamepadService._;
 
+  /// Registers an interactive workspace surface that can consume raw
+  /// button, axis, and connection events. Only the owner selected by
+  /// [setWorkspaceInputOwner] receives them.
+  void registerWorkspaceInputHandler(
+    Object owner,
+    GamepadInputEventHandler handler, {
+    WorkspaceNativeKeyEventHandler? onNativeKeyEvent,
+    GamepadInputResetHandler? onReset,
+  }) {
+    _workspaceInputHandlers[owner] = _WorkspaceInputRegistration(
+      onEvent: handler,
+      onNativeKeyEvent: onNativeKeyEvent,
+      onReset: onReset,
+    );
+  }
+
+  /// Removes a workspace input handler and releases it if it currently owns
+  /// input. This also stops any app-navigation keys left held at handoff.
+  void unregisterWorkspaceInputHandler(Object owner) {
+    if (_workspaceInputOwner == owner) setWorkspaceInputOwner(null);
+    _workspaceInputHandlers.remove(owner);
+  }
+
+  /// Routes gamepad events to one interactive workspace surface. A missing
+  /// handler for a non-null owner still consumes input, so events cannot leak
+  /// into app navigation while an interactive surface is meant to own them.
+  void setWorkspaceInputOwner(Object? owner) {
+    if (owner != null && !_workspaceInputHandlers.containsKey(owner)) {
+      throw ArgumentError.value(owner, 'owner', 'must have a registered workspace input handler');
+    }
+    if (_workspaceInputOwner == owner) return;
+    final previousOwner = _workspaceInputOwner;
+    if (previousOwner != null) {
+      _notifyWorkspaceInputReset(previousOwner, WorkspaceGameInputResetReason.leaseReleased);
+    }
+    _releaseHeldInputState();
+    _workspaceInputOwner = owner;
+  }
+
+  /// Releases [owner] only when it currently holds the input lease.
+  ///
+  /// Workspace registration sends an initial `false` callback to every
+  /// non-focused game surface. That callback must not release a different
+  /// game's active lease.
+  void releaseWorkspaceInputOwner(Object owner) {
+    if (_workspaceInputOwner == owner) setWorkspaceInputOwner(null);
+  }
+
+  bool _routeToWorkspaceInputOwner(GamepadEvent event) {
+    final owner = _workspaceInputOwner;
+    if (owner == null || !_windowFocused) return false;
+    if (event is GamepadButtonEvent &&
+        isTvosEngineOwnedGamepadButton(isAppleTV: PlatformDetector.isAppleTV(), button: event.button)) {
+      return false;
+    }
+
+    if (event is GamepadButtonEvent && _steamInputInjectsKeys()) {
+      final button = event;
+      final key = _syntheticKeyByButton[button.button];
+      if (key != null) {
+        // If a Steam key arrived first and this adapter accepts keyboard
+        // input, keep that event as the single representation. Otherwise the
+        // raw controller event remains authoritative. The reverse order is
+        // handled in [_handleNativeKeyEvent].
+        if (_workspaceInputHandlers[owner]?.onNativeKeyEvent != null &&
+            _duplicateInputGuard.shouldSuppressSyntheticKey(key)) {
+          return true;
+        }
+        _workspaceRawKeyEvents[key] = DateTime.now();
+        if (button.pressed) {
+          _workspaceRawKeysHeld.add(key);
+        } else {
+          _workspaceRawKeysHeld.remove(key);
+        }
+      }
+    }
+
+    if (event is GamepadButtonEvent && event.pressed) {
+      InputModeTracker.reportNonPointerInput();
+    } else if (event is GamepadAxisEvent && event.value.abs() > _stickDeadzone) {
+      InputModeTracker.reportNonPointerInput();
+    } else if (event is GamepadConnectionEvent && !event.connected) {
+      _notifyWorkspaceInputReset(owner, WorkspaceGameInputResetReason.controllerDisconnected);
+      _releaseHeldInputState();
+    }
+
+    final registration = _workspaceInputHandlers[owner];
+    if (registration != null) {
+      try {
+        registration.onEvent(event);
+      } catch (error, stackTrace) {
+        appLogger.e('GamepadService: Workspace input handler failed', error: error, stackTrace: stackTrace);
+      }
+    }
+    return true;
+  }
+
+  void _notifyWorkspaceInputReset(Object owner, WorkspaceGameInputResetReason reason) {
+    final handler = _workspaceInputHandlers[owner]?.onReset;
+    if (handler == null) return;
+    try {
+      handler(reason);
+    } catch (error, stackTrace) {
+      appLogger.e('GamepadService: Workspace input reset handler failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  @visibleForTesting
+  void debugSetWindowFocused(bool focused) {
+    _setInputWindowFocused(focused);
+  }
+
+  void _setInputWindowFocused(
+    bool focused, {
+    WorkspaceGameInputResetReason resetReason = WorkspaceGameInputResetReason.windowFocusLost,
+  }) {
+    if (_windowFocused == focused) return;
+    _windowFocused = focused;
+    if (!focused) {
+      final owner = _workspaceInputOwner;
+      if (owner != null) _notifyWorkspaceInputReset(owner, resetReason);
+      _releaseHeldInputState();
+    }
+  }
+
   /// Feeds [event] through the production event handler.
   @visibleForTesting
   void debugHandleGamepadEvent(GamepadEvent event) => _handleGamepadEvent(event);
+
+  /// Feeds a native keyboard event through the duplicate-input guard.
+  @visibleForTesting
+  bool debugHandleNativeKeyEvent(KeyEvent event) => _handleNativeKeyEvent(event);
 
   key_sim.KeyEventSimulatorController get _simulator {
     return _keyEventSimulator ??= key_sim.KeyEventSimulatorController(
@@ -283,6 +446,10 @@ class GamepadService with WindowListener {
       windowManager.addListener(this);
       _windowFocused = await windowManager.isFocused();
     }
+    if (!_appLifecycleObserverRegistered) {
+      WidgetsBinding.instance.addObserver(this);
+      _appLifecycleObserverRegistered = true;
+    }
     _registerNativeKeyHandler();
 
     unawaited(_subscription?.cancel());
@@ -295,18 +462,32 @@ class GamepadService with WindowListener {
 
   @override
   void onWindowFocus() {
-    _windowFocused = true;
+    debugSetWindowFocused(true);
     _duplicateInputGuard.clear();
     Gamepad.instance.resume();
   }
 
   @override
   void onWindowBlur() {
-    _windowFocused = false;
-    _releaseHeldInputState();
+    debugSetWindowFocused(false);
 
     // Release native device handles so other apps can use the gamepad.
     Gamepad.instance.pause();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        if (!_isDesktop) _setInputWindowFocused(true);
+        break;
+      case AppLifecycleState.inactive || AppLifecycleState.hidden || AppLifecycleState.paused:
+        _setInputWindowFocused(false, resetReason: WorkspaceGameInputResetReason.applicationInactive);
+        break;
+      case AppLifecycleState.detached:
+        _setInputWindowFocused(false, resetReason: WorkspaceGameInputResetReason.applicationInactive);
+        break;
+    }
   }
 
   /// Stops direction repeat and clears every held button and stick latch.
@@ -325,6 +506,8 @@ class GamepadService with WindowListener {
     _pressedButtons.clear();
     _suppressedButtons.clear();
     _duplicateInputGuard.clear();
+    _workspaceRawKeyEvents.clear();
+    _workspaceRawKeysHeld.clear();
 
     // Reset analog stick state so re-focus doesn't inherit stale direction
     _leftStickYLatch = null;
@@ -338,7 +521,40 @@ class GamepadService with WindowListener {
   }
 
   bool _handleNativeKeyEvent(KeyEvent event) {
+    final owner = _workspaceInputOwner;
+    if (owner != null && _steamInputInjectsKeys()) {
+      final workspaceKey = _workspaceSyntheticKeyForNativeKey(event.logicalKey);
+      if (workspaceKey != null) {
+        if (_workspaceRawKeysHeld.contains(workspaceKey)) return true;
+        final lastRawEvent = _workspaceRawKeyEvents[workspaceKey];
+        if (lastRawEvent != null &&
+            DateTime.now().difference(lastRawEvent) <= _duplicateInputGuard.suppressionWindow) {
+          return true;
+        }
+        final registration = _workspaceInputHandlers[owner];
+        final nativeKeyHandler = registration?.onNativeKeyEvent;
+        if (nativeKeyHandler != null) {
+          _duplicateInputGuard.handleNativeKeyEvent(event);
+          try {
+            nativeKeyHandler(event);
+          } catch (error, stackTrace) {
+            appLogger.e('GamepadService: Workspace keyboard handler failed', error: error, stackTrace: stackTrace);
+          }
+        }
+        // Prevent desktop-layout keys from navigating the app while an
+        // interactive surface owns input. If that surface only consumes raw
+        // controller events, its matching raw event still passes through.
+        return true;
+      }
+    }
     return _duplicateInputGuard.handleNativeKeyEvent(event);
+  }
+
+  LogicalKeyboardKey? _workspaceSyntheticKeyForNativeKey(LogicalKeyboardKey nativeKey) {
+    for (final entry in GamepadDuplicateInputGuard._nativeAliasesBySyntheticKey.entries) {
+      if (entry.value.contains(nativeKey)) return entry.key;
+    }
+    return null;
   }
 
   Future<void> _setNativeTextInputFocused(bool focused) async {
@@ -390,6 +606,7 @@ class GamepadService with WindowListener {
     if (TextInputDiagnostics.enabled) {
       _logGamepadDiag('event received type=${event.runtimeType} nativeTextInputFocused=$_nativeTextInputFocused');
     }
+    if (_routeToWorkspaceInputOwner(event)) return;
     switch (event) {
       case final GamepadConnectionEvent e:
         appLogger.i('GamepadService: Gamepad ${e.connected ? "connected" : "disconnected"}: ${e.info.name}');
