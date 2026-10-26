@@ -89,6 +89,22 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     setState(() => _source ??= sources.lastOrNull?.id);
   }
 
+  Future<void> _confirmExclusiveSync(SourceController controller, PublicationSyncConfig config) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.audiobook.syncTitle),
+        content: Text(t.audiobook.syncPrivacy),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.saveSync)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _action(() => controller.configureCloudSync(config));
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SourceController>();
@@ -185,13 +201,12 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       FilledButton(
                         onPressed: _busy || selected == null
                             ? null
-                            : () => _action(
-                                () => controller.configureCloudSync(
-                                  PublicationSyncConfig(
-                                    sourceId: selected.id,
-                                    code: _code.text.trim(),
-                                    folder: _folder.text.trim(),
-                                  ),
+                            : () => _confirmExclusiveSync(
+                                controller,
+                                PublicationSyncConfig(
+                                  sourceId: selected.id,
+                                  code: _code.text.trim(),
+                                  folder: _folder.text.trim(),
                                 ),
                               ),
                         child: Text(t.audiobook.saveSync),
@@ -285,3 +300,4 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     );
   }
 }
+
