@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -203,35 +204,66 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final current = await controller.sharedEntryMapping(_entry);
     if (!mounted) return;
     final sharedId = TextEditingController(text: current ?? '');
-    final save = await showDialog<bool>(
+    final formKey = GlobalKey<FormState>();
+    final save = await showScopedDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.sourceSetup.sharedEntryPair),
-        content: SingleChildScrollView(
+        scrollable: true,
+        content: Form(
+          key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(t.sourceSetup.sharedEntryPairHelp),
               const SizedBox(height: 12),
-              FocusableTextField(
+              FocusableTextFormField(
                 controller: sharedId,
                 autofocus: true,
+                textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
+                enableSuggestions: false,
                 decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
+                validator: (value) {
+                  final id = value?.trim() ?? '';
+                  if (id.isEmpty || RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) return null;
+                  return t.sourceSetup.sharedLibraryInvalid;
+                },
+                onFieldSubmitted: (_) {
+                  if (formKey.currentState?.validate() == true) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
               ),
               Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
+                alignment: AlignmentDirectional.centerEnd,
+                child: FocusableButton(
                   onPressed: () => sharedId.text = const Uuid().v4(),
-                  child: Text(t.sourceSetup.generateSharedEntryId),
+                  child: TextButton(
+                    onPressed: () => sharedId.text = const Uuid().v4(),
+                    child: Text(t.sourceSetup.generateSharedEntryId),
+                  ),
                 ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.save)),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            isPrimary: true,
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            label: t.common.save,
+          ),
         ],
       ),
     );
@@ -715,6 +747,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                     onPressed: () => sourceAction(context, _openTrailer),
                                     icon: const AppIcon(Symbols.movie_rounded),
                                     label: Text(t.tooltips.playTrailer),
+                                  ),
+                                if (source?.options['syncLibrary']?.trim().isNotEmpty == true)
+                                  FocusableButton(
+                                    onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+                                    child: TextButton.icon(
+                                      onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+                                      icon: const AppIcon(Symbols.link_rounded),
+                                      label: Text(t.sourceSetup.sharedEntryPair),
+                                    ),
                                   ),
                               ],
                             ),
