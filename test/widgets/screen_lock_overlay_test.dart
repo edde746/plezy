@@ -360,14 +360,17 @@ void main() {
     expect(node.getSemanticsData().hasAction(SemanticsAction.longPress), isFalse);
   });
 
-  testWidgets('shows the current finger count', (tester) async {
+  testWidgets('keeps the bar at the top and shows finger count while touching', (tester) async {
     await pumpOverlay(tester, fingers: 3, onUnlock: () {}, progressLabel: (count) => '$count / 3');
-    expect(find.text('0 / 3'), findsOneWidget);
+    final bar = tester.getRect(find.byKey(const ValueKey('screen-lock-bar')));
+    expect(bar.bottom, lessThan(tester.getCenter(find.byType(ScreenLockOverlay)).dy));
+    expect(find.text('0 / 3'), findsNothing);
     final finger = await touch(tester, 1);
     await tester.pump();
     expect(find.text('1 / 3'), findsOneWidget);
     await finger.up();
     await tester.pump();
-    expect(find.text('0 / 3'), findsOneWidget);
+    expect(find.text('0 / 3'), findsNothing);
+    expect(find.text('1 / 3'), findsNothing);
   });
 }

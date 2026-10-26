@@ -170,7 +170,7 @@ class _ScreenLockOverlayState extends State<ScreenLockOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final progressLabel = widget.touchProgressLabelBuilder?.call(_touchOrigins.length);
+    final progressLabel = _touchOrigins.isEmpty ? null : widget.touchProgressLabelBuilder?.call(_touchOrigins.length);
     return Semantics(
       container: true,
       label: widget.instruction,
@@ -193,52 +193,55 @@ class _ScreenLockOverlayState extends State<ScreenLockOverlay>
             child: AnimatedOpacity(
               opacity: _hintVisible ? 1 : 0,
               duration: const Duration(milliseconds: 200),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+              child: SafeArea(
+                bottom: false,
+                minimum: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Align(
+                  alignment: Alignment.topCenter,
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                    key: const ValueKey('screen-lock-bar'),
+                    constraints: const BoxConstraints(maxWidth: 360),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: const BorderRadius.all(Radius.circular(28)),
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Stack(
                       children: [
-                        AnimatedBuilder(
-                          animation: _progress,
-                          builder: (context, child) => SizedBox.square(
-                            dimension: 48,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  value: _progress.value,
-                                  strokeWidth: 3,
-                                  color: Colors.white,
-                                  backgroundColor: Colors.white24,
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 7, 12, 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const AppIcon(Symbols.lock_rounded, color: Colors.white, size: 16),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  widget.instruction,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
                                 ),
-                                child!,
+                              ),
+                              if (progressLabel != null) ...[
+                                const SizedBox(width: 8),
+                                Text(progressLabel, style: const TextStyle(color: Colors.white70, fontSize: 12)),
                               ],
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 5,
+                          child: AnimatedBuilder(
+                            animation: _progress,
+                            builder: (context, _) => LinearProgressIndicator(
+                              value: _progress.value,
+                              minHeight: 2,
+                              borderRadius: const BorderRadius.all(Radius.circular(2)),
+                              color: Colors.white,
+                              backgroundColor: Colors.white24,
                             ),
                           ),
-                          child: const AppIcon(Symbols.lock_rounded, color: Colors.white, size: 24),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.instruction,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-                        if (progressLabel != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            progressLabel,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                        ],
                       ],
                     ),
                   ),

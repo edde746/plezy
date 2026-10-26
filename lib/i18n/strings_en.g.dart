@@ -2459,11 +2459,11 @@ class Translations$videoControls$en {
 	/// en: 'Long press to unlock'
 	String get longPressToUnlock => 'Long press to unlock';
 
-	/// en: 'Hold ${fingers} for ${duration} to unlock'
-	String lockHoldInstruction({required Object fingers, required Object duration}) => 'Hold ${fingers} for ${duration} to unlock';
+	/// en: 'Hold ${fingers} · ${duration}'
+	String lockHoldInstruction({required Object fingers, required Object duration}) => 'Hold ${fingers} · ${duration}';
 
-	/// en: '${current} / ${required} fingers'
-	String lockTouchCount({required Object current, required Object required}) => '${current} / ${required} fingers';
+	/// en: '${current}/${required}'
+	String lockTouchCount({required Object current, required Object required}) => '${current}/${required}';
 
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
@@ -8945,8 +8945,8 @@ extension on Translations {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.longPressToUnlock' => 'Long press to unlock',
-			'videoControls.lockHoldInstruction' => ({required Object fingers, required Object duration}) => 'Hold ${fingers} for ${duration} to unlock',
-			'videoControls.lockTouchCount' => ({required Object current, required Object required}) => '${current} / ${required} fingers',
+			'videoControls.lockHoldInstruction' => ({required Object fingers, required Object duration}) => 'Hold ${fingers} · ${duration}',
+			'videoControls.lockTouchCount' => ({required Object current, required Object required}) => '${current}/${required}',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
