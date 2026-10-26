@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Refresh the embedded login background from the current PlezyNG website artwork, including a 4K asset for large displays.
 - Route Windows x64 release builds and package-manager submissions through private JIT runners.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 - Expand comic reading with responsive spreads, RTL wide-page splitting, continuous scroll, thumbnails, touch zoom and per-comic display settings; harden page streaming and add reproducible browser test dependencies.
