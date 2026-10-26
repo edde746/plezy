@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Connection timed out. Use the same network on both devices.",
       "sessionNotFound": "Device not found. Make sure Plezy is running on the host.",
       "authFailed": "Authentication failed. Both devices need the same Plex account.",
-      "failedToConnect": "Failed to connect: ${error}"
+      "failedToConnect": "Failed to connect: ${error}",
+      "codeTitle": "Pairing code",
+      "codeDescription": "Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.",
+      "codeInvalid": "Enter all 32 letters and numbers from the host code.",
+      "updateRequired": "Update both devices to a version that supports secure pairing.",
+      "hostDescription": "Enter this code once on each remote. Keep it private: it grants control of this profile.",
+      "resetCode": "Reset pairing code",
+      "resetDescription": "Disconnect all remotes and create a new code. Every remote will need to pair again."
     },
     "remote": {
       "disconnectConfirm": "Do you want to disconnect from the remote session?",

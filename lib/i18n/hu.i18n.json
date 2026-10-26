@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "A csatlakozás túllépte az időkorlátot. Használd ugyanazt a hálózatot mindkét eszközön.",
       "sessionNotFound": "Az eszköz nem található. Győződj meg arról, hogy a Plezy fut a gazdagépen.",
       "authFailed": "A hitelesítés nem sikerült. Mindkét eszközön ugyanazt a Plex-fiókot kell használni.",
-      "failedToConnect": "Nem sikerült a csatlakozás: ${error}"
+      "failedToConnect": "Nem sikerült a csatlakozás: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Bontod a kapcsolatot a távoli munkamenettel?",

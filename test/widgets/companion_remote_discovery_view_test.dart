@@ -132,6 +132,11 @@ void main() {
     expect(find.text('Plex-PC'), findsOneWidget);
 
     await tester.tap(find.text('Plex-PC'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(t.companionRemote.pairing.codeTitle), findsWidgets);
+    await tester.enterText(find.byType(TextField), '0123456789abcdef0123456789abcdef');
+    await tester.tap(find.text(t.common.connect));
     for (var i = 0; i < 50 && discovery.startListeningCalls < 2; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }

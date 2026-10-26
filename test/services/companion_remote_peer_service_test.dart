@@ -12,11 +12,50 @@ import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 
 const _ioTimeout = Duration(seconds: 5);
 
+Future<List<NetworkInterface>> _testInterfaces() async => [
+  _FakeNetworkInterface('test0', ['192.0.2.1']),
+];
+
 void main() {
+  test('a valid legacy auth proof without protocol v2 is rejected', () async {
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
+    addTearDown(host.dispose);
+    final remote = await _RawWebSocketClient.connect(await _startHost(host));
+    addTearDown(remote.dispose);
+    final proof = jsonDecode(_validAuthMessage(remote.challenge, _authContext)) as Map<String, dynamic>;
+    proof.remove('protocolVersion');
+    remote.add(jsonEncode(proof));
+    expect(await remote.closed.timeout(_ioTimeout), isNotNull);
+    expect(host.isConnected, isFalse);
+  });
+
+  test('same public backend identity with a wrong pairing code cannot authenticate', () async {
+    final hostContext = await RemoteAuthService.instance.bindPairingCode(
+      _authContext,
+      '0123456789abcdef0123456789abcdef',
+    );
+    final wrongContext = await RemoteAuthService.instance.bindPairingCode(
+      _authContext,
+      'fedcba9876543210fedcba9876543210',
+    );
+    expect(hostContext.discoveryKey, wrongContext.discoveryKey);
+    expect(hostContext.homeSecret, isNot(wrongContext.homeSecret));
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
+    final remote = CompanionRemotePeerService();
+    addTearDown(host.dispose);
+    addTearDown(remote.dispose);
+    final session = await host.createSessionForContexts('Host', 'linux', [hostContext]);
+    await expectLater(
+      remote.joinSessionWithContexts('Remote', 'linux', '127.0.0.1:${session.port}', [wrongContext]),
+      throwsA(isA<PeerError>()),
+    );
+    expect(host.isConnected, isFalse);
+  });
+
   test('auth precondition error uses the active locale', () async {
     await LocaleSettings.setLocale(AppLocale.bg);
     addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
-    final peer = CompanionRemotePeerService();
+    final peer = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     addTearDown(peer.dispose);
 
     await expectLater(
@@ -26,7 +65,11 @@ void main() {
   });
 
   test('per-source admission rejects before upgrade and recovers exactly one slot', () async {
-    final host = CompanionRemotePeerService.forTesting(maxTotalHostConnections: 4, maxHostConnectionsPerSource: 2);
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxTotalHostConnections: 4,
+      maxHostConnectionsPerSource: 2,
+    );
     final clients = <_RawWebSocketClient>[];
     addTearDown(() => _disposeHostAndClients(host, clients));
     final port = await _startHost(host);
@@ -42,7 +85,11 @@ void main() {
   });
 
   test('global admission rejects independently and releases one reservation once', () async {
-    final host = CompanionRemotePeerService.forTesting(maxTotalHostConnections: 2, maxHostConnectionsPerSource: 4);
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxTotalHostConnections: 2,
+      maxHostConnectionsPerSource: 4,
+    );
     final clients = <_RawWebSocketClient>[];
     addTearDown(() => _disposeHostAndClients(host, clients));
     final port = await _startHost(host);
@@ -58,11 +105,12 @@ void main() {
 
   test('authentication timeout releases capacity for a legitimate encrypted session', () async {
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       maxTotalHostConnections: 1,
       maxHostConnectionsPerSource: 1,
       authTimeout: const Duration(milliseconds: 300),
     );
-    final remote = CompanionRemotePeerService();
+    final remote = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     final clients = <_RawWebSocketClient>[];
     addTearDown(() async {
       await remote.dispose();
@@ -90,6 +138,7 @@ void main() {
 
   test('disconnect closes pending sockets and restart restores full capacity', () async {
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       maxTotalHostConnections: 2,
       maxHostConnectionsPerSource: 2,
       authTimeout: const Duration(seconds: 1),
@@ -114,7 +163,11 @@ void main() {
   });
 
   test('failed HTTP upgrade and abrupt socket loss both release the only slot', () async {
-    final host = CompanionRemotePeerService.forTesting(maxTotalHostConnections: 1, maxHostConnectionsPerSource: 1);
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxTotalHostConnections: 1,
+      maxHostConnectionsPerSource: 1,
+    );
     final clients = <_RawWebSocketClient>[];
     addTearDown(() => _disposeHostAndClients(host, clients));
     final port = await _startHost(host);
@@ -143,6 +196,7 @@ void main() {
   test('setup failure after upgrade closes the socket and releases the only slot', () async {
     var rejectSetup = true;
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       maxTotalHostConnections: 1,
       maxHostConnectionsPerSource: 1,
       afterHostUpgrade: () {
@@ -169,6 +223,7 @@ void main() {
 
   test('oversized and malformed first messages close generically and always restore capacity', () async {
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       maxTotalHostConnections: 1,
       maxHostConnectionsPerSource: 1,
       maxPreAuthMessageBytes: 256,
@@ -199,6 +254,7 @@ void main() {
         name: 'wrong field type',
         payload: jsonEncode({
           'type': 'auth',
+          'protocolVersion': RemoteAuthService.protocolVersion,
           'authTag': 1,
           'clientNonce': base64Encode(List<int>.filled(32, 1)),
           'userUUID': 'user-1',
@@ -229,6 +285,7 @@ void main() {
 
   test('malformed first message counts once, ignores a queued valid auth, and locks out before upgrade', () async {
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       maxTotalHostConnections: 2,
       maxHostConnectionsPerSource: 2,
       maxFailedAuthAttempts: 2,
@@ -263,7 +320,10 @@ void main() {
   });
 
   test('unknown context, disallowed user, and bad HMAC share the terminal auth failure path', () async {
-    final host = CompanionRemotePeerService.forTesting(maxFailedAuthAttempts: 10);
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxFailedAuthAttempts: 10,
+    );
     final clients = <_RawWebSocketClient>[];
     addTearDown(() => _disposeHostAndClients(host, clients));
     final port = await _startHost(host);
@@ -285,7 +345,7 @@ void main() {
   });
 
   test('single-context auth remains compatible without authContextId', () async {
-    final host = CompanionRemotePeerService.forTesting();
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     final clients = <_RawWebSocketClient>[];
     addTearDown(() => _disposeHostAndClients(host, clients));
     final port = await _startHost(host);
@@ -306,6 +366,7 @@ void main() {
     final secondDerivationReturned = Completer<void>();
     var derivationCount = 0;
     final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
       deriveSessionEncKey: (homeSecret, hostNonce, clientNonce) async {
         derivationCount++;
         if (derivationCount == 2) {
@@ -364,8 +425,12 @@ void main() {
   });
 
   test('address probes release every source slot before the managed connection', () async {
-    final host = CompanionRemotePeerService.forTesting(maxTotalHostConnections: 2, maxHostConnectionsPerSource: 2);
-    final remote = CompanionRemotePeerService();
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxTotalHostConnections: 2,
+      maxHostConnectionsPerSource: 2,
+    );
+    final remote = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     addTearDown(() async {
       await remote.dispose();
       await host.dispose();
@@ -448,8 +513,8 @@ void main() {
   });
 
   test('race cleanup does not hang behind a candidate that never finishes connecting', () async {
-    final host = CompanionRemotePeerService();
-    final remote = CompanionRemotePeerService();
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
+    final remote = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     // Accepts the TCP connection but never answers the WebSocket upgrade,
     // like a beacon-advertised virtual-adapter address that black-holes.
     final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
@@ -492,7 +557,10 @@ void main() {
   });
 
   test('manual join to an endpoint that never completes the handshake fails with a timeout', () async {
-    final remote = CompanionRemotePeerService.forTesting(remoteConnectTimeout: const Duration(milliseconds: 400));
+    final remote = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      remoteConnectTimeout: const Duration(milliseconds: 400),
+    );
     final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     final stalledSockets = <Socket>[];
     final blackHoleSubscription = blackHole.listen(stalledSockets.add);
@@ -516,7 +584,10 @@ void main() {
   });
 
   test('disconnect does not hang while the managed connect is still pending', () async {
-    final remote = CompanionRemotePeerService.forTesting(remoteConnectTimeout: const Duration(seconds: 30));
+    final remote = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      remoteConnectTimeout: const Duration(seconds: 30),
+    );
     final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     final stalledSockets = <Socket>[];
     final blackHoleSubscription = blackHole.listen(stalledSockets.add);
@@ -539,8 +610,8 @@ void main() {
   });
 
   test('host and remote dispatch encrypted commands through the same contract', () async {
-    final host = CompanionRemotePeerService();
-    final remote = CompanionRemotePeerService();
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
+    final remote = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     addTearDown(() async {
       await remote.dispose();
       await host.dispose();
@@ -572,8 +643,8 @@ void main() {
   });
 
   test('abrupt connection loss surfaces as a disconnect, not a terminal error', () async {
-    final host = CompanionRemotePeerService();
-    final remote = CompanionRemotePeerService();
+    final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
+    final remote = CompanionRemotePeerService.forTesting(listNetworkInterfaces: _testInterfaces);
     _TcpProxy? proxy;
     addTearDown(() async {
       await remote.dispose();
@@ -806,6 +877,7 @@ class _TcpProxy {
 
 final _authContext = RemoteAuthContext(
   id: 'context-1',
+  isPaired: true,
   backend: 'plex',
   connectionId: 'connection-1',
   homeSecret: List<int>.generate(32, (index) => index),
@@ -840,6 +912,7 @@ Future<void> _expectWebSocketHandshakeStatus(int port, int statusCode) async {
 String _minimalAuth({required String clientNonce}) {
   return jsonEncode({
     'type': 'auth',
+    'protocolVersion': RemoteAuthService.protocolVersion,
     'authTag': 'tag',
     'clientNonce': clientNonce,
     'userUUID': 'user-1',
@@ -873,6 +946,7 @@ String _validAuthMessage(
   );
   return jsonEncode({
     'type': 'auth',
+    'protocolVersion': RemoteAuthService.protocolVersion,
     if (includeAuthContextId) 'authContextId': authContextId ?? context.id,
     'clientNonce': base64Encode(clientNonce),
     'userUUID': selectedUserUuid,

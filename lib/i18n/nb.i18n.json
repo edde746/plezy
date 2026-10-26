@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.",
       "sessionNotFound": "Enhet ikke funnet. Sørg for at Plezy kjører på verten.",
       "authFailed": "Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.",
-      "failedToConnect": "Kunne ikke koble til: ${error}"
+      "failedToConnect": "Kunne ikke koble til: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Vil du koble fra fjernøkten?",

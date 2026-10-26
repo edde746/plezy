@@ -2159,7 +2159,14 @@
       "connectionTimedOut": "Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.",
       "sessionNotFound": "Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.",
       "authFailed": "Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.",
-      "failedToConnect": "Nie udało się połączyć: ${error}"
+      "failedToConnect": "Nie udało się połączyć: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Czy chcesz się rozłączyć od sesji zdalnej?",

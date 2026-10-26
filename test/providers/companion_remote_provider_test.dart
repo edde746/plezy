@@ -189,9 +189,15 @@ void main() {
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
 
-      final olderConnect = harness.provider.connectToManualHost('192.0.2.20:48634');
+      final olderConnect = harness.provider.connectToManualHost(
+        '192.0.2.20:48634',
+        pairingCode: '0123456789abcdef0123456789abcdef',
+      );
       await first.joinStarted.future;
-      final newerConnect = harness.provider.connectToManualHost('192.0.2.21:48634');
+      final newerConnect = harness.provider.connectToManualHost(
+        '192.0.2.21:48634',
+        pairingCode: '0123456789abcdef0123456789abcdef',
+      );
       await first.disconnectStarted.future;
       firstJoinGate.complete();
       await Future<void>.delayed(Duration.zero);
@@ -232,7 +238,7 @@ void main() {
         if (teardown != null) await teardown;
       });
 
-      await harness.provider.connectToManualHost('192.0.2.22:48634');
+      await harness.provider.connectToManualHost('192.0.2.22:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       var teardownCompleted = false;
       predecessorTeardown = harness.provider.leaveSession().whenComplete(() {
@@ -241,7 +247,7 @@ void main() {
       await predecessor.disconnectStarted.future;
       expect(teardownCompleted, isFalse);
 
-      await harness.provider.connectToManualHost('192.0.2.23:48634');
+      await harness.provider.connectToManualHost('192.0.2.23:48634', pairingCode: '0123456789abcdef0123456789abcdef');
       expect(harness.provider.status, RemoteSessionStatus.connected);
       expect(replacement.hasListeners, isTrue);
 
@@ -315,7 +321,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.10:48634');
+      await harness.provider.connectToManualHost('192.0.2.10:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       final statuses = <RemoteSessionStatus>[];
       harness.provider.addListener(() => statuses.add(harness.provider.status));
@@ -351,7 +357,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.11:48634');
+      await harness.provider.connectToManualHost('192.0.2.11:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       var deliveredCommands = 0;
       harness.provider.onCommandReceived = (_) => deliveredCommands++;
@@ -381,7 +387,7 @@ void main() {
         final factory = _FakePeerFactory([initial, replacement]);
         final harness = await _RemoteHarness.create(factory.call);
         addTearDown(harness.close);
-        await harness.provider.connectToManualHost('192.0.2.12:48634');
+        await harness.provider.connectToManualHost('192.0.2.12:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
         initial.emitDeviceDisconnected();
         final retry = harness.provider.retryReconnectNow();
@@ -408,7 +414,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.13:48634');
+      await harness.provider.connectToManualHost('192.0.2.13:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       var deliveredCommands = 0;
       harness.provider.onCommandReceived = (_) => deliveredCommands++;
@@ -437,7 +443,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.14:48634');
+      await harness.provider.connectToManualHost('192.0.2.14:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       initial.emitDeviceDisconnected();
       final retry = harness.provider.retryReconnectNow();
@@ -465,7 +471,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.15:48634');
+      await harness.provider.connectToManualHost('192.0.2.15:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       initial.emitDeviceDisconnected();
       await harness.provider.retryReconnectNow();
@@ -484,7 +490,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.16:48634');
+      await harness.provider.connectToManualHost('192.0.2.16:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       initial.emitDeviceDisconnected();
       await harness.provider.retryReconnectNow();
@@ -504,7 +510,7 @@ void main() {
       final factory = _FakePeerFactory([initial]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.30:48634');
+      await harness.provider.connectToManualHost('192.0.2.30:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       // The real peer emits deviceDisconnected followed by a disconnected
       // status, and a dying socket can surface a stale error; none of these
@@ -530,7 +536,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.35:48634');
+      await harness.provider.connectToManualHost('192.0.2.35:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       initial.emitDeviceDisconnected();
       final retry = harness.provider.retryReconnectNow();
@@ -560,7 +566,10 @@ void main() {
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
 
-      await expectLater(harness.provider.connectToManualHost('192.0.2.36:48634'), throwsA(isA<StateError>()));
+      await expectLater(
+        harness.provider.connectToManualHost('192.0.2.36:48634', pairingCode: '0123456789abcdef0123456789abcdef'),
+        throwsA(isA<StateError>()),
+      );
 
       // _scheduleReconnect arms synchronously, so a zero attempt count proves
       // the user-initiated failure surfaced as an error without a retry cycle.
@@ -575,7 +584,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.31:48634');
+      await harness.provider.connectToManualHost('192.0.2.31:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       harness.provider.didChangeAppLifecycleState(AppLifecycleState.paused);
       initial.emitDeviceDisconnected();
@@ -600,7 +609,7 @@ void main() {
       final factory = _FakePeerFactory([initial, candidate]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.32:48634');
+      await harness.provider.connectToManualHost('192.0.2.32:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       initial.emitDeviceDisconnected();
       expect(harness.provider.reconnectAttempts, 1);
@@ -619,7 +628,7 @@ void main() {
       final factory = _FakePeerFactory([initial]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.33:48634');
+      await harness.provider.connectToManualHost('192.0.2.33:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       harness.provider.didChangeAppLifecycleState(AppLifecycleState.paused);
       harness.provider.didChangeAppLifecycleState(AppLifecycleState.resumed);
@@ -632,7 +641,7 @@ void main() {
       final factory = _FakePeerFactory([initial]);
       final harness = await _RemoteHarness.create(factory.call);
       addTearDown(harness.close);
-      await harness.provider.connectToManualHost('192.0.2.34:48634');
+      await harness.provider.connectToManualHost('192.0.2.34:48634', pairingCode: '0123456789abcdef0123456789abcdef');
 
       harness.provider.didChangeAppLifecycleState(AppLifecycleState.paused);
       initial.emitDeviceDisconnected();
@@ -651,7 +660,7 @@ void main() {
     test('connectToDiscoveredHost reports localized auth failure when crypto is not ready', () async {
       final p = CompanionRemoteProvider();
       await expectLater(
-        () => p.connectToManualHost('192.0.2.1:9999'),
+        () => p.connectToManualHost('192.0.2.1:9999', pairingCode: '0123456789abcdef0123456789abcdef'),
         throwsA(
           isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
         ),

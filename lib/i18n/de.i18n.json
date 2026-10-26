@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Zeitüberschreitung bei der Verbindung. Nutze auf beiden Geräten dasselbe Netzwerk.",
       "sessionNotFound": "Gerät nicht gefunden. Stelle sicher, dass Plezy auf dem Host läuft.",
       "authFailed": "Authentifizierung fehlgeschlagen. Beide Geräte benötigen dasselbe Plex-Konto.",
-      "failedToConnect": "Verbindung fehlgeschlagen: ${error}"
+      "failedToConnect": "Verbindung fehlgeschlagen: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?",

@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Er is een time-out opgetreden. Gebruik op beide apparaten hetzelfde netwerk.",
       "sessionNotFound": "Apparaat niet gevonden. Zorg dat Plezy op de host draait.",
       "authFailed": "Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.",
-      "failedToConnect": "Kan niet verbinden: ${error}"
+      "failedToConnect": "Kan niet verbinden: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Wil je de verbinding met de externe sessie verbreken?",

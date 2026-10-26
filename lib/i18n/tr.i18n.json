@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Bağlantı zaman aşımına uğradı. Her iki cihazda da aynı ağı kullanın.",
       "sessionNotFound": "Cihaz bulunamadı. Plezy'nin ana bilgisayarda çalıştığından emin olun.",
       "authFailed": "Kimlik doğrulama başarısız oldu. Her iki cihazın da aynı Plex hesabına ihtiyacı var.",
-      "failedToConnect": "Bağlantı başarısız: ${error}"
+      "failedToConnect": "Bağlantı başarısız: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Uzaktan kumanda oturumundan ayrılmak istiyor musunuz?",

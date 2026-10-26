@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Délai de connexion dépassé. Utilisez le même réseau sur les deux appareils.",
       "sessionNotFound": "Appareil introuvable. Assurez-vous que Plezy fonctionne sur l'hôte.",
       "authFailed": "Échec de l'authentification. Les deux appareils doivent utiliser le même compte Plex.",
-      "failedToConnect": "Échec de la connexion : ${error}"
+      "failedToConnect": "Échec de la connexion : ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Voulez-vous vous déconnecter de la session distante ?",

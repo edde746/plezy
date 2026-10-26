@@ -15,6 +15,8 @@
 ///   alongside a vault-protected password.
 /// * [legacyPlexTokenPref] — the pre-connection-registry Plex token slot. It is
 ///   drained by the connection migration but can linger on old installs.
+/// * `companion_remote_pairing_*` — random pairing capabilities protected by
+///   `CredentialVault` and scoped to a profile and remote.
 ///
 /// Two subsystems consult this list, both added for #1732:
 ///
@@ -74,4 +76,7 @@ bool isSeerrSessionPrefKey(String key) => profileScopedCredentialBaseKey(key) ==
 /// Whether [key] holds a credential and must never be dropped or exported
 /// without an explicit, informed user decision.
 bool isSensitivePrefKey(String key) =>
-    key == credentialVaultKeyPref || key == legacyPlexTokenPref || profileScopedCredentialBaseKey(key) != null;
+    key == credentialVaultKeyPref ||
+    key == legacyPlexTokenPref ||
+    key.startsWith('companion_remote_pairing_') ||
+    profileScopedCredentialBaseKey(key) != null;

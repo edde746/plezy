@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Ulanish vaqti tugadi. Ikkala qurilmada ham bir xil tarmoqdan foydalaning.",
       "sessionNotFound": "Qurilma topilmadi. Plezy xost qurilmada ishga tushirilganiga ishonch hosil qiling.",
       "authFailed": "Autentifikatsiya xatoligi.",
-      "failedToConnect": "Ulanib boʻlmadi: ${error}"
+      "failedToConnect": "Ulanib boʻlmadi: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Pult seansidan uzilasizmi?",

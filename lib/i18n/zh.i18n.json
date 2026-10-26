@@ -2123,7 +2123,14 @@
       "connectionTimedOut": "连接超时。请在两台设备上使用同一网络。",
       "sessionNotFound": "未找到设备。请确认 Plezy 正在主机上运行。",
       "authFailed": "认证失败。两台设备需要使用同一 Plex 账号。",
-      "failedToConnect": "连接失败：${error}"
+      "failedToConnect": "连接失败：${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "确定要断开遥控会话吗？",

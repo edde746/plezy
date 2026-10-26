@@ -8,6 +8,7 @@ class RemoteAuthContext {
     required this.clientIdentifier,
     required this.userUuid,
     required this.allowedUserUuids,
+    this.isPaired = false,
   });
 
   final String id;
@@ -18,4 +19,8 @@ class RemoteAuthContext {
   final String clientIdentifier;
   final String userUuid;
   final List<String> allowedUserUuids;
+
+  /// False for discovery metadata; only a random pairing capability can turn
+  /// this into a context eligible to authenticate a control connection.
+  final bool isPaired;
 }

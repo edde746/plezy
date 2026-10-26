@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Forbindelsen fik timeout. Brug samme netværk på begge enheder.",
       "sessionNotFound": "Enhed ikke fundet. Sørg for, at Plezy kører på værten.",
       "authFailed": "Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.",
-      "failedToConnect": "Kunne ikke oprette forbindelse: ${error}"
+      "failedToConnect": "Kunne ikke oprette forbindelse: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Vil du afbryde forbindelsen til fjernsessionen?",

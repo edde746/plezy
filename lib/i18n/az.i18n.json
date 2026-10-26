@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Qoşulma vaxtı bitdi. Hər iki cihazda eyni şəbəkədən istifadə edin.",
       "sessionNotFound": "Cihaz tapılmadı.",
       "authFailed": "Kimlik doğrulanması uğursuz oldu.",
-      "failedToConnect": "Qoşulma uğursuz oldu: ${error}"
+      "failedToConnect": "Qoşulma uğursuz oldu: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Pult seansından ayrılmaq istəyirsiniz?",

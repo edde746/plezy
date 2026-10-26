@@ -2123,7 +2123,14 @@
       "connectionTimedOut": "接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。",
       "sessionNotFound": "デバイスが見つかりません。ホストでPlezyが実行中か確認してください。",
       "authFailed": "認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。",
-      "failedToConnect": "接続に失敗しました: ${error}"
+      "failedToConnect": "接続に失敗しました: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "リモートセッションを切断しますか？",

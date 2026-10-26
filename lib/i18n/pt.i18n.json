@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "A conexão atingiu o tempo limite. Use a mesma rede nos dois dispositivos.",
       "sessionNotFound": "Dispositivo não encontrado. Verifique se o Plezy está em execução no host.",
       "authFailed": "Falha na autenticação. Ambos os dispositivos precisam da mesma conta Plex.",
-      "failedToConnect": "Falha ao conectar: ${error}"
+      "failedToConnect": "Falha ao conectar: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Deseja desconectar da sessão remota?",

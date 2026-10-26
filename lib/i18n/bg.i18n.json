@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Връзката изтече. Използвайте една и съща мрежа на двете устройства.",
       "sessionNotFound": "Устройството не е намерено. Уверете се, че Plezy работи на хоста.",
       "authFailed": "Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.",
-      "failedToConnect": "Неуспешно свързване: ${error}"
+      "failedToConnect": "Неуспешно свързване: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Искате ли да прекъснете връзката с дистанционната сесия?",

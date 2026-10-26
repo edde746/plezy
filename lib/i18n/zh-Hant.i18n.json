@@ -2123,7 +2123,14 @@
       "connectionTimedOut": "連線逾時。請確認兩台裝置都使用相同網路。",
       "sessionNotFound": "找不到裝置。請確認主機上已啟動 Plezy。",
       "authFailed": "驗證失敗。兩台裝置需要登入相同的 Plex 帳戶。",
-      "failedToConnect": "連線失敗：${error}"
+      "failedToConnect": "連線失敗：${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "是否要中斷遠端連線工作階段？",

@@ -2159,7 +2159,14 @@
       "connectionTimedOut": "Время подключения истекло. Используйте одну сеть на обоих устройствах.",
       "sessionNotFound": "Устройство не найдено. Убедитесь, что Plezy запущен на хосте.",
       "authFailed": "Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.",
-      "failedToConnect": "Не удалось подключиться: ${error}"
+      "failedToConnect": "Не удалось подключиться: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Отключиться от удалённой сессии?",

@@ -2123,7 +2123,14 @@
       "connectionTimedOut": "연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.",
       "sessionNotFound": "기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.",
       "authFailed": "인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.",
-      "failedToConnect": "연결 실패: ${error}"
+      "failedToConnect": "연결 실패: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "원격 세션 연결을 해제하시겠습니까?",

@@ -2135,7 +2135,14 @@
       "connectionTimedOut": "Қосылу уақыты өтті. Екі құрылғыда да бір желіні пайдаланыңыз.",
       "sessionNotFound": "Құрылғы табылмады.",
       "authFailed": "Аутентификация қатесі.",
-      "failedToConnect": "Қосылу мүмкін болмады: ${error}"
+      "failedToConnect": "Қосылу мүмкін болмады: ${error}",
+      "codeTitle": "",
+      "codeDescription": "",
+      "codeInvalid": "",
+      "updateRequired": "",
+      "hostDescription": "",
+      "resetCode": "",
+      "resetDescription": ""
     },
     "remote": {
       "disconnectConfirm": "Пульт сеансынан ажырайсыз ба?",

@@ -7,19 +7,46 @@ import 'package:cryptography/cryptography.dart';
 
 import '../../models/plex/plex_home.dart';
 import '../../utils/app_logger.dart';
+import 'remote_auth_context.dart';
+import 'remote_pairing_store.dart';
 
 /// Cryptographic authentication service for companion remote.
 ///
-/// Proves same-account membership via a backend-derived shared secret.
+/// Backend-derived material selects discovery peers; it is NOT a secret and
+/// must never authenticate remote commands without a random pairing code.
 ///
 /// Plex uses the Plex Home metadata available to signed-in devices. The
 /// MediaBrowser backends (Jellyfin and Emby) use the stable server/user
-/// identity available after sign-in, matching the same local-LAN trust model:
-/// peers that know the same backend identity can discover and authenticate
-/// each other without a central pairing round-trip.
+/// identity available after sign-in for discovery. Authentication additionally
+/// requires the random capability displayed by the host.
 class RemoteAuthService {
   RemoteAuthService._();
   static final instance = RemoteAuthService._();
+  static const protocolVersion = 2;
+
+  Future<RemoteAuthContext> bindPairingCode(RemoteAuthContext identity, String code) async {
+    final normalized = RemotePairingStore.normalizeCode(code);
+    if (normalized == null) throw const FormatException('Invalid pairing code');
+    final secret = [
+      for (var i = 0; i < normalized.length; i += 2) int.parse(normalized.substring(i, i + 2), radix: 16),
+    ];
+    final key = await _hkdf.deriveKey(
+      secretKey: SecretKey(secret),
+      nonce: identity.homeSecret,
+      info: utf8.encode('plezy-remote-pairing-v2'),
+    );
+    return RemoteAuthContext(
+      id: identity.id,
+      backend: identity.backend,
+      connectionId: identity.connectionId,
+      homeSecret: await key.extractBytes(),
+      discoveryKey: identity.discoveryKey,
+      clientIdentifier: identity.clientIdentifier,
+      userUuid: identity.userUuid,
+      allowedUserUuids: identity.allowedUserUuids,
+      isPaired: true,
+    );
+  }
 
   // Reusable crypto algorithm instances
   static final _hkdf = Hkdf(hmac: Hmac(Sha256()), outputLength: 32);

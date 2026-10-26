@@ -7751,6 +7751,27 @@ class Translations$companionRemote$pairing$en {
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
+
+	/// en: 'Pairing code'
+	String get codeTitle => 'Pairing code';
+
+	/// en: 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.'
+	String get codeDescription => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.';
+
+	/// en: 'Enter all 32 letters and numbers from the host code.'
+	String get codeInvalid => 'Enter all 32 letters and numbers from the host code.';
+
+	/// en: 'Update both devices to a version that supports secure pairing.'
+	String get updateRequired => 'Update both devices to a version that supports secure pairing.';
+
+	/// en: 'Enter this code once on each remote. Keep it private: it grants control of this profile.'
+	String get hostDescription => 'Enter this code once on each remote. Keep it private: it grants control of this profile.';
+
+	/// en: 'Reset pairing code'
+	String get resetCode => 'Reset pairing code';
+
+	/// en: 'Disconnect all remotes and create a new code. Every remote will need to pair again.'
+	String get resetDescription => 'Disconnect all remotes and create a new code. Every remote will need to pair again.';
 }
 
 // Path: companionRemote.remote
@@ -9970,6 +9991,13 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			'companionRemote.pairing.codeTitle' => 'Pairing code',
+			'companionRemote.pairing.codeDescription' => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.',
+			'companionRemote.pairing.codeInvalid' => 'Enter all 32 letters and numbers from the host code.',
+			'companionRemote.pairing.updateRequired' => 'Update both devices to a version that supports secure pairing.',
+			'companionRemote.pairing.hostDescription' => 'Enter this code once on each remote. Keep it private: it grants control of this profile.',
+			'companionRemote.pairing.resetCode' => 'Reset pairing code',
+			'companionRemote.pairing.resetDescription' => 'Disconnect all remotes and create a new code. Every remote will need to pair again.',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
@@ -10075,6 +10103,8 @@ extension on Translations {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
@@ -10082,8 +10112,6 @@ extension on Translations {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
 			'externalPlayer.title' => 'External Player',
