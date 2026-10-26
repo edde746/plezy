@@ -84,6 +84,7 @@
 ### Changed
 
 - Use Plezy's shared Material Symbols icons for file-source, source-detail, player and standalone subtitle-search actions.
+- Keep library/publication-reader search, page entry and bookmark notes on shared focus-aware fields and scoped dialog actions.
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
 - Refresh sign-in with the crisp PlezyNG product artwork and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
