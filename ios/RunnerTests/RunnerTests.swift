@@ -221,7 +221,7 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
-  func testMpvContextsPreferAVFoundationOverAudioUnit() {
+  func testMpvContextsPreferAVFoundationOverAudioUnit() throws {
     // ao_audiounit remixes 5.1/7.1 to stereo on AirPods (#2264); both the
     // video and the music core must probe AVFoundation first.
     let core = MpvAudioPlayerCore()
