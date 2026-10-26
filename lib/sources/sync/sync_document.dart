@@ -63,6 +63,24 @@ Map<String, int> joinedClock(Iterable<SyncVersion> values) {
 }
 
 bool _covers(Map<String, int> a, Map<String, int> b) => b.entries.every((e) => (a[e.key] ?? 0) >= e.value);
+Map<String, dynamic> _semanticSyncValue(Map<String, dynamic> value) {
+  if (value['type'] != 'annotation') return value;
+  final data = sourceMap(value['data']);
+  if (data['deleted'] != true) return value;
+  return {
+    'type': 'annotation',
+    if (value['entry'] is String) 'entry': value['entry'],
+    'data': {
+      if (data['id'] is String) 'id': data['id'],
+      if (data['edition'] is String) 'edition': data['edition'],
+      if (data['mode'] is String) 'mode': data['mode'],
+      'deleted': true,
+    },
+  };
+}
+
+bool _sameSyncValue(Map<String, dynamic> a, Map<String, dynamic> b) =>
+    canonicalSyncJson(_semanticSyncValue(a)) == canonicalSyncJson(_semanticSyncValue(b));
 
 class SyncDocument {
   SyncDocument([Map<String, List<SyncVersion>>? records]) : records = records ?? {};
@@ -78,7 +96,7 @@ class SyncDocument {
         for (final old in current) {
           if (_covers(old.clock, incoming.clock)) {
             if (_covers(incoming.clock, old.clock) &&
-                canonicalSyncJson(old.value) != canonicalSyncJson(incoming.value)) {
+                !_sameSyncValue(old.value, incoming.value)) {
               throw const SourceException(SourceFailure.invalidData);
             }
             covered = true;
@@ -87,12 +105,66 @@ class SyncDocument {
         if (covered) continue;
         current.removeWhere((old) => _covers(incoming.clock, old.clock));
         current.add(incoming);
+        _compactEqualValues(current);
         current.sort((a, b) => canonicalSyncJson(a.clock).compareTo(canonicalSyncJson(b.clock)));
         if (current.length > 128 || records.length > maxRecords) {
           throw const SourceException(SourceFailure.invalidData);
         }
       }
     }
+  }
+
+  /// Coalesces equal concurrent versions and strips deleted annotation text
+  /// while retaining its causal tombstone. Both operations preserve the
+  /// information needed to reject stale writes from offline devices.
+  bool compactSafe() {
+    var changed = false;
+    for (final values in records.values) {
+      changed = _compactEqualValues(values) || changed;
+      for (var index = 0; index < values.length; index++) {
+        final version = values[index];
+        if (version.value['type'] != 'annotation') continue;
+        final data = sourceMap(version.value['data']);
+        if (data['deleted'] != true) continue;
+        final minimalData = {
+          if (data['id'] is String) 'id': data['id'],
+          if (data['edition'] is String) 'edition': data['edition'],
+          if (data['mode'] is String) 'mode': data['mode'],
+          'deleted': true,
+        };
+        if (canonicalSyncJson(data) != canonicalSyncJson(minimalData)) {
+          values[index] = SyncVersion(
+            version.clock,
+            {...version.value, 'data': minimalData},
+            actor: version.actor,
+          );
+          changed = true;
+        }
+      }
+      changed = _compactEqualValues(values) || changed;
+      values.sort((a, b) => canonicalSyncJson(a.clock).compareTo(canonicalSyncJson(b.clock)));
+    }
+    return changed;
+  }
+
+  bool _compactEqualValues(List<SyncVersion> values) {
+    final groups = <String, List<SyncVersion>>{};
+    for (final value in values) {
+      groups.putIfAbsent(canonicalSyncJson(value.value), () => []).add(value);
+    }
+    if (groups.values.every((group) => group.length == 1)) return false;
+    values.clear();
+    for (final group in groups.values) {
+      final actors = group.map((value) => value.actor).toSet();
+      values.add(
+        SyncVersion(
+          joinedClock(group),
+          group.first.value,
+          actor: actors.length == 1 ? actors.first : null,
+        ),
+      );
+    }
+    return true;
   }
 
   /// [basis] is the last value applied locally, NOT all downloaded values.
@@ -114,7 +186,8 @@ class SyncDocument {
     return next;
   }
 
-  bool conflicted(String key) => (records[key] ?? []).map((v) => canonicalSyncJson(v.value)).toSet().length > 1;
+  bool conflicted(String key) =>
+      (records[key] ?? []).map((v) => canonicalSyncJson(_semanticSyncValue(v.value))).toSet().length > 1;
   Map<String, dynamic> toJson() => {
     'version': 1,
     'records': records.map((k, v) => MapEntry(k, v.map((x) => x.toJson()).toList())),
@@ -190,3 +263,4 @@ class SyncCipher {
     }
   }
 }
+
