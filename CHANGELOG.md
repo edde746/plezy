@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Make NFS read measurement results accurately labelled, locale-formatted, and usable with remote focus and smaller screens.
 - Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync.
 - Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
 - Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.

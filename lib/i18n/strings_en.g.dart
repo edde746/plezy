@@ -8376,14 +8376,14 @@ class Translations$sourceSetup$en {
 	/// en: 'Measure NFS read performance'
 	String get nfsReadTest => 'Measure NFS read performance';
 
-	/// en: 'Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.'
-	String get nfsReadTestHelp => 'Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.';
+	/// en: 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.'
+	String get nfsReadTestHelp => 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.';
 
 	/// en: 'NFS read measurement'
 	String get nfsQualificationResult => 'NFS read measurement';
 
-	/// en: 'Bytes read'
-	String get nfsReadBytes => 'Bytes read';
+	/// en: 'Data read'
+	String get nfsReadBytes => 'Data read';
 
 	/// en: 'Measured speed'
 	String get nfsReadSpeed => 'Measured speed';
