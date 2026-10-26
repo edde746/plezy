@@ -1402,6 +1402,7 @@ class _Translations$about$ko extends Translations$about$en {
 
 	// Translations
 	@override String get title => '소개';
+	@override String get privacyPolicy => '개인정보 처리방침';
 	@override String get openSourceLicenses => '오픈소스 라이선스';
 	@override String versionLabel({required Object version}) => '버전 ${version}';
 	@override String get appDescription => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트';
@@ -4711,6 +4712,7 @@ extension on TranslationsKo {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => '소개',
+			'about.privacyPolicy' => '개인정보 처리방침',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
 			'about.appDescription' => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트',
@@ -5010,9 +5012,9 @@ extension on TranslationsKo {
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
 			'collections.collectionName' => '컬렉션 이름',
-			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			'collections.addedToCollection' => '컬렉션에 추가됨',
 			'collections.errorAddingToCollection' => '컬렉션에 추가 실패',
 			'collections.created' => '컬렉션 생성됨',
@@ -5524,9 +5526,9 @@ extension on TranslationsKo {
 			'externalPlayer.selectPlayer' => '플레이어 선택',
 			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
 			'externalPlayer.systemDefault' => '시스템 기본값',
-			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
 			'externalPlayer.playerName' => '플레이어 이름',
 			'externalPlayer.playerNameHint' => '내 플레이어',
 			'externalPlayer.playerCommand' => '명령어',

@@ -1407,6 +1407,7 @@ class _Translations$about$hu extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Névjegy';
+	@override String get privacyPolicy => 'Adatvédelmi tájékoztató';
 	@override String get openSourceLicenses => 'Nyílt forráskódú licencek';
 	@override String versionLabel({required Object version}) => 'Verzió: ${version}';
 	@override String get appDescription => 'Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez';
@@ -4723,6 +4724,7 @@ extension on TranslationsHu {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Névjegy',
+			'about.privacyPolicy' => 'Adatvédelmi tájékoztató',
 			'about.openSourceLicenses' => 'Nyílt forráskódú licencek',
 			'about.versionLabel' => ({required Object version}) => 'Verzió: ${version}',
 			'about.appDescription' => 'Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez',
@@ -5022,9 +5024,9 @@ extension on TranslationsHu {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Nem sikerült a gyűjtemény törlése: ${error}',
 			'collections.selectCollection' => 'Gyűjtemény kiválasztása',
 			'collections.collectionName' => 'Gyűjtemény neve',
-			'collections.enterCollectionName' => 'Add meg a gyűjtemény nevét',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Add meg a gyűjtemény nevét',
 			'collections.addedToCollection' => 'Hozzáadva a gyűjteményhez',
 			'collections.errorAddingToCollection' => 'Nem sikerült a gyűjteményhez adni',
 			'collections.created' => 'Gyűjtemény létrehozva',
@@ -5536,9 +5538,9 @@ extension on TranslationsHu {
 			'externalPlayer.selectPlayer' => 'Lejátszó kiválasztása',
 			'externalPlayer.customPlayers' => 'Egyéni lejátszók',
 			'externalPlayer.systemDefault' => 'Rendszer alapértelmezése',
-			'externalPlayer.addCustomPlayer' => 'Egyéni lejátszó hozzáadása',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Egyéni lejátszó hozzáadása',
 			'externalPlayer.playerName' => 'Lejátszó neve',
 			'externalPlayer.playerNameHint' => 'Saját lejátszó',
 			'externalPlayer.playerCommand' => 'Parancs',

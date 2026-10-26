@@ -68,6 +68,13 @@
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
 - Fix music fade gain handling across track transitions and avoid visualizer profile requests before the active track is ready.
 
+### Fixed
+
+- Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
+- Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
+- Localize the About screen privacy-policy link.
+- Cover AVFoundation speed flush ordering deterministically when simulator audio is unavailable.
+
 ### Removed
 
 - Remove unused upstream website, legacy app-store and Sentry upload automation, and funding links.

@@ -1407,6 +1407,7 @@ class _Translations$about$tr extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Hakkında';
+	@override String get privacyPolicy => 'Gizlilik Politikası';
 	@override String get openSourceLicenses => 'Açık Kaynak Lisansları';
 	@override String versionLabel({required Object version}) => 'Sürüm ${version}';
 	@override String get appDescription => 'Flutter için şık bir Plex, Jellyfin ve Emby istemcisi';
@@ -4723,6 +4724,7 @@ extension on TranslationsTr {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Hakkında',
+			'about.privacyPolicy' => 'Gizlilik Politikası',
 			'about.openSourceLicenses' => 'Açık Kaynak Lisansları',
 			'about.versionLabel' => ({required Object version}) => 'Sürüm ${version}',
 			'about.appDescription' => 'Flutter için şık bir Plex, Jellyfin ve Emby istemcisi',
@@ -5022,9 +5024,9 @@ extension on TranslationsTr {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Koleksiyon silinemedi: ${error}',
 			'collections.selectCollection' => 'Koleksiyon Seç',
 			'collections.collectionName' => 'Koleksiyon Adı',
-			'collections.enterCollectionName' => 'Koleksiyon adını girin',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Koleksiyon adını girin',
 			'collections.addedToCollection' => 'Koleksiyona eklendi',
 			'collections.errorAddingToCollection' => 'Koleksiyona eklenemedi',
 			'collections.created' => 'Koleksiyon oluşturuldu',
@@ -5536,9 +5538,9 @@ extension on TranslationsTr {
 			'externalPlayer.selectPlayer' => 'Oynatıcı Seç',
 			'externalPlayer.customPlayers' => 'Özel Oynatıcılar',
 			'externalPlayer.systemDefault' => 'Sistem Varsayılanı',
-			'externalPlayer.addCustomPlayer' => 'Özel Oynatıcı Ekle',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Özel Oynatıcı Ekle',
 			'externalPlayer.playerName' => 'Oynatıcı Adı',
 			'externalPlayer.playerNameHint' => 'Oynatıcım',
 			'externalPlayer.playerCommand' => 'Komut',

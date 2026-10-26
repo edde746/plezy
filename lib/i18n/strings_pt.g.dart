@@ -1407,6 +1407,7 @@ class _Translations$about$pt extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Sobre';
+	@override String get privacyPolicy => 'Política de Privacidade';
 	@override String get openSourceLicenses => 'Licenças de código aberto';
 	@override String versionLabel({required Object version}) => 'Versão ${version}';
 	@override String get appDescription => 'Um belo cliente de Plex, Jellyfin e Emby feito com Flutter';
@@ -4723,6 +4724,7 @@ extension on TranslationsPt {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Sobre',
+			'about.privacyPolicy' => 'Política de Privacidade',
 			'about.openSourceLicenses' => 'Licenças de código aberto',
 			'about.versionLabel' => ({required Object version}) => 'Versão ${version}',
 			'about.appDescription' => 'Um belo cliente de Plex, Jellyfin e Emby feito com Flutter',
@@ -5022,9 +5024,9 @@ extension on TranslationsPt {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Falha ao excluir coleção: ${error}',
 			'collections.selectCollection' => 'Selecionar Coleção',
 			'collections.collectionName' => 'Nome da Coleção',
-			'collections.enterCollectionName' => 'Insira o nome da coleção',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Insira o nome da coleção',
 			'collections.addedToCollection' => 'Adicionado à coleção',
 			'collections.errorAddingToCollection' => 'Falha ao adicionar à coleção',
 			'collections.created' => 'Coleção criada',
@@ -5536,9 +5538,9 @@ extension on TranslationsPt {
 			'externalPlayer.selectPlayer' => 'Selecionar reprodutor',
 			'externalPlayer.customPlayers' => 'Reprodutores personalizados',
 			'externalPlayer.systemDefault' => 'Padrão do sistema',
-			'externalPlayer.addCustomPlayer' => 'Adicionar reprodutor personalizado',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Adicionar reprodutor personalizado',
 			'externalPlayer.playerName' => 'Nome do reprodutor',
 			'externalPlayer.playerNameHint' => 'Meu reprodutor',
 			'externalPlayer.playerCommand' => 'Comando',

@@ -348,9 +348,11 @@ void main() {
       }
 
       Finder defaultLogo() => find.descendant(of: tile(defaultAppIconId), matching: find.byType(SvgPicture));
+      Finder defaultPreviewImage() => find.descendant(of: tile(defaultAppIconId), matching: find.byType(Image));
 
-      Color plate(WidgetTester tester) =>
-          tester.widget<ColoredBox>(find.ancestor(of: defaultLogo(), matching: find.byType(ColoredBox)).first).color;
+      Color plate(WidgetTester tester) => tester
+          .widget<ColoredBox>(find.ancestor(of: defaultPreviewImage(), matching: find.byType(ColoredBox)).first)
+          .color;
 
       testWidgets('on TV: the dark TV artwork', (tester) async {
         TvDetectionService.debugSetAppleTVOverride(true);
@@ -362,16 +364,16 @@ void main() {
         expect(defaultLogo(), findsNothing);
       });
 
-      testWidgets('on Android phones: white, or #1A1A1A in night mode', (tester) async {
+      testWidgets('on Android phones: navy launcher background in light and dark mode', (tester) async {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
         try {
           await pumpDefault(tester);
-          expect(plate(tester), const Color(0xFFFFFFFF));
+          expect(plate(tester), const Color(0xFF131928));
 
           tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
           addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
           await tester.pump();
-          expect(plate(tester), const Color(0xFF1A1A1A));
+          expect(plate(tester), const Color(0xFF131928));
         } finally {
           debugDefaultTargetPlatformOverride = null;
         }
