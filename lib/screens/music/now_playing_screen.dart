@@ -629,10 +629,14 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                       style: TextStyle(fontSize: 13, color: tk.textMuted),
                     ),
             ),
-            IconButton(
-              tooltip: _musicWorkspaceActionLabel(),
+            FocusableButton(
+              autoScroll: false,
               onPressed: () => unawaited(_openMusicInWorkspace(service, track)),
-              icon: AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1, color: tk.text),
+              child: IconButton(
+                tooltip: _musicWorkspaceActionLabel(),
+                onPressed: () => unawaited(_openMusicInWorkspace(service, track)),
+                icon: AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1, color: tk.text),
+              ),
             ),
             _buildOverflowButton(track),
           ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_motion.dart';
@@ -106,6 +107,12 @@ class _MultiviewOverlay extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final media = MediaQuery.of(context);
+        final padding = media.padding;
+        final safeEnd = Directionality.of(context) == TextDirection.rtl ? padding.left : padding.right;
+        final trayMaxWidth = (media.size.width - padding.horizontal - 24).clamp(0.0, 320.0).toDouble();
+        final trayMaxHeight =
+            (media.size.height - padding.top - padding.bottom - 80).clamp(0.0, 360.0).toDouble();
         final visible = controller.visibleSessions;
         final visibleIds = visible.map((session) => session.descriptor.id).toSet();
         final retainedGameSurfaces = controller.sessions.where(
@@ -150,9 +157,21 @@ class _MultiviewOverlay extends StatelessWidget {
                 offstage: true,
                 child: SizedBox(width: 320, height: 180, child: registration.buildSurface(context)),
               ),
-            PositionedDirectional(end: 12, bottom: 12, child: _WorkspaceDock(controller: controller)),
+            PositionedDirectional(
+              end: 12 + safeEnd,
+              bottom: 12 + padding.bottom,
+              child: _WorkspaceDock(controller: controller),
+            ),
             if (controller.sessionTrayVisible)
-              PositionedDirectional(end: 12, bottom: 68, child: _WorkspaceSessionTray(controller: controller)),
+              PositionedDirectional(
+                end: 12 + safeEnd,
+                bottom: 68 + padding.bottom,
+                child: _WorkspaceSessionTray(
+                  controller: controller,
+                  maxWidth: trayMaxWidth,
+                  maxHeight: trayMaxHeight,
+                ),
+              ),
           ],
         );
       },
@@ -260,13 +279,14 @@ class _WorkspaceWindow extends StatefulWidget {
 
 class _WorkspaceWindowState extends State<_WorkspaceWindow> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'multiview_window');
+  final FocusNode _surfaceFocusNode = FocusNode(debugLabel: 'multiview_surface');
   Offset _lastLongPressOffset = Offset.zero;
   bool _wasSelected = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_onFocusChanged);
+    _surfaceFocusNode.addListener(_onSurfaceFocusChanged);
   }
 
   @override
@@ -276,19 +296,21 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
     final nextId = widget.registration.descriptor.id;
     if (oldWidget.controller != widget.controller || oldId != nextId) {
       oldWidget.controller.setSurfaceInputFocus(oldId, false);
+      _surfaceFocusNode.unfocus();
       _wasSelected = false;
-      _onFocusChanged();
+      _onSurfaceFocusChanged();
     }
   }
 
-  void _onFocusChanged() {
-    widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, _focusNode.hasFocus);
+  void _onSurfaceFocusChanged() {
+    widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, _surfaceFocusNode.hasFocus);
   }
 
   @override
   void dispose() {
     widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, false);
-    _focusNode.removeListener(_onFocusChanged);
+    _surfaceFocusNode.removeListener(_onSurfaceFocusChanged);
+    _surfaceFocusNode.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -343,7 +365,11 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
       if (selected) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && widget.controller.focusedSessionId == id && !_focusNode.hasFocus) {
-            _focusNode.requestFocus();
+            if (registration.descriptor.acceptsInput) {
+              _surfaceFocusNode.requestFocus();
+            } else {
+              _focusNode.requestFocus();
+            }
           }
         });
       }
@@ -431,8 +457,21 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
                     },
                   ),
                   Expanded(
-                    child: SizedBox.expand(
-                      child: _buildSurfaceWithMoveGestures(context, id, registration),
+                    child: Focus(
+                      focusNode: _surfaceFocusNode,
+                      canRequestFocus: registration.descriptor.acceptsInput,
+                      child: Listener(
+                        behavior: HitTestBehavior.translucent,
+                        onPointerDown: registration.descriptor.acceptsInput
+                            ? (_) {
+                                controller.focus(id);
+                                _surfaceFocusNode.requestFocus();
+                              }
+                            : null,
+                        child: SizedBox.expand(
+                          child: _buildSurfaceWithMoveGestures(context, id, registration),
+                        ),
+                      ),
                     ),
                   ),
                   if (widget.floating && !widget.fullscreen)
@@ -512,37 +551,32 @@ class _WorkspaceTitleBar extends StatelessWidget {
               ),
             ),
             if (floating && !fullscreen)
-              IconButton(
+              _workspaceIconButton(
                 tooltip: moving ? t.common.save : t.common.edit,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: moving ? Symbols.check_rounded : Symbols.drag_handle_rounded,
                 onPressed: onMoveToggle,
-                icon: Icon(moving ? Symbols.check_rounded : Symbols.drag_handle_rounded),
+                iconSize: 19,
               ),
             if (registration.descriptor.hasAudio)
-              IconButton(
+              _workspaceIconButton(
                 tooltip: controller.audibleSessionId == id ? t.videoControls.muteButton : t.videoControls.unmuteButton,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded,
                 onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
-                icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
+                iconSize: 19,
               ),
             if (registration.descriptor.kind != MultiviewMediaKind.game)
-              IconButton(
+              _workspaceIconButton(
                 tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
                         registration.descriptor.kind == MultiviewMediaKind.liveTv
                     ? t.videoControls.returnToFullPlayer
                     : t.common.returnToFullView,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: Symbols.picture_in_picture_alt_rounded,
                 onPressed: () => controller.restore(id),
-                icon: const Icon(Symbols.picture_in_picture_alt_rounded),
+                iconSize: 19,
               ),
-            IconButton(
+            _workspaceIconButton(
               tooltip: fullscreen ? t.common.exitFullscreen : t.common.fullscreen,
-              visualDensity: VisualDensity.standard,
-              iconSize: 19,
-              icon: Icon(fullscreen ? Symbols.fullscreen_exit_rounded : Symbols.open_in_full_rounded),
+              icon: fullscreen ? Symbols.fullscreen_exit_rounded : Symbols.open_in_full_rounded,
               onPressed: () {
                 if (fullscreen) {
                   controller.exitFullscreen();
@@ -550,16 +584,16 @@ class _WorkspaceTitleBar extends StatelessWidget {
                   controller.promoteToFullscreen(id);
                 }
               },
+              iconSize: 19,
             ),
-            IconButton(
+            _workspaceIconButton(
               tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
                       registration.descriptor.kind == MultiviewMediaKind.liveTv
                   ? t.common.closeMiniPlayer
                   : t.common.closeWorkspaceWindow,
-              visualDensity: VisualDensity.standard,
-              iconSize: 19,
+              icon: Symbols.close_rounded,
               onPressed: () => controller.close(id),
-              icon: const Icon(Symbols.close_rounded),
+              iconSize: 19,
             ),
           ],
         ),
@@ -586,33 +620,31 @@ class _WorkspaceDock extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!fullscreen && controller.visibleSessions.length > 1)
-            IconButton(
+            _workspaceIconButton(
               tooltip: t.common.viewAll,
+              icon: Symbols.swap_horiz_rounded,
               onPressed: controller.swapFocusedWithNext,
-              icon: const Icon(Symbols.swap_horiz_rounded),
             ),
           if (fullscreen)
-            IconButton(
+            _workspaceIconButton(
               tooltip: t.common.exitFullscreen,
+              icon: Symbols.fullscreen_exit_rounded,
               onPressed: controller.exitFullscreen,
-              icon: const Icon(Symbols.fullscreen_exit_rounded),
             )
           else
-            IconButton(
+            _workspaceIconButton(
               tooltip: mode == MultiviewLayoutMode.floating ? t.common.sideBySideLayout : t.common.floatingWindows,
+              icon: mode == MultiviewLayoutMode.floating
+                  ? Symbols.grid_view_rounded
+                  : Symbols.picture_in_picture_alt_rounded,
               onPressed: () => controller.setLayoutMode(
                 mode == MultiviewLayoutMode.floating ? MultiviewLayoutMode.sideBySide : MultiviewLayoutMode.floating,
               ),
-              icon: Icon(
-                mode == MultiviewLayoutMode.floating
-                    ? Symbols.grid_view_rounded
-                    : Symbols.picture_in_picture_alt_rounded,
-              ),
             ),
-          IconButton(
+          _workspaceIconButton(
             tooltip: t.common.manageMediaSessions,
+            icon: Symbols.dashboard_customize_rounded,
             onPressed: controller.toggleSessionTray,
-            icon: const Icon(Symbols.dashboard_customize_rounded),
           ),
         ],
       ),
@@ -621,9 +653,11 @@ class _WorkspaceDock extends StatelessWidget {
 }
 
 class _WorkspaceSessionTray extends StatelessWidget {
-  const _WorkspaceSessionTray({required this.controller});
+  const _WorkspaceSessionTray({required this.controller, required this.maxWidth, required this.maxHeight});
 
   final MultiviewWorkspaceController controller;
+  final double maxWidth;
+  final double maxHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -634,7 +668,7 @@ class _WorkspaceSessionTray extends StatelessWidget {
       borderRadius: BorderRadius.circular(tk.radiusLg),
       elevation: 18,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320, maxHeight: 360),
+        constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: ListView(
           shrinkWrap: true,
           padding: EdgeInsets.all(tk.space * 0.5),
@@ -660,13 +694,12 @@ class _WorkspaceSessionTray extends StatelessWidget {
                   }
                   controller.setSessionTrayVisible(false);
                 },
-                trailing: IconButton(
+                trailing: _workspaceIconButton(
                   tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
                           registration.descriptor.kind == MultiviewMediaKind.liveTv
                       ? t.videoControls.returnToFullPlayer
                       : t.common.returnToFullView,
-                  visualDensity: VisualDensity.standard,
-                  icon: const Icon(Symbols.arrow_back_rounded),
+                  icon: Symbols.arrow_back_rounded,
                   onPressed: () {
                     controller.setSessionTrayVisible(false);
                     controller.restore(registration.descriptor.id);
@@ -679,6 +712,24 @@ class _WorkspaceSessionTray extends StatelessWidget {
     );
   }
 }
+
+Widget _workspaceIconButton({
+  required String tooltip,
+  required IconData icon,
+  required VoidCallback onPressed,
+  double iconSize = 24,
+}) =>
+    FocusableButton(
+      autoScroll: false,
+      onPressed: onPressed,
+      child: IconButton(
+        tooltip: tooltip,
+        visualDensity: VisualDensity.standard,
+        iconSize: iconSize,
+        onPressed: onPressed,
+        icon: Icon(icon),
+      ),
+    );
 
 class _ResizeHandle extends StatelessWidget {
   const _ResizeHandle({required this.onResize});

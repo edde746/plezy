@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
@@ -24,6 +27,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
@@ -42,6 +46,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   MultiviewWorkspaceController? _workspaceController;
   final Map<String, SteamGameWorkspaceSession> _workspaceGameSessions = <String, SteamGameWorkspaceSession>{};
   final _firstFocus = FocusNode();
+  final _searchController = TextEditingController();
   String? _profile;
   int? _sourceGeneration;
   int _epoch = 0;
@@ -54,6 +59,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final id = context.watch<ActiveProfileProvider>().activeId;
     final generation = context.select<SourceController, int>((s) => s.generation);
     if (id == _profile && generation == _sourceGeneration && _controller != null) return;
+    if (id != _profile) {
+      _searchController.clear();
+      _query = '';
+    }
     _profile = id;
     _sourceGeneration = generation;
     _retire();
@@ -117,6 +126,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _epoch++;
     _retire();
     _firstFocus.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -167,7 +177,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   Future<void> _add() async {
     final c = _controller;
-    final host = await showDialog<GameHost>(context: context, builder: (_) => const AddGameComputerDialog());
+    final host = await showScopedDialog<GameHost>(context: context, builder: (_) => const AddGameComputerDialog());
     if (host == null || !mounted || c != _controller) return;
     await _run((c) => c.saveHost(host));
     if (mounted && c == _controller) await _connect(host);
@@ -197,7 +207,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     }
     c.requireCurrent();
     if (!mounted) return;
-    final paired = await showDialog<bool>(
+    final paired = await showScopedDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => PairGameComputerDialog(host: selected, client: c.client, isCurrent: () => c.current),
@@ -283,16 +293,38 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   });
   Future<void> _engineUnavailable(GameHost host) async {
     if (!mounted) return;
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.games.engineUnavailable),
         scrollable: true,
         content: Text(host.protocol == GameProtocol.steam ? t.games.steamEnginePending : t.games.nativeEnginePending),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.ok))],
+        actions: [
+          DialogActionButton(
+            autofocus: InputModeTracker.isKeyboardMode(dialogContext, listen: false),
+            onPressed: () => Navigator.pop(dialogContext),
+            label: t.common.ok,
+          ),
+        ],
       ),
     );
   }
+
+  Future<void> _showHelp() => showScopedDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(t.games.help),
+      scrollable: true,
+      content: Text(t.games.helpBody),
+      actions: [
+        DialogActionButton(
+          autofocus: InputModeTracker.isKeyboardMode(dialogContext, listen: false),
+          onPressed: () => Navigator.pop(dialogContext),
+          label: t.common.ok,
+        ),
+      ],
+    ),
+  );
 
   Future<void> _hostAction(String action, GameHost host) async {
     switch (action) {
@@ -320,7 +352,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         }
       case 'add':
         final c = _controller;
-        final game = await showDialog<StreamGame>(
+        final game = await showScopedDialog<StreamGame>(
           context: context,
           builder: (_) => AddGameShortcutDialog(host: host),
         );
@@ -403,17 +435,13 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       automaticallyImplyLeading: false,
       focusableAppBarActions: true,
       actions: [
-        IconButton(
-          tooltip: t.games.help,
-          icon: const AppIcon(Symbols.help_outline_rounded),
-          onPressed: () => showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(t.games.help),
-              scrollable: true,
-              content: Text(t.games.helpBody),
-              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.ok))],
-            ),
+        FocusableButton(
+          autoScroll: false,
+          onPressed: _showHelp,
+          child: IconButton(
+            tooltip: t.games.help,
+            icon: const AppIcon(Symbols.help_outline_rounded),
+            onPressed: _showHelp,
           ),
         ),
       ],
@@ -431,16 +459,23 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                      FilledButton.icon(
+                      FocusableButton(
                         focusNode: filtered.isEmpty ? _firstFocus : null,
                         onPressed: enabled ? _add : null,
-                        icon: const AppIcon(Symbols.add_rounded),
-                        label: Text(t.games.addComputer),
+                        useBackgroundFocus: true,
+                        child: FilledButton.icon(
+                          onPressed: enabled ? _add : null,
+                          icon: const AppIcon(Symbols.add_rounded),
+                          label: Text(t.games.addComputer),
+                        ),
                       ),
-                      OutlinedButton.icon(
+                      FocusableButton(
                         onPressed: enabled && c?.scanning == false ? _scan : null,
-                        icon: const AppIcon(Symbols.radar_rounded),
-                        label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        child: OutlinedButton.icon(
+                          onPressed: enabled && c?.scanning == false ? _scan : null,
+                          icon: const AppIcon(Symbols.radar_rounded),
+                          label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        ),
                       ),
                     ],
                   ),
@@ -453,7 +488,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             if (state.games.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: TextField(
+                child: FocusableTextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     labelText: t.games.search,
                     prefixIcon: const AppIcon(Symbols.search_rounded),

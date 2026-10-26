@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
@@ -1065,10 +1066,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       appBar: AppBar(
         title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
-          IconButton(
-            tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
+          FocusableButton(
+            autoScroll: false,
             onPressed: _ready ? _toggleReaderWorkspace : null,
-            icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+            child: IconButton(
+              tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
+              onPressed: _ready ? _toggleReaderWorkspace : null,
+              icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+            ),
           ),
           IconButton(
             tooltip: t.fileSources.contents,

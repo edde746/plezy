@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_slider.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
@@ -549,10 +550,14 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               icon: const AppIcon(Symbols.fullscreen_rounded),
             ),
           if (s.video && _full)
-            IconButton(
-              tooltip: _workspaceDetached ? t.videoControls.returnToFullPlayer : t.videoControls.openMiniPlayer,
+            FocusableButton(
+              autoScroll: false,
               onPressed: _toggleSourceWorkspace,
-              icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+              child: IconButton(
+                tooltip: _workspaceDetached ? t.videoControls.returnToFullPlayer : t.videoControls.openMiniPlayer,
+                onPressed: _toggleSourceWorkspace,
+                icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+              ),
             ),
         ],
       ),
@@ -671,12 +676,16 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(s.entry!.title),
               focusableAppBarActions: true,
               actions: [
-                IconButton(
-                  tooltip: _workspaceDetached
-                      ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
-                      : t.videoControls.openMiniPlayer,
+                FocusableButton(
+                  autoScroll: false,
                   onPressed: _toggleSourceWorkspace,
-                  icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                  child: IconButton(
+                    tooltip: _workspaceDetached
+                        ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                        : t.videoControls.openMiniPlayer,
+                    onPressed: _toggleSourceWorkspace,
+                    icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                  ),
                 ),
                 IconButton(
                   tooltip: t.fileSources.stop,

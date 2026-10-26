@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 - Increase Multiview title-bar, session-tray, and resize controls to consistent 48dp focus targets.
+- Release embedded game input when focus moves into workspace controls, and restore it when focus returns to the game surface.
+- Keep the Multiview dock and session tray inside safe areas and fit the tray to short, narrow windows.
+- Give Multiview, Games, and media workspace actions the shared TV focus indicator and D-pad activation behavior.
+- Use shared TV focus and dialog controls for Games setup, search, and pairing; clear the search when the active profile changes.
 - Add an app-owned Multiview workspace for retained video, music, source playback and publication surfaces, with floating/split layouts, shared audio and input ownership, and independent native channels for two simultaneous video sessions.
 - Add a retained Android Steam game surface to Multiview with workspace audio ownership and exclusive gamepad input; other game engines remain on their existing launch paths.
 

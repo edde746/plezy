@@ -5,9 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/dialog_action_button.dart';
 
 class AddGameComputerDialog extends StatefulWidget {
   const AddGameComputerDialog({super.key});
@@ -62,6 +66,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
           DropdownButtonFormField<GameProtocol>(
             initialValue: _protocol,
             isExpanded: true,
+            autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
             decoration: InputDecoration(labelText: t.games.protocol),
             items: [
               DropdownMenuItem(value: GameProtocol.gameStream, child: Text(t.games.moonlight)),
@@ -76,30 +81,34 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
               }
             },
           ),
-          TextField(
+          FocusableTextField(
             controller: _name,
+            textInputAction: TextInputAction.next,
             decoration: InputDecoration(labelText: t.games.name),
             maxLength: 256,
           ),
-          TextField(
+          FocusableTextField(
             controller: _address,
             decoration: InputDecoration(labelText: t.games.address),
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.next,
           ),
-          TextField(
+          FocusableTextField(
             controller: _port,
             decoration: InputDecoration(labelText: t.games.port),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textInputAction: TextInputAction.next,
           ),
-          TextField(
+          FocusableTextField(
             controller: _mac,
             decoration: InputDecoration(labelText: t.games.mac),
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.done,
           ),
           if (_error != null)
             Semantics(
@@ -110,8 +119,8 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
       ),
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(onPressed: _save, child: Text(t.games.save)),
+      DialogActionButton(onPressed: () => Navigator.pop(context), label: t.games.cancel),
+      DialogActionButton(onPressed: _save, label: t.games.save, isPrimary: true),
     ],
   );
 }
@@ -159,6 +168,15 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
     super.dispose();
   }
 
+  Future<void> _openPairingPage() async {
+    if (!widget.isCurrent()) return;
+    try {
+      await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) setState(() => _error = t.games.unavailable);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(t.games.pairTitle),
@@ -188,16 +206,10 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
               ),
             ),
             Text(t.games.qrHelp),
-            TextButton(
-              onPressed: () async {
-                if (!widget.isCurrent()) return;
-                try {
-                  await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
-                } catch (_) {
-                  if (mounted) setState(() => _error = t.games.unavailable);
-                }
-              },
-              child: Text(t.games.openPairingPage),
+            FocusableButton(
+              autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
+              onPressed: _openPairingPage,
+              child: TextButton(onPressed: _openPairingPage, child: Text(t.games.openPairingPage)),
             ),
           ],
           if (_error == null)
@@ -210,7 +222,14 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
         ],
       ),
     ),
-    actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.games.cancel))],
+    actions: [
+      DialogActionButton(
+        autofocus:
+            InputModeTracker.isKeyboardMode(context, listen: false) && widget.host.protocol == GameProtocol.steam,
+        onPressed: () => Navigator.pop(context, false),
+        label: t.games.cancel,
+      ),
+    ],
   );
 }
 
@@ -238,23 +257,30 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
+        FocusableTextField(
           controller: _name,
+          autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
+          textInputAction: TextInputAction.next,
           maxLength: 256,
           decoration: InputDecoration(labelText: t.games.gameName),
         ),
-        TextField(
+        FocusableTextField(
           controller: _id,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          textInputAction: TextInputAction.done,
           decoration: InputDecoration(labelText: t.games.gameId),
         ),
-        if (_invalid) Text(t.games.invalidGame),
+        if (_invalid)
+          Semantics(
+            liveRegion: true,
+            child: Text(t.games.invalidGame, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
       ],
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(
+      DialogActionButton(onPressed: () => Navigator.pop(context), label: t.games.cancel),
+      DialogActionButton(
         onPressed: () {
           final id = int.tryParse(_id.text);
           if (_name.text.trim().isEmpty || id == null || id < 1 || id > 0x7fffffff) {
@@ -263,7 +289,8 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
           }
           Navigator.pop(context, StreamGame(hostKey: widget.host.key, id: '$id', name: _name.text.trim()));
         },
-        child: Text(t.games.saveShortcut),
+        label: t.games.saveShortcut,
+        isPrimary: true,
       ),
     ],
   );
