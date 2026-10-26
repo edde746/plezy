@@ -439,9 +439,13 @@ jobs:
         if: matrix.platform == 'tvOS'
         run: tvos/scripts/fetch_engine.sh
 
-      - name: Verify Flutter configuration preserved CocoaPods lockfile
+      - name: Restore and verify committed CocoaPods lockfile
         if: matrix.platform != 'tvOS'
-        run: shasum -a 256 --check "$RUNNER_TEMP/plezy-podfile-lock.sha256"
+        env:
+          PODFILE_LOCK: ${{ matrix.project_directory }}/Podfile.lock
+        run: |
+          git restore --source=HEAD --worktree -- "$PODFILE_LOCK"
+          shasum -a 256 --check "$RUNNER_TEMP/plezy-podfile-lock.sha256"
 
       - name: Install locked CocoaPods dependencies
         if: matrix.platform != 'tvOS'
