@@ -190,6 +190,25 @@ Those checks passed locally. LeakSanitizer had to be disabled because this host
 rejects its process inspection; ASan/UBSan selector execution passed. No full
 native app, Flutter or engine test pass is claimed. `clang-format` was unavailable.
 
+## Cross-platform prior art update (2026-10-26)
+
+[MDK SDK 0.39.0](https://github.com/wang-bin/mdk-sdk) now claims P7 FEL decode
+from single-track and separate BL/EL inputs, plus residual rendering through
+Metal, OpenGL/ES, Vulkan, D3D11 and D3D12. Its changelog says FFmpeg 9.0+ is
+required for separated BL/EL tracks or when in-band parameter sets are absent.
+The repository lists Windows, Linux, macOS, Android, iOS, tvOS, OpenHarmony and
+other targets, but does not list webOS. Treat these as vendor claims, not
+per-platform qualification.
+
+MDK is distributed as a downloadable binary SDK; its repository does not expose
+the FEL engine source. Its README describes license-key conditions for open
+source/Flutter use and commercial use, and the author declined to release the
+engine source in [issue #300](https://github.com/wang-bin/mdk-sdk/issues/300).
+Do not copy or adopt it as PlezyNG's engine. It may serve as a black-box
+comparison only if the key/terms permit the test. Our own engine's successful
+feature probe/build does **not** yet prove separate-track or missing-parameter-set
+input; test those independently when a properly licensed sample is available.
+
 ## Platform buildout
 
 | Platform | Concrete route | Current confidence / boundary |
