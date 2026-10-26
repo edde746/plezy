@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Use shared TV-aware text fields and focusable dialog actions for Games search and setup; keep mobile navigation destinations usable with optional tabs in a focusable More sheet.
+- Route Games search, page actions, and dialogs through the shared TV focus controls; keep mobile navigation destinations usable with optional tabs in a focusable More sheet.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
