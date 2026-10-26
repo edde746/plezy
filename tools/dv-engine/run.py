@@ -11,9 +11,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--app", type=Path, help="A PlezyNG build containing the experimental API selector")
+    parser.add_argument("--render-api", choices=("opengl", "opengl-next"),
+                        help="Strict app-only override; otherwise the in-app settings choose the renderer")
     parser.add_argument("--tool", choices=("mpv", "ffmpeg", "ffprobe"), default="mpv")
     parser.add_argument("args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
+    if args.render_api and not args.app:
+        parser.error("--render-api requires --app")
     root = args.engine.resolve(strict=True)
     lock = json.loads((root / "engine.lock.json").read_text())
     report = json.loads((root / "feature-report.json").read_text())
@@ -32,7 +36,8 @@ def main():
         # Some app packages use DT_RPATH. Preloading the selected SONAME avoids
         # silently retaining their bundled legacy libmpv. This is experimental.
         env["LD_PRELOAD"] = str(library) + (":" + env["LD_PRELOAD"] if env.get("LD_PRELOAD") else "")
-        env["PLEZYNG_EXPERIMENTAL_RENDER_API"] = "opengl-next"
+        if args.render_api:
+            env["PLEZYNG_EXPERIMENTAL_RENDER_API"] = args.render_api
     forwarded = args.args[1:] if args.args[:1] == ["--"] else args.args
     os.execve(executable, [str(executable), *forwarded], env)
 

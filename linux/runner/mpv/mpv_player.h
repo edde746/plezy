@@ -86,6 +86,18 @@ class MpvPlayer {
   /// @return true if initialization succeeded.
   bool Initialize();
 
+  // Set before initialization, on the platform thread. Never mutates a live renderer.
+  void ConfigureDolbyVisionExperiment(bool enabled, bool allow_fallback) {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    if (mpv_) return;
+    experimental_dv_ = enabled;
+    dv_compatibility_fallback_ = allow_fallback;
+  }
+  std::string DolbyVisionRendererStatus() const {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    return dv_renderer_status_;
+  }
+
   /// Creates the mpv render context bound to the app-owned EGL window surface
   /// backing the Wayland video plane. This is the only render path: nothing
   /// here is shared with or derived from Flutter's GL state, so the context is
@@ -281,6 +293,10 @@ class MpvPlayer {
   static void RetryPendingNativeTeardown();
 
  private:
+  bool experimental_dv_ = false;
+  bool dv_compatibility_fallback_ = true;
+  std::string dv_renderer_status_ = "not-initialized";
+
   class CallbackContext {
    public:
     class Lease {

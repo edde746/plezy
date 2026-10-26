@@ -760,6 +760,13 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get regionFormatDescription => '选择日期、数字和计量单位的显示方式。';
 	@override String get metadataLanguage => '元数据语言';
 	@override String get metadataLanguageDescription => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。';
+	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
+	@override String get dvCompatibilityFallback => '兼容性回退';
+	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
+	@override String get dvExperimentDiagnostics => '视频实验日志';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 }
 
 // Path: themeEditor
@@ -4871,6 +4878,13 @@ extension on TranslationsZh {
 			'settings.regionFormatDescription' => '选择日期、数字和计量单位的显示方式。',
 			'settings.metadataLanguage' => '元数据语言',
 			'settings.metadataLanguageDescription' => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。',
+			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
+			'settings.dvCompatibilityFallback' => '兼容性回退',
+			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
+			'settings.dvExperimentDiagnostics' => '视频实验日志',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
 			'themeEditor.builtIn' => '内置',
 			'themeEditor.presets' => '预设',
 			'themeEditor.custom' => '自定义',
@@ -5291,6 +5305,8 @@ extension on TranslationsZh {
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描“${title}”媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新“${title}”的元数据…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新“${title}”的元数据',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据：${error}',
 			'messages.logoutConfirm' => '确定要退出登录吗？',
@@ -5298,8 +5314,6 @@ extension on TranslationsZh {
 			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '无法加载剧集',
 			'messages.noResultsFound' => '未找到结果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠定时器已设置为 ${label}',
@@ -5805,6 +5819,8 @@ extension on TranslationsZh {
 			'explore.selectSource' => '选择来源',
 			'explore.rows.watchlist' => '想看列表',
 			'explore.rows.recommendedMovies' => '推荐电影',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推荐剧集',
 			'explore.rows.trendingMovies' => '近期热门电影',
 			'explore.rows.trendingShows' => '近期热门剧集',
@@ -5812,8 +5828,6 @@ extension on TranslationsZh {
 			'explore.rows.popularShows' => '人气剧集',
 			'explore.rows.trendingAnime' => '热门动画',
 			'explore.rows.suggestedAnime' => '推荐动画',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '热门连载动画',
 			'explore.rows.popularAnime' => '最受欢迎动画',
 			'explore.rows.trending' => '近期热门',
@@ -6319,6 +6333,8 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.retryAll' => '全部重试',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '重试失败的下载',
 			'downloads.deleteAll' => '全部删除',
 			'downloads.selectVersion' => '选择版本',
@@ -6326,8 +6342,6 @@ extension on TranslationsZh {
 			'downloads.unwatchedOnly' => '仅未观看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '每個數量(每個數...',
 			'downloads.randomEpisodes' => '随机事件',
 			'downloads.includeSpecials' => '包含特别篇',
@@ -6833,6 +6847,8 @@ extension on TranslationsZh {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '连接到 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '输入你的服务器 URL、用户名和密码。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
@@ -6840,8 +6856,6 @@ extension on TranslationsZh {
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',

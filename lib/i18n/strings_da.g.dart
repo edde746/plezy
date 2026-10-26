@@ -762,6 +762,13 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Vælg, hvordan datoer, tal og måleenheder vises.';
 	@override String get metadataLanguage => 'Sprog for metadata';
 	@override String get metadataLanguageDescription => 'Foretrukket sprog for titler og beskrivelser, når serveren understøtter det. Lyd og undertekster indstilles separat.';
+	@override String get experimentalDolbyVision => 'Eksperimentel Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Brug den eksperimentelle FEL-renderer ved næste afspilning. Kræver en separat motorbygning.';
+	@override String get dvExperimentUnavailableDescription => 'Dette eksperiment er i øjeblikket kun tilgængeligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
+	@override String get dvCompatibilityFallbackDescription => 'Brug standardrendereren, hvis eksperimentet ikke kan starte. FEL-data kan gå tabt.';
+	@override String get dvExperimentDiagnostics => 'Logning af videoeksperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivér detaljerede afspillerlogfiler ved næste afspilning.';
 }
 
 // Path: themeEditor
@@ -4876,6 +4883,13 @@ extension on TranslationsDa {
 			'settings.regionFormatDescription' => 'Vælg, hvordan datoer, tal og måleenheder vises.',
 			'settings.metadataLanguage' => 'Sprog for metadata',
 			'settings.metadataLanguageDescription' => 'Foretrukket sprog for titler og beskrivelser, når serveren understøtter det. Lyd og undertekster indstilles separat.',
+			'settings.experimentalDolbyVision' => 'Eksperimentel Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Brug den eksperimentelle FEL-renderer ved næste afspilning. Kræver en separat motorbygning.',
+			'settings.dvExperimentUnavailableDescription' => 'Dette eksperiment er i øjeblikket kun tilgængeligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
+			'settings.dvCompatibilityFallbackDescription' => 'Brug standardrendereren, hvis eksperimentet ikke kan starte. FEL-data kan gå tabt.',
+			'settings.dvExperimentDiagnostics' => 'Logning af videoeksperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivér detaljerede afspillerlogfiler ved næste afspilning.',
 			'themeEditor.builtIn' => 'Indbygget',
 			'themeEditor.presets' => 'Forudindstillinger',
 			'themeEditor.custom' => 'Brugerdefineret',
@@ -5296,6 +5310,8 @@ extension on TranslationsDa {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksscanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke scanne bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Opdaterer metadata for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadataopdatering startet for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke opdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på, at du vil logge ud?',
@@ -5303,8 +5319,6 @@ extension on TranslationsDa {
 			'messages.seasonsLoadFailed' => 'Kunne ikke indlæse sæsoner',
 			'messages.noEpisodesFound' => 'Ingen episoder fundet i første sæson',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder fundet',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Kunne ikke indlæse episoder',
 			'messages.noResultsFound' => 'Ingen resultater fundet',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sove-timer indstillet til ${label}',
@@ -5810,6 +5824,8 @@ extension on TranslationsDa {
 			'explore.selectSource' => 'Vælg kilde',
 			'explore.rows.watchlist' => 'Ønskeliste',
 			'explore.rows.recommendedMovies' => 'Anbefalede film',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Anbefalede serier',
 			'explore.rows.trendingMovies' => 'Populære film lige nu',
 			'explore.rows.trendingShows' => 'Populære serier lige nu',
@@ -5817,8 +5833,6 @@ extension on TranslationsDa {
 			'explore.rows.popularShows' => 'Populære serier',
 			'explore.rows.trendingAnime' => 'Populær anime lige nu',
 			'explore.rows.suggestedAnime' => 'Anbefalet anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Bedste aktuelle anime',
 			'explore.rows.popularAnime' => 'Mest populære anime',
 			'explore.rows.trending' => 'Populært lige nu',
@@ -6324,6 +6338,8 @@ extension on TranslationsDa {
 			'downloads.pauseAll' => 'Sæt alle på pause',
 			'downloads.resumeAll' => 'Genoptag alle',
 			'downloads.retryAll' => 'Prøv alle igen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Prøv mislykkede downloads igen',
 			'downloads.deleteAll' => 'Slet alle',
 			'downloads.selectVersion' => 'Vælg version',
@@ -6331,8 +6347,6 @@ extension on TranslationsDa {
 			'downloads.unwatchedOnly' => 'Kun usete',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Næste ${count} usete',
 			'downloads.customAmount' => 'Angiv antal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Det er en forhåndsbetalt ( hvert år)',
 			'downloads.randomEpisodes' => 'Random episoder',
 			'downloads.includeSpecials' => 'Medtag specialafsnit',
@@ -6838,6 +6852,8 @@ extension on TranslationsDa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Opret forbindelse til ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Indtast din server-URL, brugernavn og adgangskode.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Log ind på din ${product}-server. Tilknyttes til ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en anden profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',
@@ -6845,8 +6861,6 @@ extension on TranslationsDa {
 			'addServer.authResponseIncomplete' => 'Loginsvaret fra serveren var ufuldstændigt',
 			'addServer.quickConnectRejected' => 'Quick Connect blev afvist af serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret mangler en kode eller hemmelighed',
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling blev afvist af serveren',
 			'addServer.serverTimedOut' => 'Serveren svarede ikke i tide',

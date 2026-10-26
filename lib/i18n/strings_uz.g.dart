@@ -762,6 +762,13 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.';
 	@override String get metadataLanguage => 'Metamaʼlumotlar tili';
 	@override String get metadataLanguageDescription => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.';
+	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
+	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
+	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
+	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
+	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 }
 
 // Path: themeEditor
@@ -4876,6 +4883,13 @@ extension on TranslationsUz {
 			'settings.regionFormatDescription' => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.',
 			'settings.metadataLanguage' => 'Metamaʼlumotlar tili',
 			'settings.metadataLanguageDescription' => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.',
+			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
+			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
+			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
+			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
 			'themeEditor.builtIn' => 'Oʻrnatilgan',
 			'themeEditor.presets' => 'Tayyor mavzular',
 			'themeEditor.custom' => 'Shaxsiy',
@@ -5296,6 +5310,8 @@ extension on TranslationsUz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" uchun skanerlash boshlandi',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kutubxonani skanerlab boʻlmadi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" uchun metamaʼlumotlar yangilanmoqda...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" uchun metamaʼlumotlarni yangilash boshlandi',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metamaʼlumotlarni yangilab boʻlmadi: ${error}',
 			'messages.logoutConfirm' => 'Haqiqatan ham chiqmoqchimisiz?',
@@ -5303,8 +5319,6 @@ extension on TranslationsUz {
 			'messages.seasonsLoadFailed' => 'Mavsumlarni yuklab boʻlmadi',
 			'messages.noEpisodesFound' => 'Birinchi mavsumda qismlar topilmadi',
 			'messages.noEpisodesFoundGeneral' => 'Qismlar topilmadi',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Qismlarni yuklab boʻlmadi',
 			'messages.noResultsFound' => 'Natijalar topilmadi',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Uyqu taymeri ${label} vaqtiga oʻrnatildi',
@@ -5810,6 +5824,8 @@ extension on TranslationsUz {
 			'explore.selectSource' => 'Manbani tanlang',
 			'explore.rows.watchlist' => 'Tomosha roʻyxati',
 			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
 			'explore.rows.trendingMovies' => 'Ommabop filmlar',
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
@@ -5817,8 +5833,6 @@ extension on TranslationsUz {
 			'explore.rows.popularShows' => 'Mashhur seriallar',
 			'explore.rows.trendingAnime' => 'Ommabop anime',
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
 			'explore.rows.popularAnime' => 'Eng mashhur anime',
 			'explore.rows.trending' => 'Ommaboplar',
@@ -6324,6 +6338,8 @@ extension on TranslationsUz {
 			'downloads.pauseAll' => 'Barchasini toʻxtatib turish',
 			'downloads.resumeAll' => 'Barchasini davom ettirish',
 			'downloads.retryAll' => 'Barchasini qaytadan yuklash',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Muvaffaqiyatsiz yuklamalarni qaytadan yuklash',
 			'downloads.deleteAll' => 'Barchasini oʻchirish',
 			'downloads.selectVersion' => 'Versiyani tanlash',
@@ -6331,8 +6347,6 @@ extension on TranslationsUz {
 			'downloads.unwatchedOnly' => 'Faqat koʻrilmaganlar',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Keyingi ${count} koʻrilmagan',
 			'downloads.customAmount' => 'Boshqa miqdor...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Istalgan miqdorni kiriting…',
 			'downloads.randomEpisodes' => 'Reddimiyadi',
 			'downloads.includeSpecials' => 'Maxsus qismlarni qoʻshish',
@@ -6838,6 +6852,8 @@ extension on TranslationsUz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}ga ulanish',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-ini, foydalanuvchi nomini va parolni kiriting.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serveringizga kiring. ${name} profiliga bogʻlanadi.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
@@ -6845,8 +6861,6 @@ extension on TranslationsUz {
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect javobida kod yoki maxfiy kalit yoʻq',
 			'addServer.quickConnectPollRejected' => 'Quick Connect soʻrovi server tomonidan rad etildi',
 			'addServer.serverTimedOut' => 'Server oʻz vaqtida javob bermadi',

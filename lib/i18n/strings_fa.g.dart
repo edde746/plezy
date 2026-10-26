@@ -762,6 +762,13 @@ class _Translations$settings$fa extends Translations$settings$en {
 	@override String get regionFormatDescription => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.';
 	@override String get metadataLanguage => 'زبان فراداده';
 	@override String get metadataLanguageDescription => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.';
+	@override String get experimentalDolbyVision => 'Dolby Vision آزمایشی';
+	@override String get experimentalDolbyVisionDescription => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.';
+	@override String get dvExperimentUnavailableDescription => 'این آزمایش فعلاً فقط در Linux در دسترس است.';
+	@override String get dvCompatibilityFallback => 'گزینهٔ جایگزین سازگار';
+	@override String get dvCompatibilityFallbackDescription => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.';
+	@override String get dvExperimentDiagnostics => 'ثبت رویدادهای آزمایش ویدیو';
+	@override String get dvExperimentDiagnosticsDescription => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.';
 }
 
 // Path: themeEditor
@@ -4876,6 +4883,13 @@ extension on TranslationsFa {
 			'settings.regionFormatDescription' => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.',
 			'settings.metadataLanguage' => 'زبان فراداده',
 			'settings.metadataLanguageDescription' => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision آزمایشی',
+			'settings.experimentalDolbyVisionDescription' => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.',
+			'settings.dvExperimentUnavailableDescription' => 'این آزمایش فعلاً فقط در Linux در دسترس است.',
+			'settings.dvCompatibilityFallback' => 'گزینهٔ جایگزین سازگار',
+			'settings.dvCompatibilityFallbackDescription' => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.',
+			'settings.dvExperimentDiagnostics' => 'ثبت رویدادهای آزمایش ویدیو',
+			'settings.dvExperimentDiagnosticsDescription' => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.',
 			'themeEditor.builtIn' => 'ساخته شده',
 			'themeEditor.presets' => 'پیشگویی',
 			'themeEditor.custom' => 'سفارشی',
@@ -5296,6 +5310,8 @@ extension on TranslationsFa {
 			'messages.libraryScanStarted' => ({required Object title}) => 'کتابخانه اسکن برای "${title}" آغاز شد',
 			'messages.libraryScanFailed' => ({required Object error}) => 'کتابخانه را اسکن نکرد: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'فتوشاپ با «${title}»',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'بازسازی داده های متا برای "${title}" آغاز شد',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'عدم بازسازی داده های متا: ${error}',
 			'messages.logoutConfirm' => 'آیا مطمئن هستید که می خواهید خارج شوید؟',
@@ -5303,8 +5319,6 @@ extension on TranslationsFa {
 			'messages.seasonsLoadFailed' => 'نمی توان فصل ها را بارگذاری کرد',
 			'messages.noEpisodesFound' => 'هیچ قسمت در فصل اول یافت نشد',
 			'messages.noEpisodesFoundGeneral' => 'هیچ حوادث یافت نشد',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'نمی توانم قسمت ها را شارژ کنم',
 			'messages.noResultsFound' => 'نتیجه‌ای یافت نشد.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'زمان خواب برای ${label} تنظیم شده است',
@@ -5810,6 +5824,8 @@ extension on TranslationsFa {
 			'explore.selectSource' => 'انتخاب منبع',
 			'explore.rows.watchlist' => 'لیست نظارت',
 			'explore.rows.recommendedMovies' => 'فیلم های توصیه شده',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'نمایش های توصیه شده',
 			'explore.rows.trendingMovies' => 'فیلم های روندی',
 			'explore.rows.trendingShows' => 'نمایش های روندی',
@@ -5817,8 +5833,6 @@ extension on TranslationsFa {
 			'explore.rows.popularShows' => 'نمایش های محبوب',
 			'explore.rows.trendingAnime' => 'انیمه روند',
 			'explore.rows.suggestedAnime' => 'پیشنهاد انیمه',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'دانلود انیمیشن Airing Anime',
 			'explore.rows.popularAnime' => 'محبوب ترین انیمه ها',
 			'explore.rows.trending' => 'روند',
@@ -6324,6 +6338,8 @@ extension on TranslationsFa {
 			'downloads.pauseAll' => 'استراحت همه',
 			'downloads.resumeAll' => 'خلاصه همه',
 			'downloads.retryAll' => 'بازگشت همه',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'دانلود بازی های شکست خورده',
 			'downloads.deleteAll' => 'حذف همه',
 			'downloads.selectVersion' => 'انتخاب نسخه',
@@ -6331,8 +6347,6 @@ extension on TranslationsFa {
 			'downloads.unwatchedOnly' => 'فقط نادیده گرفته شده',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'بعدی ${count} ناشناخته',
 			'downloads.customAmount' => 'مقدار سفارشی...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'مقدار مشخصی (در هر...',
 			'downloads.randomEpisodes' => 'حوادث تصادفی',
 			'downloads.includeSpecials' => 'شامل ویژه ها',
@@ -6838,6 +6852,8 @@ extension on TranslationsFa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'تماس با ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'URL سرور، نام کاربری و رمز عبور خود را وارد کنید.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'ثبت نام در سرور ${product} شما. اتصال به ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'وام از یک پروفایل دیگر',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'استفاده مجدد از اتصال پروفایل دیگری. پروفایل های محافظت شده از PIN نیاز به یک PIN دارند.',
 			'addServer.invalidCredentials' => 'نام کاربری یا رمز عبور نادرست',
@@ -6845,8 +6861,6 @@ extension on TranslationsFa {
 			'addServer.authResponseIncomplete' => 'پاسخ ورود از سرور نامناسب بود.',
 			'addServer.quickConnectRejected' => 'Quick Connect توسط سرور رد شد',
 			'addServer.quickConnectNotJson' => 'پاسخ Quick Connect معتبر نبود JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'پاسخ Quick Connect یک کد یا راز را از دست می دهد',
 			'addServer.quickConnectPollRejected' => 'Quick Connect درخواست توسط سرور رد شد',
 			'addServer.serverTimedOut' => 'سرور به موقع پاسخ نمی دهد',

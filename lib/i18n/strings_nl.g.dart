@@ -762,6 +762,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Kies hoe datums, getallen en maateenheden worden weergegeven.';
 	@override String get metadataLanguage => 'Taal van metadata';
 	@override String get metadataLanguageDescription => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.';
+	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
+	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
+	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
+	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
+	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 }
 
 // Path: themeEditor
@@ -4876,6 +4883,13 @@ extension on TranslationsNl {
 			'settings.regionFormatDescription' => 'Kies hoe datums, getallen en maateenheden worden weergegeven.',
 			'settings.metadataLanguage' => 'Taal van metadata',
 			'settings.metadataLanguageDescription' => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.',
+			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
+			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
+			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
+			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
+			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
 			'themeEditor.builtIn' => 'Ingebouwd',
 			'themeEditor.presets' => 'Voorinstellingen',
 			'themeEditor.custom' => 'Aangepast',
@@ -5296,6 +5310,8 @@ extension on TranslationsNl {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheekscan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Bibliotheek scannen mislukt: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata voor "${title}" vernieuwen...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Vernieuwen van metadata gestart voor "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadata vernieuwen mislukt: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
@@ -5303,8 +5319,6 @@ extension on TranslationsNl {
 			'messages.seasonsLoadFailed' => 'Kan seizoenen niet laden',
 			'messages.noEpisodesFound' => 'Geen afleveringen gevonden in eerste seizoen',
 			'messages.noEpisodesFoundGeneral' => 'Geen afleveringen gevonden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Kan afleveringen niet laden',
 			'messages.noResultsFound' => 'Geen resultaten gevonden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Slaaptimer ingesteld op ${label}',
@@ -5810,6 +5824,8 @@ extension on TranslationsNl {
 			'explore.selectSource' => 'Bron kiezen',
 			'explore.rows.watchlist' => 'Kijklijst',
 			'explore.rows.recommendedMovies' => 'Aanbevolen films',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Aanbevolen series',
 			'explore.rows.trendingMovies' => 'Trending films',
 			'explore.rows.trendingShows' => 'Trending series',
@@ -5817,8 +5833,6 @@ extension on TranslationsNl {
 			'explore.rows.popularShows' => 'Populaire series',
 			'explore.rows.trendingAnime' => 'Trending anime',
 			'explore.rows.suggestedAnime' => 'Aanbevolen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Beste lopende anime',
 			'explore.rows.popularAnime' => 'Populairste anime',
 			'explore.rows.trending' => 'Trending',
@@ -6324,6 +6338,8 @@ extension on TranslationsNl {
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',
 			'downloads.retryAll' => 'Alles opnieuw proberen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Mislukte downloads opnieuw proberen',
 			'downloads.deleteAll' => 'Alles verwijderen',
 			'downloads.selectVersion' => 'Versie selecteren',
@@ -6331,8 +6347,6 @@ extension on TranslationsNl {
 			'downloads.unwatchedOnly' => 'Alleen ongekeken afleveringen',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} ongekeken afleveringen',
 			'downloads.customAmount' => 'Aangepast aantal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Een aantal (de hoeveelheid) voor elk...',
 			'downloads.randomEpisodes' => 'Willekeurige afleveringen',
 			'downloads.includeSpecials' => 'Specials meenemen',
@@ -6838,6 +6852,8 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Verbinding maken met ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Voer je server-URL, gebruikersnaam en wachtwoord in.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
@@ -6845,8 +6861,6 @@ extension on TranslationsNl {
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
 			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',

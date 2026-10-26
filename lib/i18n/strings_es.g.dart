@@ -764,6 +764,13 @@ class Translations$settings$es extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Elige cómo se muestran las fechas, los números y las unidades de medida.';
 	@override String get metadataLanguage => 'Idioma de los metadatos';
 	@override String get metadataLanguageDescription => 'Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado.';
+	@override String get experimentalDolbyVision => 'Dolby Vision experimental';
+	@override String get experimentalDolbyVisionDescription => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.';
+	@override String get dvExperimentUnavailableDescription => 'Este experimento solo está disponible en Linux por ahora.';
+	@override String get dvCompatibilityFallback => 'Alternativa de compatibilidad';
+	@override String get dvCompatibilityFallbackDescription => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.';
+	@override String get dvExperimentDiagnostics => 'Registro del experimento de vídeo';
+	@override String get dvExperimentDiagnosticsDescription => 'Activar registros detallados del reproductor en la próxima reproducción.';
 }
 
 // Path: themeEditor
@@ -4880,6 +4887,13 @@ extension on TranslationsEs {
 			'settings.regionFormatDescription' => 'Elige cómo se muestran las fechas, los números y las unidades de medida.',
 			'settings.metadataLanguage' => 'Idioma de los metadatos',
 			'settings.metadataLanguageDescription' => 'Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision experimental',
+			'settings.experimentalDolbyVisionDescription' => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.',
+			'settings.dvExperimentUnavailableDescription' => 'Este experimento solo está disponible en Linux por ahora.',
+			'settings.dvCompatibilityFallback' => 'Alternativa de compatibilidad',
+			'settings.dvCompatibilityFallbackDescription' => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.',
+			'settings.dvExperimentDiagnostics' => 'Registro del experimento de vídeo',
+			'settings.dvExperimentDiagnosticsDescription' => 'Activar registros detallados del reproductor en la próxima reproducción.',
 			'themeEditor.builtIn' => 'Integrados',
 			'themeEditor.presets' => 'Predefinidos',
 			'themeEditor.custom' => 'Personalizado',
@@ -5300,6 +5314,8 @@ extension on TranslationsEs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Escaneo de biblioteca iniciado para "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Error al escanear biblioteca: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Actualizando metadatos de "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Actualización de metadatos iniciada para "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Error al actualizar metadatos: ${error}',
 			'messages.logoutConfirm' => '¿Estás seguro de que quieres cerrar sesión?',
@@ -5307,8 +5323,6 @@ extension on TranslationsEs {
 			'messages.seasonsLoadFailed' => 'No se pudieron cargar las temporadas',
 			'messages.noEpisodesFound' => 'No se encontraron episodios en la primera temporada',
 			'messages.noEpisodesFoundGeneral' => 'No se encontraron episodios',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'No se pudieron cargar los episodios',
 			'messages.noResultsFound' => 'No se encontraron resultados',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Temporizador establecido en ${label}',
@@ -5814,6 +5828,8 @@ extension on TranslationsEs {
 			'explore.selectSource' => 'Seleccionar fuente',
 			'explore.rows.watchlist' => 'Lista de seguimiento',
 			'explore.rows.recommendedMovies' => 'Películas recomendadas',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Series recomendadas',
 			'explore.rows.trendingMovies' => 'Películas en tendencia',
 			'explore.rows.trendingShows' => 'Series en tendencia',
@@ -5821,8 +5837,6 @@ extension on TranslationsEs {
 			'explore.rows.popularShows' => 'Series populares',
 			'explore.rows.trendingAnime' => 'Anime en tendencia',
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Mejor anime en emisión',
 			'explore.rows.popularAnime' => 'Anime más popular',
 			'explore.rows.trending' => 'Tendencias',
@@ -6328,6 +6342,8 @@ extension on TranslationsEs {
 			'downloads.pauseAll' => 'Pausar todo',
 			'downloads.resumeAll' => 'Reanudar todo',
 			'downloads.retryAll' => 'Reintentar todo',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Reintentar descargas fallidas',
 			'downloads.deleteAll' => 'Eliminar todo',
 			'downloads.selectVersion' => 'Seleccionar versión',
@@ -6335,8 +6351,6 @@ extension on TranslationsEs {
 			'downloads.unwatchedOnly' => 'Solo no vistos',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Próximos ${count} no vistos',
 			'downloads.customAmount' => 'Cantidad personalizada...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Cuantía de la persona (todos los ...',
 			'downloads.randomEpisodes' => 'Episodios aleatorios',
 			'downloads.includeSpecials' => 'Incluir especiales',
@@ -6842,6 +6856,8 @@ extension on TranslationsEs {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Conectar a ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Introduce la URL de tu servidor, el nombre de usuario y la contraseña.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Inicia sesión en tu servidor ${product}. Se vincula a ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Tomar prestado de otro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutiliza la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.',
 			'addServer.invalidCredentials' => 'Usuario o contraseña no válidos',
@@ -6849,8 +6865,6 @@ extension on TranslationsEs {
 			'addServer.authResponseIncomplete' => 'La respuesta de inicio de sesión del servidor estaba incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect fue rechazado por el servidor',
 			'addServer.quickConnectNotJson' => 'La respuesta de Quick Connect no era un JSON válido',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'La respuesta de Quick Connect no incluye el código o el secreto',
 			'addServer.quickConnectPollRejected' => 'El servidor rechazó el sondeo de Quick Connect',
 			'addServer.serverTimedOut' => 'El servidor no respondió a tiempo',

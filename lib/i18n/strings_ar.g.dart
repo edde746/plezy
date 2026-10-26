@@ -770,6 +770,13 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get regionFormatDescription => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.';
 	@override String get metadataLanguage => 'لغة بيانات الوسائط';
 	@override String get metadataLanguageDescription => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.';
+	@override String get experimentalDolbyVision => 'Dolby Vision التجريبي';
+	@override String get experimentalDolbyVisionDescription => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.';
+	@override String get dvExperimentUnavailableDescription => 'هذه التجربة متاحة حاليًا على Linux فقط.';
+	@override String get dvCompatibilityFallback => 'الرجوع للتوافق';
+	@override String get dvCompatibilityFallbackDescription => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.';
+	@override String get dvExperimentDiagnostics => 'تسجيل تجربة الفيديو';
+	@override String get dvExperimentDiagnosticsDescription => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.';
 }
 
 // Path: themeEditor
@@ -4964,6 +4971,13 @@ extension on TranslationsAr {
 			'settings.regionFormatDescription' => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.',
 			'settings.metadataLanguage' => 'لغة بيانات الوسائط',
 			'settings.metadataLanguageDescription' => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision التجريبي',
+			'settings.experimentalDolbyVisionDescription' => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.',
+			'settings.dvExperimentUnavailableDescription' => 'هذه التجربة متاحة حاليًا على Linux فقط.',
+			'settings.dvCompatibilityFallback' => 'الرجوع للتوافق',
+			'settings.dvCompatibilityFallbackDescription' => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.',
+			'settings.dvExperimentDiagnostics' => 'تسجيل تجربة الفيديو',
+			'settings.dvExperimentDiagnosticsDescription' => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.',
 			'themeEditor.builtIn' => 'بناء في',
 			'themeEditor.presets' => 'الكهنوت',
 			'themeEditor.custom' => 'مخصص',
@@ -5384,6 +5398,8 @@ extension on TranslationsAr {
 			'messages.libraryScanStarted' => ({required Object title}) => 'بدأت فحص المكتبة لـ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'فشل في فحص المكتبة: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'إعادة تدوير البيانات الميتاتية لـ "${title}" ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'بدأ تحديث البيانات الميتة لـ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'لا يمكن تحديث البيانات الميتا: ${error}',
 			'messages.logoutConfirm' => 'هل أنت متأكد من أنك تريد الانسحاب؟',
@@ -5391,8 +5407,6 @@ extension on TranslationsAr {
 			'messages.seasonsLoadFailed' => 'لا أستطيع تحميل الموسم',
 			'messages.noEpisodesFound' => 'لا توجد أحداث في الموسم الأول',
 			'messages.noEpisodesFoundGeneral' => 'لم يتم العثور على أحداث',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'لا يمكن تحميل الحوادث',
 			'messages.noResultsFound' => 'لم يتم العثور على نتائج.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ساعة النوم المحددة ${label}',
@@ -5898,6 +5912,8 @@ extension on TranslationsAr {
 			'explore.selectSource' => 'اختيار المصدر',
 			'explore.rows.watchlist' => 'قائمة مراقبة',
 			'explore.rows.recommendedMovies' => 'الأفلام الموصى بها',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'العروض الموصى بها',
 			'explore.rows.trendingMovies' => 'أفلام متطورة',
 			'explore.rows.trendingShows' => 'عرض الاتجاهات',
@@ -5905,8 +5921,6 @@ extension on TranslationsAr {
 			'explore.rows.popularShows' => 'العروض الشعبية',
 			'explore.rows.trendingAnime' => 'انيمات الاتجاهات',
 			'explore.rows.suggestedAnime' => 'انيمو الموصى بها',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'أعلى الهواء Anime',
 			'explore.rows.popularAnime' => 'الأنيمي الأكثر شعبية',
 			'explore.rows.trending' => 'الاتجاهات',
@@ -6412,6 +6426,8 @@ extension on TranslationsAr {
 			'downloads.pauseAll' => 'استراحة كل',
 			'downloads.resumeAll' => 'قراءة كلها',
 			'downloads.retryAll' => 'استرداد كل',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'إعادة التدوير الفشل تحميل',
 			'downloads.deleteAll' => 'حذف الكل',
 			'downloads.selectVersion' => 'اختيار النسخة',
@@ -6419,8 +6435,6 @@ extension on TranslationsAr {
 			'downloads.unwatchedOnly' => 'غير ملاحظة فقط',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} غير مسبوق',
 			'downloads.customAmount' => 'المبلغ المحدد ...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'المبلغ المحدد (كل ...',
 			'downloads.randomEpisodes' => 'الحوادث العشوائية',
 			'downloads.includeSpecials' => 'إدخال الخصائص',
@@ -6926,6 +6940,8 @@ extension on TranslationsAr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'الاتصال بـ ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'أدخل عنوان URL، اسم المستخدم، وكلمة المرور.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'تسجيل الدخول إلى خادم ${product}.ربط إلى ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'القروض من ملف تعريف آخر',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'إعادة استخدام اتصال ملف تعريف آخر.البروفيسور المحمية بـ PIN تتطلب PIN.',
 			'addServer.invalidCredentials' => 'اسم المستخدم أو كلمة المرور غير صالحة',
@@ -6933,8 +6949,6 @@ extension on TranslationsAr {
 			'addServer.authResponseIncomplete' => 'استجابة التسجيل من الخادم كانت غير كاملة',
 			'addServer.quickConnectRejected' => 'Quick Connect تم رفضها من قبل الخادم',
 			'addServer.quickConnectNotJson' => 'رد Quick Connect لم يكن صالحا JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'رد Quick Connect يفتقر إلى رمز أو سر',
 			'addServer.quickConnectPollRejected' => 'Quick Connect استجواب تم رفضه من قبل الخادم',
 			'addServer.serverTimedOut' => 'لم يستجيب الخادم في الوقت المناسب.',

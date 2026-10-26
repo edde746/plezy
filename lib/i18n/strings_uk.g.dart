@@ -766,6 +766,13 @@ class _Translations$settings$uk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Виберіть формат відображення дат, чисел і одиниць вимірювання.';
 	@override String get metadataLanguage => 'Мова метаданих';
 	@override String get metadataLanguageDescription => 'Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.';
+	@override String get experimentalDolbyVision => 'Експериментальний Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.';
+	@override String get dvExperimentUnavailableDescription => 'Цей експеримент наразі доступний лише в Linux.';
+	@override String get dvCompatibilityFallback => 'Резервний режим сумісності';
+	@override String get dvCompatibilityFallbackDescription => 'Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.';
+	@override String get dvExperimentDiagnostics => 'Журнал відеоексперименту';
+	@override String get dvExperimentDiagnosticsDescription => 'Увімкнути докладні журнали програвача під час наступного відтворення.';
 }
 
 // Path: themeEditor
@@ -4914,6 +4921,13 @@ extension on TranslationsUk {
 			'settings.regionFormatDescription' => 'Виберіть формат відображення дат, чисел і одиниць вимірювання.',
 			'settings.metadataLanguage' => 'Мова метаданих',
 			'settings.metadataLanguageDescription' => 'Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.',
+			'settings.experimentalDolbyVision' => 'Експериментальний Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.',
+			'settings.dvExperimentUnavailableDescription' => 'Цей експеримент наразі доступний лише в Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервний режим сумісності',
+			'settings.dvCompatibilityFallbackDescription' => 'Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.',
+			'settings.dvExperimentDiagnostics' => 'Журнал відеоексперименту',
+			'settings.dvExperimentDiagnosticsDescription' => 'Увімкнути докладні журнали програвача під час наступного відтворення.',
 			'themeEditor.builtIn' => 'Будівництво',
 			'themeEditor.presets' => 'Президи',
 			'themeEditor.custom' => 'Користувацький',
@@ -5334,6 +5348,8 @@ extension on TranslationsUk {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканування бібліотеки розпочато для «${title}»',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не вдалося сканувати бібліотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Повторні метадані для «${title}»',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Початок оновлення метаданів для «${title}»',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не вдалося оновити метаданни: ${error}',
 			'messages.logoutConfirm' => 'Ви впевнені, що хочете вийти?',
@@ -5341,8 +5357,6 @@ extension on TranslationsUk {
 			'messages.seasonsLoadFailed' => 'Не можна завантажувати сезони',
 			'messages.noEpisodesFound' => 'У першому сезоні не знайдено жодних епізодів',
 			'messages.noEpisodesFoundGeneral' => 'Епізодів не знайдено',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Не можна завантажувати епізоди',
 			'messages.noResultsFound' => 'Нічого не знайдено.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Співальний час встановлений для ${label}',
@@ -5848,6 +5862,8 @@ extension on TranslationsUk {
 			'explore.selectSource' => 'Вибір джерела',
 			'explore.rows.watchlist' => 'Застереження',
 			'explore.rows.recommendedMovies' => 'Рекомендовані фільми',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Рекомендовані покази',
 			'explore.rows.trendingMovies' => 'Трендовий фільм',
 			'explore.rows.trendingShows' => 'Трендовий показ',
@@ -5855,8 +5871,6 @@ extension on TranslationsUk {
 			'explore.rows.popularShows' => 'Популярні шоу',
 			'explore.rows.trendingAnime' => 'Трендовий аніме',
 			'explore.rows.suggestedAnime' => 'Пропонований аніме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Анімаційний анімаційний',
 			'explore.rows.popularAnime' => 'Найпопулярніші аніме',
 			'explore.rows.trending' => 'Тенденції',
@@ -6362,6 +6376,8 @@ extension on TranslationsUk {
 			'downloads.pauseAll' => 'Відпочинок усі',
 			'downloads.resumeAll' => 'Резюме Все',
 			'downloads.retryAll' => 'Відкликати всі',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Завантажити недійсні завантаження',
 			'downloads.deleteAll' => 'Видалити все',
 			'downloads.selectVersion' => 'Вибір версії',
@@ -6369,8 +6385,6 @@ extension on TranslationsUk {
 			'downloads.unwatchedOnly' => 'Не спостерігається тільки',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} не перевірено',
 			'downloads.customAmount' => 'Кваліфікована сума...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Кількість витрат (за кожну...',
 			'downloads.randomEpisodes' => 'Різні епізоди',
 			'downloads.includeSpecials' => 'Включити спеціальності',
@@ -6876,6 +6890,8 @@ extension on TranslationsUk {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Підключення до ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Введіть URL сервера, ім\'я користувача та пароль.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Зареєструйтесь на сервер ${product}. підключіться до ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Кредит з іншого профілю',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторне використання підключення іншого профілю. PIN-захищені профілі потребують PIN.',
 			'addServer.invalidCredentials' => 'Недійсне ім\'я користувача або пароль',
@@ -6883,8 +6899,6 @@ extension on TranslationsUk {
 			'addServer.authResponseIncomplete' => 'Реакція сервера була неповною.',
 			'addServer.quickConnectRejected' => 'Quick Connect було відхилено сервером',
 			'addServer.quickConnectNotJson' => 'Відповідь Quick Connect не була дійсною JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Відповідь Quick Connect відсутня код або секрет',
 			'addServer.quickConnectPollRejected' => 'Quick Connect запит було відхилено сервером',
 			'addServer.serverTimedOut' => 'Сервер не відповідає вчасно',

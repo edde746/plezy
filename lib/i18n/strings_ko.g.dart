@@ -760,6 +760,13 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get regionFormatDescription => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.';
 	@override String get metadataLanguage => '메타데이터 언어';
 	@override String get metadataLanguageDescription => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.';
+	@override String get experimentalDolbyVision => '실험적 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.';
+	@override String get dvExperimentUnavailableDescription => '이 실험은 현재 Linux에서만 사용할 수 있습니다.';
+	@override String get dvCompatibilityFallback => '호환성 대체 모드';
+	@override String get dvCompatibilityFallbackDescription => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.';
+	@override String get dvExperimentDiagnostics => '비디오 실험 로그';
+	@override String get dvExperimentDiagnosticsDescription => '다음 재생에서 상세 플레이어 로그를 활성화합니다.';
 }
 
 // Path: themeEditor
@@ -4871,6 +4878,13 @@ extension on TranslationsKo {
 			'settings.regionFormatDescription' => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.',
 			'settings.metadataLanguage' => '메타데이터 언어',
 			'settings.metadataLanguageDescription' => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.',
+			'settings.experimentalDolbyVision' => '실험적 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.',
+			'settings.dvExperimentUnavailableDescription' => '이 실험은 현재 Linux에서만 사용할 수 있습니다.',
+			'settings.dvCompatibilityFallback' => '호환성 대체 모드',
+			'settings.dvCompatibilityFallbackDescription' => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.',
+			'settings.dvExperimentDiagnostics' => '비디오 실험 로그',
+			'settings.dvExperimentDiagnosticsDescription' => '다음 재생에서 상세 플레이어 로그를 활성화합니다.',
 			'themeEditor.builtIn' => '기본 제공',
 			'themeEditor.presets' => '프리셋',
 			'themeEditor.custom' => '사용자 지정',
@@ -5291,6 +5305,8 @@ extension on TranslationsKo {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃하시겠습니까?',
@@ -5298,8 +5314,6 @@ extension on TranslationsKo {
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '에피소드를 불러오지 못했습니다',
 			'messages.noResultsFound' => '결과를 찾을 수 없습니다',
 			'messages.sleepTimerSet' => ({required Object label}) => '취침 타이머가 ${label}(으)로 설정되었습니다',
@@ -5805,6 +5819,8 @@ extension on TranslationsKo {
 			'explore.selectSource' => '소스 선택',
 			'explore.rows.watchlist' => '관심 목록',
 			'explore.rows.recommendedMovies' => '추천 영화',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '추천 TV 프로그램',
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
@@ -5812,8 +5828,6 @@ extension on TranslationsKo {
 			'explore.rows.popularShows' => '인기 TV 프로그램',
 			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
 			'explore.rows.trending' => '지금 뜨는 콘텐츠',
@@ -6319,6 +6333,8 @@ extension on TranslationsKo {
 			'downloads.pauseAll' => '모두 일시정지',
 			'downloads.resumeAll' => '모두 재개',
 			'downloads.retryAll' => '모두 재시도',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '실패한 다운로드 재시도',
 			'downloads.deleteAll' => '모두 삭제',
 			'downloads.selectVersion' => '버전 선택',
@@ -6326,8 +6342,6 @@ extension on TranslationsKo {
 			'downloads.unwatchedOnly' => '시청하지 않은 것만',
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '각각의 수량(일반적으로)',
 			'downloads.randomEpisodes' => '우연한 사건',
 			'downloads.includeSpecials' => '스페셜 포함',
@@ -6833,6 +6847,8 @@ extension on TranslationsKo {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}에 연결',
 			'addServer.connectToMediaBrowserCardSubtitle' => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} 서버에 로그인하세요. ${name}에 연결됩니다.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
@@ -6840,8 +6856,6 @@ extension on TranslationsKo {
 			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',
 			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
 			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',

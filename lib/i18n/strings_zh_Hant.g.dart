@@ -761,6 +761,13 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get regionFormatDescription => '選擇日期、數字及計量單位的顯示方式。';
 	@override String get metadataLanguage => '中繼資料語言';
 	@override String get metadataLanguageDescription => '伺服器支援時，優先使用此語言顯示標題及簡介。音訊和字幕偏好設定互相獨立。';
+	@override String get experimentalDolbyVision => '實驗性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放時使用實驗性 FEL 算繪器。需要單獨建置的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此實驗目前僅支援 Linux。';
+	@override String get dvCompatibilityFallback => '相容性備援';
+	@override String get dvCompatibilityFallbackDescription => '如果實驗無法啟動，則使用標準算繪器。FEL 資料可能會遺失。';
+	@override String get dvExperimentDiagnostics => '影片實驗記錄';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放時啟用詳細的播放器記錄。';
 }
 
 // Path: themeEditor
@@ -4872,6 +4879,13 @@ extension on TranslationsZhHant {
 			'settings.regionFormatDescription' => '選擇日期、數字及計量單位的顯示方式。',
 			'settings.metadataLanguage' => '中繼資料語言',
 			'settings.metadataLanguageDescription' => '伺服器支援時，優先使用此語言顯示標題及簡介。音訊和字幕偏好設定互相獨立。',
+			'settings.experimentalDolbyVision' => '實驗性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放時使用實驗性 FEL 算繪器。需要單獨建置的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此實驗目前僅支援 Linux。',
+			'settings.dvCompatibilityFallback' => '相容性備援',
+			'settings.dvCompatibilityFallbackDescription' => '如果實驗無法啟動，則使用標準算繪器。FEL 資料可能會遺失。',
+			'settings.dvExperimentDiagnostics' => '影片實驗記錄',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放時啟用詳細的播放器記錄。',
 			'themeEditor.builtIn' => '內建',
 			'themeEditor.presets' => '精選',
 			'themeEditor.custom' => '自訂',
@@ -5292,6 +5306,8 @@ extension on TranslationsZhHant {
 			'messages.libraryScanStarted' => ({required Object title}) => '已開始掃描「${title}」媒體庫',
 			'messages.libraryScanFailed' => ({required Object error}) => '無法掃描媒體庫：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在重新整理「${title}」的中繼資料…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已開始重新整理「${title}」的中繼資料',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '無法重新整理中繼資料：${error}',
 			'messages.logoutConfirm' => '您確定要登出嗎？',
@@ -5299,8 +5315,6 @@ extension on TranslationsZhHant {
 			'messages.seasonsLoadFailed' => '無法載入季數',
 			'messages.noEpisodesFound' => '在第一季中找不到單集',
 			'messages.noEpisodesFoundGeneral' => '找不到單集',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '無法載入單集',
 			'messages.noResultsFound' => '找不到結果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠計時器已設定為 ${label}',
@@ -5806,6 +5820,8 @@ extension on TranslationsZhHant {
 			'explore.selectSource' => '選擇來源',
 			'explore.rows.watchlist' => '待看清單',
 			'explore.rows.recommendedMovies' => '推薦電影',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推薦影集',
 			'explore.rows.trendingMovies' => '近期熱門電影',
 			'explore.rows.trendingShows' => '近期熱門影集',
@@ -5813,8 +5829,6 @@ extension on TranslationsZhHant {
 			'explore.rows.popularShows' => '熱門影集',
 			'explore.rows.trendingAnime' => '近期熱門動畫',
 			'explore.rows.suggestedAnime' => '推薦動畫',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '熱門連載動畫',
 			'explore.rows.popularAnime' => '最受歡迎的動畫',
 			'explore.rows.trending' => '趨勢',
@@ -6320,6 +6334,8 @@ extension on TranslationsZhHant {
 			'downloads.pauseAll' => '全部暫停',
 			'downloads.resumeAll' => '全部繼續',
 			'downloads.retryAll' => '全部重試',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '重試失敗的下載',
 			'downloads.deleteAll' => '全部刪除',
 			'downloads.selectVersion' => '選擇版本',
@@ -6327,8 +6343,6 @@ extension on TranslationsZhHant {
 			'downloads.unwatchedOnly' => '僅未觀看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下來 ${count} 集未觀看',
 			'downloads.customAmount' => '自訂數量…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '每個數量(每個數...',
 			'downloads.randomEpisodes' => '隨機事件',
 			'downloads.includeSpecials' => '包含特別篇',
@@ -6834,6 +6848,8 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '連線至 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '輸入您的伺服器 URL、使用者名稱與密碼。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
@@ -6841,8 +6857,6 @@ extension on TranslationsZhHant {
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 回應缺少代碼或密鑰',
 			'addServer.quickConnectPollRejected' => 'Quick Connect 輪詢遭到伺服器拒絕',
 			'addServer.serverTimedOut' => '伺服器未及時回應',

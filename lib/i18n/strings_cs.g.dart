@@ -766,6 +766,13 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.';
 	@override String get metadataLanguage => 'Jazyk metadat';
 	@override String get metadataLanguageDescription => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.';
+	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
+	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
+	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
+	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
+	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
+	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
 }
 
 // Path: themeEditor
@@ -4914,6 +4921,13 @@ extension on TranslationsCs {
 			'settings.regionFormatDescription' => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.',
 			'settings.metadataLanguage' => 'Jazyk metadat',
 			'settings.metadataLanguageDescription' => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.',
+			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
+			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
+			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
+			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
+			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
+			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
 			'themeEditor.builtIn' => 'stavět-in',
 			'themeEditor.presets' => 'přednášky',
 			'themeEditor.custom' => 'Vlastní',
@@ -5334,6 +5348,8 @@ extension on TranslationsCs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Skenování knihovny začíná pro "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Knihovna se neskončila: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Znovuzavírací metadata pro "${title}..."',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aktualizace metadata začíná pro "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nepodařilo se aktualizovat metadata: ${error}',
 			'messages.logoutConfirm' => 'Jste si jisti, že se chcete přihlásit?',
@@ -5341,8 +5357,6 @@ extension on TranslationsCs {
 			'messages.seasonsLoadFailed' => 'Nemohla by se stahovat sezóny',
 			'messages.noEpisodesFound' => 'V první sezoně nebyly nalezeny žádné epizody',
 			'messages.noEpisodesFoundGeneral' => 'Žádné epizody nenajdete',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nemohl by se vyskytnout epizody',
 			'messages.noResultsFound' => 'Žádné výsledky.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Časovač spánku nastavený pro ${label}',
@@ -5848,6 +5862,8 @@ extension on TranslationsCs {
 			'explore.selectSource' => 'Vyberte zdroj',
 			'explore.rows.watchlist' => 'sledovací seznam',
 			'explore.rows.recommendedMovies' => 'Doporučené filmy',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Doporučené show',
 			'explore.rows.trendingMovies' => 'Trendy filmů',
 			'explore.rows.trendingShows' => 'Trendové show',
@@ -5855,8 +5871,6 @@ extension on TranslationsCs {
 			'explore.rows.popularShows' => 'Populární show',
 			'explore.rows.trendingAnime' => 'Trendy Anime',
 			'explore.rows.suggestedAnime' => 'Doporučené anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Nejlepší Airing Anime',
 			'explore.rows.popularAnime' => 'Nejpopulárnější anime',
 			'explore.rows.trending' => 'Trendy',
@@ -6362,6 +6376,8 @@ extension on TranslationsCs {
 			'downloads.pauseAll' => 'Odpočinek vše',
 			'downloads.resumeAll' => 'Recenze vše',
 			'downloads.retryAll' => 'Vraťte všechny',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Neúspěšné stahování',
 			'downloads.deleteAll' => 'Odstranit vše',
 			'downloads.selectVersion' => 'Vyberte verzi',
@@ -6369,8 +6385,6 @@ extension on TranslationsCs {
 			'downloads.unwatchedOnly' => 'Pouze ignorované',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Další ${count} nepozorováno',
 			'downloads.customAmount' => 'Přizpůsobené množství...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Příslušná částka (v každém případě)',
 			'downloads.randomEpisodes' => 'Náhodné epizody',
 			'downloads.includeSpecials' => 'Zahrnuje speciály',
@@ -6876,6 +6890,8 @@ extension on TranslationsCs {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Připojte se k číslu ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Zadejte URL, uživatelské jméno a heslo.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Přihlaste se k serveru ${product}. připojte se k serveru ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Půjčka z jiného profilu',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Další připojení profilu znovu použijte. PIN-ochráněné profily vyžadují PIN.',
 			'addServer.invalidCredentials' => 'Invalidní uživatelské jméno nebo heslo',
@@ -6883,8 +6899,6 @@ extension on TranslationsCs {
 			'addServer.authResponseIncomplete' => 'Odpověď na sign-in ze serveru byla neúplná',
 			'addServer.quickConnectRejected' => 'Quick Connect byl odvolán serverem',
 			'addServer.quickConnectNotJson' => 'Odpověď Quick Connect nebyla platná JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Odpověď Quick Connect chybí kód nebo tajemství',
 			'addServer.quickConnectPollRejected' => 'Quick Connect zpráva byla odmítnuta serverem',
 			'addServer.serverTimedOut' => 'Server neodpovídá včas',

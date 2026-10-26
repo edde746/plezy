@@ -1606,6 +1606,27 @@ class Translations$settings$en {
 	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
 	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
 
+	/// en: 'Experimental Dolby Vision'
+	String get experimentalDolbyVision => 'Experimental Dolby Vision';
+
+	/// en: 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.'
+	String get experimentalDolbyVisionDescription => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.';
+
+	/// en: 'This experiment is currently available on Linux only.'
+	String get dvExperimentUnavailableDescription => 'This experiment is currently available on Linux only.';
+
+	/// en: 'Compatibility fallback'
+	String get dvCompatibilityFallback => 'Compatibility fallback';
+
+	/// en: 'Use the standard renderer if the experiment cannot start. FEL data may be lost.'
+	String get dvCompatibilityFallbackDescription => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.';
+
+	/// en: 'Video experiment logging'
+	String get dvExperimentDiagnostics => 'Video experiment logging';
+
+	/// en: 'Enable detailed player logs on the next playback.'
+	String get dvExperimentDiagnosticsDescription => 'Enable detailed player logs on the next playback.';
+
 	/// en: 'Disable Dolby Vision'
 	String get disableDolbyVision => 'Disable Dolby Vision';
 
@@ -10874,9 +10895,16 @@ extension on Translations {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
-			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Experimental Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.',
+			'settings.dvExperimentUnavailableDescription' => 'This experiment is currently available on Linux only.',
+			'settings.dvCompatibilityFallback' => 'Compatibility fallback',
+			'settings.dvCompatibilityFallbackDescription' => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.',
+			'settings.dvExperimentDiagnostics' => 'Video experiment logging',
+			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
+			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
@@ -11382,6 +11410,8 @@ extension on Translations {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
@@ -11389,8 +11419,6 @@ extension on Translations {
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
@@ -11896,6 +11924,8 @@ extension on Translations {
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
 			'explore.rows.recommendedMovies' => 'Recommended Movies',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Recommended Shows',
 			'explore.rows.trendingMovies' => 'Trending Movies',
 			'explore.rows.trendingShows' => 'Trending Shows',
@@ -11903,8 +11933,6 @@ extension on Translations {
 			'explore.rows.popularShows' => 'Popular Shows',
 			'explore.rows.trendingAnime' => 'Trending Anime',
 			'explore.rows.suggestedAnime' => 'Suggested Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Top Airing Anime',
 			'explore.rows.popularAnime' => 'Most Popular Anime',
 			'explore.rows.trending' => 'Trending',
@@ -12410,6 +12438,8 @@ extension on Translations {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.retryAll' => 'Retry all',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry failed downloads',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
@@ -12417,8 +12447,6 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Custom amount (any)...',
 			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.includeSpecials' => 'Include Specials',
@@ -12924,6 +12952,8 @@ extension on Translations {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',
 			'addServer.invalidCredentials' => 'Invalid username or password',
@@ -12931,8 +12961,6 @@ extension on Translations {
 			'addServer.authResponseIncomplete' => 'The sign-in response from the server was incomplete',
 			'addServer.quickConnectRejected' => 'Quick Connect was rejected by the server',
 			'addServer.quickConnectNotJson' => 'The Quick Connect response was not valid JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'The Quick Connect response is missing a code or secret',
 			'addServer.quickConnectPollRejected' => 'Quick Connect polling was rejected by the server',
 			'addServer.serverTimedOut' => 'The server did not respond in time',

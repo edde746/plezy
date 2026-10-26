@@ -762,6 +762,13 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.';
 	@override String get metadataLanguage => 'Meta veri dili';
 	@override String get metadataLanguageDescription => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.';
+	@override String get experimentalDolbyVision => 'Deneysel Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.';
+	@override String get dvExperimentUnavailableDescription => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.';
+	@override String get dvCompatibilityFallback => 'Uyumluluk yedeği';
+	@override String get dvCompatibilityFallbackDescription => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.';
+	@override String get dvExperimentDiagnostics => 'Video deneyi günlükleri';
+	@override String get dvExperimentDiagnosticsDescription => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.';
 }
 
 // Path: themeEditor
@@ -4876,6 +4883,13 @@ extension on TranslationsTr {
 			'settings.regionFormatDescription' => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.',
 			'settings.metadataLanguage' => 'Meta veri dili',
 			'settings.metadataLanguageDescription' => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.',
+			'settings.experimentalDolbyVision' => 'Deneysel Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.',
+			'settings.dvCompatibilityFallback' => 'Uyumluluk yedeği',
+			'settings.dvCompatibilityFallbackDescription' => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.',
+			'settings.dvExperimentDiagnostics' => 'Video deneyi günlükleri',
+			'settings.dvExperimentDiagnosticsDescription' => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.',
 			'themeEditor.builtIn' => 'Yerleşik',
 			'themeEditor.presets' => 'Hazır Temalar',
 			'themeEditor.custom' => 'Özel',
@@ -5296,6 +5310,8 @@ extension on TranslationsTr {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" için kitaplık taraması başladı',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kitaplık taranamadı: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" için meta veriler yenileniyor...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" için meta veri yenilemesi başladı',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Meta veriler yenilenemedi: ${error}',
 			'messages.logoutConfirm' => 'Çıkış yapmak istediğinizden emin misiniz?',
@@ -5303,8 +5319,6 @@ extension on TranslationsTr {
 			'messages.seasonsLoadFailed' => 'Sezonlar yüklenemedi',
 			'messages.noEpisodesFound' => 'İlk sezonda bölüm bulunamadı',
 			'messages.noEpisodesFoundGeneral' => 'Bölüm bulunamadı',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Bölümler yüklenemedi',
 			'messages.noResultsFound' => 'Sonuç bulunamadı',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Uyku zamanlayıcısı ${label} için ayarlandı',
@@ -5810,6 +5824,8 @@ extension on TranslationsTr {
 			'explore.selectSource' => 'Kaynak seçin',
 			'explore.rows.watchlist' => 'İzleme Listesi',
 			'explore.rows.recommendedMovies' => 'Önerilen Filmler',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Önerilen Diziler',
 			'explore.rows.trendingMovies' => 'Trend Filmler',
 			'explore.rows.trendingShows' => 'Trend Diziler',
@@ -5817,8 +5833,6 @@ extension on TranslationsTr {
 			'explore.rows.popularShows' => 'Popüler Diziler',
 			'explore.rows.trendingAnime' => 'Trend Animeler',
 			'explore.rows.suggestedAnime' => 'Önerilen Animeler',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'En İyi Yayınlanan Animeler',
 			'explore.rows.popularAnime' => 'En Popüler Animeler',
 			'explore.rows.trending' => 'Trendler',
@@ -6324,6 +6338,8 @@ extension on TranslationsTr {
 			'downloads.pauseAll' => 'Tümünü duraklat',
 			'downloads.resumeAll' => 'Tümünü devam ettir',
 			'downloads.retryAll' => 'Tümünü tekrar dene',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Başarısız indirmeleri tekrar dene',
 			'downloads.deleteAll' => 'Tümünü sil',
 			'downloads.selectVersion' => 'Sürüm Seç',
@@ -6331,8 +6347,6 @@ extension on TranslationsTr {
 			'downloads.unwatchedOnly' => 'Yalnızca izlenmeyenler',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Sonraki ${count} izlenmeyen',
 			'downloads.customAmount' => 'Özel miktar...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Özel miktar (her yıl)',
 			'downloads.randomEpisodes' => 'Random Olayları',
 			'downloads.includeSpecials' => 'Özel Bölümleri Dahil Et',
@@ -6838,6 +6852,8 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} ile Bağlan',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Sunucu URL\'nizi, kullanıcı adınızı ve şifrenizi girin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
@@ -6845,8 +6861,6 @@ extension on TranslationsTr {
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect yanıtında kod veya gizli anahtar eksik',
 			'addServer.quickConnectPollRejected' => 'Quick Connect yoklaması sunucu tarafından reddedildi',
 			'addServer.serverTimedOut' => 'Sunucu zamanında yanıt vermedi',

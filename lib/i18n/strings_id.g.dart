@@ -760,6 +760,13 @@ class _Translations$settings$id extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Pilih cara menampilkan tanggal, angka, dan satuan ukuran.';
 	@override String get metadataLanguage => 'Bahasa metadata';
 	@override String get metadataLanguageDescription => 'Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah.';
+	@override String get experimentalDolbyVision => 'Dolby Vision eksperimental';
+	@override String get experimentalDolbyVisionDescription => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.';
+	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini saat ini hanya tersedia di Linux.';
+	@override String get dvCompatibilityFallback => 'Cadangan kompatibilitas';
+	@override String get dvCompatibilityFallbackDescription => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.';
+	@override String get dvExperimentDiagnostics => 'Pencatatan eksperimen video';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.';
 }
 
 // Path: themeEditor
@@ -4854,6 +4861,13 @@ extension on TranslationsId {
 			'settings.regionFormatDescription' => 'Pilih cara menampilkan tanggal, angka, dan satuan ukuran.',
 			'settings.metadataLanguage' => 'Bahasa metadata',
 			'settings.metadataLanguageDescription' => 'Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimental',
+			'settings.experimentalDolbyVisionDescription' => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.',
+			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini saat ini hanya tersedia di Linux.',
+			'settings.dvCompatibilityFallback' => 'Cadangan kompatibilitas',
+			'settings.dvCompatibilityFallbackDescription' => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.',
+			'settings.dvExperimentDiagnostics' => 'Pencatatan eksperimen video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.',
 			'themeEditor.builtIn' => 'dibangun',
 			'themeEditor.presets' => 'Preset',
 			'themeEditor.custom' => 'Kustom',
@@ -5274,6 +5288,8 @@ extension on TranslationsId {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scan perpustakaan dimulai untuk "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Tidak berhasil memindai perpustakaan: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata yang diperbaharui untuk "${title}..."',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata pembaharuan dimulai untuk "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Tidak dapat memperbarui metadata: ${error}',
 			'messages.logoutConfirm' => 'Apakah Anda yakin Anda ingin keluar?',
@@ -5281,8 +5297,6 @@ extension on TranslationsId {
 			'messages.seasonsLoadFailed' => 'Tidak bisa mengisi musim',
 			'messages.noEpisodesFound' => 'Tidak ada episode yang ditemukan di musim pertama',
 			'messages.noEpisodesFoundGeneral' => 'Tidak ditemukan episode',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Tidak bisa memuat episode',
 			'messages.noResultsFound' => 'Tidak ada hasil.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Waktu tidur untuk ${label}',
@@ -5788,6 +5802,8 @@ extension on TranslationsId {
 			'explore.selectSource' => 'Pilih sumber',
 			'explore.rows.watchlist' => 'Pengawasan',
 			'explore.rows.recommendedMovies' => 'Film yang disarankan',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Persembahan yang disarankan',
 			'explore.rows.trendingMovies' => 'Film yang Trend',
 			'explore.rows.trendingShows' => 'Tendangan menunjukkan',
@@ -5795,8 +5811,6 @@ extension on TranslationsId {
 			'explore.rows.popularShows' => 'Pameran populer',
 			'explore.rows.trendingAnime' => 'Tindakan Anime',
 			'explore.rows.suggestedAnime' => 'Anime yang disarankan',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Anime teratas yang sedang tayang',
 			'explore.rows.popularAnime' => 'Anime yang paling populer',
 			'explore.rows.trending' => 'Trend yang',
@@ -6302,6 +6316,8 @@ extension on TranslationsId {
 			'downloads.pauseAll' => 'Beristirahat Semua',
 			'downloads.resumeAll' => 'Resume Semua',
 			'downloads.retryAll' => 'Kembalikan Semua',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry gagal download',
 			'downloads.deleteAll' => 'Hapus Semua',
 			'downloads.selectVersion' => 'Pilih versi',
@@ -6309,8 +6325,6 @@ extension on TranslationsId {
 			'downloads.unwatchedOnly' => 'Hanya tidak diperhatikan',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} tidak diperhatikan',
 			'downloads.customAmount' => 'Jumlah Custom...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Jumlah yang disesuaikan (setiap kali)',
 			'downloads.randomEpisodes' => 'episode rahasia',
 			'downloads.includeSpecials' => 'Termasuk spesial',
@@ -6816,6 +6830,8 @@ extension on TranslationsId {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Menghubungkan ke ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Masukkan URL, nama pengguna, dan kata sandi server Anda.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Mendaftar ke server ${product} Anda. menghubungkan ke ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pinjaman dari profil lain',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Menggunakan koneksi profil lain. profil yang dilindungi PIN membutuhkan PIN.',
 			'addServer.invalidCredentials' => 'Nama pengguna atau kata sandi yang tidak sah',
@@ -6823,8 +6839,6 @@ extension on TranslationsId {
 			'addServer.authResponseIncomplete' => 'Respon sign-in dari server tidak lengkap',
 			'addServer.quickConnectRejected' => 'Quick Connect ditolak oleh server',
 			'addServer.quickConnectNotJson' => 'Jawaban Quick Connect tidak sah JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Jawaban Quick Connect tidak memiliki kode atau rahasia',
 			'addServer.quickConnectPollRejected' => 'Quick Connect pertanyaan ditolak oleh server',
 			'addServer.serverTimedOut' => 'Server tidak bertindak balas tepat waktu.',
