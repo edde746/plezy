@@ -36,7 +36,11 @@ class AccessibilitySettingsScreen extends StatelessWidget {
                     semanticFormatterCallback: formatPercent,
                     onChanged: (v) => SettingsService.instance.write(SettingsService.accessibilityTextScale, v),
                   ),
-                  Text(t.accessibility.preview),
+                  Text(
+                    t.accessibility.preview,
+                    textScaler: TextScaler.linear(value),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
               ),
             ),

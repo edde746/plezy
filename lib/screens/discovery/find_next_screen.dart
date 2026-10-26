@@ -1017,10 +1017,6 @@ class _FindNextScreenState extends State<FindNextScreen> {
   }
 
   Future<void> _showDetails(DiscoveryChoice choice) async {
-    if (choice.liveProgram != null && choice.liveChannel != null && choice.serverId != null) {
-      unawaited(_openLiveChoice(choice, detailsOnly: true));
-      return;
-    }
     await _openChoice(choice, detailsOnly: true);
   }
 

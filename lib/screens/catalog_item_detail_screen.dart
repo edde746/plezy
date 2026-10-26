@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:plezy/i18n/locale_preferences.dart';
 import 'dart:async';
@@ -673,7 +675,12 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       leading: BackendBadge(backend: match.backend, size: 24),
       title: Text(match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex'),
       subtitle: details.isEmpty ? null : Text(details.join(' • ')),
-      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+      trailing: AppIcon(
+        Directionality.of(context) == ui.TextDirection.rtl
+            ? Symbols.chevron_left_rounded
+            : Symbols.chevron_right_rounded,
+        fill: 1,
+      ),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),
     );
   }
@@ -1286,7 +1293,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                 ),
               ),
               AppIcon(
-                Symbols.chevron_right_rounded,
+                Directionality.of(context) == ui.TextDirection.rtl
+                    ? Symbols.chevron_left_rounded
+                    : Symbols.chevron_right_rounded,
                 fill: 1,
                 size: 18,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),

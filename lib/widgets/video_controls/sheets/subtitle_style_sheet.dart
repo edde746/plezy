@@ -1,10 +1,11 @@
-import '../../../i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/focusable_slider.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../i18n/presentation_formats.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/app_logger.dart';
@@ -93,6 +94,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                     label: formatDecimal(_fontSize, maximumDecimals: 0),
                     min: 12,
                     max: 72,
+                    formatValue: (value) => formatDecimal(value, maximumDecimals: 0),
                     onChanged: (value) {
                       setState(() => _fontSize = value.round());
                       unawaited(_apply());
@@ -106,6 +108,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                     label: formatPercent(_position / 100),
                     min: 0,
                     max: 150,
+                    formatValue: (value) => formatPercent(value / 100),
                     onChanged: (value) {
                       setState(() => _position = value.round());
                       unawaited(_apply());
@@ -126,6 +129,7 @@ class _StyleSlider extends StatelessWidget {
     required this.label,
     required this.min,
     required this.max,
+    required this.formatValue,
     required this.onChanged,
     required this.onChangeEnd,
   });
@@ -135,6 +139,7 @@ class _StyleSlider extends StatelessWidget {
   final String label;
   final double min;
   final double max;
+  final String Function(double) formatValue;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
 
@@ -148,10 +153,12 @@ class _StyleSlider extends StatelessWidget {
           Text(label, style: Theme.of(context).textTheme.labelLarge),
         ],
       ),
-      Slider(
+      FocusableSlider(
         value: value.clamp(min, max).toDouble(),
         min: min,
         max: max,
+        semanticLabel: title,
+        semanticFormatterCallback: formatValue,
         onChanged: onChanged,
         onChangeEnd: onChangeEnd,
       ),
