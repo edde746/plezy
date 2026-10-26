@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/bounded_web_socket.dart';
 import '../../utils/serial_future_queue.dart';
 import '../../utils/web_socket_connect.dart';
 import '../base_peer_service.dart';
@@ -329,7 +330,13 @@ class CompanionRemotePeerService with KeepaliveMixin {
     try {
       // Ownership transfers to the admission immediately after upgrade.
       // ignore: close_sinks
-      final socket = await WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff);
+      final socket = await upgradeBoundedWebSocket(
+        request,
+        // Include framing overhead; fragmented/control frames count toward the
+        // unauthenticated budget too.
+        maxUnauthenticatedBytes: _maxPreAuthMessageBytes + 4096,
+        isAuthenticated: () => admission.phase == _HostAdmissionPhase.authenticated,
+      );
       admission.socket = socket;
       admission.completeUpgrade();
       _afterHostUpgrade?.call();
@@ -493,8 +500,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     List<RemoteAuthContext> authContexts,
     RemoteAuthContext primaryContext,
   ) async {
-    // dart:io delivers an assembled WebSocket message. This bounds application
-    // parsing and allocation after delivery, not the runtime's frame buffer.
+    // Keep the application limit separate from the transport byte budget;
+    // this also bounds JSON parsing after a complete message is delivered.
     if (data is! String || data.length > _maxPreAuthMessageBytes) {
       _rejectHostAuthentication(admission);
       return;

@@ -12,7 +12,33 @@ import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 
 const _ioTimeout = Duration(seconds: 5);
 
+Future<List<NetworkInterface>> _testInterfaces() async => [
+  _FakeNetworkInterface('test0', ['192.0.2.1']),
+];
+
 void main() {
+  test('unterminated fragmented frames exhaust the pre-auth transport budget', () async {
+    final host = CompanionRemotePeerService.forTesting(
+      listNetworkInterfaces: _testInterfaces,
+      maxPreAuthMessageBytes: 256,
+      maxTotalHostConnections: 1,
+      authTimeout: const Duration(seconds: 30),
+    );
+    addTearDown(host.dispose);
+    final port = await _startHost(host);
+    final raw = await _RawUpgradedSocket.connect(port);
+    addTearDown(raw.dispose);
+    // No FIN frame: the message-level listener never receives this payload.
+    // Each frame is only 100 bytes, so a per-frame check would also miss it.
+    raw.socket.add([
+      for (var i = 0; i < 50; i++) ...[i == 0 ? 2 : 0, 0x80 | 100, 0, 0, 0, 0, ...List.filled(100, 0)],
+    ]);
+    await raw.socket.flush();
+    await raw._done.future.timeout(_ioTimeout);
+    final next = await _RawWebSocketClient.connect(port);
+    await next.dispose();
+  });
+
   test('auth precondition error uses the active locale', () async {
     await LocaleSettings.setLocale(AppLocale.bg);
     addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
