@@ -42,7 +42,10 @@ class GeneralSettingsScreen extends StatelessWidget {
     return SettingsPage(
       title: Text(t.settings.general),
       children: [
-        SettingsGroup(title: t.settings.languageAndRegion, children: [_languageSelector(context), _formatSelector(context), _metadataSelector(context)]),
+        SettingsGroup(
+          title: t.settings.languageAndRegion,
+          children: [_languageSelector(context), _formatSelector(context), _metadataSelector(context)],
+        ),
 
         SettingsGroup(
           title: t.settings.startup,
@@ -93,9 +96,11 @@ class GeneralSettingsScreen extends StatelessWidget {
     return FocusableListTile(
       leading: const AppIcon(Symbols.language_rounded, fill: 1),
       title: Text(t.settings.language),
-      subtitle: Text(followsSystem
-          ? '${t.settings.followSystem} · ${LocaleSettings.currentLocale.nativeName}'
-          : LocaleSettings.currentLocale.nativeName),
+      subtitle: Text(
+        followsSystem
+            ? '${t.settings.followSystem} · ${LocaleSettings.currentLocale.nativeName}'
+            : LocaleSettings.currentLocale.nativeName,
+      ),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () async {
         final picked = await showSelectionDialog<String>(
@@ -105,66 +110,98 @@ class GeneralSettingsScreen extends StatelessWidget {
           options: [
             DialogOption(value: '', title: t.settings.followSystem),
             for (final locale in AppLocale.values)
-              DialogOption(value: locale.name, title: locale.nativeName,
-                subtitle: '${LanguageCodes.getDisplayName(locale.languageTag)} · ${locale.languageTag}'),
+              DialogOption(
+                value: locale.name,
+                title: locale.nativeName,
+                subtitle: '${LanguageCodes.getDisplayName(locale.languageTag)} · ${locale.languageTag}',
+              ),
           ],
           currentValue: followsSystem ? '' : LocaleSettings.currentLocale.name,
         );
         if (picked != null && context.mounted) {
-          final locale = picked.value.isEmpty ? LocaleSettings.currentLocale
-              : AppLocale.values.byName(picked.value);
-          await const SettingsMutationService().write(context, SettingsService.appLocale, locale,
-            reset: picked.value.isEmpty);
+          final locale = picked.value.isEmpty ? LocaleSettings.currentLocale : AppLocale.values.byName(picked.value);
+          await const SettingsMutationService().write(
+            context,
+            SettingsService.appLocale,
+            locale,
+            reset: picked.value.isEmpty,
+          );
         }
       },
     );
   }
 
-  Widget _formatSelector(BuildContext context) => FocusableListTile(
-    leading: const AppIcon(Symbols.public_rounded),
-    title: Text(t.settings.regionFormat),
-    subtitle: Text('${t.settings.regionFormatDescription} ${isolateDisplayText(formatDecimal(12345.67, grouping: true))}'),
-    trailing: const AppIcon(Symbols.chevron_right_rounded),
-    onTap: () async {
-      final current = SettingsService.instance.read(SettingsService.formatLocale);
-      final locales = numberFormatSymbols.keys.toList()..sort();
-      final picked = await showSelectionDialog<String>(
-        context: context, title: t.settings.regionFormat, currentValue: current, searchable: true,
-        options: [
-          DialogOption(value: 'app', title: t.settings.followAppLanguage),
-          DialogOption(value: 'system', title: t.settings.followSystem),
-          for (final code in locales)
-            DialogOption(value: code.replaceAll('_', '-'), title: LanguageCodes.getDisplayName(code),
-              subtitle: '${code.replaceAll('_', '-')} · ${isolateDisplayText(NumberFormat.decimalPattern(code).format(12345.67))}'),
-        ],
-      );
-      if (picked != null && context.mounted) {
-        await const SettingsMutationService().write(context, SettingsService.formatLocale, picked.value);
-      }
-    },
-  );
+  Widget _formatSelector(BuildContext context) {
+    final current = SettingsService.instance.read(SettingsService.formatLocale);
+    final label = switch (current) {
+      'app' => t.settings.followAppLanguage,
+      'system' => t.settings.followSystem,
+      _ => LanguageCodes.getDisplayName(current),
+    };
+    return FocusableListTile(
+      leading: const AppIcon(Symbols.public_rounded),
+      title: Text(t.settings.regionFormat),
+      subtitle: Text(
+        '$label · ${isolateDisplayText(formatDecimal(12345.67, grouping: true))}\n${t.settings.regionFormatDescription}',
+      ),
+      trailing: const AppIcon(Symbols.chevron_right_rounded),
+      onTap: () async {
+        final current = SettingsService.instance.read(SettingsService.formatLocale);
+        final locales = numberFormatSymbols.keys.toList()..sort();
+        final picked = await showSelectionDialog<String>(
+          context: context,
+          title: t.settings.regionFormat,
+          currentValue: current,
+          searchable: true,
+          options: [
+            DialogOption(value: 'app', title: t.settings.followAppLanguage),
+            DialogOption(value: 'system', title: t.settings.followSystem),
+            for (final code in locales)
+              DialogOption(
+                value: code.replaceAll('_', '-'),
+                title: LanguageCodes.getDisplayName(code),
+                subtitle:
+                    '${code.replaceAll('_', '-')} · ${isolateDisplayText(NumberFormat.decimalPattern(code).format(12345.67))}',
+              ),
+          ],
+        );
+        if (picked != null && context.mounted) {
+          await const SettingsMutationService().write(context, SettingsService.formatLocale, picked.value);
+        }
+      },
+    );
+  }
 
-  Widget _metadataSelector(BuildContext context) => FocusableListTile(
-    leading: const AppIcon(Symbols.translate_rounded),
-    title: Text(t.settings.metadataLanguage),
-    subtitle: Text(t.settings.metadataLanguageDescription),
-    trailing: const AppIcon(Symbols.chevron_right_rounded),
-    onTap: () async {
-      final picked = await showSelectionDialog<String>(
-        context: context, title: t.settings.metadataLanguage,
-        currentValue: SettingsService.instance.read(SettingsService.metadataLocale), searchable: true,
-        options: [
-          DialogOption(value: '', title: t.settings.followAppLanguage),
-          for (final language in LanguageCodes.getAllLanguages())
-            DialogOption(value: language.code, title: language.name,
-              subtitle: localizedLanguageNames['en']![language.code]),
-        ],
-      );
-      if (picked != null && context.mounted) {
-        await const SettingsMutationService().write(context, SettingsService.metadataLocale, picked.value);
-      }
-    },
-  );
+  Widget _metadataSelector(BuildContext context) {
+    final current = SettingsService.instance.read(SettingsService.metadataLocale);
+    final label = current.isEmpty ? t.settings.followAppLanguage : LanguageCodes.getDisplayName(current);
+    return FocusableListTile(
+      leading: const AppIcon(Symbols.translate_rounded),
+      title: Text(t.settings.metadataLanguage),
+      subtitle: Text('$label\n${t.settings.metadataLanguageDescription}'),
+      trailing: const AppIcon(Symbols.chevron_right_rounded),
+      onTap: () async {
+        final picked = await showSelectionDialog<String>(
+          context: context,
+          title: t.settings.metadataLanguage,
+          currentValue: SettingsService.instance.read(SettingsService.metadataLocale),
+          searchable: true,
+          options: [
+            DialogOption(value: '', title: t.settings.followAppLanguage),
+            for (final language in LanguageCodes.getAllLanguages())
+              DialogOption(
+                value: language.code,
+                title: language.name,
+                subtitle: localizedLanguageNames['en']![language.code],
+              ),
+          ],
+        );
+        if (picked != null && context.mounted) {
+          await const SettingsMutationService().write(context, SettingsService.metadataLocale, picked.value);
+        }
+      },
+    );
+  }
 
   // Sections offered as a startup destination, in display order. Live TV is
   // always listed; if no server provides it, startup falls back to Home.
@@ -184,7 +221,6 @@ class GeneralSettingsScreen extends StatelessWidget {
     subtitleBuilder: _startupSectionLabel,
     options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
   );
-
 }
 
 class _PreferredServerTile extends StatelessWidget {

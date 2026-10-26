@@ -21,8 +21,11 @@ void main() {
   });
   tearDown(() async {
     AppLocaleEnvironment.debugDeviceLocales = null;
+    AppLocaleEnvironment.platformDeviceLocales = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      PlatformLocaleSync.channel, null);
+      PlatformLocaleSync.channel,
+      null,
+    );
     await LocaleSettings.setLocale(AppLocale.en);
   });
 
@@ -49,6 +52,23 @@ void main() {
     expect(LocaleSettings.currentLocale, AppLocale.ja);
   });
 
+  test('plural numerals follow region changes without changing grammatical language', () async {
+    await settings.write(SettingsService.appLocale, AppLocale.en);
+    await settings.write(SettingsService.formatLocale, 'de-DE');
+    await LocalePreferences.apply();
+    expect(t.videoControls.frameCount(n: 1234), '1.234 frames');
+    expect(t.playlists.itemCount(count: 1), '1 item');
+    expect(t.playlists.itemCount(count: 2), '2 items');
+    await settings.write(SettingsService.formatLocale, 'en-US');
+    await LocalePreferences.apply();
+    expect(t.videoControls.frameCount(n: 1234), '1,234 frames');
+    await settings.write(SettingsService.appLocale, AppLocale.ar);
+    await settings.write(SettingsService.formatLocale, 'ar-EG');
+    await LocalePreferences.apply();
+    expect(t.playlists.itemCount(count: 2), 'عنصران');
+    expect(t.playlists.itemCount(count: 3), contains('٣'));
+  });
+
   test('Traditional Chinese formatting does not inherit Simplified device symbols', () async {
     AppLocaleEnvironment.debugDeviceLocales = const [Locale('zh', 'CN')];
     await settings.write(SettingsService.appLocale, AppLocale.zhHant);
@@ -70,15 +90,20 @@ void main() {
     var nativeTag = '';
     final writes = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      PlatformLocaleSync.channel, (call) async {
+      PlatformLocaleSync.channel,
+      (call) async {
         if (call.method == 'getApplicationLocale') return nativeTag;
+        if (call.method == 'getSystemLocales') return 'de-DE';
         nativeTag = call.arguments as String;
         writes.add(nativeTag);
         return null;
-      });
+      },
+    );
     await settings.write(SettingsService.appLocale, AppLocale.fr);
     await PlatformLocaleSync.synchronizeChannel(settings);
     expect(nativeTag, 'fr'); // Migrates an existing in-app choice.
+    await settings.write(SettingsService.formatLocale, 'system');
+    expect(LocalePreferences.formattingLocaleName, 'de');
     nativeTag = 'ar'; // Changed in Android Settings while the app was away.
     await PlatformLocaleSync.synchronizeChannel(settings);
     expect(settings.read(SettingsService.appLocale), AppLocale.ar);
@@ -101,5 +126,15 @@ void main() {
   test('external bidi overrides cannot reorder surrounding UI', () {
     expect(isolateDisplayText('Movie \u202e2026'), '\u2068Movie 2026\u2069');
     expect(isolateDisplayText('فيلم (2026)'), '\u2068فيلم (2026)\u2069');
+  });
+
+  test('numeric settings accept system keyboard digits without accepting ambiguous decimals', () {
+    for (final digits in ['١٢٣', '۱۲۳', '१२३', '১২৩', '๑๒๓', '１２３', '123']) {
+      expect(parseLocalizedInteger(digits), 123);
+    }
+    expect(parseLocalizedInteger('\u061c−۱۲'), -12);
+    for (final invalid in ['1,5', '1.5', '1e3', '١٬٢٣٤', '12 hours']) {
+      expect(parseLocalizedInteger(invalid), isNull);
+    }
   });
 }

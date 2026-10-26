@@ -351,8 +351,7 @@ class MultiServerManager {
     }
   }
 
-  String? get _currentPlexLanguageCode =>
-      LocalePreferences.metadataLanguageCode;
+  String? get _currentPlexLanguageCode => LocalePreferences.metadataLanguageCode;
 
   @visibleForTesting
   void debugRegisterJellyfinClientForTesting(JellyfinClient client, {bool online = true}) {

@@ -103,7 +103,12 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     final position = _scrollController.position;
     final delta = direction * position.viewportDimension * widget.scrollAmount;
     final targetScroll = (position.pixels + delta).clamp(0.0, position.maxScrollExtent);
-    _scrollController.animateTo(targetScroll, duration: tokens(context).slow, curve: Curves.easeInOut);
+    final duration = tokens(context).slow;
+    if (MediaQuery.disableAnimationsOf(context) || duration == Duration.zero) {
+      _scrollController.jumpTo(targetScroll);
+    } else {
+      _scrollController.animateTo(targetScroll, duration: duration, curve: Curves.easeInOut);
+    }
   }
 
   void _scrollLeft() => _animateScroll(-1);
@@ -116,9 +121,9 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     required VoidCallback onPressed,
     required bool canScroll,
   }) {
-    return Positioned(
-      left: position < 0 ? null : position,
-      right: position < 0 ? -position : null,
+    return PositionedDirectional(
+      start: position < 0 ? null : position,
+      end: position < 0 ? -position : null,
       top: 0,
       bottom: 0,
       child: Center(

@@ -10,7 +10,12 @@ class AppLocaleEnvironment {
   @visibleForTesting
   static List<Locale>? debugDeviceLocales;
 
-  static List<Locale> get deviceLocales => debugDeviceLocales ?? PlatformDispatcher.instance.locales;
+  // Android's in-process locale list starts with the per-app override. Keep
+  // the unmodified system list for the independent “Follow system” format.
+  static List<Locale>? platformDeviceLocales;
+
+  static List<Locale> get deviceLocales =>
+      debugDeviceLocales ?? platformDeviceLocales ?? PlatformDispatcher.instance.locales;
 }
 
 /// Resolves device locales in preference order while preserving Chinese script.
@@ -31,8 +36,31 @@ AppLocale resolvePreferredAppLocale(Iterable<Locale> preferredLocales) {
 AppLocale _resolveRegionalLocale(Locale locale) {
   // Latin American Spanish has one regional catalog, not one copy per
   // country. Spain and unspecified Spanish retain the language-only catalog.
-  const latinAmerica = {'419', 'AR', 'BO', 'BR', 'BZ', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'GT', 'HN',
-    'MX', 'NI', 'PA', 'PE', 'PR', 'PY', 'SV', 'US', 'UY', 'VE'};
+  const latinAmerica = {
+    '419',
+    'AR',
+    'BO',
+    'BR',
+    'BZ',
+    'CL',
+    'CO',
+    'CR',
+    'CU',
+    'DO',
+    'EC',
+    'GT',
+    'HN',
+    'MX',
+    'NI',
+    'PA',
+    'PE',
+    'PR',
+    'PY',
+    'SV',
+    'US',
+    'UY',
+    'VE',
+  };
   if (locale.languageCode == 'es' && latinAmerica.contains(locale.countryCode?.toUpperCase())) {
     return AppLocaleUtils.parse('es-419');
   }

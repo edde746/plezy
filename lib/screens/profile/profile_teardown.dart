@@ -26,6 +26,7 @@ import '../../services/api_cache.dart';
 import '../../services/multi_server_manager.dart';
 import '../../services/storage_service.dart';
 import '../../services/system_shelf_service.dart';
+import '../../sources/source_controller.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/global_key_utils.dart';
@@ -49,6 +50,7 @@ class SessionTeardownScope {
   final StorageService storage;
   final NavigatorState navigator;
   final SystemShelfService shelf;
+  final SourceController? sources;
 
   MultiServerManager get serverManager => multiServer.serverManager;
 
@@ -73,6 +75,7 @@ class SessionTeardownScope {
       database = context.read<AppDatabase>(),
       storage = context.read<StorageService>(),
       shelf = SystemShelfService(),
+      sources = context.read<SourceController?>(),
       navigator = Navigator.of(context, rootNavigator: true);
 }
 
@@ -204,6 +207,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.database.deleteDownloadCollectionsForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
     await scope.database.deleteMusicSessionForProfile(profile.id);
+    await scope.sources?.forgetProfile(profile.id);
     await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
     await scope.storage.clearProfileLastUsed(profile.id);
@@ -314,6 +318,7 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
         await scope.database.deleteDownloadCollectionsForProfile(profileId);
         await scope.database.deleteWatchActionsForProfile(profileId);
         await scope.database.deleteMusicSessionForProfile(profileId);
+        await scope.sources?.forgetProfile(profileId);
       }
 
       return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);

@@ -17,6 +17,8 @@ class FocusableSlider extends StatefulWidget {
   final FocusNode? focusNode;
   final bool autofocus;
 
+  final String? semanticLabel;
+  final SemanticFormatterCallback? semanticFormatterCallback;
   final Color? activeColor;
   final Color? inactiveColor;
   const FocusableSlider({
@@ -31,6 +33,8 @@ class FocusableSlider extends StatefulWidget {
     this.onSelect,
     this.focusNode,
     this.autofocus = false,
+    this.semanticLabel,
+    this.semanticFormatterCallback,
     this.activeColor,
     this.inactiveColor,
   });
@@ -51,10 +55,23 @@ class _FocusableSliderState extends State<FocusableSlider> {
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
-    if (key.isLeftKey || key.isRightKey) {
+    if (key.isLeftKey ||
+        key.isRightKey ||
+        key == LogicalKeyboardKey.home ||
+        key == LogicalKeyboardKey.end ||
+        key == LogicalKeyboardKey.pageUp ||
+        key == LogicalKeyboardKey.pageDown) {
       if (event.isActionable && widget.onChanged != null) {
-        final delta = key.isInlineEnd(context) ? _step : -_step;
-        final newValue = (widget.value + delta).clamp(widget.min, widget.max);
+        final delta = key == LogicalKeyboardKey.pageUp
+            ? _step * 4
+            : key == LogicalKeyboardKey.pageDown
+            ? -_step * 4
+            : (key.isInlineEnd(context) ? _step : -_step);
+        final newValue = key == LogicalKeyboardKey.home
+            ? widget.min
+            : key == LogicalKeyboardKey.end
+            ? widget.max
+            : (widget.value + delta).clamp(widget.min, widget.max);
         widget.onChangeStart?.call(widget.value);
         widget.onChanged!(newValue);
         widget.onChangeEnd?.call(newValue);
@@ -71,31 +88,37 @@ class _FocusableSliderState extends State<FocusableSlider> {
   @override
   Widget build(BuildContext context) {
     final sliderTheme = SliderTheme.of(context);
-    return FocusableWrapper(
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
-      descendantsAreFocusable: false,
-      disableScale: true,
-      focusColor: Colors.transparent,
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      onKeyEvent: _handleKeyEvent,
-      child: SliderTheme(
-        data: sliderTheme.copyWith(
-          overlayShape: sliderTheme.overlayShape ?? const RoundSliderOverlayShape(overlayRadius: 0),
-          thumbSize: WidgetStatePropertyAll(
-            (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
+    return MergeSemantics(
+      child: Semantics(
+        label: widget.semanticLabel,
+        child: FocusableWrapper(
+          focusNode: widget.focusNode,
+          autofocus: widget.autofocus,
+          descendantsAreFocusable: false,
+          disableScale: true,
+          focusColor: Colors.transparent,
+          onFocusChange: (focused) => setState(() => _isFocused = focused),
+          onKeyEvent: _handleKeyEvent,
+          child: SliderTheme(
+            data: sliderTheme.copyWith(
+              overlayShape: sliderTheme.overlayShape ?? const RoundSliderOverlayShape(overlayRadius: 0),
+              thumbSize: WidgetStatePropertyAll(
+                (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
+              ),
+            ),
+            child: Slider(
+              value: widget.value,
+              min: widget.min,
+              max: widget.max,
+              divisions: widget.divisions,
+              semanticFormatterCallback: widget.semanticFormatterCallback,
+              onChanged: widget.onChanged,
+              onChangeStart: widget.onChangeStart,
+              onChangeEnd: widget.onChangeEnd,
+              activeColor: widget.activeColor,
+              inactiveColor: widget.inactiveColor,
+            ),
           ),
-        ),
-        child: Slider(
-          value: widget.value,
-          min: widget.min,
-          max: widget.max,
-          divisions: widget.divisions,
-          onChanged: widget.onChanged,
-          onChangeStart: widget.onChangeStart,
-          onChangeEnd: widget.onChangeEnd,
-          activeColor: widget.activeColor,
-          inactiveColor: widget.inactiveColor,
         ),
       ),
     );

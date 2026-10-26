@@ -45,12 +45,28 @@ RatingInfo? ratingInfoForSource(String source, double value) => switch (source) 
     value >= _rottenTomatoesFresh
         ? RatingInfo(_rtUprightAsset, _percent(value), _rtUprightAspect)
         : RatingInfo(_rtSpilledAsset, _percent(value), _rtSpilledAspect),
-  'metacritic' => RatingInfo(_metacriticAsset, formatDecimal((value * 10), minimumDecimals: 0, maximumDecimals: 0), _metacriticAspect),
-  'letterboxd' => RatingInfo(_letterboxdAsset, formatDecimal((value / 2), minimumDecimals: 1, maximumDecimals: 1), _letterboxdAspect),
+  'metacritic' => RatingInfo(
+    _metacriticAsset,
+    formatDecimal((value * 10), minimumDecimals: 0, maximumDecimals: 0),
+    _metacriticAspect,
+  ),
+  'letterboxd' => RatingInfo(
+    _letterboxdAsset,
+    formatDecimal((value / 2), minimumDecimals: 1, maximumDecimals: 1),
+    _letterboxdAspect,
+  ),
   // The trackers' marks are their service logos, square viewBoxes.
   'trakt' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.trakt), _percent(value), 1),
-  'simkl' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.simkl), formatDecimal(value, minimumDecimals: 1, maximumDecimals: 1), 1),
-  'mal' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.mal), formatDecimal(value, minimumDecimals: 2, maximumDecimals: 2), 1),
+  'simkl' => RatingInfo(
+    catalogSourceLogoAsset(CatalogSourceId.simkl),
+    formatDecimal(value, minimumDecimals: 1, maximumDecimals: 1),
+    1,
+  ),
+  'mal' => RatingInfo(
+    catalogSourceLogoAsset(CatalogSourceId.mal),
+    formatDecimal(value, minimumDecimals: 2, maximumDecimals: 2),
+    1,
+  ),
   'anilist' => RatingInfo(catalogSourceLogoAsset(CatalogSourceId.anilist), _percent(value), 1),
   _ => null,
 };

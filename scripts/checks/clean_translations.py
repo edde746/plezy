@@ -206,7 +206,7 @@ def clean_pass(check_only: bool) -> bool:
 
 
 def collect_references() -> set[str]:
-    refs: set[str] = {'platform'}  # scripts/codegen/generate_platform_locales.py
+    refs: set[str] = set()
     for dart_file in LIB_DIR.rglob("*.dart"):
         # Skip i18n sources and generated files.
         try:
@@ -227,6 +227,8 @@ def unused_pass(strict: bool) -> int:
     en = load_json(I18N_DIR / f"{SOURCE_LOCALE}.i18n.json")
     leaves = flatten(en)
     refs = collect_references()
+    # Native permission messages are consumed outside Dart.
+    refs.add('platform')  # scripts/codegen/generate_platform_locales.py
 
     direct: set[str] = set()
     for leaf in leaves:

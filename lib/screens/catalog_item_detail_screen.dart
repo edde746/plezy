@@ -850,7 +850,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       final source = ratingSourceLabel(rating.source);
       final badge = ratingInfoForSource(rating.source, rating.value);
       if (source == null && badge == null) continue;
-      var label = badge == null ? '$source ${formatDecimal(rating.value, minimumDecimals: 1, maximumDecimals: 1)}' : badge.formattedValue;
+      var label = badge == null
+          ? '$source ${formatDecimal(rating.value, minimumDecimals: 1, maximumDecimals: 1)}'
+          : badge.formattedValue;
       if (rating.votes case final votes?) {
         label = '$label (${t.explore.stats.votes(n: compact.format(votes))})';
       }
@@ -999,7 +1001,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       add(t.explore.detail.physicalRelease, dateFormat.format(date.toLocal()));
     }
     if (item.endDate case final date?) add(t.explore.detail.ended, dateFormat.format(date.toLocal()));
-    if (item.userRating case final rating?) add(t.explore.detail.yourRating, formatDecimal(rating, minimumDecimals: 1, maximumDecimals: 1));
+    if (item.userRating case final rating?) {
+      add(t.explore.detail.yourRating, formatDecimal(rating, minimumDecimals: 1, maximumDecimals: 1));
+    }
     if (item.budget case final budget?) add(t.explore.detail.budget, currency.format(budget));
     if (item.revenue case final revenue?) add(t.explore.detail.revenue, currency.format(revenue));
     add(t.explore.detail.contentAdvisory, item.contentAdvisory);

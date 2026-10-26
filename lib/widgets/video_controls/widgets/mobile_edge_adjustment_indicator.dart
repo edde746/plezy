@@ -1,3 +1,4 @@
+import '../../../i18n/presentation_formats.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -91,7 +92,7 @@ class _IndicatorContent extends StatelessWidget {
           AppIcon(icon, fill: 1, color: color, size: 24),
           const SizedBox(height: 6),
           Text(
-            '${(value * 100).round()}%',
+            formatPercent(value),
             textAlign: .center,
             style: TextStyle(
               color: color,

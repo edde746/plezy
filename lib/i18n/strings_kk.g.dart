@@ -7,6 +7,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
@@ -40,11 +41,15 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$kk app = _Translations$app$kk._(_root);
+	@override late final _Translations$cast$kk cast = _Translations$cast$kk._(_root);
+	@override late final _Translations$automation$kk automation = _Translations$automation$kk._(_root);
+	@override late final _Translations$notifications$kk notifications = _Translations$notifications$kk._(_root);
 	@override late final _Translations$appIcon$kk appIcon = _Translations$appIcon$kk._(_root);
 	@override late final _Translations$auth$kk auth = _Translations$auth$kk._(_root);
 	@override late final _Translations$common$kk common = _Translations$common$kk._(_root);
 	@override late final _Translations$screens$kk screens = _Translations$screens$kk._(_root);
 	@override late final _Translations$update$kk update = _Translations$update$kk._(_root);
+	@override late final _Translations$appAccess$kk appAccess = _Translations$appAccess$kk._(_root);
 	@override late final _Translations$settings$kk settings = _Translations$settings$kk._(_root);
 	@override late final _Translations$themeEditor$kk themeEditor = _Translations$themeEditor$kk._(_root);
 	@override late final _Translations$search$kk search = _Translations$search$kk._(_root);
@@ -70,6 +75,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$kk serverSelection = _Translations$serverSelection$kk._(_root);
 	@override late final _Translations$hubDetail$kk hubDetail = _Translations$hubDetail$kk._(_root);
 	@override late final _Translations$logs$kk logs = _Translations$logs$kk._(_root);
+	@override late final _Translations$detail$kk detail = _Translations$detail$kk._(_root);
 	@override late final _Translations$startup$kk startup = _Translations$startup$kk._(_root);
 	@override late final _Translations$licenses$kk licenses = _Translations$licenses$kk._(_root);
 	@override late final _Translations$navigation$kk navigation = _Translations$navigation$kk._(_root);
@@ -92,7 +98,11 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$kk seerr = _Translations$seerr$kk._(_root);
 	@override late final _Translations$services$kk services = _Translations$services$kk._(_root);
 	@override late final _Translations$addServer$kk addServer = _Translations$addServer$kk._(_root);
+	@override late final _Translations$watchLink$kk watchLink = _Translations$watchLink$kk._(_root);
 	@override late final _Translations$homeLayout$kk homeLayout = _Translations$homeLayout$kk._(_root);
+	@override late final _Translations$platform$kk platform = _Translations$platform$kk._(_root);
+	@override late final _Translations$fileSources$kk fileSources = _Translations$fileSources$kk._(_root);
+	@override late final _Translations$lending$kk lending = _Translations$lending$kk._(_root);
 }
 
 // Path: app
@@ -105,6 +115,48 @@ class _Translations$app$kk extends Translations$app$en {
 	@override String get title => 'PlezyNG';
 }
 
+// Path: cast
+class _Translations$cast$kk extends Translations$cast$en {
+	_Translations$cast$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Ауыз ішінен';
+	@override String get searching => 'Қазіргі таңда қабырғалар үшін...';
+	@override String connectedTo({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}';
+	@override String get device => 'Ауызды';
+	@override String get readyToCast => 'Қатысуға арналған';
+	@override String get subtitle => 'Субтитрлер';
+	@override String get serverNotAvailable => 'Медыя сервері не қосқан.';
+	@override String get stopCasting => 'Оданды';
+	@override String get castToDevice => 'Ауыздылықтық';
+	@override String get noEpisodeAvailable => 'Бұл үшін не ескеп келді.';
+	@override String get startFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір';
+}
+
+// Path: automation
+class _Translations$automation$kk extends Translations$automation$en {
+	_Translations$automation$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Ауызды видео сессиясы бар.';
+	@override String get profileNotFound => 'Бұл Plezy профильде қарағанда ол не қарағанда.';
+}
+
+// Path: notifications
+class _Translations$notifications$kk extends Translations$notifications$en {
+	_Translations$notifications$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Епізод';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
 // Path: appIcon
 class _Translations$appIcon$kk extends Translations$appIcon$en {
 	_Translations$appIcon$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -115,6 +167,8 @@ class _Translations$appIcon$kk extends Translations$appIcon$en {
 	@override String get title => 'Қолданба белгішесі';
 	@override String get defaultIcon => 'Әдепкі';
 	@override String get current => 'Ағымдағы белгіше';
+	@override String get locked => 'Жүзілік қабығылық қабығы';
+	@override String get lockedHint => 'Басқа белгішелерді пайдалану үшін 7 күндік сынақ мерзімін бастаңыз немесе PlezyNG-ге өмірлік қолжетімділікті сатып алыңыз.';
 	@override String get changeFailed => 'Қолданба белгішесін өзгерту мүмкін болмады';
 	@override String get launcherHint => 'PlezyNG-ден шыққаннан кейін жаңа белгіше басты экранда пайда болады.';
 	@override String get tvLauncherHint => 'PlezyNG-ден шыққаннан кейін жаңа баннер пайда болады. Android TV теледидар қайта іске қосылғанша ескісін көрсете беруі мүмкін.';
@@ -145,6 +199,7 @@ class _Translations$auth$kk extends Translations$auth$en {
 	@override String get quickConnectExpired => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.';
 	@override String get localDataRecoveryRequired => 'PlezyNG жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.';
 	@override String get pinCheckRejected => 'Plex PIN кодын тексеру қабылданбады';
+	@override String get connectToDirectPlex => 'Қаланың тұрақты тұрғындарының саны Plex';
 }
 
 // Path: common
@@ -237,6 +292,37 @@ class _Translations$update$kk extends Translations$update$en {
 	@override String get checkFailed => 'Жаңартуларды тексеру мүмкін болмады';
 }
 
+// Path: appAccess
+class _Translations$appAccess$kk extends Translations$appAccess$en {
+	_Translations$appAccess$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '7 күннен кейін бір-бірінен ұзақтығы';
+	@override String get description => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.';
+	@override String get trialEndedDescription => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.';
+	@override String get startTrial => '7 жылдан кейінгі ұзақ уақытқа дейін';
+	@override String get trialActive => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.';
+	@override String get trialEnded => '7 жылдан кейінгі қазір қарап отыр.';
+	@override String get trialStartFailed => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.';
+	@override String get lifetimeTitle => 'PlezyNG-ге өмірлік қолжетімділік ашылды';
+	@override String get lifetimeBody => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.';
+	@override String get manageTitle => 'PlezyNG жылдық қабығы';
+	@override String get manageDescription => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.';
+	@override String buy({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу';
+	@override String get loadingPrice => 'Өнімдер мен жарықтық бағасы...';
+	@override String get retryPrice => 'Өткен қағазды';
+	@override String get restore => 'Өткен келдім келдім';
+	@override String get pending => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
+	@override String get storeUnavailable => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
+	@override String get productNotFound => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.';
+	@override String get productQueryFailed => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.';
+	@override String get purchaseFailed => 'Қаншама жылы қазір, қайтып келді.';
+	@override String get restoreFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.';
+	@override String get nothingToRestore => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.';
+}
+
 // Path: settings
 class _Translations$settings$kk extends Translations$settings$en {
 	_Translations$settings$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -247,9 +333,14 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get title => 'Баптаулар';
 	@override String get supportDeveloper => 'PlezyNG жобасын қолдау';
 	@override String get supportDeveloperDescription => 'Әзірлеуді қолдау үшін қайырымдылық жасаңыз';
+	@override String get lifetimeAccess => 'PlezyNG жылдық қабығы';
 	@override String get language => 'Тіл';
 	@override String get theme => 'Тақырып';
 	@override String get appearance => 'Сыртқы келбеті';
+	@override String get detailPage => 'Детайл сайын';
+	@override String get themeSongsEnabled => 'Теме песында';
+	@override String get themeSongsEnabledDescription => 'Бұл үшін, бізге жаңа жаңа музыкалардан көреміз, медиадан көретін.';
+	@override String get themeSongVolume => 'Сондай-ақ песқыны';
 	@override String get videoPlayback => 'Видеоны ойнату';
 	@override String get videoPlaybackDescription => 'Ойнату параметрлерін реттеңіз';
 	@override String get advanced => 'Кеңейтілген';
@@ -286,7 +377,24 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get gridView => 'Тор';
 	@override String get listView => 'Тізім';
 	@override String get showHeroSection => 'Басты бөлімді көрсету';
+	@override String get showHomeBackdrop => 'Өзінің астығы арт-қатынас';
+	@override String get showHomeBackdropDescription => 'Өзінің астының астының өзара көшіруге қарастырылған';
+	@override String get contentScreensaverEnabled => 'Серіктің шығыстар';
+	@override String get contentScreensaverEnabledDescription => 'Бұл үшін алдыңғы мультфильмдық қағидалар мен идеялардан тұрады.';
+	@override String get contentScreensaverDelay => 'Серіктің да көптеген жылдар';
+	@override String get contentScreensaverLibraries => 'Бібліотекасы';
 	@override String get contentScreensaverLibrariesDescription => 'Экран сақтағышы үшін суреттер алынатын кітапханаларды таңдаңыз. Ешқайсысы таңдалмаса, барлық кітапхананың суреттері пайдаланылады.';
+	@override String get contentScreensaverAllLibraries => 'Бібліотекасы';
+	@override String contentScreensaverSelectedLibraries({required Object count}) => '${count} кітапхана таңдалды';
+	@override String get contentScreensaverNoLibraries => 'Медіалық библиотекасы бар.';
+	@override String get contentScreensaverDismissHint => 'Қандай-ақ, қанақтардан немесе қанақтатын';
+	@override String get newEpisodeNotifications => 'Есімде-ақ жаңалықтары';
+	@override String get newEpisodeNotificationsDescription => 'Барлық бөлімін көріп болған сериалыңызға жаңа бөлім қосылғанда хабарлау. Plezy ашық болғанда тексеріледі.';
+	@override String get continueWatchingRowSize => 'Өздіктер өңдеуге қараңыз';
+	@override String continueWatchingRowSizeValue({required Object label}) => '${label} карточкалар';
+	@override String get rowSizeCompact => 'Тығыз';
+	@override String get rowSizeStandard => 'стандартты';
+	@override String get rowSizeLarge => 'Үлкен';
 	@override String get continueWatchingAction => '"Көруді жалғастыру" әрекеті';
 	@override String get continueWatchingPlay => 'Ойнату';
 	@override String get continueWatchingDetails => 'Толығырақ ашу';
@@ -331,8 +439,15 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get playbackBufferLarge => 'Үлкен';
 	@override String get playbackBufferExtraLarge => 'Өте үлкен';
 	@override String get playbackBufferDescription => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.';
+	@override String get streamBufferSize => 'Баукерлік';
+	@override String streamBufferSizeValue({required Object size}) => '${size} МБ';
+	@override String get streamBufferSizeDescription => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылады. Transcodes зуп, сервердің собственный transcode buffer. 0 = Auto';
+	@override String get streamBufferSizeExoNote => 'Бұл үшін, «Playback Buffer» бағдарламасы мен «App» бағдарламасы бар.';
+	@override String get streamBufferMegabytes => 'Мегабайт';
 	@override String get defaultQualityTitle => 'Әдепкі сапа';
 	@override String get cellularQualityTitle => 'Мобильді желідегі әдепкі сапа';
+	@override String get remoteQualityTitle => 'Өнімдертік қызмет көрсету';
+	@override String get remoteQualitySameAsDefault => 'Өнімдер мен сапалы';
 	@override String get cellularQualitySameAsDefault => 'Әдепкі сапамен бірдей';
 	@override String get directPlayCoveredQuality => 'Кіші видеоларды түпнұсқа сапада ойнату';
 	@override String get directPlayCoveredQualityDescription => 'Сапа шегіне сәйкес келетін видеоларды транскодтаудың орнына тікелей ойнату';
@@ -345,10 +460,22 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get smallSkipDuration => 'Шағын өткізіп жіберу уақыты';
 	@override String get largeSkipDuration => 'Үлкен өткізіп жіберу уақыты';
 	@override String get rewindOnResume => 'Жалғастырғанда артқа айналдыру';
-	@override String secondsUnit({required Object seconds}) => '${seconds} секунд';
+	@override String secondsUnit({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(seconds,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} секунд',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} секунд',
+	);
 	@override String get defaultSleepTimer => 'Әдепкі ұйқы таймері';
-	@override String minutesUnit({required Object minutes}) => '${minutes} минут';
+	@override String minutesUnit({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(minutes,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} минут',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} минут',
+	);
 	@override String get rememberTrackSelections => 'Әр фильм/сериал үшін дыбыс/субтитр таңдауын есте сақтау';
+	@override String get chooseTracksBeforePlayback => 'Аудиолық және субтитрикалық қазалықты қазалықтары';
+	@override String get chooseTracksBeforePlaybackDescription => 'Бұл үшін, бізге көшіру үшін, біздің видеодан көшіруге болады.';
+	@override String get alwaysShowSubtitlesOnDevice => 'Бұл үшін бұл қосымшасы бар.';
+	@override String get alwaysShowSubtitlesOnDeviceDescription => 'Бұл үшін, сервердер үшін не қанаққалы, қанақтықты, қанағы мен қанақтың қанақындалы бар.';
+	@override String get autoDownloadPreferredSubtitle => '«Атлант» АҚШ-ның «Атла» АҚШ бағдарламасының қағидалары';
+	@override String get autoDownloadPreferredSubtitleDescription => 'Бұл үшін, бізге сіздің қосылымды және сіздің қолылымды және бізге сізге қолылымда және сіздің қағидалары мен сіздің қолайлылары мен сізге қолайлысы және сіздің жүктелу үшін сіздің қолымды және Сіздің қолайлалары мен сіздердің қолайлары мен сізді қолайлыңызға болады.';
 	@override String get rememberTrackSelectionsDescription => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау';
 	@override String get rememberTrackSelectionsBackendRule => 'Plex әр таңдауды серверде файл бойынша сақтайды; Jellyfin сонымен қатар тіркелгінің «Таңдауларды есте сақтау» мүмкіндігін қосады; Emby қолдау көрсетпейді';
 	@override String get followServerTrackSelections => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану';
@@ -395,6 +522,17 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get importSettingsSuccess => 'Баптаулар импортталды';
 	@override String get importSettingsInvalidFile => 'Бұл файл дұрыс PlezyNG баптаулар файлы емес';
 	@override String get importSettingsNoUser => 'Баптауларды импорттау алдында жүйеге кіріңіз';
+	@override String get cloudBackup => 'Ауыздылық Cloud';
+	@override String get cloudBackupDescription => 'Тасымалданатын параметрлердің сақтық көшірмесін HTTPS арқылы WebDAV мекенжайына сақтаңыз. Сервер қосылымдары мен тіркелгі деректері осы құрылғыда қалады.';
+	@override String get cloudBackupUrl => 'WebDAV JSON файл URL';
+	@override String get cloudBackupUsername => 'Пайдаланушы аты';
+	@override String get cloudBackupPassword => 'Құпия сөз';
+	@override String get cloudBackupSaved => 'Ауыздылықлықлық тазалық тазаның';
+	@override String get cloudBackupNow => 'Қазір қайтарып';
+	@override String get cloudBackupComplete => 'Басқасы қанаққалы';
+	@override String get cloudBackupRestore => 'Бақырлық';
+	@override String get cloudBackupRestoreConfirm => 'Бұл үшін бұл қосымшалар мен қосымшалармен қосымшалар бар.';
+	@override String get cloudBackupRestored => '«Аяқтар» АҚШ-ның «Now Backup» АҚШ';
 	@override String get shortcutsReset => 'Пернелер тіркесі әдепкі күйге қайтарылды';
 	@override String get resetShortcutsConfirm => 'Бұл таңдамалы пернелер тіркесін әдепкі мәндермен ауыстырады. Жалғастырасыз ба?';
 	@override String get about => 'Қолданба туралы';
@@ -414,6 +552,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау';
 	@override String get shuffleStartsFromBeginning => 'Араластыру басынан басталады';
 	@override String get shuffleStartsFromBeginningDescription => 'Араластырғанда әр бөлімді жалғастырудың орнына басынан бастау';
+	@override String get plexCinemaPreRoll => 'Кінематографиялық сервертер';
+	@override String get plexCinemaPreRollDescription => 'Фильм басталмай тұрып бапталған Plex алдын ала роликтерін немесе Jellyfin және Emby кіріспелерін ойнату.';
 	@override String get playNextCountdown => 'Келесіні ойнату санағы';
 	@override String get playNextCountdownImmediate => 'Дереу ойнату';
 	@override String get skipIntroMode => 'Кіріспені өткізу';
@@ -424,17 +564,38 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get skipCreditsModeOffDescription => 'Титрлерді өткізу түймесінсіз қалыпты ойнату';
 	@override String get skipCreditsModeButtonDescription => 'Титрлер басталғанда өткізу түймесін көрсету';
 	@override String get skipCreditsModeAutoDescription => 'Титрлерді автоматты өткізіп, келесі бөлімді ойнату';
+	@override String get skipAdsMode => 'Ауызды';
+	@override String get skipAdsModeOffDescription => '«Атлант» бағдарламасы, «Атла» бағдарламасы және бағдарламасы';
+	@override String get skipAdsModeButtonDescription => 'Plex жарнаманы анықтағанда өткізіп жіберу түймесін көрсету';
+	@override String get skipAdsModeAutoDescription => 'Алдыңғы: Алдыңғы мақаласы: Алдыңтын мақаласы';
+	@override String get musicPlayback => 'Музыкалық Playback';
+	@override String get musicSweetFades => 'Өткен қасық';
+	@override String get musicSweetFadesDescription => 'Plex-те дыбыс қаттылығы туралы дерек болғанда тректің басы мен соңында дыбысты біртіндеп өзгерту. Альбомды ойнату өзгермейді.';
 	@override String get skipMarkerModeOff => 'Өшірулі';
 	@override String get skipMarkerModeButton => 'Түймені көрсету';
 	@override String get skipMarkerModeAuto => 'Автоматты';
 	@override String get forceSkipMarkerFallback => 'Қосалқы белгілерді мәжбүрлеу';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex белгілері болса да бөлім тақырыбы үлгілерін пайдалану';
+	@override String get theIntroDbFallback => '«Аяқтар» АҚШ-ның «IntroFallback» АҚШ бағдарламасы';
+	@override String get theIntroDbFallbackDescription => 'Бұл үшін, бізге қосылыңыз және бізге қосаңыз және бізді қосылымыз және бізге қабығыңыз және бізде қосылылар бар.';
 	@override String get autoSkipDelay => 'Автоматты өткізу кідірісі';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Автоматты өткізгенге дейін ${seconds} секунд күту';
 	@override String get introPattern => 'Киріс бөлім белгісінің үлгісі';
 	@override String get introPatternDescription => 'Бөлім тақырыптарында интроны табуға арналған Regex үлгісі';
 	@override String get creditsPattern => 'Титр белгісінің үлгісі';
 	@override String get creditsPatternDescription => 'Бөлім тақырыптарында титрлерді табуға арналған Regex үлгісі';
+	@override String get prerolls => 'Олар';
+	@override String get playPrerollsBeforeMovies => 'Фильмдық кинодан кейінгі';
+	@override String get playPrerollsBeforeMoviesDescription => 'Бұл жануарлардың ең айқын көргенде, оныншы кірілген қазанды, онынша кірілген көне, онынш келді.';
+	@override String get prerollLibrary => 'Бібліотекасы';
+	@override String get prerollLibraryNotSet => 'Орнатылмаған';
+	@override String get prerollLibraryNoneFound => 'Бібліотекасы сіздің сервердерде не көреп отыр.';
+	@override String get prerollSelection => 'Қаланың қабығы';
+	@override String get prerollSelectionPickLibraryFirst => 'Бібліотекадан першінің';
+	@override String get prerollSelectionNoneSelected => 'Жұмыс-қатынас қағаз';
+	@override String prerollSelectionCount({required Object count}) => '${count} таңдалды';
+	@override String get prerollItemPicker => 'Прерольдық';
+	@override String get prerollItemPickerLoadFailed => 'Бұл библиотекасы да салыстырды не айтылады.';
 	@override String get invalidRegex => 'Қате тұрақты өрнек (Regex)';
 	@override String get regex => 'Тұрақты өрнек (Regex)';
 	@override String get downloads => 'Жүктеулер';
@@ -452,6 +613,12 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get downloadOnWifiOnlyDescription => 'Мобильді деректер пайдаланылғанда жүктеулерді кідірту';
 	@override String get autoRemoveWatchedDownloads => 'Көрілген жүктеулерді автоматты өшіру';
 	@override String get autoRemoveWatchedDownloadsDescription => 'Көрілген жүктеулерді автоматты түрде өшіру';
+	@override String get autoDownloadContinueWatching => 'Ауто-шоу қабығыңыз';
+	@override String get autoDownloadContinueWatchingDescription => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірумен, бір';
+	@override String get downloadQuality => 'Өнімдер жүктеу';
+	@override String get downloadQualityDescription => 'Plex түрлендірілген көшірмені жүктеу кезегінде дайындайды. Jellyfin мен Emby файл жүктеліп жатқанда түрлендіреді; үзілген жүктеуді қайта бастау қажет болуы мүмкін.';
+	@override String get askDownloadQualityEachTime => 'Өнімдер мен сапалы сапалы сапасы';
+	@override String get askDownloadQualityEachTimeDescription => 'Бұл үшін, бізге сіздің видеодан жүктеу үшін сапалы пикеры бар.';
 	@override String get cellularDownloadBlocked => 'Мобильді желіде жүктеу бұғатталған. Wi-Fi пайдаланыңыз немесе параметрді өзгертіңіз.';
 	@override String get maxVolume => 'Максималды дыбыс';
 	@override String get maxVolumeDescription => 'Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру';
@@ -538,8 +705,13 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Навигация панелінің мәтіндерін көрсету';
 	@override String get showNavBarLabelsDescription => 'Навигация белгішелерінің астында мәтінді көрсету';
 	@override String get startupSection => 'Бастапқы бөлім';
+	@override String get preferredServer => 'Қазір сервердер';
+	@override String get preferredServerDescription => 'Бұл сервернің өңдеуге және басқа да басқа да басқа бір сервердердерге қолдан тұрады.';
+	@override String get preferredServerAutomatic => 'Автоматты';
 	@override String get showExploreTab => '«Шолу» қойындысын көрсету';
 	@override String get showExploreTabDescription => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету';
+	@override String get hideEmptyLibraries => 'Бібліотекасы тазаны';
+	@override String get hideEmptyLibrariesDescription => '«Жеңіске» АҚШ-ның «Желдер» АҚШ бағдарламасының «Женер» АҚШ АҚШ бағдарламасына көшіру';
 	@override String get liveTvDefaultFavorites => 'Тікелей TV-де таңдаулы арналарды әдепкі ету';
 	@override String get liveTvDefaultFavoritesDescription => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету';
 	@override String get general => 'Жалпы';
@@ -566,6 +738,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get gestureVolumeSwipeDescription => 'Оң жақ шетінде жоғары немесе төмен сырғытып, дыбыс деңгейін реттеу';
 	@override String get gesturePinchToZoom => 'Шымшу арқылы масштабтау';
 	@override String get gesturePinchToZoomDescription => 'Видеода шымшып, жақындату немесе алыстату';
+	@override String get gestureSeekSwipe => 'Өткен қағал';
+	@override String get gestureSeekSwipeDescription => 'Бұл үшін видеодан шығарылған және көшіру үшін делайтын және көшірмеді.';
 	@override String get rememberBrightnessLevel => 'Жарықтық деңгейін есте сақтау';
 	@override String get rememberBrightnessLevelDescription => 'Ойнатуды соңғы сырғытумен орнатылған жарықтықта бастау';
 	@override String get controls => 'Басқару элементтері';
@@ -580,6 +754,12 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Кітапхана бойынша';
 	@override String get playerScopeTitle => 'Сериал немесе фильм бойынша';
 	@override String get exportDialogTitle => 'PlezyNG параметрлерін экспорттау';
+	@override String get followSystem => 'Жүйе тіліне сай';
+	@override String get followAppLanguage => 'Интерфейс тілімен бірдей';
+	@override String get regionFormat => 'Аймақтық пішімдер';
+	@override String get regionFormatDescription => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.';
+	@override String get metadataLanguage => 'Метадеректер тілі';
+	@override String get metadataLanguageDescription => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.';
 }
 
 // Path: themeEditor
@@ -595,6 +775,8 @@ class _Translations$themeEditor$kk extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Әлі жасалмаған';
 	@override String get editCustom => 'Жеке тақырыпты өңдеу';
 	@override String get editCustomDescription => 'Әр түсті өзіңіз таңдаңыз';
+	@override String get locked => 'Жүзілік қабығылық қабығы';
+	@override String get savedLocked => '- Қайдан - жылдан кейінгі';
 	@override String get title => 'Жеке тақырып';
 	@override String get startFrom => 'Негізге алу';
 	@override String get startFromDescription => 'Барлық түстерді басқа тақырыптан көшіру';
@@ -801,16 +983,16 @@ class _Translations$mediaMenu$kk extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => '${title} серверіңізден толық өшірілсін бе?';
 	@override String get deleteMultipleWarning => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: 'Бұл ондағы ${n} бөлімді және оның файлын өшіреді.',
-		other: 'Бұл ондағы барлық ${n} бөлімді және олардың файлдарын өшіреді.',
+		one: 'Бұл ондағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлімді және оның файлын өшіреді.',
+		other: 'Бұл ондағы барлық ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлімді және олардың файлдарын өшіреді.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: 'Бұл элемент ${n} файл ретінде сақталған, ол өшіріледі.',
-		other: 'Бұл элемент ${n} файлда сақталған, олардың барлығы өшіріледі.',
+		one: 'Бұл элемент ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файл ретінде сақталған, ол өшіріледі.',
+		other: 'Бұл элемент ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлда сақталған, олардың барлығы өшіріледі.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: 'Сол файлда тағы ${n} бөлім сақталған, ол да өшіріледі:',
-		other: 'Сол файлда тағы ${n} бөлім сақталған, олар да өшіріледі:',
+		one: 'Сол файлда тағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім сақталған, ол да өшіріледі:',
+		other: 'Сол файлда тағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім сақталған, олар да өшіріледі:',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG қандай файлдар өшірілетінін тексере алмады, сондықтан ол жоғарыда аталған элементтен артық өшіруі мүмкін. Бас тартып, қайталап көріңіз немесе бәрібір өшіріңіз.';
 	@override String get deleteScopeUnverifiedNoFileInfo => 'Серверіңіз бұл элемент үшін файл мәліметтерін ұсынбады, сондықтан PlezyNG қандай файлдар өшірілетінін тексере алмайды. Ол жоғарыда аталған элементтен артық өшіруі мүмкін.';
@@ -869,8 +1051,31 @@ class _Translations$accessibility$kk extends Translations$accessibility$en {
 	@override String get autoScrollPlay => 'Автоайналдыруды бастау';
 	@override String get autoScrollPause => 'Автоайналдыруды кідірту';
 	@override String get hueShort => 'H';
-	@override String get saturationShort => 'S';
-	@override String get valueShort => 'V';
+	@override String get saturationShort => 'С';
+	@override String get valueShort => 'Ж';
+	@override String get red => 'Жүзілік';
+	@override String get green => 'Жүзілік';
+	@override String get blue => 'Блакит';
+	@override String get redShort => 'Р';
+	@override String get greenShort => 'Ж';
+	@override String get blueShort => 'Б';
+	@override String get colorModeHsv => 'Абайға';
+	@override String get colorModeRgb => 'РГБ';
+	@override String get title => 'Доступдық';
+	@override String get summary => 'Текстос, контраст, рух және контролер';
+	@override String get systemHint => 'Бұл үшін сіздің қосыласы бар, сіздің қосуға дейін қосылы бар. Бұл опциясы PlezyNG жылы қосылыңыз.';
+	@override String get readability => 'Жүктесі және қанағат';
+	@override String get textSize => 'текстірлік қағидалар';
+	@override String get preview => 'Өзі сүйікті жары, балалары, балалары мен балалары мен жары.';
+	@override String get boldText => 'Жарық интерфейс';
+	@override String get highContrast => 'Өзі сүйікті контраст';
+	@override String get highContrastHint => 'Бұл үшін тек, ауқызы және фокус индикаторы мен светлы және түйі ұзақтығы.';
+	@override String get interaction => 'Ақыттық және интерфейс';
+	@override String get reduceMotion => 'Ақыттық рух';
+	@override String get reduceMotionHint => 'Бұл үшін, қазір мен қазір мен детективтік ефекттер.';
+	@override String get largeTargets => 'Өнімдер сенімді';
+	@override String get largeTargetsHint => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.';
+	@override String get navigationHint => '«Жеңіске» және «Жекте» және «Сайфт» және «Тұрақты» және «Карта» және «Бұрақты», «Жестеске» және „Жестестеске» бағдарламасы бар.';
 }
 
 // Path: tooltips
@@ -903,6 +1108,10 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар',
+	);
 	@override String get audioLabel => 'Дыбыс';
 	@override String get subtitlesLabel => 'Субтитр';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -939,6 +1148,8 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Дыбысты қосу';
 	@override String get settingsButton => 'Ойнату баптаулары';
 	@override String get tracksButton => 'Дыбыс және субтитрлер';
+	@override String get trackSelectionTitle => 'Жарықтың да көптеген жылдар бойы жарықтың';
+	@override String get trackSelectionAuto => 'Автоматдық селекциясы';
 	@override String get chaptersButton => 'Бөлімдер';
 	@override String get versionQualityButton => 'Нұсқа және сапа';
 	@override String get versionColumnHeader => 'Нұсқа';
@@ -973,6 +1184,8 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Кезекте элементтер жоқ';
 	@override String get noAudioDevicesAvailable => 'Қолжетімді аудио құрылғылар жоқ';
 	@override String get searchSubtitles => 'Субтитр іздеу';
+	@override String get loadSubtitleFile => 'Басқа да салыстырды,';
+	@override String get subtitleLoadFailed => 'Басқа да салыстырдан да салыстатын';
 	@override String get language => 'Тіл';
 	@override String get noSubtitlesFound => 'Субтитр табылмады';
 	@override String get subtitleDownloaded => 'Субтитр жүктелді';
@@ -981,6 +1194,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Тілдерден іздеу...';
 	@override String get skipIntro => 'Кіріспені өткізу';
 	@override String get skipCredits => 'Титрлерді өткізу';
+	@override String get skipAds => 'Ауызды';
 	@override String get nextEpisode => 'Келесі бөлім';
 	@override String subtitleTrack({required Object n}) => 'Жол ${n}';
 	@override String subtitleFile({required Object name}) => 'Субтитр ${name}';
@@ -1003,8 +1217,8 @@ class _Translations$messages$kk extends Translations$messages$en {
 	@override String get markedAsUnwatchedOffline => 'Көрілмеді деп белгіленді (онлайн болғанда синхрондалады)';
 	@override String autoRemovedWatchedDownload({required Object title}) => 'Автоматты түрде өшірілді: ${title}';
 	@override String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: 'Көрілген ${n} жүктеу автоматты өшірілді',
-		other: 'Көрілген ${n} жүктеу автоматты өшірілді',
+		one: 'Көрілген ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу автоматты өшірілді',
+		other: 'Көрілген ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу автоматты өшірілді',
 	);
 	@override String get removedFromContinueWatching => '"Көруді жалғастыру" тізімінен өшірілді';
 	@override String errorLoading({required Object error}) => 'Қате: ${error}';
@@ -1076,6 +1290,7 @@ class _Translations$subtitlingStyling$kk extends Translations$subtitlingStyling$
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
+	@override String get previewSample => 'Бұл үшін, бұл жерде жарықша нарыққа да салыстыр.';
 	@override String get text => 'Мәтін';
 	@override String get border => 'Жиек';
 	@override String get background => 'Фон';
@@ -1171,6 +1386,9 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String deleteProfileMessage({required Object displayName}) => '${displayName} мен оның қосылымдары өшіріледі. Серверлер қолжетімді күйінде қалады.';
 	@override String get profileNameLabel => 'Профиль атауы';
 	@override String get pinProtectionLabel => 'PIN қорғанысы';
+	@override String get copyAutomationLink => 'Android автоматтандыру сілтемесін көшіру';
+	@override String get copyAutomationLinkDescription => 'Бұл профильді Android intent немесе автоматтандыру арқылы таңдаңыз. Профильдің PIN тексеруі сақталады.';
+	@override String get automationLinkCopied => 'Профессорлық автомациялық қосылды.';
 	@override String get pinManagedByPlex => 'PIN кодын Plex басқарады. plex.tv сайтында өңдеңіз.';
 	@override String get noPinSetEditOnPlex => 'PIN код орнатылмаған. Талап ету үшін plex.tv сайтында Home пайдаланушысын өңдеңіз.';
 	@override String get setPin => 'PIN орнату';
@@ -1212,6 +1430,10 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String get continueButton => 'Жалғастыру';
 	@override String get pinsDontMatch => 'PIN кодтар сәйкес келмейді';
 	@override String get tokenIdentityMismatch => 'Plex профилінің токені күтілмеген серверді анықтады';
+	@override String get settingsLocked => 'Бұл профиль үшін қосымшалық.';
+	@override String get unlockSettings => 'Оданды';
+	@override String get showExploreForProfile => 'Бұл профиль үшін қараңыз';
+	@override String get showExploreForProfileDescription => 'Бұл өнімдер мен электрондық пошта туралы ақпаратты туралы ақпаратты бар.';
 }
 
 // Path: connections
@@ -1309,8 +1531,8 @@ class _Translations$discover$kk extends Translations$discover$en {
 	@override String minutesLeft({required Object minutes}) => '${minutes} мин қалды';
 	@override String get moreLikeThis => 'Ұқсастар';
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} атау',
-		other: '${n} атау',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} атау',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} атау',
 	);
 	@override late final _Translations$discover$person$kk person = _Translations$discover$person$kk._(_root);
 }
@@ -1350,6 +1572,8 @@ class _Translations$libraries$kk extends Translations$libraries$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
+	@override String get playRandomMovie => 'Ауыз фильмдер';
+	@override String get randomPickFailed => 'Бұл кинодан бір-бірімен не күтіледі.';
 	@override String get title => 'Кітапханалар';
 	@override String get fallbackTitle => 'Кітапхана';
 	@override String get scanLibraryFiles => 'Файлдарды сканерлеу';
@@ -1411,6 +1635,7 @@ class _Translations$about$kk extends Translations$about$en {
 	@override String versionLabel({required Object version}) => 'Нұсқа ${version}';
 	@override String get appDescription => 'Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті';
 	@override String get viewLicensesDescription => 'Үшінші тарап кітапханаларының лицензияларын көру';
+	@override String get privacyPolicy => 'Құпиялылық саясаты';
 }
 
 // Path: serverSelection
@@ -1449,6 +1674,19 @@ class _Translations$logs$kk extends Translations$logs$en {
 	@override String get clearLogs => 'Журналдарды тазалау';
 	@override String get copyLogs => 'Журналдарды көшіру';
 	@override String get uploadLogs => 'Журналдарды жүктеу';
+	@override String get saveLogs => 'Ауызды да салықты';
+	@override String logsSaved({required Object path}) => 'Журналдар ${path} жолына сақталды';
+	@override String get saveLogsFailed => 'Бұл да да салық файлға болады.';
+}
+
+// Path: detail
+class _Translations$detail$kk extends Translations$detail$en {
+	_Translations$detail$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Аяқталу уақыты: ${time}';
 }
 
 // Path: startup
@@ -1523,13 +1761,14 @@ class _Translations$explore$kk extends Translations$explore$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
+	@override late final _Translations$explore$mdblistShelves$kk mdblistShelves = _Translations$explore$mdblistShelves$kk._(_root);
 	@override String get title => 'Шолу';
 	@override String get selectSource => 'Дереккөзді таңдаңыз';
 	@override late final _Translations$explore$rows$kk rows = _Translations$explore$rows$kk._(_root);
 	@override late final _Translations$explore$status$kk status = _Translations$explore$status$kk._(_root);
 	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} бөлім',
-		other: '${n} бөлім',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім',
 	);
 	@override String get cast => 'Актерлер';
 	@override String get characters => 'Кейіпкерлер';
@@ -1543,8 +1782,8 @@ class _Translations$explore$kk extends Translations$explore$en {
 	@override String get inTheseLibraries => 'Осы кітапханаларда бар';
 	@override String get checkingLibrary => 'Кітапхана тексерілуде...';
 	@override String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} серверді тексеру мүмкін болмады',
-		other: '${n} серверді тексеру мүмкін болмады',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} серверді тексеру мүмкін болмады',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} серверді тексеру мүмкін болмады',
 	);
 	@override String get emptyTitle => 'Әлі де мұнда ештеңе жоқ';
 	@override String emptyMessage({required Object source}) => '${source} дереккөзінің қатарлары мазмұны болған кезде осында көрсетіледі.';
@@ -1563,8 +1802,8 @@ class _Translations$explore$kk extends Translations$explore$en {
 	@override String broadcastWithZone({required Object day, required Object time, required Object timezone}) => '${day} күні ${time} ${timezone} көрсетіледі';
 	@override late final _Translations$explore$detail$kk detail = _Translations$explore$detail$kk._(_root);
 	@override String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} нәтиже',
-		other: '${n} нәтиже',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} нәтиже',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} нәтиже',
 	);
 }
 
@@ -1584,11 +1823,18 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get noPrograms => 'Бағдарлама ақпараты жоқ';
 	@override String get liveStreamFailed => 'Тікелей ағын қатесі';
 	@override String get unknownProgram => 'Белгісіз бағдарлама';
+	@override String get timelineLiveProgram => '«Жив» бағдарламасы (иілiкiнiкiкiзiкiң бағдарламасы)';
+	@override String get timelineBuffer => 'Баукердің ұзақтығы';
+	@override String get timelineUnavailable => 'Қатысушылардың қағидалар';
+	@override String get timelineEstimated => 'Жарықтық Playback';
+	@override String get timelinePending => 'Қазір қарап';
+	@override String get timelineStale => 'Қазіргі таңда бүкіл әлемде';
 	@override String get unknownHub => 'Белгісіз';
 	@override String get unknownError => 'Белгісіз қате';
 	@override String channelNumber({required Object number}) => '${number}-арна';
 	@override String get unknownChannel => 'Белгісіз арна';
 	@override String get live => 'ТІКЕЛЕЙ ЭФИР';
+	@override String get premiereBadge => 'Өткен';
 	@override String get reloadGuide => 'Бағдарламаны жаңарту';
 	@override String get searchGuide => 'Телебағдарламадан іздеу';
 	@override String get searchHint => 'Арналар мен бағдарламаларды іздеу';
@@ -1707,8 +1953,10 @@ class _Translations$playlists$kk extends Translations$playlists$en {
 	@override String get delete => 'Ойнату тізімін өшіру';
 	@override String get removeItem => 'Тізімнен өшіру';
 	@override String get smartPlaylist => 'Ақылды ойнату тізімі';
-	@override String itemCount({required Object count}) => '${count} элемент';
-	@override String get oneItem => '1 элемент';
+	@override String itemCount({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(count,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} элемент',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} элемент',
+	);
 	@override String get emptyPlaylist => 'Бұл ойнату тізімі бос';
 	@override String get deleteConfirm => 'Ойнату тізімі өшірілсін бе?';
 	@override String deleteMessage({required Object name}) => '"${name}" өшірілсін бе?';
@@ -1740,18 +1988,33 @@ class _Translations$music$kk extends Translations$music$en {
 	@override String get addToQueue => 'Кезекке қосу';
 	@override String discNumber({required Object n}) => '${n}-диск';
 	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} ән',
-		other: '${n} ән',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ән',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ән',
 	);
 	@override String get nowPlaying => 'Қазір ойнатылуда';
 	@override String playingFrom({required Object title}) => '${title} дереккөзінен';
 	@override String get queue => 'Кезек';
 	@override String get clearQueue => 'Кезекті тазалау';
 	@override String get lyrics => 'Ән мәтіні';
+	@override String get visualizer => 'Жүктесі';
+	@override String get visualizerProfileLoading => 'Ауыздан кейінгі тек тек тек тек...';
+	@override String get visualizerAmbientMotion => 'Абайғасы';
+	@override String get visualizerPlexLoudness => 'Plex қақтар';
+	@override String get visualizerPreviousPreset => 'Previous Жүктесің стиль';
+	@override String get visualizerNextPreset => 'Өзі сүйікті стиль';
+	@override String get visualizerPresetAurora => 'Ауыз';
+	@override String get visualizerPresetBloom => 'Блум';
+	@override String get visualizerPresetOrbitals => 'орбиталы';
+	@override String get visualizerPresetPrism => 'Абайдың';
+	@override String get visualizerPresetTunnel => 'туннель';
+	@override String get visualizerPresetTrackMap => 'Карталық';
 	@override String get noLyrics => 'Ән мәтіні жоқ';
 	@override String get sleepTimer => 'Ұйқы таймері';
 	@override String get sleepTimerEndOfTrack => 'Әннің соңы';
-	@override String sleepTimerMinutes({required Object n}) => '${n} минут';
+	@override String sleepTimerMinutes({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} минут',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} минут',
+	);
 	@override String get stopPlayback => 'Ойнатуды тоқтату';
 	@override String get previousTrack => 'Алдыңғы ән';
 	@override String get nextTrack => 'Келесі ән';
@@ -1841,8 +2104,8 @@ class _Translations$watchTogether$kk extends Translations$watchTogether$en {
 	@override String get offsetPlusSecond => '+1 сек';
 	@override String get participants => 'Қатысушылар';
 	@override String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} қатысушы',
-		other: '${n} қатысушы',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қатысушы',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қатысушы',
 	);
 	@override String get hostBadge => 'ҰЙЫМДАСТЫРУШЫ';
 	@override String nameYou({required Object name}) => '${name} (Сіз)';
@@ -1937,6 +2200,8 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get unwatchedOnly => 'Тек көрілмегендер';
 	@override String nextNUnwatched({required Object count}) => 'Келесі ${count} көрілмеген';
 	@override String get customAmount => 'Арнайы мөлшер...';
+	@override String get customAmountAny => 'Өнімдер (ақықтық) және басқа да';
+	@override String get randomEpisodes => 'Ауызды';
 	@override String get includeSpecials => 'Арнайы бөлімдерді қосу';
 	@override String get howManyEpisodes => 'Қанша бөлім?';
 	@override String get invalidEpisodeCount => 'Дұрыс бөлім санын енгізіңіз.';
@@ -1956,6 +2221,9 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get syncRuleCleanupBusy => 'Синхрондау ережелері қазір жаңартылуда. Сәлден соң қайталап көріңіз.';
 	@override String get syncRuleCleanupUnavailable => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды';
+	@override String get syncNow => 'Ақытқытқыш';
+	@override String get downloadsUpToDate => 'Ауызды дауысы';
+	@override String syncComplete({required Object queued, required Object removed}) => 'Синхрондау аяқталды · кезекке қосылды: ${queued}, жойылды: ${removed}';
 	@override String get activeSyncRules => 'Белсенді синхрондау ережелері';
 	@override String get reviewOrphanFiles => 'Жазбасы жоқ жүктеулерді тексеру';
 	@override String get orphanReviewTitle => 'Жазбасы жоқ жүктеулерді тексеру';
@@ -1988,10 +2256,29 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get unknownSeason => 'Белгісіз маусым';
 	@override String get unknownAlbum => 'Белгісіз альбом';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} аяқталды';
+	@override String storageUsed({required Object size}) => 'Қатысушылардың: ${size}';
+	@override String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу',
+	);
+	@override String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} сериал',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} сериал',
+	);
+	@override String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кино',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кино',
+	);
+	@override String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} альбом',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} альбом',
+	);
 	@override String get errorFileNotFound => 'Файл табылмады (404)';
 	@override String get errorDownloadNotAllowed => 'Сервер жүктеп алуға рұқсат бермейді (403)';
 	@override String get errorDownloadFailed => 'Жүктеу сәтсіз аяқталды';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Жүктеу сәтсіз аяқталды: ${reason}';
+	@override String get convertingOnServer => 'Қазіргі таңда сервердермен...';
+	@override String convertingOnServerPercent({required Object percent}) => 'Қаланың тұрақты тұрғындарының саны ${percent}%';
 	@override String errorHttpStatus({required Object status}) => 'Жүктеу сәтсіз аяқталды (HTTP ${status})';
 	@override String errorPostProcessing({required Object reason}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${reason}';
 	@override String get reasonFileNotSaved => 'файлды осы құрылғыда сақтау мүмкін болмады';
@@ -2072,6 +2359,13 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get audioOutputSurround => 'Көлемді дыбыс';
 	@override String get audioOutputSpatial => 'Кеңістіктік дыбыс';
 	@override String get audioOutputStereo => 'Стерео';
+	@override String get audioEqualizer => 'Аудиолық эквиваленттер';
+	@override String get audioEqualizerDescription => 'Бұл үшін 5 фреквенция барды өтінеміз. mpv жылы қаталған; активация EQ аудіо-декоды және паралтын ұзақтығы.';
+	@override String get audioEqualizerFlat => 'Өткен';
+	@override String get audioEqualizerActive => 'Жеке';
+	@override String get audioEqualizerSaveFailed => 'Бұл үшін аудіо-еквализаторлық настройки бар.';
+	@override String get backgroundVideoAudio => 'Аудио видео';
+	@override String get backgroundVideoAudioDescription => 'Бұл жануарлардың ең айқын көргенде, бұл видео-аудио-искеріне көреген, сенің көреген. Android медиа-искеткемен көреген';
 	@override String get audioNormalization => 'Дыбыс деңгейін нормалау';
 	@override String get audioNormalizationDisablesPassthrough => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі';
 }
@@ -2124,6 +2418,7 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get cacheLimit => 'Кэш шегі';
 	@override String get speed => 'Жылдамдық';
 	@override String get player => 'Ойнатқыш';
+	@override String get playMethod => 'Теңізді';
 	@override String get memory => 'Жады';
 	@override String get uiFps => 'Интерфейс (UI) FPS';
 	@override String get fps => 'FPS';
@@ -2436,6 +2731,39 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	@override String redirectDifferentHost({required Object product}) => 'Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.';
 	@override String get redirectInsecure => 'Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады';
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.';
+	@override String get directPlexServerUrl => 'Plex серверінің URL мекенжайы';
+	@override String get directPlexServerUrlHelper => 'Қаланың тұрақты тұрғындарының саны Plex Media Server.';
+	@override String get directPlexServerUrlHint => 'http://192.168.1.100:32400';
+	@override String get plexToken => 'Plex Токен (ақық)';
+	@override String get plexTokenHelper => 'Бұл үшін, аутқалы және аутқаны басқа да аутқалау үшін аутқасы бар.';
+	@override String get plexTokenRequired => 'Аутентификация қажет. Plex токенін (X-Plex-Token) енгізіңіз.';
+	@override String get connectDirectPlexCard => 'Plex Media Server (тікелей / жергілікті)';
+	@override String get connectDirectPlexCardSubtitle => 'Қаншалықты IP немесе URL-дер арқылы қосылды.';
+	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Қаланың тұрақты тұрғындарының IP немесе URL-ті қосылды. ${name} қосылды';
+	@override String get insecureTitle => 'Негізгі қосылды';
+	@override String insecureDescription({required Object url}) => '${url} HTTP пайдаланады. Желідегі басқа адамдар құпиясөзіңізді, токендеріңізді және медиаңызды оқуы немесе өзгертуі мүмкін. Мүмкін болса, HTTPS пайдаланыңыз. Осы желіге сенсеңіз және тәуекелді қабылдасаңыз ғана жалғастырыңыз.';
+	@override String get allowHttp => 'Қазір қазір HTTP';
+	@override String get httpsRequired => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.';
+}
+
+// Path: watchLink
+class _Translations$watchLink$kk extends Translations$watchLink$en {
+	_Translations$watchLink$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get serverUnavailable => 'Бұл қағидалар үшін Plex сервері не айтасыз.';
+	@override String get notFound => 'Бұл сериал немесе фильм Plex серверлеріңізден табылмады.';
+	@override String get ambiguous => 'Бұл қабығы мен қабығы бар, бұл қабығы бір сервері.';
+	@override String get plexOnly => 'Көру сілтемелері әзірге тек Plex серверлерін қолдайды.';
+	@override String get unsupportedItem => 'Бұл үшін, кинодан немесе шоудан немесе кинодан қараңыз.';
+	@override String get menuItem => 'Қайтақтық Link';
+	@override String get dialogTitle => 'Қайтаны Link';
+	@override String get dialogShowHint => 'Бұл қағидалардан тұрады және басқа да қағидаларынан тұрады.';
+	@override String get dialogMovieHint => 'Бұл киноның ең көне айқын көрмеген.';
+	@override String get copy => 'Жүктесі';
+	@override String get copied => 'Қайтақтық копиясы';
 }
 
 // Path: homeLayout
@@ -2445,101 +2773,347 @@ class _Translations$homeLayout$kk extends Translations$homeLayout$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Home layout';
-	@override String get resetToast => 'Home reset to the original Plezy hero layout';
-	@override String get resetHeroTitle => 'Reset hero layout to stock Plezy?';
-	@override String get resetHeroBody => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.';
-	@override String get removeRowTitle => 'Remove Home row?';
-	@override String removeRowBody({required Object title}) => '${title} will be deleted. This can\'t be undone.';
-	@override String get sync => 'Sync';
-	@override String get syncAccountTitle => 'Sync layout with your Plex account';
-	@override String get syncAccountOn => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.';
-	@override String get syncAccountOff => 'Off: this device keeps its own layout.';
-	@override String get syncNow => 'Sync now';
-	@override String get plexHomeManager => 'Plex Home manager';
-	@override String get managePlexRows => 'Manage Plex rows in Plezy';
-	@override String get managePlexRowsDescription => 'Open to organize the Home-selected rows';
-	@override String get organizeHomeRows => 'Organize Home rows';
-	@override String organizeHomeRowsDescription({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove';
-	@override String organizeLibraryRows({required Object library}) => 'Organize ${library} rows';
-	@override String organizeLibraryRowsDescription({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide';
-	@override String get renderAsHero => 'Render as a hero card';
-	@override String get heroOnlySingleCollection => 'Only available when this row resolves to a single collection\'s actual titles';
-	@override String get hero => 'Hero';
-	@override String get autoSlide => 'Auto-slide';
-	@override String get autoSlideDescription => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.';
-	@override String get autoSlideEditDescription => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.';
-	@override String get enableHeroFirst => 'Enable Hero first';
-	@override String get showOnHome => 'Show on Home screen';
-	@override String get home => 'Home';
-	@override String get removeFromHome => 'Remove from Home';
-	@override String get selectRowsFirst => 'Select Home rows below first.';
-	@override String plexManagedRows({required Object n}) => '${n} Plex-managed rows';
-	@override String get continueWatching => 'Continue Watching';
-	@override String get continueWatchingLibraryDescription => 'This library\'s own resume-progress row';
-	@override String get continueWatchingHomeDescription => 'The resume-progress row shown on Home';
-	@override String get library => 'Library';
-	@override String get showInRecommended => 'Show in Library Recommended';
-	@override String get customPlexRow => 'Custom Plex row';
-	@override String get heroNeedsLibrary => 'Check Library first — Hero needs somewhere to show';
-	@override String get heroNeedsSurface => 'Check Library or Home first — Hero needs somewhere to show';
-	@override String get removeHub => 'Remove Hub';
-	@override String get noPlexRows => 'No Plex-managed rows returned for this library.';
-	@override String get openDetails => 'Open details';
-	@override String get heroCards => 'Hero cards';
-	@override String get tapHeroCard => 'Tapping a hero card';
-	@override String get tvPlayFocus => 'TV remote: highlight Play button';
-	@override String get tvPlayFocusDescription => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.';
-	@override String get tvWrap => 'TV remote: loop hero cards';
-	@override String get tvWrapDescription => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.';
-	@override String get castOnHero => 'Cast on hero banners';
-	@override String get castOnHeroDescription => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.';
-	@override String get customRows => 'Custom rows';
-	@override String get loading => 'Loading home layout…';
-	@override String get noCustomRows => 'No custom rows yet';
-	@override String get addRowHint => 'Use Add Home row to create one.';
-	@override String get addHomeRow => 'Add Home row';
-	@override String get addHomeRowDescription => 'Choose a category; the new row is added to Organizer automatically';
-	@override String get removeRow => 'Remove row';
-	@override String get recentlyAdded => 'Recently Added';
-	@override String get recentlyReleased => 'Recently Released';
-	@override String get movieCollections => 'Movie Collections';
-	@override String get showCollections => 'Show Collections';
-	@override String get rowTitle => 'Row title';
-	@override String get content => 'Content';
-	@override String get showThisRowIn => 'Show this row in:';
-	@override String get libraryRecommended => 'Library Recommended';
-	@override String get heroCard => 'Hero card';
-	@override String get heroCardDescription => 'Shows as one full-width rotating card instead of a poster shelf.';
-	@override String get heroUnavailableDescription => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.';
-	@override String get librariesSelection => 'Libraries (leave all unchecked to include every library)';
-	@override String get librariesMergedDescription => 'Every library checked here is merged into this one row.';
-	@override String get movieCollectionsSelection => 'Movie collections (leave all unchecked for every selected library)';
-	@override String get showCollectionsSelection => 'Show collections (leave all unchecked for every selected library)';
-	@override String get collectionRowsDescription => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.';
-	@override String get allCollections => 'All collections';
-	@override String get noRowsHere => 'No rows here yet.';
-	@override String get hideWatchedRows => 'Hide watched items in rows';
-	@override String get hideWatchedRowsDescription => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.';
-	@override String get untitledCollection => 'Untitled collection';
-	@override String get moveRowHint => 'Up/Down: move row · Select: drop it here · Back: cancel';
-	@override String get organizeRowsHint => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done';
-	@override String get layoutNavDescription => 'Choose rows, libraries, and collection categories';
-	@override String get editHomeRow => 'Edit Home row';
-	@override String get resetHeroButton => 'Reset hero layout to stock Plezy';
-	@override String get reorderingUnlocked => 'Reordering unlocked';
-	@override String get reorderingLocked => 'Reordering locked';
-	@override String get rowsCanBeDragged => 'Rows can be dragged — tap the lock to prevent that';
-	@override String get tapLockToDrag => 'Tap the lock to drag rows';
-	@override String customRowLabel({required Object title}) => 'Custom: ${title}';
+	@override String get title => 'Өнімдер лайон';
+	@override String get resetToast => 'Басты бет бастапқы Plezy баннер орналасуына қайтарылды';
+	@override String get resetHeroTitle => 'Қаланың тұрақты тұрғындарының саны Plezy?';
+	@override String get resetHeroBody => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-бақамен, бір және бір-бірек, бір-берек, бір және басқа да бір, бір және т.б.';
+	@override String get removeRowTitle => 'Өткен қағалдық қағалды?';
+	@override String removeRowBody({required Object title}) => '${title} жойылады. Бұл әрекетті болдырмау мүмкін емес.';
+	@override String get sync => 'Сүтті';
+	@override String get syncAccountTitle => 'Қаланың тұрақты тұрғындарының саны Plex';
+	@override String get syncAccountOn => 'Бұл үшін, бұл үшін, бұл команда, команда, команда және авто-слайд үшін басқа да сіздің қосылы бар.';
+	@override String get syncAccountOff => 'Бұл үшін, бұл қосымшалар мен салықты ұзақ уақытқа дейін ұзақ уақыт бойы жасылады.';
+	@override String get syncNow => 'Ақытқытқыш';
+	@override String get plexHomeManager => 'Plex Жүрілік менеджер';
+	@override String get managePlexRows => 'Plezy ішіндегі Plex қатарларын басқару';
+	@override String get managePlexRowsDescription => 'Өнімдермен танымал, бірақ танымал, таңдардан танымал.';
+	@override String get organizeHomeRows => 'Өнімдермен өңдеу';
+	@override String organizeHomeRowsDescription({required Object n}) => '${n} қатар: жылжыту, баннер, автоматты ауысу, жою';
+	@override String organizeLibraryRows({required Object library}) => 'Қаланың тұрақты тұрғындарының саны ${library}';
+	@override String organizeLibraryRowsDescription({required Object n}) => 'Өзінің қабырғасы + ${n} қабырғалары: қараша, Библиотека, Доминика, Героя, Авто-Слайд';
+	@override String get renderAsHero => 'Бұл үшін карталық карталық карта';
+	@override String get heroOnlySingleCollection => 'Бұл жануарлардың бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір';
+	@override String get hero => 'Әлемдік';
+	@override String get autoSlide => 'Авто-Слайд';
+	@override String get autoSlideDescription => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған.';
+	@override String get autoSlideEditDescription => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған.Ап: бұл жерде ұзақ уақыттан дейін ұзақ жылдан дейін ұзақ уақытта ұзақ уақытға дейін ұзақ мерзімде (PC) немесе ұзақ мерзімі (TV) ұзақ мерзі (TV) жасылғанды.';
+	@override String get enableHeroFirst => 'Бұл үшін Герояның';
+	@override String get showOnHome => 'Home Screen қауымда';
+	@override String get home => 'Басты бет';
+	@override String get removeFromHome => 'Өйткені қайтарып';
+	@override String get selectRowsFirst => 'Қаланың ең айқын көрмесі еркелеткенімен де.';
+	@override String plexManagedRows({required Object n}) => '${n} Plex қабырғасы';
+	@override String get continueWatching => 'Көруді жалғастыру';
+	@override String get continueWatchingLibraryDescription => 'Бұл библиотекасының өзара-қатынас';
+	@override String get continueWatchingHomeDescription => 'Өнімдермен көшiрiнiң өнерінің өнерімен';
+	@override String get nextUpHomeDescription => '«Аяқтар» АҚШ-ның «Аяға» АҚШ бағдарламасының өзарамен таныстыратын';
+	@override String get library => 'Кітапхана';
+	@override String get showInRecommended => 'Библиотеканың тұрақтанды';
+	@override String get customPlexRow => 'Қазір Plex қаңтар';
+	@override String get heroNeedsLibrary => '«Жеңіске үлес қосқандар» деген әйгілі әндердің авторы.';
+	@override String get heroNeedsSurface => '«Жеңіске» және «Жектесі» деген әйгілі әндер шыққан әндер шырқалып, биленді.';
+	@override String get removeHub => 'Өткен қағал';
+	@override String get noPlexRows => 'Бұл кітапхана үшін Plex басқаратын қатарлар табылмады.';
+	@override String get openDetails => 'Одандық детайл';
+	@override String get heroCards => 'Үлкен картасы';
+	@override String get tapHeroCard => 'Жүктесі картасы';
+	@override String get tvPlayFocus => 'Телевизорда көтеріп: «Жеңір» бутон';
+	@override String get tvPlayFocusDescription => 'Бұл үшін, «Д-пады» және «Д-пай» және «Сейп» және «Бай» және басқа да «Сейб» және «Аль-Кай» және т.б.';
+	@override String get tvWrap => 'Телевизиялық картасы: «Лоуп герои»';
+	@override String get tvWrapDescription => 'Бұл үшін, бір-бірімен, бір-бирімен, басқа да бір-бірін, бір-бетімен, бір -бірімен және бір-бірин, бір-бақамен, бір –бірімен бір-бірек, бір –бирімен және басқа да бір –бірек, басқа да басқа да бір -бірек, және басқа да басқа басқа да басқа.';
+	@override String get castOnHero => 'Базарлардан базарлардан';
+	@override String get castOnHeroDescription => 'Бұл үшін, бұл жерде одан кейінгі қазанды және одан кейінге оданды.';
+	@override String get customRows => 'Күйінің';
+	@override String get loading => 'Өнімдерде көліктерліктерліктері...';
+	@override String get noCustomRows => 'Бұл үшін не қазір';
+	@override String get addRowHint => 'Бұл үшін «Home» бағдарламасы бар.';
+	@override String get addHomeRow => 'Өнімдер мен қабығы';
+	@override String get addHomeRowDescription => '«Аяқтық» бағдарламасы: «Аяқытары» бағдарламасы автоматикалық';
+	@override String get removeRow => 'Оған қосылды';
+	@override String get recentlyAdded => 'Соңғы қосылғандар';
+	@override String get recentlyReleased => 'Олардың ең көне ұлы';
+	@override String get movieCollections => 'кино коллекциясы';
+	@override String get showCollections => 'Колекциясы';
+	@override String get rowTitle => 'Әуес қауымда';
+	@override String get content => 'Жүзілік';
+	@override String get showThisRowIn => 'Бұл қағидалардан қараңыз:';
+	@override String get libraryRecommended => 'Библиотекасы мен';
+	@override String get heroCard => 'Герой картасы';
+	@override String get heroCardDescription => 'Бұл үшін бір-бірімен бір-бірек картон, бір-бірін бір-білік картон, басқа бір-бітік картон.';
+	@override String get heroUnavailableDescription => 'Бұл жануарлардың бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір - бір-біреймен бір-бетімен бір-бақа бір-біреттің бір-биреттің бір - біремен бір -біректің де бір-бірестің бір-бетқа бір-бирімен бір -биректің де біремен де біремеді.';
+	@override String get librariesSelection => 'Бібліотекасы (вiнiңiңiнiкiнiнiзiнiмiнiлiңiкiңiмiзiмiңiзiзi)';
+	@override String get librariesMergedDescription => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-биректік бір.';
+	@override String get movieCollectionsSelection => '«Аяқтық» киносы (аяқтық-аяққа қанақтық-бақыны)';
+	@override String get showCollectionsSelection => '«Аяқтық» (аяқтық) және «Аялық» (ааяққа) және «Карталық» (Аяққалы) және «Тұқсат» (Ааяқтың) және «Сұқсаттың» (ААяқтың).';
+	@override String get collectionRowsDescription => 'Бұл жануарлардың бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір және бір-беткемен, бір, бір-базардан, бір-бырімен, және бір-бастардан, бір,базардан және бір-бирумен, базардан және басқа да бір,бастардан және бір,басқа және бір-бысқа,басқа,бастарды және бір-безімен,бастарда және бір-бендімен,базарда және бір,бетке және бір-бандімен,беткер және бір-буғал,базарды және бір,банді және бір-байғал,бет және бір-Беткемен.';
+	@override String get allCollections => 'Бүгін колекциясы';
+	@override String get noRowsHere => 'Бұл үшін бірақ қазір не.';
+	@override String get hideWatchedRows => 'Қазір көшіру үшін көшіруге көшіру';
+	@override String get hideWatchedRowsDescription => 'Бұл үшін, «Жилақ» және «Жилоқ» деген әлі де ұлыстыратын, «Жылоқ» және басқа да ұлыстырды.';
+	@override String get untitledCollection => 'Ауыз колекциясы';
+	@override String get moveRowHint => 'Өзінің қабырға айналады: «Серде» және «Серд» дегенде айналады.';
+	@override String get organizeRowsHint => 'Алдыңғы: «Жеңізде» және «Жектеу» және «Серде» және «Карта» және «Барта» бағдарламасы';
+	@override String get layoutNavDescription => 'Өзінің, өңдеу және өңдеу категориясы';
+	@override String get editHomeRow => 'Өнімдер мен үй';
+	@override String get resetHeroButton => 'Қаланың тұрақты тұрғындарының саны Plezy';
+	@override String get reorderingUnlocked => 'Олардың дағдыры';
+	@override String get reorderingLocked => 'Олардың бәрі';
+	@override String get rowsCanBeDragged => 'Бұл үшін бір-бірімен бір-біректік қайтарып, бір-біремен бір-биректік қайтарды.';
+	@override String get tapLockToDrag => 'Олардың ішіндегі ең көне апеллятив – үңгір.';
+	@override String customRowLabel({required Object title}) => 'Қазіргі таңда: ${title}';
 	@override String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
-	@override String get hide => 'Hide';
-	@override String get remove => 'Remove';
-	@override String get libraryResumeRow => 'This library\'s resume row';
-	@override String get pressAgainToDelete => 'Press again to delete';
+	@override String get hide => 'Жасыру';
+	@override String get remove => 'Өшіру';
+	@override String get libraryResumeRow => 'Бібліотеканың ең айқын көрмесі';
+	@override String get pressAgainToDelete => 'Көпiнiң өнерінен өнеріне';
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
-	@override String get on => 'On';
-	@override String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
+	@override String get on => 'Қазір';
+	@override String get resetHeroButtonDescription => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-басқа, бір-бысқа, бір, бірақ, бір-бесімен, бір және бір-бірек, бір-бенді, бір-бір, бір-байға, бір-бей, бір-ақ, бір-қой, бір-қатынас, бір-әрекет, бір-шой, бір, қағал, бір-шара, бір-шаң, бір-шікүй, бір-сің, бір, қараша, бір-шың, бір.';
+}
+
+// Path: platform
+class _Translations$platform$kk extends Translations$platform$en {
+	_Translations$platform$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get localNetworkPermission => 'PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.';
+	@override String get locationPermission => 'PlezyNG қосымшасы бар, iOS қосымшасы арқылы қосымшасы және қосымшасы бойынша қосымшасы туралы қосымшасы.';
+	@override String get photoLibraryPermission => 'Бұл үшін фото-библиотекасы мен медиа-артуінің артықшылықтармен таныстырып қараңыз.';
+	@override String get cameraPermission => 'Бұл үшін QR кодсы бар, содан кейінгі ұзақ уақытқа дейін.';
+}
+
+// Path: fileSources
+class _Translations$fileSources$kk extends Translations$fileSources$en {
+	_Translations$fileSources$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Бібліотекасы және файлы';
+	@override String get subtitle => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.';
+	@override String get add => 'Қайталық';
+	@override String get importFiles => 'Ауыз файл';
+	@override String get localFiles => 'Бұл приспособления';
+	@override String get source => 'Қайтаны';
+	@override String get name => 'Әйтсе де';
+	@override String get endpoint => 'Сервер URL-і';
+	@override String get root => 'Олардың дағдырысы және';
+	@override String get username => 'Пайдаланушы аты';
+	@override String get password => 'Құпия сөз';
+	@override String get token => 'API қақтар';
+	@override String get accessKey => 'Керіктің қабығы';
+	@override String get secretKey => 'Тақырып: Access Key';
+	@override String get sessionToken => 'Сессия токен (апциялық)';
+	@override String get region => 'Қаланың';
+	@override String get clientId => 'ОАО «Клиент ID»';
+	@override String get clientSecret => 'ОАУТ клиенттік тайна (десктоп Google үшін)';
+	@override String get allowHttp => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру';
+	@override String get connect => 'Қосылу';
+	@override String get cancel => 'Бас тарту';
+	@override String get save => 'Сақтау';
+	@override String get close => 'Жабу';
+	@override String get removeSource => 'Қайталық ресурсы';
+	@override String get disconnectMessage => 'Бұл көзбен байланысты ажырату керек пе? Жүктелген файлдар, оқу және тыңдау тарихы осы құрылғыда сақталады.';
+	@override String get localFolder => 'Қайтаны';
+	@override String get empty => 'Әлі де мұнда ештеңе жоқ';
+	@override String get emptyHint => 'Бұл үшін бір-бірімен, аудіо-книга, музыка, видео, және басқа да бір-бірін ұсынады.';
+	@override String get search => 'Бұл фасцикле';
+	@override String get searchCached => 'Бібліотеканың тұрады';
+	@override String get refresh => 'Жаңарту';
+	@override String get loadMore => 'Өздіктер';
+	@override String get offline => 'Олайда ұзақтығы';
+	@override String get download => 'Олайда offline';
+	@override String get removeDownload => 'Олайда offline копиясы';
+	@override String get continueReading => 'Жүктесі тек';
+	@override String get continueListening => 'Өткен қазық';
+	@override String get continueWatching => 'Өткен қабырға';
+	@override String get read => 'Жүктеу';
+	@override String get listen => 'Әдеп';
+	@override String get play => 'Ойнату';
+	@override String get pause => 'Кідірту';
+	@override String get stop => 'Тоқтату';
+	@override String get startOver => 'Қазір';
+	@override String get finished => 'Аяқталды';
+	@override String get markFinished => 'Марктің';
+	@override String get markUnfinished => 'Марк қабығы';
+	@override String get editions => 'Ауыз ішінен';
+	@override String get chapters => 'Бөлімдер';
+	@override String get bookmarks => 'Басқасы және белегі';
+	@override String get bookmark => 'Бірінші мезгіл';
+	@override String get highlight => 'Өткен';
+	@override String get note => 'Ақытқытқы';
+	@override String get delete => 'Өшіру';
+	@override String get export => 'Експорттық банкноты';
+	@override String get exported => 'Експорттық ғылыми';
+	@override String get sync => 'Өткен өңдеу';
+	@override String get synced => 'Өнімдермен өңдеу';
+	@override String get conflict => 'Бұл үшін бір-бірімен басқа да бір-бірек қосуға болады.';
+	@override String get useLocal => 'Бұл приспособление';
+	@override String get useRemote => 'Ауыз іші шығыңыз';
+	@override String get history => 'Ауыздан соң';
+	@override String get groupAudio => 'Аудиологиялық қағидалар';
+	@override String get groupHint => 'Бұл қабығы мен қабығы мақалалар мен қабықтар мен қабырға мақалалар бар.';
+	@override String get order => 'Файл командасы';
+	@override String get moveUp => 'Өзінің';
+	@override String get moveDown => 'Қайтаны';
+	@override String get speed => 'Жарықтарлық';
+	@override String get sleep => 'Ұйқы таймері';
+	@override String get sleepOff => 'Өшірулі';
+	@override String get endChapter => 'Керіктің қабығы';
+	@override String minutes({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(count,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} минут',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} минут',
+	);
+	@override String get skipBack => 'Сүттің қайта';
+	@override String get skipForward => 'Есімдіктің';
+	@override String get smartRewind => 'Өздіктер өңдеуге дейін өңдеу';
+	@override String get playbackOptions => 'Алдыңғы опциялары';
+	@override String remaining({required Object time}) => '${time} жылы қазір';
+	@override String get contents => 'Жүзілік';
+	@override String get readerSettings => 'Қайтақтықтықтық';
+	@override String get fontSize => 'текстір';
+	@override String get lineHeight => 'Әуес қағала';
+	@override String get margin => 'Маргарита';
+	@override String get font => 'Жүзілік';
+	@override String get serif => 'Сериалды';
+	@override String get sans => 'Шұқсат';
+	@override String get mono => 'Монастыр';
+	@override String get columns => 'Жүзілік';
+	@override String get scroll => 'Вертикалды қалың';
+	@override String get justify => 'текстір мен текстір';
+	@override String get readerTheme => 'Page ұзақтығы';
+	@override String get appTheme => 'Апп Теме';
+	@override String get paper => 'Қағаз';
+	@override String get sepia => 'Септа';
+	@override String get night => 'Өзінің';
+	@override String get readAloud => 'Бұл сайтдың қағидалар';
+	@override String get readAlong => 'Жүктеу';
+	@override String get stopReading => 'Жаққа қабығы';
+	@override String get searchBook => 'Бірінші мезгіл';
+	@override String get noMatches => 'Не күш';
+	@override String get previousPage => 'Қазір қазір';
+	@override String get nextPage => 'Қазіргі таңда';
+	@override String page({required Object number}) => 'Қаланың тұрақты тұрғындарының саны ${number}';
+	@override String get externalBlocked => 'Бұл үшін, аударыптар мен аударыпталар мен аударыпалар мен аудармалар мен ауды.';
+	@override String get loading => 'Одан...';
+	@override String get narrator => 'Ақыттық';
+	@override String get audio => 'Аудио';
+	@override String get video => 'Видео';
+	@override String get ebooks => 'Ексклюзив';
+	@override String get all => 'Барлығы';
+	@override String get downloads => 'Offline файл';
+	@override String get confirmDelete => 'Таңдалған офлайн көшірмені жою керек пе? Оқу немесе тыңдау орны мен жазбаларыңыз сақталады.';
+	@override String get errorAuthentication => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлар.';
+	@override String get errorPermission => 'Бұл өнімнің дағдысы бар дағдысын дағдысқа дағдығы не айталады.';
+	@override String get errorUnavailable => 'Бұл үшін бір-бірімен таныстырып, басқа да басқа да аударып, басқа да аудар.';
+	@override String get errorUnsupported => 'Бұл форматтау немесе конекцияның бұл қосыланы не қосылады.';
+	@override String get errorInvalidData => 'Бұл файл немесе сервер-отзық не күтіледі.';
+	@override String get errorCancelled => 'Операцияның ануға болады.';
+	@override String get errorConflict => 'Бұл үшін бір сессияның бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-бирімен бір.';
+	@override String get signIn => 'Кіру';
+	@override String get reconnect => 'Қайта қосылу';
+	@override String get folderHelp => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір -бірімен және бір-біректімен, бір –бірімен.';
+	@override String get preferences => 'Преференциясы';
+	@override String get timePosition => 'Орналасуы';
+	@override String get audioTrack => 'Аудио трактейлі';
+	@override String get subtitleTrack => 'Алдыңғы Subtitle';
+	@override String get none => 'Әйтсе';
+	@override String get fullscreen => 'Екіптер';
+	@override String get syncLocation => 'Өнімдер мен қанағаттан (i)';
+	@override String get syncLocationHint => 'PlezyNG күйіне арналған бөлек WebDAV қалтасы. Деректер шартты түрде жазылады; медиафайлдар өзгермейді.';
+	@override String get audiobooks => 'Аудиолық';
+	@override String get comics => 'Комедиясы';
+	@override String get scan => 'Серіктің да салықты және медиа';
+	@override String get browserReader => 'Одан және';
+	@override String get browserReaderHelp => 'Оқу құралы браузерде ашық. Оқу орнын және жазбаларды сақтау үшін PlezyNG қолданбасын ашық ұстаңыз.';
+	@override String get on => 'Қазір';
+	@override String get advancedSetup => 'App регистрациясы';
+	@override String get microsoftSignIn => 'Microsoft-ның ең айқын көрмесі';
+	@override String get zoomIn => 'Жүзіліктің';
+	@override String get zoomOut => 'Өзiңiңi';
+	@override String get fitPage => 'Жүктесі сайын';
+	@override String get fitWidth => 'Өткен қабырға';
+	@override String get actualSize => 'Қазір қазір';
+	@override String get goToPage => 'Қайтаққа қабығы';
+	@override String get goToSection => 'Есімде қасиетті';
+	@override String pageRange({required Object count}) => '1 жылы қаңтарда 1 жылы ${count} жылы қаңтады';
+	@override String get pageLayout => 'Page Layout қауымда';
+	@override String get automatic => 'Автоматты';
+	@override String get singlePage => 'Екіп сайын';
+	@override String get twoPages => '2 қаңтар';
+	@override String get readingDirection => 'Жүктеуiң қанақтық';
+	@override String get leftToRight => 'Алдыңғы қабығы';
+	@override String get rightToLeft => 'Олардың дағдыры';
+	@override String get letterSpacing => 'Есімдіктің қағидалар';
+	@override String get wordSpacing => 'Әдеп ұзын';
+	@override String get readerControlsHelp => 'Қандай-ақ, бұл қабырға айналады және қабырға жарыққа ұлыстыратын, қабырға дағдарыстатын, қабаттар дағдарыстырды және қабығы дағдарысды.';
+	@override String get imagePage => 'Комедиялық сайт';
+	@override String get resetReader => 'Жүктесінен репетициясы';
+	@override String get zoom => 'Масштаб';
+	@override String get useFiles => 'Бірінші мезгіл файлы және книги';
+	@override String get cancelScan => 'Сұрақтық Сұрағы';
+	@override String get googleDrive => 'Google Drive';
+}
+
+// Path: lending
+class _Translations$lending$kk extends Translations$lending$en {
+	_Translations$lending$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Публикалық библиотекасы';
+	@override String get add => 'Бібліотекасы көшіру';
+	@override String get other => 'Бібліотеканың басқа';
+	@override String get libraryName => 'Бібліотеканың қағидалар';
+	@override String get libraryUrl => 'Бібліотека сайтында';
+	@override String get libraryUrlHint => 'Библиотеканың каталогында немесе сайынға дейін көшіру.';
+	@override String get intro => 'Бібліотекадан көшіру үшін, сіздің книги менің қанаққалыңыз.';
+	@override String get handoff => 'Бұл үшін, бізге сіздің библиотекасы арқылы сіздің қызметтері бар, сіздің қызметтер бар, сізге сіздің қызмет көрсету үшін сіздің қызметтерді бар.';
+	@override String get openService => 'Бібліотекасы';
+	@override String get findLibrary => 'Бібліотеканың тұрады';
+	@override String get search => 'Бібліотекасы және авторлары';
+	@override String get catalogue => 'Каталог';
+	@override String get loans => 'Кредиттер';
+	@override String get holds => 'Қайта';
+	@override String get signIn => 'Бібліотеканың ең айқын көрмесі';
+	@override String get waiting => 'Бұл үшін сіздің браузерде көреген, онда сіздің қосыңызға болады.';
+	@override String get cancel => 'Бас тарту';
+	@override String get disconnect => 'Бібліотекасы көтерілу';
+	@override String get disconnectMessage => 'Бұл бірақтың да оның профильде көреміз? - Сіздің кредит және сіздің библиотекасы бар.';
+	@override String get getBook => 'Бібліі';
+	@override String get checkAvailability => 'Қайтанының дағдыры';
+	@override String get available => 'Керіктің қабығы';
+	@override String get unavailable => 'Қазіргі таңда қазір';
+	@override String get borrow => 'Кредиттер';
+	@override String get placeHold => 'Қазір қазір';
+	@override String get returnBook => 'Өткен қайтарып';
+	@override String get cancelHold => 'Абайдың қабығы';
+	@override String get confirmBorrow => 'Бұл қағидалардан бір-бірінен биліктің қағидалары бар?';
+	@override String get confirmReturn => 'Бұл үшін бұл қағидалар мен қағидалары мен қағидаталар мен қабақшаларынан тұрады.';
+	@override String get confirmCancelHold => 'Бұл тийрмелер мен тийрмен таныстырып келдім?';
+	@override String get email => 'электрондық поштадағы электрондық пошты';
+	@override String due({required Object date}) => 'Қайтару мерзімі: ${date}';
+	@override String queue({required Object position}) => 'Қаланың тұрақты тұрғындарының саны ${position}';
+	@override String get empty => 'Бұл үшін не қазір титул.';
+	@override String get openLibraryNote => 'Бұл үшін, «Аяқтар» және «Аялық» бағдарламасы, «Аақтар» бағдарламасы және «Аақықтар» жобасы бар.';
+	@override String get more => 'Өздіктер';
+	@override String get gateway => 'Библиотекасы қабырғасы';
+	@override String get gatewayHint => 'Біздің библиотекасы немесе PlezyNG администраторға арналған.';
+	@override String get advanced => 'Библиотекасы';
+	@override String get loadLibraries => 'Бібліотека мен биліктері';
+	@override String get expired => 'Бұл кредиттік қызметті ұзақтығы.';
+	@override String get updated => 'Бібліотекасы көрету';
+	@override String get continueService => 'Ақыттық қызмет көрсету';
+	@override String get comingSoon => '«Апп» бағдарламасы – өте көп';
+	@override String get comingSoonDescription => 'Бизнес әріптестікке және кооперацияға ұсыныс.';
+	@override String get suspendHold => 'Жаққалы';
+	@override String get resumeHold => 'Жүктесі';
+	@override String get suspendMessage => 'Бұл үшін, бізге сіздің қағидалар мен қағидаларынан тұрады, және сіздің қаһарманның қағидаларын қараңыз?';
+	@override String get resumeMessage => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлардан тұрады.';
+	@override String get editEmail => 'электрондық поштадағы электрондық пошты';
 }
 
 // Path: appIcon.names
@@ -2581,8 +3155,8 @@ class _Translations$common$ratingSource$kk extends Translations$common$ratingSou
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get critic => 'Сыншылар';
-	@override String get audience => 'Көрермендер';
+	@override String get critic => 'Critics';
+	@override String get audience => 'Audience';
 	@override String get imdb => 'IMDb';
 	@override String get tmdb => 'TMDB';
 	@override String get rottenTomatoes => 'Rotten Tomatoes';
@@ -2590,8 +3164,8 @@ class _Translations$common$ratingSource$kk extends Translations$common$ratingSou
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get trakt => 'Trakt';
-	@override String get rottenTomatoesCritic => 'Rotten Tomatoes сыншылары';
-	@override String get rottenTomatoesAudience => 'Rotten Tomatoes көрермендері';
+	@override String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+	@override String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
 	@override String get metacritic => 'Metacritic';
 	@override String get letterboxd => 'Letterboxd';
 }
@@ -2682,6 +3256,8 @@ class _Translations$hotkeys$actions$kk extends Translations$hotkeys$actions$en {
 	@override String get shaderToggle => 'Шейдерлерді қосу/өшіру';
 	@override String get skipMarker => 'Интро/Титрді өткізу';
 	@override String get screenshot => 'Экран суретін түсіру';
+	@override String get framePrevious => 'Қазіргі таңда';
+	@override String get frameNext => 'Қазіргі уақытта';
 }
 
 // Path: videoControls.pipErrors
@@ -2921,14 +3497,41 @@ class _Translations$libraries$selection$kk extends Translations$libraries$select
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get selectItems => 'Select items';
-	@override String selectedCount({required Object count}) => '${count} selected';
-	@override String get actions => 'Selection actions';
-	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
-	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
-	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
-	@override String completed({required Object count}) => 'Items updated: ${count}.';
-	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
+	@override String get selectItems => 'Қатысушылардың';
+	@override String selectedCount({required Object count}) => '${count} таңдалды';
+	@override String get actions => 'Алдыңғы акциясы';
+	@override String get confirmDescendants => 'Бұл үшін бірнеше епізод, соңынан кейін, кеңінен танымал.';
+	@override String get confirmUnwatched => 'Бұл үшін реттегінің реттегімен реттегінен реттегіне реттегінде реттегі.';
+	@override String confirmCount({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.';
+	@override String completed({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Жаңартылды: ${succeeded}; сәтсіз: ${failed}. Сәтсіз элементтер таңдалған күйінде қалады.';
+}
+
+// Path: explore.mdblistShelves
+class _Translations$explore$mdblistShelves$kk extends Translations$explore$mdblistShelves$en {
+	_Translations$explore$mdblistShelves$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get manage => 'Қайталылықтық қабығы';
+	@override String get manageDescription => 'Қаланың тұрақты тұрғындарының саны MDBList';
+	@override String get description => 'MDBList тіркелгіңізден жария фильмдер мен сериалдар тізімдерін таңдаңыз. MDBList-те тізім жасаңыз немесе көшіріңіз, содан кейін жаңартыңыз.';
+	@override String get selected => 'Алдыңғы шетелдік';
+	@override String get available => 'Ауыздылық контенттер';
+	@override String get noLists => 'Жария фильмдер немесе сериалдар тізімі табылмады. MDBList-те тізім жасаңыз немесе көшіріңіз, содан кейін жаңартыңыз.';
+	@override String get displayName => 'Шелл қазықтықты';
+	@override String get nameHint => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір.';
+	@override String get add => 'Шелгі';
+	@override String get save => 'Қайталылық';
+	@override String moveUp({required Object title}) => 'Қазіргі таңда ${title}';
+	@override String moveDown({required Object title}) => 'Қазіргі таңда ${title}';
+	@override String get unavailable => 'Бұл спиртқа не қосқан.Серіктің шағын немесе жүктеу.';
+	@override String get rateLimited => 'MDBList сұрау шегіне жетті. Кейінірек қайталап көріңіз.';
+	@override String get loadFailed => 'Қандайды, бұл қанақтар мен қанақтатын қанақты бар.';
+	@override String get saveFailed => 'Қандайды да, ол да, ол жасайды.';
+	@override String get accountChanged => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал.';
+	@override String get settingsUnreadable => 'Бұл үшін бір-бірімен танымал, «Бытқалы» және «Бытақалы» дегенде танымал.';
 }
 
 // Path: explore.rows
@@ -3014,8 +3617,8 @@ class _Translations$explore$stats$kk extends Translations$explore$stats$en {
 	@override String favorited({required Object n}) => '${n} таңдаулы';
 	@override String dropRate({required Object percent}) => '${percent} тастап кетті';
 	@override String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} пікір',
-		other: '${n} пікір',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пікір',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пікір',
 	);
 	@override String votes({required Object n}) => '${n} дауыс';
 	@override String watching({required Object n}) => '${n} қарап жатыр';
@@ -3136,8 +3739,8 @@ class _Translations$explore$detail$kk extends Translations$explore$detail$en {
 	@override String get ratings => 'Бағалаулар';
 	@override String get schedule => 'Кесте';
 	@override String recommendedByUsers({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${n} пайдаланушы ұсынды',
-		other: '${n} пайдаланушы ұсынды',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пайдаланушы ұсынды',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пайдаланушы ұсынды',
 	);
 	@override String recommendedBy({required Object who}) => '${who} ұсынды';
 	@override String favoritedBy({required Object who}) => '${who} таңдаулыға қосты';
@@ -3336,6 +3939,13 @@ class _Translations$companionRemote$pairing$kk extends Translations$companionRem
 	@override String get sessionNotFound => 'Құрылғы табылмады.';
 	@override String get authFailed => 'Аутентификация қатесі.';
 	@override String failedToConnect({required Object error}) => 'Қосылу мүмкін болмады: ${error}';
+	@override String get codeTitle => 'Кодекс';
+	@override String get codeDescription => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған коды бар.';
+	@override String get codeInvalid => 'Қаланың тұрақты тұрғындарының саны 32 адамды құрайды.';
+	@override String get updateRequired => 'Бұл үшін бір-бірімен бір-біректермен таныстырып, және бір-бірін бір-біремен таныстыр.';
+	@override String get hostDescription => 'Бұл коданың бір-бірінен кейін бір-біректік кодсы бар. Бұл кодасы бар: Бұл профильдің контрольмен қамтамасыз ету.';
+	@override String get resetCode => 'Басқа коды';
+	@override String get resetDescription => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып, қанағаттанды.';
 }
 
 // Path: companionRemote.remote
@@ -3484,9 +4094,26 @@ extension on TranslationsKk {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
+			'cast.chooseDevice' => 'Ауыз ішінен',
+			'cast.searching' => 'Қазіргі таңда қабырғалар үшін...',
+			'cast.connectedTo' => ({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}',
+			'cast.device' => 'Ауызды',
+			'cast.readyToCast' => 'Қатысуға арналған',
+			'cast.subtitle' => 'Субтитрлер',
+			'cast.serverNotAvailable' => 'Медыя сервері не қосқан.',
+			'cast.stopCasting' => 'Оданды',
+			'cast.castToDevice' => 'Ауыздылықтық',
+			'cast.noEpisodeAvailable' => 'Бұл үшін не ескеп келді.',
+			'cast.startFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір',
+			'automation.noActivePlayback' => 'Ауызды видео сессиясы бар.',
+			'automation.profileNotFound' => 'Бұл Plezy профильде қарағанда ол не қарағанда.',
+			'notifications.newEpisodeTitle' => 'Епізод',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Қолданба белгішесі',
 			'appIcon.defaultIcon' => 'Әдепкі',
 			'appIcon.current' => 'Ағымдағы белгіше',
+			'appIcon.locked' => 'Жүзілік қабығылық қабығы',
+			'appIcon.lockedHint' => 'Басқа белгішелерді пайдалану үшін 7 күндік сынақ мерзімін бастаңыз немесе PlezyNG-ге өмірлік қолжетімділікті сатып алыңыз.',
 			'appIcon.changeFailed' => 'Қолданба белгішесін өзгерту мүмкін болмады',
 			'appIcon.launcherHint' => 'PlezyNG-ден шыққаннан кейін жаңа белгіше басты экранда пайда болады.',
 			'appIcon.tvLauncherHint' => 'PlezyNG-ден шыққаннан кейін жаңа баннер пайда болады. Android TV теледидар қайта іске қосылғанша ескісін көрсете беруі мүмкін.',
@@ -3530,6 +4157,7 @@ extension on TranslationsKk {
 			'auth.quickConnectExpired' => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.',
 			'auth.localDataRecoveryRequired' => 'PlezyNG жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.',
 			'auth.pinCheckRejected' => 'Plex PIN кодын тексеру қабылданбады',
+			'auth.connectToDirectPlex' => 'Қаланың тұрақты тұрғындарының саны Plex',
 			'common.cancel' => 'Бас тарту',
 			'common.save' => 'Сақтау',
 			'common.close' => 'Жабу',
@@ -3576,8 +4204,8 @@ extension on TranslationsKk {
 			'common.fullscreen' => 'Толық экран',
 			'common.exitFullscreen' => 'Толық экраннан шығу',
 			'common.pressBackAgainToExit' => 'Шығу үшін артқа түймесін қайтадан басыңыз',
-			'common.ratingSource.critic' => 'Сыншылар',
-			'common.ratingSource.audience' => 'Көрермендер',
+			'common.ratingSource.critic' => 'Critics',
+			'common.ratingSource.audience' => 'Audience',
 			'common.ratingSource.imdb' => 'IMDb',
 			'common.ratingSource.tmdb' => 'TMDB',
 			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
@@ -3585,8 +4213,8 @@ extension on TranslationsKk {
 			'common.ratingSource.mal' => 'MyAnimeList',
 			'common.ratingSource.anilist' => 'AniList',
 			'common.ratingSource.trakt' => 'Trakt',
-			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes сыншылары',
-			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes көрермендері',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
 			'common.ratingSource.metacritic' => 'Metacritic',
 			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
@@ -3616,12 +4244,39 @@ extension on TranslationsKk {
 			'update.viewRelease' => 'Релизді көру',
 			'update.latestVersion' => 'Сізде ең соңғы нұсқа орнатылған',
 			'update.checkFailed' => 'Жаңартуларды тексеру мүмкін болмады',
+			'appAccess.title' => '7 күннен кейін бір-бірінен ұзақтығы',
+			'appAccess.description' => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.',
+			'appAccess.trialEndedDescription' => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.',
+			'appAccess.startTrial' => '7 жылдан кейінгі ұзақ уақытқа дейін',
+			'appAccess.trialActive' => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.',
+			'appAccess.trialEnded' => '7 жылдан кейінгі қазір қарап отыр.',
+			'appAccess.trialStartFailed' => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.',
+			'appAccess.lifetimeTitle' => 'PlezyNG-ге өмірлік қолжетімділік ашылды',
+			'appAccess.lifetimeBody' => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.',
+			'appAccess.manageTitle' => 'PlezyNG жылдық қабығы',
+			'appAccess.manageDescription' => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.',
+			'appAccess.buy' => ({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу',
+			'appAccess.loadingPrice' => 'Өнімдер мен жарықтық бағасы...',
+			'appAccess.retryPrice' => 'Өткен қағазды',
+			'appAccess.restore' => 'Өткен келдім келдім',
+			'appAccess.pending' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
+			'appAccess.storeUnavailable' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
+			'appAccess.productNotFound' => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.',
+			'appAccess.productQueryFailed' => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.',
+			'appAccess.purchaseFailed' => 'Қаншама жылы қазір, қайтып келді.',
+			'appAccess.restoreFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.',
+			'appAccess.nothingToRestore' => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.',
 			'settings.title' => 'Баптаулар',
 			'settings.supportDeveloper' => 'PlezyNG жобасын қолдау',
 			'settings.supportDeveloperDescription' => 'Әзірлеуді қолдау үшін қайырымдылық жасаңыз',
+			'settings.lifetimeAccess' => 'PlezyNG жылдық қабығы',
 			'settings.language' => 'Тіл',
 			'settings.theme' => 'Тақырып',
 			'settings.appearance' => 'Сыртқы келбеті',
+			'settings.detailPage' => 'Детайл сайын',
+			'settings.themeSongsEnabled' => 'Теме песында',
+			'settings.themeSongsEnabledDescription' => 'Бұл үшін, бізге жаңа жаңа музыкалардан көреміз, медиадан көретін.',
+			'settings.themeSongVolume' => 'Сондай-ақ песқыны',
 			'settings.videoPlayback' => 'Видеоны ойнату',
 			'settings.videoPlaybackDescription' => 'Ойнату параметрлерін реттеңіз',
 			'settings.advanced' => 'Кеңейтілген',
@@ -3658,7 +4313,24 @@ extension on TranslationsKk {
 			'settings.gridView' => 'Тор',
 			'settings.listView' => 'Тізім',
 			'settings.showHeroSection' => 'Басты бөлімді көрсету',
+			'settings.showHomeBackdrop' => 'Өзінің астығы арт-қатынас',
+			'settings.showHomeBackdropDescription' => 'Өзінің астының астының өзара көшіруге қарастырылған',
+			'settings.contentScreensaverEnabled' => 'Серіктің шығыстар',
+			'settings.contentScreensaverEnabledDescription' => 'Бұл үшін алдыңғы мультфильмдық қағидалар мен идеялардан тұрады.',
+			'settings.contentScreensaverDelay' => 'Серіктің да көптеген жылдар',
+			'settings.contentScreensaverLibraries' => 'Бібліотекасы',
 			'settings.contentScreensaverLibrariesDescription' => 'Экран сақтағышы үшін суреттер алынатын кітапханаларды таңдаңыз. Ешқайсысы таңдалмаса, барлық кітапхананың суреттері пайдаланылады.',
+			'settings.contentScreensaverAllLibraries' => 'Бібліотекасы',
+			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} кітапхана таңдалды',
+			'settings.contentScreensaverNoLibraries' => 'Медіалық библиотекасы бар.',
+			'settings.contentScreensaverDismissHint' => 'Қандай-ақ, қанақтардан немесе қанақтатын',
+			'settings.newEpisodeNotifications' => 'Есімде-ақ жаңалықтары',
+			'settings.newEpisodeNotificationsDescription' => 'Барлық бөлімін көріп болған сериалыңызға жаңа бөлім қосылғанда хабарлау. Plezy ашық болғанда тексеріледі.',
+			'settings.continueWatchingRowSize' => 'Өздіктер өңдеуге қараңыз',
+			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} карточкалар',
+			'settings.rowSizeCompact' => 'Тығыз',
+			'settings.rowSizeStandard' => 'стандартты',
+			'settings.rowSizeLarge' => 'Үлкен',
 			'settings.continueWatchingAction' => '"Көруді жалғастыру" әрекеті',
 			'settings.continueWatchingPlay' => 'Ойнату',
 			'settings.continueWatchingDetails' => 'Толығырақ ашу',
@@ -3703,8 +4375,15 @@ extension on TranslationsKk {
 			'settings.playbackBufferLarge' => 'Үлкен',
 			'settings.playbackBufferExtraLarge' => 'Өте үлкен',
 			'settings.playbackBufferDescription' => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.',
+			'settings.streamBufferSize' => 'Баукерлік',
+			'settings.streamBufferSizeValue' => ({required Object size}) => '${size} МБ',
+			'settings.streamBufferSizeDescription' => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылады. Transcodes зуп, сервердің собственный transcode buffer. 0 = Auto',
+			'settings.streamBufferSizeExoNote' => 'Бұл үшін, «Playback Buffer» бағдарламасы мен «App» бағдарламасы бар.',
+			'settings.streamBufferMegabytes' => 'Мегабайт',
 			'settings.defaultQualityTitle' => 'Әдепкі сапа',
 			'settings.cellularQualityTitle' => 'Мобильді желідегі әдепкі сапа',
+			'settings.remoteQualityTitle' => 'Өнімдертік қызмет көрсету',
+			'settings.remoteQualitySameAsDefault' => 'Өнімдер мен сапалы',
 			'settings.cellularQualitySameAsDefault' => 'Әдепкі сапамен бірдей',
 			'settings.directPlayCoveredQuality' => 'Кіші видеоларды түпнұсқа сапада ойнату',
 			'settings.directPlayCoveredQualityDescription' => 'Сапа шегіне сәйкес келетін видеоларды транскодтаудың орнына тікелей ойнату',
@@ -3717,10 +4396,16 @@ extension on TranslationsKk {
 			'settings.smallSkipDuration' => 'Шағын өткізіп жіберу уақыты',
 			'settings.largeSkipDuration' => 'Үлкен өткізіп жіберу уақыты',
 			'settings.rewindOnResume' => 'Жалғастырғанда артқа айналдыру',
-			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} секунд',
+			'settings.secondsUnit' => ({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(seconds, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} секунд', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} секунд', ), 
 			'settings.defaultSleepTimer' => 'Әдепкі ұйқы таймері',
-			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минут',
+			'settings.minutesUnit' => ({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(minutes, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} минут', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} минут', ), 
 			'settings.rememberTrackSelections' => 'Әр фильм/сериал үшін дыбыс/субтитр таңдауын есте сақтау',
+			'settings.chooseTracksBeforePlayback' => 'Аудиолық және субтитрикалық қазалықты қазалықтары',
+			'settings.chooseTracksBeforePlaybackDescription' => 'Бұл үшін, бізге көшіру үшін, біздің видеодан көшіруге болады.',
+			'settings.alwaysShowSubtitlesOnDevice' => 'Бұл үшін бұл қосымшасы бар.',
+			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'Бұл үшін, сервердер үшін не қанаққалы, қанақтықты, қанағы мен қанақтың қанақындалы бар.',
+			'settings.autoDownloadPreferredSubtitle' => '«Атлант» АҚШ-ның «Атла» АҚШ бағдарламасының қағидалары',
+			'settings.autoDownloadPreferredSubtitleDescription' => 'Бұл үшін, бізге сіздің қосылымды және сіздің қолылымды және бізге сізге қолылымда және сіздің қағидалары мен сіздің қолайлылары мен сізге қолайлысы және сіздің жүктелу үшін сіздің қолымды және Сіздің қолайлалары мен сіздердің қолайлары мен сізді қолайлыңызға болады.',
 			'settings.rememberTrackSelectionsDescription' => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау',
 			'settings.rememberTrackSelectionsBackendRule' => 'Plex әр таңдауды серверде файл бойынша сақтайды; Jellyfin сонымен қатар тіркелгінің «Таңдауларды есте сақтау» мүмкіндігін қосады; Emby қолдау көрсетпейді',
 			'settings.followServerTrackSelections' => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану',
@@ -3767,6 +4452,17 @@ extension on TranslationsKk {
 			'settings.importSettingsSuccess' => 'Баптаулар импортталды',
 			'settings.importSettingsInvalidFile' => 'Бұл файл дұрыс PlezyNG баптаулар файлы емес',
 			'settings.importSettingsNoUser' => 'Баптауларды импорттау алдында жүйеге кіріңіз',
+			'settings.cloudBackup' => 'Ауыздылық Cloud',
+			'settings.cloudBackupDescription' => 'Тасымалданатын параметрлердің сақтық көшірмесін HTTPS арқылы WebDAV мекенжайына сақтаңыз. Сервер қосылымдары мен тіркелгі деректері осы құрылғыда қалады.',
+			'settings.cloudBackupUrl' => 'WebDAV JSON файл URL',
+			'settings.cloudBackupUsername' => 'Пайдаланушы аты',
+			'settings.cloudBackupPassword' => 'Құпия сөз',
+			'settings.cloudBackupSaved' => 'Ауыздылықлықлық тазалық тазаның',
+			'settings.cloudBackupNow' => 'Қазір қайтарып',
+			'settings.cloudBackupComplete' => 'Басқасы қанаққалы',
+			'settings.cloudBackupRestore' => 'Бақырлық',
+			'settings.cloudBackupRestoreConfirm' => 'Бұл үшін бұл қосымшалар мен қосымшалармен қосымшалар бар.',
+			'settings.cloudBackupRestored' => '«Аяқтар» АҚШ-ның «Now Backup» АҚШ',
 			'settings.shortcutsReset' => 'Пернелер тіркесі әдепкі күйге қайтарылды',
 			'settings.resetShortcutsConfirm' => 'Бұл таңдамалы пернелер тіркесін әдепкі мәндермен ауыстырады. Жалғастырасыз ба?',
 			'settings.about' => 'Қолданба туралы',
@@ -3786,6 +4482,8 @@ extension on TranslationsKk {
 			'settings.autoPlayNextEpisodeDescription' => 'Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау',
 			'settings.shuffleStartsFromBeginning' => 'Араластыру басынан басталады',
 			'settings.shuffleStartsFromBeginningDescription' => 'Араластырғанда әр бөлімді жалғастырудың орнына басынан бастау',
+			'settings.plexCinemaPreRoll' => 'Кінематографиялық сервертер',
+			'settings.plexCinemaPreRollDescription' => 'Фильм басталмай тұрып бапталған Plex алдын ала роликтерін немесе Jellyfin және Emby кіріспелерін ойнату.',
 			'settings.playNextCountdown' => 'Келесіні ойнату санағы',
 			'settings.playNextCountdownImmediate' => 'Дереу ойнату',
 			'settings.skipIntroMode' => 'Кіріспені өткізу',
@@ -3796,17 +4494,38 @@ extension on TranslationsKk {
 			'settings.skipCreditsModeOffDescription' => 'Титрлерді өткізу түймесінсіз қалыпты ойнату',
 			'settings.skipCreditsModeButtonDescription' => 'Титрлер басталғанда өткізу түймесін көрсету',
 			'settings.skipCreditsModeAutoDescription' => 'Титрлерді автоматты өткізіп, келесі бөлімді ойнату',
+			'settings.skipAdsMode' => 'Ауызды',
+			'settings.skipAdsModeOffDescription' => '«Атлант» бағдарламасы, «Атла» бағдарламасы және бағдарламасы',
+			'settings.skipAdsModeButtonDescription' => 'Plex жарнаманы анықтағанда өткізіп жіберу түймесін көрсету',
+			'settings.skipAdsModeAutoDescription' => 'Алдыңғы: Алдыңғы мақаласы: Алдыңтын мақаласы',
+			'settings.musicPlayback' => 'Музыкалық Playback',
+			'settings.musicSweetFades' => 'Өткен қасық',
+			'settings.musicSweetFadesDescription' => 'Plex-те дыбыс қаттылығы туралы дерек болғанда тректің басы мен соңында дыбысты біртіндеп өзгерту. Альбомды ойнату өзгермейді.',
 			'settings.skipMarkerModeOff' => 'Өшірулі',
 			'settings.skipMarkerModeButton' => 'Түймені көрсету',
 			'settings.skipMarkerModeAuto' => 'Автоматты',
 			'settings.forceSkipMarkerFallback' => 'Қосалқы белгілерді мәжбүрлеу',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex белгілері болса да бөлім тақырыбы үлгілерін пайдалану',
+			'settings.theIntroDbFallback' => '«Аяқтар» АҚШ-ның «IntroFallback» АҚШ бағдарламасы',
+			'settings.theIntroDbFallbackDescription' => 'Бұл үшін, бізге қосылыңыз және бізге қосаңыз және бізді қосылымыз және бізге қабығыңыз және бізде қосылылар бар.',
 			'settings.autoSkipDelay' => 'Автоматты өткізу кідірісі',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Автоматты өткізгенге дейін ${seconds} секунд күту',
 			'settings.introPattern' => 'Киріс бөлім белгісінің үлгісі',
 			'settings.introPatternDescription' => 'Бөлім тақырыптарында интроны табуға арналған Regex үлгісі',
 			'settings.creditsPattern' => 'Титр белгісінің үлгісі',
 			'settings.creditsPatternDescription' => 'Бөлім тақырыптарында титрлерді табуға арналған Regex үлгісі',
+			'settings.prerolls' => 'Олар',
+			'settings.playPrerollsBeforeMovies' => 'Фильмдық кинодан кейінгі',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Бұл жануарлардың ең айқын көргенде, оныншы кірілген қазанды, онынша кірілген көне, онынш келді.',
+			'settings.prerollLibrary' => 'Бібліотекасы',
+			'settings.prerollLibraryNotSet' => 'Орнатылмаған',
+			'settings.prerollLibraryNoneFound' => 'Бібліотекасы сіздің сервердерде не көреп отыр.',
+			'settings.prerollSelection' => 'Қаланың қабығы',
+			'settings.prerollSelectionPickLibraryFirst' => 'Бібліотекадан першінің',
+			'settings.prerollSelectionNoneSelected' => 'Жұмыс-қатынас қағаз',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} таңдалды',
+			'settings.prerollItemPicker' => 'Прерольдық',
+			'settings.prerollItemPickerLoadFailed' => 'Бұл библиотекасы да салыстырды не айтылады.',
 			'settings.invalidRegex' => 'Қате тұрақты өрнек (Regex)',
 			'settings.regex' => 'Тұрақты өрнек (Regex)',
 			'settings.downloads' => 'Жүктеулер',
@@ -3824,6 +4543,12 @@ extension on TranslationsKk {
 			'settings.downloadOnWifiOnlyDescription' => 'Мобильді деректер пайдаланылғанда жүктеулерді кідірту',
 			'settings.autoRemoveWatchedDownloads' => 'Көрілген жүктеулерді автоматты өшіру',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Көрілген жүктеулерді автоматты түрде өшіру',
+			'settings.autoDownloadContinueWatching' => 'Ауто-шоу қабығыңыз',
+			'settings.autoDownloadContinueWatchingDescription' => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірумен, бір',
+			'settings.downloadQuality' => 'Өнімдер жүктеу',
+			'settings.downloadQualityDescription' => 'Plex түрлендірілген көшірмені жүктеу кезегінде дайындайды. Jellyfin мен Emby файл жүктеліп жатқанда түрлендіреді; үзілген жүктеуді қайта бастау қажет болуы мүмкін.',
+			'settings.askDownloadQualityEachTime' => 'Өнімдер мен сапалы сапалы сапасы',
+			'settings.askDownloadQualityEachTimeDescription' => 'Бұл үшін, бізге сіздің видеодан жүктеу үшін сапалы пикеры бар.',
 			'settings.cellularDownloadBlocked' => 'Мобильді желіде жүктеу бұғатталған. Wi-Fi пайдаланыңыз немесе параметрді өзгертіңіз.',
 			'settings.maxVolume' => 'Максималды дыбыс',
 			'settings.maxVolumeDescription' => 'Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру',
@@ -3880,6 +4605,8 @@ extension on TranslationsKk {
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
 			'settings.disableDolbyVision' => 'Dolby Vision-ды өшіру',
+			_ => null,
+		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату',
 			'settings.hdrSdrConversion' => 'HDR-ды SDR-ға түрлендіру',
 			'settings.hdrSdrConversionDescription' => 'Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.',
@@ -3910,8 +4637,13 @@ extension on TranslationsKk {
 			'settings.showNavBarLabels' => 'Навигация панелінің мәтіндерін көрсету',
 			'settings.showNavBarLabelsDescription' => 'Навигация белгішелерінің астында мәтінді көрсету',
 			'settings.startupSection' => 'Бастапқы бөлім',
+			'settings.preferredServer' => 'Қазір сервердер',
+			'settings.preferredServerDescription' => 'Бұл сервернің өңдеуге және басқа да басқа да басқа бір сервердердерге қолдан тұрады.',
+			'settings.preferredServerAutomatic' => 'Автоматты',
 			'settings.showExploreTab' => '«Шолу» қойындысын көрсету',
 			'settings.showExploreTabDescription' => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету',
+			'settings.hideEmptyLibraries' => 'Бібліотекасы тазаны',
+			'settings.hideEmptyLibrariesDescription' => '«Жеңіске» АҚШ-ның «Желдер» АҚШ бағдарламасының «Женер» АҚШ АҚШ бағдарламасына көшіру',
 			'settings.liveTvDefaultFavorites' => 'Тікелей TV-де таңдаулы арналарды әдепкі ету',
 			'settings.liveTvDefaultFavoritesDescription' => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету',
 			'settings.general' => 'Жалпы',
@@ -3938,6 +4670,8 @@ extension on TranslationsKk {
 			'settings.gestureVolumeSwipeDescription' => 'Оң жақ шетінде жоғары немесе төмен сырғытып, дыбыс деңгейін реттеу',
 			'settings.gesturePinchToZoom' => 'Шымшу арқылы масштабтау',
 			'settings.gesturePinchToZoomDescription' => 'Видеода шымшып, жақындату немесе алыстату',
+			'settings.gestureSeekSwipe' => 'Өткен қағал',
+			'settings.gestureSeekSwipeDescription' => 'Бұл үшін видеодан шығарылған және көшіру үшін делайтын және көшірмеді.',
 			'settings.rememberBrightnessLevel' => 'Жарықтық деңгейін есте сақтау',
 			'settings.rememberBrightnessLevelDescription' => 'Ойнатуды соңғы сырғытумен орнатылған жарықтықта бастау',
 			'settings.controls' => 'Басқару элементтері',
@@ -3952,12 +4686,20 @@ extension on TranslationsKk {
 			'settings.playerScopeLibrary' => 'Кітапхана бойынша',
 			'settings.playerScopeTitle' => 'Сериал немесе фильм бойынша',
 			'settings.exportDialogTitle' => 'PlezyNG параметрлерін экспорттау',
+			'settings.followSystem' => 'Жүйе тіліне сай',
+			'settings.followAppLanguage' => 'Интерфейс тілімен бірдей',
+			'settings.regionFormat' => 'Аймақтық пішімдер',
+			'settings.regionFormatDescription' => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.',
+			'settings.metadataLanguage' => 'Метадеректер тілі',
+			'settings.metadataLanguageDescription' => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.',
 			'themeEditor.builtIn' => 'Кірістірілген',
 			'themeEditor.presets' => 'Дайын тақырыптар',
 			'themeEditor.custom' => 'Жеке',
 			'themeEditor.customEmpty' => 'Әлі жасалмаған',
 			'themeEditor.editCustom' => 'Жеке тақырыпты өңдеу',
 			'themeEditor.editCustomDescription' => 'Әр түсті өзіңіз таңдаңыз',
+			'themeEditor.locked' => 'Жүзілік қабығылық қабығы',
+			'themeEditor.savedLocked' => '- Қайдан - жылдан кейінгі',
 			'themeEditor.title' => 'Жеке тақырып',
 			'themeEditor.startFrom' => 'Негізге алу',
 			'themeEditor.startFromDescription' => 'Барлық түстерді басқа тақырыптан көшіру',
@@ -3995,8 +4737,6 @@ extension on TranslationsKk {
 			'search.people' => 'Адамдар',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} үшін пернелер тіркесін орнату',
 			'hotkeys.clearShortcut' => 'Тіркесті тазалау',
-			_ => null,
-		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Пернелер тіркесі орнатылмаған',
 			'hotkeys.currentShortcut' => 'Ағымдағы тіркес:',
 			'hotkeys.pressToRecord' => 'Тіркесті жазу үшін басыңыз',
@@ -4028,6 +4768,8 @@ extension on TranslationsKk {
 			'hotkeys.actions.shaderToggle' => 'Шейдерлерді қосу/өшіру',
 			'hotkeys.actions.skipMarker' => 'Интро/Титрді өткізу',
 			'hotkeys.actions.screenshot' => 'Экран суретін түсіру',
+			'hotkeys.actions.framePrevious' => 'Қазіргі таңда',
+			'hotkeys.actions.frameNext' => 'Қазіргі уақытта',
 			'fileInfo.title' => 'Файл туралы ақпарат',
 			'fileInfo.overview' => 'Шолу',
 			'fileInfo.video' => 'Видео',
@@ -4166,9 +4908,9 @@ extension on TranslationsKk {
 			'mediaMenu.deleteAnyway' => 'Бәрібір өшіру',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '${title} серверіңізден толық өшірілсін бе?',
 			'mediaMenu.deleteMultipleWarning' => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл ондағы ${n} бөлімді және оның файлын өшіреді.', other: 'Бұл ондағы барлық ${n} бөлімді және олардың файлдарын өшіреді.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл элемент ${n} файл ретінде сақталған, ол өшіріледі.', other: 'Бұл элемент ${n} файлда сақталған, олардың барлығы өшіріледі.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Сол файлда тағы ${n} бөлім сақталған, ол да өшіріледі:', other: 'Сол файлда тағы ${n} бөлім сақталған, олар да өшіріледі:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл ондағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлімді және оның файлын өшіреді.', other: 'Бұл ондағы барлық ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлімді және олардың файлдарын өшіреді.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл элемент ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файл ретінде сақталған, ол өшіріледі.', other: 'Бұл элемент ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлда сақталған, олардың барлығы өшіріледі.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Сол файлда тағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім сақталған, ол да өшіріледі:', other: 'Сол файлда тағы ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім сақталған, олар да өшіріледі:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG қандай файлдар өшірілетінін тексере алмады, сондықтан ол жоғарыда аталған элементтен артық өшіруі мүмкін. Бас тартып, қайталап көріңіз немесе бәрібір өшіріңіз.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Серверіңіз бұл элемент үшін файл мәліметтерін ұсынбады, сондықтан PlezyNG қандай файлдар өшірілетінін тексере алмайды. Ол жоғарыда аталған элементтен артық өшіруі мүмкін.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Медиа элементі сәтті өшірілді',
@@ -4208,13 +4950,37 @@ extension on TranslationsKk {
 			'accessibility.autoScrollPlay' => 'Автоайналдыруды бастау',
 			'accessibility.autoScrollPause' => 'Автоайналдыруды кідірту',
 			'accessibility.hueShort' => 'H',
-			'accessibility.saturationShort' => 'S',
-			'accessibility.valueShort' => 'V',
+			'accessibility.saturationShort' => 'С',
+			'accessibility.valueShort' => 'Ж',
+			'accessibility.red' => 'Жүзілік',
+			'accessibility.green' => 'Жүзілік',
+			'accessibility.blue' => 'Блакит',
+			'accessibility.redShort' => 'Р',
+			'accessibility.greenShort' => 'Ж',
+			'accessibility.blueShort' => 'Б',
+			'accessibility.colorModeHsv' => 'Абайға',
+			'accessibility.colorModeRgb' => 'РГБ',
+			'accessibility.title' => 'Доступдық',
+			'accessibility.summary' => 'Текстос, контраст, рух және контролер',
+			'accessibility.systemHint' => 'Бұл үшін сіздің қосыласы бар, сіздің қосуға дейін қосылы бар. Бұл опциясы PlezyNG жылы қосылыңыз.',
+			'accessibility.readability' => 'Жүктесі және қанағат',
+			'accessibility.textSize' => 'текстірлік қағидалар',
+			'accessibility.preview' => 'Өзі сүйікті жары, балалары, балалары мен балалары мен жары.',
+			'accessibility.boldText' => 'Жарық интерфейс',
+			'accessibility.highContrast' => 'Өзі сүйікті контраст',
+			'accessibility.highContrastHint' => 'Бұл үшін тек, ауқызы және фокус индикаторы мен светлы және түйі ұзақтығы.',
+			'accessibility.interaction' => 'Ақыттық және интерфейс',
+			'accessibility.reduceMotion' => 'Ақыттық рух',
+			'accessibility.reduceMotionHint' => 'Бұл үшін, қазір мен қазір мен детективтік ефекттер.',
+			'accessibility.largeTargets' => 'Өнімдер сенімді',
+			'accessibility.largeTargetsHint' => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.',
+			'accessibility.navigationHint' => '«Жеңіске» және «Жекте» және «Сайфт» және «Тұрақты» және «Карта» және «Бұрақты», «Жестеске» және „Жестестеске» бағдарламасы бар.',
 			'tooltips.shufflePlay' => 'Араластырып ойнату',
 			'tooltips.playTrailer' => 'Трейлерді ойнату',
 			'tooltips.markAsWatched' => 'Көрілді деп белгілеу',
 			'tooltips.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'audioTracks.track' => ({required Object n}) => 'Аудиожол ${n}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар', ), 
 			'videoControls.audioLabel' => 'Дыбыс',
 			'videoControls.subtitlesLabel' => 'Субтитр',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -4251,6 +5017,8 @@ extension on TranslationsKk {
 			'videoControls.unmuteButton' => 'Дыбысты қосу',
 			'videoControls.settingsButton' => 'Ойнату баптаулары',
 			'videoControls.tracksButton' => 'Дыбыс және субтитрлер',
+			'videoControls.trackSelectionTitle' => 'Жарықтың да көптеген жылдар бойы жарықтың',
+			'videoControls.trackSelectionAuto' => 'Автоматдық селекциясы',
 			'videoControls.chaptersButton' => 'Бөлімдер',
 			'videoControls.versionQualityButton' => 'Нұсқа және сапа',
 			'videoControls.versionColumnHeader' => 'Нұсқа',
@@ -4292,6 +5060,8 @@ extension on TranslationsKk {
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
 			'videoControls.noAudioDevicesAvailable' => 'Қолжетімді аудио құрылғылар жоқ',
 			'videoControls.searchSubtitles' => 'Субтитр іздеу',
+			'videoControls.loadSubtitleFile' => 'Басқа да салыстырды,',
+			'videoControls.subtitleLoadFailed' => 'Басқа да салыстырдан да салыстатын',
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
@@ -4300,6 +5070,7 @@ extension on TranslationsKk {
 			'videoControls.searchLanguages' => 'Тілдерден іздеу...',
 			'videoControls.skipIntro' => 'Кіріспені өткізу',
 			'videoControls.skipCredits' => 'Титрлерді өткізу',
+			'videoControls.skipAds' => 'Ауызды',
 			'videoControls.nextEpisode' => 'Келесі бөлім',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Жол ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Субтитр ${name}',
@@ -4312,7 +5083,7 @@ extension on TranslationsKk {
 			'messages.markedAsWatchedOffline' => 'Көрілді деп белгіленді (онлайн болғанда синхрондалады)',
 			'messages.markedAsUnwatchedOffline' => 'Көрілмеді деп белгіленді (онлайн болғанда синхрондалады)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматты түрде өшірілді: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Көрілген ${n} жүктеу автоматты өшірілді', other: 'Көрілген ${n} жүктеу автоматты өшірілді', ), 
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Көрілген ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу автоматты өшірілді', other: 'Көрілген ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу автоматты өшірілді', ), 
 			'messages.removedFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшірілді',
 			'messages.errorLoading' => ({required Object error}) => 'Қате: ${error}',
 			'messages.searchPartialResults' => 'Кейбір медиа серверлерінде іздеу орындалмады. Қолжетімді нәтижелер көрсетілуде.',
@@ -4348,6 +5119,8 @@ extension on TranslationsKk {
 			'messages.seasonsLoadFailed' => 'Маусымдарды жүктеу мүмкін болмады',
 			'messages.noEpisodesFound' => 'Бірінші маусымда бөлімдер табылмады',
 			'messages.noEpisodesFoundGeneral' => 'Бөлімдер табылмады',
+			_ => null,
+		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Бөлімдерді жүктеу мүмкін болмады',
 			'messages.noResultsFound' => 'Нәтижелер табылмады',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Ұйқы таймері ${label} уақытына орнатылды',
@@ -4374,6 +5147,7 @@ extension on TranslationsKk {
 			'messages.streamSelectionFailed' => 'Таңдалған ағындарды қолдану мүмкін болмады',
 			'messages.trackSelectionNotRemembered' => 'Бұл жол таңдауы тек ағымдағы ойнатуға қолданылады.',
 			'messages.serverUnavailableForProfile' => 'Белсенді профиль үшін қолжетімді сервер жоқ',
+			'subtitlingStyling.previewSample' => 'Бұл үшін, бұл жерде жарықша нарыққа да салыстыр.',
 			'subtitlingStyling.text' => 'Мәтін',
 			'subtitlingStyling.border' => 'Жиек',
 			'subtitlingStyling.background' => 'Фон',
@@ -4442,6 +5216,9 @@ extension on TranslationsKk {
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} мен оның қосылымдары өшіріледі. Серверлер қолжетімді күйінде қалады.',
 			'profiles.profileNameLabel' => 'Профиль атауы',
 			'profiles.pinProtectionLabel' => 'PIN қорғанысы',
+			'profiles.copyAutomationLink' => 'Android автоматтандыру сілтемесін көшіру',
+			'profiles.copyAutomationLinkDescription' => 'Бұл профильді Android intent немесе автоматтандыру арқылы таңдаңыз. Профильдің PIN тексеруі сақталады.',
+			'profiles.automationLinkCopied' => 'Профессорлық автомациялық қосылды.',
 			'profiles.pinManagedByPlex' => 'PIN кодын Plex басқарады. plex.tv сайтында өңдеңіз.',
 			'profiles.noPinSetEditOnPlex' => 'PIN код орнатылмаған. Талап ету үшін plex.tv сайтында Home пайдаланушысын өңдеңіз.',
 			'profiles.setPin' => 'PIN орнату',
@@ -4483,6 +5260,10 @@ extension on TranslationsKk {
 			'profiles.continueButton' => 'Жалғастыру',
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
+			'profiles.settingsLocked' => 'Бұл профиль үшін қосымшалық.',
+			'profiles.unlockSettings' => 'Оданды',
+			'profiles.showExploreForProfile' => 'Бұл профиль үшін қараңыз',
+			'profiles.showExploreForProfileDescription' => 'Бұл өнімдер мен электрондық пошта туралы ақпаратты туралы ақпаратты бар.',
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
@@ -4509,8 +5290,6 @@ extension on TranslationsKk {
 			'accountPreferences.groups.libraryDisplay' => 'Кітапхана',
 			'accountPreferences.groups.personalMedia' => 'Жеке медиа',
 			'accountPreferences.preferredAudioLanguage' => 'Қалаулы аудио тілі',
-			_ => null,
-		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Аудионы тілі бойынша таңдау',
 			'accountPreferences.autoSelectAudioDescription' => 'Өшірулі күйде файл әдепкі деп белгілеген аудио трек қолданылады.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Қалаулы субтитр тілі',
@@ -4577,7 +5356,7 @@ extension on TranslationsKk {
 			'discover.tvShow' => 'TV Шоу',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} мин қалды',
 			'discover.moreLikeThis' => 'Ұқсастар',
-			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} атау', other: '${n} атау', ), 
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} атау', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} атау', ), 
 			'discover.person.born' => 'Туған күні',
 			'discover.person.died' => 'Қайтыс болған күні',
 			'discover.person.birthplace' => 'Туған жері',
@@ -4602,6 +5381,8 @@ extension on TranslationsKk {
 			'errors.reasonServerError' => 'сервер қате хабарлады',
 			'errors.reasonCancelled' => 'сұрау бас тартылды',
 			'errors.reasonUnexpected' => 'күтпеген қате орын алды',
+			'libraries.playRandomMovie' => 'Ауыз фильмдер',
+			'libraries.randomPickFailed' => 'Бұл кинодан бір-бірімен не күтіледі.',
 			'libraries.title' => 'Кітапханалар',
 			'libraries.fallbackTitle' => 'Кітапхана',
 			'libraries.scanLibraryFiles' => 'Файлдарды сканерлеу',
@@ -4714,19 +5495,20 @@ extension on TranslationsKk {
 			'libraries.advancedFilters.dateLastYear' => 'Соңғы бір жыл',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count} күннен бұрынғы',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Бір жылдан бұрынғы',
-			'libraries.selection.selectItems' => 'Select items',
-			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
-			'libraries.selection.actions' => 'Selection actions',
-			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
-			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
-			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
-			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
-			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
+			'libraries.selection.selectItems' => 'Қатысушылардың',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} таңдалды',
+			'libraries.selection.actions' => 'Алдыңғы акциясы',
+			'libraries.selection.confirmDescendants' => 'Бұл үшін бірнеше епізод, соңынан кейін, кеңінен танымал.',
+			'libraries.selection.confirmUnwatched' => 'Бұл үшін реттегінің реттегімен реттегінен реттегіне реттегінде реттегі.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Жаңартылды: ${succeeded}; сәтсіз: ${failed}. Сәтсіз элементтер таңдалған күйінде қалады.',
 			'about.title' => 'Қолданба туралы',
 			'about.openSourceLicenses' => 'Ашық бастапқы код лицензиялары',
 			'about.versionLabel' => ({required Object version}) => 'Нұсқа ${version}',
 			'about.appDescription' => 'Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті',
 			'about.viewLicensesDescription' => 'Үшінші тарап кітапханаларының лицензияларын көру',
+			'about.privacyPolicy' => 'Құпиялылық саясаты',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email}) үшін серверлер табылмады',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Серверлерді жүктеу қатесі: ${error}',
 			'serverSelection.noValidServers' => 'Бұл тіркелгіде жарамды сервер табылмады',
@@ -4738,6 +5520,10 @@ extension on TranslationsKk {
 			'logs.clearLogs' => 'Журналдарды тазалау',
 			'logs.copyLogs' => 'Журналдарды көшіру',
 			'logs.uploadLogs' => 'Журналдарды жүктеу',
+			'logs.saveLogs' => 'Ауызды да салықты',
+			'logs.logsSaved' => ({required Object path}) => 'Журналдар ${path} жолына сақталды',
+			'logs.saveLogsFailed' => 'Бұл да да салық файлға болады.',
+			'detail.endsAt' => ({required Object time}) => 'Аяқталу уақыты: ${time}',
 			'startup.failedTitle' => 'PlezyNG іске қосылмады',
 			'startup.failedBody' => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.',
 			'startup.failedBodyRepairable' => 'PlezyNG сақталған баптаулар файлы зақымдалған және PlezyNG іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.',
@@ -4776,6 +5562,24 @@ extension on TranslationsKk {
 			'navigation.downloads' => 'Жүктеулер',
 			'navigation.liveTv' => 'Тікелей TV',
 			'navigation.explore' => 'Шолу',
+			'explore.mdblistShelves.manage' => 'Қайталылықтық қабығы',
+			'explore.mdblistShelves.manageDescription' => 'Қаланың тұрақты тұрғындарының саны MDBList',
+			'explore.mdblistShelves.description' => 'MDBList тіркелгіңізден жария фильмдер мен сериалдар тізімдерін таңдаңыз. MDBList-те тізім жасаңыз немесе көшіріңіз, содан кейін жаңартыңыз.',
+			'explore.mdblistShelves.selected' => 'Алдыңғы шетелдік',
+			'explore.mdblistShelves.available' => 'Ауыздылық контенттер',
+			'explore.mdblistShelves.noLists' => 'Жария фильмдер немесе сериалдар тізімі табылмады. MDBList-те тізім жасаңыз немесе көшіріңіз, содан кейін жаңартыңыз.',
+			'explore.mdblistShelves.displayName' => 'Шелл қазықтықты',
+			'explore.mdblistShelves.nameHint' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір.',
+			'explore.mdblistShelves.add' => 'Шелгі',
+			'explore.mdblistShelves.save' => 'Қайталылық',
+			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Қазіргі таңда ${title}',
+			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Қазіргі таңда ${title}',
+			'explore.mdblistShelves.unavailable' => 'Бұл спиртқа не қосқан.Серіктің шағын немесе жүктеу.',
+			'explore.mdblistShelves.rateLimited' => 'MDBList сұрау шегіне жетті. Кейінірек қайталап көріңіз.',
+			'explore.mdblistShelves.loadFailed' => 'Қандайды, бұл қанақтар мен қанақтатын қанақты бар.',
+			'explore.mdblistShelves.saveFailed' => 'Қандайды да, ол да, ол жасайды.',
+			'explore.mdblistShelves.accountChanged' => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал.',
+			'explore.mdblistShelves.settingsUnreadable' => 'Бұл үшін бір-бірімен танымал, «Бытқалы» және «Бытақалы» дегенде танымал.',
 			'explore.title' => 'Шолу',
 			'explore.selectSource' => 'Дереккөзді таңдаңыз',
 			'explore.rows.watchlist' => 'Көру тізімі',
@@ -4796,7 +5600,7 @@ extension on TranslationsKk {
 			'explore.status.ended' => 'Аяқталды',
 			'explore.status.canceled' => 'Тоқтатылды',
 			'explore.status.upcoming' => 'Күтілуде',
-			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} бөлім', other: '${n} бөлім', ), 
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} бөлім', ), 
 			'explore.cast' => 'Актерлер',
 			'explore.characters' => 'Кейіпкерлер',
 			'explore.addToWatchlist' => 'Көру тізіміне қосу',
@@ -4808,7 +5612,7 @@ extension on TranslationsKk {
 			'explore.notInLibrary' => 'Кітапханаңызда жоқ',
 			'explore.inTheseLibraries' => 'Осы кітапханаларда бар',
 			'explore.checkingLibrary' => 'Кітапхана тексерілуде...',
-			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} серверді тексеру мүмкін болмады', other: '${n} серверді тексеру мүмкін болмады', ), 
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} серверді тексеру мүмкін болмады', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} серверді тексеру мүмкін болмады', ), 
 			'explore.emptyTitle' => 'Әлі де мұнда ештеңе жоқ',
 			'explore.emptyMessage' => ({required Object source}) => '${source} дереккөзінің қатарлары мазмұны болған кезде осында көрсетіледі.',
 			'explore.searchHint' => ({required Object source}) => '${source} ішінен іздеу',
@@ -4829,6 +5633,8 @@ extension on TranslationsKk {
 			'explore.badge.processing' => 'Өңделуде',
 			'explore.badge.declined' => 'Қабылданбады',
 			'explore.badge.requestFailed' => 'Сұрау сәтсіз аяқталды',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K сұралған',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} маусым',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '${episode}-бөлім ${duration} ішінде',
@@ -4845,7 +5651,7 @@ extension on TranslationsKk {
 			'explore.stats.planning' => ({required Object n}) => '${n} көруді жоспарлауда',
 			'explore.stats.favorited' => ({required Object n}) => '${n} таңдаулы',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} тастап кетті',
-			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пікір', other: '${n} пікір', ), 
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пікір', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пікір', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} дауыс',
 			'explore.stats.watching' => ({required Object n}) => '${n} қарап жатыр',
 			'explore.stats.completed' => ({required Object n}) => '${n} аяқтады',
@@ -4912,14 +5718,14 @@ extension on TranslationsKk {
 			'explore.detail.crew' => 'Ұжым',
 			'explore.detail.ratings' => 'Бағалаулар',
 			'explore.detail.schedule' => 'Кесте',
-			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пайдаланушы ұсынды', other: '${n} пайдаланушы ұсынды', ), 
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пайдаланушы ұсынды', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} пайдаланушы ұсынды', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => '${who} ұсынды',
 			'explore.detail.favoritedBy' => ({required Object who}) => '${who} таңдаулыға қосты',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} әлі көрсетілмеген',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Көрермендердің ${percent} ұсынады',
 			'explore.detail.relatedTitles' => 'Қатысты атаулар',
 			'explore.detail.background' => 'Фон',
-			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} нәтиже', other: '${n} нәтиже', ), 
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} нәтиже', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} нәтиже', ), 
 			'liveTv.title' => 'Тікелей TV',
 			'liveTv.guide' => 'Телебағдарлама',
 			'liveTv.noChannels' => 'Қолжетімді арналар жоқ',
@@ -4929,11 +5735,18 @@ extension on TranslationsKk {
 			'liveTv.noPrograms' => 'Бағдарлама ақпараты жоқ',
 			'liveTv.liveStreamFailed' => 'Тікелей ағын қатесі',
 			'liveTv.unknownProgram' => 'Белгісіз бағдарлама',
+			'liveTv.timelineLiveProgram' => '«Жив» бағдарламасы (иілiкiнiкiкiзiкiң бағдарламасы)',
+			'liveTv.timelineBuffer' => 'Баукердің ұзақтығы',
+			'liveTv.timelineUnavailable' => 'Қатысушылардың қағидалар',
+			'liveTv.timelineEstimated' => 'Жарықтық Playback',
+			'liveTv.timelinePending' => 'Қазір қарап',
+			'liveTv.timelineStale' => 'Қазіргі таңда бүкіл әлемде',
 			'liveTv.unknownHub' => 'Белгісіз',
 			'liveTv.unknownError' => 'Белгісіз қате',
 			'liveTv.channelNumber' => ({required Object number}) => '${number}-арна',
 			'liveTv.unknownChannel' => 'Белгісіз арна',
 			'liveTv.live' => 'ТІКЕЛЕЙ ЭФИР',
+			'liveTv.premiereBadge' => 'Өткен',
 			'liveTv.reloadGuide' => 'Бағдарламаны жаңарту',
 			'liveTv.searchGuide' => 'Телебағдарламадан іздеу',
 			'liveTv.searchHint' => 'Арналар мен бағдарламаларды іздеу',
@@ -5023,8 +5836,6 @@ extension on TranslationsKk {
 			'collections.selectCollection' => 'Топтаманы таңдау',
 			'collections.collectionName' => 'Топтама атауы',
 			'collections.enterCollectionName' => 'Топтама атауын енгізіңіз',
-			_ => null,
-		} ?? switch (path) {
 			'collections.addedToCollection' => 'Топтамаға қосылды',
 			'collections.errorAddingToCollection' => 'Топтамаға қосу мүмкін болмады',
 			'collections.created' => 'Топтама жасалды',
@@ -5043,8 +5854,7 @@ extension on TranslationsKk {
 			'playlists.delete' => 'Ойнату тізімін өшіру',
 			'playlists.removeItem' => 'Тізімнен өшіру',
 			'playlists.smartPlaylist' => 'Ақылды ойнату тізімі',
-			'playlists.itemCount' => ({required Object count}) => '${count} элемент',
-			'playlists.oneItem' => '1 элемент',
+			'playlists.itemCount' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} элемент', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} элемент', ), 
 			'playlists.emptyPlaylist' => 'Бұл ойнату тізімі бос',
 			'playlists.deleteConfirm' => 'Ойнату тізімі өшірілсін бе?',
 			'playlists.deleteMessage' => ({required Object name}) => '"${name}" өшірілсін бе?',
@@ -5066,16 +5876,28 @@ extension on TranslationsKk {
 			'music.playNext' => 'Келесіні ойнату',
 			'music.addToQueue' => 'Кезекке қосу',
 			'music.discNumber' => ({required Object n}) => '${n}-диск',
-			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} ән', other: '${n} ән', ), 
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ән', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ән', ), 
 			'music.nowPlaying' => 'Қазір ойнатылуда',
 			'music.playingFrom' => ({required Object title}) => '${title} дереккөзінен',
 			'music.queue' => 'Кезек',
 			'music.clearQueue' => 'Кезекті тазалау',
 			'music.lyrics' => 'Ән мәтіні',
+			'music.visualizer' => 'Жүктесі',
+			'music.visualizerProfileLoading' => 'Ауыздан кейінгі тек тек тек тек...',
+			'music.visualizerAmbientMotion' => 'Абайғасы',
+			'music.visualizerPlexLoudness' => 'Plex қақтар',
+			'music.visualizerPreviousPreset' => 'Previous Жүктесің стиль',
+			'music.visualizerNextPreset' => 'Өзі сүйікті стиль',
+			'music.visualizerPresetAurora' => 'Ауыз',
+			'music.visualizerPresetBloom' => 'Блум',
+			'music.visualizerPresetOrbitals' => 'орбиталы',
+			'music.visualizerPresetPrism' => 'Абайдың',
+			'music.visualizerPresetTunnel' => 'туннель',
+			'music.visualizerPresetTrackMap' => 'Карталық',
 			'music.noLyrics' => 'Ән мәтіні жоқ',
 			'music.sleepTimer' => 'Ұйқы таймері',
 			'music.sleepTimerEndOfTrack' => 'Әннің соңы',
-			'music.sleepTimerMinutes' => ({required Object n}) => '${n} минут',
+			'music.sleepTimerMinutes' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} минут', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} минут', ), 
 			'music.stopPlayback' => 'Ойнатуды тоқтату',
 			'music.previousTrack' => 'Алдыңғы ән',
 			'music.nextTrack' => 'Келесі ән',
@@ -5157,7 +5979,7 @@ extension on TranslationsKk {
 			'watchTogether.offsetPlusTenth' => '+100 мс',
 			'watchTogether.offsetPlusSecond' => '+1 сек',
 			'watchTogether.participants' => 'Қатысушылар',
-			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} қатысушы', other: '${n} қатысушы', ), 
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қатысушы', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қатысушы', ), 
 			'watchTogether.hostBadge' => 'ҰЙЫМДАСТЫРУШЫ',
 			'watchTogether.nameYou' => ({required Object name}) => '${name} (Сіз)',
 			'watchTogether.playerIdle' => 'Әрекетсіз',
@@ -5283,6 +6105,8 @@ extension on TranslationsKk {
 			'downloads.unwatchedOnly' => 'Тек көрілмегендер',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Келесі ${count} көрілмеген',
 			'downloads.customAmount' => 'Арнайы мөлшер...',
+			'downloads.customAmountAny' => 'Өнімдер (ақықтық) және басқа да',
+			'downloads.randomEpisodes' => 'Ауызды',
 			'downloads.includeSpecials' => 'Арнайы бөлімдерді қосу',
 			'downloads.howManyEpisodes' => 'Қанша бөлім?',
 			'downloads.invalidEpisodeCount' => 'Дұрыс бөлім санын енгізіңіз.',
@@ -5302,6 +6126,9 @@ extension on TranslationsKk {
 			'downloads.syncRuleCleanupBusy' => 'Синхрондау ережелері қазір жаңартылуда. Сәлден соң қайталап көріңіз.',
 			'downloads.syncRuleCleanupUnavailable' => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды',
+			'downloads.syncNow' => 'Ақытқытқыш',
+			'downloads.downloadsUpToDate' => 'Ауызды дауысы',
+			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Синхрондау аяқталды · кезекке қосылды: ${queued}, жойылды: ${removed}',
 			'downloads.activeSyncRules' => 'Белсенді синхрондау ережелері',
 			'downloads.reviewOrphanFiles' => 'Жазбасы жоқ жүктеулерді тексеру',
 			'downloads.orphanReviewTitle' => 'Жазбасы жоқ жүктеулерді тексеру',
@@ -5320,6 +6147,8 @@ extension on TranslationsKk {
 			'downloads.syncUnwatchedItems' => 'Көрілмеген элементтер синхрондалады',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Қолжетімді',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Кіру қажет',
 			'downloads.syncRuleAccessDenied' => 'Кіруге тыйым салынды',
@@ -5360,10 +6189,17 @@ extension on TranslationsKk {
 			'downloads.unknownSeason' => 'Белгісіз маусым',
 			'downloads.unknownAlbum' => 'Белгісіз альбом',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} аяқталды',
+			'downloads.storageUsed' => ({required Object size}) => 'Қатысушылардың: ${size}',
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} жүктеу', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} сериал', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} сериал', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кино', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кино', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} альбом', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} альбом', ), 
 			'downloads.errorFileNotFound' => 'Файл табылмады (404)',
 			'downloads.errorDownloadNotAllowed' => 'Сервер жүктеп алуға рұқсат бермейді (403)',
 			'downloads.errorDownloadFailed' => 'Жүктеу сәтсіз аяқталды',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Жүктеу сәтсіз аяқталды: ${reason}',
+			'downloads.convertingOnServer' => 'Қазіргі таңда сервердермен...',
+			'downloads.convertingOnServerPercent' => ({required Object percent}) => 'Қаланың тұрақты тұрғындарының саны ${percent}%',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Жүктеу сәтсіз аяқталды (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object reason}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${reason}',
 			'downloads.reasonFileNotSaved' => 'файлды осы құрылғыда сақтау мүмкін болмады',
@@ -5417,6 +6253,13 @@ extension on TranslationsKk {
 			'companionRemote.pairing.sessionNotFound' => 'Құрылғы табылмады.',
 			'companionRemote.pairing.authFailed' => 'Аутентификация қатесі.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Қосылу мүмкін болмады: ${error}',
+			'companionRemote.pairing.codeTitle' => 'Кодекс',
+			'companionRemote.pairing.codeDescription' => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған коды бар.',
+			'companionRemote.pairing.codeInvalid' => 'Қаланың тұрақты тұрғындарының саны 32 адамды құрайды.',
+			'companionRemote.pairing.updateRequired' => 'Бұл үшін бір-бірімен бір-біректермен таныстырып, және бір-бірін бір-біремен таныстыр.',
+			'companionRemote.pairing.hostDescription' => 'Бұл коданың бір-бірінен кейін бір-біректік кодсы бар. Бұл кодасы бар: Бұл профильдің контрольмен қамтамасыз ету.',
+			'companionRemote.pairing.resetCode' => 'Басқа коды',
+			'companionRemote.pairing.resetDescription' => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып, қанағаттанды.',
 			'companionRemote.remote.disconnectConfirm' => 'Пульт сеансынан ажырайсыз ба?',
 			'companionRemote.remote.reconnecting' => 'Қайта қосылуда...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Әрекет ${current} / 5',
@@ -5475,6 +6318,13 @@ extension on TranslationsKk {
 			'videoSettings.audioOutputSurround' => 'Көлемді дыбыс',
 			'videoSettings.audioOutputSpatial' => 'Кеңістіктік дыбыс',
 			'videoSettings.audioOutputStereo' => 'Стерео',
+			'videoSettings.audioEqualizer' => 'Аудиолық эквиваленттер',
+			'videoSettings.audioEqualizerDescription' => 'Бұл үшін 5 фреквенция барды өтінеміз. mpv жылы қаталған; активация EQ аудіо-декоды және паралтын ұзақтығы.',
+			'videoSettings.audioEqualizerFlat' => 'Өткен',
+			'videoSettings.audioEqualizerActive' => 'Жеке',
+			'videoSettings.audioEqualizerSaveFailed' => 'Бұл үшін аудіо-еквализаторлық настройки бар.',
+			'videoSettings.backgroundVideoAudio' => 'Аудио видео',
+			'videoSettings.backgroundVideoAudioDescription' => 'Бұл жануарлардың ең айқын көргенде, бұл видео-аудио-искеріне көреген, сенің көреген. Android медиа-искеткемен көреген',
 			'videoSettings.audioNormalization' => 'Дыбыс деңгейін нормалау',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі',
 			'performanceOverlay.color' => 'Түс',
@@ -5518,6 +6368,7 @@ extension on TranslationsKk {
 			'performanceOverlay.cacheLimit' => 'Кэш шегі',
 			'performanceOverlay.speed' => 'Жылдамдық',
 			'performanceOverlay.player' => 'Ойнатқыш',
+			'performanceOverlay.playMethod' => 'Теңізді',
 			'performanceOverlay.memory' => 'Жады',
 			'performanceOverlay.uiFps' => 'Интерфейс (UI) FPS',
 			'performanceOverlay.fps' => 'FPS',
@@ -5537,8 +6388,6 @@ extension on TranslationsKk {
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',
 			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Ойнатқыш атауы',
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',
@@ -5784,101 +6633,343 @@ extension on TranslationsKk {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.',
 			'addServer.redirectInsecure' => 'Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.',
-			'homeLayout.title' => 'Home layout',
-			'homeLayout.resetToast' => 'Home reset to the original Plezy hero layout',
-			'homeLayout.resetHeroTitle' => 'Reset hero layout to stock Plezy?',
-			'homeLayout.resetHeroBody' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.',
-			'homeLayout.removeRowTitle' => 'Remove Home row?',
-			'homeLayout.removeRowBody' => ({required Object title}) => '${title} will be deleted. This can\'t be undone.',
-			'homeLayout.sync' => 'Sync',
-			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
-			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
-			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
-			'homeLayout.syncNow' => 'Sync now',
-			'homeLayout.plexHomeManager' => 'Plex Home manager',
-			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',
-			'homeLayout.managePlexRowsDescription' => 'Open to organize the Home-selected rows',
-			'homeLayout.organizeHomeRows' => 'Organize Home rows',
-			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove',
-			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organize ${library} rows',
-			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide',
-			'homeLayout.renderAsHero' => 'Render as a hero card',
-			'homeLayout.heroOnlySingleCollection' => 'Only available when this row resolves to a single collection\'s actual titles',
-			'homeLayout.hero' => 'Hero',
-			'homeLayout.autoSlide' => 'Auto-slide',
-			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
-			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
-			'homeLayout.enableHeroFirst' => 'Enable Hero first',
-			'homeLayout.showOnHome' => 'Show on Home screen',
-			'homeLayout.home' => 'Home',
-			'homeLayout.removeFromHome' => 'Remove from Home',
-			'homeLayout.selectRowsFirst' => 'Select Home rows below first.',
-			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex-managed rows',
-			'homeLayout.continueWatching' => 'Continue Watching',
-			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
-			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
-			'homeLayout.library' => 'Library',
-			'homeLayout.showInRecommended' => 'Show in Library Recommended',
-			'homeLayout.customPlexRow' => 'Custom Plex row',
-			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
-			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',
-			'homeLayout.removeHub' => 'Remove Hub',
-			'homeLayout.noPlexRows' => 'No Plex-managed rows returned for this library.',
-			'homeLayout.openDetails' => 'Open details',
-			'homeLayout.heroCards' => 'Hero cards',
-			'homeLayout.tapHeroCard' => 'Tapping a hero card',
-			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
-			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
-			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
-			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',
-			'homeLayout.castOnHero' => 'Cast on hero banners',
-			'homeLayout.castOnHeroDescription' => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.',
-			'homeLayout.customRows' => 'Custom rows',
-			'homeLayout.loading' => 'Loading home layout…',
-			'homeLayout.noCustomRows' => 'No custom rows yet',
-			'homeLayout.addRowHint' => 'Use Add Home row to create one.',
-			'homeLayout.addHomeRow' => 'Add Home row',
-			'homeLayout.addHomeRowDescription' => 'Choose a category; the new row is added to Organizer automatically',
-			'homeLayout.removeRow' => 'Remove row',
-			'homeLayout.recentlyAdded' => 'Recently Added',
-			'homeLayout.recentlyReleased' => 'Recently Released',
-			'homeLayout.movieCollections' => 'Movie Collections',
-			'homeLayout.showCollections' => 'Show Collections',
-			'homeLayout.rowTitle' => 'Row title',
-			'homeLayout.content' => 'Content',
-			'homeLayout.showThisRowIn' => 'Show this row in:',
-			'homeLayout.libraryRecommended' => 'Library Recommended',
-			'homeLayout.heroCard' => 'Hero card',
-			'homeLayout.heroCardDescription' => 'Shows as one full-width rotating card instead of a poster shelf.',
-			'homeLayout.heroUnavailableDescription' => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.',
-			'homeLayout.librariesSelection' => 'Libraries (leave all unchecked to include every library)',
-			'homeLayout.librariesMergedDescription' => 'Every library checked here is merged into this one row.',
-			'homeLayout.movieCollectionsSelection' => 'Movie collections (leave all unchecked for every selected library)',
-			'homeLayout.showCollectionsSelection' => 'Show collections (leave all unchecked for every selected library)',
-			'homeLayout.collectionRowsDescription' => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.',
-			'homeLayout.allCollections' => 'All collections',
-			'homeLayout.noRowsHere' => 'No rows here yet.',
-			'homeLayout.hideWatchedRows' => 'Hide watched items in rows',
-			'homeLayout.hideWatchedRowsDescription' => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.',
-			'homeLayout.untitledCollection' => 'Untitled collection',
-			'homeLayout.moveRowHint' => 'Up/Down: move row · Select: drop it here · Back: cancel',
-			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
-			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
-			'homeLayout.editHomeRow' => 'Edit Home row',
-			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
-			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
-			'homeLayout.reorderingLocked' => 'Reordering locked',
-			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',
-			'homeLayout.tapLockToDrag' => 'Tap the lock to drag rows',
-			'homeLayout.customRowLabel' => ({required Object title}) => 'Custom: ${title}',
+			'addServer.directPlexServerUrl' => 'Plex серверінің URL мекенжайы',
+			'addServer.directPlexServerUrlHelper' => 'Қаланың тұрақты тұрғындарының саны Plex Media Server.',
+			'addServer.directPlexServerUrlHint' => 'http://192.168.1.100:32400',
+			'addServer.plexToken' => 'Plex Токен (ақық)',
+			'addServer.plexTokenHelper' => 'Бұл үшін, аутқалы және аутқаны басқа да аутқалау үшін аутқасы бар.',
+			'addServer.plexTokenRequired' => 'Аутентификация қажет. Plex токенін (X-Plex-Token) енгізіңіз.',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (тікелей / жергілікті)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Қаншалықты IP немесе URL-дер арқылы қосылды.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Қаланың тұрақты тұрғындарының IP немесе URL-ті қосылды. ${name} қосылды',
+			'addServer.insecureTitle' => 'Негізгі қосылды',
+			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP пайдаланады. Желідегі басқа адамдар құпиясөзіңізді, токендеріңізді және медиаңызды оқуы немесе өзгертуі мүмкін. Мүмкін болса, HTTPS пайдаланыңыз. Осы желіге сенсеңіз және тәуекелді қабылдасаңыз ғана жалғастырыңыз.',
+			'addServer.allowHttp' => 'Қазір қазір HTTP',
+			'addServer.httpsRequired' => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.',
+			'watchLink.serverUnavailable' => 'Бұл қағидалар үшін Plex сервері не айтасыз.',
+			'watchLink.notFound' => 'Бұл сериал немесе фильм Plex серверлеріңізден табылмады.',
+			'watchLink.ambiguous' => 'Бұл қабығы мен қабығы бар, бұл қабығы бір сервері.',
+			'watchLink.plexOnly' => 'Көру сілтемелері әзірге тек Plex серверлерін қолдайды.',
+			'watchLink.unsupportedItem' => 'Бұл үшін, кинодан немесе шоудан немесе кинодан қараңыз.',
+			'watchLink.menuItem' => 'Қайтақтық Link',
+			'watchLink.dialogTitle' => 'Қайтаны Link',
+			'watchLink.dialogShowHint' => 'Бұл қағидалардан тұрады және басқа да қағидаларынан тұрады.',
+			'watchLink.dialogMovieHint' => 'Бұл киноның ең көне айқын көрмеген.',
+			'watchLink.copy' => 'Жүктесі',
+			'watchLink.copied' => 'Қайтақтық копиясы',
+			'homeLayout.title' => 'Өнімдер лайон',
+			'homeLayout.resetToast' => 'Басты бет бастапқы Plezy баннер орналасуына қайтарылды',
+			'homeLayout.resetHeroTitle' => 'Қаланың тұрақты тұрғындарының саны Plezy?',
+			'homeLayout.resetHeroBody' => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-бақамен, бір және бір-бірек, бір-берек, бір және басқа да бір, бір және т.б.',
+			_ => null,
+		} ?? switch (path) {
+			'homeLayout.removeRowTitle' => 'Өткен қағалдық қағалды?',
+			'homeLayout.removeRowBody' => ({required Object title}) => '${title} жойылады. Бұл әрекетті болдырмау мүмкін емес.',
+			'homeLayout.sync' => 'Сүтті',
+			'homeLayout.syncAccountTitle' => 'Қаланың тұрақты тұрғындарының саны Plex',
+			'homeLayout.syncAccountOn' => 'Бұл үшін, бұл үшін, бұл команда, команда, команда және авто-слайд үшін басқа да сіздің қосылы бар.',
+			'homeLayout.syncAccountOff' => 'Бұл үшін, бұл қосымшалар мен салықты ұзақ уақытқа дейін ұзақ уақыт бойы жасылады.',
+			'homeLayout.syncNow' => 'Ақытқытқыш',
+			'homeLayout.plexHomeManager' => 'Plex Жүрілік менеджер',
+			'homeLayout.managePlexRows' => 'Plezy ішіндегі Plex қатарларын басқару',
+			'homeLayout.managePlexRowsDescription' => 'Өнімдермен танымал, бірақ танымал, таңдардан танымал.',
+			'homeLayout.organizeHomeRows' => 'Өнімдермен өңдеу',
+			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} қатар: жылжыту, баннер, автоматты ауысу, жою',
+			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Қаланың тұрақты тұрғындарының саны ${library}',
+			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Өзінің қабырғасы + ${n} қабырғалары: қараша, Библиотека, Доминика, Героя, Авто-Слайд',
+			'homeLayout.renderAsHero' => 'Бұл үшін карталық карталық карта',
+			'homeLayout.heroOnlySingleCollection' => 'Бұл жануарлардың бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір',
+			'homeLayout.hero' => 'Әлемдік',
+			'homeLayout.autoSlide' => 'Авто-Слайд',
+			'homeLayout.autoSlideDescription' => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған.',
+			'homeLayout.autoSlideEditDescription' => 'Бұл үшін, бұл жерде де ұзақ уақытқа дейін ұзақ уақыт бойы жасылған.Ап: бұл жерде ұзақ уақыттан дейін ұзақ жылдан дейін ұзақ уақытта ұзақ уақытға дейін ұзақ мерзімде (PC) немесе ұзақ мерзімі (TV) ұзақ мерзі (TV) жасылғанды.',
+			'homeLayout.enableHeroFirst' => 'Бұл үшін Герояның',
+			'homeLayout.showOnHome' => 'Home Screen қауымда',
+			'homeLayout.home' => 'Басты бет',
+			'homeLayout.removeFromHome' => 'Өйткені қайтарып',
+			'homeLayout.selectRowsFirst' => 'Қаланың ең айқын көрмесі еркелеткенімен де.',
+			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex қабырғасы',
+			'homeLayout.continueWatching' => 'Көруді жалғастыру',
+			'homeLayout.continueWatchingLibraryDescription' => 'Бұл библиотекасының өзара-қатынас',
+			'homeLayout.continueWatchingHomeDescription' => 'Өнімдермен көшiрiнiң өнерінің өнерімен',
+			'homeLayout.nextUpHomeDescription' => '«Аяқтар» АҚШ-ның «Аяға» АҚШ бағдарламасының өзарамен таныстыратын',
+			'homeLayout.library' => 'Кітапхана',
+			'homeLayout.showInRecommended' => 'Библиотеканың тұрақтанды',
+			'homeLayout.customPlexRow' => 'Қазір Plex қаңтар',
+			'homeLayout.heroNeedsLibrary' => '«Жеңіске үлес қосқандар» деген әйгілі әндердің авторы.',
+			'homeLayout.heroNeedsSurface' => '«Жеңіске» және «Жектесі» деген әйгілі әндер шыққан әндер шырқалып, биленді.',
+			'homeLayout.removeHub' => 'Өткен қағал',
+			'homeLayout.noPlexRows' => 'Бұл кітапхана үшін Plex басқаратын қатарлар табылмады.',
+			'homeLayout.openDetails' => 'Одандық детайл',
+			'homeLayout.heroCards' => 'Үлкен картасы',
+			'homeLayout.tapHeroCard' => 'Жүктесі картасы',
+			'homeLayout.tvPlayFocus' => 'Телевизорда көтеріп: «Жеңір» бутон',
+			'homeLayout.tvPlayFocusDescription' => 'Бұл үшін, «Д-пады» және «Д-пай» және «Сейп» және «Бай» және басқа да «Сейб» және «Аль-Кай» және т.б.',
+			'homeLayout.tvWrap' => 'Телевизиялық картасы: «Лоуп герои»',
+			'homeLayout.tvWrapDescription' => 'Бұл үшін, бір-бірімен, бір-бирімен, басқа да бір-бірін, бір-бетімен, бір -бірімен және бір-бірин, бір-бақамен, бір –бірімен бір-бірек, бір –бирімен және басқа да бір –бірек, басқа да басқа да бір -бірек, және басқа да басқа басқа да басқа.',
+			'homeLayout.castOnHero' => 'Базарлардан базарлардан',
+			'homeLayout.castOnHeroDescription' => 'Бұл үшін, бұл жерде одан кейінгі қазанды және одан кейінге оданды.',
+			'homeLayout.customRows' => 'Күйінің',
+			'homeLayout.loading' => 'Өнімдерде көліктерліктерліктері...',
+			'homeLayout.noCustomRows' => 'Бұл үшін не қазір',
+			'homeLayout.addRowHint' => 'Бұл үшін «Home» бағдарламасы бар.',
+			'homeLayout.addHomeRow' => 'Өнімдер мен қабығы',
+			'homeLayout.addHomeRowDescription' => '«Аяқтық» бағдарламасы: «Аяқытары» бағдарламасы автоматикалық',
+			'homeLayout.removeRow' => 'Оған қосылды',
+			'homeLayout.recentlyAdded' => 'Соңғы қосылғандар',
+			'homeLayout.recentlyReleased' => 'Олардың ең көне ұлы',
+			'homeLayout.movieCollections' => 'кино коллекциясы',
+			'homeLayout.showCollections' => 'Колекциясы',
+			'homeLayout.rowTitle' => 'Әуес қауымда',
+			'homeLayout.content' => 'Жүзілік',
+			'homeLayout.showThisRowIn' => 'Бұл қағидалардан қараңыз:',
+			'homeLayout.libraryRecommended' => 'Библиотекасы мен',
+			'homeLayout.heroCard' => 'Герой картасы',
+			'homeLayout.heroCardDescription' => 'Бұл үшін бір-бірімен бір-бірек картон, бір-бірін бір-білік картон, басқа бір-бітік картон.',
+			'homeLayout.heroUnavailableDescription' => 'Бұл жануарлардың бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір - бір-біреймен бір-бетімен бір-бақа бір-біреттің бір-биреттің бір - біремен бір -біректің де бір-бірестің бір-бетқа бір-бирімен бір -биректің де біремен де біремеді.',
+			'homeLayout.librariesSelection' => 'Бібліотекасы (вiнiңiңiнiкiнiнiзiнiмiнiлiңiкiңiмiзiмiңiзiзi)',
+			'homeLayout.librariesMergedDescription' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-биректік бір.',
+			'homeLayout.movieCollectionsSelection' => '«Аяқтық» киносы (аяқтық-аяққа қанақтық-бақыны)',
+			'homeLayout.showCollectionsSelection' => '«Аяқтық» (аяқтық) және «Аялық» (ааяққа) және «Карталық» (Аяққалы) және «Тұқсат» (Ааяқтың) және «Сұқсаттың» (ААяқтың).',
+			'homeLayout.collectionRowsDescription' => 'Бұл жануарлардың бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір және бір-беткемен, бір, бір-базардан, бір-бырімен, және бір-бастардан, бір,базардан және бір-бирумен, базардан және басқа да бір,бастардан және бір,басқа және бір-бысқа,басқа,бастарды және бір-безімен,бастарда және бір-бендімен,базарда және бір,бетке және бір-бандімен,беткер және бір-буғал,базарды және бір,банді және бір-байғал,бет және бір-Беткемен.',
+			'homeLayout.allCollections' => 'Бүгін колекциясы',
+			'homeLayout.noRowsHere' => 'Бұл үшін бірақ қазір не.',
+			'homeLayout.hideWatchedRows' => 'Қазір көшіру үшін көшіруге көшіру',
+			'homeLayout.hideWatchedRowsDescription' => 'Бұл үшін, «Жилақ» және «Жилоқ» деген әлі де ұлыстыратын, «Жылоқ» және басқа да ұлыстырды.',
+			'homeLayout.untitledCollection' => 'Ауыз колекциясы',
+			'homeLayout.moveRowHint' => 'Өзінің қабырға айналады: «Серде» және «Серд» дегенде айналады.',
+			'homeLayout.organizeRowsHint' => 'Алдыңғы: «Жеңізде» және «Жектеу» және «Серде» және «Карта» және «Барта» бағдарламасы',
+			'homeLayout.layoutNavDescription' => 'Өзінің, өңдеу және өңдеу категориясы',
+			'homeLayout.editHomeRow' => 'Өнімдер мен үй',
+			'homeLayout.resetHeroButton' => 'Қаланың тұрақты тұрғындарының саны Plezy',
+			'homeLayout.reorderingUnlocked' => 'Олардың дағдыры',
+			'homeLayout.reorderingLocked' => 'Олардың бәрі',
+			'homeLayout.rowsCanBeDragged' => 'Бұл үшін бір-бірімен бір-біректік қайтарып, бір-біремен бір-биректік қайтарды.',
+			'homeLayout.tapLockToDrag' => 'Олардың ішіндегі ең көне апеллятив – үңгір.',
+			'homeLayout.customRowLabel' => ({required Object title}) => 'Қазіргі таңда: ${title}',
 			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
-			'homeLayout.hide' => 'Hide',
-			'homeLayout.remove' => 'Remove',
-			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
-			'homeLayout.pressAgainToDelete' => 'Press again to delete',
+			'homeLayout.hide' => 'Жасыру',
+			'homeLayout.remove' => 'Өшіру',
+			'homeLayout.libraryResumeRow' => 'Бібліотеканың ең айқын көрмесі',
+			'homeLayout.pressAgainToDelete' => 'Көпiнiң өнерінен өнеріне',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
-			'homeLayout.on' => 'On',
-			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'homeLayout.on' => 'Қазір',
+			'homeLayout.resetHeroButtonDescription' => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-басқа, бір-бысқа, бір, бірақ, бір-бесімен, бір және бір-бірек, бір-бенді, бір-бір, бір-байға, бір-бей, бір-ақ, бір-қой, бір-қатынас, бір-әрекет, бір-шой, бір, қағал, бір-шара, бір-шаң, бір-шікүй, бір-сің, бір, қараша, бір-шың, бір.',
+			'platform.localNetworkPermission' => 'PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.',
+			'platform.locationPermission' => 'PlezyNG қосымшасы бар, iOS қосымшасы арқылы қосымшасы және қосымшасы бойынша қосымшасы туралы қосымшасы.',
+			'platform.photoLibraryPermission' => 'Бұл үшін фото-библиотекасы мен медиа-артуінің артықшылықтармен таныстырып қараңыз.',
+			'platform.cameraPermission' => 'Бұл үшін QR кодсы бар, содан кейінгі ұзақ уақытқа дейін.',
+			'fileSources.title' => 'Бібліотекасы және файлы',
+			'fileSources.subtitle' => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.',
+			'fileSources.add' => 'Қайталық',
+			'fileSources.importFiles' => 'Ауыз файл',
+			'fileSources.localFiles' => 'Бұл приспособления',
+			'fileSources.source' => 'Қайтаны',
+			'fileSources.name' => 'Әйтсе де',
+			'fileSources.endpoint' => 'Сервер URL-і',
+			'fileSources.root' => 'Олардың дағдырысы және',
+			'fileSources.username' => 'Пайдаланушы аты',
+			'fileSources.password' => 'Құпия сөз',
+			'fileSources.token' => 'API қақтар',
+			'fileSources.accessKey' => 'Керіктің қабығы',
+			'fileSources.secretKey' => 'Тақырып: Access Key',
+			'fileSources.sessionToken' => 'Сессия токен (апциялық)',
+			'fileSources.region' => 'Қаланың',
+			'fileSources.clientId' => 'ОАО «Клиент ID»',
+			'fileSources.clientSecret' => 'ОАУТ клиенттік тайна (десктоп Google үшін)',
+			'fileSources.allowHttp' => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру',
+			'fileSources.connect' => 'Қосылу',
+			'fileSources.cancel' => 'Бас тарту',
+			'fileSources.save' => 'Сақтау',
+			'fileSources.close' => 'Жабу',
+			'fileSources.removeSource' => 'Қайталық ресурсы',
+			'fileSources.disconnectMessage' => 'Бұл көзбен байланысты ажырату керек пе? Жүктелген файлдар, оқу және тыңдау тарихы осы құрылғыда сақталады.',
+			'fileSources.localFolder' => 'Қайтаны',
+			'fileSources.empty' => 'Әлі де мұнда ештеңе жоқ',
+			'fileSources.emptyHint' => 'Бұл үшін бір-бірімен, аудіо-книга, музыка, видео, және басқа да бір-бірін ұсынады.',
+			'fileSources.search' => 'Бұл фасцикле',
+			'fileSources.searchCached' => 'Бібліотеканың тұрады',
+			'fileSources.refresh' => 'Жаңарту',
+			'fileSources.loadMore' => 'Өздіктер',
+			'fileSources.offline' => 'Олайда ұзақтығы',
+			'fileSources.download' => 'Олайда offline',
+			'fileSources.removeDownload' => 'Олайда offline копиясы',
+			'fileSources.continueReading' => 'Жүктесі тек',
+			'fileSources.continueListening' => 'Өткен қазық',
+			'fileSources.continueWatching' => 'Өткен қабырға',
+			'fileSources.read' => 'Жүктеу',
+			'fileSources.listen' => 'Әдеп',
+			'fileSources.play' => 'Ойнату',
+			'fileSources.pause' => 'Кідірту',
+			'fileSources.stop' => 'Тоқтату',
+			'fileSources.startOver' => 'Қазір',
+			'fileSources.finished' => 'Аяқталды',
+			'fileSources.markFinished' => 'Марктің',
+			'fileSources.markUnfinished' => 'Марк қабығы',
+			'fileSources.editions' => 'Ауыз ішінен',
+			'fileSources.chapters' => 'Бөлімдер',
+			'fileSources.bookmarks' => 'Басқасы және белегі',
+			'fileSources.bookmark' => 'Бірінші мезгіл',
+			'fileSources.highlight' => 'Өткен',
+			'fileSources.note' => 'Ақытқытқы',
+			'fileSources.delete' => 'Өшіру',
+			'fileSources.export' => 'Експорттық банкноты',
+			'fileSources.exported' => 'Експорттық ғылыми',
+			'fileSources.sync' => 'Өткен өңдеу',
+			'fileSources.synced' => 'Өнімдермен өңдеу',
+			'fileSources.conflict' => 'Бұл үшін бір-бірімен басқа да бір-бірек қосуға болады.',
+			'fileSources.useLocal' => 'Бұл приспособление',
+			'fileSources.useRemote' => 'Ауыз іші шығыңыз',
+			'fileSources.history' => 'Ауыздан соң',
+			'fileSources.groupAudio' => 'Аудиологиялық қағидалар',
+			'fileSources.groupHint' => 'Бұл қабығы мен қабығы мақалалар мен қабықтар мен қабырға мақалалар бар.',
+			'fileSources.order' => 'Файл командасы',
+			'fileSources.moveUp' => 'Өзінің',
+			'fileSources.moveDown' => 'Қайтаны',
+			'fileSources.speed' => 'Жарықтарлық',
+			'fileSources.sleep' => 'Ұйқы таймері',
+			'fileSources.sleepOff' => 'Өшірулі',
+			'fileSources.endChapter' => 'Керіктің қабығы',
+			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} минут', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} минут', ), 
+			'fileSources.skipBack' => 'Сүттің қайта',
+			'fileSources.skipForward' => 'Есімдіктің',
+			'fileSources.smartRewind' => 'Өздіктер өңдеуге дейін өңдеу',
+			'fileSources.playbackOptions' => 'Алдыңғы опциялары',
+			'fileSources.remaining' => ({required Object time}) => '${time} жылы қазір',
+			'fileSources.contents' => 'Жүзілік',
+			'fileSources.readerSettings' => 'Қайтақтықтықтық',
+			'fileSources.fontSize' => 'текстір',
+			'fileSources.lineHeight' => 'Әуес қағала',
+			'fileSources.margin' => 'Маргарита',
+			'fileSources.font' => 'Жүзілік',
+			'fileSources.serif' => 'Сериалды',
+			'fileSources.sans' => 'Шұқсат',
+			'fileSources.mono' => 'Монастыр',
+			'fileSources.columns' => 'Жүзілік',
+			'fileSources.scroll' => 'Вертикалды қалың',
+			'fileSources.justify' => 'текстір мен текстір',
+			'fileSources.readerTheme' => 'Page ұзақтығы',
+			'fileSources.appTheme' => 'Апп Теме',
+			'fileSources.paper' => 'Қағаз',
+			'fileSources.sepia' => 'Септа',
+			'fileSources.night' => 'Өзінің',
+			'fileSources.readAloud' => 'Бұл сайтдың қағидалар',
+			'fileSources.readAlong' => 'Жүктеу',
+			'fileSources.stopReading' => 'Жаққа қабығы',
+			'fileSources.searchBook' => 'Бірінші мезгіл',
+			'fileSources.noMatches' => 'Не күш',
+			'fileSources.previousPage' => 'Қазір қазір',
+			'fileSources.nextPage' => 'Қазіргі таңда',
+			'fileSources.page' => ({required Object number}) => 'Қаланың тұрақты тұрғындарының саны ${number}',
+			'fileSources.externalBlocked' => 'Бұл үшін, аударыптар мен аударыпталар мен аударыпалар мен аудармалар мен ауды.',
+			'fileSources.loading' => 'Одан...',
+			'fileSources.narrator' => 'Ақыттық',
+			'fileSources.audio' => 'Аудио',
+			'fileSources.video' => 'Видео',
+			'fileSources.ebooks' => 'Ексклюзив',
+			'fileSources.all' => 'Барлығы',
+			'fileSources.downloads' => 'Offline файл',
+			'fileSources.confirmDelete' => 'Таңдалған офлайн көшірмені жою керек пе? Оқу немесе тыңдау орны мен жазбаларыңыз сақталады.',
+			'fileSources.errorAuthentication' => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлар.',
+			'fileSources.errorPermission' => 'Бұл өнімнің дағдысы бар дағдысын дағдысқа дағдығы не айталады.',
+			'fileSources.errorUnavailable' => 'Бұл үшін бір-бірімен таныстырып, басқа да басқа да аударып, басқа да аудар.',
+			'fileSources.errorUnsupported' => 'Бұл форматтау немесе конекцияның бұл қосыланы не қосылады.',
+			'fileSources.errorInvalidData' => 'Бұл файл немесе сервер-отзық не күтіледі.',
+			'fileSources.errorCancelled' => 'Операцияның ануға болады.',
+			'fileSources.errorConflict' => 'Бұл үшін бір сессияның бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-бирімен бір.',
+			'fileSources.signIn' => 'Кіру',
+			'fileSources.reconnect' => 'Қайта қосылу',
+			'fileSources.folderHelp' => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір -бірімен және бір-біректімен, бір –бірімен.',
+			'fileSources.preferences' => 'Преференциясы',
+			'fileSources.timePosition' => 'Орналасуы',
+			'fileSources.audioTrack' => 'Аудио трактейлі',
+			'fileSources.subtitleTrack' => 'Алдыңғы Subtitle',
+			'fileSources.none' => 'Әйтсе',
+			'fileSources.fullscreen' => 'Екіптер',
+			'fileSources.syncLocation' => 'Өнімдер мен қанағаттан (i)',
+			'fileSources.syncLocationHint' => 'PlezyNG күйіне арналған бөлек WebDAV қалтасы. Деректер шартты түрде жазылады; медиафайлдар өзгермейді.',
+			'fileSources.audiobooks' => 'Аудиолық',
+			'fileSources.comics' => 'Комедиясы',
+			'fileSources.scan' => 'Серіктің да салықты және медиа',
+			'fileSources.browserReader' => 'Одан және',
+			'fileSources.browserReaderHelp' => 'Оқу құралы браузерде ашық. Оқу орнын және жазбаларды сақтау үшін PlezyNG қолданбасын ашық ұстаңыз.',
+			'fileSources.on' => 'Қазір',
+			'fileSources.advancedSetup' => 'App регистрациясы',
+			'fileSources.microsoftSignIn' => 'Microsoft-ның ең айқын көрмесі',
+			'fileSources.zoomIn' => 'Жүзіліктің',
+			'fileSources.zoomOut' => 'Өзiңiңi',
+			'fileSources.fitPage' => 'Жүктесі сайын',
+			'fileSources.fitWidth' => 'Өткен қабырға',
+			'fileSources.actualSize' => 'Қазір қазір',
+			'fileSources.goToPage' => 'Қайтаққа қабығы',
+			'fileSources.goToSection' => 'Есімде қасиетті',
+			'fileSources.pageRange' => ({required Object count}) => '1 жылы қаңтарда 1 жылы ${count} жылы қаңтады',
+			'fileSources.pageLayout' => 'Page Layout қауымда',
+			'fileSources.automatic' => 'Автоматты',
+			'fileSources.singlePage' => 'Екіп сайын',
+			'fileSources.twoPages' => '2 қаңтар',
+			'fileSources.readingDirection' => 'Жүктеуiң қанақтық',
+			'fileSources.leftToRight' => 'Алдыңғы қабығы',
+			'fileSources.rightToLeft' => 'Олардың дағдыры',
+			'fileSources.letterSpacing' => 'Есімдіктің қағидалар',
+			'fileSources.wordSpacing' => 'Әдеп ұзын',
+			'fileSources.readerControlsHelp' => 'Қандай-ақ, бұл қабырға айналады және қабырға жарыққа ұлыстыратын, қабырға дағдарыстатын, қабаттар дағдарыстырды және қабығы дағдарысды.',
+			'fileSources.imagePage' => 'Комедиялық сайт',
+			'fileSources.resetReader' => 'Жүктесінен репетициясы',
+			'fileSources.zoom' => 'Масштаб',
+			'fileSources.useFiles' => 'Бірінші мезгіл файлы және книги',
+			'fileSources.cancelScan' => 'Сұрақтық Сұрағы',
+			'fileSources.googleDrive' => 'Google Drive',
+			'lending.title' => 'Публикалық библиотекасы',
+			'lending.add' => 'Бібліотекасы көшіру',
+			'lending.other' => 'Бібліотеканың басқа',
+			'lending.libraryName' => 'Бібліотеканың қағидалар',
+			'lending.libraryUrl' => 'Бібліотека сайтында',
+			'lending.libraryUrlHint' => 'Библиотеканың каталогында немесе сайынға дейін көшіру.',
+			'lending.intro' => 'Бібліотекадан көшіру үшін, сіздің книги менің қанаққалыңыз.',
+			'lending.handoff' => 'Бұл үшін, бізге сіздің библиотекасы арқылы сіздің қызметтері бар, сіздің қызметтер бар, сізге сіздің қызмет көрсету үшін сіздің қызметтерді бар.',
+			'lending.openService' => 'Бібліотекасы',
+			'lending.findLibrary' => 'Бібліотеканың тұрады',
+			'lending.search' => 'Бібліотекасы және авторлары',
+			'lending.catalogue' => 'Каталог',
+			'lending.loans' => 'Кредиттер',
+			'lending.holds' => 'Қайта',
+			'lending.signIn' => 'Бібліотеканың ең айқын көрмесі',
+			'lending.waiting' => 'Бұл үшін сіздің браузерде көреген, онда сіздің қосыңызға болады.',
+			'lending.cancel' => 'Бас тарту',
+			'lending.disconnect' => 'Бібліотекасы көтерілу',
+			'lending.disconnectMessage' => 'Бұл бірақтың да оның профильде көреміз? - Сіздің кредит және сіздің библиотекасы бар.',
+			'lending.getBook' => 'Бібліі',
+			'lending.checkAvailability' => 'Қайтанының дағдыры',
+			'lending.available' => 'Керіктің қабығы',
+			'lending.unavailable' => 'Қазіргі таңда қазір',
+			'lending.borrow' => 'Кредиттер',
+			'lending.placeHold' => 'Қазір қазір',
+			'lending.returnBook' => 'Өткен қайтарып',
+			'lending.cancelHold' => 'Абайдың қабығы',
+			'lending.confirmBorrow' => 'Бұл қағидалардан бір-бірінен биліктің қағидалары бар?',
+			'lending.confirmReturn' => 'Бұл үшін бұл қағидалар мен қағидалары мен қағидаталар мен қабақшаларынан тұрады.',
+			'lending.confirmCancelHold' => 'Бұл тийрмелер мен тийрмен таныстырып келдім?',
+			'lending.email' => 'электрондық поштадағы электрондық пошты',
+			'lending.due' => ({required Object date}) => 'Қайтару мерзімі: ${date}',
+			'lending.queue' => ({required Object position}) => 'Қаланың тұрақты тұрғындарының саны ${position}',
+			'lending.empty' => 'Бұл үшін не қазір титул.',
+			'lending.openLibraryNote' => 'Бұл үшін, «Аяқтар» және «Аялық» бағдарламасы, «Аақтар» бағдарламасы және «Аақықтар» жобасы бар.',
+			'lending.more' => 'Өздіктер',
+			'lending.gateway' => 'Библиотекасы қабырғасы',
+			'lending.gatewayHint' => 'Біздің библиотекасы немесе PlezyNG администраторға арналған.',
+			'lending.advanced' => 'Библиотекасы',
+			'lending.loadLibraries' => 'Бібліотека мен биліктері',
+			'lending.expired' => 'Бұл кредиттік қызметті ұзақтығы.',
+			'lending.updated' => 'Бібліотекасы көрету',
+			'lending.continueService' => 'Ақыттық қызмет көрсету',
+			'lending.comingSoon' => '«Апп» бағдарламасы – өте көп',
+			'lending.comingSoonDescription' => 'Бизнес әріптестікке және кооперацияға ұсыныс.',
+			'lending.suspendHold' => 'Жаққалы',
+			'lending.resumeHold' => 'Жүктесі',
+			'lending.suspendMessage' => 'Бұл үшін, бізге сіздің қағидалар мен қағидаларынан тұрады, және сіздің қаһарманның қағидаларын қараңыз?',
+			'lending.resumeMessage' => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлардан тұрады.',
+			'lending.editEmail' => 'электрондық поштадағы электрондық пошты',
 			_ => null,
 		};
 	}

@@ -75,6 +75,7 @@ Future<void> openNowPlaying(BuildContext context) async {
       reverseTransitionDuration: duration,
       pageBuilder: (context, animation, secondaryAnimation) => const NowPlayingScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.disableAnimationsOf(context)) return child;
         final curved = CurvedAnimation(
           parent: animation,
           curve: MonoMotion.emphasized,

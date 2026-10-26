@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'app_icon.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
@@ -25,7 +26,6 @@ import '../utils/formatters.dart';
 import 'cast_member_strip.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
-import 'app_icon.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
   TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})
@@ -212,8 +212,13 @@ class TvSpotlightScaffold extends StatelessWidget {
                       );
                     },
                   ),
-                  builder: (context, animatedBleed, child) =>
-                      Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+                  builder: (context, animatedBleed, child) => PositionedDirectional(
+                    top: 0,
+                    bottom: 0,
+                    start: -animatedBleed,
+                    width: fullBleedWidth,
+                    child: child!,
+                  ),
                 );
               },
             ),
@@ -359,8 +364,8 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final title = widget.hubTitle;
     if (title == null || title.isEmpty) return const SizedBox.shrink();
     final scale = TvLayoutConstants.scaleOf(context);
-    return Positioned(
-      left: widget.contentLeft,
+    return PositionedDirectional(
+      start: widget.contentLeft,
       top: widget.labelTop ?? widget.contentTop,
       child: Text(
         title.toUpperCase(),
@@ -374,18 +379,20 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     );
   }
 
-  Widget _buildChevron(BuildContext context, {required Alignment alignment, required IconData icon}) {
+  Widget _buildChevron(BuildContext context, {required AlignmentDirectional alignment, required IconData icon}) {
     final scale = TvLayoutConstants.scaleOf(context);
     final size = 44 * scale;
     // contentLeft already includes the side nav's reserved width, so the left
     // chevron sits just inside the content area instead of on top of the nav.
-    final isLeft = alignment.x < 0;
+    final isLeft = alignment.start < 0;
     return Align(
       alignment: alignment,
       child: Padding(
         padding: isLeft
-            ? EdgeInsets.only(left: (widget.contentLeft - size - 8 * scale).clamp(16 * scale, double.infinity))
-            : EdgeInsets.only(right: 16 * scale),
+            ? EdgeInsetsDirectional.only(
+                start: (widget.contentLeft - size - 8 * scale).clamp(16 * scale, double.infinity),
+              )
+            : EdgeInsetsDirectional.only(end: 16 * scale),
         child: Container(
           width: size,
           height: size,
@@ -431,16 +438,16 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
         themed,
         _buildHubLabel(context),
         if (widget.showCast && widget.item != null)
-          Positioned(
-            left: widget.contentLeft,
-            right: 0,
+          PositionedDirectional(
+            start: widget.contentLeft,
+            end: 0,
             top: widget.castTop,
             child: _HeroCastRow(item: widget.item!, client: widget.client),
           ),
         if (widget.hasPrevious)
-          _buildChevron(context, alignment: Alignment.centerLeft, icon: Symbols.chevron_left_rounded),
+          _buildChevron(context, alignment: AlignmentDirectional.centerStart, icon: Symbols.chevron_left_rounded),
         if (widget.hasNext)
-          _buildChevron(context, alignment: Alignment.centerRight, icon: Symbols.chevron_right_rounded),
+          _buildChevron(context, alignment: AlignmentDirectional.centerEnd, icon: Symbols.chevron_right_rounded),
       ],
     );
   }
@@ -575,7 +582,7 @@ class TvToolbarOverlay extends StatelessWidget {
       targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
       child: ExcludeFocusTraversal(child: child),
       builder: (context, animatedBleed, child) =>
-          Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+          PositionedDirectional(top: 0, start: -animatedBleed, width: fullBleedWidth, child: child!),
     );
   }
 }

@@ -398,8 +398,14 @@ class MainScreen extends StatefulWidget {
   /// resolved the launch profile prompt — skip the postFrame prompt that
   /// would otherwise re-fire it.
   final bool initialPromptHandled;
+  final bool initialSourceLibrary;
 
-  const MainScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false});
+  const MainScreen({
+    super.key,
+    this.isOfflineMode = false,
+    this.initialPromptHandled = false,
+    this.initialSourceLibrary = false,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -591,6 +597,14 @@ class _MainScreenState extends State<MainScreen>
     _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
         ? preferredStartup
         : null;
+    if (widget.initialSourceLibrary) {
+      _currentTab = NavigationTabId.libraries;
+      _pendingStartupTab = null;
+      _selectedLibraryGlobalKey = 'source:files';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _selectLibrary('source:files');
+      });
+    }
     _mountedTabs.add(_currentTab);
     _screens = _buildScreens(_isOffline);
 
@@ -2489,10 +2503,10 @@ class _MainScreenState extends State<MainScreen>
                         clipBehavior: Clip.hardEdge,
                         children: [
                           Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
-                          Positioned(
+                          PositionedDirectional(
                             top: 0,
                             bottom: 0,
-                            left: contentLayout.left,
+                            start: contentLayout.left,
                             width: contentLayout.width,
                             child: TweenAnimationBuilder<double>(
                               duration: SideNavigationRailState.expandDuration,
@@ -2509,7 +2523,11 @@ class _MainScreenState extends State<MainScreen>
                               // animation so all three track tick for tick.
                               builder: (context, contentLeftPadding, contentChild) {
                                 return Transform.translate(
-                                  offset: Offset(contentLeftPadding - targetContentOffset, 0),
+                                  offset: Offset(
+                                    (contentLeftPadding - targetContentOffset) *
+                                        (Directionality.of(context) == TextDirection.rtl ? -1 : 1),
+                                    0,
+                                  ),
                                   child: contentChild!,
                                 );
                               },
@@ -2528,10 +2546,10 @@ class _MainScreenState extends State<MainScreen>
                               ),
                             ),
                           ),
-                          Positioned(
+                          PositionedDirectional(
                             top: 0,
                             bottom: 0,
-                            left: 0,
+                            start: 0,
                             child: FocusScope(
                               node: _sidebarFocusScope,
                               child: SideNavigationRail(

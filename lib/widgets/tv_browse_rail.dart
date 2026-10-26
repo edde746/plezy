@@ -463,7 +463,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   // hold-repeats — retarget the animation from the row's current offset, so a
   // sustained drag trails the focused index slightly and catches up in one
   // continuous glide on release.
-  static Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration();
+  Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration(context);
   static const _scrollCatchUpViewportDistance = 2.5;
   // Equivalent to the former whole-rail Opacity(0.6) without keeping a
   // full-viewport saveLayer alive.
@@ -1392,14 +1392,18 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                       ),
                     ),
                     Padding(
-                      padding: .fromLTRB(
+                      padding: EdgeInsetsDirectional.fromSTEB(
                         horizontalInset,
                         TvBrowseRailLayout.railTopPaddingForScale(scale),
                         0,
                         TvBrowseRailLayout.railBottomPaddingForScale(scale),
                       ),
                       child: ClipRect(
-                        clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
+                        clipper: _RailClipper(
+                          leftOverflow: horizontalInset,
+                          rightOverflow: 0,
+                          textDirection: Directionality.of(context),
+                        ),
                         child: ExcludeSemantics(
                           // Both axes animate during D-pad navigation. Keeping
                           // the individual headers/cards in the semantics tree
@@ -1424,10 +1428,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                         ),
                       ),
                     ),
-                    Positioned(
-                      left: horizontalInset,
+                    PositionedDirectional(
+                      start: horizontalInset,
                       top: TvBrowseRailLayout.railTopPaddingForScale(scale),
-                      right: 0,
+                      end: 0,
                       height: viewportHeight,
                       child: _buildSemanticSelectionProxy(context),
                     ),
@@ -1738,12 +1742,13 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     final rightOverflow = metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap;
 
     return Transform.translate(
-      offset: Offset(-interactionExpansion, 0),
+      offset: Offset(interactionExpansion * (Directionality.of(context) == TextDirection.rtl ? 1 : -1), 0),
       child: SizedBox(
         width: railViewportWidth,
         height: metrics.height,
         child: ClipRect(
           clipper: _RailClipper(
+            textDirection: Directionality.of(context),
             leftOverflow: leftOverflow,
             rightOverflow: rightOverflow,
             verticalOverflow: metrics.focusExtra,
@@ -1800,10 +1805,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         slivers: [
           if (leadingCount > 0)
             SliverPadding(
-              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, 0, 6 * scale),
+              padding: EdgeInsetsDirectional.fromSTEB(metrics.railEdgePadding, 2 * scale, 0, 6 * scale),
               sliver: SliverToBoxAdapter(
                 child: Align(
-                  alignment: .topLeft,
+                  alignment: AlignmentDirectional.topStart,
                   child: ListenableSelector<bool>(
                     listenable: _focusModel,
                     selector: () => _focusModel.railHasFocus && _focusModel.position == (hubIndex, 0),
@@ -1833,9 +1838,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
                   if (_isTrailingSlot(hub, itemIndex)) {
                     return Padding(
-                      padding: .only(right: metrics.itemGap),
+                      padding: EdgeInsetsDirectional.only(end: metrics.itemGap),
                       child: Align(
-                        alignment: .topLeft,
+                        alignment: AlignmentDirectional.topStart,
                         child: ListenableSelector<bool>(
                           listenable: _focusModel,
                           selector: isItemFocused,
@@ -1953,10 +1958,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     );
 
     return Padding(
-      padding: .only(right: metrics.itemGap),
+      padding: EdgeInsetsDirectional.only(end: metrics.itemGap),
       child: MouseRegion(
         onEnter: (_) => _setHoveredItem(_liveHub(hub, hubIndex), itemIndex),
-        child: Align(alignment: .topLeft, child: focusableCard),
+        child: Align(alignment: AlignmentDirectional.topStart, child: focusableCard),
       ),
     );
   }
@@ -2060,9 +2065,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                     stops: const [0.45, 1.0],
                   ),
                 ),
-                Positioned(
-                  left: 10 * scale,
-                  right: 10 * scale,
+                PositionedDirectional(
+                  start: 10 * scale,
+                  end: 10 * scale,
                   bottom: 9 * scale,
                   child: Column(
                     mainAxisSize: .min,
@@ -2354,7 +2359,7 @@ class _RailBleedPositioned extends StatelessWidget {
       child: child,
       builder: (context, bleedLeft, child) {
         final backgroundWidth = math.max(width + bleedLeft, MediaQuery.sizeOf(context).width);
-        return Positioned(top: 0, bottom: 0, left: -bleedLeft, width: backgroundWidth, child: child!);
+        return PositionedDirectional(top: 0, bottom: 0, start: -bleedLeft, width: backgroundWidth, child: child!);
       },
     );
   }
@@ -2365,8 +2370,10 @@ class _RailClipper extends CustomClipper<Rect> {
   final double rightOverflow;
   final double topOverflow;
   final double bottomOverflow;
+  final TextDirection textDirection;
 
   const _RailClipper({
+    this.textDirection = TextDirection.ltr,
     this.leftOverflow = 0,
     required this.rightOverflow,
     double verticalOverflow = 0,
@@ -2376,12 +2383,17 @@ class _RailClipper extends CustomClipper<Rect> {
        bottomOverflow = bottomOverflow ?? verticalOverflow;
 
   @override
-  Rect getClip(Size size) =>
-      Rect.fromLTRB(-leftOverflow, -topOverflow, size.width + rightOverflow, size.height + bottomOverflow);
+  Rect getClip(Size size) => Rect.fromLTRB(
+    -(textDirection == TextDirection.rtl ? rightOverflow : leftOverflow),
+    -topOverflow,
+    size.width + (textDirection == TextDirection.rtl ? leftOverflow : rightOverflow),
+    size.height + bottomOverflow,
+  );
 
   @override
   bool shouldReclip(covariant _RailClipper oldClipper) {
-    return oldClipper.leftOverflow != leftOverflow ||
+    return oldClipper.textDirection != textDirection ||
+        oldClipper.leftOverflow != leftOverflow ||
         oldClipper.rightOverflow != rightOverflow ||
         oldClipper.topOverflow != topOverflow ||
         oldClipper.bottomOverflow != bottomOverflow;

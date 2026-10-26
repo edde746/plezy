@@ -25,6 +25,7 @@ import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../database/app_database.dart';
 import '../screens/main_screen.dart';
+import '../screens/sources/source_player_screen.dart';
 import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
 import '../services/agent_control_service.dart';
@@ -68,21 +69,27 @@ CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
 /// from taking focus: nested routes still read as current, so their focus
 /// self-heals would otherwise pull the remote behind the covering route.
 class ProfileSessionScreen extends StatefulWidget {
-  const ProfileSessionScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false})
-    : profileShellBuilder = null,
-      trackerHttpClientFactory = null;
+  const ProfileSessionScreen({
+    super.key,
+    this.isOfflineMode = false,
+    this.initialPromptHandled = false,
+    this.initialSourceLibrary = false,
+  }) : profileShellBuilder = null,
+       trackerHttpClientFactory = null;
 
   @visibleForTesting
   const ProfileSessionScreen.forTesting({
     super.key,
     this.isOfflineMode = false,
     this.initialPromptHandled = false,
+    this.initialSourceLibrary = false,
     required this.profileShellBuilder,
     required http.Client Function() httpClientFactory,
   }) : trackerHttpClientFactory = httpClientFactory;
 
   final bool isOfflineMode;
   final bool initialPromptHandled;
+  final bool initialSourceLibrary;
   final WidgetBuilder? profileShellBuilder;
   final http.Client Function()? trackerHttpClientFactory;
 
@@ -314,6 +321,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 child: _ProfileSessionNavigator(
                   isOfflineMode: widget.isOfflineMode,
                   initialPromptHandled: initialPromptHandled,
+                  initialSourceLibrary: widget.initialSourceLibrary,
                   profileShellBuilder: widget.profileShellBuilder,
                 ),
               ),
@@ -329,11 +337,13 @@ class _ProfileSessionNavigator extends StatefulWidget {
   const _ProfileSessionNavigator({
     required this.isOfflineMode,
     required this.initialPromptHandled,
+    required this.initialSourceLibrary,
     required this.profileShellBuilder,
   });
 
   final bool isOfflineMode;
   final bool initialPromptHandled;
+  final bool initialSourceLibrary;
   final WidgetBuilder? profileShellBuilder;
 
   @override
@@ -412,6 +422,18 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                       onGenerateRoute: _onGenerateRoute,
                     ),
                     const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                    Positioned.fill(
+                      child: SourceMiniPlayer(
+                        onOpen: () {
+                          _navigatorKey.currentState?.push(
+                            MaterialPageRoute(
+                              settings: const RouteSettings(name: 'source-player'),
+                              builder: (_) => const SourcePlayerScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -435,7 +457,11 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
       settings: settings,
       builder: (context) =>
           widget.profileShellBuilder?.call(context) ??
-          MainScreen(isOfflineMode: widget.isOfflineMode, initialPromptHandled: widget.initialPromptHandled),
+          MainScreen(
+            isOfflineMode: widget.isOfflineMode,
+            initialPromptHandled: widget.initialPromptHandled,
+            initialSourceLibrary: widget.initialSourceLibrary,
+          ),
     );
   }
 }

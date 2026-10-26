@@ -14,13 +14,21 @@ class ByteFormatter {
   ByteFormatter._();
 
   // Preserve the established English symbols while other languages use CLDR.
-  static const _englishSymbols = {'byte': 'B', 'kilobyte': 'KB', 'megabyte': 'MB', 'gigabyte': 'GB',
-    'byte-per-second': 'B/s', 'kilobyte-per-second': 'KB/s', 'megabyte-per-second': 'MB/s',
-    'kilobit-per-second': 'kbps', 'megabit-per-second': 'Mbps'};
+  static const _englishSymbols = {
+    'byte': 'B',
+    'kilobyte': 'KB',
+    'megabyte': 'MB',
+    'gigabyte': 'GB',
+    'byte-per-second': 'B/s',
+    'kilobyte-per-second': 'KB/s',
+    'megabyte-per-second': 'MB/s',
+    'kilobit-per-second': 'kbps',
+    'megabit-per-second': 'Mbps',
+  };
   static String _dataUnit(num value, String unit, {int decimals = 0}) =>
       LocaleSettings.currentLocale.languageCode == 'en'
-        ? '${formatDecimal(value, minimumDecimals: decimals, maximumDecimals: decimals)} ${_englishSymbols[unit]}'
-        : formatLocalizedUnit(value, unit, width: 'short', decimals: decimals);
+      ? '${formatDecimal(value, minimumDecimals: decimals, maximumDecimals: decimals)} ${_englishSymbols[unit]}'
+      : formatLocalizedUnit(value, unit, width: 'short', decimals: decimals);
 
   static const int _kb = 1024;
   static const int _mb = _kb * 1024;
@@ -40,10 +48,8 @@ class ByteFormatter {
     return _dataUnit(bytesPerSecond / _mb, 'megabyte-per-second', decimals: 1);
   }
 
-  static String formatBitrate(int kbps) => kbps < 1000
-      ? _dataUnit(kbps, 'kilobit-per-second')
-      : _dataUnit(kbps / 1000, 'megabit-per-second', decimals: 1);
-
+  static String formatBitrate(int kbps) =>
+      kbps < 1000 ? _dataUnit(kbps, 'kilobit-per-second') : _dataUnit(kbps / 1000, 'megabit-per-second', decimals: 1);
 }
 
 /// Formats a duration in human-readable textual format (e.g., "1h 23m" or "1 hour 23 minutes").
@@ -71,7 +77,7 @@ String _formatDurationUnits(Duration duration, {required bool abbreviated, requi
     if ((includeSeconds && seconds > 0) || (hours == 0 && minutes == 0))
       formatLocalizedUnit(seconds, 'second', width: width),
   ];
-  return '${duration.isNegative ? '−' : ''}${parts.join(abbreviated ? ' ' : ', ')}';
+  return '${duration.isNegative ? '−' : ''}${formatUnitList(parts, abbreviated: abbreviated)}';
 }
 
 /// Formats a duration in timestamp format (e.g., "1:23:45" or "23:45").
@@ -138,10 +144,16 @@ String toBulletedString(List<String> parts) {
 
 String? formatSeasonEpisodeLabel(int? season, int? episode) {
   if (season == null || episode == null) return null;
-  return 'S$season E$episode';
+  return t.discover.playEpisode(
+    season: formatDecimal(season, maximumDecimals: 0),
+    episode: formatDecimal(episode, maximumDecimals: 0),
+  );
 }
 
 String formatRating(double value) => formatDecimal(value, maximumDecimals: 1);
+
+String formatDateTime(DateTime value) =>
+    DateFormat.yMMMd(LocalePreferences.formattingLocaleName).add_jm().format(value.toLocal());
 
 /// Format a playback rate for display (e.g. 1.25 → "1.25x", 2.0 → "2x").
 /// When [normalAtOne] is true, 1.0 renders with the localized normal-speed

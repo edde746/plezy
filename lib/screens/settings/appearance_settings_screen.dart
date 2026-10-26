@@ -19,6 +19,7 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
+import 'accessibility_settings_screen.dart';
 import 'home_layout_settings_screen.dart';
 import 'content_screensaver_libraries_screen.dart';
 import 'settings_utils.dart';
@@ -47,6 +48,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
           children: [
             _themeSelector(),
             if (AppIconSetting.isShown(context)) const AppIconSetting(),
+            SettingNavigationTile(
+              icon: Symbols.accessibility_new_rounded,
+              title: t.accessibility.title,
+              subtitle: t.accessibility.summary,
+              destinationBuilder: (_) => const AccessibilitySettingsScreen(),
+            ),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
           ],
@@ -351,7 +358,10 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Text(t.settings.displayScale, style: settingsOptionTitleStyle(context)),
                   const Spacer(),
-                  Text('${formatDecimal(scale, minimumDecimals: 2, maximumDecimals: 2)}×', style: Theme.of(context).textTheme.bodyMedium),
+                  Text(
+                    '${formatDecimal(scale, minimumDecimals: 2, maximumDecimals: 2)}×',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -384,7 +394,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Text(t.settings.themeSongVolume, style: settingsOptionTitleStyle(context)),
                   const Spacer(),
-                  Text('${volume.round()}%', style: Theme.of(context).textTheme.bodyMedium),
+                  Text(formatPercent(volume / 100), style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const SizedBox(height: 12),

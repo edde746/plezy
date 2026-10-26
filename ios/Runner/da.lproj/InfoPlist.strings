@@ -1,5 +1,5 @@
 // Generated from lib/i18n; edit the source catalog.
-"NSLocalNetworkUsageDescription" = "PlezyNG connects to your media servers and playback devices on your local network.";
-"NSLocationWhenInUseUsageDescription" = "PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.";
-"NSPhotoLibraryUsageDescription" = "Choose images from your photo library to use as media artwork.";
-"NSCameraUsageDescription" = "Scan QR codes to pair a Companion Remote.";
+"NSLocalNetworkUsageDescription" = "PlezyNG forbinder til dine medie- og playback-enheder på dit lokale netværk.";
+"NSLocationWhenInUseUsageDescription" = "PlezyNG bruger lokationsindgang, når iOS kræver det for at opdage dit lokale netværk og tilslutte sig dine medie servere.";
+"NSPhotoLibraryUsageDescription" = "Vælg billeder fra din fotobibliotek til at bruge som medie kunstværk.";
+"NSCameraUsageDescription" = "Skan QR-koder til at parere en Companion Remote.";

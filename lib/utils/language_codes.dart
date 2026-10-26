@@ -39,8 +39,8 @@ class LanguageCodes {
     return _resolve(normalized)?.code2;
   }
 
-  static Map<String, String> get _names => localizedLanguageNames[LocaleSettings.currentLocale.languageTag]
-      ?? localizedLanguageNames['en']!;
+  static Map<String, String> get _names =>
+      localizedLanguageNames[LocaleSettings.currentLocale.languageTag] ?? localizedLanguageNames['en']!;
 
   /// Localized language, script and territory names; accepts BCP-47 tags and
   /// legacy underscore tags without dropping a Chinese script or region.

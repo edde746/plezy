@@ -74,7 +74,11 @@ jobs:
         run: scripts/codegen.sh --check
 
       - name: Verify translation hygiene
-        run: python3 scripts/checks/clean_translations.py --check --strict
+        run: |
+          python3 scripts/checks/clean_translations.py --check --strict
+          python3 scripts/checks/check_localizations.py
+          python3 scripts/codegen/generate_localized_quantities.py --check
+          python3 scripts/codegen/generate_platform_locales.py --check
 
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh
@@ -456,14 +460,23 @@ jobs:
 
       - name: Run Apple native reliability tests
         run: |
+          result_bundle="$RUNNER_TEMP/apple-native-reliability.xcresult"
+          set +e
           xcodebuild test \
             -workspace "${{ matrix.workspace }}" \
             -scheme Runner \
             -configuration Debug \
             -destination "$APPLE_TEST_DESTINATION" \
             -disableAutomaticPackageResolution \
+            -resultBundlePath "$result_bundle" \
             CODE_SIGNING_ALLOWED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO
+          test_status=$?
+          set -e
+          if [ "$test_status" -ne 0 ]; then
+            xcrun xcresulttool get test-results tests --path "$result_bundle"
+          fi
+          exit "$test_status"
 
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})

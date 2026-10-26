@@ -4,9 +4,16 @@
 
 ### Added
 
+- Add Arabic, Persian, Hebrew, Bengali, Hindi, Indonesian, Malay, Thai, Vietnamese, Czech and Ukrainian interfaces, with regional Spanish, French and Portuguese catalogs.
+- Add searchable language controls, independent regional formatting and metadata-language preferences, and Android system app-language synchronization.
+- Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.
-- Use the new nested-triangle PlezyNG artwork as the high-resolution app icon and Google Play listing icon.
+- Use the new nested-triangle PlezyNG artwork as the default app icon across platforms and in store listings.
+- Add a public privacy notice and link to it from the app's About screen.
+- Add ebooks, comics and multipart audiobooks with reading preferences, zoom, notes, offline editions and separate progress; connect local files, OPDS, Audiobookshelf, Google Drive, OneDrive, Dropbox, WebDAV and S3-compatible storage.
+- Add public-library discovery and service handoffs, with OverDrive/Libby circulation prepared behind a default-off Coming soon release flag.
+- Add app-wide accessibility preferences for text size, bold text, contrast, reduced motion and larger shared controls; improve keyboard slider navigation and reader affordances.
 - Add configurable skipping for Plex-detected commercial markers, six original animated visualizer styles, and opt-in loudness-aware music fades.
 - Add converted download quality for Jellyfin and Emby, and let sync rules keep their own quality preset.
 - Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.
@@ -43,6 +50,7 @@
 
 ### Security
 
+- Clarify that the publication reader's local WebSocket bridge is restricted to loopback and a per-session capability.
 - Restrict OAuth authorization redirects to configured provider hosts, preserve relay error status for log downloads, and remove the bundled Trakt client secret.
 - Update the relay to Go 1.27.3 for GO-2026-6809 and refresh its immutable container pin.
 
@@ -54,6 +62,8 @@
 
 ### Changed
 
+- Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
+- Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.
 - Format the download and screensaver library views with Flutter's configured Dart formatter.
@@ -62,10 +72,19 @@
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
 - Refresh package and store descriptions to explain PlezyNG's Plex client features.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
+- Record the current Google Play foreground-service demo links and release-run results in the channel guide.
 - Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
 - Fix music fade gain handling across track transitions and avoid visualizer profile requests before the active track is ready.
+
+### Fixed
+
+- Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
+- Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
+- Localize the About screen privacy-policy link.
+- Cover AVFoundation speed flush ordering deterministically when simulator audio is unavailable.
+- Keep unsigned macOS release builds available when only the shared mobile Apple team ID is configured.
 
 ### Removed
 

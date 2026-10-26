@@ -1,3 +1,4 @@
+import '../i18n/presentation_formats.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -249,7 +250,7 @@ class _VersionBlock extends StatelessWidget {
       _InfoField.text(t.fileInfo.transportTimestamp, version.transportStreamTimestamp),
       _InfoField.text(
         t.fileInfo.displayOffset,
-        version.displayOffsetPercent == null ? null : '${version.displayOffsetPercent}%',
+        version.displayOffsetPercent == null ? null : formatPercent(version.displayOffsetPercent! / 100),
       ),
       _InfoField.boolean(t.fileInfo.remoteSource, version.isRemote),
       _InfoField.boolean(t.fileInfo.infiniteStream, version.isInfiniteStream),

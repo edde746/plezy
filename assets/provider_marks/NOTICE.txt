@@ -1,0 +1,13 @@
+Provider names and artwork identify the services to which PlezyNG can connect or hand off. They do not imply endorsement, affiliation, or unrestricted rights to reuse the artwork.
+
+Google Drive is a trademark of Google LLC. The unmodified product icon is provided by Google's Drive branding guide for integrations: https://developers.google.com/workspace/drive/api/guides/branding
+
+Dropbox and its logo are trademarks of Dropbox, Inc. The unmodified glyph identifies Dropbox integration functionality under its developer branding guidance: https://docs.dropboxapi.com/dropbox-api/docs/developer-resources/branding-guide
+
+Microsoft and OneDrive are trademarks of the Microsoft group of companies. The Microsoft sign-in symbol is supplied by Microsoft's identity platform branding guidance: https://learn.microsoft.com/en-us/entra/identity-platform/howto-add-branding-in-apps
+The OneDrive product icon is supplied from Microsoft's product-icon CDN and identifies the OneDrive connection. Microsoft trademark guidelines apply: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks
+
+Libby and OverDrive are trademarks of OverDrive, Inc. The Libby icon is the unmodified white-outline PNG from OverDrive's official Libby website-assets kit. The OverDrive wordmark is the official white SVG, used only on dark surfaces. https://resources.overdrive.com/library/marketing-outreach-community/libby-website-assets/
+These assets are used to identify and link to the services. This does not assert partner or API approval. Confirm partner branding terms with OverDrive before enabling native circulation in a production release.
+
+sources.json records the exact official asset locations and SHA-256 hashes. No provider artwork has been recoloured, redrawn, or used as PlezyNG's app identity. Generic protocols (WebDAV, OPDS, S3-compatible storage) use PlezyNG's existing Material Symbols; they do not imply a particular vendor.

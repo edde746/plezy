@@ -95,6 +95,35 @@ void main() {
     expect(settings.read(SettingsService.volume), 65);
   });
 
+  testWidgets('RTL D-pad volume follows the mirrored slider', (tester) async {
+    final settings = SettingsService.instance;
+    final player = _VolumePlayer(50);
+    final controller = VideoVolumeController(player: player, settings: settings, initialVolume: 50);
+    final focus = FocusNode();
+    addTearDown(controller.dispose);
+    addTearDown(focus.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+        home: Scaffold(
+          body: VolumeControl(volumeController: controller, focusNode: focus),
+        ),
+      ),
+    );
+    focus.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await controller.idle;
+    await tester.pump();
+    expect(controller.value, 55);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await controller.idle;
+    await tester.pump();
+    expect(controller.value, 50);
+  });
+
   testWidgets('slider previews are serialized and only the final drag value persists', (tester) async {
     final settings = SettingsService.instance;
     await settings.write(SettingsService.volume, 50.0);

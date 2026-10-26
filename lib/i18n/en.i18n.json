@@ -329,9 +329,15 @@
     "smallSkipDuration": "Small Skip Duration",
     "largeSkipDuration": "Large Skip Duration",
     "rewindOnResume": "Rewind on Resume",
-    "secondsUnit": "${seconds} seconds",
+    "secondsUnit(param=seconds)": {
+      "other": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} seconds",
+      "one": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} second"
+    },
     "defaultSleepTimer": "Default Sleep Timer",
-    "minutesUnit": "${minutes} minutes",
+    "minutesUnit(param=minutes)": {
+      "other": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
     "rememberTrackSelections": "Remember track selections per show/movie",
     "chooseTracksBeforePlayback": "Choose audio and subtitles before playback",
     "chooseTracksBeforePlaybackDescription": "Pick the source audio and subtitle tracks before each video starts.",
@@ -856,16 +862,16 @@
     "confirmDeleteTarget": "Permanently delete ${title} from your server?",
     "deleteMultipleWarning": "This includes all episodes and their files.",
     "deleteEpisodeCountWarning": {
-      "one": "This deletes all ${n} episode in it, and its file.",
-      "other": "This deletes all ${n} episodes in it, and their files."
+      "one": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode in it, and its file.",
+      "other": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes in it, and their files."
     },
     "deleteMultiPartWarning": {
-      "one": "This item is stored as ${n} file, which will be deleted.",
-      "other": "This item is stored across ${n} files, and all of them will be deleted."
+      "one": "This item is stored as ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} file, which will be deleted.",
+      "other": "This item is stored across ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} files, and all of them will be deleted."
     },
     "deleteSharedFileHeading": {
-      "one": "${n} other episode is stored in the same file and will be deleted too:",
-      "other": "${n} other episodes are stored in the same file and will be deleted too:"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episode is stored in the same file and will be deleted too:",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episodes are stored in the same file and will be deleted too:"
     },
     "deleteScopeUnverifiedProbeFailed": "PlezyNG could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.",
     "deleteScopeUnverifiedNoFileInfo": "Your server did not provide file details for this item, so PlezyNG cannot check which files this will remove. It may delete more than the item named above.",
@@ -919,7 +925,22 @@
     "greenShort": "G",
     "blueShort": "B",
     "colorModeHsv": "HSV",
-    "colorModeRgb": "RGB"
+    "colorModeRgb": "RGB",
+    "title": "Accessibility",
+    "summary": "Text, contrast, motion and controls",
+    "systemHint": "Your device’s accessibility settings always apply. These options add adjustments throughout PlezyNG.",
+    "readability": "Reading and visibility",
+    "textSize": "Additional text size",
+    "preview": "Find your next story. Read, listen and watch at your own pace.",
+    "boldText": "Bold interface text",
+    "highContrast": "High contrast",
+    "highContrastHint": "Stronger text, outlines and focus indicators on light or dark surfaces.",
+    "interaction": "Motion and interaction",
+    "reduceMotion": "Reduce motion",
+    "reduceMotionHint": "Keep focus, page transitions and decorative effects still.",
+    "largeTargets": "Larger touch targets",
+    "largeTargetsHint": "Give shared controls more room for touch and assistive navigation.",
+    "navigationHint": "Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open."
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -932,8 +953,8 @@
   },
   "videoControls": {
     "frameCount": {
-      "one": "${n} frame",
-      "other": "${n} frames"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames"
     },
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
@@ -1043,8 +1064,8 @@
     "markedAsUnwatchedOffline": "Marked as unwatched (will sync when online)",
     "autoRemovedWatchedDownload": "Auto-removed: ${title}",
     "autoRemovedWatchedDownloads": {
-      "one": "Auto-removed ${n} watched download",
-      "other": "Auto-removed ${n} watched downloads"
+      "one": "Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched download",
+      "other": "Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched downloads"
     },
     "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
@@ -1343,8 +1364,8 @@
     "minutesLeft": "${minutes} min left",
     "moreLikeThis": "More Like This",
     "titleCount": {
-      "one": "${n} title",
-      "other": "${n} titles"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} title",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} titles"
     },
     "person": {
       "born": "Born",
@@ -1516,7 +1537,8 @@
     "openSourceLicenses": "Open Source Licenses",
     "versionLabel": "Version ${version}",
     "appDescription": "A beautiful Plex, Jellyfin, and Emby client for Flutter",
-    "viewLicensesDescription": "View licenses of third-party libraries"
+    "viewLicensesDescription": "View licenses of third-party libraries",
+    "privacyPolicy": "Privacy Policy"
   },
   "serverSelection": {
     "noServersFoundForAccount": "No servers found for ${username} (${email})",
@@ -1631,8 +1653,8 @@
       "upcoming": "Upcoming"
     },
     "episodeCount": {
-      "one": "${n} episode",
-      "other": "${n} episodes"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes"
     },
     "cast": "Cast",
     "characters": "Characters",
@@ -1646,8 +1668,8 @@
     "inTheseLibraries": "In these libraries",
     "checkingLibrary": "Checking your library...",
     "libraryCheckFailed": {
-      "one": "Couldn't check ${n} server",
-      "other": "Couldn't check ${n} servers"
+      "one": "Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} server",
+      "other": "Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} servers"
     },
     "emptyTitle": "Nothing here yet",
     "emptyMessage": "Rows from ${source} will appear here once they have content.",
@@ -1689,8 +1711,8 @@
       "favorited": "${n} favorites",
       "dropRate": "${percent} dropped it",
       "comments": {
-        "one": "${n} comment",
-        "other": "${n} comments"
+        "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comment",
+        "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comments"
       },
       "votes": "${n} votes",
       "watching": "${n} watching it",
@@ -1771,8 +1793,8 @@
       "ratings": "Ratings",
       "schedule": "Schedule",
       "recommendedByUsers": {
-        "one": "Recommended by ${n} user",
-        "other": "Recommended by ${n} users"
+        "one": "Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} user",
+        "other": "Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} users"
       },
       "recommendedBy": "Recommended by ${who}",
       "favoritedBy": "Favorited by ${who}",
@@ -1782,8 +1804,8 @@
       "background": "Background"
     },
     "totalResults": {
-      "one": "${n} result",
-      "other": "${n} results"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} result",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} results"
     }
   },
   "liveTv": {
@@ -1921,8 +1943,10 @@
     "delete": "Delete Playlist",
     "removeItem": "Remove from Playlist",
     "smartPlaylist": "Smart Playlist",
-    "itemCount": "${count} items",
-    "oneItem": "1 item",
+    "itemCount(param=count)": {
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} item",
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} items"
+    },
     "emptyPlaylist": "This playlist is empty",
     "deleteConfirm": "Delete Playlist?",
     "deleteMessage": "Are you sure you want to delete \"${name}\"?",
@@ -1947,8 +1971,8 @@
     "addToQueue": "Add to queue",
     "discNumber": "Disc ${n}",
     "trackCount": {
-      "one": "${n} track",
-      "other": "${n} tracks"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} track",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} tracks"
     },
     "nowPlaying": "Now Playing",
     "playingFrom": "Playing from ${title}",
@@ -1970,7 +1994,10 @@
     "noLyrics": "No lyrics available",
     "sleepTimer": "Sleep timer",
     "sleepTimerEndOfTrack": "End of track",
-    "sleepTimerMinutes": "${n} minutes",
+    "sleepTimerMinutes": {
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
     "stopPlayback": "Stop playback",
     "previousTrack": "Previous track",
     "nextTrack": "Next track",
@@ -2057,8 +2084,8 @@
     "offsetPlusSecond": "+1 s",
     "participants": "Participants",
     "participantCount": {
-      "one": "${n} participant",
-      "other": "${n} participants"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participant",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participants"
     },
     "hostBadge": "HOST",
     "nameYou": "${name} (You)",
@@ -2281,20 +2308,20 @@
     "completedOfTotal": "${completed}/${total} completed",
     "storageUsed": "Storage used: ${size}",
     "downloadCount": {
-      "one": "${n} download",
-      "other": "${n} downloads"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} download",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} downloads"
     },
     "showCount": {
-      "one": "${n} show",
-      "other": "${n} shows"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} show",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} shows"
     },
     "movieCount": {
-      "one": "${n} movie",
-      "other": "${n} movies"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movie",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movies"
     },
     "albumCount": {
-      "one": "${n} album",
-      "other": "${n} albums"
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} album",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} albums"
     },
     "errorFileNotFound": "File not found (404)",
     "errorDownloadNotAllowed": "Download not allowed by the server (403)",
@@ -2909,5 +2936,223 @@
     "locationPermission": "PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.",
     "photoLibraryPermission": "Choose images from your photo library to use as media artwork.",
     "cameraPermission": "Scan QR codes to pair a Companion Remote."
+  },
+  "fileSources": {
+    "title": "Files and books",
+    "subtitle": "Read, listen, and watch from your own files.",
+    "add": "Add source",
+    "importFiles": "Import files",
+    "localFiles": "On this device",
+    "source": "Source",
+    "name": "Name",
+    "endpoint": "Server URL",
+    "root": "Folder or prefix",
+    "username": "Username",
+    "password": "Password",
+    "token": "API token",
+    "accessKey": "Access key ID",
+    "secretKey": "Secret access key",
+    "sessionToken": "Session token (optional)",
+    "region": "Region",
+    "clientId": "OAuth client ID",
+    "clientSecret": "OAuth client secret (desktop Google only)",
+    "allowHttp": "Allow unencrypted HTTP on a trusted network",
+    "connect": "Connect",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "removeSource": "Disconnect source",
+    "disconnectMessage": "Disconnect this source? Downloaded files and your reading and listening history will stay on this device.",
+    "localFolder": "Choose folder",
+    "empty": "Nothing here yet",
+    "emptyHint": "Add a source or import a book, audiobook, music, or video.",
+    "search": "Search this folder",
+    "searchCached": "Search saved library",
+    "refresh": "Refresh",
+    "loadMore": "Load more",
+    "offline": "Available offline",
+    "download": "Keep offline",
+    "removeDownload": "Remove offline copy",
+    "continueReading": "Continue reading",
+    "continueListening": "Continue listening",
+    "continueWatching": "Continue watching",
+    "read": "Read",
+    "listen": "Listen",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "startOver": "Start over",
+    "finished": "Finished",
+    "markFinished": "Mark finished",
+    "markUnfinished": "Mark unfinished",
+    "editions": "Editions and files",
+    "chapters": "Chapters",
+    "bookmarks": "Bookmarks and notes",
+    "bookmark": "Add bookmark",
+    "highlight": "Highlight",
+    "note": "Note",
+    "delete": "Delete",
+    "export": "Export notes",
+    "exported": "Notes exported",
+    "sync": "Sync progress",
+    "synced": "Progress synced",
+    "conflict": "Another device has a different position. Choose where to continue.",
+    "useLocal": "Use this device",
+    "useRemote": "Use other device",
+    "history": "Position history",
+    "groupAudio": "Listen as one audiobook",
+    "groupHint": "Combines the audio files currently loaded in this folder. Load all pages first.",
+    "order": "File order",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "speed": "Playback speed",
+    "sleep": "Sleep timer",
+    "sleepOff": "Off",
+    "endChapter": "End of chapter",
+    "minutes(param=count)": {
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes",
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute"
+    },
+    "skipBack": "Skip back",
+    "skipForward": "Skip forward",
+    "smartRewind": "Smart rewind after a pause",
+    "playbackOptions": "Listening options",
+    "remaining": "${time} remaining",
+    "contents": "Contents",
+    "readerSettings": "Reading settings",
+    "fontSize": "Text size",
+    "lineHeight": "Line spacing",
+    "margin": "Margins",
+    "font": "Typeface",
+    "serif": "Serif",
+    "sans": "Sans serif",
+    "mono": "Monospace",
+    "columns": "Columns",
+    "scroll": "Scroll vertically",
+    "justify": "Justify text",
+    "readerTheme": "Page appearance",
+    "appTheme": "Follow app theme",
+    "paper": "Paper",
+    "sepia": "Sepia",
+    "night": "Night",
+    "readAloud": "Read this page aloud",
+    "readAlong": "Read along",
+    "stopReading": "Stop narration",
+    "searchBook": "Search in book",
+    "noMatches": "No matches",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page ${number}",
+    "externalBlocked": "External book links are disabled in the reader.",
+    "loading": "Opening…",
+    "narrator": "Narrator",
+    "audio": "Audio",
+    "video": "Video",
+    "ebooks": "Ebooks",
+    "all": "All",
+    "downloads": "Offline files",
+    "confirmDelete": "Remove the selected offline copy? Your position and notes will stay.",
+    "errorAuthentication": "Sign in again to reconnect this source.",
+    "errorPermission": "This source did not grant access to the requested file.",
+    "errorUnavailable": "The source is unavailable. Try again, or open an offline copy.",
+    "errorUnsupported": "This format or connection is not supported on this device. Check the source setup guide.",
+    "errorInvalidData": "This file or server response could not be read safely.",
+    "errorCancelled": "The operation was cancelled.",
+    "errorConflict": "The position changed in another session. Reopen the item to choose a position.",
+    "signIn": "Sign in",
+    "reconnect": "Reconnect",
+    "folderHelp": "Leave blank to start at the source root. S3 URLs include the bucket.",
+    "preferences": "Preferences",
+    "timePosition": "Position",
+    "audioTrack": "Audio track",
+    "subtitleTrack": "Subtitle track",
+    "none": "None",
+    "fullscreen": "Full screen",
+    "syncLocation": "Progress sync folder (optional)",
+    "syncLocationHint": "A dedicated WebDAV folder for PlezyNG state. Uses conditional writes; media stays unchanged.",
+    "audiobooks": "Audiobooks",
+    "comics": "Comics",
+    "scan": "Scan for books and media",
+    "browserReader": "Open reader",
+    "browserReaderHelp": "The reader is open in your browser. Keep PlezyNG open to save your place and notes.",
+    "on": "On",
+    "advancedSetup": "App registration",
+    "microsoftSignIn": "Sign in with Microsoft",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitPage": "Fit page",
+    "fitWidth": "Fit width",
+    "actualSize": "Actual size",
+    "goToPage": "Go to page",
+    "goToSection": "Go to chapter",
+    "pageRange": "Enter a number from 1 to $count",
+    "pageLayout": "Page layout",
+    "automatic": "Automatic",
+    "singlePage": "Single page",
+    "twoPages": "Two pages",
+    "readingDirection": "Reading direction",
+    "leftToRight": "Left to right",
+    "rightToLeft": "Right to left",
+    "letterSpacing": "Letter spacing",
+    "wordSpacing": "Word spacing",
+    "readerControlsHelp": "Pinch or use zoom controls to enlarge pages. Drag to pan. Ctrl/⌘ + or − adjusts zoom; Ctrl/⌘ 0 resets it. Page Up and Page Down turn pages.",
+    "imagePage": "Comic page",
+    "resetReader": "Reset reading preferences",
+    "zoom": "Zoom",
+    "useFiles": "Use files and books",
+    "cancelScan": "Cancel scan",
+    "googleDrive": "Google Drive"
+  },
+  "lending": {
+    "title": "Public libraries",
+    "add": "Add a library",
+    "other": "Another library",
+    "libraryName": "Library name",
+    "libraryUrl": "Library website",
+    "libraryUrlHint": "Use your library’s catalogue or sign-in page.",
+    "intro": "Borrow from your library. Keep your books close.",
+    "handoff": "Sign in, borrow and read securely with your library’s own service.",
+    "openService": "Open library",
+    "findLibrary": "Find a library",
+    "search": "Search books and authors",
+    "catalogue": "Catalogue",
+    "loans": "Loans",
+    "holds": "Holds",
+    "signIn": "Sign in with your library",
+    "waiting": "Finish signing in in your browser, then return here.",
+    "cancel": "Cancel",
+    "disconnect": "Remove library",
+    "disconnectMessage": "Remove this library from this profile? Your loans and holds stay with your library.",
+    "getBook": "Get book",
+    "checkAvailability": "Check availability",
+    "available": "Available to borrow",
+    "unavailable": "Currently unavailable",
+    "borrow": "Borrow",
+    "placeHold": "Place hold",
+    "returnBook": "Return early",
+    "cancelHold": "Cancel hold",
+    "confirmBorrow": "Borrow this title from your library?",
+    "confirmReturn": "Return this title now? You may need to borrow it again to continue.",
+    "confirmCancelHold": "Remove your hold on this title?",
+    "email": "Hold notification email",
+    "due": "Due $date",
+    "queue": "Position $position in line",
+    "empty": "No titles here yet.",
+    "openLibraryNote": "Explore Open Library’s catalogue. Reading and borrowing options are shown on each title’s page.",
+    "more": "Load more",
+    "gateway": "Library sign-in service",
+    "gatewayHint": "Provided by your library or the PlezyNG administrator.",
+    "advanced": "Library integration",
+    "loadLibraries": "Choose your library",
+    "expired": "This loan has expired.",
+    "updated": "Library updated",
+    "continueService": "Continue in service",
+    "comingSoon": "In-app borrowing · Coming soon",
+    "comingSoonDescription": "Libby integration is on its way. You can use your library in Libby while we finish connecting it.",
+    "suspendHold": "Suspend hold",
+    "resumeHold": "Resume hold",
+    "suspendMessage": "Keep your place in line and let the next reader borrow this copy? You can resume the hold later.",
+    "resumeMessage": "Resume this hold so your library can offer you the next available copy?",
+    "editEmail": "Change notification email"
   }
 }

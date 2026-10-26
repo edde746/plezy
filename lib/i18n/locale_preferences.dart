@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
@@ -29,8 +28,11 @@ class LocalePreferences {
     } else {
       final app = LocaleSettings.currentLocale;
       // Keep regional conventions when the device and chosen UI language agree.
-      final matchingDevice = device.where((locale) => locale.languageCode == app.languageCode &&
-          (app.languageCode != 'zh' || resolvePreferredAppLocale([locale]) == app));
+      final matchingDevice = device.where(
+        (locale) =>
+            locale.languageCode == app.languageCode &&
+            (app.languageCode != 'zh' || resolvePreferredAppLocale([locale]) == app),
+      );
       requested = app.countryCode == null && matchingDevice.isNotEmpty
           ? matchingDevice.first.toLanguageTag().replaceAll('-', '_')
           : app.intlLocaleName;
@@ -49,9 +51,8 @@ class LocalePreferences {
     final next = _pending.catchError((Object _) {}).then((_) async {
       final settings = SettingsService.instanceOrNull;
       if (settings != null) await PlatformLocaleSync.synchronize(settings);
-      final locale = settings?.read(SettingsService.appLocale) ?? resolvePreferredAppLocale(
-        AppLocaleEnvironment.deviceLocales,
-      );
+      final locale =
+          settings?.read(SettingsService.appLocale) ?? resolvePreferredAppLocale(AppLocaleEnvironment.deviceLocales);
       await LocaleSettings.setLocale(locale);
       await initializeDateFormatting();
       Intl.defaultLocale = formattingLocaleName;

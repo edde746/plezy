@@ -1,3 +1,6 @@
+import '../screens/sources/source_navigation.dart';
+import '../sources/source_controller.dart';
+import '../sources/publication_shelf.dart';
 import 'dart:async';
 import 'dart:ui' show lerpDouble;
 import '../media/ids.dart';
@@ -58,7 +61,12 @@ final class _LibraryItemRow extends _LibraryNavRow {
 }
 
 /// SELECT activates the rail row, RIGHT hands off to the content area.
-KeyEventResult _handleRailItemKey(BuildContext context, KeyEvent event, {required VoidCallback onSelect, VoidCallback? onNavigateRight}) {
+KeyEventResult _handleRailItemKey(
+  BuildContext context,
+  KeyEvent event, {
+  required VoidCallback onSelect,
+  VoidCallback? onNavigateRight,
+}) {
   if (event is! KeyDownEvent) return KeyEventResult.ignored;
   if (event.logicalKey.isSelectKey) {
     onSelect();
@@ -269,7 +277,7 @@ class NavigationRailItem extends StatelessWidget {
   Widget _buildExpandedLayout(BuildContext context, MonoTokens t, {required bool focused, required bool fixedHeight}) {
     return Container(
       constraints: fixedHeight ? null : BoxConstraints(minHeight: expandedHeight),
-      alignment: .centerLeft,
+      alignment: AlignmentDirectional.centerStart,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: fixedHeight ? 0 : 8),
       decoration: BoxDecoration(
         color: _indicatorColor(t, focused: focused, expansion: 1),
@@ -305,8 +313,8 @@ class NavigationRailItem extends StatelessWidget {
       height: lerpDouble(collapsedHeight, expandedHeight, expansion),
       child: Stack(
         children: [
-          Positioned(
-            left: indicatorLeft,
+          PositionedDirectional(
+            start: indicatorLeft,
             top: indicatorTop,
             child: Container(
               width: lerpDouble(collapsedPillWidth, expandedContentWidth, expansion),
@@ -317,8 +325,8 @@ class NavigationRailItem extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: 0,
+          PositionedDirectional(
+            start: 0,
             top: 0,
             child: SizedBox(
               width: expandedContentWidth,
@@ -329,8 +337,8 @@ class NavigationRailItem extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: iconLeft,
+          PositionedDirectional(
+            start: iconLeft,
             top: iconTop,
             child: SizedBox(
               width: iconSize,
@@ -366,7 +374,8 @@ class NavigationRailItem extends StatelessWidget {
         return Focus(
           focusNode: focusNode,
           autofocus: autofocus,
-          onKeyEvent: (node, event) => _handleRailItemKey(context, event, onSelect: onTap, onNavigateRight: onNavigateRight),
+          onKeyEvent: (node, event) =>
+              _handleRailItemKey(context, event, onSelect: onTap, onNavigateRight: onNavigateRight),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -374,7 +383,7 @@ class NavigationRailItem extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
               child: UnconstrainedBox(
-                alignment: .centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 constrainedAxis: Axis.vertical,
                 clipBehavior: Clip.hardEdge,
                 child: content,
@@ -772,6 +781,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         // condition so a collapsed rail never targets a focus-excluded row.
         if (_librariesExpanded && !isCollapsed) ...[
           ..._focusKeysForLibraryRows(visibleRows),
+          for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})
+            'source:${shelf.name}',
           if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
             if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
@@ -1000,8 +1011,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                             // instead of pushing it.
                             borderRadius: isCollapsed
                                 ? BorderRadius.zero
-                                : BorderRadius.horizontal(
-                                    right: Radius.circular(_isFloatingPanel ? overlayCornerRadius : t.radiusLg),
+                                : BorderRadiusDirectional.horizontal(
+                                    end: Radius.circular(_isFloatingPanel ? overlayCornerRadius : t.radiusLg),
                                   ),
                             boxShadow: _isFloatingPanel
                                 ? [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 24)]
@@ -1283,7 +1294,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesTabSelected = widget.selectedTab == NavigationTabId.libraries;
-    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
+    final sourceShelves = context.watch<SourceController?>()?.shelves ?? <PublicationShelf>{};
+    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0 && sourceShelves.isEmpty;
     final headerLabelColor = isLibrariesTabSelected ? t.text : t.textMuted;
 
     Widget buildChevron(double opacity) {
@@ -1363,6 +1375,24 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                   )
                 else ...[
                   if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
+                  for (final shelf in sourceShelves)
+                    NavigationRailItem(
+                      icon: shelfIcon(shelf),
+                      selectedIcon: shelfIcon(shelf),
+                      label: Text(
+                        shelfLabel(shelf),
+                        style: TextStyle(fontSize: 13, color: t.textMuted),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      isSelected:
+                          widget.selectedTab == NavigationTabId.libraries &&
+                          widget.selectedLibraryKey == 'source:${shelf.name}',
+                      iconSize: 18,
+                      expandedHeight: 40,
+                      focusNode: _focusTracker.get('source:${shelf.name}'),
+                      onTap: () => widget.onLibrarySelected('source:${shelf.name}'),
+                      onNavigateRight: widget.onNavigateToContent,
+                    ),
                   if (hiddenLibraryCount > 0) ...[
                     _buildHiddenLibrariesHeader(hiddenLibraryCount, t),
                     if (_hiddenLibrariesExpanded) _buildLibraryGroupedColumn(hiddenRows, t),
@@ -1486,7 +1516,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               ),
               clipBehavior: Clip.hardEdge,
               child: UnconstrainedBox(
-                alignment: .centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 constrainedAxis: Axis.vertical,
                 clipBehavior: Clip.hardEdge,
                 child: SizedBox(

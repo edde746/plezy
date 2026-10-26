@@ -165,7 +165,8 @@ class MediaFileVersion {
     return videoResolutionLabel;
   }
 
-  String? get aspectRatioFormatted => aspectRatio?.toStringAsFixed(2);
+  String? get aspectRatioFormatted =>
+      aspectRatio == null ? null : formatDecimal(aspectRatio!, minimumDecimals: 2, maximumDecimals: 2);
 
   int get totalFileSize => parts.fold(0, (sum, part) => sum + (part.fileSize ?? 0));
 
@@ -559,14 +560,18 @@ class MediaStreamDetails {
     final rate = frameRate;
     if (rate == null) return null;
     final rounded = rate.roundToDouble();
-    final text = (rate - rounded).abs() < 0.0005 ? formatDecimal(rounded, minimumDecimals: 0, maximumDecimals: 0) : formatDecimal(rate, minimumDecimals: 3, maximumDecimals: 3);
+    final text = (rate - rounded).abs() < 0.0005
+        ? formatDecimal(rounded, minimumDecimals: 0, maximumDecimals: 0)
+        : formatDecimal(rate, minimumDecimals: 3, maximumDecimals: 3);
     return '$text fps';
   }
 
   String? get sampleRateFormatted {
     final rate = sampleRate;
     if (rate == null) return null;
-    return rate % 1000 == 0 ? '${formatCount(rate ~/ 1000)} kHz' : '${formatDecimal((rate / 1000), minimumDecimals: 1, maximumDecimals: 1)} kHz';
+    return rate % 1000 == 0
+        ? '${formatCount(rate ~/ 1000)} kHz'
+        : '${formatDecimal((rate / 1000), minimumDecimals: 1, maximumDecimals: 1)} kHz';
   }
 
   String? get bitDepthFormatted => bitDepth == null ? null : '${formatCount(bitDepth!)} bit';

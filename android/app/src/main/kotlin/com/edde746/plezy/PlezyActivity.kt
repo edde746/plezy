@@ -916,6 +916,7 @@ class PlezyActivity : FlutterActivity() {
           }
           when (call.method) {
             "getApplicationLocale" -> result.success(manager.applicationLocales.toLanguageTags())
+            "getSystemLocales" -> result.success(manager.systemLocales.toLanguageTags())
             "setApplicationLocale" -> {
               val tag = call.arguments as? String
               if (tag == null || !Regex("^([a-z]{2,3}(-[A-Za-z0-9]{2,8})*)?$").matches(tag)) {

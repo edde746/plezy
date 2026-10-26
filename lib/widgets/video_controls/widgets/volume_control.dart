@@ -86,12 +86,8 @@ class _VolumeControlState extends State<VolumeControl> {
       }
 
       // In adjust mode: left/right adjusts volume, back/escape exits
-      if (key == LogicalKeyboardKey.arrowLeft) {
-        widget.volumeController.adjust(-_volumeStep);
-        return KeyEventResult.handled;
-      }
-      if (key == LogicalKeyboardKey.arrowRight) {
-        widget.volumeController.adjust(_volumeStep);
+      if (key.isLeftKey || key.isRightKey) {
+        widget.volumeController.adjust(key.isInlineEnd(context) ? _volumeStep : -_volumeStep);
         return KeyEventResult.handled;
       }
       if (key.isSelectKey) {
@@ -187,11 +183,11 @@ class _VolumeControlState extends State<VolumeControl> {
     return SizedBox(
       width: 100,
       child: Stack(
-        alignment: .centerLeft,
+        alignment: AlignmentDirectional.centerStart,
         children: [
           if (showMarker)
-            Positioned(
-              left: 100 * markerPosition - 1, // Adjust for marker width
+            PositionedDirectional(
+              start: 100 * markerPosition - 1, // Adjust for marker width
               child: Container(
                 width: 2,
                 height: 12,

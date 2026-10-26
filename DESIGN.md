@@ -61,3 +61,13 @@ Keep existing card and control geometry. Selection indicators use circles.
 - Use shared menus, icons, theme tokens, dialogs, and snackbars.
 - Keep selected items recognizable in both grid and list views.
 - Do not restyle the library for selection or obscure focus decoration.
+
+## Reading, sources and accessibility
+
+File sources and public libraries extend the existing grouped rows, quiet actions and artwork-led shelves. Use official unmodified provider marks only at their connection/sign-in/service affordances; provenance and attribution live in `assets/provider_marks`. EPUB/CBZ controls use the active palette and low-emphasis controls; PDF uses the same reader shell. Zoom, fit and layout are ordinary reader actions, not a separate technical panel.
+
+App accessibility preferences live in Appearance and compose with system settings. High contrast retains Mono geometry, font sizing reflows, and reduced motion keeps visible focus while removing decorative movement. Shared controls keep labelled keyboard/screen-reader actions and adequate touch targets. Do not replace a semantic control with an unlabelled custom gesture.
+
+## Planned cross-media discovery
+
+[Find your next](docs/plezyng/swipe/README.md) defines the swipe-discovery handoff. Its [interaction contract](docs/plezyng/swipe/UX.md) preserves the existing Mono palette, runtime geometry, artwork, shared controls, adaptive sheets and TV focus flow. One focused choice uses visible Not now, Save and explicit media actions; a gesture is an optional shortcut. This section records planned behavior, not a shipped runtime feature.

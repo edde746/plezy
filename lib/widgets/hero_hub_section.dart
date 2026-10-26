@@ -1,3 +1,4 @@
+import '../i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -94,6 +95,8 @@ class HeroHubSectionState extends State<HeroHubSection> {
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
   bool _isAutoScrollPaused = false;
+  bool _disableAnimations = false;
+  bool _accessibleNavigation = false;
 
   /// The scrollable this row lives in doesn't lazily unmount off-screen
   /// slivers (every hub is a plain SliverToBoxAdapter, always built), so
@@ -150,6 +153,12 @@ class HeroHubSectionState extends State<HeroHubSection> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    if (_disableAnimations != media.disableAnimations || _accessibleNavigation != media.accessibleNavigation) {
+      _disableAnimations = media.disableAnimations;
+      _accessibleNavigation = media.accessibleNavigation;
+      _startAutoScroll();
+    }
     final newPosition = Scrollable.maybeOf(context)?.position;
     if (newPosition != _scrollPosition) {
       _scrollPosition?.removeListener(_onScrollChanged);
@@ -219,7 +228,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
       Scrollable.ensureVisible(
         context,
         alignment: alignment,
-        duration: const Duration(milliseconds: 200),
+        duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
       );
     });
@@ -231,7 +240,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
   /// page restarts the auto timer from zero rather than fighting it.
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
-    if (!widget.hub.heroAutoSlide || _items.length < 2) {
+    if (!widget.hub.heroAutoSlide || _items.length < 2 || _disableAnimations || _accessibleNavigation) {
       _indicatorTimer?.cancel();
       _indicatorProgress.value = 0.0;
       return;
@@ -259,7 +268,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
     final current = _currentIndex.value.clamp(0, _items.length - 1);
     final raw = current + delta;
     final target = raw % _items.length;
-    if (raw < 0 || raw >= _items.length) {
+    if (raw < 0 || raw >= _items.length || _disableAnimations || duration == Duration.zero) {
       _pageController.jumpToPage(target);
     } else {
       _pageController.animateToPage(target, duration: duration, curve: Curves.easeInOut);
@@ -391,19 +400,16 @@ class HeroHubSectionState extends State<HeroHubSection> {
 
   Widget _buildArrowButton({required bool isLeft, required int currentIndex}) {
     // Always enabled: paging wraps around in both directions.
-    return ClickableCursor(
-      child: GestureDetector(
-        onTap: () => _pageBy(isLeft ? -1 : 1, tokens(context).slow),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
-          child: AppIcon(
-            isLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
+    return IconButton(
+      tooltip: isLeft
+          ? MaterialLocalizations.of(context).previousPageTooltip
+          : MaterialLocalizations.of(context).nextPageTooltip,
+      onPressed: () => _pageBy(isLeft ? -1 : 1, tokens(context).slow),
+      style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.4)),
+      icon: AppIcon(
+        isLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
+        color: Colors.white,
+        size: 22,
       ),
     );
   }
@@ -493,9 +499,9 @@ class HeroHubSectionState extends State<HeroHubSection> {
               // Row name — multiple hero rows can be on screen at once, so
               // unlike the old single-hero-slot version there's otherwise no
               // way to tell which configured row a given card is showing.
-              Positioned(
+              PositionedDirectional(
                 top: MediaQuery.paddingOf(context).top + (isTv ? 20.0 : 16),
-                left: isTv ? 20.0 : 16,
+                start: isTv ? 20.0 : 16,
                 child: IgnorePointer(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -538,10 +544,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
                 ),
               // Nothing to page or pause with a single item.
               if (showPointerControls && _items.length > 1)
-                Positioned(
+                PositionedDirectional(
                   bottom: 16,
-                  left: widget.hub.heroAutoSlide ? -26 : 0,
-                  right: 0,
+                  start: widget.hub.heroAutoSlide ? -26 : 0,
+                  end: 0,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -587,7 +593,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                                             borderRadius: BorderRadius.circular(dotSize / 2),
                                           ),
                                           child: Align(
-                                            alignment: Alignment.centerLeft,
+                                            alignment: AlignmentDirectional.centerStart,
                                             child: Container(
                                               width: fillWidth,
                                               height: dotSize,
@@ -706,16 +712,16 @@ class HeroHubSectionState extends State<HeroHubSection> {
             children: [
               // Backdrop art.
               if (widget.showBackdrop && heroArtPaths.isNotEmpty)
-                Positioned(
+                PositionedDirectional(
                   top: 0,
-                  left: 0,
-                  right: 0,
+                  start: 0,
+                  end: 0,
                   height: isTv ? artHeight : null,
                   bottom: isTv ? null : 0,
                   child: TweenAnimationBuilder<double>(
                     key: ValueKey(heroItem.globalKey),
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
+                    duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 800),
                     curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Transform.scale(
@@ -753,10 +759,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
                   ),
                 )
               else
-                Positioned(
+                PositionedDirectional(
                   top: 0,
-                  left: 0,
-                  right: 0,
+                  start: 0,
+                  end: 0,
                   height: isTv ? artHeight : null,
                   bottom: isTv ? null : 0,
                   child: ColoredBox(color: colorScheme.surfaceContainerHighest),
@@ -809,10 +815,10 @@ class HeroHubSectionState extends State<HeroHubSection> {
       fit: StackFit.expand,
       clipBehavior: Clip.none,
       children: [
-        Positioned(
+        PositionedDirectional(
           top: 0,
-          left: 0,
-          right: 0,
+          start: 0,
+          end: 0,
           bottom: -4,
           child: IgnorePointer(
             child: Builder(
@@ -832,14 +838,14 @@ class HeroHubSectionState extends State<HeroHubSection> {
             ),
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           bottom: isTv
               ? 88
               : isLargeScreen
               ? 80
               : 50,
-          left: 0,
-          right: isTv
+          start: 0,
+          end: isTv
               ? screenWidth * 0.36
               : isLargeScreen
               ? 200
@@ -853,7 +859,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                   : 24,
             ),
             child: Align(
-              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+              alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity),
                 child: Column(
@@ -872,12 +878,14 @@ class HeroHubSectionState extends State<HeroHubSection> {
                             logoWidth: heroLogoWidth,
                             available: isTv ? TvLayoutConstants.heroContentMaxWidth : screenWidth,
                           ),
-                          alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                          alignment: alignLeft
+                              ? AlignmentDirectional.bottomStart.resolve(Directionality.of(context))
+                              : Alignment.bottomCenter,
                           fallbackBuilder: (context) => FittingTitleText(
                             showName,
                             style: heroTitleStyle,
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                            textAlign: alignLeft ? TextAlign.start : TextAlign.center,
+                            alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                           ),
                         ),
                       ),
@@ -891,7 +899,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                           fontSize: isTv ? 18 : 14,
                           fontWeight: FontWeight.w600,
                         ),
-                        textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                        textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                       ),
                     ],
                     if (!alignLeft) ...[const SizedBox(height: 20), _buildPlayButton(context, heroItem)],
@@ -901,7 +909,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                         heroItem.summary!,
                         maxLines: isTv ? 3 : 2,
                         overflow: TextOverflow.ellipsis,
-                        textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                        textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                         style: TextStyle(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: isTv ? 18 : 14,
@@ -960,7 +968,9 @@ class HeroHubSectionState extends State<HeroHubSection> {
                     AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
                     const SizedBox(width: 8),
                     Text(
-                      hasProgress ? '$minutesLeft min left' : t.common.play,
+                      hasProgress
+                          ? t.discover.minutesLeft(minutes: formatDecimal(minutesLeft, maximumDecimals: 0))
+                          : t.common.play,
                       style: TextStyle(color: foregroundColor, fontWeight: FontWeight.bold, fontSize: isTv ? 18 : 14),
                     ),
                   ],

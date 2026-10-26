@@ -12,7 +12,7 @@ const iso = fs.readFileSync(path.join(root, 'lib/data/iso_639_data.dart'), 'utf8
 const codes = [...new Set([...iso.matchAll(/LanguageEntry\('([a-z]+)'/g)].map(m => m[1]))];
 if (codes.length < 150) throw new Error('ISO language table could not be read');
 const regions = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW 419'.split(' ');
-const languages = {}, territories = {}, scripts = {}, endonyms = {}, units = {};
+const languages = {}, territories = {}, scripts = {}, endonyms = {}, units = {}, unitLists = {};
 const unitIds = ['hour', 'minute', 'second', 'millisecond', 'day', 'week', 'month', 'year',
   'byte', 'kilobyte', 'megabyte', 'gigabyte', 'byte-per-second', 'kilobyte-per-second', 'megabyte-per-second',
   'kilobit-per-second', 'megabit-per-second'];
@@ -27,6 +27,10 @@ for (const tag of catalog.locales) {
   territories[tag] = Object.fromEntries(regions.map(c => [c, rn.of(c)]));
   scripts[tag] = Object.fromEntries(['Arab','Cyrl','Deva','Hans','Hant','Hebr','Latn'].map(c => [c,sn.of(c)]));
   endonyms[tag] = new Intl.DisplayNames([locale], {type: 'language', languageDisplay: 'standard'}).of(locale);
+  unitLists[tag] = Object.fromEntries(['narrow', 'long'].map(style => {
+    const list = new Intl.ListFormat(locale, {type: 'unit', style});
+    return [style, [list.format(['{0}', '{1}']), list.format(['{0}', '{1}', '{2}'])]];
+  }));
   units[tag] = {};
   const rules = new Intl.PluralRules(locale);
   const samples = {};
@@ -67,4 +71,8 @@ fs.writeFileSync(path.join(root, 'lib/i18n/locale_units.g.dart'),
   `// Generated from Unicode CLDR ${process.versions.cldr}, ICU ${process.versions.icu}.\n` +
   `// Regenerate: node scripts/codegen/generate_locale_names.mjs\n// Data license: https://www.unicode.org/license.txt\n` +
   `const localizedUnitPatterns = <String, Map<String, Map<String, Map<String, String>>>>${dart(units)};\n`);
+fs.writeFileSync(path.join(root, 'lib/i18n/locale_lists.g.dart'),
+  `// Generated from Unicode CLDR ${process.versions.cldr}, ICU ${process.versions.icu}.\n` +
+  `// Regenerate: node scripts/codegen/generate_locale_names.mjs\n// Data license: https://www.unicode.org/license.txt\n` +
+  `const localizedUnitLists = <String, Map<String, List<String>>>${dart(unitLists)};\n`);
 console.log(`Generated ${codes.length} language names and ${regions.length} territories for ${catalog.locales.length} locales.`);

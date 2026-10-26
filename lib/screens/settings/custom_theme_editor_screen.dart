@@ -404,7 +404,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_hue'),
             label: t.accessibility.hue,
-            valueLabel: '${_hsv.hue.round()}°',
+            valueLabel: '${formatDecimal(_hsv.hue, maximumDecimals: 0)}°',
             value: _hsv.hue,
             max: 360,
             onChanged: (value) => _setHsv(_hsv.withHue(value)),
@@ -412,7 +412,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_saturation'),
             label: t.accessibility.saturation,
-            valueLabel: '${(_hsv.saturation * 100).round()}%',
+            valueLabel: formatPercent(_hsv.saturation),
             value: _hsv.saturation,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withSaturation(value)),
@@ -420,7 +420,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_value'),
             label: t.accessibility.brightness,
-            valueLabel: '${(_hsv.value * 100).round()}%',
+            valueLabel: formatPercent(_hsv.value),
             value: _hsv.value,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withValue(value)),
@@ -428,7 +428,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_alpha'),
             label: t.themeEditor.opacity,
-            valueLabel: '${(_hsv.alpha * 100).round()}%',
+            valueLabel: formatPercent(_hsv.alpha),
             value: _hsv.alpha,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withAlpha(value)),
@@ -688,7 +688,8 @@ class _ContrastWarning extends StatelessWidget {
 
   /// Truncated, not rounded, so a pair just under the bar never reads as
   /// meeting it (4.46 shows 4.4, not 4.5).
-  static String _formatRatio(double value) => ((value * 10).floor() / 10).toStringAsFixed(1);
+  static String _formatRatio(double value) =>
+      formatDecimal((value * 10).floor() / 10, minimumDecimals: 1, maximumDecimals: 1);
 
   static String _formatMinimum(double value) =>
       value == value.roundToDouble() ? formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0) : value.toString();

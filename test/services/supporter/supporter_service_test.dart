@@ -21,17 +21,38 @@ Future<void> _cacheEntitlement(bool value) async {
 Future<bool> _cachedEntitlement() async =>
     (await SettingsService.getInstance()).read(SettingsService.supporterEntitlementCached);
 
+Future<int> _setTrialStartedAt(DateTime startedAt) async {
+  final settings = await SettingsService.getInstance();
+  final timestamp = startedAt.toUtc().millisecondsSinceEpoch;
+  await settings.write(SettingsService.appAccessTrialStartedAtEpochMs, timestamp);
+  return timestamp;
+}
+
+Future<int> _cachedTrialStartedAt() async =>
+    (await SettingsService.getInstance()).read(SettingsService.appAccessTrialStartedAtEpochMs);
+
+Future<void> _expireTrialForPurchaseTest() async {
+  await _setTrialStartedAt(
+    DateTime.now().toUtc().subtract(SupporterService.fullAccessTrialDuration + const Duration(days: 1)),
+  );
+}
+
 SupporterService _purchasable(SupporterStore store) {
   final service = SupporterService.forTesting(availability: SupporterAvailability.purchasable, store: store);
   addTearDown(service.dispose);
   return service;
 }
 
-/// Counts [SupporterService] notifications, which fire only when
-/// `isUnlocked` changes.
+/// Counts [SupporterService] notifications that change `isUnlocked`.
 int Function() _countNotifications(SupporterService service) {
   var count = 0;
-  service.addListener(() => count++);
+  var wasUnlocked = service.isUnlocked;
+  service.addListener(() {
+    final isUnlocked = service.isUnlocked;
+    if (isUnlocked == wasUnlocked) return;
+    count++;
+    wasUnlocked = isUnlocked;
+  });
   return () => count;
 }
 
@@ -108,6 +129,7 @@ void main() {
 
       expect(service.isAvailable, isFalse);
       expect(service.isUnlocked, isFalse);
+      expect(service.hasAccess, isTrue);
     });
 
     test('a free build is unlocked without any purchase', () async {
@@ -115,6 +137,61 @@ void main() {
       addTearDown(service.dispose);
       await service.init();
       expect(service.isUnlocked, isTrue);
+    });
+  });
+
+  group('seven-day access trial', () {
+    test('init starts a trial once and unlocks the full app', () async {
+      final service = SupporterService.forTesting(availability: SupporterAvailability.purchasable);
+      addTearDown(service.dispose);
+
+      expect(service.canStartTrial, isTrue);
+      expect(service.hasAccess, isFalse);
+      await service.init();
+
+      expect(service.isReady, isTrue);
+      expect(service.hasStartedTrial, isTrue);
+      expect(service.isTrialActive, isTrue);
+      expect(service.hasAccess, isTrue);
+      expect(service.isUnlocked, isTrue);
+      expect(service.canStartTrial, isFalse);
+      expect(await _cachedTrialStartedAt(), greaterThan(0));
+      expect(await service.startTrial(), isFalse);
+    });
+
+    test('an active persisted trial keeps its original end time', () async {
+      final startedAt = DateTime.now().toUtc().subtract(const Duration(days: 1));
+      final storedTimestamp = await _setTrialStartedAt(startedAt);
+      final service = SupporterService.forTesting(availability: SupporterAvailability.purchasable);
+      addTearDown(service.dispose);
+
+      await service.init();
+
+      expect(service.isTrialActive, isTrue);
+      expect(
+        service.trialEndsAt,
+        DateTime.fromMillisecondsSinceEpoch(storedTimestamp, isUtc: true).add(SupporterService.fullAccessTrialDuration),
+      );
+      expect(await _cachedTrialStartedAt(), storedTimestamp);
+    });
+
+    test('an expired persisted trial does not restart and keeps access locked', () async {
+      final startedAt = DateTime.now().toUtc().subtract(
+        SupporterService.fullAccessTrialDuration + const Duration(days: 1),
+      );
+      final storedTimestamp = await _setTrialStartedAt(startedAt);
+      final service = SupporterService.forTesting(availability: SupporterAvailability.purchasable);
+      addTearDown(service.dispose);
+
+      await service.init();
+
+      expect(service.isReady, isTrue);
+      expect(service.hasStartedTrial, isTrue);
+      expect(service.isTrialActive, isFalse);
+      expect(service.hasAccess, isFalse);
+      expect(service.isUnlocked, isFalse);
+      expect(service.canStartTrial, isFalse);
+      expect(await _cachedTrialStartedAt(), storedTimestamp);
     });
   });
 
@@ -140,10 +217,14 @@ void main() {
     late FakeInAppPurchasePlatform platform;
     late FakePlayStore play;
 
-    setUp(() {
+    setUp(() async {
       platform = FakeInAppPurchasePlatform();
       play = FakePlayStore(platform);
       addTearDown(platform.close);
+      // Purchase tests isolate store entitlement transitions from a first-run
+      // trial. An expired trial still exercises the real init and persistence
+      // path without granting temporary access during billing assertions.
+      await _expireTrialForPurchaseTest();
     });
 
     test('the product loads with the store\'s localized price', () async {
@@ -418,10 +499,11 @@ void main() {
     late FakeInAppPurchasePlatform platform;
     late FakeAppStore appStore;
 
-    setUp(() {
+    setUp(() async {
       platform = FakeInAppPurchasePlatform();
       appStore = FakeAppStore(platform);
       addTearDown(platform.close);
+      await _expireTrialForPurchaseTest();
     });
 
     test('a completed purchase unlocks, caches and finishes the transaction', () async {

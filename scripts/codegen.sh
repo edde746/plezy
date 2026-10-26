@@ -11,5 +11,7 @@ dart run scripts/codegen/generate_ducet_ranks.dart
 dart run scripts/codegen/generate_hid_key_labels.dart
 dart run scripts/codegen/generate_iso_639_data.dart
 python3 scripts/codegen/generate_relay_protocol.py
+python3 scripts/codegen/generate_localized_quantities.py
+python3 scripts/codegen/generate_platform_locales.py
 dart run slang
 dart run build_runner build "$@"

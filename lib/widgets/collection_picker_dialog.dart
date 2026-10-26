@@ -235,7 +235,7 @@ class PlaylistSelectionDialog extends StatelessWidget {
       itemTitle: (playlist) => playlist.title,
       itemBuilder: (context, playlist) {
         final leafCount = playlist.leafCount;
-        final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
+        final subtitleText = t.playlists.itemCount(count: leafCount ?? 0);
         return FocusableListTile(
           leading: playlist.smart
               ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)

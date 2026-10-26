@@ -68,10 +68,12 @@ extension DpadKeyExtension on LogicalKeyboardKey {
 
   /// Horizontal UI traversal follows reading order. Playback seek, volume and
   /// other physical controls continue using isLeftKey/isRightKey explicitly.
-  bool isInlineStart(BuildContext context) => this == (Directionality.of(context) == TextDirection.rtl
-      ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft);
-  bool isInlineEnd(BuildContext context) => this == (Directionality.of(context) == TextDirection.rtl
-      ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight);
+  bool isInlineStart(BuildContext context) =>
+      this ==
+      (Directionality.of(context) == TextDirection.rtl ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft);
+  bool isInlineEnd(BuildContext context) =>
+      this ==
+      (Directionality.of(context) == TextDirection.rtl ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight);
 
   bool get isLeftKey => this == LogicalKeyboardKey.arrowLeft;
   bool get isRightKey => this == LogicalKeyboardKey.arrowRight;

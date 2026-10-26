@@ -345,6 +345,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _startAutoScroll();
   }
 
+  bool _disableAnimations = false;
+  bool _accessibleNavigation = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    if (_disableAnimations != media.disableAnimations || _accessibleNavigation != media.accessibleNavigation) {
+      _disableAnimations = media.disableAnimations;
+      _accessibleNavigation = media.accessibleNavigation;
+      _startAutoScroll();
+    }
+  }
+
+  void _pageHero(int delta) {
+    if (!_heroController.hasClients) return;
+    final target = (_heroIndex.value + delta).clamp(0, _onDeck.length - 1);
+    final duration = tokens(context).slow;
+    if (_disableAnimations || duration == Duration.zero) {
+      _heroController.jumpToPage(target);
+    } else {
+      _heroController.animateToPage(target, duration: duration, curve: Curves.easeInOut);
+    }
+  }
+
   /// Mirror provider changes into this state's UI concerns: rebuild, apply
   /// pending TV-rail focus, and keep the hero carousel index in sync — a
   /// fresh [DiscoverProvider.load] resets it, a background Continue Watching
@@ -436,14 +461,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onUp: _focusTopActions,
       onLeft: () {
         if (_heroIndex.value > 0) {
-          _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
+          _pageHero(-1);
         } else {
           _navigateToSidebar();
         }
       },
       onRight: () {
         if (_heroIndex.value < _onDeck.length - 1) {
-          _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
+          _pageHero(1);
         }
       },
       onSelect: () {
@@ -494,6 +519,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
+    if (_disableAnimations || _accessibleNavigation) {
+      _stopIndicatorProgress();
+      return;
+    }
     if (PlatformDetector.isTV()) return;
     if (_isAutoScrollPaused) return;
 
@@ -518,7 +547,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _startIndicatorProgress() {
-    if (!mounted) return;
+    if (!mounted || _disableAnimations || _accessibleNavigation) return;
     _indicatorTimer?.cancel();
     _indicatorProgress.value = 0.0;
     final totalSteps = _heroAutoScrollDuration.inMilliseconds ~/ _indicatorUpdateInterval.inMilliseconds;
@@ -848,9 +877,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           tooltip: t.watchTogether.title,
                         ),
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                          Positioned(
+                          PositionedDirectional(
                             top: 6,
-                            right: 6,
+                            end: 6,
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                               decoration: BoxDecoration(
@@ -881,9 +910,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           tooltip: t.companionRemote.title,
                         ),
                         if (companionRemote.isConnected)
-                          Positioned(
+                          PositionedDirectional(
                             top: 6,
-                            right: 6,
+                            end: 6,
                             child: Container(
                               width: 8,
                               height: 8,
@@ -1114,11 +1143,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       color: theme.scaffoldBackgroundColor,
       child: Stack(
         children: [
-          if (isTv) Positioned(top: topSpacerHeight, left: 0, right: 0, bottom: 0, child: scrollView) else scrollView,
+          if (isTv)
+            PositionedDirectional(top: topSpacerHeight, start: 0, end: 0, bottom: 0, child: scrollView)
+          else
+            scrollView,
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
-          Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
+          PositionedDirectional(top: 0, start: 0, end: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),
@@ -1228,9 +1260,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               icon: Symbols.movie_rounded,
             ),
           if (browseHubs.isNotEmpty)
-            Positioned(
-              left: 0,
-              right: 0,
+            PositionedDirectional(
+              start: 0,
+              end: 0,
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
@@ -1286,10 +1318,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // via d-pad) — never gated on transient input mode, which back-key
               // events, BT keyboards, and gamepads can flip on phones/desktop.
               if (!isTv)
-                Positioned(
+                PositionedDirectional(
                   bottom: 16,
-                  left: -26,
-                  right: 0,
+                  start: -26,
+                  end: 0,
                   // Centered on the same safe width as the hero item above it.
                   child: SafeArea(
                     top: false,
@@ -1404,11 +1436,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               animation: _scrollController,
               builder: (context, child) {
                 final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+                return Transform.translate(
+                  offset: Offset(0, _disableAnimations ? 0 : scrollOffset * 0.3),
+                  child: child,
+                );
               },
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
+                duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 800),
                 curve: Curves.easeOut,
                 builder: (context, value, child) {
                   return Transform.scale(
@@ -1430,10 +1465,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
           ),
           // Gradient Overlay - blends into scaffold background
-          Positioned(
+          PositionedDirectional(
             top: 0,
-            left: 0,
-            right: 0,
+            start: 0,
+            end: 0,
             bottom: -4, // Extend past stack bounds to ensure coverage
             child: Builder(
               builder: (context) {
@@ -1536,7 +1571,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // Content with responsive alignment. Compact trims the offset
               // but still clears the page indicator row (bottom 16, ~18 tall)
               // that sits over every handheld hero.
-              Positioned(
+              PositionedDirectional(
                 bottom: isTv
                     ? 88
                     : compact
@@ -1544,8 +1579,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     : isLargeScreen
                     ? 80
                     : 50,
-                left: 0,
-                right: isTv
+                start: 0,
+                end: isTv
                     ? screenWidth * 0.36
                     : isLargeScreen
                     ? 200
@@ -1565,7 +1600,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           : 24,
                     ),
                     child: Align(
-                      alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                      alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
@@ -1586,7 +1621,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   logoWidth: heroLogoWidth,
                                   available: constraints.maxWidth,
                                 ),
-                                alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                alignment: alignLeft
+                                    ? AlignmentDirectional.bottomStart.resolve(Directionality.of(context))
+                                    : Alignment.bottomCenter,
                                 // The hero scrim washes artwork toward the scaffold
                                 // background; light themes recolor light-toned logos.
                                 logoToneTarget: logoToneTargetFor(
@@ -1596,8 +1633,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fallbackBuilder: (context) => FittingTitleText(
                                   showName,
                                   style: heroTitleStyle,
-                                  textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                  textAlign: alignLeft ? TextAlign.start : TextAlign.center,
+                                  alignment: alignLeft ? AlignmentDirectional.centerStart : Alignment.center,
                                 ),
                               ),
                             ),
@@ -1617,7 +1654,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   fontSize: isTv ? 18 : 14,
                                   fontWeight: .w600,
                                 ),
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                               ),
                             ],
 
@@ -1628,7 +1665,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               RichText(
                                 maxLines: isTv ? 3 : 2,
                                 overflow: .ellipsis,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                                 text: TextSpan(
                                   style: TextStyle(
                                     color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1658,7 +1695,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
                                 maxLines: 2,
                                 overflow: .ellipsis,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                textAlign: alignLeft ? TextAlign.start : TextAlign.center,
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,

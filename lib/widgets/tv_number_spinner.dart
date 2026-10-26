@@ -1,3 +1,4 @@
+import '../i18n/presentation_formats.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -226,7 +227,9 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               constraints: BoxConstraints(minWidth: isCompact ? 56 : 60),
               alignment: .center,
               child: Text(
-                '${widget.value}${widget.suffix ?? ''}',
+                widget.suffix == '%'
+                    ? formatPercent(widget.value / 100)
+                    : '${formatDecimal(widget.value, maximumDecimals: 0)}${widget.suffix ?? ''}',
                 style: isCompact
                     ? theme.textTheme.titleMedium
                     : theme.textTheme.headlineMedium?.copyWith(fontWeight: .bold),

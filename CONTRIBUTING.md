@@ -7,6 +7,9 @@
 3. Run `scripts/codegen.sh` to generate translations and Dart model code
 4. Start developing!
 
+Brand assets use the selected PlezyNG master and one reproducible export pipeline.
+See [the branding guide](docs/maintainers/branding.md) before changing logos or launcher artwork.
+
 ## Development
 
 - Follow Dart/Flutter conventions
@@ -15,6 +18,11 @@
 - Run `flutter analyze` before submitting to check for issues
 - Run `scripts/run_tests.sh` to run the test suite (same as `flutter test`, but scaled to your core count)
 - Test your changes thoroughly
+
+### Localization
+
+See [Localization maintenance](docs/localization/README.md) for locale coverage,
+regional inheritance, RTL behavior, translation provenance and required checks.
 
 ### AI-assisted contributions
 

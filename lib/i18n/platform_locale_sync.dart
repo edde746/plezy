@@ -28,16 +28,23 @@ class PlatformLocaleSync {
       return; // A platform failure must not prevent the Dart language choice.
     }
     if (platformTag == null) return;
+    try {
+      final systemTags = await channel.invokeMethod<String>('getSystemLocales');
+      if (systemTags != null && systemTags.isNotEmpty) {
+        AppLocaleEnvironment.platformDeviceLocales = systemTags.split(',').map(_localeFromTag).toList();
+      }
+    } on MissingPluginException {
+      // Older host bridges can still synchronize the app-language choice.
+    } on PlatformException {
+      // Keep the last known system list if the native call is unavailable.
+    }
     final checkpoint = settings.readNullableString(_checkpointKey);
     final changedExternally = checkpoint == null ? platformTag.isNotEmpty : checkpoint != platformTag;
     if (changedExternally) {
       if (platformTag.isEmpty) {
         await settings.reset(SettingsService.appLocale);
       } else {
-        final pieces = platformTag.split(',').first.split('-');
-        final locale = Locale.fromSubtags(languageCode: pieces.first,
-          scriptCode: pieces.skip(1).where((p) => p.length == 4).firstOrNull,
-          countryCode: pieces.skip(1).where((p) => p.length == 2 || p.length == 3).firstOrNull);
+        final locale = _localeFromTag(platformTag.split(',').first);
         await settings.write(SettingsService.appLocale, resolvePreferredAppLocale([locale]));
       }
       await settings.writeString(_checkpointKey, platformTag);
@@ -50,8 +57,19 @@ class PlatformLocaleSync {
         await channel.invokeMethod<void>('setApplicationLocale', desired);
       } on PlatformException {
         return;
+      } on MissingPluginException {
+        return;
       }
     }
     await settings.writeString(_checkpointKey, desired);
+  }
+
+  static Locale _localeFromTag(String tag) {
+    final pieces = tag.split('-');
+    return Locale.fromSubtags(
+      languageCode: pieces.first,
+      scriptCode: pieces.skip(1).where((p) => p.length == 4).firstOrNull,
+      countryCode: pieces.skip(1).where((p) => p.length == 2 || p.length == 3).firstOrNull,
+    );
   }
 }

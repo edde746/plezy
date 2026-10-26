@@ -16,17 +16,21 @@ void main() {
     final node = FocusNode();
     addTearDown(node.dispose);
     final events = <String>[];
-    await tester.pumpWidget(MaterialApp(
-      locale: AppLocale.ar.localizationsLocale,
-      supportedLocales: supportedLocalizationsLocales,
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: Scaffold(body: FocusableWrapper(
-        focusNode: node,
-        onNavigateLeft: () => events.add('previous'),
-        onNavigateRight: () => events.add('next'),
-        child: Text(t.common.settings),
-      )),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: AppLocale.ar.localizationsLocale,
+        supportedLocales: supportedLocalizationsLocales,
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: Scaffold(
+          body: FocusableWrapper(
+            focusNode: node,
+            onNavigateLeft: () => events.add('previous'),
+            onNavigateRight: () => events.add('next'),
+            child: Text(t.common.settings),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(Directionality.of(tester.element(find.text(t.common.settings))), TextDirection.rtl);
     node.requestFocus();
@@ -37,16 +41,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-
   testWidgets('RTL sliders increase in the same direction as their visual track', (tester) async {
     final node = FocusNode();
     addTearDown(node.dispose);
     double? changed;
-    await tester.pumpWidget(MaterialApp(home: Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(body: FocusableSlider(focusNode: node, value: 0.5, divisions: 10,
-        onChanged: (value) => changed = value)),
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: FocusableSlider(focusNode: node, value: 0.5, divisions: 10, onChanged: (value) => changed = value),
+          ),
+        ),
+      ),
+    );
     node.requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
@@ -72,7 +80,16 @@ void main() {
     await LocaleSettings.setLocale(AppLocale.ja);
     final japanese = await strategy.loadCharacters(filters: {}, typeId: null, descending: false);
     expect(japanese.chars, isEmpty);
-    expect(strategy.shouldShow(totalItemCount: 1000, loadedCharacterCount: 0,
-      sortKey: 'titleSort', isFolderGrouping: false, mediaBrowserAlphaPrefix: null, isPhone: false), isFalse);
+    expect(
+      strategy.shouldShow(
+        totalItemCount: 1000,
+        loadedCharacterCount: 0,
+        sortKey: 'titleSort',
+        isFolderGrouping: false,
+        mediaBrowserAlphaPrefix: null,
+        isPhone: false,
+      ),
+      isFalse,
+    );
   });
 }

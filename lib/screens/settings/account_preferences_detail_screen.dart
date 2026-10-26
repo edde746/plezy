@@ -28,7 +28,6 @@ import 'settings_utils.dart';
 /// that is what the transports read as "clear this".
 const _noLanguage = '';
 
-
 class AccountPreferencesDetailScreen extends StatelessWidget {
   final AccountPreferenceTarget target;
 
@@ -205,8 +204,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
     // prepended per build because its label is translated.
     final languageOptions = <DialogOption<String>>[
       DialogOption(value: _noLanguage, title: t.accountPreferences.noPreference),
-      for (final language in LanguageCodes.getAllLanguages())
-        DialogOption(value: language.code, title: language.name),
+      for (final language in LanguageCodes.getAllLanguages()) DialogOption(value: language.code, title: language.name),
     ];
 
     return [

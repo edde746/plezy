@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -249,16 +248,15 @@ class _AppIconPreview extends StatelessWidget {
 /// * tvOS and Android TV: dark plates, from the thumbnails
 ///   scripts/codegen/generate_app_icons.py renders from the shipping image
 ///   stack and banner.
-/// * Android phones: the adaptive foreground on `ic_launcher_background`, white
-///   or #1A1A1A with the system night mode the launcher resolves it in
-///   (res/values/colors.xml, res/values-night/colors.xml).
+/// * Android phones: the adaptive foreground on the PlezyNG navy launcher
+///   background (res/values/colors.xml).
 /// * iOS: ios/plezy.icon's one light fill, which its dark appearance inherits.
 class _DefaultIconPreview extends StatelessWidget {
   const _DefaultIconPreview();
 
   static const _iosFill = Color(0xFFF1F1F1);
-  static const _androidDayFill = Color(0xFFFFFFFF);
-  static const _androidNightFill = Color(0xFF1A1A1A);
+  static const _androidDayFill = Color(0xFF131928);
+  static const _androidNightFill = Color(0xFF131928);
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +273,7 @@ class _DefaultIconPreview extends StatelessWidget {
         : _androidDayFill;
     return ColoredBox(
       color: fill,
-      child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', fit: BoxFit.contain),
+      child: Image.asset('assets/plezy_adaptive_foreground.png', fit: BoxFit.contain),
     );
   }
 }

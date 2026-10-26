@@ -2,7 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/painting.dart';
 
-typedef _Key = (String, TextStyle, TextScaler, TextDirection);
+typedef _Key = (String, TextStyle, TextScaler, TextDirection, Locale?);
 
 final LinkedHashMap<_Key, Size> _sizes = LinkedHashMap<_Key, Size>();
 const int _maxEntries = 512;
@@ -23,13 +23,15 @@ Size cachedSingleLineTextSize(
   required TextStyle style,
   required TextScaler textScaler,
   required TextDirection textDirection,
+  Locale? locale,
 }) {
-  final key = (text, style, textScaler, textDirection);
+  final key = (text, style, textScaler, textDirection, locale);
   final cached = _sizes[key];
   if (cached != null) return cached;
   final painter = TextPainter(
     text: TextSpan(text: text, style: style),
     textDirection: textDirection,
+    locale: locale,
     textScaler: textScaler,
     maxLines: 1,
   )..layout();

@@ -1,7 +1,7 @@
 name: plezy
 description: "A cross-platform PlezyNG client for Plex, Jellyfin, and Emby"
 publish_to: "none"
-version: 2.24.1+156
+version: 2.24.1+157
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -19,7 +19,7 @@ dependencies:
   json_annotation: ^4.12.0
   shared_preferences: ^2.5.4
   cached_network_image_ce: ^4.9.0
-  http: ^1.2.0
+  http: ^1.6.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0
   window_manager: ^0.5.1
@@ -100,10 +100,17 @@ dependencies:
   flutter_chrome_cast: ^2.0.0
   flutter_local_notifications: ^22.3.3
   flutter_inapp_purchase: ^11.1.0
+  flutter_inappwebview:
+    path: packages/flutter_inappwebview
+  pdfrx: ^2.10.1
+  app_links: ^7.2.2
+  google_sign_in: ^7.2.0
+  mime: ^2.0.0
+  archive: ^4.5.2
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_secure_storage_platform_interface: ^2.1.1
-  archive: ^4.0.9
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
@@ -166,12 +173,15 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - assets/reader/
+    - assets/provider_marks/
+    - assets/reader/foliate/
     - assets/certificates/cacert.pem
     - assets/licenses/SpatialAudioBridge.txt
     - assets/licenses/Unicode.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
-    - assets/plezy_adaptive_foreground.svg
+    - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
     - assets/emby_icon.svg

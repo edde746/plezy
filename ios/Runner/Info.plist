@@ -71,6 +71,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>plezy</string>
+				<string>plezyng-source</string>
 			</array>
 		</dict>
 	</array>

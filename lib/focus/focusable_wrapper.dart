@@ -402,7 +402,11 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       if (!position.maxScrollExtent.isFinite) return;
       final targetOffset = (currentOffset + scrollDelta).clamp(position.minScrollExtent, position.maxScrollExtent);
 
-      position.animateTo(targetOffset, duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
+      if (MediaQuery.disableAnimationsOf(context)) {
+        position.jumpTo(targetOffset);
+      } else {
+        position.animateTo(targetOffset, duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
+      }
     });
   }
 
@@ -530,7 +534,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         controller.duration = duration;
       }
 
-      final shouldScale = showFocus && !widget.disableScale;
+      final shouldScale = showFocus && !widget.disableScale && !MediaQuery.disableAnimationsOf(context);
       // Keep the card subtree outside the scale builder. Rebuilding media-card
       // semantics on every animation tick is substantially more expensive than
       // changing the paint transform alone on dense TV grids.

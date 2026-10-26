@@ -44,7 +44,7 @@ def generated_outputs():
         + ''.join(f'    <locale android:name="{escape(tag)}" />\n' for tag in locales)
         + '</locale-config>\n'
     )
-    for platform in ('ios', 'macos'):
+    for platform in ('ios', 'macos', 'tvos'):
         for tag in locales:
             entries = KEYS if platform == 'ios' else {'NSLocalNetworkUsageDescription': 'localNetworkPermission'}
             outputs[f'{platform}/Runner/{tag}.lproj/InfoPlist.strings'] = (
@@ -58,7 +58,9 @@ def generated_outputs():
         localized = '\t<key>CFBundleLocalizations</key>\n\t<array>\n' + ''.join(
             f'\t\t<string>{escape(tag)}</string>\n' for tag in locales) + '\t</array>\n'
         plist = plist.replace('\t<key>CFBundleDevelopmentRegion</key>', localized + '\t<key>CFBundleDevelopmentRegion</key>')
-        for key, name in KEYS.items():
+        for key, name in entries.items():
+            if f'<key>{key}</key>' not in plist:
+                plist = plist.replace('<dict>\n', f'<dict>\n\t<key>{key}</key>\n\t<string>{escape(english[name])}</string>\n', 1)
             plist = re.sub(r'(<key>' + key + r'</key>\s*<string>).*?(</string>)',
                            lambda m: m[1] + escape(english[name]) + m[2], plist, flags=re.S)
         outputs[plist_path] = plist
@@ -85,9 +87,9 @@ def generated_outputs():
             marker = f'/* End {section} section */'
             block = f'\n/* Begin GeneratedLocale {section} */\n{content}/* End GeneratedLocale {section} */\n'
             project = project.replace(marker, block + marker)
-        # The existing Info.plist group is the correct visible parent on each platform.
-        project = re.sub(r'(^\s*\w+ /\* Info.plist \*/,\n)', lambda m: m[1] + f'\t\t\t\t{group_id} /* InfoPlist.strings */,\n', project, count=1, flags=re.M)
-        anchor = 'Main.storyboard' if platform == 'ios' else 'MainMenu.xib'
+        # Match Runner explicitly: tvOS also has a TopShelfExtension Info.plist.
+        project = re.sub(r'(\w+ /\* Runner \*/ = \{\s*isa = PBXGroup;\s*children = \(\n)', lambda m: m[1] + f'\t\t\t\t{group_id} /* InfoPlist.strings */,\n', project, count=1)
+        anchor = 'MainMenu.xib' if platform == 'macos' else 'Main.storyboard'
         project = re.sub(r'(^\s*\w+ /\* ' + re.escape(anchor) + r' in Resources \*/,\n)',
                          lambda m: m[1] + f'\t\t\t\t{build_id} /* InfoPlist.strings in Resources */,\n', project, count=1, flags=re.M)
         outputs[project_path] = project

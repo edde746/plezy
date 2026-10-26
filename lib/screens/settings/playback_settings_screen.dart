@@ -385,8 +385,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.playNextCountdown,
         icon: Symbols.timer_rounded,
         title: t.settings.playNextCountdown,
-        subtitleBuilder: (v) =>
-            v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v),
+        subtitleBuilder: (v) => v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),

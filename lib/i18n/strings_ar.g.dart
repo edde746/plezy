@@ -7,6 +7,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
@@ -100,6 +101,8 @@ class TranslationsAr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$ar watchLink = _Translations$watchLink$ar._(_root);
 	@override late final _Translations$homeLayout$ar homeLayout = _Translations$homeLayout$ar._(_root);
 	@override late final _Translations$platform$ar platform = _Translations$platform$ar._(_root);
+	@override late final _Translations$fileSources$ar fileSources = _Translations$fileSources$ar._(_root);
+	@override late final _Translations$lending$ar lending = _Translations$lending$ar._(_root);
 }
 
 // Path: app
@@ -269,7 +272,7 @@ class _Translations$screens$ar extends Translations$screens$en {
 	@override String get licenses => 'التراخيص';
 	@override String get switchProfile => 'الملف الشخصي Switch';
 	@override String get subtitleStyling => 'تنسيق الترجمة';
-	@override String get mpvConfig => 'mpv كونف';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => 'السجلات';
 }
 
@@ -457,9 +460,23 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get smallSkipDuration => 'قصة قصيرة طويلة';
 	@override String get largeSkipDuration => 'طوله طوله طوله';
 	@override String get rewindOnResume => 'عودة على المجلد';
-	@override String secondsUnit({required Object seconds}) => '${seconds} ثانية';
+	@override String secondsUnit({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(seconds,
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية',
+		one: 'ثانية',
+		two: 'ثانيتان',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثوان',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية',
+	);
 	@override String get defaultSleepTimer => 'أوقات النوم الافتراضية';
-	@override String minutesUnit({required Object minutes}) => '${minutes} دقيقة';
+	@override String minutesUnit({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(minutes,
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة',
+		one: 'دقيقة',
+		two: 'دقيقتان',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقائق',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة',
+	);
 	@override String get rememberTrackSelections => 'تذكر اختيارات المسارات حسب عرض/فيلم';
 	@override String get chooseTracksBeforePlayback => 'اختيار الأصوات والأسماء الفرعية قبل تشغيل';
 	@override String get chooseTracksBeforePlaybackDescription => 'اقرأ الصوت المصدر ومتابعة العناوين الفرعية قبل أن يبدأ كل مقطع فيديو.';
@@ -611,8 +628,8 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get askDownloadQualityEachTime => 'اختيار الجودة لكل تحميل';
 	@override String get askDownloadQualityEachTimeDescription => 'إظهار الجودة الرائدة قبل إزالة كل تحميل الفيديو';
 	@override String get cellularDownloadBlocked => 'يتم حظر التنزيلات على الهاتف المحمول.استخدم Wi-Fi أو تغيير الإعداد.';
-	@override String get maxVolume => 'الحد الأقصى حجم';
-	@override String get maxVolumeDescription => 'السماح بزيادة حجم أكثر من 100٪ لوسائل الإعلام الهادئة';
+	@override String get maxVolume => 'الحد الأقصى لمستوى الصوت';
+	@override String get maxVolumeDescription => 'السماح برفع مستوى الصوت فوق 100% للمحتوى ذي الصوت المنخفض';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'ضعف غنية الحضور';
 	@override String get discordRichPresenceDescription => 'إظهار ما تشاهده على Discord';
@@ -708,7 +725,7 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get general => 'عام';
 	@override String get generalDescription => 'اللغة والبدء والنافذة السلوك';
 	@override String get languageAndRegion => 'اللغة والمنطقة';
-	@override String get startup => 'Startup';
+	@override String get startup => 'بدء التشغيل';
 	@override String get display => 'العرض';
 	@override String get libraryAndCards => 'المكتبة والبطاقات';
 	@override String get homeScreen => 'Home شاشة';
@@ -785,7 +802,7 @@ class _Translations$themeEditor$ar extends Translations$themeEditor$en {
 	@override String get discard => 'ديكارد';
 	@override String previewCardTitle({required Object number}) => 'الحلقة ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} دقيقة متبقية';
-	@override String get previewSwitch => 'Autoplay';
+	@override String get previewSwitch => 'التشغيل التلقائي';
 	@override String get previewMutedText => 'النص الثانوي يقرأ هكذا';
 }
 
@@ -879,12 +896,12 @@ class _Translations$fileInfo$ar extends Translations$fileInfo$en {
 	@override String get dolbyVisionVersion => 'Dolby Vision النسخة';
 	@override String get dolbyVisionLayers => 'Dolby Vision طبقات';
 	@override String get baseLayerCompatibility => 'التوافق الأساسي';
-	@override String get avcBitstream => 'AVC Bitstream';
+	@override String get avcBitstream => 'تدفق بتات AVC';
 	@override String get nalLengthSize => 'نال طول الحجم';
 	@override String get scalingMatrix => 'المصفوفة المصفوفة المصفوفة';
 	@override String get streamIdentifier => 'الهوية الهوية';
 	@override String get streamIndex => 'مؤشر التدفق';
-	@override String get streamId => 'Stream ID';
+	@override String get streamId => 'معرّف التدفق';
 	@override String get language => 'اللغة';
 	@override String get languageCode => 'رمز اللغة';
 	@override String get streamTitle => 'العنوان Track';
@@ -926,7 +943,7 @@ class _Translations$fileInfo$ar extends Translations$fileInfo$en {
 	@override String get directPlay => 'اللعب المباشر';
 	@override String get directStream => 'البث المباشر';
 	@override String get transcoding => 'تحويل الترميز';
-	@override String get etag => 'إيتاغ';
+	@override String get etag => 'ETag';
 	@override String get versionId => 'نسخة ID';
 	@override String get fileId => 'ملف ID';
 	@override String get defaultAudioTrack => 'أداة Audio Track';
@@ -977,25 +994,25 @@ class _Translations$mediaMenu$ar extends Translations$mediaMenu$en {
 		zero: 'لن تُحذف أي حلقات.',
 		one: 'سيُحذف جميع محتواها: حلقة واحدة وملفها.',
 		two: 'سيُحذف جميع محتواها: حلقتان وملفاهما.',
-		few: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقات، مع ملفاتها.',
-		many: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقة، مع ملفاتها.',
-		other: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقة، مع ملفاتها.',
+		few: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات، مع ملفاتها.',
+		many: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.',
+		other: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
 		zero: 'لا توجد ملفات لهذا العنصر.',
 		one: 'هذا العنصر محفوظ في ملف واحد سيُحذف.',
 		two: 'هذا العنصر محفوظ في ملفين سيُحذفان.',
-		few: 'هذا العنصر موزّع على ${n} ملفات، وستُحذف كلها.',
-		many: 'هذا العنصر موزّع على ${n} ملفًا، وستُحذف كلها.',
-		other: 'هذا العنصر موزّع على ${n} ملف، وستُحذف كلها.',
+		few: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفات، وستُحذف كلها.',
+		many: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفًا، وستُحذف كلها.',
+		other: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملف، وستُحذف كلها.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
 		zero: 'لا توجد حلقات أخرى في الملف نفسه.',
 		one: 'توجد حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
 		two: 'توجد حلقتان أخريان في الملف نفسه وستُحذفان أيضًا:',
-		few: 'توجد ${n} حلقات أخرى في الملف نفسه وستُحذف أيضًا:',
-		many: 'توجد ${n} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
-		other: 'توجد ${n} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
+		few: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات أخرى في الملف نفسه وستُحذف أيضًا:',
+		many: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
+		other: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG لم يكن قادرا على التحقق من الملفات التي سيتم إزالتها، لذلك قد يحذف أكثر من العنصر المذكور أعلاه.';
 	@override String get deleteScopeUnverifiedNoFileInfo => 'لم يقدم خادمك تفاصيل الملفات لهذا العنصر، لذلك لا يمكن أن تحقق PlezyNG من الملفات التي سيتم إزالتها.';
@@ -1064,6 +1081,21 @@ class _Translations$accessibility$ar extends Translations$accessibility$en {
 	@override String get blueShort => 'ب';
 	@override String get colorModeHsv => 'HSV';
 	@override String get colorModeRgb => 'RGB';
+	@override String get title => 'إمكانية الوصول';
+	@override String get summary => 'النص والتباين والحركة وعناصر التحكم';
+	@override String get systemHint => 'تظل إعدادات إمكانية الوصول في جهازك سارية دائمًا. تضيف هذه الخيارات تعديلات في جميع أنحاء PlezyNG.';
+	@override String get readability => 'القراءة والرؤية';
+	@override String get textSize => 'تكبير إضافي للنص';
+	@override String get preview => 'اعثر على قصتك التالية. اقرأ واستمع وشاهد بالوتيرة التي تناسبك.';
+	@override String get boldText => 'نص واجهة عريض';
+	@override String get highContrast => 'تباين عالٍ';
+	@override String get highContrastHint => 'نص وحدود ومؤشرات تركيز أوضح على الأسطح الفاتحة أو الداكنة.';
+	@override String get interaction => 'الحركة والتفاعل';
+	@override String get reduceMotion => 'تقليل الحركة';
+	@override String get reduceMotionHint => 'إيقاف حركة التركيز وانتقالات الصفحات والمؤثرات الزخرفية.';
+	@override String get largeTargets => 'مساحات لمس أكبر';
+	@override String get largeTargetsHint => 'توفير مساحة أوسع لعناصر التحكم المشتركة للمس والتنقل باستخدام التقنيات المساعدة.';
+	@override String get navigationHint => 'استخدم Tab وShift+Tab للتنقل بين عناصر التحكم، وEnter أو مفتاح المسافة لتفعيلها، وEscape أو زر الرجوع للإغلاق. تتوفر خيارات التكبير وتفضيلات القراءة أثناء فتح الكتاب.';
 }
 
 // Path: tooltips
@@ -1097,12 +1129,12 @@ class _Translations$videoControls$ar extends Translations$videoControls$en {
 
 	// Translations
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} إطار',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار',
 		one: 'إطار واحد',
 		two: 'إطاران',
-		few: '${n} إطارات',
-		many: '${n} إطار',
-		other: '${n} إطار',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطارات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار',
 	);
 	@override String get audioLabel => 'الصوت';
 	@override String get subtitlesLabel => 'الترجمة';
@@ -1167,8 +1199,8 @@ class _Translations$videoControls$ar extends Translations$videoControls$en {
 	@override String get pipFailed => 'صورة في الصورة فشلت في البدء';
 	@override String get screenshotSaved => 'صورة شاشة تم حفظها';
 	@override String get screenshotFailed => 'لا أستطيع التقاط صورة شاشة';
-	@override String zoomPercent({required Object percent}) => 'زوم ${percent}%';
-	@override String volumePercent({required Object percent}) => 'حجم ${percent}%';
+	@override String zoomPercent({required Object percent}) => 'التكبير ${percent}%';
+	@override String volumePercent({required Object percent}) => 'مستوى الصوت ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$ar pipErrors = _Translations$videoControls$pipErrors$ar._(_root);
 	@override String get chapters => 'الفصول';
 	@override String get noChaptersAvailable => 'لا توجد فصول متاحة';
@@ -1212,9 +1244,9 @@ class _Translations$messages$ar extends Translations$messages$en {
 		zero: 'لم تُزل أي تنزيلات تمت مشاهدتها',
 		one: 'أُزيل تنزيل واحد تمت مشاهدته تلقائيًا',
 		two: 'أُزيل تنزيلان تمت مشاهدتهما تلقائيًا',
-		few: 'أُزيلت ${n} تنزيلات تمت مشاهدتها تلقائيًا',
-		many: 'أُزيل ${n} تنزيلًا تمت مشاهدته تلقائيًا',
-		other: 'أُزيل ${n} تنزيل تمت مشاهدته تلقائيًا',
+		few: 'أُزيلت ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلات تمت مشاهدتها تلقائيًا',
+		many: 'أُزيل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلًا تمت مشاهدته تلقائيًا',
+		other: 'أُزيل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل تمت مشاهدته تلقائيًا',
 	);
 	@override String get removedFromContinueWatching => 'إزالة من مواصلة مراقبة';
 	@override String errorLoading({required Object error}) => 'الخطأ: ${error}';
@@ -1268,7 +1300,7 @@ class _Translations$messages$ar extends Translations$messages$en {
 	@override String get playbackNotAllowedBody => 'ورفض الخادم بث هذا البند (HTTP 403). قد لا يكون حسابك مسموحًا بتشغيلها، أو قد يسمح الخادم فقط بالتشغيل على شبكتها المحلية.';
 	@override String get logsUploaded => 'Logs تحميل';
 	@override String get logsUploadFailed => 'فشل في تحميل اللوحات';
-	@override String get logId => 'Log ID';
+	@override String get logId => 'معرّف السجل';
 	@override String get burnedSubtitlesUseMenu => 'يتم حرق العناوين في هذا التدفق.تغييرها من قائمة العناوين.';
 	@override String get noVideoUrl => 'لا توجد URL الفيديو المتاحة';
 	@override String get playbackNoMediaSources => 'الخادم لم يعيد أي مصادر وسائل الإعلام المباشرة';
@@ -1321,7 +1353,7 @@ class _Translations$mpvConfig$ar extends Translations$mpvConfig$en {
 	final TranslationsAr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'mpv كونف';
+	@override String get title => 'mpv.conf';
 	@override String get description => 'إعدادات مشغل الفيديو المتقدمة';
 	@override String get presets => 'الكهنوت';
 	@override String get noPresets => 'لا توجد سلاحات';
@@ -1335,7 +1367,7 @@ class _Translations$mpvConfig$ar extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'إلغاء Preset';
 	@override String get confirmDeletePreset => 'هل أنت متأكد من أنك ترغب في إزالة هذا التوقيع؟';
 	@override String get configPlaceholder => 'gpu-api=vulkan hwdec=auto # التعليق';
-	@override String get lineHint => 'الخيار = القيمة';
+	@override String get lineHint => 'option=value';
 	@override String get addLine => 'إضافة خط';
 	@override String get removeLine => 'إزالة الخط';
 	@override String get embeddedVoHint => 'يتم تجاهل vo، gpu-context و gpu-api على Linux: فيديو مدمج دائما يخرج من خلال vo=libmpv على مقطع الفيديو، و gpu-next (الذي يحتاج الظلال الحاسوبية مثل ArtCNN) لا يمكن تشغيل مدمج.';
@@ -1514,7 +1546,7 @@ class _Translations$discover$ar extends Translations$discover$en {
 	@override String latestAlbumsIn({required Object library}) => 'أحدث الألبومات في ${library}';
 	@override String recentlyPlayedIn({required Object library}) => 'اللعب مؤخرا في ${library}';
 	@override String mostPlayedIn({required Object library}) => 'الأكثر لعبًا في ${library}';
-	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
+	@override String playEpisode({required Object season, required Object episode}) => 'م${season} ح${episode}';
 	@override String get overview => 'نظرة عامة';
 	@override String get cast => 'كاست';
 	@override String get extras => 'تريلر و إضافات';
@@ -1527,12 +1559,12 @@ class _Translations$discover$ar extends Translations$discover$en {
 	@override String minutesLeft({required Object minutes}) => '${minutes} دقيقة متبقية';
 	@override String get moreLikeThis => 'مشابه لهذا';
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} عنوان',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان',
 		one: 'عنوان واحد',
 		two: 'عنوانان',
-		few: '${n} عناوين',
-		many: '${n} عنوان',
-		other: '${n} عنوان',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عناوين',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان',
 	);
 	@override late final _Translations$discover$person$ar person = _Translations$discover$person$ar._(_root);
 }
@@ -1635,6 +1667,7 @@ class _Translations$about$ar extends Translations$about$en {
 	@override String versionLabel({required Object version}) => 'النسخة ${version}';
 	@override String get appDescription => 'عميل جميل Plex و Jellyfin و Emby لـ Flutter';
 	@override String get viewLicensesDescription => 'عرض ترخيص المكتبات من طرف ثالث';
+	@override String get privacyPolicy => 'سياسة الخصوصية';
 }
 
 // Path: serverSelection
@@ -1766,12 +1799,12 @@ class _Translations$explore$ar extends Translations$explore$en {
 	@override late final _Translations$explore$rows$ar rows = _Translations$explore$rows$ar._(_root);
 	@override late final _Translations$explore$status$ar status = _Translations$explore$status$ar._(_root);
 	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} حلقة',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة',
 		one: 'حلقة واحدة',
 		two: 'حلقتان',
-		few: '${n} حلقات',
-		many: '${n} حلقة',
-		other: '${n} حلقة',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة',
 	);
 	@override String get cast => 'كاست';
 	@override String get characters => 'شخصيات';
@@ -1788,9 +1821,9 @@ class _Translations$explore$ar extends Translations$explore$en {
 		zero: 'تعذر فحص أي خادم',
 		one: 'تعذر فحص خادم واحد',
 		two: 'تعذر فحص خادمين',
-		few: 'تعذر فحص ${n} خوادم',
-		many: 'تعذر فحص ${n} خادمًا',
-		other: 'تعذر فحص ${n} خادم',
+		few: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خوادم',
+		many: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خادمًا',
+		other: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خادم',
 	);
 	@override String get emptyTitle => 'لا شيء هنا حتى الآن';
 	@override String emptyMessage({required Object source}) => 'سيتم عرض الأقواس من ${source} هنا بمجرد أن يكون لديهم محتوى.';
@@ -1809,12 +1842,12 @@ class _Translations$explore$ar extends Translations$explore$en {
 	@override String broadcastWithZone({required Object day, required Object time, required Object timezone}) => 'Airs ${day} عند ${time} ${timezone}';
 	@override late final _Translations$explore$detail$ar detail = _Translations$explore$detail$ar._(_root);
 	@override String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} نتيجة',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة',
 		one: 'نتيجة واحدة',
 		two: 'نتيجتان',
-		few: '${n} نتائج',
-		many: '${n} نتيجة',
-		other: '${n} نتيجة',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتائج',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة',
 	);
 }
 
@@ -1964,8 +1997,14 @@ class _Translations$playlists$ar extends Translations$playlists$en {
 	@override String get delete => 'حذف قائمة التشغيل';
 	@override String get removeItem => 'إزالة من قائمة التشغيل';
 	@override String get smartPlaylist => 'لعبة ذكية';
-	@override String itemCount({required Object count}) => '${count} العناصر';
-	@override String get oneItem => '1 عنصر';
+	@override String itemCount({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(count,
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصر',
+		one: 'عنصر واحد',
+		two: 'عنصران',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عناصر',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصرًا',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصر',
+	);
 	@override String get emptyPlaylist => 'هذه القائمة فارغة';
 	@override String get deleteConfirm => 'إلغاء اللعب؟';
 	@override String deleteMessage({required Object name}) => 'هل أنت متأكد من أنك تريد إزالة "${name}"؟';
@@ -1997,12 +2036,12 @@ class _Translations$music$ar extends Translations$music$en {
 	@override String get addToQueue => 'إضافة إلى كوشنر';
 	@override String discNumber({required Object n}) => 'القرص ${n}';
 	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} مقطع',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع',
 		one: 'مقطع واحد',
 		two: 'مقطعان',
-		few: '${n} مقاطع',
-		many: '${n} مقطع',
-		other: '${n} مقطع',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقاطع',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع',
 	);
 	@override String get nowPlaying => 'اللعب الآن';
 	@override String playingFrom({required Object title}) => 'اللعب من ${title}';
@@ -2024,7 +2063,14 @@ class _Translations$music$ar extends Translations$music$en {
 	@override String get noLyrics => 'لا توجد أغاني متوفرة';
 	@override String get sleepTimer => 'ساعات النوم';
 	@override String get sleepTimerEndOfTrack => 'نهاية المسار';
-	@override String sleepTimerMinutes({required Object n}) => '${n} دقيقة';
+	@override String sleepTimerMinutes({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة',
+		one: 'دقيقة',
+		two: 'دقيقتان',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقائق',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة',
+	);
 	@override String get stopPlayback => 'إيقاف التشغيل';
 	@override String get previousTrack => 'المسار السابق';
 	@override String get nextTrack => 'المسار التالي';
@@ -2114,12 +2160,12 @@ class _Translations$watchTogether$ar extends Translations$watchTogether$en {
 	@override String get offsetPlusSecond => '+1 س';
 	@override String get participants => 'المشاركين';
 	@override String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} مشارك',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك',
 		one: 'مشارك واحد',
 		two: 'مشاركان',
-		few: '${n} مشاركين',
-		many: '${n} مشارك',
-		other: '${n} مشارك',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشاركين',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك',
 	);
 	@override String get hostBadge => 'المضيف';
 	@override String nameYou({required Object name}) => '${name} (أنت)';
@@ -2256,7 +2302,7 @@ class _Translations$downloads$ar extends Translations$downloads$en {
 	@override String get syncUnwatchedItems => 'تصنيف العناصر غير المراقبة';
 	@override String syncRuleServerContext({required Object server, required Object status}) => 'الخادم: ${server} • ${status}';
 	@override String get syncRuleAvailable => 'متاح';
-	@override String get syncRuleOffline => 'Offline';
+	@override String get syncRuleOffline => 'غير متصل';
 	@override String get syncRuleSignInRequired => 'التوقيع في المطلوب';
 	@override String get syncRuleAccessDenied => 'الوصول يرفض';
 	@override String get syncRuleNotAvailableForProfile => 'غير متوفر للملف الحالي';
@@ -2272,36 +2318,36 @@ class _Translations$downloads$ar extends Translations$downloads$en {
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} تم الانتهاء منه';
 	@override String storageUsed({required Object size}) => 'التخزين المستخدم: ${size}';
 	@override String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} تنزيل',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل',
 		one: 'تنزيل واحد',
 		two: 'تنزيلان',
-		few: '${n} تنزيلات',
-		many: '${n} تنزيل',
-		other: '${n} تنزيل',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل',
 	);
 	@override String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} مسلسل',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل',
 		one: 'مسلسل واحد',
 		two: 'مسلسلان',
-		few: '${n} مسلسلات',
-		many: '${n} مسلسل',
-		other: '${n} مسلسل',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسلات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل',
 	);
 	@override String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} فيلم',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم',
 		one: 'فيلم واحد',
 		two: 'فيلمان',
-		few: '${n} أفلام',
-		many: '${n} فيلم',
-		other: '${n} فيلم',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} أفلام',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم',
 	);
 	@override String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} ألبوم',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم',
 		one: 'ألبوم واحد',
 		two: 'ألبومان',
-		few: '${n} ألبومات',
-		many: '${n} ألبوم',
-		other: '${n} ألبوم',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبومات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم',
 	);
 	@override String get errorFileNotFound => 'ملف غير موجود (404)';
 	@override String get errorDownloadNotAllowed => 'تنزيل غير مسموح به الخادم (403)';
@@ -2384,8 +2430,8 @@ class _Translations$videoSettings$ar extends Translations$videoSettings$en {
 	@override String get hdrToneMappingFailed => 'لا يمكن تغيير خرائط الأصوات HDR - الوضع السابق لا يزال نشطا.';
 	@override String get audioOutput => 'أداة الصوت';
 	@override String get performanceOverlay => 'أداء Overlay';
-	@override String get audioOutputDolbyAtmos => 'ديلبي Atmos';
-	@override String get audioOutputDolbyAudio => 'Dolby الصوت';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'حول';
 	@override String get audioOutputSpatial => 'الفضاء الصوت';
 	@override String get audioOutputStereo => 'ستيريو (Stereo)';
@@ -2442,8 +2488,8 @@ class _Translations$performanceOverlay$ar extends Translations$performanceOverla
 	@override String get dvSampleAverage => 'DV نموذج Avg';
 	@override String get maxLuma => 'ماكس لوما';
 	@override String get minLuma => 'لوميا';
-	@override String get maxCll => 'ماكسيل';
-	@override String get maxFall => 'ماكسفال';
+	@override String get maxCll => 'MaxCLL';
+	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'كاش المستخدم';
 	@override String get cacheLimit => 'الحد الأدنى للكاش';
 	@override String get speed => 'السرعة';
@@ -2630,7 +2676,7 @@ class _Translations$seerr$ar extends Translations$seerr$en {
 	final TranslationsAr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'مشاهدة';
+	@override String get title => 'Seerr';
 	@override String get connectTitle => 'الاتصال Seerr';
 	@override String get serverUrl => 'URL الخادم';
 	@override String get serverUrlHelper => 'العنوان الخاص بك Seerr instance';
@@ -2803,102 +2849,102 @@ class _Translations$homeLayout$ar extends Translations$homeLayout$en {
 	final TranslationsAr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Home لويس';
-	@override String get resetToast => 'إعادة تعيين المنزل إلى التصميم الأصلي Plezy البطل';
-	@override String get resetHeroTitle => 'إعادة ترتيب البطل إلى المخزون Plezy؟';
-	@override String get resetHeroBody => 'يلغي إعدادات البطل في كل صف ويعيد علامة التبويب الوحيدة التي تدور في أعلى المنزل، كما كان قبل أن توجد صفوف البطل.';
-	@override String get removeRowTitle => 'إزالة صف المنزل؟';
-	@override String removeRowBody({required Object title}) => '${title} سيتم إلغاء.';
-	@override String get sync => 'التزامن';
-	@override String get syncAccountTitle => 'تصنيف التصميم مع حسابك Plex';
-	@override String get syncAccountOn => 'على: هذا الجهاز يشارك صفوف الأوامر، الصفوف، Hero و Auto-slide مع الأجهزة الأخرى.';
-	@override String get syncAccountOff => 'إلغاء: يحتفظ هذا الجهاز بتصميمه الخاص.';
-	@override String get syncNow => 'Sync الآن';
-	@override String get plexHomeManager => 'Plex المدير المنزلي';
-	@override String get managePlexRows => 'إدارة Plex صفوف في Plezy';
-	@override String get managePlexRowsDescription => 'مفتوحة لتنظيم الخطوط المنزلية المختارة';
-	@override String get organizeHomeRows => 'تنظيم السلسلة المنزلية';
-	@override String organizeHomeRowsDescription({required Object n}) => '${n} صفوف: تحريك, بطل, السيارة, إزالة';
-	@override String organizeLibraryRows({required Object library}) => 'تنظيم ${library} صفوف';
-	@override String organizeLibraryRowsDescription({required Object n}) => 'مواصلة مشاهدة + ${n} صفوف: الحركة, مكتبة, المنزل, البطل, السيارة';
-	@override String get renderAsHero => 'راندر كبطل بطاقة';
-	@override String get heroOnlySingleCollection => 'متوفر فقط عندما يتم حل هذه السلسلة إلى العناوين الفعلية لمجموعة واحدة';
-	@override String get hero => 'البطل';
-	@override String get autoSlide => 'سلاسل السيارات';
-	@override String get autoSlideDescription => 'أيضًا ، يتم تشغيل الشرائح من تلقاء نفسها كل بضع ثوان. Arrows (PC) و d-pad (TV) يعملون دائمًا وإعادة تشغيل التوقيت.';
-	@override String get autoSlideEditDescription => 'أيضًا ، يغلق نفسه كل بضع ثوان.إيقاف: يتحرك فقط عند النقر على شريط (PC) أو الضغط على اليسار / اليمين على البريد عن بعد (TV).';
-	@override String get enableHeroFirst => 'إمكانية إطلاق البطل أولاً';
-	@override String get showOnHome => 'عرض على الشاشة المنزلية';
+	@override String get title => 'تخطيط الصفحة الرئيسية';
+	@override String get resetToast => 'أُعيد تخطيط الصفحة الرئيسية إلى بانر Plezy الأصلي';
+	@override String get resetHeroTitle => 'إعادة تخطيط البانر إلى إعداد Plezy الأصلي؟';
+	@override String get resetHeroBody => 'يُوقف عرض كل الصفوف كبطاقات بارزة، ويُعيد البانر الدوّار الواحد إلى أعلى الصفحة الرئيسية كما كان سابقًا. يبقى ترتيب الصفوف وإعداد إظهارها كما هو.';
+	@override String get removeRowTitle => 'إزالة صف من الصفحة الرئيسية؟';
+	@override String removeRowBody({required Object title}) => 'سيُحذف ${title}. لا يمكن التراجع عن هذا الإجراء.';
+	@override String get sync => 'مزامنة';
+	@override String get syncAccountTitle => 'مزامنة التخطيط مع حساب Plex';
+	@override String get syncAccountOn => 'مفعّل: يشارك هذا الجهاز ترتيب الصفوف والصفوف نفسها وإعدادات البطاقات البارزة والتنقّل التلقائي مع أجهزتك الأخرى.';
+	@override String get syncAccountOff => 'متوقف: يحتفظ هذا الجهاز بتخطيطه الخاص.';
+	@override String get syncNow => 'مزامنة الآن';
+	@override String get plexHomeManager => 'إدارة الصفحة الرئيسية في Plex';
+	@override String get managePlexRows => 'إدارة صفوف Plex في Plezy';
+	@override String get managePlexRowsDescription => 'تنظيم الصفوف المختارة للصفحة الرئيسية';
+	@override String get organizeHomeRows => 'تنظيم صفوف الصفحة الرئيسية';
+	@override String organizeHomeRowsDescription({required Object n}) => '${n} صفوف: نقل، بطاقة بارزة، تنقّل تلقائي، إزالة';
+	@override String organizeLibraryRows({required Object library}) => 'تنظيم صفوف ${library}';
+	@override String organizeLibraryRowsDescription({required Object n}) => 'متابعة المشاهدة و${n} صفوف: نقل، مكتبة، رئيسية، بطاقة بارزة، تنقّل تلقائي';
+	@override String get renderAsHero => 'عرض كبطاقة بارزة';
+	@override String get heroOnlySingleCollection => 'متاح فقط عندما يعرض هذا الصف عناوين مجموعة واحدة مباشرةً';
+	@override String get hero => 'بطاقة بارزة';
+	@override String get autoSlide => 'تنقّل تلقائي';
+	@override String get autoSlideDescription => 'ينتقل أيضًا تلقائيًا كل بضع ثوانٍ. تعمل الأسهم على الكمبيوتر وأزرار الاتجاهات على التلفزيون دائمًا، وتعيد بدء المؤقّت.';
+	@override String get autoSlideEditDescription => 'ينتقل أيضًا تلقائيًا كل بضع ثوانٍ. عند الإيقاف، يتنقّل فقط عند النقر على سهم في الكمبيوتر أو الضغط على اليمين أو اليسار في جهاز التحكم. تعمل الأسهم وأزرار الاتجاهات في الحالتين.';
+	@override String get enableHeroFirst => 'فعّل البطاقة البارزة أولًا';
+	@override String get showOnHome => 'إظهار في الصفحة الرئيسية';
 	@override String get home => 'الرئيسية';
-	@override String get removeFromHome => 'إزالة من المنزل';
-	@override String get selectRowsFirst => 'اختر صفوف المنزل أدناه أولاً.';
-	@override String plexManagedRows({required Object n}) => '${n} Plex صفوف مدعومة';
+	@override String get removeFromHome => 'إزالة من الصفحة الرئيسية';
+	@override String get selectRowsFirst => 'اختر صفوف الصفحة الرئيسية أدناه أولًا.';
+	@override String plexManagedRows({required Object n}) => '${n} صفوف يديرها Plex';
 	@override String get continueWatching => 'متابعة المشاهدة';
-	@override String get continueWatchingLibraryDescription => 'هذه المكتبة ذاتية إعادة التقدم';
-	@override String get continueWatchingHomeDescription => 'إعادة التقدم الترتيب المعروضة على المنزل';
-	@override String get nextUpHomeDescription => 'الحلقة التالية غير الملاحظة عرض منفصلة على Home';
+	@override String get continueWatchingLibraryDescription => 'صف استئناف المشاهدة الخاص بهذه المكتبة';
+	@override String get continueWatchingHomeDescription => 'صف استئناف المشاهدة المعروض في الصفحة الرئيسية';
+	@override String get nextUpHomeDescription => 'صف الحلقة التالية غير المشاهدة، ويظهر بشكل منفصل في الصفحة الرئيسية';
 	@override String get library => 'المكتبة';
-	@override String get showInRecommended => 'عرض في المكتبة الموصى بها';
-	@override String get customPlexRow => 'مخصص Plex صف';
-	@override String get heroNeedsLibrary => 'اقرأ المكتبة أولاً - يحتاج البطل إلى مكان ما لإظهار';
-	@override String get heroNeedsSurface => 'تحقق من المكتبة أو المنزل أولاً - يحتاج البطل إلى مكان ما لإظهار';
-	@override String get removeHub => 'إزالة Hub';
-	@override String get noPlexRows => 'رقم Plex-السلسلة التي تم إدارةها عاد إلى هذه المكتبة.';
-	@override String get openDetails => 'التفاصيل المفتوحة';
-	@override String get heroCards => 'بطاقات البطل';
-	@override String get tapHeroCard => 'إلقاء بطاقة بطل';
-	@override String get tvPlayFocus => 'التلفزيون عن بعد: الضوء على زر اللعب';
-	@override String get tvPlayFocusDescription => 'يتوقف D-pad إلى أسفل على زر اللعب قبل الانتقال إلى الصف التالي.';
-	@override String get tvWrap => 'التلفزيون عن بعد: بطاقات البطل القفز';
-	@override String get tvWrapDescription => 'على البطاقة الأخيرة يعود إلى البطاقة الأولى.على البطاقة الأخيرة يتوقف.على اليسار على البطاقة الأولى يذهب دائمًا إلى شريط الجانب.';
-	@override String get castOnHero => 'أضف تعليق حول Hero Banner';
-	@override String get castOnHeroDescription => 'يظهر الخصم على طول الجزء السفلي من علامة البانر البطل.';
-	@override String get customRows => 'خطوط مخصصة';
-	@override String get loading => 'تحميل المنزلي layout ...';
-	@override String get noCustomRows => 'لا توجد صفوف عادية حتى الآن';
-	@override String get addRowHint => 'استخدم إضافة صف المنزل لإنشاء واحد.';
-	@override String get addHomeRow => 'إضافة الصفحة الرئيسية';
-	@override String get addHomeRowDescription => 'اختر فئة؛ يتم إضافة الصف الجديد تلقائيًا إلى المنظم';
-	@override String get removeRow => 'إزالة صفوف';
-	@override String get recentlyAdded => 'أُضيف حديثًا';
-	@override String get recentlyReleased => 'أصدرت مؤخرا';
-	@override String get movieCollections => 'مجموعة الأفلام';
-	@override String get showCollections => 'عرض مجموعات';
-	@override String get rowTitle => 'لقب Row';
-	@override String get content => 'حاجة';
-	@override String get showThisRowIn => 'إظهار هذه السلسلة في:';
-	@override String get libraryRecommended => 'المكتبة الموصى بها';
-	@override String get heroCard => 'بطاقة البطل';
-	@override String get heroCardDescription => 'يظهر كبطاقة عجلة واسعة كاملة بدلاً من ملصق ملصق.';
-	@override String get heroUnavailableDescription => 'متوفر فقط عندما يتم حل هذه السلسلة إلى العناوين الحقيقية لمجموعة واحدة - مع أكثر من مجموعة واحدة مختارة لا يوجد عنوان واحد للدوران من خلال.';
-	@override String get librariesSelection => 'المكتبات (تخفي جميع غير المراجعة لتشمل كل مكتبة)';
-	@override String get librariesMergedDescription => 'كل مكتبة تم فحصها هنا يتم دمجها في هذه السلسلة.';
-	@override String get movieCollectionsSelection => 'مجموعات الأفلام (تخفي جميع غير مسبوقة لكل مكتبة مختارة)';
-	@override String get showCollectionsSelection => 'عرض المجموعات (تخفي جميع غير المراجعة لكل مكتبة مختارة)';
-	@override String get collectionRowsDescription => 'إذا كانت مجموعة واحدة تتطابق بالضبط ، فإن عناوينها تظهر مباشرة في التسلسل.إذا كانت أكثر من مجموعة واحدة تتطابق ، فإن كل مجموعة تظهر كملصق واحد - اضغط عليه لفتح تلك المجموعة.';
-	@override String get allCollections => 'جميع المجموعات';
-	@override String get noRowsHere => 'لا توجد صفوف هنا حتى الآن.';
-	@override String get hideWatchedRows => 'إخفاء العناصر المراقبة في صفوف';
-	@override String get hideWatchedRowsDescription => 'العناوين المراقبة بالكامل تترك المنزل والمكتبة الصفوف الموصى بها.';
-	@override String get untitledCollection => 'مجموعة غير مدرجة';
-	@override String get moveRowHint => 'Up/Down: move order · Select: drop it here · Back: cancel';
-	@override String get organizeRowsHint => 'اختر في صف (أو احتفظ باختيار): تحريكها · اليسار/اليمين: خيارات الصف · العودة: جاهزة';
-	@override String get layoutNavDescription => 'اختر صفوف ومكتبات ومجموعات جمع';
-	@override String get editHomeRow => 'Edit Home صفحة';
-	@override String get resetHeroButton => 'إعادة ترتيب البطل إلى المخزون Plezy';
-	@override String get reorderingUnlocked => 'إعادة ترتيب مفتوحة';
-	@override String get reorderingLocked => 'إعادة ترتيب مغلقة';
-	@override String get rowsCanBeDragged => 'يمكن سحب الحواجب - اضغط على القفل لمنع ذلك';
-	@override String get tapLockToDrag => 'اضغط على القفل لسحب الصفوف';
-	@override String customRowLabel({required Object title}) => 'مميزات: ${title}';
+	@override String get showInRecommended => 'إظهار ضمن توصيات المكتبة';
+	@override String get customPlexRow => 'صف Plex مخصّص';
+	@override String get heroNeedsLibrary => 'حدّد المكتبة أولًا ليكون للبطاقة البارزة مكان تظهر فيه';
+	@override String get heroNeedsSurface => 'حدّد المكتبة أو الصفحة الرئيسية أولًا ليكون للبطاقة البارزة مكان تظهر فيه';
+	@override String get removeHub => 'إزالة قسم المحتوى';
+	@override String get noPlexRows => 'لم يُرجع Plex أي صفوف يديرها لهذه المكتبة.';
+	@override String get openDetails => 'فتح التفاصيل';
+	@override String get heroCards => 'البطاقات البارزة';
+	@override String get tapHeroCard => 'عند النقر على بطاقة بارزة';
+	@override String get tvPlayFocus => 'جهاز التحكم: الانتقال إلى زر التشغيل';
+	@override String get tvPlayFocusDescription => 'يتوقف التنقّل إلى الأسفل على زر التشغيل قبل الانتقال إلى الصف التالي. عند الإيقاف، ينتقل مباشرةً إلى الصف التالي.';
+	@override String get tvWrap => 'جهاز التحكم: تكرار التنقّل بين البطاقات البارزة';
+	@override String get tvWrapDescription => 'الضغط على اليسار عند البطاقة الأخيرة يعيدك إلى الأولى. عند إيقاف الخيار، يتوقف التنقل عند البطاقة الأخيرة. الضغط على اليمين عند البطاقة الأولى ينقلك دائمًا إلى الشريط الجانبي.';
+	@override String get castOnHero => 'طاقم التمثيل في البطاقات البارزة';
+	@override String get castOnHeroDescription => 'يعرض طاقم التمثيل أسفل البطاقة البارزة. عند الإيقاف، يظهر العنوان والملخّص فقط.';
+	@override String get customRows => 'صفوف مخصّصة';
+	@override String get loading => 'جارٍ تحميل تخطيط الصفحة الرئيسية…';
+	@override String get noCustomRows => 'لا توجد صفوف مخصّصة بعد';
+	@override String get addRowHint => 'اختر «إضافة صف إلى الرئيسية» لإنشاء صف.';
+	@override String get addHomeRow => 'إضافة صف إلى الرئيسية';
+	@override String get addHomeRowDescription => 'اختر فئة، وسيُضاف الصف الجديد إلى منظّم الصفوف تلقائيًا';
+	@override String get removeRow => 'إزالة الصف';
+	@override String get recentlyAdded => 'أُضيف مؤخرًا';
+	@override String get recentlyReleased => 'صدر مؤخرًا';
+	@override String get movieCollections => 'مجموعات الأفلام';
+	@override String get showCollections => 'مجموعات المسلسلات';
+	@override String get rowTitle => 'عنوان الصف';
+	@override String get content => 'المحتوى';
+	@override String get showThisRowIn => 'إظهار هذا الصف في:';
+	@override String get libraryRecommended => 'توصيات المكتبة';
+	@override String get heroCard => 'بطاقة بارزة';
+	@override String get heroCardDescription => 'يعرض بطاقة دوّارة بعرض الشاشة بدلًا من صف الملصقات.';
+	@override String get heroUnavailableDescription => 'متاح فقط عندما يعرض الصف عناوين مجموعة واحدة مباشرةً. عند اختيار أكثر من مجموعة، لا توجد مجموعة عناوين واحدة للتنقّل بينها.';
+	@override String get librariesSelection => 'المكتبات (اتركها كلها دون تحديد لتضمين جميع المكتبات)';
+	@override String get librariesMergedDescription => 'تُدمج كل المكتبات المحدّدة هنا في هذا الصف الواحد.';
+	@override String get movieCollectionsSelection => 'مجموعات الأفلام (اتركها كلها دون تحديد لتضمين كل المجموعات في المكتبات المختارة)';
+	@override String get showCollectionsSelection => 'مجموعات المسلسلات (اتركها كلها دون تحديد لتضمين كل المجموعات في المكتبات المختارة)';
+	@override String get collectionRowsDescription => 'إذا طابقت مجموعة واحدة، تظهر عناوينها مباشرةً في الصف. وإذا طابقت عدة مجموعات، تظهر كل مجموعة كملصق واحد؛ انقر عليه لفتحها.';
+	@override String get allCollections => 'كل المجموعات';
+	@override String get noRowsHere => 'لا توجد صفوف هنا بعد.';
+	@override String get hideWatchedRows => 'إخفاء العناصر المشاهدة من الصفوف';
+	@override String get hideWatchedRowsDescription => 'تُزال العناوين التي شاهدتها بالكامل من صفوف الرئيسية وتوصيات المكتبة، وتبقى العناوين التي لا تزال تشاهدها.';
+	@override String get untitledCollection => 'مجموعة بلا عنوان';
+	@override String get moveRowHint => 'أعلى/أسفل: نقل الصف · اختيار: وضعه هنا · رجوع: إلغاء';
+	@override String get organizeRowsHint => 'اختيار الصف أو الضغط المطوّل على اختيار: نقله · يمين/يسار: خيارات الصف · رجوع: إنهاء';
+	@override String get layoutNavDescription => 'اختيار الصفوف والمكتبات وفئات المجموعات';
+	@override String get editHomeRow => 'تعديل صف الصفحة الرئيسية';
+	@override String get resetHeroButton => 'استعادة تخطيط بانر Plezy الأصلي';
+	@override String get reorderingUnlocked => 'إعادة الترتيب متاحة';
+	@override String get reorderingLocked => 'إعادة الترتيب مقفلة';
+	@override String get rowsCanBeDragged => 'يمكن سحب الصفوف؛ انقر على القفل لمنع ذلك';
+	@override String get tapLockToDrag => 'انقر على القفل لسحب الصفوف';
+	@override String customRowLabel({required Object title}) => 'مخصّص: ${title}';
 	@override String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
 	@override String get hide => 'إخفاء';
 	@override String get remove => 'إزالة';
-	@override String get libraryResumeRow => 'إعادة تدوير هذه المكتبة';
-	@override String get pressAgainToDelete => 'اضغط مرة أخرى لحذف';
+	@override String get libraryResumeRow => 'صف استئناف المشاهدة الخاص بهذه المكتبة';
+	@override String get pressAgainToDelete => 'اضغط مرة أخرى للحذف';
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
-	@override String get on => 'على';
-	@override String get resetHeroButtonDescription => 'يلغي إعدادات بطل كل صف ويعيد البانر الوحيد الذي يدور إلى الأعلى، كما كان قبل أن توجد صفوف بطل.';
+	@override String get on => 'مفعّل';
+	@override String get resetHeroButtonDescription => 'يُوقف عرض الصفوف كبطاقات بارزة، ويُعيد البانر الدوّار الواحد إلى الأعلى كما كان سابقًا. يبقى ترتيب الصفوف كما هو.';
 }
 
 // Path: platform
@@ -2914,6 +2960,242 @@ class _Translations$platform$ar extends Translations$platform$en {
 	@override String get cameraPermission => 'امسح رموز QR لإقران جهاز تحكم مرافق.';
 }
 
+// Path: fileSources
+class _Translations$fileSources$ar extends Translations$fileSources$en {
+	_Translations$fileSources$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'الملفات والكتب';
+	@override String get subtitle => 'اقرأ واستمع وشاهد من ملفاتك الخاصة.';
+	@override String get add => 'إضافة مصدر';
+	@override String get importFiles => 'استيراد ملفات';
+	@override String get localFiles => 'على هذا الجهاز';
+	@override String get source => 'المصدر';
+	@override String get name => 'الاسم';
+	@override String get endpoint => 'عنوان الخادم';
+	@override String get root => 'المجلد أو بادئة المسار';
+	@override String get username => 'اسم المستخدم';
+	@override String get password => 'كلمة المرور';
+	@override String get token => 'رمز API';
+	@override String get accessKey => 'معرّف مفتاح الوصول';
+	@override String get secretKey => 'مفتاح الوصول السري';
+	@override String get sessionToken => 'رمز الجلسة (اختياري)';
+	@override String get region => 'المنطقة';
+	@override String get clientId => 'معرّف عميل OAuth';
+	@override String get clientSecret => 'سر عميل OAuth (لـ Google على سطح المكتب فقط)';
+	@override String get allowHttp => 'السماح باتصال HTTP غير المشفر على شبكة موثوقة';
+	@override String get connect => 'اتصال';
+	@override String get cancel => 'إلغاء';
+	@override String get save => 'حفظ';
+	@override String get close => 'إغلاق';
+	@override String get removeSource => 'قطع اتصال المصدر';
+	@override String get disconnectMessage => 'هل تريد قطع الاتصال بهذا المصدر؟ ستبقى الملفات المنزّلة وسجل القراءة والاستماع على هذا الجهاز.';
+	@override String get localFolder => 'اختيار المجلد';
+	@override String get empty => 'لا شيء هنا حتى الآن';
+	@override String get emptyHint => 'أضف مصدرًا أو استورد كتابًا أو كتابًا صوتيًا أو موسيقى أو فيديو.';
+	@override String get search => 'البحث في هذا المجلد';
+	@override String get searchCached => 'البحث في المكتبة المحفوظة';
+	@override String get refresh => 'تحديث';
+	@override String get loadMore => 'تحميل المزيد';
+	@override String get offline => 'متاح دون اتصال';
+	@override String get download => 'حفظ للاستخدام دون اتصال';
+	@override String get removeDownload => 'إزالة النسخة المحفوظة دون اتصال';
+	@override String get continueReading => 'متابعة القراءة';
+	@override String get continueListening => 'متابعة الاستماع';
+	@override String get continueWatching => 'متابعة المشاهدة';
+	@override String get read => 'قراءة';
+	@override String get listen => 'الاستماع';
+	@override String get play => 'تشغيل';
+	@override String get pause => 'إيقاف مؤقت';
+	@override String get stop => 'إيقاف';
+	@override String get startOver => 'البدء من جديد';
+	@override String get finished => 'مكتمل';
+	@override String get markFinished => 'وضع علامة مكتمل';
+	@override String get markUnfinished => 'وضع علامة غير مكتمل';
+	@override String get editions => 'الإصدارات والملفات';
+	@override String get chapters => 'الفصول';
+	@override String get bookmarks => 'الإشارات المرجعية والملاحظات';
+	@override String get bookmark => 'إضافة إشارة مرجعية';
+	@override String get highlight => 'تمييز النص';
+	@override String get note => 'ملاحظة';
+	@override String get delete => 'حذف';
+	@override String get export => 'تصدير الملاحظات';
+	@override String get exported => 'تم تصدير الملاحظات';
+	@override String get sync => 'مزامنة التقدم';
+	@override String get synced => 'تمت مزامنة التقدم';
+	@override String get conflict => 'موضع القراءة أو الاستماع مختلف على جهاز آخر. اختر الموضع الذي تريد المتابعة منه.';
+	@override String get useLocal => 'استخدم هذا الجهاز';
+	@override String get useRemote => 'استخدام موضع الجهاز الآخر';
+	@override String get history => 'سجل المواضع';
+	@override String get groupAudio => 'الاستماع ككتاب صوتي واحد';
+	@override String get groupHint => 'يجمع الملفات الصوتية المحمّلة حاليًا في هذا المجلد. حمّل جميع الصفحات أولًا.';
+	@override String get order => 'ترتيب الملفات';
+	@override String get moveUp => 'تحرك إلى الأعلى';
+	@override String get moveDown => 'تحرك إلى أسفل';
+	@override String get speed => 'سرعة التشغيل';
+	@override String get sleep => 'مؤقّت النوم';
+	@override String get sleepOff => 'إيقاف';
+	@override String get endChapter => 'نهاية الفصل';
+	@override String minutes({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(count,
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة',
+		one: 'دقيقة',
+		two: 'دقيقتان',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقائق',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة',
+	);
+	@override String get skipBack => 'رجوع للخلف';
+	@override String get skipForward => 'تقديم للأمام';
+	@override String get smartRewind => 'الرجوع الذكي بعد الإيقاف المؤقت';
+	@override String get playbackOptions => 'خيارات الاستماع';
+	@override String remaining({required Object time}) => 'متبقٍ ${time}';
+	@override String get contents => 'جدول المحتويات';
+	@override String get readerSettings => 'إعدادات القراءة';
+	@override String get fontSize => 'حجم النص';
+	@override String get lineHeight => 'تباعد الأسطر';
+	@override String get margin => 'الهوامش';
+	@override String get font => 'نوع الخط';
+	@override String get serif => 'خط ذو زوائد';
+	@override String get sans => 'خط بلا زوائد';
+	@override String get mono => 'خط ثابت العرض';
+	@override String get columns => 'الأعمدة';
+	@override String get scroll => 'التمرير عموديًا';
+	@override String get justify => 'ضبط محاذاة النص';
+	@override String get readerTheme => 'مظهر الصفحة';
+	@override String get appTheme => 'اتباع سمة التطبيق';
+	@override String get paper => 'الورق';
+	@override String get sepia => 'بني فاتح';
+	@override String get night => 'ليلي';
+	@override String get readAloud => 'قراءة هذه الصفحة بصوت عالٍ';
+	@override String get readAlong => 'متابعة القراءة مع الصوت';
+	@override String get stopReading => 'إيقاف السرد';
+	@override String get searchBook => 'البحث في الكتاب';
+	@override String get noMatches => 'لا توجد نتائج مطابقة';
+	@override String get previousPage => 'الصفحة السابقة';
+	@override String get nextPage => 'الصفحة التالية';
+	@override String page({required Object number}) => 'الصفحة ${number}';
+	@override String get externalBlocked => 'يتم تعطيل الروابط الخارجية للكتاب في القارئ.';
+	@override String get loading => 'فتح...';
+	@override String get narrator => 'الراوي';
+	@override String get audio => 'الصوت';
+	@override String get video => 'فيديو';
+	@override String get ebooks => 'كتب إلكترونية';
+	@override String get all => 'الكل';
+	@override String get downloads => 'الملفات المحفوظة دون اتصال';
+	@override String get confirmDelete => 'هل تريد إزالة النسخة المحددة المحفوظة دون اتصال؟ سيبقى موضعك وملاحظاتك محفوظين.';
+	@override String get errorAuthentication => 'سجّل الدخول مجددًا لإعادة الاتصال بهذا المصدر.';
+	@override String get errorPermission => 'لم يمنح هذا المصدر إمكانية الوصول إلى الملف المطلوب.';
+	@override String get errorUnavailable => 'المصدر غير متاح. حاول مجددًا أو افتح نسخة محفوظة دون اتصال.';
+	@override String get errorUnsupported => 'هذه الصيغة أو طريقة الاتصال غير مدعومة على هذا الجهاز. راجع دليل إعداد المصدر.';
+	@override String get errorInvalidData => 'لا يمكن قراءة هذا الملف أو استجابة الخادم بأمان.';
+	@override String get errorCancelled => 'تم إلغاء العملية.';
+	@override String get errorConflict => 'تغيّر الموضع في جلسة أخرى. أعد فتح العنصر لاختيار موضع المتابعة.';
+	@override String get signIn => 'تسجيل الدخول';
+	@override String get reconnect => 'إعادة الاتصال';
+	@override String get folderHelp => 'اتركه فارغًا للبدء من جذر المصدر. تتضمن عناوين S3 اسم حاوية التخزين.';
+	@override String get preferences => 'تفضيلات';
+	@override String get timePosition => 'موضع التشغيل';
+	@override String get audioTrack => 'المسار الصوتي';
+	@override String get subtitleTrack => 'مسار الترجمة';
+	@override String get none => 'لا شيء';
+	@override String get fullscreen => 'ملء الشاشة';
+	@override String get syncLocation => 'مجلد مزامنة التقدم (اختياري)';
+	@override String get syncLocationHint => 'مجلد WebDAV مخصص لحالة PlezyNG. تُستخدم الكتابة المشروطة، وتبقى ملفات الوسائط دون تغيير.';
+	@override String get audiobooks => 'كتب صوتية';
+	@override String get comics => 'قصص مصوّرة';
+	@override String get scan => 'البحث عن الكتب والوسائط';
+	@override String get browserReader => 'فتح القارئ';
+	@override String get browserReaderHelp => 'القارئ مفتوح في متصفحك. أبقِ PlezyNG مفتوحًا لحفظ موضعك وملاحظاتك.';
+	@override String get on => 'تشغيل';
+	@override String get advancedSetup => 'تسجيل التطبيق';
+	@override String get microsoftSignIn => 'تسجيل الدخول باستخدام Microsoft';
+	@override String get zoomIn => 'تكبير';
+	@override String get zoomOut => 'تصغير';
+	@override String get fitPage => 'ملاءمة الصفحة';
+	@override String get fitWidth => 'ملاءمة العرض';
+	@override String get actualSize => 'الحجم الأصلي';
+	@override String get goToPage => 'الانتقال إلى صفحة';
+	@override String get goToSection => 'الانتقال إلى فصل';
+	@override String pageRange({required Object count}) => 'أدخل رقمًا من ١ إلى ${count}';
+	@override String get pageLayout => 'تخطيط الصفحات';
+	@override String get automatic => 'تلقائي';
+	@override String get singlePage => 'صفحة واحدة';
+	@override String get twoPages => 'صفحتان';
+	@override String get readingDirection => 'اتجاه القراءة';
+	@override String get leftToRight => 'من اليسار لليمين';
+	@override String get rightToLeft => 'من اليمين لليسار';
+	@override String get letterSpacing => 'تباعد الأحرف';
+	@override String get wordSpacing => 'تباعد الكلمات';
+	@override String get readerControlsHelp => 'استخدم إيماءة التكبير بإصبعين أو أزرار التكبير لتكبير الصفحات، واسحب لتحريكها. استخدم Ctrl/⌘ مع + أو − لضبط التكبير، وCtrl/⌘ مع 0 لإعادة ضبطه. استخدم Page Up وPage Down للتنقل بين الصفحات.';
+	@override String get imagePage => 'صفحة قصة مصوّرة';
+	@override String get resetReader => 'إعادة تعيين تفضيلات القراءة';
+	@override String get zoom => 'التكبير';
+	@override String get useFiles => 'استخدام الملفات والكتب';
+	@override String get cancelScan => 'إلغاء الفحص';
+	@override String get googleDrive => 'Google Drive';
+}
+
+// Path: lending
+class _Translations$lending$ar extends Translations$lending$en {
+	_Translations$lending$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'المكتبات العامة';
+	@override String get add => 'إضافة مكتبة';
+	@override String get other => 'مكتبة أخرى';
+	@override String get libraryName => 'اسم المكتبة';
+	@override String get libraryUrl => 'موقع المكتبة';
+	@override String get libraryUrlHint => 'استخدم صفحة فهرس مكتبتك أو صفحة تسجيل الدخول.';
+	@override String get intro => 'استعر من مكتبتك واحتفظ بكتبك في متناولك.';
+	@override String get handoff => 'سجّل الدخول واستعر واقرأ بأمان عبر خدمة مكتبتك نفسها.';
+	@override String get openService => 'فتح المكتبة';
+	@override String get findLibrary => 'العثور على مكتبة';
+	@override String get search => 'البحث عن كتب ومؤلفين';
+	@override String get catalogue => 'الفهرس';
+	@override String get loans => 'الاستعارات';
+	@override String get holds => 'الحجوزات';
+	@override String get signIn => 'تسجيل الدخول عبر مكتبتك';
+	@override String get waiting => 'أكمل تسجيل الدخول في المتصفح، ثم عُد إلى هنا.';
+	@override String get cancel => 'إلغاء';
+	@override String get disconnect => 'إزالة المكتبة';
+	@override String get disconnectMessage => 'هل تريد إزالة هذه المكتبة من هذا الملف الشخصي؟ ستبقى استعاراتك وحجوزاتك لدى المكتبة.';
+	@override String get getBook => 'الحصول على الكتاب';
+	@override String get checkAvailability => 'التحقق من التوفر';
+	@override String get available => 'متاح للاستعارة';
+	@override String get unavailable => 'غير متاح حاليًا';
+	@override String get borrow => 'استعارة';
+	@override String get placeHold => 'حجز';
+	@override String get returnBook => 'إرجاع مبكر';
+	@override String get cancelHold => 'إلغاء الحجز';
+	@override String get confirmBorrow => 'هل تريد استعارة هذا العنوان من مكتبتك؟';
+	@override String get confirmReturn => 'هل تريد إرجاع هذا العنوان الآن؟ قد تحتاج إلى استعارته مجددًا للمتابعة.';
+	@override String get confirmCancelHold => 'هل تريد إلغاء حجزك لهذا العنوان؟';
+	@override String get email => 'البريد الإلكتروني لإشعارات الحجز';
+	@override String due({required Object date}) => 'موعد الإرجاع: ${date}';
+	@override String queue({required Object position}) => 'ترتيبك في قائمة الانتظار: ${position}';
+	@override String get empty => 'لا توجد عناوين هنا بعد.';
+	@override String get openLibraryNote => 'استكشف فهرس Open Library. تظهر خيارات القراءة والاستعارة في صفحة كل عنوان.';
+	@override String get more => 'تحميل المزيد';
+	@override String get gateway => 'خدمة تسجيل الدخول إلى المكتبة';
+	@override String get gatewayHint => 'توفرها مكتبتك أو مسؤول PlezyNG.';
+	@override String get advanced => 'تكامل المكتبة';
+	@override String get loadLibraries => 'اختيار مكتبتك';
+	@override String get expired => 'انتهت مدة هذه الاستعارة.';
+	@override String get updated => 'تم تحديث المكتبة';
+	@override String get continueService => 'المتابعة في الخدمة';
+	@override String get comingSoon => 'الاستعارة داخل التطبيق · قريبًا';
+	@override String get comingSoonDescription => 'تكامل Libby قادم قريبًا. يمكنك استخدام مكتبتك في Libby بينما نكمل الربط.';
+	@override String get suspendHold => 'تعليق الحجز';
+	@override String get resumeHold => 'استئناف الحجز';
+	@override String get suspendMessage => 'هل تريد الاحتفاظ بترتيبك في قائمة الانتظار والسماح للقارئ التالي باستعارة هذه النسخة؟ يمكنك استئناف الحجز لاحقًا.';
+	@override String get resumeMessage => 'هل تريد استئناف هذا الحجز لتعرض عليك المكتبة النسخة التالية المتاحة؟';
+	@override String get editEmail => 'تغيير البريد الإلكتروني للإشعارات';
+}
+
 // Path: appIcon.names
 class _Translations$appIcon$names$ar extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$ar._(TranslationsAr root) : this._root = root, super.internal(root);
@@ -2927,7 +3209,7 @@ class _Translations$appIcon$names$ar extends Translations$appIcon$names$en {
 	@override String get oled => 'OLED';
 	@override String get line => 'الخطوط';
 	@override String get ocean => 'المحيط';
-	@override String get ultraviolet => 'Ultraviolet';
+	@override String get ultraviolet => 'فوق بنفسجي';
 	@override String get matcha => 'ماتشا';
 	@override String get sunset => 'الشمس';
 	@override String get gold => 'الذهب';
@@ -2938,7 +3220,7 @@ class _Translations$appIcon$names$ar extends Translations$appIcon$names$en {
 	@override String get synthwave => 'الموجة';
 	@override String get pixel => 'بيكسل';
 	@override String get neon => 'نينوى';
-	@override String get sticker => 'Sticker';
+	@override String get sticker => 'ملصق';
 	@override String get ticket => 'تذاكر';
 	@override String get pop => 'بوب';
 	@override String get strata => 'الشارع';
@@ -2953,19 +3235,19 @@ class _Translations$common$ratingSource$ar extends Translations$common$ratingSou
 	final TranslationsAr _root; // ignore: unused_field
 
 	// Translations
-	@override String get critic => 'النقاد';
-	@override String get audience => 'الجمهور';
+	@override String get critic => 'Critics';
+	@override String get audience => 'Audience';
 	@override String get imdb => 'IMDb';
 	@override String get tmdb => 'TMDB';
-	@override String get rottenTomatoes => 'الطماطم المطبوخة';
+	@override String get rottenTomatoes => 'Rotten Tomatoes';
 	@override String get simkl => 'Simkl';
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get trakt => 'Trakt';
-	@override String get rottenTomatoesCritic => 'روتين الطماطم النقدية';
-	@override String get rottenTomatoesAudience => 'روتين الطماطم الجمهور';
-	@override String get metacritic => 'ميتاكريتيك';
-	@override String get letterboxd => 'ليت بوكسد';
+	@override String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+	@override String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3415,12 +3697,12 @@ class _Translations$explore$stats$ar extends Translations$explore$stats$en {
 	@override String favorited({required Object n}) => '${n} المفضلة';
 	@override String dropRate({required Object percent}) => '${percent} ألغيت';
 	@override String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n,
-		zero: '${n} تعليق',
+		zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق',
 		one: 'تعليق واحد',
 		two: 'تعليقان',
-		few: '${n} تعليقات',
-		many: '${n} تعليق',
-		other: '${n} تعليق',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليقات',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق',
 	);
 	@override String votes({required Object n}) => '${n} صوت';
 	@override String watching({required Object n}) => '${n} مشاهدة';
@@ -3454,8 +3736,8 @@ class _Translations$explore$format$ar extends Translations$explore$format$en {
 	@override String get tvShort => 'التلفزيون القصير';
 	@override String get movie => 'فيلم';
 	@override String get special => 'خاصة';
-	@override String get ova => 'هذه';
-	@override String get ona => 'هو';
+	@override String get ova => 'OVA';
+	@override String get ona => 'ONA';
 	@override String get music => 'الموسيقى';
 	@override String get other => 'أخرى';
 }
@@ -3503,7 +3785,7 @@ class _Translations$explore$relation$ar extends Translations$explore$relation$en
 	@override String get prequel => 'البروتوكول';
 	@override String get sequel => 'السلسلة';
 	@override String get sideStory => 'قصة الجانب';
-	@override String get spinOff => 'Spin-off';
+	@override String get spinOff => 'عمل مشتق';
 	@override String get alternativeVersion => 'النسخة البديلة';
 	@override String get summary => 'ملخص';
 	@override String get parentStory => 'قصة الوالدين';
@@ -3544,9 +3826,9 @@ class _Translations$explore$detail$ar extends Translations$explore$detail$en {
 		zero: 'لا توجد توصيات من المستخدمين',
 		one: 'أوصى به مستخدم واحد',
 		two: 'أوصى به مستخدمان',
-		few: 'أوصى به ${n} مستخدمين',
-		many: 'أوصى به ${n} مستخدمًا',
-		other: 'أوصى به ${n} مستخدم',
+		few: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدمين',
+		many: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدمًا',
+		other: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدم',
 	);
 	@override String recommendedBy({required Object who}) => 'الموصى بها من قبل ${who}';
 	@override String favoritedBy({required Object who}) => 'المفضلة بواسطة ${who}';
@@ -3817,7 +4099,7 @@ class _Translations$services$names$ar extends Translations$services$names$en {
 	@override String get mal => 'MyAnimeList';
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
-	@override String get seerr => 'مشاهدة';
+	@override String get seerr => 'Seerr';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -3929,7 +4211,7 @@ extension on TranslationsAr {
 			'appIcon.names.oled' => 'OLED',
 			'appIcon.names.line' => 'الخطوط',
 			'appIcon.names.ocean' => 'المحيط',
-			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.ultraviolet' => 'فوق بنفسجي',
 			'appIcon.names.matcha' => 'ماتشا',
 			'appIcon.names.sunset' => 'الشمس',
 			'appIcon.names.gold' => 'الذهب',
@@ -3940,7 +4222,7 @@ extension on TranslationsAr {
 			'appIcon.names.synthwave' => 'الموجة',
 			'appIcon.names.pixel' => 'بيكسل',
 			'appIcon.names.neon' => 'نينوى',
-			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.sticker' => 'ملصق',
 			'appIcon.names.ticket' => 'تذاكر',
 			'appIcon.names.pop' => 'بوب',
 			'appIcon.names.strata' => 'الشارع',
@@ -4010,19 +4292,19 @@ extension on TranslationsAr {
 			'common.fullscreen' => 'ملء الشاشة',
 			'common.exitFullscreen' => 'الخروج الشاشة الكاملة',
 			'common.pressBackAgainToExit' => 'اضغط مرة أخرى للخروج',
-			'common.ratingSource.critic' => 'النقاد',
-			'common.ratingSource.audience' => 'الجمهور',
+			'common.ratingSource.critic' => 'Critics',
+			'common.ratingSource.audience' => 'Audience',
 			'common.ratingSource.imdb' => 'IMDb',
 			'common.ratingSource.tmdb' => 'TMDB',
-			'common.ratingSource.rottenTomatoes' => 'الطماطم المطبوخة',
+			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
 			'common.ratingSource.simkl' => 'Simkl',
 			'common.ratingSource.mal' => 'MyAnimeList',
 			'common.ratingSource.anilist' => 'AniList',
 			'common.ratingSource.trakt' => 'Trakt',
-			'common.ratingSource.rottenTomatoesCritic' => 'روتين الطماطم النقدية',
-			'common.ratingSource.rottenTomatoesAudience' => 'روتين الطماطم الجمهور',
-			'common.ratingSource.metacritic' => 'ميتاكريتيك',
-			'common.ratingSource.letterboxd' => 'ليت بوكسد',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N / A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -4041,7 +4323,7 @@ extension on TranslationsAr {
 			'screens.licenses' => 'التراخيص',
 			'screens.switchProfile' => 'الملف الشخصي Switch',
 			'screens.subtitleStyling' => 'تنسيق الترجمة',
-			'screens.mpvConfig' => 'mpv كونف',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'السجلات',
 			'update.available' => 'التحديثات المتاحة',
 			'update.versionAvailable' => ({required Object version}) => 'الإصدار ${version} متوفر',
@@ -4202,9 +4484,9 @@ extension on TranslationsAr {
 			'settings.smallSkipDuration' => 'قصة قصيرة طويلة',
 			'settings.largeSkipDuration' => 'طوله طوله طوله',
 			'settings.rewindOnResume' => 'عودة على المجلد',
-			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} ثانية',
+			'settings.secondsUnit' => ({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(seconds, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية', one: 'ثانية', two: 'ثانيتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثوان', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} ثانية', ), 
 			'settings.defaultSleepTimer' => 'أوقات النوم الافتراضية',
-			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} دقيقة',
+			'settings.minutesUnit' => ({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(minutes, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة', one: 'دقيقة', two: 'دقيقتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقائق', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} دقيقة', ), 
 			'settings.rememberTrackSelections' => 'تذكر اختيارات المسارات حسب عرض/فيلم',
 			'settings.chooseTracksBeforePlayback' => 'اختيار الأصوات والأسماء الفرعية قبل تشغيل',
 			'settings.chooseTracksBeforePlaybackDescription' => 'اقرأ الصوت المصدر ومتابعة العناوين الفرعية قبل أن يبدأ كل مقطع فيديو.',
@@ -4356,8 +4638,8 @@ extension on TranslationsAr {
 			'settings.askDownloadQualityEachTime' => 'اختيار الجودة لكل تحميل',
 			'settings.askDownloadQualityEachTimeDescription' => 'إظهار الجودة الرائدة قبل إزالة كل تحميل الفيديو',
 			'settings.cellularDownloadBlocked' => 'يتم حظر التنزيلات على الهاتف المحمول.استخدم Wi-Fi أو تغيير الإعداد.',
-			'settings.maxVolume' => 'الحد الأقصى حجم',
-			'settings.maxVolumeDescription' => 'السماح بزيادة حجم أكثر من 100٪ لوسائل الإعلام الهادئة',
+			'settings.maxVolume' => 'الحد الأقصى لمستوى الصوت',
+			'settings.maxVolumeDescription' => 'السماح برفع مستوى الصوت فوق 100% للمحتوى ذي الصوت المنخفض',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'ضعف غنية الحضور',
 			'settings.discordRichPresenceDescription' => 'إظهار ما تشاهده على Discord',
@@ -4455,7 +4737,7 @@ extension on TranslationsAr {
 			'settings.general' => 'عام',
 			'settings.generalDescription' => 'اللغة والبدء والنافذة السلوك',
 			'settings.languageAndRegion' => 'اللغة والمنطقة',
-			'settings.startup' => 'Startup',
+			'settings.startup' => 'بدء التشغيل',
 			'settings.display' => 'العرض',
 			'settings.libraryAndCards' => 'المكتبة والبطاقات',
 			'settings.homeScreen' => 'Home شاشة',
@@ -4534,7 +4816,7 @@ extension on TranslationsAr {
 			'themeEditor.discard' => 'ديكارد',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'الحلقة ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} دقيقة متبقية',
-			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewSwitch' => 'التشغيل التلقائي',
 			'themeEditor.previewMutedText' => 'النص الثانوي يقرأ هكذا',
 			'search.hint' => 'البحث عن الأفلام، العروض، الموسيقى...',
 			'search.tryDifferentTerm' => 'اختبر مصطلح بحث مختلف',
@@ -4629,12 +4911,12 @@ extension on TranslationsAr {
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision النسخة',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision طبقات',
 			'fileInfo.baseLayerCompatibility' => 'التوافق الأساسي',
-			'fileInfo.avcBitstream' => 'AVC Bitstream',
+			'fileInfo.avcBitstream' => 'تدفق بتات AVC',
 			'fileInfo.nalLengthSize' => 'نال طول الحجم',
 			'fileInfo.scalingMatrix' => 'المصفوفة المصفوفة المصفوفة',
 			'fileInfo.streamIdentifier' => 'الهوية الهوية',
 			'fileInfo.streamIndex' => 'مؤشر التدفق',
-			'fileInfo.streamId' => 'Stream ID',
+			'fileInfo.streamId' => 'معرّف التدفق',
 			'fileInfo.language' => 'اللغة',
 			'fileInfo.languageCode' => 'رمز اللغة',
 			'fileInfo.streamTitle' => 'العنوان Track',
@@ -4676,7 +4958,7 @@ extension on TranslationsAr {
 			'fileInfo.directPlay' => 'اللعب المباشر',
 			'fileInfo.directStream' => 'البث المباشر',
 			'fileInfo.transcoding' => 'تحويل الترميز',
-			'fileInfo.etag' => 'إيتاغ',
+			'fileInfo.etag' => 'ETag',
 			'fileInfo.versionId' => 'نسخة ID',
 			'fileInfo.fileId' => 'ملف ID',
 			'fileInfo.defaultAudioTrack' => 'أداة Audio Track',
@@ -4714,9 +4996,9 @@ extension on TranslationsAr {
 			'mediaMenu.deleteAnyway' => 'إزالة على أي حال',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'إزالة ${title} بشكل دائم من خادمك؟',
 			'mediaMenu.deleteMultipleWarning' => 'هذا يشمل جميع الحلقات وملفاتها.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لن تُحذف أي حلقات.', one: 'سيُحذف جميع محتواها: حلقة واحدة وملفها.', two: 'سيُحذف جميع محتواها: حلقتان وملفاهما.', few: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقات، مع ملفاتها.', many: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقة، مع ملفاتها.', other: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${n} حلقة، مع ملفاتها.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد ملفات لهذا العنصر.', one: 'هذا العنصر محفوظ في ملف واحد سيُحذف.', two: 'هذا العنصر محفوظ في ملفين سيُحذفان.', few: 'هذا العنصر موزّع على ${n} ملفات، وستُحذف كلها.', many: 'هذا العنصر موزّع على ${n} ملفًا، وستُحذف كلها.', other: 'هذا العنصر موزّع على ${n} ملف، وستُحذف كلها.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد حلقات أخرى في الملف نفسه.', one: 'توجد حلقة أخرى في الملف نفسه وستُحذف أيضًا:', two: 'توجد حلقتان أخريان في الملف نفسه وستُحذفان أيضًا:', few: 'توجد ${n} حلقات أخرى في الملف نفسه وستُحذف أيضًا:', many: 'توجد ${n} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', other: 'توجد ${n} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لن تُحذف أي حلقات.', one: 'سيُحذف جميع محتواها: حلقة واحدة وملفها.', two: 'سيُحذف جميع محتواها: حلقتان وملفاهما.', few: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات، مع ملفاتها.', many: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.', other: 'ستُحذف جميع الحلقات الموجودة فيها وعددها ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة، مع ملفاتها.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد ملفات لهذا العنصر.', one: 'هذا العنصر محفوظ في ملف واحد سيُحذف.', two: 'هذا العنصر محفوظ في ملفين سيُحذفان.', few: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفات، وستُحذف كلها.', many: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملفًا، وستُحذف كلها.', other: 'هذا العنصر موزّع على ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ملف، وستُحذف كلها.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد حلقات أخرى في الملف نفسه.', one: 'توجد حلقة أخرى في الملف نفسه وستُحذف أيضًا:', two: 'توجد حلقتان أخريان في الملف نفسه وستُحذفان أيضًا:', few: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات أخرى في الملف نفسه وستُحذف أيضًا:', many: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', other: 'توجد ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة أخرى في الملف نفسه وستُحذف أيضًا:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG لم يكن قادرا على التحقق من الملفات التي سيتم إزالتها، لذلك قد يحذف أكثر من العنصر المذكور أعلاه.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'لم يقدم خادمك تفاصيل الملفات لهذا العنصر، لذلك لا يمكن أن تحقق PlezyNG من الملفات التي سيتم إزالتها.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'تم حذف منتجات وسائل الإعلام بنجاح',
@@ -4766,12 +5048,27 @@ extension on TranslationsAr {
 			'accessibility.blueShort' => 'ب',
 			'accessibility.colorModeHsv' => 'HSV',
 			'accessibility.colorModeRgb' => 'RGB',
+			'accessibility.title' => 'إمكانية الوصول',
+			'accessibility.summary' => 'النص والتباين والحركة وعناصر التحكم',
+			'accessibility.systemHint' => 'تظل إعدادات إمكانية الوصول في جهازك سارية دائمًا. تضيف هذه الخيارات تعديلات في جميع أنحاء PlezyNG.',
+			'accessibility.readability' => 'القراءة والرؤية',
+			'accessibility.textSize' => 'تكبير إضافي للنص',
+			'accessibility.preview' => 'اعثر على قصتك التالية. اقرأ واستمع وشاهد بالوتيرة التي تناسبك.',
+			'accessibility.boldText' => 'نص واجهة عريض',
+			'accessibility.highContrast' => 'تباين عالٍ',
+			'accessibility.highContrastHint' => 'نص وحدود ومؤشرات تركيز أوضح على الأسطح الفاتحة أو الداكنة.',
+			'accessibility.interaction' => 'الحركة والتفاعل',
+			'accessibility.reduceMotion' => 'تقليل الحركة',
+			'accessibility.reduceMotionHint' => 'إيقاف حركة التركيز وانتقالات الصفحات والمؤثرات الزخرفية.',
+			'accessibility.largeTargets' => 'مساحات لمس أكبر',
+			'accessibility.largeTargetsHint' => 'توفير مساحة أوسع لعناصر التحكم المشتركة للمس والتنقل باستخدام التقنيات المساعدة.',
+			'accessibility.navigationHint' => 'استخدم Tab وShift+Tab للتنقل بين عناصر التحكم، وEnter أو مفتاح المسافة لتفعيلها، وEscape أو زر الرجوع للإغلاق. تتوفر خيارات التكبير وتفضيلات القراءة أثناء فتح الكتاب.',
 			'tooltips.shufflePlay' => 'لعبة Shuffle',
 			'tooltips.playTrailer' => 'لعبة تريلر',
 			'tooltips.markAsWatched' => 'مارك كما شاهدت',
 			'tooltips.markAsUnwatched' => 'مارك غير ملاحظة',
 			'audioTracks.track' => ({required Object n}) => 'سياق الصوت ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} إطار', one: 'إطار واحد', two: 'إطاران', few: '${n} إطارات', many: '${n} إطار', other: '${n} إطار', ), 
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار', one: 'إطار واحد', two: 'إطاران', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطارات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} إطار', ), 
 			'videoControls.audioLabel' => 'الصوت',
 			'videoControls.subtitlesLabel' => 'الترجمة',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -4835,8 +5132,8 @@ extension on TranslationsAr {
 			'videoControls.pipFailed' => 'صورة في الصورة فشلت في البدء',
 			'videoControls.screenshotSaved' => 'صورة شاشة تم حفظها',
 			'videoControls.screenshotFailed' => 'لا أستطيع التقاط صورة شاشة',
-			'videoControls.zoomPercent' => ({required Object percent}) => 'زوم ${percent}%',
-			'videoControls.volumePercent' => ({required Object percent}) => 'حجم ${percent}%',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'التكبير ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'مستوى الصوت ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'مطلوب Android 8.0 أو أحدث',
 			'videoControls.pipErrors.iosVersion' => 'مطلوب iOS 15.0 أو أحدث',
 			'videoControls.pipErrors.permissionDisabled' => 'تم تعطيل صورة في صورة، وتتمكن من ذلك في إعدادات النظام.',
@@ -4874,7 +5171,7 @@ extension on TranslationsAr {
 			'messages.markedAsWatchedOffline' => 'علامة كما تم مشاهدتها (سيتم مزامنة عند الإنترنت)',
 			'messages.markedAsUnwatchedOffline' => 'علامة غير مسبوقة (سيتم مزامنة عند الانترنت)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'إزالة السيارة: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لم تُزل أي تنزيلات تمت مشاهدتها', one: 'أُزيل تنزيل واحد تمت مشاهدته تلقائيًا', two: 'أُزيل تنزيلان تمت مشاهدتهما تلقائيًا', few: 'أُزيلت ${n} تنزيلات تمت مشاهدتها تلقائيًا', many: 'أُزيل ${n} تنزيلًا تمت مشاهدته تلقائيًا', other: 'أُزيل ${n} تنزيل تمت مشاهدته تلقائيًا', ), 
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لم تُزل أي تنزيلات تمت مشاهدتها', one: 'أُزيل تنزيل واحد تمت مشاهدته تلقائيًا', two: 'أُزيل تنزيلان تمت مشاهدتهما تلقائيًا', few: 'أُزيلت ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلات تمت مشاهدتها تلقائيًا', many: 'أُزيل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلًا تمت مشاهدته تلقائيًا', other: 'أُزيل ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل تمت مشاهدته تلقائيًا', ), 
 			'messages.removedFromContinueWatching' => 'إزالة من مواصلة مراقبة',
 			'messages.errorLoading' => ({required Object error}) => 'الخطأ: ${error}',
 			'messages.searchPartialResults' => 'بعض خوادم الوسائط لا يمكن البحث عنها.عرض النتائج المتاحة.',
@@ -4910,6 +5207,8 @@ extension on TranslationsAr {
 			'messages.seasonsLoadFailed' => 'لا أستطيع تحميل الموسم',
 			'messages.noEpisodesFound' => 'لا توجد أحداث في الموسم الأول',
 			'messages.noEpisodesFoundGeneral' => 'لم يتم العثور على أحداث',
+			_ => null,
+		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'لا يمكن تحميل الحوادث',
 			'messages.noResultsFound' => 'لم يتم العثور على نتائج.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ساعة النوم المحددة ${label}',
@@ -4925,11 +5224,9 @@ extension on TranslationsAr {
 			'messages.serverBusyBody' => 'لا يزال الخادم يرفض بث هذا الملف (HTTP 503).قد يكون إعادة تشغيل، مشغول، أو قد يكون تخزين الملف غير متصل.حاول مرة أخرى في لحظة - إذا كان لا يزال يحدث، اطلب من مالك الخادم التحقق من الخادم وتخزين الملف.',
 			'messages.playbackNotAllowedTitle' => 'لا يسمح لـ Playback',
 			'messages.playbackNotAllowedBody' => 'ورفض الخادم بث هذا البند (HTTP 403). قد لا يكون حسابك مسموحًا بتشغيلها، أو قد يسمح الخادم فقط بالتشغيل على شبكتها المحلية.',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploaded' => 'Logs تحميل',
 			'messages.logsUploadFailed' => 'فشل في تحميل اللوحات',
-			'messages.logId' => 'Log ID',
+			'messages.logId' => 'معرّف السجل',
 			'messages.burnedSubtitlesUseMenu' => 'يتم حرق العناوين في هذا التدفق.تغييرها من قائمة العناوين.',
 			'messages.noVideoUrl' => 'لا توجد URL الفيديو المتاحة',
 			'messages.playbackNoMediaSources' => 'الخادم لم يعيد أي مصادر وسائل الإعلام المباشرة',
@@ -4964,7 +5261,7 @@ extension on TranslationsAr {
 			'subtitlingStyling.renderResolution' => 'رينتر القرار',
 			'subtitlingStyling.renderResolutionScreen' => 'دقة الشاشة',
 			'subtitlingStyling.renderResolutionVideo' => 'دقة الفيديو',
-			'mpvConfig.title' => 'mpv كونف',
+			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'إعدادات مشغل الفيديو المتقدمة',
 			'mpvConfig.presets' => 'الكهنوت',
 			'mpvConfig.noPresets' => 'لا توجد سلاحات',
@@ -4978,7 +5275,7 @@ extension on TranslationsAr {
 			'mpvConfig.presetDeleted' => 'إلغاء Preset',
 			'mpvConfig.confirmDeletePreset' => 'هل أنت متأكد من أنك ترغب في إزالة هذا التوقيع؟',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan hwdec=auto # التعليق',
-			'mpvConfig.lineHint' => 'الخيار = القيمة',
+			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'إضافة خط',
 			'mpvConfig.removeLine' => 'إزالة الخط',
 			'mpvConfig.embeddedVoHint' => 'يتم تجاهل vo، gpu-context و gpu-api على Linux: فيديو مدمج دائما يخرج من خلال vo=libmpv على مقطع الفيديو، و gpu-next (الذي يحتاج الظلال الحاسوبية مثل ArtCNN) لا يمكن تشغيل مدمج.',
@@ -5135,7 +5432,7 @@ extension on TranslationsAr {
 			'discover.latestAlbumsIn' => ({required Object library}) => 'أحدث الألبومات في ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'اللعب مؤخرا في ${library}',
 			'discover.mostPlayedIn' => ({required Object library}) => 'الأكثر لعبًا في ${library}',
-			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
+			'discover.playEpisode' => ({required Object season, required Object episode}) => 'م${season} ح${episode}',
 			'discover.overview' => 'نظرة عامة',
 			'discover.cast' => 'كاست',
 			'discover.extras' => 'تريلر و إضافات',
@@ -5147,7 +5444,7 @@ extension on TranslationsAr {
 			'discover.tvShow' => 'عرض التلفزيون',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} دقيقة متبقية',
 			'discover.moreLikeThis' => 'مشابه لهذا',
-			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} عنوان', one: 'عنوان واحد', two: 'عنوانان', few: '${n} عناوين', many: '${n} عنوان', other: '${n} عنوان', ), 
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان', one: 'عنوان واحد', two: 'عنوانان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عناوين', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} عنوان', ), 
 			'discover.person.born' => 'ولدت',
 			'discover.person.died' => 'الموت',
 			'discover.person.birthplace' => 'مكان الميلاد',
@@ -5299,6 +5596,7 @@ extension on TranslationsAr {
 			'about.versionLabel' => ({required Object version}) => 'النسخة ${version}',
 			'about.appDescription' => 'عميل جميل Plex و Jellyfin و Emby لـ Flutter',
 			'about.viewLicensesDescription' => 'عرض ترخيص المكتبات من طرف ثالث',
+			'about.privacyPolicy' => 'سياسة الخصوصية',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'لا توجد خوادم تم العثور عليها في ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'الخوادم التي لم يتم تحميلها: ${error}',
 			'serverSelection.noValidServers' => 'لم يتم العثور على خادمات قابلة للاستخدام في هذا الحساب',
@@ -5390,7 +5688,7 @@ extension on TranslationsAr {
 			'explore.status.ended' => 'انتهى',
 			'explore.status.canceled' => 'إلغاء',
 			'explore.status.upcoming' => 'التالي',
-			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} حلقة', one: 'حلقة واحدة', two: 'حلقتان', few: '${n} حلقات', many: '${n} حلقة', other: '${n} حلقة', ), 
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة', one: 'حلقة واحدة', two: 'حلقتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} حلقة', ), 
 			'explore.cast' => 'كاست',
 			'explore.characters' => 'شخصيات',
 			'explore.addToWatchlist' => 'إضافة إلى Watchlist',
@@ -5402,7 +5700,7 @@ extension on TranslationsAr {
 			'explore.notInLibrary' => 'لا في مكتبتك',
 			'explore.inTheseLibraries' => 'في هذه المكتبات',
 			'explore.checkingLibrary' => 'فحص مكتبتك ..',
-			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'تعذر فحص أي خادم', one: 'تعذر فحص خادم واحد', two: 'تعذر فحص خادمين', few: 'تعذر فحص ${n} خوادم', many: 'تعذر فحص ${n} خادمًا', other: 'تعذر فحص ${n} خادم', ), 
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'تعذر فحص أي خادم', one: 'تعذر فحص خادم واحد', two: 'تعذر فحص خادمين', few: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خوادم', many: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خادمًا', other: 'تعذر فحص ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} خادم', ), 
 			'explore.emptyTitle' => 'لا شيء هنا حتى الآن',
 			'explore.emptyMessage' => ({required Object source}) => 'سيتم عرض الأقواس من ${source} هنا بمجرد أن يكون لديهم محتوى.',
 			'explore.searchHint' => ({required Object source}) => 'البحث ${source}',
@@ -5423,6 +5721,8 @@ extension on TranslationsAr {
 			'explore.badge.processing' => 'المعالجة',
 			'explore.badge.declined' => 'انخفاض',
 			'explore.badge.requestFailed' => 'طلب فشل',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K طلب',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} الموسم',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => 'Ep ${episode} في ${duration}',
@@ -5439,9 +5739,7 @@ extension on TranslationsAr {
 			'explore.stats.planning' => ({required Object n}) => '${n} التخطيط لمشاهدة',
 			'explore.stats.favorited' => ({required Object n}) => '${n} المفضلة',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} ألغيت',
-			_ => null,
-		} ?? switch (path) {
-			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} تعليق', one: 'تعليق واحد', two: 'تعليقان', few: '${n} تعليقات', many: '${n} تعليق', other: '${n} تعليق', ), 
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق', one: 'تعليق واحد', two: 'تعليقان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليقات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تعليق', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} صوت',
 			'explore.stats.watching' => ({required Object n}) => '${n} مشاهدة',
 			'explore.stats.completed' => ({required Object n}) => '${n} إكمال',
@@ -5456,8 +5754,8 @@ extension on TranslationsAr {
 			'explore.format.tvShort' => 'التلفزيون القصير',
 			'explore.format.movie' => 'فيلم',
 			'explore.format.special' => 'خاصة',
-			'explore.format.ova' => 'هذه',
-			'explore.format.ona' => 'هو',
+			'explore.format.ova' => 'OVA',
+			'explore.format.ona' => 'ONA',
 			'explore.format.music' => 'الموسيقى',
 			'explore.format.other' => 'أخرى',
 			'explore.sourceMaterial.original' => 'الأصلي',
@@ -5478,7 +5776,7 @@ extension on TranslationsAr {
 			'explore.relation.prequel' => 'البروتوكول',
 			'explore.relation.sequel' => 'السلسلة',
 			'explore.relation.sideStory' => 'قصة الجانب',
-			'explore.relation.spinOff' => 'Spin-off',
+			'explore.relation.spinOff' => 'عمل مشتق',
 			'explore.relation.alternativeVersion' => 'النسخة البديلة',
 			'explore.relation.summary' => 'ملخص',
 			'explore.relation.parentStory' => 'قصة الوالدين',
@@ -5508,14 +5806,14 @@ extension on TranslationsAr {
 			'explore.detail.crew' => 'الطاقم',
 			'explore.detail.ratings' => 'تصنيف',
 			'explore.detail.schedule' => 'جدولة',
-			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد توصيات من المستخدمين', one: 'أوصى به مستخدم واحد', two: 'أوصى به مستخدمان', few: 'أوصى به ${n} مستخدمين', many: 'أوصى به ${n} مستخدمًا', other: 'أوصى به ${n} مستخدم', ), 
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'لا توجد توصيات من المستخدمين', one: 'أوصى به مستخدم واحد', two: 'أوصى به مستخدمان', few: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدمين', many: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدمًا', other: 'أوصى به ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مستخدم', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => 'الموصى بها من قبل ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'المفضلة بواسطة ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} لم يتم نشره بعد',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'الموصى بها من قبل ${percent} من المشاهدين',
 			'explore.detail.relatedTitles' => 'العناوين ذات الصلة',
 			'explore.detail.background' => 'الخلفية',
-			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} نتيجة', one: 'نتيجة واحدة', two: 'نتيجتان', few: '${n} نتائج', many: '${n} نتيجة', other: '${n} نتيجة', ), 
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة', one: 'نتيجة واحدة', two: 'نتيجتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتائج', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} نتيجة', ), 
 			'liveTv.title' => 'البث التلفزيوني المباشر',
 			'liveTv.guide' => 'الدليل',
 			'liveTv.noChannels' => 'لا توجد قنوات متاحة',
@@ -5644,8 +5942,7 @@ extension on TranslationsAr {
 			'playlists.delete' => 'حذف قائمة التشغيل',
 			'playlists.removeItem' => 'إزالة من قائمة التشغيل',
 			'playlists.smartPlaylist' => 'لعبة ذكية',
-			'playlists.itemCount' => ({required Object count}) => '${count} العناصر',
-			'playlists.oneItem' => '1 عنصر',
+			'playlists.itemCount' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(count, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصر', one: 'عنصر واحد', two: 'عنصران', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عناصر', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصرًا', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} عنصر', ), 
 			'playlists.emptyPlaylist' => 'هذه القائمة فارغة',
 			'playlists.deleteConfirm' => 'إلغاء اللعب؟',
 			'playlists.deleteMessage' => ({required Object name}) => 'هل أنت متأكد من أنك تريد إزالة "${name}"؟',
@@ -5667,7 +5964,7 @@ extension on TranslationsAr {
 			'music.playNext' => 'تشغيل التالي',
 			'music.addToQueue' => 'إضافة إلى كوشنر',
 			'music.discNumber' => ({required Object n}) => 'القرص ${n}',
-			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} مقطع', one: 'مقطع واحد', two: 'مقطعان', few: '${n} مقاطع', many: '${n} مقطع', other: '${n} مقطع', ), 
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع', one: 'مقطع واحد', two: 'مقطعان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقاطع', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مقطع', ), 
 			'music.nowPlaying' => 'اللعب الآن',
 			'music.playingFrom' => ({required Object title}) => 'اللعب من ${title}',
 			'music.queue' => 'كوي',
@@ -5688,7 +5985,7 @@ extension on TranslationsAr {
 			'music.noLyrics' => 'لا توجد أغاني متوفرة',
 			'music.sleepTimer' => 'ساعات النوم',
 			'music.sleepTimerEndOfTrack' => 'نهاية المسار',
-			'music.sleepTimerMinutes' => ({required Object n}) => '${n} دقيقة',
+			'music.sleepTimerMinutes' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة', one: 'دقيقة', two: 'دقيقتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقائق', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} دقيقة', ), 
 			'music.stopPlayback' => 'إيقاف التشغيل',
 			'music.previousTrack' => 'المسار السابق',
 			'music.nextTrack' => 'المسار التالي',
@@ -5770,7 +6067,7 @@ extension on TranslationsAr {
 			'watchTogether.offsetPlusTenth' => '+ 100 ميغاواط',
 			'watchTogether.offsetPlusSecond' => '+1 س',
 			'watchTogether.participants' => 'المشاركين',
-			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} مشارك', one: 'مشارك واحد', two: 'مشاركان', few: '${n} مشاركين', many: '${n} مشارك', other: '${n} مشارك', ), 
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك', one: 'مشارك واحد', two: 'مشاركان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشاركين', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مشارك', ), 
 			'watchTogether.hostBadge' => 'المضيف',
 			'watchTogether.nameYou' => ({required Object name}) => '${name} (أنت)',
 			'watchTogether.playerIdle' => 'خاملة',
@@ -5938,7 +6235,9 @@ extension on TranslationsAr {
 			'downloads.syncUnwatchedItems' => 'تصنيف العناصر غير المراقبة',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'الخادم: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'متاح',
-			'downloads.syncRuleOffline' => 'Offline',
+			_ => null,
+		} ?? switch (path) {
+			'downloads.syncRuleOffline' => 'غير متصل',
 			'downloads.syncRuleSignInRequired' => 'التوقيع في المطلوب',
 			'downloads.syncRuleAccessDenied' => 'الوصول يرفض',
 			'downloads.syncRuleNotAvailableForProfile' => 'غير متوفر للملف الحالي',
@@ -5953,8 +6252,6 @@ extension on TranslationsAr {
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'جهازك يحدد عندما يمكن تحميل PlezyNG في الخلفية.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'استخدام الخلفية PlezyNG يقتصر.إعداد استخدام البطارية أو الخلفية إلى "غير محدود".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android قد وضعت PlezyNG في حالة وقوف محدودة.',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'يتم إيقاف تشغيل إشعارات التنزيل ، لذلك قد لا تكون التقدم والسيطرة متاحة.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'يتم إيقاف الإشعارات. على Android 13 أو أحدث، فهي مطلوبة للتنزيلات الخلفية الطويلة.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'توفير البيانات مفعّل، مما يمنع التنزيل في الخلفية عبر بيانات الجوّال. يُفترض أن تستمر التنزيلات عبر Wi-Fi.',
@@ -5981,10 +6278,10 @@ extension on TranslationsAr {
 			'downloads.unknownAlbum' => 'ألبوم غير معروف',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} تم الانتهاء منه',
 			'downloads.storageUsed' => ({required Object size}) => 'التخزين المستخدم: ${size}',
-			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} تنزيل', one: 'تنزيل واحد', two: 'تنزيلان', few: '${n} تنزيلات', many: '${n} تنزيل', other: '${n} تنزيل', ), 
-			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} مسلسل', one: 'مسلسل واحد', two: 'مسلسلان', few: '${n} مسلسلات', many: '${n} مسلسل', other: '${n} مسلسل', ), 
-			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} فيلم', one: 'فيلم واحد', two: 'فيلمان', few: '${n} أفلام', many: '${n} فيلم', other: '${n} فيلم', ), 
-			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${n} ألبوم', one: 'ألبوم واحد', two: 'ألبومان', few: '${n} ألبومات', many: '${n} ألبوم', other: '${n} ألبوم', ), 
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل', one: 'تنزيل واحد', two: 'تنزيلان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيلات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} تنزيل', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل', one: 'مسلسل واحد', two: 'مسلسلان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسلات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} مسلسل', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم', one: 'فيلم واحد', two: 'فيلمان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} أفلام', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فيلم', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم', one: 'ألبوم واحد', two: 'ألبومان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبومات', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ألبوم', ), 
 			'downloads.errorFileNotFound' => 'ملف غير موجود (404)',
 			'downloads.errorDownloadNotAllowed' => 'تنزيل غير مسموح به الخادم (403)',
 			'downloads.errorDownloadFailed' => 'تحميل فشل',
@@ -6104,8 +6401,8 @@ extension on TranslationsAr {
 			'videoSettings.hdrToneMappingFailed' => 'لا يمكن تغيير خرائط الأصوات HDR - الوضع السابق لا يزال نشطا.',
 			'videoSettings.audioOutput' => 'أداة الصوت',
 			'videoSettings.performanceOverlay' => 'أداء Overlay',
-			'videoSettings.audioOutputDolbyAtmos' => 'ديلبي Atmos',
-			'videoSettings.audioOutputDolbyAudio' => 'Dolby الصوت',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'حول',
 			'videoSettings.audioOutputSpatial' => 'الفضاء الصوت',
 			'videoSettings.audioOutputStereo' => 'ستيريو (Stereo)',
@@ -6153,8 +6450,8 @@ extension on TranslationsAr {
 			'performanceOverlay.dvSampleAverage' => 'DV نموذج Avg',
 			'performanceOverlay.maxLuma' => 'ماكس لوما',
 			'performanceOverlay.minLuma' => 'لوميا',
-			'performanceOverlay.maxCll' => 'ماكسيل',
-			'performanceOverlay.maxFall' => 'ماكسفال',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'كاش المستخدم',
 			'performanceOverlay.cacheLimit' => 'الحد الأدنى للكاش',
 			'performanceOverlay.speed' => 'السرعة',
@@ -6287,7 +6584,7 @@ extension on TranslationsAr {
 			'trakt.scrobbleDescription' => 'إرسال لعبة، وقف، وقف الأحداث إلى Trakt أثناء تشغيل.',
 			'trakt.watchedSync' => 'سينك مراقبة الوضع',
 			'trakt.watchedSyncDescription' => 'عند وضع علامة على العناصر كما تم مشاهدتها في PlezyNG، يتم وضع علامة على العناصر كما تم مشاهدتها في Trakt.',
-			'seerr.title' => 'مشاهدة',
+			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'الاتصال Seerr',
 			'seerr.serverUrl' => 'URL الخادم',
 			'seerr.serverUrlHelper' => 'العنوان الخاص بك Seerr instance',
@@ -6350,7 +6647,7 @@ extension on TranslationsAr {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'مشاهدة',
+			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'إعادة الاتصال Simkl',
 			'services.simklReconnect.subtitle' => 'توقف Simkl تدريجيًا دعم طريقة تسجيل الدخول المستخدمة في هذا الاتصال. تفتح إعادة الاتصال موقع simkl.com للموافقة على PlezyNG، ولا يطّلع PlezyNG على كلمة مرورك مطلقًا. يبقى سجل مشاهداتك محفوظًا في Simkl.',
@@ -6448,108 +6745,319 @@ extension on TranslationsAr {
 			'watchLink.dialogMovieHint' => 'فتح هذا الرابط يلعب الفيلم.',
 			'watchLink.copy' => 'نسخ',
 			'watchLink.copied' => 'Link نسخ',
-			'homeLayout.title' => 'Home لويس',
-			'homeLayout.resetToast' => 'إعادة تعيين المنزل إلى التصميم الأصلي Plezy البطل',
-			'homeLayout.resetHeroTitle' => 'إعادة ترتيب البطل إلى المخزون Plezy؟',
-			'homeLayout.resetHeroBody' => 'يلغي إعدادات البطل في كل صف ويعيد علامة التبويب الوحيدة التي تدور في أعلى المنزل، كما كان قبل أن توجد صفوف البطل.',
-			'homeLayout.removeRowTitle' => 'إزالة صف المنزل؟',
-			'homeLayout.removeRowBody' => ({required Object title}) => '${title} سيتم إلغاء.',
-			'homeLayout.sync' => 'التزامن',
-			'homeLayout.syncAccountTitle' => 'تصنيف التصميم مع حسابك Plex',
-			'homeLayout.syncAccountOn' => 'على: هذا الجهاز يشارك صفوف الأوامر، الصفوف، Hero و Auto-slide مع الأجهزة الأخرى.',
-			'homeLayout.syncAccountOff' => 'إلغاء: يحتفظ هذا الجهاز بتصميمه الخاص.',
-			'homeLayout.syncNow' => 'Sync الآن',
-			'homeLayout.plexHomeManager' => 'Plex المدير المنزلي',
-			'homeLayout.managePlexRows' => 'إدارة Plex صفوف في Plezy',
-			'homeLayout.managePlexRowsDescription' => 'مفتوحة لتنظيم الخطوط المنزلية المختارة',
-			'homeLayout.organizeHomeRows' => 'تنظيم السلسلة المنزلية',
-			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} صفوف: تحريك, بطل, السيارة, إزالة',
-			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'تنظيم ${library} صفوف',
-			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'مواصلة مشاهدة + ${n} صفوف: الحركة, مكتبة, المنزل, البطل, السيارة',
-			'homeLayout.renderAsHero' => 'راندر كبطل بطاقة',
+			'homeLayout.title' => 'تخطيط الصفحة الرئيسية',
+			'homeLayout.resetToast' => 'أُعيد تخطيط الصفحة الرئيسية إلى بانر Plezy الأصلي',
+			'homeLayout.resetHeroTitle' => 'إعادة تخطيط البانر إلى إعداد Plezy الأصلي؟',
+			'homeLayout.resetHeroBody' => 'يُوقف عرض كل الصفوف كبطاقات بارزة، ويُعيد البانر الدوّار الواحد إلى أعلى الصفحة الرئيسية كما كان سابقًا. يبقى ترتيب الصفوف وإعداد إظهارها كما هو.',
 			_ => null,
 		} ?? switch (path) {
-			'homeLayout.heroOnlySingleCollection' => 'متوفر فقط عندما يتم حل هذه السلسلة إلى العناوين الفعلية لمجموعة واحدة',
-			'homeLayout.hero' => 'البطل',
-			'homeLayout.autoSlide' => 'سلاسل السيارات',
-			'homeLayout.autoSlideDescription' => 'أيضًا ، يتم تشغيل الشرائح من تلقاء نفسها كل بضع ثوان. Arrows (PC) و d-pad (TV) يعملون دائمًا وإعادة تشغيل التوقيت.',
-			'homeLayout.autoSlideEditDescription' => 'أيضًا ، يغلق نفسه كل بضع ثوان.إيقاف: يتحرك فقط عند النقر على شريط (PC) أو الضغط على اليسار / اليمين على البريد عن بعد (TV).',
-			'homeLayout.enableHeroFirst' => 'إمكانية إطلاق البطل أولاً',
-			'homeLayout.showOnHome' => 'عرض على الشاشة المنزلية',
+			'homeLayout.removeRowTitle' => 'إزالة صف من الصفحة الرئيسية؟',
+			'homeLayout.removeRowBody' => ({required Object title}) => 'سيُحذف ${title}. لا يمكن التراجع عن هذا الإجراء.',
+			'homeLayout.sync' => 'مزامنة',
+			'homeLayout.syncAccountTitle' => 'مزامنة التخطيط مع حساب Plex',
+			'homeLayout.syncAccountOn' => 'مفعّل: يشارك هذا الجهاز ترتيب الصفوف والصفوف نفسها وإعدادات البطاقات البارزة والتنقّل التلقائي مع أجهزتك الأخرى.',
+			'homeLayout.syncAccountOff' => 'متوقف: يحتفظ هذا الجهاز بتخطيطه الخاص.',
+			'homeLayout.syncNow' => 'مزامنة الآن',
+			'homeLayout.plexHomeManager' => 'إدارة الصفحة الرئيسية في Plex',
+			'homeLayout.managePlexRows' => 'إدارة صفوف Plex في Plezy',
+			'homeLayout.managePlexRowsDescription' => 'تنظيم الصفوف المختارة للصفحة الرئيسية',
+			'homeLayout.organizeHomeRows' => 'تنظيم صفوف الصفحة الرئيسية',
+			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} صفوف: نقل، بطاقة بارزة، تنقّل تلقائي، إزالة',
+			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'تنظيم صفوف ${library}',
+			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'متابعة المشاهدة و${n} صفوف: نقل، مكتبة، رئيسية، بطاقة بارزة، تنقّل تلقائي',
+			'homeLayout.renderAsHero' => 'عرض كبطاقة بارزة',
+			'homeLayout.heroOnlySingleCollection' => 'متاح فقط عندما يعرض هذا الصف عناوين مجموعة واحدة مباشرةً',
+			'homeLayout.hero' => 'بطاقة بارزة',
+			'homeLayout.autoSlide' => 'تنقّل تلقائي',
+			'homeLayout.autoSlideDescription' => 'ينتقل أيضًا تلقائيًا كل بضع ثوانٍ. تعمل الأسهم على الكمبيوتر وأزرار الاتجاهات على التلفزيون دائمًا، وتعيد بدء المؤقّت.',
+			'homeLayout.autoSlideEditDescription' => 'ينتقل أيضًا تلقائيًا كل بضع ثوانٍ. عند الإيقاف، يتنقّل فقط عند النقر على سهم في الكمبيوتر أو الضغط على اليمين أو اليسار في جهاز التحكم. تعمل الأسهم وأزرار الاتجاهات في الحالتين.',
+			'homeLayout.enableHeroFirst' => 'فعّل البطاقة البارزة أولًا',
+			'homeLayout.showOnHome' => 'إظهار في الصفحة الرئيسية',
 			'homeLayout.home' => 'الرئيسية',
-			'homeLayout.removeFromHome' => 'إزالة من المنزل',
-			'homeLayout.selectRowsFirst' => 'اختر صفوف المنزل أدناه أولاً.',
-			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex صفوف مدعومة',
+			'homeLayout.removeFromHome' => 'إزالة من الصفحة الرئيسية',
+			'homeLayout.selectRowsFirst' => 'اختر صفوف الصفحة الرئيسية أدناه أولًا.',
+			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} صفوف يديرها Plex',
 			'homeLayout.continueWatching' => 'متابعة المشاهدة',
-			'homeLayout.continueWatchingLibraryDescription' => 'هذه المكتبة ذاتية إعادة التقدم',
-			'homeLayout.continueWatchingHomeDescription' => 'إعادة التقدم الترتيب المعروضة على المنزل',
-			'homeLayout.nextUpHomeDescription' => 'الحلقة التالية غير الملاحظة عرض منفصلة على Home',
+			'homeLayout.continueWatchingLibraryDescription' => 'صف استئناف المشاهدة الخاص بهذه المكتبة',
+			'homeLayout.continueWatchingHomeDescription' => 'صف استئناف المشاهدة المعروض في الصفحة الرئيسية',
+			'homeLayout.nextUpHomeDescription' => 'صف الحلقة التالية غير المشاهدة، ويظهر بشكل منفصل في الصفحة الرئيسية',
 			'homeLayout.library' => 'المكتبة',
-			'homeLayout.showInRecommended' => 'عرض في المكتبة الموصى بها',
-			'homeLayout.customPlexRow' => 'مخصص Plex صف',
-			'homeLayout.heroNeedsLibrary' => 'اقرأ المكتبة أولاً - يحتاج البطل إلى مكان ما لإظهار',
-			'homeLayout.heroNeedsSurface' => 'تحقق من المكتبة أو المنزل أولاً - يحتاج البطل إلى مكان ما لإظهار',
-			'homeLayout.removeHub' => 'إزالة Hub',
-			'homeLayout.noPlexRows' => 'رقم Plex-السلسلة التي تم إدارةها عاد إلى هذه المكتبة.',
-			'homeLayout.openDetails' => 'التفاصيل المفتوحة',
-			'homeLayout.heroCards' => 'بطاقات البطل',
-			'homeLayout.tapHeroCard' => 'إلقاء بطاقة بطل',
-			'homeLayout.tvPlayFocus' => 'التلفزيون عن بعد: الضوء على زر اللعب',
-			'homeLayout.tvPlayFocusDescription' => 'يتوقف D-pad إلى أسفل على زر اللعب قبل الانتقال إلى الصف التالي.',
-			'homeLayout.tvWrap' => 'التلفزيون عن بعد: بطاقات البطل القفز',
-			'homeLayout.tvWrapDescription' => 'على البطاقة الأخيرة يعود إلى البطاقة الأولى.على البطاقة الأخيرة يتوقف.على اليسار على البطاقة الأولى يذهب دائمًا إلى شريط الجانب.',
-			'homeLayout.castOnHero' => 'أضف تعليق حول Hero Banner',
-			'homeLayout.castOnHeroDescription' => 'يظهر الخصم على طول الجزء السفلي من علامة البانر البطل.',
-			'homeLayout.customRows' => 'خطوط مخصصة',
-			'homeLayout.loading' => 'تحميل المنزلي layout ...',
-			'homeLayout.noCustomRows' => 'لا توجد صفوف عادية حتى الآن',
-			'homeLayout.addRowHint' => 'استخدم إضافة صف المنزل لإنشاء واحد.',
-			'homeLayout.addHomeRow' => 'إضافة الصفحة الرئيسية',
-			'homeLayout.addHomeRowDescription' => 'اختر فئة؛ يتم إضافة الصف الجديد تلقائيًا إلى المنظم',
-			'homeLayout.removeRow' => 'إزالة صفوف',
-			'homeLayout.recentlyAdded' => 'أُضيف حديثًا',
-			'homeLayout.recentlyReleased' => 'أصدرت مؤخرا',
-			'homeLayout.movieCollections' => 'مجموعة الأفلام',
-			'homeLayout.showCollections' => 'عرض مجموعات',
-			'homeLayout.rowTitle' => 'لقب Row',
-			'homeLayout.content' => 'حاجة',
-			'homeLayout.showThisRowIn' => 'إظهار هذه السلسلة في:',
-			'homeLayout.libraryRecommended' => 'المكتبة الموصى بها',
-			'homeLayout.heroCard' => 'بطاقة البطل',
-			'homeLayout.heroCardDescription' => 'يظهر كبطاقة عجلة واسعة كاملة بدلاً من ملصق ملصق.',
-			'homeLayout.heroUnavailableDescription' => 'متوفر فقط عندما يتم حل هذه السلسلة إلى العناوين الحقيقية لمجموعة واحدة - مع أكثر من مجموعة واحدة مختارة لا يوجد عنوان واحد للدوران من خلال.',
-			'homeLayout.librariesSelection' => 'المكتبات (تخفي جميع غير المراجعة لتشمل كل مكتبة)',
-			'homeLayout.librariesMergedDescription' => 'كل مكتبة تم فحصها هنا يتم دمجها في هذه السلسلة.',
-			'homeLayout.movieCollectionsSelection' => 'مجموعات الأفلام (تخفي جميع غير مسبوقة لكل مكتبة مختارة)',
-			'homeLayout.showCollectionsSelection' => 'عرض المجموعات (تخفي جميع غير المراجعة لكل مكتبة مختارة)',
-			'homeLayout.collectionRowsDescription' => 'إذا كانت مجموعة واحدة تتطابق بالضبط ، فإن عناوينها تظهر مباشرة في التسلسل.إذا كانت أكثر من مجموعة واحدة تتطابق ، فإن كل مجموعة تظهر كملصق واحد - اضغط عليه لفتح تلك المجموعة.',
-			'homeLayout.allCollections' => 'جميع المجموعات',
-			'homeLayout.noRowsHere' => 'لا توجد صفوف هنا حتى الآن.',
-			'homeLayout.hideWatchedRows' => 'إخفاء العناصر المراقبة في صفوف',
-			'homeLayout.hideWatchedRowsDescription' => 'العناوين المراقبة بالكامل تترك المنزل والمكتبة الصفوف الموصى بها.',
-			'homeLayout.untitledCollection' => 'مجموعة غير مدرجة',
-			'homeLayout.moveRowHint' => 'Up/Down: move order · Select: drop it here · Back: cancel',
-			'homeLayout.organizeRowsHint' => 'اختر في صف (أو احتفظ باختيار): تحريكها · اليسار/اليمين: خيارات الصف · العودة: جاهزة',
-			'homeLayout.layoutNavDescription' => 'اختر صفوف ومكتبات ومجموعات جمع',
-			'homeLayout.editHomeRow' => 'Edit Home صفحة',
-			'homeLayout.resetHeroButton' => 'إعادة ترتيب البطل إلى المخزون Plezy',
-			'homeLayout.reorderingUnlocked' => 'إعادة ترتيب مفتوحة',
-			'homeLayout.reorderingLocked' => 'إعادة ترتيب مغلقة',
-			'homeLayout.rowsCanBeDragged' => 'يمكن سحب الحواجب - اضغط على القفل لمنع ذلك',
-			'homeLayout.tapLockToDrag' => 'اضغط على القفل لسحب الصفوف',
-			'homeLayout.customRowLabel' => ({required Object title}) => 'مميزات: ${title}',
+			'homeLayout.showInRecommended' => 'إظهار ضمن توصيات المكتبة',
+			'homeLayout.customPlexRow' => 'صف Plex مخصّص',
+			'homeLayout.heroNeedsLibrary' => 'حدّد المكتبة أولًا ليكون للبطاقة البارزة مكان تظهر فيه',
+			'homeLayout.heroNeedsSurface' => 'حدّد المكتبة أو الصفحة الرئيسية أولًا ليكون للبطاقة البارزة مكان تظهر فيه',
+			'homeLayout.removeHub' => 'إزالة قسم المحتوى',
+			'homeLayout.noPlexRows' => 'لم يُرجع Plex أي صفوف يديرها لهذه المكتبة.',
+			'homeLayout.openDetails' => 'فتح التفاصيل',
+			'homeLayout.heroCards' => 'البطاقات البارزة',
+			'homeLayout.tapHeroCard' => 'عند النقر على بطاقة بارزة',
+			'homeLayout.tvPlayFocus' => 'جهاز التحكم: الانتقال إلى زر التشغيل',
+			'homeLayout.tvPlayFocusDescription' => 'يتوقف التنقّل إلى الأسفل على زر التشغيل قبل الانتقال إلى الصف التالي. عند الإيقاف، ينتقل مباشرةً إلى الصف التالي.',
+			'homeLayout.tvWrap' => 'جهاز التحكم: تكرار التنقّل بين البطاقات البارزة',
+			'homeLayout.tvWrapDescription' => 'الضغط على اليسار عند البطاقة الأخيرة يعيدك إلى الأولى. عند إيقاف الخيار، يتوقف التنقل عند البطاقة الأخيرة. الضغط على اليمين عند البطاقة الأولى ينقلك دائمًا إلى الشريط الجانبي.',
+			'homeLayout.castOnHero' => 'طاقم التمثيل في البطاقات البارزة',
+			'homeLayout.castOnHeroDescription' => 'يعرض طاقم التمثيل أسفل البطاقة البارزة. عند الإيقاف، يظهر العنوان والملخّص فقط.',
+			'homeLayout.customRows' => 'صفوف مخصّصة',
+			'homeLayout.loading' => 'جارٍ تحميل تخطيط الصفحة الرئيسية…',
+			'homeLayout.noCustomRows' => 'لا توجد صفوف مخصّصة بعد',
+			'homeLayout.addRowHint' => 'اختر «إضافة صف إلى الرئيسية» لإنشاء صف.',
+			'homeLayout.addHomeRow' => 'إضافة صف إلى الرئيسية',
+			'homeLayout.addHomeRowDescription' => 'اختر فئة، وسيُضاف الصف الجديد إلى منظّم الصفوف تلقائيًا',
+			'homeLayout.removeRow' => 'إزالة الصف',
+			'homeLayout.recentlyAdded' => 'أُضيف مؤخرًا',
+			'homeLayout.recentlyReleased' => 'صدر مؤخرًا',
+			'homeLayout.movieCollections' => 'مجموعات الأفلام',
+			'homeLayout.showCollections' => 'مجموعات المسلسلات',
+			'homeLayout.rowTitle' => 'عنوان الصف',
+			'homeLayout.content' => 'المحتوى',
+			'homeLayout.showThisRowIn' => 'إظهار هذا الصف في:',
+			'homeLayout.libraryRecommended' => 'توصيات المكتبة',
+			'homeLayout.heroCard' => 'بطاقة بارزة',
+			'homeLayout.heroCardDescription' => 'يعرض بطاقة دوّارة بعرض الشاشة بدلًا من صف الملصقات.',
+			'homeLayout.heroUnavailableDescription' => 'متاح فقط عندما يعرض الصف عناوين مجموعة واحدة مباشرةً. عند اختيار أكثر من مجموعة، لا توجد مجموعة عناوين واحدة للتنقّل بينها.',
+			'homeLayout.librariesSelection' => 'المكتبات (اتركها كلها دون تحديد لتضمين جميع المكتبات)',
+			'homeLayout.librariesMergedDescription' => 'تُدمج كل المكتبات المحدّدة هنا في هذا الصف الواحد.',
+			'homeLayout.movieCollectionsSelection' => 'مجموعات الأفلام (اتركها كلها دون تحديد لتضمين كل المجموعات في المكتبات المختارة)',
+			'homeLayout.showCollectionsSelection' => 'مجموعات المسلسلات (اتركها كلها دون تحديد لتضمين كل المجموعات في المكتبات المختارة)',
+			'homeLayout.collectionRowsDescription' => 'إذا طابقت مجموعة واحدة، تظهر عناوينها مباشرةً في الصف. وإذا طابقت عدة مجموعات، تظهر كل مجموعة كملصق واحد؛ انقر عليه لفتحها.',
+			'homeLayout.allCollections' => 'كل المجموعات',
+			'homeLayout.noRowsHere' => 'لا توجد صفوف هنا بعد.',
+			'homeLayout.hideWatchedRows' => 'إخفاء العناصر المشاهدة من الصفوف',
+			'homeLayout.hideWatchedRowsDescription' => 'تُزال العناوين التي شاهدتها بالكامل من صفوف الرئيسية وتوصيات المكتبة، وتبقى العناوين التي لا تزال تشاهدها.',
+			'homeLayout.untitledCollection' => 'مجموعة بلا عنوان',
+			'homeLayout.moveRowHint' => 'أعلى/أسفل: نقل الصف · اختيار: وضعه هنا · رجوع: إلغاء',
+			'homeLayout.organizeRowsHint' => 'اختيار الصف أو الضغط المطوّل على اختيار: نقله · يمين/يسار: خيارات الصف · رجوع: إنهاء',
+			'homeLayout.layoutNavDescription' => 'اختيار الصفوف والمكتبات وفئات المجموعات',
+			'homeLayout.editHomeRow' => 'تعديل صف الصفحة الرئيسية',
+			'homeLayout.resetHeroButton' => 'استعادة تخطيط بانر Plezy الأصلي',
+			'homeLayout.reorderingUnlocked' => 'إعادة الترتيب متاحة',
+			'homeLayout.reorderingLocked' => 'إعادة الترتيب مقفلة',
+			'homeLayout.rowsCanBeDragged' => 'يمكن سحب الصفوف؛ انقر على القفل لمنع ذلك',
+			'homeLayout.tapLockToDrag' => 'انقر على القفل لسحب الصفوف',
+			'homeLayout.customRowLabel' => ({required Object title}) => 'مخصّص: ${title}',
 			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
 			'homeLayout.hide' => 'إخفاء',
 			'homeLayout.remove' => 'إزالة',
-			'homeLayout.libraryResumeRow' => 'إعادة تدوير هذه المكتبة',
-			'homeLayout.pressAgainToDelete' => 'اضغط مرة أخرى لحذف',
+			'homeLayout.libraryResumeRow' => 'صف استئناف المشاهدة الخاص بهذه المكتبة',
+			'homeLayout.pressAgainToDelete' => 'اضغط مرة أخرى للحذف',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
-			'homeLayout.on' => 'على',
-			'homeLayout.resetHeroButtonDescription' => 'يلغي إعدادات بطل كل صف ويعيد البانر الوحيد الذي يدور إلى الأعلى، كما كان قبل أن توجد صفوف بطل.',
+			'homeLayout.on' => 'مفعّل',
+			'homeLayout.resetHeroButtonDescription' => 'يُوقف عرض الصفوف كبطاقات بارزة، ويُعيد البانر الدوّار الواحد إلى الأعلى كما كان سابقًا. يبقى ترتيب الصفوف كما هو.',
 			'platform.localNetworkPermission' => 'يتصل PlezyNG بخوادم الوسائط وأجهزة التشغيل على شبكتك المحلية.',
 			'platform.locationPermission' => 'يستخدم PlezyNG إذن الموقع عندما يتطلبه iOS للتعرف على شبكتك المحلية والاتصال بخوادم الوسائط.',
 			'platform.photoLibraryPermission' => 'اختر صورًا من مكتبة الصور لاستخدامها كصور للوسائط.',
 			'platform.cameraPermission' => 'امسح رموز QR لإقران جهاز تحكم مرافق.',
+			'fileSources.title' => 'الملفات والكتب',
+			'fileSources.subtitle' => 'اقرأ واستمع وشاهد من ملفاتك الخاصة.',
+			'fileSources.add' => 'إضافة مصدر',
+			'fileSources.importFiles' => 'استيراد ملفات',
+			'fileSources.localFiles' => 'على هذا الجهاز',
+			'fileSources.source' => 'المصدر',
+			'fileSources.name' => 'الاسم',
+			'fileSources.endpoint' => 'عنوان الخادم',
+			'fileSources.root' => 'المجلد أو بادئة المسار',
+			'fileSources.username' => 'اسم المستخدم',
+			'fileSources.password' => 'كلمة المرور',
+			'fileSources.token' => 'رمز API',
+			'fileSources.accessKey' => 'معرّف مفتاح الوصول',
+			'fileSources.secretKey' => 'مفتاح الوصول السري',
+			'fileSources.sessionToken' => 'رمز الجلسة (اختياري)',
+			'fileSources.region' => 'المنطقة',
+			'fileSources.clientId' => 'معرّف عميل OAuth',
+			'fileSources.clientSecret' => 'سر عميل OAuth (لـ Google على سطح المكتب فقط)',
+			'fileSources.allowHttp' => 'السماح باتصال HTTP غير المشفر على شبكة موثوقة',
+			'fileSources.connect' => 'اتصال',
+			'fileSources.cancel' => 'إلغاء',
+			'fileSources.save' => 'حفظ',
+			'fileSources.close' => 'إغلاق',
+			'fileSources.removeSource' => 'قطع اتصال المصدر',
+			'fileSources.disconnectMessage' => 'هل تريد قطع الاتصال بهذا المصدر؟ ستبقى الملفات المنزّلة وسجل القراءة والاستماع على هذا الجهاز.',
+			'fileSources.localFolder' => 'اختيار المجلد',
+			'fileSources.empty' => 'لا شيء هنا حتى الآن',
+			'fileSources.emptyHint' => 'أضف مصدرًا أو استورد كتابًا أو كتابًا صوتيًا أو موسيقى أو فيديو.',
+			'fileSources.search' => 'البحث في هذا المجلد',
+			'fileSources.searchCached' => 'البحث في المكتبة المحفوظة',
+			'fileSources.refresh' => 'تحديث',
+			'fileSources.loadMore' => 'تحميل المزيد',
+			'fileSources.offline' => 'متاح دون اتصال',
+			'fileSources.download' => 'حفظ للاستخدام دون اتصال',
+			'fileSources.removeDownload' => 'إزالة النسخة المحفوظة دون اتصال',
+			'fileSources.continueReading' => 'متابعة القراءة',
+			'fileSources.continueListening' => 'متابعة الاستماع',
+			'fileSources.continueWatching' => 'متابعة المشاهدة',
+			'fileSources.read' => 'قراءة',
+			'fileSources.listen' => 'الاستماع',
+			'fileSources.play' => 'تشغيل',
+			'fileSources.pause' => 'إيقاف مؤقت',
+			'fileSources.stop' => 'إيقاف',
+			'fileSources.startOver' => 'البدء من جديد',
+			'fileSources.finished' => 'مكتمل',
+			'fileSources.markFinished' => 'وضع علامة مكتمل',
+			'fileSources.markUnfinished' => 'وضع علامة غير مكتمل',
+			'fileSources.editions' => 'الإصدارات والملفات',
+			'fileSources.chapters' => 'الفصول',
+			'fileSources.bookmarks' => 'الإشارات المرجعية والملاحظات',
+			'fileSources.bookmark' => 'إضافة إشارة مرجعية',
+			'fileSources.highlight' => 'تمييز النص',
+			'fileSources.note' => 'ملاحظة',
+			'fileSources.delete' => 'حذف',
+			'fileSources.export' => 'تصدير الملاحظات',
+			'fileSources.exported' => 'تم تصدير الملاحظات',
+			'fileSources.sync' => 'مزامنة التقدم',
+			'fileSources.synced' => 'تمت مزامنة التقدم',
+			'fileSources.conflict' => 'موضع القراءة أو الاستماع مختلف على جهاز آخر. اختر الموضع الذي تريد المتابعة منه.',
+			'fileSources.useLocal' => 'استخدم هذا الجهاز',
+			'fileSources.useRemote' => 'استخدام موضع الجهاز الآخر',
+			'fileSources.history' => 'سجل المواضع',
+			'fileSources.groupAudio' => 'الاستماع ككتاب صوتي واحد',
+			'fileSources.groupHint' => 'يجمع الملفات الصوتية المحمّلة حاليًا في هذا المجلد. حمّل جميع الصفحات أولًا.',
+			'fileSources.order' => 'ترتيب الملفات',
+			'fileSources.moveUp' => 'تحرك إلى الأعلى',
+			'fileSources.moveDown' => 'تحرك إلى أسفل',
+			'fileSources.speed' => 'سرعة التشغيل',
+			'fileSources.sleep' => 'مؤقّت النوم',
+			'fileSources.sleepOff' => 'إيقاف',
+			'fileSources.endChapter' => 'نهاية الفصل',
+			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(count, zero: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة', one: 'دقيقة', two: 'دقيقتان', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقائق', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} دقيقة', ), 
+			'fileSources.skipBack' => 'رجوع للخلف',
+			'fileSources.skipForward' => 'تقديم للأمام',
+			'fileSources.smartRewind' => 'الرجوع الذكي بعد الإيقاف المؤقت',
+			'fileSources.playbackOptions' => 'خيارات الاستماع',
+			'fileSources.remaining' => ({required Object time}) => 'متبقٍ ${time}',
+			'fileSources.contents' => 'جدول المحتويات',
+			'fileSources.readerSettings' => 'إعدادات القراءة',
+			'fileSources.fontSize' => 'حجم النص',
+			'fileSources.lineHeight' => 'تباعد الأسطر',
+			'fileSources.margin' => 'الهوامش',
+			'fileSources.font' => 'نوع الخط',
+			'fileSources.serif' => 'خط ذو زوائد',
+			'fileSources.sans' => 'خط بلا زوائد',
+			'fileSources.mono' => 'خط ثابت العرض',
+			'fileSources.columns' => 'الأعمدة',
+			'fileSources.scroll' => 'التمرير عموديًا',
+			'fileSources.justify' => 'ضبط محاذاة النص',
+			'fileSources.readerTheme' => 'مظهر الصفحة',
+			'fileSources.appTheme' => 'اتباع سمة التطبيق',
+			'fileSources.paper' => 'الورق',
+			'fileSources.sepia' => 'بني فاتح',
+			'fileSources.night' => 'ليلي',
+			'fileSources.readAloud' => 'قراءة هذه الصفحة بصوت عالٍ',
+			'fileSources.readAlong' => 'متابعة القراءة مع الصوت',
+			'fileSources.stopReading' => 'إيقاف السرد',
+			'fileSources.searchBook' => 'البحث في الكتاب',
+			'fileSources.noMatches' => 'لا توجد نتائج مطابقة',
+			'fileSources.previousPage' => 'الصفحة السابقة',
+			'fileSources.nextPage' => 'الصفحة التالية',
+			'fileSources.page' => ({required Object number}) => 'الصفحة ${number}',
+			'fileSources.externalBlocked' => 'يتم تعطيل الروابط الخارجية للكتاب في القارئ.',
+			'fileSources.loading' => 'فتح...',
+			'fileSources.narrator' => 'الراوي',
+			'fileSources.audio' => 'الصوت',
+			'fileSources.video' => 'فيديو',
+			'fileSources.ebooks' => 'كتب إلكترونية',
+			'fileSources.all' => 'الكل',
+			'fileSources.downloads' => 'الملفات المحفوظة دون اتصال',
+			'fileSources.confirmDelete' => 'هل تريد إزالة النسخة المحددة المحفوظة دون اتصال؟ سيبقى موضعك وملاحظاتك محفوظين.',
+			'fileSources.errorAuthentication' => 'سجّل الدخول مجددًا لإعادة الاتصال بهذا المصدر.',
+			'fileSources.errorPermission' => 'لم يمنح هذا المصدر إمكانية الوصول إلى الملف المطلوب.',
+			'fileSources.errorUnavailable' => 'المصدر غير متاح. حاول مجددًا أو افتح نسخة محفوظة دون اتصال.',
+			'fileSources.errorUnsupported' => 'هذه الصيغة أو طريقة الاتصال غير مدعومة على هذا الجهاز. راجع دليل إعداد المصدر.',
+			'fileSources.errorInvalidData' => 'لا يمكن قراءة هذا الملف أو استجابة الخادم بأمان.',
+			'fileSources.errorCancelled' => 'تم إلغاء العملية.',
+			'fileSources.errorConflict' => 'تغيّر الموضع في جلسة أخرى. أعد فتح العنصر لاختيار موضع المتابعة.',
+			'fileSources.signIn' => 'تسجيل الدخول',
+			'fileSources.reconnect' => 'إعادة الاتصال',
+			'fileSources.folderHelp' => 'اتركه فارغًا للبدء من جذر المصدر. تتضمن عناوين S3 اسم حاوية التخزين.',
+			'fileSources.preferences' => 'تفضيلات',
+			'fileSources.timePosition' => 'موضع التشغيل',
+			'fileSources.audioTrack' => 'المسار الصوتي',
+			'fileSources.subtitleTrack' => 'مسار الترجمة',
+			'fileSources.none' => 'لا شيء',
+			'fileSources.fullscreen' => 'ملء الشاشة',
+			'fileSources.syncLocation' => 'مجلد مزامنة التقدم (اختياري)',
+			'fileSources.syncLocationHint' => 'مجلد WebDAV مخصص لحالة PlezyNG. تُستخدم الكتابة المشروطة، وتبقى ملفات الوسائط دون تغيير.',
+			'fileSources.audiobooks' => 'كتب صوتية',
+			'fileSources.comics' => 'قصص مصوّرة',
+			'fileSources.scan' => 'البحث عن الكتب والوسائط',
+			'fileSources.browserReader' => 'فتح القارئ',
+			'fileSources.browserReaderHelp' => 'القارئ مفتوح في متصفحك. أبقِ PlezyNG مفتوحًا لحفظ موضعك وملاحظاتك.',
+			'fileSources.on' => 'تشغيل',
+			'fileSources.advancedSetup' => 'تسجيل التطبيق',
+			'fileSources.microsoftSignIn' => 'تسجيل الدخول باستخدام Microsoft',
+			'fileSources.zoomIn' => 'تكبير',
+			'fileSources.zoomOut' => 'تصغير',
+			'fileSources.fitPage' => 'ملاءمة الصفحة',
+			'fileSources.fitWidth' => 'ملاءمة العرض',
+			'fileSources.actualSize' => 'الحجم الأصلي',
+			'fileSources.goToPage' => 'الانتقال إلى صفحة',
+			'fileSources.goToSection' => 'الانتقال إلى فصل',
+			'fileSources.pageRange' => ({required Object count}) => 'أدخل رقمًا من ١ إلى ${count}',
+			'fileSources.pageLayout' => 'تخطيط الصفحات',
+			'fileSources.automatic' => 'تلقائي',
+			'fileSources.singlePage' => 'صفحة واحدة',
+			'fileSources.twoPages' => 'صفحتان',
+			'fileSources.readingDirection' => 'اتجاه القراءة',
+			'fileSources.leftToRight' => 'من اليسار لليمين',
+			'fileSources.rightToLeft' => 'من اليمين لليسار',
+			'fileSources.letterSpacing' => 'تباعد الأحرف',
+			'fileSources.wordSpacing' => 'تباعد الكلمات',
+			'fileSources.readerControlsHelp' => 'استخدم إيماءة التكبير بإصبعين أو أزرار التكبير لتكبير الصفحات، واسحب لتحريكها. استخدم Ctrl/⌘ مع + أو − لضبط التكبير، وCtrl/⌘ مع 0 لإعادة ضبطه. استخدم Page Up وPage Down للتنقل بين الصفحات.',
+			'fileSources.imagePage' => 'صفحة قصة مصوّرة',
+			'fileSources.resetReader' => 'إعادة تعيين تفضيلات القراءة',
+			'fileSources.zoom' => 'التكبير',
+			'fileSources.useFiles' => 'استخدام الملفات والكتب',
+			'fileSources.cancelScan' => 'إلغاء الفحص',
+			'fileSources.googleDrive' => 'Google Drive',
+			'lending.title' => 'المكتبات العامة',
+			'lending.add' => 'إضافة مكتبة',
+			'lending.other' => 'مكتبة أخرى',
+			'lending.libraryName' => 'اسم المكتبة',
+			'lending.libraryUrl' => 'موقع المكتبة',
+			'lending.libraryUrlHint' => 'استخدم صفحة فهرس مكتبتك أو صفحة تسجيل الدخول.',
+			'lending.intro' => 'استعر من مكتبتك واحتفظ بكتبك في متناولك.',
+			'lending.handoff' => 'سجّل الدخول واستعر واقرأ بأمان عبر خدمة مكتبتك نفسها.',
+			'lending.openService' => 'فتح المكتبة',
+			'lending.findLibrary' => 'العثور على مكتبة',
+			'lending.search' => 'البحث عن كتب ومؤلفين',
+			'lending.catalogue' => 'الفهرس',
+			'lending.loans' => 'الاستعارات',
+			'lending.holds' => 'الحجوزات',
+			'lending.signIn' => 'تسجيل الدخول عبر مكتبتك',
+			'lending.waiting' => 'أكمل تسجيل الدخول في المتصفح، ثم عُد إلى هنا.',
+			'lending.cancel' => 'إلغاء',
+			'lending.disconnect' => 'إزالة المكتبة',
+			'lending.disconnectMessage' => 'هل تريد إزالة هذه المكتبة من هذا الملف الشخصي؟ ستبقى استعاراتك وحجوزاتك لدى المكتبة.',
+			'lending.getBook' => 'الحصول على الكتاب',
+			'lending.checkAvailability' => 'التحقق من التوفر',
+			'lending.available' => 'متاح للاستعارة',
+			'lending.unavailable' => 'غير متاح حاليًا',
+			'lending.borrow' => 'استعارة',
+			'lending.placeHold' => 'حجز',
+			'lending.returnBook' => 'إرجاع مبكر',
+			'lending.cancelHold' => 'إلغاء الحجز',
+			'lending.confirmBorrow' => 'هل تريد استعارة هذا العنوان من مكتبتك؟',
+			'lending.confirmReturn' => 'هل تريد إرجاع هذا العنوان الآن؟ قد تحتاج إلى استعارته مجددًا للمتابعة.',
+			'lending.confirmCancelHold' => 'هل تريد إلغاء حجزك لهذا العنوان؟',
+			'lending.email' => 'البريد الإلكتروني لإشعارات الحجز',
+			'lending.due' => ({required Object date}) => 'موعد الإرجاع: ${date}',
+			'lending.queue' => ({required Object position}) => 'ترتيبك في قائمة الانتظار: ${position}',
+			'lending.empty' => 'لا توجد عناوين هنا بعد.',
+			'lending.openLibraryNote' => 'استكشف فهرس Open Library. تظهر خيارات القراءة والاستعارة في صفحة كل عنوان.',
+			'lending.more' => 'تحميل المزيد',
+			'lending.gateway' => 'خدمة تسجيل الدخول إلى المكتبة',
+			'lending.gatewayHint' => 'توفرها مكتبتك أو مسؤول PlezyNG.',
+			'lending.advanced' => 'تكامل المكتبة',
+			'lending.loadLibraries' => 'اختيار مكتبتك',
+			'lending.expired' => 'انتهت مدة هذه الاستعارة.',
+			'lending.updated' => 'تم تحديث المكتبة',
+			'lending.continueService' => 'المتابعة في الخدمة',
+			'lending.comingSoon' => 'الاستعارة داخل التطبيق · قريبًا',
+			'lending.comingSoonDescription' => 'تكامل Libby قادم قريبًا. يمكنك استخدام مكتبتك في Libby بينما نكمل الربط.',
+			'lending.suspendHold' => 'تعليق الحجز',
+			'lending.resumeHold' => 'استئناف الحجز',
+			'lending.suspendMessage' => 'هل تريد الاحتفاظ بترتيبك في قائمة الانتظار والسماح للقارئ التالي باستعارة هذه النسخة؟ يمكنك استئناف الحجز لاحقًا.',
+			'lending.resumeMessage' => 'هل تريد استئناف هذا الحجز لتعرض عليك المكتبة النسخة التالية المتاحة؟',
+			'lending.editEmail' => 'تغيير البريد الإلكتروني للإشعارات',
 			_ => null,
 		};
 	}

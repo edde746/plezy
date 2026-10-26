@@ -117,6 +117,7 @@ class VideoTimelineBar extends StatelessWidget {
     List<BufferRange> bufferRanges,
   ) {
     return Row(
+      textDirection: TextDirection.ltr,
       children: [
         _buildTimestamp(position),
         const SizedBox(width: 12),
@@ -139,6 +140,7 @@ class VideoTimelineBar extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
+            textDirection: TextDirection.ltr,
             mainAxisAlignment: .spaceBetween,
             children: [_buildTimestamp(position), _buildRemainingTimestamp(remaining)],
           ),

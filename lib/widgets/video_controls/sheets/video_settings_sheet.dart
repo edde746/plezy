@@ -745,7 +745,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return t.videoSettings.sleepTimerActive(duration: formatDurationWithSeconds(remaining));
   }
 
-  String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
+  String _formatZoomScale(double scale) => formatPercent(scale);
 
   void _setZoomScale(double scale) {
     final next = VideoFilterManager.normalizeZoomScale(scale);
@@ -1171,7 +1171,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               max: 12,
               divisions: 24,
               label: '${formatDecimal(_audioEqualizerGains[index], minimumDecimals: 0, maximumDecimals: 0)} dB',
-              semanticFormatterCallback: (value) => '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} dB',
+              semanticFormatterCallback: (value) =>
+                  '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} dB',
               onChanged: (gain) => _setAudioEqualizerBand(index, gain),
               onChangeEnd: (gain) => unawaited(_persistAudioEqualizerBand(prefs[index], gain)),
             ),

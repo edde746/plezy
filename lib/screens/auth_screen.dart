@@ -31,6 +31,8 @@ import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
 import '../services/plex_gdm_discovery_service.dart';
 import 'auth/plex_pin_auth_flow.dart';
+import 'sources/file_sources_setup.dart';
+import 'sources/source_widgets.dart';
 import 'profile/profile_switch_screen.dart';
 import 'settings/add_direct_plex_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
@@ -247,6 +249,17 @@ class _AuthScreenState extends State<AuthScreen> {
   void _handleDebugTap() {
     if (!kDebugMode) return;
     _showDebugTokenDialog();
+  }
+
+  Future<void> _connectToFiles() async {
+    if (_isAuthenticating) return;
+    setState(() => _isAuthenticating = true);
+    try {
+      if (!await _prepareDatabaseRecoveryForSignIn() || !mounted) return;
+      await openFileSourcesSession(context, createIfEmpty: true);
+    } finally {
+      if (mounted) setState(() => _isAuthenticating = false);
+    }
   }
 
   Future<void> _connectToMediaBrowser(MediaBrowserDialect dialect) async {
@@ -511,6 +524,14 @@ class _AuthScreenState extends State<AuthScreen> {
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
             label: Text(t.auth.connectToDirectPlex),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: busy ? null : () => unawaited(sourceAction(context, _connectToFiles)),
+          child: OutlinedButton(
+            onPressed: busy ? null : () => unawaited(sourceAction(context, _connectToFiles)),
+            child: Text(t.fileSources.useFiles),
           ),
         ),
         if (kDebugMode) ...[

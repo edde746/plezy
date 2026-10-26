@@ -1218,29 +1218,37 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
                 thumbShape: dragging ? null : SliderComponentShape.noThumb,
                 overlayShape: SliderComponentShape.noOverlay,
               ),
-              child: Slider(
-                max: hasDuration ? durationMs : 1,
-                value: positionMs,
-                onChangeStart: hasDuration
-                    ? (value) {
-                        _keySeek.cancel();
-                        setState(() => _dragValueMs = value);
-                      }
-                    : null,
-                onChanged: hasDuration ? (value) => setState(() => _dragValueMs = value) : null,
-                onChangeEnd: hasDuration
-                    ? (value) {
-                        if (service.currentTrack?.globalKey == widget.trackKey) {
-                          unawaited(service.seek(Duration(milliseconds: value.round())));
-                        }
-                        setState(() => _dragValueMs = null);
-                      }
-                    : null,
+              child: Semantics(
+                label: t.videoControls.timelineSlider,
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Slider(
+                    max: hasDuration ? durationMs : 1,
+                    value: positionMs,
+                    semanticFormatterCallback: (value) => formatDurationTextual(value.round()),
+                    onChangeStart: hasDuration
+                        ? (value) {
+                            _keySeek.cancel();
+                            setState(() => _dragValueMs = value);
+                          }
+                        : null,
+                    onChanged: hasDuration ? (value) => setState(() => _dragValueMs = value) : null,
+                    onChangeEnd: hasDuration
+                        ? (value) {
+                            if (service.currentTrack?.globalKey == widget.trackKey) {
+                              unawaited(service.seek(Duration(milliseconds: value.round())));
+                            }
+                            setState(() => _dragValueMs = null);
+                          }
+                        : null,
+                  ),
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 2, 24, 0),
               child: Row(
+                textDirection: TextDirection.ltr,
                 children: [
                   Text(
                     formatDurationTimestamp(Duration(milliseconds: positionMs.round())),
