@@ -111,6 +111,9 @@
 
 ### Fixed
 
+- Re-check a protected local profile PIN before every explicit download deletion, keep cancelled-download dismissal safe, and use explicit button actions for keyboard and remote Find Next controls.
+- Keep compact Find Next artwork retries in the focus order and isolate recommendation summaries for mixed-direction text.
+- Use shared focus-aware fields and viewport-sized dialogs for cloud backup, custom players, MDBList shelf editing, searchable settings, and Home Layout.
 - Restore TV remote focus to the Retry action while Plex sign-in is waiting.
 - Respect reduced motion in Supporter sheet scrolling, expose mobile profile PIN entry to screen readers, and retain D-pad focus on the locked-settings action; let PIN controls wrap at large text sizes.
 - Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.

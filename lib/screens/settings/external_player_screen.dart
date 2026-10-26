@@ -216,9 +216,10 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
   Widget build(BuildContext context) {
     final (:label, :hint) = _valueFieldInfo;
     return AlertDialog(
+      scrollable: true,
       title: Text(t.externalPlayer.addCustomPlayer),
       content: SizedBox(
-        width: 300,
+        width: double.maxFinite,
         child: Column(
           mainAxisSize: .min,
           children: [

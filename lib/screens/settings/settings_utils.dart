@@ -263,10 +263,17 @@ class _SearchableSelectionDialogState<T> extends State<_SearchableSelectionDialo
         )
         .toList();
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.title),
       content: SizedBox(
-        width: 440,
-        height: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom) * 0.6,
+        width: double.maxFinite,
+        height:
+            ((MediaQuery.sizeOf(context).height -
+                        MediaQuery.viewInsetsOf(context).bottom -
+                        MediaQuery.viewPaddingOf(context).vertical) *
+                    0.6)
+                .clamp(0.0, 560.0)
+                .toDouble(),
         child: Column(
           children: [
             FocusableTextField(

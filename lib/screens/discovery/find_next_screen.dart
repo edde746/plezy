@@ -41,6 +41,7 @@ import '../../utils/media_image_helper.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'discovery_artwork.dart';
 import 'discovery_controls.dart';
@@ -1155,7 +1156,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     title: isolateDisplayText(choice.title),
     subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).map(isolateDisplayText).join(' · '),
     facts: [_typeLabel(choice), _durationLabel(choice), if (choice.offlineReady) t.fileSources.offline].join(' · '),
-    summary: choice.summary,
+    summary: isolateDisplayText(choice.summary),
     artwork: _artwork(choice),
     artworkAspectRatio: _artworkAspectRatio(choice),
     enabled: !_committing,
@@ -1401,7 +1402,8 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final choice = savedChoices[index];
-                return ListTile(
+                return FocusableListTile(
+                  autofocus: index == 0,
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
                   title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(

@@ -1448,6 +1448,7 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     // Nudged above dead-center: on a shorter window the dialog's natural
     // content height (title + dropdown + both checklists) can exceed the
     // available height even after the cap below, and centering split the
@@ -1456,13 +1457,18 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
     alignment: const Alignment(0, -0.3),
     title: Text(widget.initial == null ? t.homeLayout.addHomeRow : t.homeLayout.editHomeRow),
     content: SizedBox(
-      width: 560,
+      width: double.maxFinite,
       // A shrink-wrapped ListView sizes to its content with no ceiling, so a
       // dialog with many libraries/collections checked could grow taller
       // than the window and get clipped at the bottom instead of scrolling.
       // Capping the height here and dropping shrinkWrap makes the list
       // scroll internally once it would otherwise overflow.
-      height: (MediaQuery.sizeOf(context).height - 160).clamp(200, 640),
+      height: (MediaQuery.sizeOf(context).height -
+              MediaQuery.viewPaddingOf(context).vertical -
+              MediaQuery.viewInsetsOf(context).bottom -
+              160)
+          .clamp(0.0, 640.0)
+          .toDouble(),
       child: ListView(
         children: [
           FocusableTextField(
