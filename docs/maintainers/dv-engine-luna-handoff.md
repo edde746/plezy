@@ -45,12 +45,13 @@ are needed. Do not merge or ship an unqualified engine as the production default
   because `inflate_wrapper` lacked zlib under `--disable-autodetect`. All 16
   runnable libplacebo tests passed; one surfaceless test was skipped. No artifact
   was packaged.
-- Follow-on local edits now add `zlib1g-dev` and `--enable-zlib`, reject FEL metadata
-  without an EL frame pointer, and apply a pinned-source mpv patch that fails closed
-  on missing/invalid EL, decoder setup errors, unknown/unmatched PTS, and GPU import
-  errors. These edits **have not yet gone through the pinned mpv build**. Run the
-  workflow on the updated tree and inspect the compile and tests before claiming
-  the integration works.
+- The follow-on patch set adds `zlib1g-dev` and `--enable-zlib`, rejects FEL metadata
+  without an EL frame pointer, and applies a pinned-source mpv patch that fails
+  closed on missing/invalid EL, decoder setup errors, unknown/unmatched PTS, and
+  GPU import errors. It also rejects ambiguous existing BL metadata rather than
+  replacing an owned buffer. This code **has not yet gone through the pinned mpv
+  build**. Run the workflow on the updated tree and inspect the compile and tests
+  before claiming the integration works.
 - The general PR checks in [Actions run 40270533737](https://github.com/snapetech-org/PlezyNG/actions/runs/40270533737)
   are separate from the engine build; at last inspection, they were still running.
 - Local checks currently pass: Python byte-compilation, 13 DV-lab tests, and the

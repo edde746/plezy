@@ -87,6 +87,8 @@ def apply(root: Path) -> None:
     if (bl->params.repr.sys == PL_COLOR_SYSTEM_DOLBYVISION &&
         bl->params.repr.dovi)
         return true;
+    if (bl->dovi)
+        return false; // Do not overwrite ambiguous BL metadata ownership.
     if (!el->dovi || !el->params.repr.dovi ||
         el->params.repr.sys != PL_COLOR_SYSTEM_DOLBYVISION)
         return false;
