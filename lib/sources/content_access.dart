@@ -538,8 +538,8 @@ class PublicationDownloads {
     if (sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
       PublicationFile? descriptor;
       try {
-        descriptor = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
-        if (key(sourceId, descriptor) != downloadKey) descriptor = null;
+        final candidate = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (key(sourceId, candidate) == downloadKey && candidate.fingerprint == row['fingerprint']) descriptor = candidate;
       } on Object {
         // The row can be removed without touching a path from an invalid descriptor.
       }
