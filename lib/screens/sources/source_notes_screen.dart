@@ -7,12 +7,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_widgets.dart';
 
@@ -32,7 +34,7 @@ Future<String?> editSourceNote(BuildContext context, {String initial = '', Strin
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(quote!, maxLines: 5, overflow: TextOverflow.ellipsis),
               ),
-            TextField(
+            FocusableTextField(
               controller: controller,
               autofocus: true,
               maxLines: 4,
@@ -42,8 +44,12 @@ Future<String?> editSourceNote(BuildContext context, {String initial = '', Strin
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
-        FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.fileSources.save)),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.fileSources.cancel),
+        DialogActionButton(
+          onPressed: () => Navigator.pop(context, controller.text),
+          label: t.fileSources.save,
+          isPrimary: true,
+        ),
       ],
     ),
   );
