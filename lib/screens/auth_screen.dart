@@ -679,8 +679,20 @@ class _AuthScreenBackground extends StatelessWidget {
       builder: (context, constraints) {
         final size = constraints.biggest;
         final compact = size.width < 760;
+        final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+        final physicalSize = size * devicePixelRatio;
+        // Use the 4K-sized site-art upscale only when the physical
+        // display can show it; phone and standard-density layouts keep the
+        // smaller source to avoid decoding a 4K bitmap unnecessarily.
+        final useHighResolutionArtwork = physicalSize.width >= 2560 && physicalSize.height >= 1440;
+        final illustrationAsset = useHighResolutionArtwork
+            ? 'assets/branding/plezyng-product-illustration-4k.png'
+            : 'assets/branding/plezyng-product-illustration.webp';
         final illustrationWidth = math.min(size.width * 0.82, 1800.0).toDouble();
         final illustrationHeight = math.min(size.height * 0.44, size.width * 0.72).toDouble();
+        final illustrationPixelWidth = useHighResolutionArtwork
+            ? math.min((compact ? size.width : illustrationWidth) * devicePixelRatio, 3840).round()
+            : null;
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -693,9 +705,11 @@ class _AuthScreenBackground extends StatelessWidget {
                 height: illustrationHeight,
                 child: ExcludeSemantics(
                   child: Image.asset(
-                    'assets/branding/plezyng-product-illustration.png',
+                    illustrationAsset,
                     fit: BoxFit.contain,
                     alignment: Alignment.topCenter,
+                    filterQuality: FilterQuality.high,
+                    cacheWidth: illustrationPixelWidth,
                   ),
                 ),
               )
@@ -707,9 +721,11 @@ class _AuthScreenBackground extends StatelessWidget {
                 width: illustrationWidth,
                 child: ExcludeSemantics(
                   child: Image.asset(
-                    'assets/branding/plezyng-product-illustration.png',
+                    illustrationAsset,
                     fit: BoxFit.contain,
                     alignment: Alignment.centerRight,
+                    filterQuality: FilterQuality.high,
+                    cacheWidth: illustrationPixelWidth,
                   ),
                 ),
               ),

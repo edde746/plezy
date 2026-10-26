@@ -226,7 +226,8 @@ flutter:
     - assets/licenses/Unicode.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
-    - assets/branding/plezyng-product-illustration.png
+    - assets/branding/plezyng-product-illustration.webp
+    - assets/branding/plezyng-product-illustration-4k.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
