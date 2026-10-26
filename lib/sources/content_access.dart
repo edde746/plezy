@@ -164,6 +164,7 @@ class PublicationDownloads {
         await _removeNativeTask(taskId);
         waiter = Completer<TaskStatusUpdate>();
         _nativeWaiters[taskId] = waiter;
+        context.acceptingProgress = true;
         _nativeContexts[taskId] = context;
         record = null;
       }
