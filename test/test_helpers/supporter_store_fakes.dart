@@ -90,7 +90,7 @@ ProductDetails supporterProduct({String price = r'$2.99'}) => ProductDetails(
   description: 'Lifetime access to every PlezyNG feature',
   price: price,
   rawPrice: 2.99,
-  currencyCode: 'CAD',
+  currencyCode: 'USD',
 );
 
 /// Google Play behind [platform], answering the purchase query from
