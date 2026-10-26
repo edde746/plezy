@@ -152,9 +152,9 @@ class PublicationSync {
     }
   }
 
-  /// Re-keys cached sync records when a user pairs an existing source under a
-  /// shared library ID. Old records remain as migration history so an offline
-  /// device can still merge its writes; the paired identity receives copies.
+  /// Re-keys cached sync records when a source is paired under a shared
+  /// library ID. Old records remain as history; every participating device
+  /// needs the matching IDs before it can join the paired identity.
   Future<void> migrateSourceIdentity({
     required String profile,
     required FileSource oldSource,
