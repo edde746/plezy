@@ -68,6 +68,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   String? _errorMessage;
   bool _replaceContinuationItems = false;
   bool _usesPaginatedLoader = false;
+  bool _nextHubPageCheckScheduled = false;
 
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
@@ -101,7 +102,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void initState() {
     super.initState();
-    scrollController.addListener(_maybeLoadNextHubPage);
+    scrollController.addListener(_scheduleNextHubPageCheck);
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
     if (widget.hub.more) {
@@ -113,7 +114,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   @override
   void dispose() {
-    scrollController.removeListener(_maybeLoadNextHubPage);
+    scrollController.removeListener(_scheduleNextHubPageCheck);
     disposePagination();
     _continuation.dispose();
     _continuationRetryFocusNode.dispose();
@@ -390,8 +391,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     _applySort();
   }
 
+  /// Checks for the next page once this frame is laid out. The scroll position
+  /// can move before layout catches up with freshly appended items (a fling
+  /// tick at the start of a frame, a drag while a page lands); measuring the
+  /// extent then reads the previous end and fetches a page the user has not
+  /// reached.
   void _scheduleNextHubPageCheck() {
+    if (_nextHubPageCheckScheduled) return;
+    _nextHubPageCheckScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nextHubPageCheckScheduled = false;
       if (mounted) _maybeLoadNextHubPage();
     });
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -146,6 +148,48 @@ void main() {
     expect(find.text('Item 449'), findsOneWidget);
     expect(harness.client.requestedStarts, [0, 200, 400]);
     expect(harness.client.requestedSizes, [200, 200, 50]);
+  });
+
+  testWidgets('Jellyfin Recently Added does not fetch past a page that has not been laid out yet', (tester) async {
+    final items = List.generate(450, (index) => _item(index, backend: MediaBackend.jellyfin));
+    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        HubDetailScreen(
+          hub: MediaHub(
+            id: 'home.recent',
+            title: 'Recently Added',
+            type: 'mixed',
+            items: items.take(20).toList(),
+            size: items.length,
+            more: true,
+            serverId: 'server_1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(harness.client.requestedStarts, [0]);
+
+    final gate = harness.client.pageGate = Completer<void>();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(harness.client.requestedStarts, [0, 200]);
+
+    // The page lands and the user scrolls back a little before the next frame
+    // lays the new items out. Items 200-399 now sit below the viewport.
+    harness.client.pageGate = null;
+    gate.complete();
+    await tester.idle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 100));
+    await tester.pumpAndSettle();
+    expect(harness.client.requestedStarts, [0, 200]);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
+    await tester.pumpAndSettle();
+    expect(harness.client.requestedStarts, [0, 200, 400]);
   });
 
   testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
@@ -567,6 +611,9 @@ class _PagedHubClient implements MediaServerClient {
   int fullHubRequests = 0;
   List<MediaSort> sortOptions = const [];
 
+  /// While set, page responses wait on it, so a test decides when a page lands.
+  Completer<void>? pageGate;
+
   @override
   final MediaBackend backend;
 
@@ -589,6 +636,7 @@ class _PagedHubClient implements MediaServerClient {
   }) async {
     requestedStarts.add(start);
     requestedSizes.add(size);
+    await pageGate?.future;
     return fakeLibraryPage(items, start: start, size: size);
   }
 
