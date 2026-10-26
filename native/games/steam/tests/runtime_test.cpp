@@ -107,7 +107,7 @@ int main() {
   setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   Runtime stream;
   auto run = std::async(std::launch::async, [&] {
-    return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, std::make_shared<NullSink>());
+    return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false, std::make_shared<NullSink>());
   });
   uint8_t bytes[4096];
   ssize_t length = recv(fd, bytes, sizeof(bytes), 0);
