@@ -8,7 +8,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../services/credential_vault.dart';
+import 'publication_shelf.dart';
 import 'source_models.dart';
+
+String _entrySearchText(SourceEntry entry) => '${entry.title} ${entry.author} ${entry.narrator} ${entry.series}'.toLowerCase();
 
 /// Separate versioned database: installing file sources does not rewrite or
 /// reinterpret the existing server, watched-state or download schemas.
@@ -20,7 +23,7 @@ class SourceDatabase extends GeneratedDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 7;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -28,8 +31,12 @@ class SourceDatabase extends GeneratedDatabase {
     onCreate: (_) async {
       for (final sql in [
         'CREATE TABLE sources (profile TEXT NOT NULL, id TEXT NOT NULL, config TEXT NOT NULL, credentials TEXT NOT NULL, PRIMARY KEY(profile,id))',
-        'CREATE TABLE entries (profile TEXT NOT NULL, source TEXT NOT NULL, id TEXT NOT NULL, parent TEXT, payload TEXT NOT NULL, scan_generation INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(profile,source,id))',
+        'CREATE TABLE entries (profile TEXT NOT NULL, source TEXT NOT NULL, id TEXT NOT NULL, parent TEXT, payload TEXT NOT NULL, scan_generation INTEGER NOT NULL DEFAULT 0, search TEXT NOT NULL DEFAULT \'\', entry_key TEXT NOT NULL DEFAULT \'\', PRIMARY KEY(profile,source,id))',
         'CREATE INDEX entries_profile_source_parent ON entries(profile,source,parent)',
+        'CREATE INDEX entries_profile_entry_key ON entries(profile,entry_key)',
+        'CREATE INDEX entries_profile_rowid ON entries(profile)',
+        'CREATE TABLE entry_shelves (profile TEXT NOT NULL, source TEXT NOT NULL, id TEXT NOT NULL, shelf TEXT NOT NULL, PRIMARY KEY(profile,source,id,shelf))',
+        'CREATE INDEX entry_shelves_profile_shelf ON entry_shelves(profile,shelf)',
         'CREATE TABLE source_scans (profile TEXT NOT NULL, source TEXT NOT NULL, generation INTEGER NOT NULL, PRIMARY KEY(profile,source))',
         'CREATE TABLE progress (profile TEXT NOT NULL, key TEXT NOT NULL, payload TEXT NOT NULL, revision INTEGER NOT NULL, pending INTEGER NOT NULL DEFAULT 0, remote TEXT, entry TEXT NOT NULL DEFAULT \'\', PRIMARY KEY(profile,key))',
         'CREATE INDEX progress_profile_entry ON progress(profile,entry)',
@@ -41,6 +48,7 @@ class SourceDatabase extends GeneratedDatabase {
       ]) {
         await customStatement(sql);
       }
+      await _createEntrySearchIndex();
     },
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -57,8 +65,92 @@ class SourceDatabase extends GeneratedDatabase {
         await customStatement("UPDATE progress SET entry=COALESCE(json_extract(payload,'$.entryKey'),'')");
         await customStatement('CREATE INDEX progress_profile_entry ON progress(profile,entry)');
       }
+      if (from < 5) {
+        await customStatement("ALTER TABLE entries ADD COLUMN search TEXT NOT NULL DEFAULT ''");
+        await customStatement("ALTER TABLE entries ADD COLUMN entry_key TEXT NOT NULL DEFAULT ''");
+        await customStatement('CREATE INDEX entries_profile_entry_key ON entries(profile,entry_key)');
+        final rows = await customSelect('SELECT profile,source,id,payload FROM entries').get();
+        for (final row in rows) {
+          final source = row.read<String>('source'), id = row.read<String>('id');
+          var search = '';
+          try {
+            search = _entrySearchText(SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload')))));
+          } on Object {
+            // Preserve a corrupt cached row so existing recovery behavior is
+            // unchanged; it simply remains unavailable to text search.
+          }
+          await customStatement(
+            'UPDATE entries SET search=?,entry_key=? WHERE profile=? AND source=? AND id=?',
+            [
+              search,
+              sourceKey(source, id),
+              row.read<String>('profile'),
+              row.read<String>('source'),
+              row.read<String>('id'),
+            ],
+          );
+        }
+      }
+      if (from < 6) {
+        await customStatement('CREATE INDEX entries_profile_rowid ON entries(profile)');
+        await customStatement(
+          'CREATE TABLE entry_shelves (profile TEXT NOT NULL, source TEXT NOT NULL, id TEXT NOT NULL, shelf TEXT NOT NULL, PRIMARY KEY(profile,source,id,shelf))',
+        );
+        await customStatement('CREATE INDEX entry_shelves_profile_shelf ON entry_shelves(profile,shelf)');
+        final rows = await customSelect('SELECT profile,source,id,payload FROM entries').get();
+        for (final row in rows) {
+          try {
+            final entry = SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
+            for (final shelf in PublicationShelf.values.where((shelf) => shelf.includes(entry))) {
+              await customStatement(
+                'INSERT OR IGNORE INTO entry_shelves(profile,source,id,shelf) VALUES (?,?,?,?)',
+                [row.read<String>('profile'), row.read<String>('source'), row.read<String>('id'), shelf.name],
+              );
+            }
+          } on Object {
+            // Keep corrupt cache rows recoverable without making startup fail.
+          }
+        }
+      }
+      if (from < 7) await _createEntrySearchIndex();
     },
   );
+
+  /// FTS5's trigram tokenizer preserves substring search while avoiding a
+  /// full payload decode. Some system SQLite builds omit FTS5, so indexed
+  /// search is optional and callers retain the SQL substring fallback.
+  Future<void> _createEntrySearchIndex() async {
+    try {
+      await customStatement("CREATE VIRTUAL TABLE entries_search_fts USING fts5(search, tokenize='trigram')");
+      await customStatement('INSERT INTO entries_search_fts(rowid,search) SELECT rowid,search FROM entries');
+      await customStatement(
+        'CREATE TRIGGER entries_search_insert AFTER INSERT ON entries BEGIN '
+        'INSERT INTO entries_search_fts(rowid,search) VALUES (new.rowid,new.search); END',
+      );
+      await customStatement(
+        'CREATE TRIGGER entries_search_update AFTER UPDATE OF search ON entries BEGIN '
+        "INSERT INTO entries_search_fts(entries_search_fts,rowid,search) VALUES ('delete',old.rowid,old.search); "
+        'INSERT INTO entries_search_fts(rowid,search) VALUES (new.rowid,new.search); END',
+      );
+      await customStatement(
+        'CREATE TRIGGER entries_search_delete AFTER DELETE ON entries BEGIN '
+        "INSERT INTO entries_search_fts(entries_search_fts,rowid,search) VALUES ('delete',old.rowid,old.search); END",
+      );
+    } on Object {
+      for (final statement in const [
+        'DROP TRIGGER IF EXISTS entries_search_insert',
+        'DROP TRIGGER IF EXISTS entries_search_update',
+        'DROP TRIGGER IF EXISTS entries_search_delete',
+        'DROP TABLE IF EXISTS entries_search_fts',
+      ]) {
+        try {
+          await customStatement(statement);
+        } on Object {
+          // Keep startup available when SQLite does not include FTS5.
+        }
+      }
+    }
+  }
 }
 
 class SourceRepository {
@@ -68,6 +160,7 @@ class SourceRepository {
   final Future<String?> Function(String) reveal;
   static const _uuid = Uuid();
   final _removedProfiles = <String>{};
+  bool? _ftsSearchAvailable;
   void _writable(String profile) {
     if (_removedProfiles.contains(profile)) throw const SourceException(SourceFailure.cancelled);
   }
@@ -75,7 +168,17 @@ class SourceRepository {
   Future<void> forgetProfile(String profile) async {
     _removedProfiles.add(profile);
     await database.transaction(() async {
-      for (final table in ['sources', 'entries', 'source_scans', 'progress', 'events', 'annotations', 'downloads', 'preferences']) {
+      for (final table in [
+        'sources',
+        'entries',
+        'entry_shelves',
+        'source_scans',
+        'progress',
+        'events',
+        'annotations',
+        'downloads',
+        'preferences',
+      ]) {
         await database.customStatement('DELETE FROM $table WHERE profile=?', [profile]);
       }
     });
@@ -154,18 +257,53 @@ class SourceRepository {
     _writable(profile);
     for (final entry in entries) {
       await database.customStatement(
-        'INSERT INTO entries (profile,source,id,parent,payload) VALUES (?,?,?,?,?) '
-        'ON CONFLICT(profile,source,id) DO UPDATE SET parent=excluded.parent,payload=excluded.payload',
+        'INSERT INTO entries (profile,source,id,parent,payload,search,entry_key) VALUES (?,?,?,?,?,?,?) '
+        'ON CONFLICT(profile,source,id) DO UPDATE SET parent=excluded.parent,payload=excluded.payload,search=excluded.search,entry_key=excluded.entry_key',
         [
           profile,
           entry.sourceId,
           entry.id,
           entry.parentId,
           jsonEncode(entry.toJson()),
+          _entrySearchText(entry),
+          entry.key,
         ],
       );
+      await database.customStatement('DELETE FROM entry_shelves WHERE profile=? AND source=? AND id=?', [
+        profile,
+        entry.sourceId,
+        entry.id,
+      ]);
+      for (final shelf in PublicationShelf.values.where((shelf) => shelf.includes(entry))) {
+        await database.customStatement(
+          'INSERT INTO entry_shelves(profile,source,id,shelf) VALUES (?,?,?,?)',
+          [profile, entry.sourceId, entry.id, shelf.name],
+        );
+      }
     }
   });
+
+  Future<bool> hasShelfEntries(String profile, PublicationShelf shelf) async =>
+      await database
+          .customSelect(
+            'SELECT 1 FROM entry_shelves WHERE profile=? AND shelf=? LIMIT 1',
+            variables: [Variable(profile), Variable(shelf.name)],
+          )
+          .getSingleOrNull() !=
+      null;
+
+  Future<bool> _hasFullTextSearch() async {
+    final cached = _ftsSearchAvailable;
+    if (cached != null) return cached;
+    try {
+      await database.customSelect('SELECT rowid FROM entries_search_fts LIMIT 0').get();
+      _ftsSearchAvailable = true;
+      return true;
+    } on Object {
+      _ftsSearchAvailable = false;
+      return false;
+    }
+  }
 
   Future<int> beginSourceScan(String profile, String source) => database.transaction(() async {
     _writable(profile);
@@ -232,6 +370,11 @@ class SourceRepository {
               [generation, jsonEncode(entry.copyWith(unavailable: true).toJson()), profile, source, id],
             );
           } else {
+            await database.customStatement('DELETE FROM entry_shelves WHERE profile=? AND source=? AND id=?', [
+              profile,
+              source,
+              id,
+            ]);
             await database.customStatement('DELETE FROM entries WHERE profile=? AND source=? AND id=?', [profile, source, id]);
           }
         }
@@ -257,6 +400,10 @@ class SourceRepository {
         variables.add(Variable(parent));
       }
     }
+    if (query?.trim().isNotEmpty == true) {
+      predicates.add('instr(search,?)>0');
+      variables.add(Variable(query!.trim().toLowerCase()));
+    }
     final rows = await database
         .customSelect('SELECT payload FROM entries WHERE ${predicates.join(' AND ')}', variables: variables)
         .get();
@@ -267,10 +414,111 @@ class SourceRepository {
               (source == null || e.sourceId == source) &&
               (!filterParent ||
                   (parent == null ? e.parentId == null || e.parentId!.isEmpty : e.parentId == parent)) &&
-              (query == null ||
-                  '${e.title} ${e.author} ${e.narrator} ${e.series}'.toLowerCase().contains(query.toLowerCase())),
+              (query == null || _entrySearchText(e).contains(query.trim().toLowerCase())),
         )
         .toList();
+  }
+
+  /// Returns a bounded source-index slice. Only the selected payloads are
+  /// decoded; the stable rowid cursor avoids loading the entire profile index
+  /// to satisfy a small first page or a text search.
+  Future<({List<SourceEntry> items, String? cursor})> entriesPage(
+    String profile, {
+    String? source,
+    String? parent,
+    bool filterParent = false,
+    PublicationShelf? shelf,
+    String? query,
+    String? cursor,
+    int limit = 200,
+  }) async {
+    final safeLimit = limit.clamp(1, 500).toInt();
+    final predicates = <String>['profile=?'];
+    final variables = <Variable<Object>>[Variable(profile)];
+    if (source != null) {
+      predicates.add('source=?');
+      variables.add(Variable(source));
+    }
+    if (filterParent) {
+      if (parent == null) {
+        predicates.add("(parent IS NULL OR parent='')");
+      } else {
+        predicates.add('parent=?');
+        variables.add(Variable(parent));
+      }
+    }
+    if (shelf != null) {
+      predicates.add(
+        'EXISTS (SELECT 1 FROM entry_shelves es WHERE es.profile=entries.profile AND es.source=entries.source AND es.id=entries.id AND es.shelf=?)',
+      );
+      variables.add(Variable(shelf.name));
+    }
+    final normalizedQuery = query?.trim().toLowerCase() ?? '';
+    final useFts = normalizedQuery.runes.length >= 3 && await _hasFullTextSearch();
+    final after = cursor == null ? 0 : int.tryParse(cursor);
+    if (after == null || after < 0) throw const SourceException(SourceFailure.invalidData);
+    Future<List<QueryRow>> fetch(bool fts) {
+      final pagePredicates = [...predicates];
+      final pageVariables = [...variables];
+      if (normalizedQuery.isNotEmpty) {
+        if (fts) {
+          pagePredicates.add('rowid IN (SELECT rowid FROM entries_search_fts WHERE search MATCH ?)');
+          pageVariables.add(Variable('"${normalizedQuery.replaceAll('"', '""')}"'));
+        } else {
+          pagePredicates.add('instr(search,?)>0');
+          pageVariables.add(Variable(normalizedQuery));
+        }
+      }
+      pagePredicates.add('rowid>?');
+      pageVariables.add(Variable(after));
+      pageVariables.add(Variable(safeLimit + 1));
+      return database
+          .customSelect(
+            'SELECT rowid AS page_id,payload FROM entries WHERE ${pagePredicates.join(' AND ')} ORDER BY rowid LIMIT ?',
+            variables: pageVariables,
+          )
+          .get();
+    }
+
+    List<QueryRow> rows;
+    if (useFts) {
+      try {
+        rows = await fetch(true);
+      } on Object {
+        _ftsSearchAvailable = false;
+        rows = await fetch(false);
+      }
+    } else {
+      rows = await fetch(false);
+    }
+    final hasMore = rows.length > safeLimit;
+    final selected = rows.take(safeLimit).toList(growable: false);
+    final items = selected
+        .map((row) => SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload')))))
+        .toList(growable: false);
+    return (items: items, cursor: hasMore && selected.isNotEmpty ? '${selected.last.read<int>('page_id')}' : null);
+  }
+
+  /// A small recent-state slice keeps the Files root's Continue rows useful
+  /// without decoding every progress record in the profile.
+  Future<List<(SourceEntry, PublicationProgress)>> recentProgressEntries(String profile, {int limit = 18}) async {
+    final safeLimit = limit.clamp(1, 100).toInt();
+    final rows = await database
+        .customSelect(
+          'SELECT e.payload AS entry_payload,p.payload AS progress_payload '
+          'FROM progress p JOIN entries e ON e.profile=p.profile AND e.entry_key=p.entry '
+          "WHERE p.profile=? ORDER BY CAST(json_extract(p.payload,'$.updatedAt') AS INTEGER) DESC LIMIT ?",
+          variables: [Variable(profile), Variable(safeLimit)],
+        )
+        .get();
+    return rows
+        .map(
+          (row) => (
+            SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('entry_payload')))),
+            PublicationProgress.fromJson(sourceMap(jsonDecode(row.read<String>('progress_payload')))),
+          ),
+        )
+        .toList(growable: false);
   }
 
   /// Bounded recent index slice for lightweight surfaces such as discovery.
@@ -296,6 +544,16 @@ class SourceRepository {
         .customSelect(
           'SELECT payload FROM entries WHERE profile = ? AND source = ? AND id = ?',
           variables: [Variable(profile), Variable(source), Variable(id)],
+        )
+        .getSingleOrNull();
+    return row == null ? null : SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
+  }
+
+  Future<SourceEntry?> entryByKey(String profile, String key) async {
+    final row = await database
+        .customSelect(
+          'SELECT payload FROM entries WHERE profile=? AND entry_key=? LIMIT 1',
+          variables: [Variable(profile), Variable(key)],
         )
         .getSingleOrNull();
     return row == null ? null : SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
@@ -590,4 +848,5 @@ class SourceRepository {
           .map((r) => r.data)
           .toList();
 }
+
 
