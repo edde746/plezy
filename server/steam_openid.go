@@ -280,7 +280,18 @@ func (p *oauthProxy) verifySteamAssertion(ctx context.Context, query url.Values)
 		return errors.New("Steam assertion verification failed")
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, 16*1024))
-	if err != nil || strings.TrimSpace(string(body)) != "is_valid:true" {
+	if err != nil || len(body) == 16*1024 {
+		return errors.New("Steam assertion was rejected")
+	}
+	valid := false
+	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n") {
+		if strings.TrimSpace(line) == "is_valid:true" {
+			valid = true
+		} else if strings.HasPrefix(line, "is_valid:") {
+			return errors.New("Steam assertion was rejected")
+		}
+	}
+	if !valid {
 		return errors.New("Steam assertion was rejected")
 	}
 	return nil
