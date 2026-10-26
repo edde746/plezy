@@ -51,20 +51,22 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
     surface = new SurfaceView(this);
     root.addView(surface, new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER));
     surface.getHolder().addCallback(this);
-    controls = new SteamControls(this, getIntent().getBooleanExtra("touch", true), new SteamControls.Listener() {
-      public void pad(short[] axes, int buttons) {
-        touch = axes;
-        touchButtons = buttons;
-        sendPad();
-      }
-      public void mouse(float x, float y, int button, boolean down) {
-        if (handle == 0)
-          return;
-        float sx = (x * root.getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
-        float sy = (y * root.getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
-        NativeSteam.mouse(handle, sx, sy, button, down);
-      }
-    });
+    controls = new SteamControls(
+        this, getIntent().getBooleanExtra("touch", true), getIntent().getStringExtra("touchLabel"),
+        new SteamControls.Listener() {
+          public void pad(short[] axes, int buttons) {
+            touch = axes;
+            touchButtons = buttons;
+            sendPad();
+          }
+          public void mouse(float x, float y, int button, boolean down) {
+            if (handle == 0)
+              return;
+            float sx = (x * root.getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
+            float sy = (y * root.getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
+            NativeSteam.mouse(handle, sx, sy, button, down);
+          }
+        });
     root.addView(controls, new FrameLayout.LayoutParams(-1, -1));
     status = new TextView(this);
     status.setText(label("connecting", "Connecting…"));
