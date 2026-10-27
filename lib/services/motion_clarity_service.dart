@@ -80,6 +80,7 @@ class MotionClarityService {
   Timer? _healthTimer;
   bool _samplingHealth = false;
   int? _lastDropCount;
+  int _healthReadFailures = 0;
   int _sustainedDropWindows = 0;
 
   MotionClarityService._(this._player);
@@ -524,6 +525,7 @@ class MotionClarityService {
   void _startHealthMonitor() {
     if (_healthTimer != null) return;
     _lastDropCount = null;
+    _healthReadFailures = 0;
     _sustainedDropWindows = 0;
     _healthTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       unawaited(_sampleMotionHealth());
@@ -534,6 +536,7 @@ class MotionClarityService {
     _healthTimer?.cancel();
     _healthTimer = null;
     _lastDropCount = null;
+    _healthReadFailures = 0;
     _sustainedDropWindows = 0;
   }
 
@@ -545,11 +548,21 @@ class MotionClarityService {
     }
     _samplingHealth = true;
     try {
-      final count = int.tryParse((await _readProperty('frame-drop-count') ?? '').trim());
-      if (count == null) return;
+      final rawCount = await _readProperty('frame-drop-count');
+      final count = int.tryParse((rawCount ?? '').trim());
+      if (count == null) {
+        _healthReadFailures++;
+        if (_healthReadFailures >= 3) _stopHealthMonitor();
+        return;
+      }
+      _healthReadFailures = 0;
       final previous = _lastDropCount;
       _lastDropCount = count;
-      if (previous == null || count < previous) return;
+      if (previous == null) return;
+      if (count < previous) {
+        _sustainedDropWindows = 0;
+        return;
+      }
       if (count > previous) {
         _sustainedDropWindows++;
       } else {
