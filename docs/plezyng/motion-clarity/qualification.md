@@ -80,6 +80,7 @@ count; metrics; confidence interval where meaningful; failures and raw evidence.
 | RES-03 | Native + neural copy-heavy path | Report actual transfer bytes/times; admission includes transfers |
 | RES-04 | Main + companion video, PiP, background/resume | Shared budget; per-session epochs and release; focused session priority |
 | RES-05 | 100 repeated seek/start/stop/dispose cycles | No growing retained buffers, stale callbacks, leaking decoder surfaces or deadlocks |
+| RES-06 | Missing or invalid mpv `frame-drop-count` | Report adaptive fallback unavailable, stop polling after bounded retries, and leave the selected MCI path/preferences unchanged |
 | INT-01 | Plex/Jellyfin/Emby/local/SMB/download playback | Same feature contract; credentials never appear in logs/cache keys |
 | INT-02 | Audio passthrough/PCM/Apple audio, subtitle types and offsets | A/V/sub timing retained; rendering capability does not change track selection |
 | INT-03 | Episode transition, multiversion, chapters and Watch Together | Source timeline and explicit play intent preserved |
