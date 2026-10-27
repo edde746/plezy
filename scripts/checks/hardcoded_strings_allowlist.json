@@ -36,6 +36,10 @@
     "mpv": "Intentional executable example",
     "/usr/bin/player": "Intentional executable path example"
   },
+  "lib/screens/sources/open_media_screen.dart": {
+    "https://radio.example/stream": "Intentional direct-stream URL example",
+    "https://example.org/stations.m3u": "Intentional playlist URL example"
+  },
   "lib/screens/settings/general_settings_screen.dart": {
     "English": "Language endonym",
     "Svenska": "Language endonym",

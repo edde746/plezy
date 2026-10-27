@@ -143,7 +143,11 @@ class UniversalMediaPlaylistParser {
         final comma = line.indexOf(',');
         pendingTitle = comma >= 0 ? line.substring(comma + 1).trim() : '';
         pendingGroup = _attribute(line, 'group-title') ?? '';
-        final durationText = line.substring('#EXTINF:'.length, comma < 0 ? line.length : comma).trim();
+        final durationText = line
+            .substring('#EXTINF:'.length, comma < 0 ? line.length : comma)
+            .trim()
+            .split(RegExp(r'\s+'))
+            .first;
         pendingDuration = int.tryParse(durationText);
         if (pendingDuration != null && pendingDuration < 0) containsLiveInput = true;
         continue;
