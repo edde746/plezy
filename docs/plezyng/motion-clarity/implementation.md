@@ -7,8 +7,11 @@ A settings surface or successful property write does not complete the full featu
 
 ## Current delivery in this PR
 
-- Adds typed Original, Cinema, Balanced, Smooth, Animation, Sports and Custom
-  profiles. The default stays Original.
+- Adds typed Original, Cinema, Balanced, Smooth, Animation, Sports, OLED and Custom
+  profiles. The default stays Original. OLED routes through motion compensation at
+  the current renderer-reported display cadence and falls back to temporal blending
+  with the effective reason retained for status refreshes. It is opt-in, does not
+  detect panel type, and is not per-model calibration.
 - Adds portable preset, kernel, threshold, engine, generated-rate and MCI search-effort
   preferences. One global/library/title scope applies to every motion preference.
 - Adds Playback Settings and in-player controls, including custom temporal kernel,
@@ -282,7 +285,7 @@ validating the first real embedded playback route.
 
 - Build proposed `lib/widgets/video_controls/sheets/motion_settings_sheet.dart`
   and shared settings content using existing components, tokens and navigation.
-- Implement exact help, availability states, six presets, Custom, advanced controls,
+- Implement exact help, availability states, seven presets, Custom, advanced controls,
   comparison/revert and per-scope apply. Keep unsupported controls explanatory.
 - Done: keyboard/touch/remote and screen-reader tests pass; large text/RTL/CJK work;
   no permanent playback button or hidden-op behavior; all strings localized.
