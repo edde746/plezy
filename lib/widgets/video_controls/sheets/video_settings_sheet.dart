@@ -355,11 +355,15 @@ class VideoSettingsSheet extends StatefulWidget {
   /// auto-hide) is read straight off it.
   final TrackControlsState trackControlsState;
 
+  /// Opens directly to motion controls when launched from the player quick action.
+  final bool openMotionClarity;
+
   const VideoSettingsSheet({
     super.key,
     required this.player,
     this.supportsHdrControl,
     required this.trackControlsState,
+    this.openMotionClarity = false,
   });
 
   @override
@@ -419,6 +423,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   @override
   void initState() {
     super.initState();
+    if (widget.openMotionClarity) _currentView = _SettingsView.motionClarity;
     _audioSyncOffset = _state.audioSyncOffset;
     _subtitleSyncOffset = _state.subtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
