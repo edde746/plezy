@@ -1095,7 +1095,7 @@ jobs:
       - name: Verify universal macOS executable
         run: |
           set -euo pipefail
-          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
           EXECUTABLE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist")
           ARCHITECTURES=$(lipo -archs "$APP_PATH/Contents/MacOS/$EXECUTABLE")
           for architecture in arm64 x86_64; do
@@ -1187,7 +1187,7 @@ jobs:
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
           echo "Signing with identity: $IDENTITY"
 
-          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
 
           # Deep sign everything inside-out: executables, dylibs, XPC services, app bundles, frameworks
           find "$APP_PATH/Contents/Frameworks" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "*.dylib" \) -print0 \
@@ -1210,7 +1210,7 @@ jobs:
       - name: Verify Signature
         if: steps.macos-signing.outputs.codesign == 'true'
         run: |
-          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
           echo "Verifying signature..."
           codesign -dvvv "$APP_PATH"
           echo "Verifying signed entitlements..."
@@ -1227,7 +1227,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
 
           # Create a temporary ZIP for notarization submission
           echo "Creating ZIP for notarization..."
@@ -1251,14 +1251,14 @@ jobs:
 
       - name: Verify Gatekeeper acceptance for Homebrew Cask
         if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
-        run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/Plezy.app
+        run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/PlezyNG.app
 
       - name: Create DMG
         run: |
           mkdir -p dmg-staging
-          cp -R build/macos/Build/Products/Release/Plezy.app dmg-staging/
+          cp -R build/macos/Build/Products/Release/PlezyNG.app dmg-staging/
           ln -s /Applications dmg-staging/Applications
-          hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
+          hdiutil create -format ULMO -srcfolder dmg-staging -volname "PlezyNG" plezyng-macos.dmg
 
       - name: Check Sparkle signing key
         id: sparkle-signing
@@ -1277,17 +1277,17 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
-          OUTPUT=$(dart run auto_updater:sign_update plezy-macos.dmg ed25519_key.pem)
+          OUTPUT=$(dart run auto_updater:sign_update plezyng-macos.dmg ed25519_key.pem)
           rm ed25519_key.pem
           # Extract edSignature value from output like: sparkle:edSignature="..." length="..."
           SIGNATURE=$(echo "$OUTPUT" | grep -o 'edSignature="[^"]*"' | sed 's/edSignature="//;s/"//')
           echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
-          echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
+          echo "MACOS_DMG_SIZE=$(stat -f%z plezyng-macos.dmg)" >> $GITHUB_ENV
 
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
-          subject-path: plezy-macos.dmg
+          subject-path: plezyng-macos.dmg
 
       - name: Write macOS signature metadata
         run: |
@@ -1299,7 +1299,7 @@ jobs:
         with:
           name: macos-dmg
           path: |
-            plezy-macos.dmg
+            plezyng-macos.dmg
             macos-ed-signature.txt
             macos-dmg-size.txt
 
@@ -2174,7 +2174,7 @@ jobs:
           # macOS enclosure
           if [ -n "$MACOS_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/plezy-macos.dmg"
+                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/plezyng-macos.dmg"
                            length="${MACOS_DMG_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${MACOS_ED_SIG}"
                            sparkle:os="macos" />
@@ -2231,7 +2231,7 @@ jobs:
             if [ -f artifacts/tvos-ipa/plezyng-tvos-appstore.ipa ]; then
               echo artifacts/tvos-ipa/plezyng-tvos-appstore.ipa
             fi
-            echo artifacts/macos-dmg/plezy-macos.dmg
+            echo artifacts/macos-dmg/plezyng-macos.dmg
             echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
             echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             echo artifacts/windows-installer/plezy-windows-installer.exe

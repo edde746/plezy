@@ -2,7 +2,7 @@ cask "snapetech-plezyng" do
   version "@@VERSION@@"
   sha256 "@@SHA256@@"
 
-  url "https://github.com/snapetech-org/PlezyNG/releases/download/v#{version}/plezy-macos.dmg"
+  url "https://github.com/snapetech-org/PlezyNG/releases/download/v#{version}/plezyng-macos.dmg"
   name "PlezyNG"
   desc "Media client for Plex, Jellyfin, and Emby"
   homepage "https://github.com/snapetech-org/PlezyNG"
@@ -14,7 +14,7 @@ cask "snapetech-plezyng" do
 
   auto_updates true
 
-  app "Plezy.app", target: "PlezyNG.app"
+  app "PlezyNG.app"
 
   uninstall quit: "org.snapetech.plezyng"
 

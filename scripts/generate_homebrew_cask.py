@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-SHA_PATTERN = re.compile(r"^([0-9a-fA-F]{64})\s+plezy-macos\.dmg$")
+SHA_PATTERN = re.compile(r"^([0-9a-fA-F]{64})\s+plezyng-macos\.dmg$")
 TEMPLATE_PATH = Path(__file__).resolve().parents[1] / "Casks" / "snapetech-plezyng.rb.template"
 
 
@@ -30,7 +30,7 @@ def main() -> int:
         if (match := SHA_PATTERN.fullmatch(line.strip()))
     ]
     if len(matches) != 1:
-        parser.error("checksum manifest must contain exactly one SHA-256 entry for plezy-macos.dmg")
+        parser.error("checksum manifest must contain exactly one SHA-256 entry for plezyng-macos.dmg")
 
     if not TEMPLATE_PATH.is_file():
         parser.error(f"Cask template does not exist: {TEMPLATE_PATH}")

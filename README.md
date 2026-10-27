@@ -86,9 +86,12 @@ Published PlezyNG downloads appear on the [GitHub Releases page](https://github.
 
 ### macOS — Homebrew
 
+The `snapetech-plezyng` Cask is being prepared. It will be installable after a signed and notarized macOS release is published and the generated Cask is added to this repository.
+
 ```bash
+# After the Cask is published in this tap
 brew tap snapetech-org/PlezyNG https://github.com/snapetech-org/PlezyNG
-brew install --cask plezy
+brew install --cask snapetech-plezyng
 ```
 
 ### Linux — Flatpak
