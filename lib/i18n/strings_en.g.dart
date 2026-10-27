@@ -6416,6 +6416,16 @@ class Translations$videoSettings$en {
 	String get motionClarityMciQuality => 'Motion search effort';
 	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.'
 	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.';
+	/// en: 'Repeated dropped frames. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
+	String get motionClarityGuardReduced => 'Repeated dropped frames. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
+	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
+	String get motionClarityGuardFallback => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.';
+	/// en: 'Motion compensation could not keep up, and temporal fallback could not be enabled.'
+	String get motionClarityGuardFallbackFailed => 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
+	/// en: 'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.'
+	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.';
+	/// en: 'Playback is dropping frames; motion compensation may not be keeping up.'
+	String get motionClarityGuardFailure => 'Playback is dropping frames; motion compensation may not be keeping up.';
 	/// en: 'Low search effort'
 	String get motionClarityMciFast => 'Low search effort';
 	/// en: 'Balanced search effort'

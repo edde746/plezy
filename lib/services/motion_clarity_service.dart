@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../i18n/strings.g.dart';
 import '../mpv/player/player.dart';
 import '../models/motion_clarity.dart';
 import '../utils/app_logger.dart';
@@ -557,8 +558,7 @@ class MotionClarityService {
         _healthReadFailures++;
         if (_healthReadFailures >= 3) {
           _stopHealthMonitor();
-          _statusReason =
-              'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.';
+          _statusReason = t.videoSettings.motionClarityGuardTelemetryUnavailable;
         }
         return;
       }
@@ -600,14 +600,13 @@ class MotionClarityService {
           applyPresetRouting: false,
         );
         if (reduced.effectiveEngine == MotionClarityEngine.motionCompensated) {
-          _statusReason =
-              'Repeated dropped frames; active motion-search effort was temporarily reduced to ${lowerQuality.name}. Your saved preference is unchanged. Select the preset again to retry it.';
+          _statusReason = t.videoSettings.motionClarityGuardReduced;
           return;
         }
         if (reduced.effectiveEngine == MotionClarityEngine.temporalBlend) {
           _statusReason = reduced.isConfigured
-              ? 'Motion compensation could not keep up after search-effort reduction; temporal blending is active. Select the preset again to retry.'
-              : 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
+              ? t.videoSettings.motionClarityGuardFallback
+              : t.videoSettings.motionClarityGuardFallbackFailed;
           return;
         }
       }
@@ -623,11 +622,11 @@ class MotionClarityService {
         applyPresetRouting: false,
       );
       _statusReason = result.isConfigured
-          ? 'Motion compensation was switched to temporal blending after repeated dropped frames. Select the preset again to retry.'
-          : 'Motion compensation was overloaded and the temporal fallback could not be enabled.';
+          ? t.videoSettings.motionClarityGuardFallback
+          : t.videoSettings.motionClarityGuardFallbackFailed;
     } catch (error, stackTrace) {
       appLogger.w('MotionClarityService: playback-health fallback failed', error: error, stackTrace: stackTrace);
-      _statusReason = 'Playback is dropping frames; motion compensation may not be keeping up.';
+      _statusReason = t.videoSettings.motionClarityGuardFailure;
     } finally {
       _samplingHealth = false;
     }
