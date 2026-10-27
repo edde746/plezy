@@ -155,8 +155,9 @@ class TrackChapterControls extends StatelessWidget {
                   shaderService != null && shaderService.isSupported && shaderService.currentPreset.isEnabled;
               final isZoomActive = (state.videoZoomScale - 1.0).abs() > 0.0001;
               final isMotionActive =
+                  player.playerType == 'mpv' &&
                   ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata) !=
-                  MotionClarityPreset.original;
+                      MotionClarityPreset.original;
               final isActive =
                   sleepTimer.isActive ||
                   state.audioSyncOffset != 0 ||
@@ -187,7 +188,7 @@ class TrackChapterControls extends StatelessWidget {
         );
         buttonIndex++;
 
-        {
+        if (player.playerType == 'mpv') {
           final currentIndex = buttonIndex;
           final motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata);
           final isMotionActive = motionPreset != MotionClarityPreset.original;
@@ -214,8 +215,8 @@ class TrackChapterControls extends StatelessWidget {
               },
             ),
           );
+          buttonIndex++;
         }
-        buttonIndex++;
 
         {
           final currentIndex = buttonIndex;
