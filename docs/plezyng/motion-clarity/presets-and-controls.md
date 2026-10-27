@@ -11,9 +11,14 @@ strength values in the target design table. Preset tuning values are in
 ## 1. Entry points and default behavior
 
 **Motion & clarity** is available from the in-player Video settings sheet and
-Settings → Playback. It uses the app's existing setting tiles, focus behavior,
-dialogs and sliders. The in-player entry supports preset changes and live A/B;
-saved defaults and scope are available in Playback Settings.
+Settings → Playback. The desktop player-bar button toggles the active profile;
+hold it to open the preset sheet. The first toggle uses Balanced, and later
+sessions restore the last enabled profile. Keyboard and remote users can hold
+Select or use the context-menu action. Mobile users open Video settings → Motion
+& clarity. The remembered preset follows the same global, library or title scope
+as the motion controls. Preset changes and live A/B use the app's existing
+setting tiles, focus behavior, dialogs and sliders; saved defaults remain in
+Playback Settings.
 
 Playback Settings shows the selected preset and its short description. The in-player
 status shows the active method, renderer-reported display rate, container-reported

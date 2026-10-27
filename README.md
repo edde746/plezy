@@ -184,7 +184,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
-- Motion & clarity — motion presets, temporal blending, motion-compensated frame generation, OLED and sports profiles, generated-rate and search controls, player quick access, live A/B comparison, and scoped preferences[^mpv]. See the [Motion & clarity guide](docs/plezyng/motion-clarity/guide.md).
+- Motion & clarity — motion presets, temporal blending, motion-compensated frame generation, OLED and sports profiles, generated-rate and search controls, desktop player-bar toggle with hold-to-open presets, mobile Video settings access, live A/B comparison, and scoped preferences[^mpv]. See the [Motion & clarity guide](docs/plezyng/motion-clarity/guide.md).
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
 
 ### <img src="assets/readme_icons/music.svg" height="20" alt="" align="center" /> Music
