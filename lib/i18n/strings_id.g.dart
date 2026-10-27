@@ -101,6 +101,7 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$id watchLink = _Translations$watchLink$id._(_root);
 	@override late final _Translations$homeLayout$id homeLayout = _Translations$homeLayout$id._(_root);
 	@override late final _Translations$platform$id platform = _Translations$platform$id._(_root);
+	@override late final _Translations$universalMedia$id universalMedia = _Translations$universalMedia$id._(_root);
 	@override late final _Translations$fileSources$id fileSources = _Translations$fileSources$id._(_root);
 	@override late final _Translations$lending$id lending = _Translations$lending$id._(_root);
 	@override late final _Translations$audiobook$id audiobook = _Translations$audiobook$id._(_root);
@@ -3027,6 +3028,134 @@ class _Translations$platform$id extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Pilih gambar dari perpustakaan foto Anda untuk digunakan sebagai karya seni media.';
 	@override String get cameraPermission => 'Mengimbas kode QR untuk berpasangan dengan Companion Remote.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$id extends Translations$universalMedia$en {
+	_Translations$universalMedia$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Media Terbuka';
+	@override String get shortcutHelp => 'Mainkan link, playlist, atau file untuk sesi ini.';
+	@override String get intro => 'Buka link, playlist, atau file. Playback menggunakan pemutar standar PlezyNG dan tidak menambahkan sejarah ke perpustakaan Anda.';
+	@override String get openWhat => 'Apa yang ingin Anda buka?';
+	@override String get stream => 'Alamat Stream';
+	@override String get playlist => 'Daftar Playlist';
+	@override String get files => 'perangkat file';
+	@override String get favorites => 'Penyimpanan Stream Favorit';
+	@override String get address => 'Alamat Media';
+	@override String get addressHelp => 'URL dengan parameter pengesahan atau tandatangan yang diakui hanya digunakan untuk sesi ini dan tidak dapat disimpan sebagai favorit.';
+	@override String get displayName => 'Nama Pameran (Optional)';
+	@override String get displayNameHelp => 'Pilih nama singkat untuk pemain dan kontrol media sistem.';
+	@override String get allowHttp => 'Memungkinkan koneksi HTTP yang tidak terenkripsi';
+	@override String get allowHttpHelp => 'HTTP tidak menyulitkan koneksi. hanya membiarkannya di jaringan yang dipercaya. gunakan HTTPS kapan saja mungkin.';
+	@override String get advancedProtocols => 'Hanya MPV: masukkan alamat RTSP, RTMP/RTMPS, UDP, atau RTP. Alamat ini tidak dapat disimpan sebagai favorit.';
+	@override String get liveStream => 'Perlakukan sebagai hidup';
+	@override String get liveStreamHelp => 'Gunakan ini untuk live video atau radio. aplikasi menyembunyikan bar waktu, skip tombol, dan go-to-time opsi.';
+	@override String get privateSession => 'Hanya playback ini menggunakan alamat.Save a eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Selamatkan Favorit';
+	@override String get playNow => 'Bermain sekarang';
+	@override String get favoriteSaved => 'Stream favorit disimpan ke profil ini';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} masuk daftar main yang tidak didukung atau tidak aman.',
+	);
+	@override String get playlistAddress => 'Alamat Playlist';
+	@override String get playlistAddressHelp => 'Buka daftar main M3U, M3u8, atau PLS dari alamat web. link streaming langsung tidak menyimpan daftar main.';
+	@override String get choosePlaylist => 'Pilih file playlist';
+	@override String get openPlaylist => 'Pembukaan playlist';
+	@override String get playlistFormatsHelp => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.';
+	@override String get noFavorites => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.';
+	@override String get removeFavorite => 'Menghapus Stream Favorit';
+	@override String get filesHelp => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.';
+	@override String get chooseFiles => 'Pilih file';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} file terpilih',
+	);
+	@override String get wifiTransfer => 'Mengirim file melalui Wi-Fi';
+	@override String get wifiTransferHelp => 'Memindahkan file yang didukung dari browser pada jaringan yang sama.';
+	@override String get wifiTransferIntro => 'Buka alamat ini dalam browser pada perangkat lain. pilih file untuk menambahkan mereka ke perpustakaan File dan buku perangkat ini.';
+	@override String get wifiTransferPrivacy => 'Setiap orang yang tahu alamat ini dapat mengirim file sampai Anda menghentikan transfer atau alamat berakhir setelah 15 menit. maksimum: 100 file, 4 GiB per file, 10 GiB total.';
+	@override String get wifiTransferStarting => 'Menyiapkan transfer pribadi dan terbatas waktu.';
+	@override String get wifiTransferUnavailable => 'Tidak bisa memulai transfer. periksa akses jaringan lokal dan coba lagi.';
+	@override String get openThisAddress => 'Buka salah satu alamat ini pada perangkat pengiriman';
+	@override String get copyAddress => 'Kopi alamat transfer';
+	@override String get addressCopied => 'Alamat transfer yang disalin';
+	@override String transferExpires({required Object time}) => 'Alamat ini berakhir di ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} file yang diterima',
+	);
+	@override String uploadedData({required Object size}) => 'Diterima oleh ${size}';
+	@override String get stopTransfer => 'Hentikan transfer dan membatalkan alamat';
+	@override String get startTransfer => 'Mulai transfer';
+	@override String get wifiImportedFiles => 'Pengiriman Wi-Fi';
+	@override String get wifiBrowserTitle => 'Mengirim file ke PlezyNG';
+	@override String get wifiBrowserIntro => 'Pilih file audio, video, ebook, atau komik untuk dikirimkan. file disimpan di perpustakaan File dan buku perangkat ini. maksimum: 100 file, 4 GiB per file, 10 GiB total.';
+	@override String get uploadFilesLabel => 'File untuk dikirimkan';
+	@override String get uploadSelected => 'Mengunggah file terpilih';
+	@override String get uploadSelectFirst => 'Pilih satu atau lebih file terlebih dahulu.';
+	@override String get uploading => 'mengirimkan';
+	@override String get uploadComplete => 'File yang ditambahkan ke PlezyNG.';
+	@override String get uploadFailed => 'File tidak dapat ditambahkan.Jadilah halaman ini terbuka dan coba lagi.';
+	@override String get liveCue => 'hidup';
+	@override String get liveSession => 'Live Stream';
+	@override String get liveCueHelp => 'Untuk video atau radio langsung, aplikasi menyembunyikan bar waktu dan melompat tombol. tidak menyimpan alamat atau menonton sejarah.';
+	@override String get sessionOnly => 'Playback ini hanya sesi saja.';
+	@override String get sessionOnlyHelp => 'Playback tidak pernah menyimpan kemajuan atau sejarah.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Gambar penyesuaian';
+	@override String get pictureHelp => 'Perubahan gambar ini hanya mempengaruhi playback ini. mereka menetapkan kembali ketika playback berakhir.';
+	@override String get resetPicture => 'Reset gambar';
+	@override String get brightness => 'Cahaya';
+	@override String get contrast => 'kontras';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturasi';
+	@override String get view360 => 'Pemandangan rata untuk video 360 derajat';
+	@override String get view360Help => 'Gunakan ini untuk video 360° equirectangular. MPV membutuhkan filter v360 FFmpeg untuk pandangan ini.';
+	@override String get view360Unavailable => 'Pembuatan MPV ini tidak dapat menerapkan filter 360 derajat.';
+	@override String get view360Yaw => 'pandangan horizontal';
+	@override String get view360Pitch => 'Pandangan Vertikal';
+	@override String get view360FieldOfView => 'Bidang Penglihatan';
+	@override String get recordStream => 'Rekor Live Stream';
+	@override String get stopRecording => 'Hentikan dan Simpan Rekaman';
+	@override String get recordingStarted => 'Rekaman aktif. meninggalkan playback berhenti dan menyimpan rekaman.';
+	@override String get recordingSaved => 'Rekaman selesai dan diselamatkan.';
+	@override String get recordingActive => 'Mengingat perangkat ini. meninggalkan playback berhenti dan menyimpannya.';
+	@override String get recordingFormatHelp => 'Untuk video, pilih MKV atau MPEG-TS. untuk audio, pilih MKA atau MKV.';
+	@override String get replaceRecordingTitle => 'Mengganti rekaman ini?';
+	@override String get replaceRecordingHelp => 'PlezyNG mengembalikan file yang ada saat merekam.Jika tidak dapat menyimpan rekaman baru, plezyNG memulihkan sandaran.';
+	@override String get replaceRecording => 'Mengganti file';
+	@override String get discHelp => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.';
+	@override String get discs => 'Disk optik';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'dan Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.';
+	@override String get converterTitle => 'Konversi file media lokal';
+	@override String get converterHelp => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.';
+	@override String get converterIntro => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.';
+	@override String get converterPrivacy => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.';
+	@override String get converterChooseInput => 'Pilih file media lokal';
+	@override String get converterFormat => 'Format output';
+	@override String get converterMp4 => 'MP4 H.264 dan AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 dan Audio';
+	@override String get converterSaveAs => 'Menyimpan media yang terkonversi sebagai';
+	@override String get converterExtensionMismatch => 'Pilih nama file dengan ekstensi output yang dipilih.';
+	@override String get converterUnsupportedInput => 'Pilih file audio atau video.';
+	@override String get converterLocalOnly => 'File yang dipilih tidak tersedia sebagai jalur perangkat lokal.';
+	@override String get converterReplaceTitle => 'Mengganti file ini?';
+	@override String get converterReplaceHelp => 'PlezyNG mengembalikan file yang ada sampai salinan terkonversi disimpan.';
+	@override String get converterStarting => 'Mulai dari FFmpeg...';
+	@override String get converterProgress => 'Beralih ke komputer ini...';
+	@override String get converterComplete => 'Konversi selesai. file baru sudah siap.';
+	@override String get converterFfmpegMissing => 'Instal FFmpeg dengan dukungan H.264, AAC, dan MP3, kemudian coba lagi.';
+	@override String get converterFailed => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.';
+	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.';
+	@override String get converterDesktopOnly => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.';
+	@override String get converterStart => 'Konversi file';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$id extends Translations$fileSources$en {
@@ -7596,6 +7725,118 @@ extension on TranslationsId {
 			'platform.locationPermission' => 'PlezyNG menggunakan akses lokasi ketika iOS membutuhkan untuk mengidentifikasi jaringan lokal Anda dan menghubungkannya ke server media Anda.',
 			'platform.photoLibraryPermission' => 'Pilih gambar dari perpustakaan foto Anda untuk digunakan sebagai karya seni media.',
 			'platform.cameraPermission' => 'Mengimbas kode QR untuk berpasangan dengan Companion Remote.',
+			'universalMedia.title' => 'Media Terbuka',
+			'universalMedia.shortcutHelp' => 'Mainkan link, playlist, atau file untuk sesi ini.',
+			'universalMedia.intro' => 'Buka link, playlist, atau file. Playback menggunakan pemutar standar PlezyNG dan tidak menambahkan sejarah ke perpustakaan Anda.',
+			'universalMedia.openWhat' => 'Apa yang ingin Anda buka?',
+			'universalMedia.stream' => 'Alamat Stream',
+			'universalMedia.playlist' => 'Daftar Playlist',
+			'universalMedia.files' => 'perangkat file',
+			'universalMedia.favorites' => 'Penyimpanan Stream Favorit',
+			'universalMedia.address' => 'Alamat Media',
+			'universalMedia.addressHelp' => 'URL dengan parameter pengesahan atau tandatangan yang diakui hanya digunakan untuk sesi ini dan tidak dapat disimpan sebagai favorit.',
+			'universalMedia.displayName' => 'Nama Pameran (Optional)',
+			'universalMedia.displayNameHelp' => 'Pilih nama singkat untuk pemain dan kontrol media sistem.',
+			'universalMedia.allowHttp' => 'Memungkinkan koneksi HTTP yang tidak terenkripsi',
+			'universalMedia.allowHttpHelp' => 'HTTP tidak menyulitkan koneksi. hanya membiarkannya di jaringan yang dipercaya. gunakan HTTPS kapan saja mungkin.',
+			'universalMedia.advancedProtocols' => 'Hanya MPV: masukkan alamat RTSP, RTMP/RTMPS, UDP, atau RTP. Alamat ini tidak dapat disimpan sebagai favorit.',
+			'universalMedia.liveStream' => 'Perlakukan sebagai hidup',
+			'universalMedia.liveStreamHelp' => 'Gunakan ini untuk live video atau radio. aplikasi menyembunyikan bar waktu, skip tombol, dan go-to-time opsi.',
+			'universalMedia.privateSession' => 'Hanya playback ini menggunakan alamat.Save a eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Selamatkan Favorit',
+			'universalMedia.playNow' => 'Bermain sekarang',
+			'universalMedia.favoriteSaved' => 'Stream favorit disimpan ke profil ini',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} masuk daftar main yang tidak didukung atau tidak aman.', ),
+			'universalMedia.playlistAddress' => 'Alamat Playlist',
+			'universalMedia.playlistAddressHelp' => 'Buka daftar main M3U, M3u8, atau PLS dari alamat web. link streaming langsung tidak menyimpan daftar main.',
+			'universalMedia.choosePlaylist' => 'Pilih file playlist',
+			'universalMedia.openPlaylist' => 'Pembukaan playlist',
+			'universalMedia.playlistFormatsHelp' => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.',
+			'universalMedia.noFavorites' => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.',
+			'universalMedia.removeFavorite' => 'Menghapus Stream Favorit',
+			'universalMedia.filesHelp' => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.',
+			'universalMedia.chooseFiles' => 'Pilih file',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} file terpilih', ),
+			'universalMedia.wifiTransfer' => 'Mengirim file melalui Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Memindahkan file yang didukung dari browser pada jaringan yang sama.',
+			'universalMedia.wifiTransferIntro' => 'Buka alamat ini dalam browser pada perangkat lain. pilih file untuk menambahkan mereka ke perpustakaan File dan buku perangkat ini.',
+			'universalMedia.wifiTransferPrivacy' => 'Setiap orang yang tahu alamat ini dapat mengirim file sampai Anda menghentikan transfer atau alamat berakhir setelah 15 menit. maksimum: 100 file, 4 GiB per file, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Menyiapkan transfer pribadi dan terbatas waktu.',
+			'universalMedia.wifiTransferUnavailable' => 'Tidak bisa memulai transfer. periksa akses jaringan lokal dan coba lagi.',
+			'universalMedia.openThisAddress' => 'Buka salah satu alamat ini pada perangkat pengiriman',
+			'universalMedia.copyAddress' => 'Kopi alamat transfer',
+			'universalMedia.addressCopied' => 'Alamat transfer yang disalin',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Alamat ini berakhir di ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} file yang diterima', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Diterima oleh ${size}',
+			'universalMedia.stopTransfer' => 'Hentikan transfer dan membatalkan alamat',
+			'universalMedia.startTransfer' => 'Mulai transfer',
+			'universalMedia.wifiImportedFiles' => 'Pengiriman Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Mengirim file ke PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Pilih file audio, video, ebook, atau komik untuk dikirimkan. file disimpan di perpustakaan File dan buku perangkat ini. maksimum: 100 file, 4 GiB per file, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'File untuk dikirimkan',
+			'universalMedia.uploadSelected' => 'Mengunggah file terpilih',
+			'universalMedia.uploadSelectFirst' => 'Pilih satu atau lebih file terlebih dahulu.',
+			'universalMedia.uploading' => 'mengirimkan',
+			'universalMedia.uploadComplete' => 'File yang ditambahkan ke PlezyNG.',
+			'universalMedia.uploadFailed' => 'File tidak dapat ditambahkan.Jadilah halaman ini terbuka dan coba lagi.',
+			'universalMedia.liveCue' => 'hidup',
+			'universalMedia.liveSession' => 'Live Stream',
+			'universalMedia.liveCueHelp' => 'Untuk video atau radio langsung, aplikasi menyembunyikan bar waktu dan melompat tombol. tidak menyimpan alamat atau menonton sejarah.',
+			'universalMedia.sessionOnly' => 'Playback ini hanya sesi saja.',
+			'universalMedia.sessionOnlyHelp' => 'Playback tidak pernah menyimpan kemajuan atau sejarah.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Gambar penyesuaian',
+			'universalMedia.pictureHelp' => 'Perubahan gambar ini hanya mempengaruhi playback ini. mereka menetapkan kembali ketika playback berakhir.',
+			'universalMedia.resetPicture' => 'Reset gambar',
+			'universalMedia.brightness' => 'Cahaya',
+			'universalMedia.contrast' => 'kontras',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturasi',
+			'universalMedia.view360' => 'Pemandangan rata untuk video 360 derajat',
+			'universalMedia.view360Help' => 'Gunakan ini untuk video 360° equirectangular. MPV membutuhkan filter v360 FFmpeg untuk pandangan ini.',
+			'universalMedia.view360Unavailable' => 'Pembuatan MPV ini tidak dapat menerapkan filter 360 derajat.',
+			'universalMedia.view360Yaw' => 'pandangan horizontal',
+			'universalMedia.view360Pitch' => 'Pandangan Vertikal',
+			'universalMedia.view360FieldOfView' => 'Bidang Penglihatan',
+			'universalMedia.recordStream' => 'Rekor Live Stream',
+			'universalMedia.stopRecording' => 'Hentikan dan Simpan Rekaman',
+			'universalMedia.recordingStarted' => 'Rekaman aktif. meninggalkan playback berhenti dan menyimpan rekaman.',
+			'universalMedia.recordingSaved' => 'Rekaman selesai dan diselamatkan.',
+			'universalMedia.recordingActive' => 'Mengingat perangkat ini. meninggalkan playback berhenti dan menyimpannya.',
+			'universalMedia.recordingFormatHelp' => 'Untuk video, pilih MKV atau MPEG-TS. untuk audio, pilih MKA atau MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Mengganti rekaman ini?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG mengembalikan file yang ada saat merekam.Jika tidak dapat menyimpan rekaman baru, plezyNG memulihkan sandaran.',
+			'universalMedia.replaceRecording' => 'Mengganti file',
+			'universalMedia.discHelp' => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.',
+			'universalMedia.discs' => 'Disk optik',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'dan Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.',
+			'universalMedia.converterTitle' => 'Konversi file media lokal',
+			'universalMedia.converterHelp' => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.',
+			'universalMedia.converterIntro' => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.',
+			'universalMedia.converterPrivacy' => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.',
+			'universalMedia.converterChooseInput' => 'Pilih file media lokal',
+			'universalMedia.converterFormat' => 'Format output',
+			'universalMedia.converterMp4' => 'MP4 H.264 dan AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 dan Audio',
+			'universalMedia.converterSaveAs' => 'Menyimpan media yang terkonversi sebagai',
+			'universalMedia.converterExtensionMismatch' => 'Pilih nama file dengan ekstensi output yang dipilih.',
+			'universalMedia.converterUnsupportedInput' => 'Pilih file audio atau video.',
+			'universalMedia.converterLocalOnly' => 'File yang dipilih tidak tersedia sebagai jalur perangkat lokal.',
+			'universalMedia.converterReplaceTitle' => 'Mengganti file ini?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG mengembalikan file yang ada sampai salinan terkonversi disimpan.',
+			'universalMedia.converterStarting' => 'Mulai dari FFmpeg...',
+			'universalMedia.converterProgress' => 'Beralih ke komputer ini...',
+			'universalMedia.converterComplete' => 'Konversi selesai. file baru sudah siap.',
+			'universalMedia.converterFfmpegMissing' => 'Instal FFmpeg dengan dukungan H.264, AAC, dan MP3, kemudian coba lagi.',
+			'universalMedia.converterFailed' => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.',
+			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.',
+			'universalMedia.converterDesktopOnly' => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.',
+			'universalMedia.converterStart' => 'Konversi file',
 			'fileSources.title' => 'File dan buku',
 			'fileSources.subtitle' => 'Baca, dengar, dan menonton dari file Anda sendiri.',
 			'fileSources.add' => 'Tambahkan sumber',

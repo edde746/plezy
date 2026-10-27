@@ -101,6 +101,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$kk watchLink = _Translations$watchLink$kk._(_root);
 	@override late final _Translations$homeLayout$kk homeLayout = _Translations$homeLayout$kk._(_root);
 	@override late final _Translations$platform$kk platform = _Translations$platform$kk._(_root);
+	@override late final _Translations$universalMedia$kk universalMedia = _Translations$universalMedia$kk._(_root);
 	@override late final _Translations$fileSources$kk fileSources = _Translations$fileSources$kk._(_root);
 	@override late final _Translations$lending$kk lending = _Translations$lending$kk._(_root);
 	@override late final _Translations$audiobook$kk audiobook = _Translations$audiobook$kk._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$kk extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.';
 	@override String get cameraPermission => 'Companion Remote басқару пультін жұптау үшін QR кодтарын сканерлеңіз.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$kk extends Translations$universalMedia$en {
+	_Translations$universalMedia$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Открыты медиа';
+	@override String get shortcutHelp => 'Бұл сессия үшін қолайлы, playlist немесе файлды жүктеу.';
+	@override String get intro => 'Өзі сүйікті жабдықтар, жүктеу спиртке немесе файлға айналады. Playback-ге PlezyNG стандартты фейерверктері бар және библиографиясы көшіру керек емес.';
+	@override String get openWhat => 'Қанша идеялардан тұрады?';
+	@override String get stream => 'Тегін адресы';
+	@override String get playlist => 'Жүзілік';
+	@override String get files => 'Файлы';
+	@override String get favorites => 'Алдыңғы ең айқын көргенде';
+	@override String get address => 'Медыялық адресы';
+	@override String get addressHelp => 'Өзі сүйікті жабдықтардан тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get displayName => 'Алдыңғы қағидалар (опциональ)';
+	@override String get displayNameHelp => 'Қаланың ең айқын көрмесі ержеткен балалардың бір-бірімен танымал.';
+	@override String get allowHttp => 'Қандай-ақ HTTP қосылды';
+	@override String get allowHttpHelp => 'HTTP-ге қағидалардан тұтынуға болады.Сұқсат етіледі.Сұлдыз және HTTPS-ге жабдықтармен таныстырады.';
+	@override String get advancedProtocols => 'Қандай MPV: RTSP, RTMP/RTMPS, UDP немесе RTP адресы бар.';
+	@override String get liveStream => 'Жыныс жасушалары';
+	@override String get liveStreamHelp => 'Бұл видео немесе радио үшін пайдаланады.Аппликация тазатын часы бар, ескерту бутонты және хода-на-часы опцияға болады.';
+	@override String get privateSession => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get saveFavorite => 'Алдыңғы фаворит';
+	@override String get playNow => 'Қазіргі уақытта';
+	@override String get favoriteSaved => 'Бұл профильде көшіру керек.';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: 'Skipped ${count} unsupported or unsafe playlist entry.',
+		other: 'Skipped ${count} unsupported or unsafe playlist entries.',
+	);
+	@override String get playlistAddress => 'Жабдықтау адресы';
+	@override String get playlistAddressHelp => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды, 1 адамды қағидасы, 2 адамды жабдықтар, 4 адамды салыстырды.';
+	@override String get choosePlaylist => 'Серіктің қағидалары';
+	@override String get openPlaylist => 'Ауыз Playlist';
+	@override String get playlistFormatsHelp => 'Өмірінің соңына дейін 1 тыс. нәрсе бар және 2 Мб. HLS-дер көшірмеген, оның ішінде жүктеуге ұсынады.';
+	@override String get noFavorites => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.Favorites stay in this profile.';
+	@override String get removeFavorite => 'Өткен қабырғасы';
+	@override String get filesHelp => 'Аудио, видео, немесе ISO файлы бар. Файлы және URL-дер библиографияның аяқталуы мүмкін емес.';
+	@override String get chooseFiles => 'Серіктің файл';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '1 Жылдық артықшылығы',
+		other: '${count} жабдықтау файлы',
+	);
+	@override String get wifiTransfer => 'Wi-Fi қосылу үшін дағдарысты';
+	@override String get wifiTransferHelp => 'Біздің веб-сайты мен электрондық пошталардан басқа да сіздің сайын өздерінің бір-бірімен танымал.';
+	@override String get wifiTransferIntro => 'Осылайша «Барселона» АҚ-ның «Аль-Каида» бағдарламасын көшіруге, «Файлы» және «Книги» библиотекасы бар.';
+	@override String get wifiTransferPrivacy => 'Қаланың тұрақты тұрғындарының саны 10 адамды құрайды және 1 адамды қағидасы бар.';
+	@override String get wifiTransferStarting => 'Қазіргі таңда бүкіл әлемдегі ең төменде жасайды...';
+	@override String get wifiTransferUnavailable => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.';
+	@override String get openThisAddress => 'Олардың ішіндегі ең көне апеллятив – үңгір.';
+	@override String get copyAddress => 'Трансфер адресы';
+	@override String get addressCopied => 'Ауызды және копиясы';
+	@override String transferExpires({required Object time}) => 'Қазіргі уақытта қаңтарда ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${count} файлды қарастырылған',
+		other: '${count} файлы бар.',
+	);
+	@override String uploadedData({required Object size}) => 'Қазіргі уақытта ${size}';
+	@override String get stopTransfer => 'Ауыз ішінен қайтадан қайтарып';
+	@override String get startTransfer => 'Трансферы';
+	@override String get wifiImportedFiles => 'Wi-Fi қызмет көрсету';
+	@override String get wifiBrowserTitle => 'Серіктің қағидалар';
+	@override String get wifiBrowserIntro => 'Аудио, видео, электрондық книге немесе комик файлысы ескертуға болады. Файлы тағайындалған «Файлы» және «Книги» библиотерады. Максималь: 100 файл, 4 GiB за файл, 10 GiB суреттер.';
+	@override String get uploadFilesLabel => 'Серіктің қабығы';
+	@override String get uploadSelected => 'Алдыңғы файлы';
+	@override String get uploadSelectFirst => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get uploading => 'Серіктің';
+	@override String get uploadComplete => 'Серіктің қағидалардан тұрады.';
+	@override String get uploadFailed => 'Өзі сүйікті жазаларынан тұрады.Серіктің қабырға айналады.';
+	@override String get liveCue => 'Жыныс жасуша';
+	@override String get liveSession => 'Жыныс жасуша';
+	@override String get liveCueHelp => 'Қандай-ақ видео немесе радио үшін, бағдарламаның часы бар тазады және кеңінен танымал.';
+	@override String get sessionOnly => 'Ауыз іші мен сессиялар';
+	@override String get sessionOnlyHelp => 'Өзі сүйікті жабдықтардан тұрып қараңыз: «Playback never saves progress or history.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Адаптациясы';
+	@override String get pictureHelp => 'Өзі сүйікті жарысы, жүгінің үлес қосқанды.';
+	@override String get resetPicture => 'Серіктің фото';
+	@override String get brightness => 'Өнімдер';
+	@override String get contrast => 'Контраст';
+	@override String get gamma => 'Гейтлер';
+	@override String get hue => 'Өткен';
+	@override String get saturation => 'Сатурация';
+	@override String get view360 => 'Қазіргі уақытта 360° видео';
+	@override String get view360Help => 'Қаланың тұрақты тұрғындарының саны 390 адамды құрайды.';
+	@override String get view360Unavailable => 'Бұл mpv конструкциясы 360° фильтр үшін пайдаланады.';
+	@override String get view360Yaw => 'Орациональдық перспектива';
+	@override String get view360Pitch => 'Вертикалды';
+	@override String get view360FieldOfView => 'ҚазАқпарат';
+	@override String get recordStream => 'Live Stream көшіру';
+	@override String get stopRecording => 'Серіктің қабырға айналады.';
+	@override String get recordingStarted => '«Жеңіске үлес қосқандар», «Жиңіске танымал» және «Жіңіске айналды».';
+	@override String get recordingSaved => 'Серіктің көшірмеді және көшіру.';
+	@override String get recordingActive => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get recordingFormatHelp => 'Қандай-қатты бар, қадағы мен жарықтар үшін МКВ немесе MPEG-TS.';
+	@override String get replaceRecordingTitle => 'Серіктің записы бар?';
+	@override String get replaceRecordingHelp => 'Өзі сүйікті жабдықтардан тұрады.Ауыз іші шырышты қабырға айналады.';
+	@override String get replaceRecording => 'Файлылықты';
+	@override String get discHelp => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
+	@override String get discs => 'Оптикалық дискі';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Блу-райы';
+	@override String get audioCd => 'Аудиолық CD';
+	@override String get discAvailability => 'Диск-плейбак үшін компатибильный MPV конструкция, поддержан дискі және операционно-системдық разрешение бар.';
+	@override String get converterTitle => 'Менеджменттің медыяфайлы';
+	@override String get converterHelp => 'Қандай MP4, M4A, немесе MP3 копиясы бар.';
+	@override String get converterIntro => 'Аудио және видео файлы мен мультимедийдық конвертациясы, сондай-ақ басқа да көптеген сезімдердің форматы бар.';
+	@override String get converterPrivacy => 'Қандай-ақ, «Мендекс» және «Миндекс», «Корпорация», «Тұлтшылды» және т.б., «Жеңінен танымал», «ДРМ» деп хабарлады.';
+	@override String get converterChooseInput => 'Менеджменттің медыяфайлы';
+	@override String get converterFormat => 'Өздіктер формат';
+	@override String get converterMp4 => 'MP4 · H.264 және AAC';
+	@override String get converterM4a => 'М4А · ААК аудио';
+	@override String get converterMp3 => 'MP3 және аудіо';
+	@override String get converterSaveAs => 'Содан соң облыстық әкімдікте Павлодар';
+	@override String get converterExtensionMismatch => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get converterUnsupportedInput => 'Аудио және видео файлы бар.';
+	@override String get converterLocalOnly => 'Қаланың ең айқын көрмесі ержеткен балалардың бір-бірімен танымал.';
+	@override String get converterReplaceTitle => 'Серіктің артықты бар?';
+	@override String get converterReplaceHelp => 'Содан соң облыстық әкімдікте Павлодар облысының әкімі мен митрополиттің жеке кездесуі өтті.';
+	@override String get converterStarting => 'Құрметті ФФМ...';
+	@override String get converterProgress => 'Қазіргі таңда бүкіл әлемдік компьютер...';
+	@override String get converterComplete => 'Өзі сүйікті келді, бірақ танымал файл бар.';
+	@override String get converterFfmpegMissing => 'Қандай-ақ, қаңтар мен жабдықтаушы бар. Қанды-қатты бар: Қанда, Қандан, Қардан, Шанда және Қандам.';
+	@override String get converterFailed => 'Өзі сүйікті жабдықтардан тұрады.Серіктің қабығы бір-бірімен таныстырып келді.';
+	@override String get converterCancelled => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.';
+	@override String get converterDesktopOnly => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.';
+	@override String get converterStart => 'Серіктің файлы';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$kk extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsKk {
 			'platform.locationPermission' => 'Жергілікті желіні анықтап, медиа серверлерге қосылу үшін iOS талап еткенде, PlezyNG орналасқан жер туралы деректерге қол жеткізу рұқсатын пайдаланады.',
 			'platform.photoLibraryPermission' => 'Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.',
 			'platform.cameraPermission' => 'Companion Remote басқару пультін жұптау үшін QR кодтарын сканерлеңіз.',
+			'universalMedia.title' => 'Открыты медиа',
+			'universalMedia.shortcutHelp' => 'Бұл сессия үшін қолайлы, playlist немесе файлды жүктеу.',
+			'universalMedia.intro' => 'Өзі сүйікті жабдықтар, жүктеу спиртке немесе файлға айналады. Playback-ге PlezyNG стандартты фейерверктері бар және библиографиясы көшіру керек емес.',
+			'universalMedia.openWhat' => 'Қанша идеялардан тұрады?',
+			'universalMedia.stream' => 'Тегін адресы',
+			'universalMedia.playlist' => 'Жүзілік',
+			'universalMedia.files' => 'Файлы',
+			'universalMedia.favorites' => 'Алдыңғы ең айқын көргенде',
+			'universalMedia.address' => 'Медыялық адресы',
+			'universalMedia.addressHelp' => 'Өзі сүйікті жабдықтардан тұрып қара сөздерін, аудармаларын жазды.',
+			'universalMedia.displayName' => 'Алдыңғы қағидалар (опциональ)',
+			'universalMedia.displayNameHelp' => 'Қаланың ең айқын көрмесі ержеткен балалардың бір-бірімен танымал.',
+			'universalMedia.allowHttp' => 'Қандай-ақ HTTP қосылды',
+			'universalMedia.allowHttpHelp' => 'HTTP-ге қағидалардан тұтынуға болады.Сұқсат етіледі.Сұлдыз және HTTPS-ге жабдықтармен таныстырады.',
+			'universalMedia.advancedProtocols' => 'Қандай MPV: RTSP, RTMP/RTMPS, UDP немесе RTP адресы бар.',
+			'universalMedia.liveStream' => 'Жыныс жасушалары',
+			'universalMedia.liveStreamHelp' => 'Бұл видео немесе радио үшін пайдаланады.Аппликация тазатын часы бар, ескерту бутонты және хода-на-часы опцияға болады.',
+			'universalMedia.privateSession' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'universalMedia.saveFavorite' => 'Алдыңғы фаворит',
+			'universalMedia.playNow' => 'Қазіргі уақытта',
+			'universalMedia.favoriteSaved' => 'Бұл профильде көшіру керек.',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ),
+			'universalMedia.playlistAddress' => 'Жабдықтау адресы',
+			'universalMedia.playlistAddressHelp' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды, 1 адамды қағидасы, 2 адамды жабдықтар, 4 адамды салыстырды.',
+			'universalMedia.choosePlaylist' => 'Серіктің қағидалары',
+			'universalMedia.openPlaylist' => 'Ауыз Playlist',
+			'universalMedia.playlistFormatsHelp' => 'Өмірінің соңына дейін 1 тыс. нәрсе бар және 2 Мб. HLS-дер көшірмеген, оның ішінде жүктеуге ұсынады.',
+			'universalMedia.noFavorites' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.Favorites stay in this profile.',
+			'universalMedia.removeFavorite' => 'Өткен қабырғасы',
+			'universalMedia.filesHelp' => 'Аудио, видео, немесе ISO файлы бар. Файлы және URL-дер библиографияның аяқталуы мүмкін емес.',
+			'universalMedia.chooseFiles' => 'Серіктің файл',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '1 Жылдық артықшылығы', other: '${count} жабдықтау файлы', ),
+			'universalMedia.wifiTransfer' => 'Wi-Fi қосылу үшін дағдарысты',
+			'universalMedia.wifiTransferHelp' => 'Біздің веб-сайты мен электрондық пошталардан басқа да сіздің сайын өздерінің бір-бірімен танымал.',
+			'universalMedia.wifiTransferIntro' => 'Осылайша «Барселона» АҚ-ның «Аль-Каида» бағдарламасын көшіруге, «Файлы» және «Книги» библиотекасы бар.',
+			'universalMedia.wifiTransferPrivacy' => 'Қаланың тұрақты тұрғындарының саны 10 адамды құрайды және 1 адамды қағидасы бар.',
+			'universalMedia.wifiTransferStarting' => 'Қазіргі таңда бүкіл әлемдегі ең төменде жасайды...',
+			'universalMedia.wifiTransferUnavailable' => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.',
+			'universalMedia.openThisAddress' => 'Олардың ішіндегі ең көне апеллятив – үңгір.',
+			'universalMedia.copyAddress' => 'Трансфер адресы',
+			'universalMedia.addressCopied' => 'Ауызды және копиясы',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Қазіргі уақытта қаңтарда ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${count} файлды қарастырылған', other: '${count} файлы бар.', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Қазіргі уақытта ${size}',
+			'universalMedia.stopTransfer' => 'Ауыз ішінен қайтадан қайтарып',
+			'universalMedia.startTransfer' => 'Трансферы',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi қызмет көрсету',
+			'universalMedia.wifiBrowserTitle' => 'Серіктің қағидалар',
+			'universalMedia.wifiBrowserIntro' => 'Аудио, видео, электрондық книге немесе комик файлысы ескертуға болады. Файлы тағайындалған «Файлы» және «Книги» библиотерады. Максималь: 100 файл, 4 GiB за файл, 10 GiB суреттер.',
+			'universalMedia.uploadFilesLabel' => 'Серіктің қабығы',
+			'universalMedia.uploadSelected' => 'Алдыңғы файлы',
+			'universalMedia.uploadSelectFirst' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'universalMedia.uploading' => 'Серіктің',
+			'universalMedia.uploadComplete' => 'Серіктің қағидалардан тұрады.',
+			'universalMedia.uploadFailed' => 'Өзі сүйікті жазаларынан тұрады.Серіктің қабырға айналады.',
+			'universalMedia.liveCue' => 'Жыныс жасуша',
+			'universalMedia.liveSession' => 'Жыныс жасуша',
+			'universalMedia.liveCueHelp' => 'Қандай-ақ видео немесе радио үшін, бағдарламаның часы бар тазады және кеңінен танымал.',
+			'universalMedia.sessionOnly' => 'Ауыз іші мен сессиялар',
+			'universalMedia.sessionOnlyHelp' => 'Өзі сүйікті жабдықтардан тұрып қараңыз: «Playback never saves progress or history.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Адаптациясы',
+			'universalMedia.pictureHelp' => 'Өзі сүйікті жарысы, жүгінің үлес қосқанды.',
+			'universalMedia.resetPicture' => 'Серіктің фото',
+			'universalMedia.brightness' => 'Өнімдер',
+			'universalMedia.contrast' => 'Контраст',
+			'universalMedia.gamma' => 'Гейтлер',
+			'universalMedia.hue' => 'Өткен',
+			'universalMedia.saturation' => 'Сатурация',
+			'universalMedia.view360' => 'Қазіргі уақытта 360° видео',
+			'universalMedia.view360Help' => 'Қаланың тұрақты тұрғындарының саны 390 адамды құрайды.',
+			'universalMedia.view360Unavailable' => 'Бұл mpv конструкциясы 360° фильтр үшін пайдаланады.',
+			'universalMedia.view360Yaw' => 'Орациональдық перспектива',
+			'universalMedia.view360Pitch' => 'Вертикалды',
+			'universalMedia.view360FieldOfView' => 'ҚазАқпарат',
+			'universalMedia.recordStream' => 'Live Stream көшіру',
+			'universalMedia.stopRecording' => 'Серіктің қабырға айналады.',
+			'universalMedia.recordingStarted' => '«Жеңіске үлес қосқандар», «Жиңіске танымал» және «Жіңіске айналды».',
+			'universalMedia.recordingSaved' => 'Серіктің көшірмеді және көшіру.',
+			'universalMedia.recordingActive' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'universalMedia.recordingFormatHelp' => 'Қандай-қатты бар, қадағы мен жарықтар үшін МКВ немесе MPEG-TS.',
+			'universalMedia.replaceRecordingTitle' => 'Серіктің записы бар?',
+			'universalMedia.replaceRecordingHelp' => 'Өзі сүйікті жабдықтардан тұрады.Ауыз іші шырышты қабырға айналады.',
+			'universalMedia.replaceRecording' => 'Файлылықты',
+			'universalMedia.discHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
+			'universalMedia.discs' => 'Оптикалық дискі',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Блу-райы',
+			'universalMedia.audioCd' => 'Аудиолық CD',
+			'universalMedia.discAvailability' => 'Диск-плейбак үшін компатибильный MPV конструкция, поддержан дискі және операционно-системдық разрешение бар.',
+			'universalMedia.converterTitle' => 'Менеджменттің медыяфайлы',
+			'universalMedia.converterHelp' => 'Қандай MP4, M4A, немесе MP3 копиясы бар.',
+			'universalMedia.converterIntro' => 'Аудио және видео файлы мен мультимедийдық конвертациясы, сондай-ақ басқа да көптеген сезімдердің форматы бар.',
+			'universalMedia.converterPrivacy' => 'Қандай-ақ, «Мендекс» және «Миндекс», «Корпорация», «Тұлтшылды» және т.б., «Жеңінен танымал», «ДРМ» деп хабарлады.',
+			'universalMedia.converterChooseInput' => 'Менеджменттің медыяфайлы',
+			'universalMedia.converterFormat' => 'Өздіктер формат',
+			'universalMedia.converterMp4' => 'MP4 · H.264 және AAC',
+			'universalMedia.converterM4a' => 'М4А · ААК аудио',
+			'universalMedia.converterMp3' => 'MP3 және аудіо',
+			'universalMedia.converterSaveAs' => 'Содан соң облыстық әкімдікте Павлодар',
+			'universalMedia.converterExtensionMismatch' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'universalMedia.converterUnsupportedInput' => 'Аудио және видео файлы бар.',
+			'universalMedia.converterLocalOnly' => 'Қаланың ең айқын көрмесі ержеткен балалардың бір-бірімен танымал.',
+			'universalMedia.converterReplaceTitle' => 'Серіктің артықты бар?',
+			'universalMedia.converterReplaceHelp' => 'Содан соң облыстық әкімдікте Павлодар облысының әкімі мен митрополиттің жеке кездесуі өтті.',
+			'universalMedia.converterStarting' => 'Құрметті ФФМ...',
+			'universalMedia.converterProgress' => 'Қазіргі таңда бүкіл әлемдік компьютер...',
+			'universalMedia.converterComplete' => 'Өзі сүйікті келді, бірақ танымал файл бар.',
+			'universalMedia.converterFfmpegMissing' => 'Қандай-ақ, қаңтар мен жабдықтаушы бар. Қанды-қатты бар: Қанда, Қандан, Қардан, Шанда және Қандам.',
+			'universalMedia.converterFailed' => 'Өзі сүйікті жабдықтардан тұрады.Серіктің қабығы бір-бірімен таныстырып келді.',
+			'universalMedia.converterCancelled' => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.',
+			'universalMedia.converterDesktopOnly' => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.',
+			'universalMedia.converterStart' => 'Серіктің файлы',
 			'fileSources.title' => 'Бібліотекасы және файлы',
 			'fileSources.subtitle' => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.',
 			'fileSources.add' => 'Қайталық',

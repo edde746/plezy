@@ -101,6 +101,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$nl watchLink = _Translations$watchLink$nl._(_root);
 	@override late final _Translations$homeLayout$nl homeLayout = _Translations$homeLayout$nl._(_root);
 	@override late final _Translations$platform$nl platform = _Translations$platform$nl._(_root);
+	@override late final _Translations$universalMedia$nl universalMedia = _Translations$universalMedia$nl._(_root);
 	@override late final _Translations$fileSources$nl fileSources = _Translations$fileSources$nl._(_root);
 	@override late final _Translations$lending$nl lending = _Translations$lending$nl._(_root);
 	@override late final _Translations$audiobook$nl audiobook = _Translations$audiobook$nl._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$nl extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Kies afbeeldingen uit je fotobibliotheek als omslag of illustratie voor je media.';
 	@override String get cameraPermission => 'Scan QR codes om een Companion Remote te koppelen.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$nl extends Translations$universalMedia$en {
+	_Translations$universalMedia$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Open media';
+	@override String get shortcutHelp => 'Speel een link, playlist of bestand voor deze sessie.';
+	@override String get intro => 'Open een link, playlist of bestand.Playback gebruikt de standaardspeler van PlezyNG en voegt geen geschiedenis toe aan uw bibliotheek.';
+	@override String get openWhat => 'Wat wil je graag openen?';
+	@override String get stream => 'Streamadres';
+	@override String get playlist => 'Playlijst';
+	@override String get files => 'Gerelateerde bestanden';
+	@override String get favorites => 'Save Stream favorieten';
+	@override String get address => 'Media adres';
+	@override String get addressHelp => 'URL\'s met geïdentificeerde credentiale of signature parameters worden alleen gebruikt voor deze sessie en kunnen niet als favorieten worden opgeslagen.';
+	@override String get displayName => 'Display naam (optional)';
+	@override String get displayNameHelp => 'Kies een korte naam voor de speler en system media controles.';
+	@override String get allowHttp => 'Een niet-encrypt HTTP verbinding mogelijk maken';
+	@override String get allowHttpHelp => 'HTTP versleutelt de verbinding niet. toelaat het alleen op een vertrouwde netwerk. gebruik HTTPS wanneer mogelijk.';
+	@override String get advancedProtocols => 'MPV alleen: voer een RTSP, RTMP/RTMPS, UDP of RTP-adres in. Deze adressen kunnen niet als favorieten worden opgeslagen.';
+	@override String get liveStream => 'behandelen als levend';
+	@override String get liveStreamHelp => 'Gebruik dit voor live video of radio.De app verbergt de tijdbalk, skip knoppen en go-to-time optie.';
+	@override String get privateSession => 'Alleen deze playback gebruikt het adres. Save a eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Save de favoriete';
+	@override String get playNow => 'Speel nu';
+	@override String get favoriteSaved => 'Stream favoriete bewaard naar dit profiel';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: 'Skipped ${count} niet ondersteund of onveilig playlist ingang.',
+		other: 'Skipped ${count} niet ondersteunde of onveilige playlist-inputs.',
+	);
+	@override String get playlistAddress => 'Playlist adres';
+	@override String get playlistAddressHelp => 'Open een M3U, M3u8 of PLS playlist vanuit een webadres. Direct stream links slaan de playlist niet op.';
+	@override String get choosePlaylist => 'Kies een playlist bestand';
+	@override String get openPlaylist => 'Open playlist';
+	@override String get playlistFormatsHelp => 'Een playlist kan maximaal 1.000 items en 2 MB bevatten.HLS manifesteert open als stromen zodat de speler een kwaliteit kan kiezen.';
+	@override String get noFavorites => 'Er zijn nog geen favorieten opgeslagen.Favorites blijven in dit profiel.';
+	@override String get removeFavorite => 'Verwijder de favoriete stream';
+	@override String get filesHelp => 'Kies audio, video of ISO-bestanden voor een tijdelijke waaier. bestanden en URL\'s worden niet toegevoegd aan de bibliotheekgeschiedenis.';
+	@override String get chooseFiles => 'Kies bestanden';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '1 geselecteerde bestanden',
+		other: '${count} geselecteerde bestanden',
+	);
+	@override String get wifiTransfer => 'Bestanden verzenden via Wi-Fi';
+	@override String get wifiTransferHelp => 'Overdracht van ondersteunde bestanden uit een browser op hetzelfde vertrouwde netwerk.';
+	@override String get wifiTransferIntro => 'Open deze adres in een browser op een ander apparaat.Kies bestanden om ze toe te voegen aan de bibliotheek Bestanden en boeken van dit apparaat';
+	@override String get wifiTransferPrivacy => 'Dit apparaat ontvangt bestanden via uw lokale netwerk.Iedereen die deze adres kent kan bestanden verzenden totdat u de overdracht stopt of het adres na 15 minuten expireert.Maximum: 100 bestanden, 4 GiB per bestand, 10 GiB in totaal.';
+	@override String get wifiTransferStarting => 'Voorbereiding van een privé, tijdsbeperkte transfer...';
+	@override String get wifiTransferUnavailable => 'Kan de overdracht niet beginnen. check local-network access en probeer het opnieuw.';
+	@override String get openThisAddress => 'Open een van deze adressen op het verzendapparaat';
+	@override String get copyAddress => 'Kopieer overdrachtadres';
+	@override String get addressCopied => 'Transferadres gecopieerd';
+	@override String transferExpires({required Object time}) => 'Dit adres eindigt in ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '${count} bestanden ontvangen',
+		other: '${count} bestanden ontvangen',
+	);
+	@override String uploadedData({required Object size}) => 'Gebruikte ${size}';
+	@override String get stopTransfer => 'Stop de overdracht en invalide adres';
+	@override String get startTransfer => 'Begin met transfer';
+	@override String get wifiImportedFiles => 'Wi-Fi overdracht';
+	@override String get wifiBrowserTitle => 'Stuur bestanden naar PlezyNG';
+	@override String get wifiBrowserIntro => 'Kies audio, video, ebook of comic bestanden om te sturen.De bestanden worden opgeslagen in de bestanden en boeken bibliotheek van dit apparaat.Maximum: 100 bestanden, 4 GiB per bestand, 10 GiB totaal.';
+	@override String get uploadFilesLabel => 'Bestanden om te verzenden';
+	@override String get uploadSelected => 'Upload geselecteerde bestanden';
+	@override String get uploadSelectFirst => 'Kies eerst één of meer bestanden.';
+	@override String get uploading => 'Sending';
+	@override String get uploadComplete => 'Het bestand is toegevoegd aan PlezyNG.';
+	@override String get uploadFailed => 'De bestand kan niet worden toegevoegd. houd deze pagina open en probeer het opnieuw.';
+	@override String get liveCue => 'Leven';
+	@override String get liveSession => 'Live Stream';
+	@override String get liveCueHelp => 'Voor live video of radio verbergt de app de tijdslijn en skip-knoppen.Het slaat niet het adres op of het geschiedenisverhaal bekijken.';
+	@override String get sessionOnly => 'Deze playback is sessie-only';
+	@override String get sessionOnlyHelp => 'Playback slaat nooit vooruitgang of geschiedenis op. Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'afbeelding aanpassingen';
+	@override String get pictureHelp => 'Deze afbeeldingswijzigingen beïnvloeden alleen deze playback. ze worden hersteld wanneer de playback eindigt.';
+	@override String get resetPicture => 'Reset afbeelding';
+	@override String get brightness => 'helderheid';
+	@override String get contrast => 'Contrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Huis';
+	@override String get saturation => 'Saturatie';
+	@override String get view360 => 'Flat view voor 360° video';
+	@override String get view360Help => 'Gebruik dit voor 360° video. MPV heeft het v360-filter van FFmpeg nodig voor deze weergave.';
+	@override String get view360Unavailable => 'Deze MPV-constructie kan de 360° filter niet toepassen.';
+	@override String get view360Yaw => 'Horizontale uitzicht';
+	@override String get view360Pitch => 'Verticale uitzicht';
+	@override String get view360FieldOfView => 'Het veld van zicht';
+	@override String get recordStream => 'Record live stream';
+	@override String get stopRecording => 'Stop en bespaar opname';
+	@override String get recordingStarted => 'De opname is actief.Leaving playback stopt en slaat de opname op.';
+	@override String get recordingSaved => 'De opname is afgerond en gered.';
+	@override String get recordingActive => 'Op dit apparaat.Leaving playback stopt en slaat het op.';
+	@override String get recordingFormatHelp => 'Voor video, kies MKV of MPEG-TS. voor audio, kies MKA of MKV.';
+	@override String get replaceRecordingTitle => 'De opname vervangen?';
+	@override String get replaceRecordingHelp => 'PlezyNG herstelt de bestaande bestand tijdens het opnemen.Als het de nieuwe opname niet kan redden, herstert Plezy NG de backup.';
+	@override String get replaceRecording => 'vervanging van bestanden';
+	@override String get discHelp => 'Open een plaat in de optische schijf van deze computer.U kunt ook een ISO-beeld vanuit Device-bestanden openen.';
+	@override String get discs => 'Optische disc';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'De Blu-ray';
+	@override String get audioCd => 'Audio cd';
+	@override String get discAvailability => 'Disc playback vereist een compatibele MPV-opbouw, ondersteunde schijf en besturingssysteemvergunning.';
+	@override String get converterTitle => 'Convert een lokale media-bestand';
+	@override String get converterHelp => 'Gebruik FFmpeg om een MP4, M4A of MP3 kopie te maken.';
+	@override String get converterIntro => 'Converteer een lokale audio- of videobestand naar een format dat op meerdere apparaten werkt.';
+	@override String get converterPrivacy => 'FFmpeg moet op deze computer worden geïnstalleerd. Conversion leest alleen lokale bestanden. Het downloadt geen stromen of verwijdert DRM.';
+	@override String get converterChooseInput => 'Kies een lokale media bestand';
+	@override String get converterFormat => 'Uitgangsformaat';
+	@override String get converterMp4 => 'MP4 · H.264 en AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 en audio';
+	@override String get converterSaveAs => 'Verwijder converteerde media als';
+	@override String get converterExtensionMismatch => 'Kies een filename met de geselecteerde output extensie.';
+	@override String get converterUnsupportedInput => 'Kies een audio of video bestand.';
+	@override String get converterLocalOnly => 'De geselecteerde bestand is niet beschikbaar als een lokale apparaatpad.';
+	@override String get converterReplaceTitle => 'Vervang deze bestand?';
+	@override String get converterReplaceHelp => 'PlezyNG reserveert de bestaande bestand totdat de geconverteerde kopie is opgeslagen.';
+	@override String get converterStarting => 'Begin met FFmpeg...';
+	@override String get converterProgress => 'Om te zetten op deze computer...';
+	@override String get converterComplete => 'Conversie voltooid.De nieuwe bestand is klaar.';
+	@override String get converterFfmpegMissing => 'FFmpeg kon geen vereiste encoder vinden. installeren FFmpEG met H.264, AAC en MP3 ondersteuning, dan probeer het nogmaals.';
+	@override String get converterFailed => 'Controleer dat de bronbestand kan worden gelezen en de bestemming voldoende vrije ruimte heeft.';
+	@override String get converterCancelled => 'Conversie geannuleerd. de onvolledige output is verwijderd.';
+	@override String get converterDesktopOnly => 'Locale conversie is beschikbaar op desktop computers met FFmpeg geïnstalleerd.';
+	@override String get converterStart => 'Converteren van bestanden';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$nl extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsNl {
 			'platform.locationPermission' => 'PlezyNG maakt gebruik van locatie-toegang wanneer iOS nodig heeft om uw lokale netwerk te detecteren en verbinding te maken met uw media servers.',
 			'platform.photoLibraryPermission' => 'Kies afbeeldingen uit je fotobibliotheek als omslag of illustratie voor je media.',
 			'platform.cameraPermission' => 'Scan QR codes om een Companion Remote te koppelen.',
+			'universalMedia.title' => 'Open media',
+			'universalMedia.shortcutHelp' => 'Speel een link, playlist of bestand voor deze sessie.',
+			'universalMedia.intro' => 'Open een link, playlist of bestand.Playback gebruikt de standaardspeler van PlezyNG en voegt geen geschiedenis toe aan uw bibliotheek.',
+			'universalMedia.openWhat' => 'Wat wil je graag openen?',
+			'universalMedia.stream' => 'Streamadres',
+			'universalMedia.playlist' => 'Playlijst',
+			'universalMedia.files' => 'Gerelateerde bestanden',
+			'universalMedia.favorites' => 'Save Stream favorieten',
+			'universalMedia.address' => 'Media adres',
+			'universalMedia.addressHelp' => 'URL\'s met geïdentificeerde credentiale of signature parameters worden alleen gebruikt voor deze sessie en kunnen niet als favorieten worden opgeslagen.',
+			'universalMedia.displayName' => 'Display naam (optional)',
+			'universalMedia.displayNameHelp' => 'Kies een korte naam voor de speler en system media controles.',
+			'universalMedia.allowHttp' => 'Een niet-encrypt HTTP verbinding mogelijk maken',
+			'universalMedia.allowHttpHelp' => 'HTTP versleutelt de verbinding niet. toelaat het alleen op een vertrouwde netwerk. gebruik HTTPS wanneer mogelijk.',
+			'universalMedia.advancedProtocols' => 'MPV alleen: voer een RTSP, RTMP/RTMPS, UDP of RTP-adres in. Deze adressen kunnen niet als favorieten worden opgeslagen.',
+			'universalMedia.liveStream' => 'behandelen als levend',
+			'universalMedia.liveStreamHelp' => 'Gebruik dit voor live video of radio.De app verbergt de tijdbalk, skip knoppen en go-to-time optie.',
+			'universalMedia.privateSession' => 'Alleen deze playback gebruikt het adres. Save a eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Save de favoriete',
+			'universalMedia.playNow' => 'Speel nu',
+			'universalMedia.favoriteSaved' => 'Stream favoriete bewaard naar dit profiel',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Skipped ${count} niet ondersteund of onveilig playlist ingang.', other: 'Skipped ${count} niet ondersteunde of onveilige playlist-inputs.', ),
+			'universalMedia.playlistAddress' => 'Playlist adres',
+			'universalMedia.playlistAddressHelp' => 'Open een M3U, M3u8 of PLS playlist vanuit een webadres. Direct stream links slaan de playlist niet op.',
+			'universalMedia.choosePlaylist' => 'Kies een playlist bestand',
+			'universalMedia.openPlaylist' => 'Open playlist',
+			'universalMedia.playlistFormatsHelp' => 'Een playlist kan maximaal 1.000 items en 2 MB bevatten.HLS manifesteert open als stromen zodat de speler een kwaliteit kan kiezen.',
+			'universalMedia.noFavorites' => 'Er zijn nog geen favorieten opgeslagen.Favorites blijven in dit profiel.',
+			'universalMedia.removeFavorite' => 'Verwijder de favoriete stream',
+			'universalMedia.filesHelp' => 'Kies audio, video of ISO-bestanden voor een tijdelijke waaier. bestanden en URL\'s worden niet toegevoegd aan de bibliotheekgeschiedenis.',
+			'universalMedia.chooseFiles' => 'Kies bestanden',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '1 geselecteerde bestanden', other: '${count} geselecteerde bestanden', ),
+			'universalMedia.wifiTransfer' => 'Bestanden verzenden via Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Overdracht van ondersteunde bestanden uit een browser op hetzelfde vertrouwde netwerk.',
+			'universalMedia.wifiTransferIntro' => 'Open deze adres in een browser op een ander apparaat.Kies bestanden om ze toe te voegen aan de bibliotheek Bestanden en boeken van dit apparaat',
+			'universalMedia.wifiTransferPrivacy' => 'Dit apparaat ontvangt bestanden via uw lokale netwerk.Iedereen die deze adres kent kan bestanden verzenden totdat u de overdracht stopt of het adres na 15 minuten expireert.Maximum: 100 bestanden, 4 GiB per bestand, 10 GiB in totaal.',
+			'universalMedia.wifiTransferStarting' => 'Voorbereiding van een privé, tijdsbeperkte transfer...',
+			'universalMedia.wifiTransferUnavailable' => 'Kan de overdracht niet beginnen. check local-network access en probeer het opnieuw.',
+			'universalMedia.openThisAddress' => 'Open een van deze adressen op het verzendapparaat',
+			'universalMedia.copyAddress' => 'Kopieer overdrachtadres',
+			'universalMedia.addressCopied' => 'Transferadres gecopieerd',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Dit adres eindigt in ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${count} bestanden ontvangen', other: '${count} bestanden ontvangen', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Gebruikte ${size}',
+			'universalMedia.stopTransfer' => 'Stop de overdracht en invalide adres',
+			'universalMedia.startTransfer' => 'Begin met transfer',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi overdracht',
+			'universalMedia.wifiBrowserTitle' => 'Stuur bestanden naar PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Kies audio, video, ebook of comic bestanden om te sturen.De bestanden worden opgeslagen in de bestanden en boeken bibliotheek van dit apparaat.Maximum: 100 bestanden, 4 GiB per bestand, 10 GiB totaal.',
+			'universalMedia.uploadFilesLabel' => 'Bestanden om te verzenden',
+			'universalMedia.uploadSelected' => 'Upload geselecteerde bestanden',
+			'universalMedia.uploadSelectFirst' => 'Kies eerst één of meer bestanden.',
+			'universalMedia.uploading' => 'Sending',
+			'universalMedia.uploadComplete' => 'Het bestand is toegevoegd aan PlezyNG.',
+			'universalMedia.uploadFailed' => 'De bestand kan niet worden toegevoegd. houd deze pagina open en probeer het opnieuw.',
+			'universalMedia.liveCue' => 'Leven',
+			'universalMedia.liveSession' => 'Live Stream',
+			'universalMedia.liveCueHelp' => 'Voor live video of radio verbergt de app de tijdslijn en skip-knoppen.Het slaat niet het adres op of het geschiedenisverhaal bekijken.',
+			'universalMedia.sessionOnly' => 'Deze playback is sessie-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback slaat nooit vooruitgang of geschiedenis op. Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'afbeelding aanpassingen',
+			'universalMedia.pictureHelp' => 'Deze afbeeldingswijzigingen beïnvloeden alleen deze playback. ze worden hersteld wanneer de playback eindigt.',
+			'universalMedia.resetPicture' => 'Reset afbeelding',
+			'universalMedia.brightness' => 'helderheid',
+			'universalMedia.contrast' => 'Contrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Huis',
+			'universalMedia.saturation' => 'Saturatie',
+			'universalMedia.view360' => 'Flat view voor 360° video',
+			'universalMedia.view360Help' => 'Gebruik dit voor 360° video. MPV heeft het v360-filter van FFmpeg nodig voor deze weergave.',
+			'universalMedia.view360Unavailable' => 'Deze MPV-constructie kan de 360° filter niet toepassen.',
+			'universalMedia.view360Yaw' => 'Horizontale uitzicht',
+			'universalMedia.view360Pitch' => 'Verticale uitzicht',
+			'universalMedia.view360FieldOfView' => 'Het veld van zicht',
+			'universalMedia.recordStream' => 'Record live stream',
+			'universalMedia.stopRecording' => 'Stop en bespaar opname',
+			'universalMedia.recordingStarted' => 'De opname is actief.Leaving playback stopt en slaat de opname op.',
+			'universalMedia.recordingSaved' => 'De opname is afgerond en gered.',
+			'universalMedia.recordingActive' => 'Op dit apparaat.Leaving playback stopt en slaat het op.',
+			'universalMedia.recordingFormatHelp' => 'Voor video, kies MKV of MPEG-TS. voor audio, kies MKA of MKV.',
+			'universalMedia.replaceRecordingTitle' => 'De opname vervangen?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG herstelt de bestaande bestand tijdens het opnemen.Als het de nieuwe opname niet kan redden, herstert Plezy NG de backup.',
+			'universalMedia.replaceRecording' => 'vervanging van bestanden',
+			'universalMedia.discHelp' => 'Open een plaat in de optische schijf van deze computer.U kunt ook een ISO-beeld vanuit Device-bestanden openen.',
+			'universalMedia.discs' => 'Optische disc',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'De Blu-ray',
+			'universalMedia.audioCd' => 'Audio cd',
+			'universalMedia.discAvailability' => 'Disc playback vereist een compatibele MPV-opbouw, ondersteunde schijf en besturingssysteemvergunning.',
+			'universalMedia.converterTitle' => 'Convert een lokale media-bestand',
+			'universalMedia.converterHelp' => 'Gebruik FFmpeg om een MP4, M4A of MP3 kopie te maken.',
+			'universalMedia.converterIntro' => 'Converteer een lokale audio- of videobestand naar een format dat op meerdere apparaten werkt.',
+			'universalMedia.converterPrivacy' => 'FFmpeg moet op deze computer worden geïnstalleerd. Conversion leest alleen lokale bestanden. Het downloadt geen stromen of verwijdert DRM.',
+			'universalMedia.converterChooseInput' => 'Kies een lokale media bestand',
+			'universalMedia.converterFormat' => 'Uitgangsformaat',
+			'universalMedia.converterMp4' => 'MP4 · H.264 en AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 en audio',
+			'universalMedia.converterSaveAs' => 'Verwijder converteerde media als',
+			'universalMedia.converterExtensionMismatch' => 'Kies een filename met de geselecteerde output extensie.',
+			'universalMedia.converterUnsupportedInput' => 'Kies een audio of video bestand.',
+			'universalMedia.converterLocalOnly' => 'De geselecteerde bestand is niet beschikbaar als een lokale apparaatpad.',
+			'universalMedia.converterReplaceTitle' => 'Vervang deze bestand?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG reserveert de bestaande bestand totdat de geconverteerde kopie is opgeslagen.',
+			'universalMedia.converterStarting' => 'Begin met FFmpeg...',
+			'universalMedia.converterProgress' => 'Om te zetten op deze computer...',
+			'universalMedia.converterComplete' => 'Conversie voltooid.De nieuwe bestand is klaar.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg kon geen vereiste encoder vinden. installeren FFmpEG met H.264, AAC en MP3 ondersteuning, dan probeer het nogmaals.',
+			'universalMedia.converterFailed' => 'Controleer dat de bronbestand kan worden gelezen en de bestemming voldoende vrije ruimte heeft.',
+			'universalMedia.converterCancelled' => 'Conversie geannuleerd. de onvolledige output is verwijderd.',
+			'universalMedia.converterDesktopOnly' => 'Locale conversie is beschikbaar op desktop computers met FFmpeg geïnstalleerd.',
+			'universalMedia.converterStart' => 'Converteren van bestanden',
 			'fileSources.title' => 'Bestanden en boeken',
 			'fileSources.subtitle' => 'Lees, luister en kijk van je eigen bestanden.',
 			'fileSources.add' => 'Voeg de bron toe',

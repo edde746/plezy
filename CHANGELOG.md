@@ -14,6 +14,10 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Include ARM webOS and Tizen tester builds in versioned releases, with pinned SDK and host-tool setup for Android, webOS and Tizen.
 - Provision pinned Android SDK packages and install hash-verified Python/Ninja plus host prerequisites for Android, webOS and Tizen private JIT builds.
 
+#### Universal media tools
+
+- Add one Open media workspace for direct streams, playlists, local files and desktop discs, plus desktop conversion, live-stream recording, Wi-Fi transfer, and MPV picture tools. Keep favorites and nested launchers in the existing focus-aware Files and books rows.
+
 #### Playback and downloads
 
 - Add a PlezyNG mpv playback backend, direct Plex server sign-in without plex.tv, and external-player return with playback progress sync.

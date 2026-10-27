@@ -101,6 +101,7 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$watchLink$es watchLink = Translations$watchLink$es.internal(_root);
 	@override late final Translations$homeLayout$es homeLayout = Translations$homeLayout$es.internal(_root);
 	@override late final Translations$platform$es platform = Translations$platform$es.internal(_root);
+	@override late final Translations$universalMedia$es universalMedia = Translations$universalMedia$es.internal(_root);
 	@override late final Translations$fileSources$es fileSources = Translations$fileSources$es.internal(_root);
 	@override late final Translations$lending$es lending = Translations$lending$es.internal(_root);
 	@override late final Translations$audiobook$es audiobook = Translations$audiobook$es.internal(_root);
@@ -3049,6 +3050,140 @@ class Translations$platform$es extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Elige imágenes de tu fototeca para usarlas como carátulas y otras ilustraciones de tus archivos multimedia.';
 	@override String get cameraPermission => 'Escanear los códigos QR para unir un Companion Remote.';
 }
+
+// Path: universalMedia
+class Translations$universalMedia$es extends Translations$universalMedia$en {
+	Translations$universalMedia$es.internal(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Medios abiertos';
+	@override String get shortcutHelp => 'Juega un enlace, playlist o archivo para esta sesión.';
+	@override String get intro => 'Abra un enlace, lista de reproducción o archivo. Playback utiliza el jugador estándar de PlezyNG y no añade historia a su biblioteca.';
+	@override String get openWhat => '¿Qué te gustaría abrir?';
+	@override String get stream => 'Dirección de flujo';
+	@override String get playlist => 'Playlista';
+	@override String get files => 'Archivos de dispositivos';
+	@override String get favorites => 'Los favoritos de los flujos salvos';
+	@override String get address => 'Dirección de los medios';
+	@override String get addressHelp => 'URLs con parámetros de credencia o firma reconocidos se utilizan únicamente para esta sesión y no pueden ser guardados como favoritos.';
+	@override String get displayName => 'Nombre de pantalla (opcional)';
+	@override String get displayNameHelp => 'Seleccione un nombre corto para el jugador y los controles de medios del sistema.';
+	@override String get allowHttp => 'Permite una conexión HTTP sin cifrado';
+	@override String get allowHttpHelp => 'HTTP no cifra la conexión. permita sólo en una red confiada. Use HTTPS cuando sea posible.';
+	@override String get advancedProtocols => 'Solo MPV: introduzca una dirección RTSP, RTMP/RTMPS, UDP o RTP. Estas direcciones no se pueden guardar como favoritos.';
+	@override String get liveStream => 'Tratar como vivo';
+	@override String get liveStreamHelp => 'Utilice esto para video en vivo o radio.La aplicación esconde la barra de tiempo, botones de escape y la opción go-to-time.';
+	@override String get privateSession => 'Solo esta reproducción utiliza la dirección.Save a un flujo elegible favorito para mantenerlo en este perfil.';
+	@override String get saveFavorite => 'Salva los favoritos';
+	@override String get playNow => 'Juega ahora';
+	@override String get favoriteSaved => 'El flujo favorito se salvó a este perfil';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n,
+		one: 'Descargar ${count} entrada de lista de reproducción no soportada o insegura.',
+		many: 'Descargar ${count} entradas de lista de reproducción no apoyadas o inseguras.',
+		other: 'Descargar ${count} entradas de lista de reproducción no apoyadas o inseguras.',
+	);
+	@override String get playlistAddress => 'Dirección Playlist';
+	@override String get playlistAddressHelp => 'Abre una lista de reproducción M3U, M3u8, o PLS desde un enderezo web. enlaces de flujo directo no salvan la lista de reprodución.';
+	@override String get choosePlaylist => 'Elegir el archivo de playlist';
+	@override String get openPlaylist => 'Playlist abierto';
+	@override String get playlistFormatsHelp => 'Una lista de reproducción puede contener hasta 1.000 artículos y 2 MB. HLS se manifiesta abierto como corrientes para que el jugador pueda elegir una calidad.';
+	@override String get noFavorites => 'No se ha salvado el flujo de favoritos aún. los favoritos permanecen en este perfil.';
+	@override String get removeFavorite => 'Eliminar el flujo favorito';
+	@override String get filesHelp => 'Seleccione los archivos de audio, vídeo o ISO para una cueva temporal.Los archivos y las URL no se añaden a la historia de la biblioteca.';
+	@override String get chooseFiles => 'Elegir archivos';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n,
+		one: '1 Archivo seleccionado',
+		many: '${count} archivos seleccionados',
+		other: '${count} archivos seleccionados',
+	);
+	@override String get wifiTransfer => 'Enviar archivos a través de Wi-Fi';
+	@override String get wifiTransferHelp => 'Transferir archivos apoyados de un navegador en la misma red confiada.';
+	@override String get wifiTransferIntro => 'Abre esta dirección en un navegador en otro dispositivo. Seleccione los archivos para agregarlos a la biblioteca de archivos y libros de este dispositivo.';
+	@override String get wifiTransferPrivacy => 'Este dispositivo recibe archivos a través de su red local.Cualquier persona que conoce esta dirección puede enviar archivos hasta que se detenga la transferencia o la dirección expire después de 15 minutos.Másimo: 100 archivos, 4 GiB por archivo, 10 GiB total.';
+	@override String get wifiTransferStarting => 'La preparación de una transferencia privada, a tiempo limitado...';
+	@override String get wifiTransferUnavailable => 'No puede comenzar la transferencia. comprobar el acceso a la red local y intentarlo de nuevo.';
+	@override String get openThisAddress => 'Abre una de estas direcciones en el dispositivo de envío';
+	@override String get copyAddress => 'Copia de la dirección de transferencia';
+	@override String get addressCopied => 'Dirección de transferencia copiada';
+	@override String transferExpires({required Object time}) => 'Esta dirección expira en ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n,
+		one: '${count} archivo recibido',
+		many: 'Los archivos ${count} recibidos',
+		other: 'Los archivos ${count} recibidos',
+	);
+	@override String uploadedData({required Object size}) => 'Recogido por ${size}';
+	@override String get stopTransfer => 'Detener la transferencia y invalidar la dirección';
+	@override String get startTransfer => 'Inicio Transferencia';
+	@override String get wifiImportedFiles => 'Transferencia Wi-Fi';
+	@override String get wifiBrowserTitle => 'Envío de archivos a PlezyNG';
+	@override String get wifiBrowserIntro => 'Seleccione archivos de audio, vídeo, ebook o cómics para enviar. Los archivos se almacenan en la biblioteca de archivos y libros de este dispositivo. Máximo: 100 archivos, 4 GiB por archivo, 10 GiB total.';
+	@override String get uploadFilesLabel => 'Archivos para enviar';
+	@override String get uploadSelected => 'Descargar archivos seleccionados';
+	@override String get uploadSelectFirst => 'Seleccione uno o más archivos primero.';
+	@override String get uploading => 'Envío';
+	@override String get uploadComplete => 'Archivo añadido a PlezyNG.';
+	@override String get uploadFailed => 'El archivo no puede ser añadido. mantenga esta página abierta y trate de nuevo.';
+	@override String get liveCue => 'en vivo';
+	@override String get liveSession => 'Streaming en vivo';
+	@override String get liveCueHelp => 'Para el vídeo o la radio en vivo, la aplicación esconde la barra de tiempo y salta los botones. no salva la dirección o ver historia.';
+	@override String get sessionOnly => 'Este playback es solo sesión';
+	@override String get sessionOnlyHelp => 'Playback nunca salva el progreso o la historia.Save the stream as a favor to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Adaptación de imágenes';
+	@override String get pictureHelp => 'Estos cambios de imagen solo afectan a esta reproducción. se resuelven cuando la reproducción termina.';
+	@override String get resetPicture => 'Recuperar la imagen';
+	@override String get brightness => 'brillo';
+	@override String get contrast => 'Contrast';
+	@override String get gamma => 'El Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturado';
+	@override String get view360 => 'Vista plana para 360° de vídeo';
+	@override String get view360Help => 'Utilice esto para un vídeo 360° equirectangular. MPV necesita el filtro v360 de FFmpeg para esta vista.';
+	@override String get view360Unavailable => 'Esta configuración de MPV no podría aplicar el filtro 360°.';
+	@override String get view360Yaw => 'Vista horizontal';
+	@override String get view360Pitch => 'Vista Vertical';
+	@override String get view360FieldOfView => 'El campo de visión';
+	@override String get recordStream => 'Recuerdo en directo';
+	@override String get stopRecording => 'Detener y guardar la grabación';
+	@override String get recordingStarted => 'La grabación está activa. dejar la reproducción se detiene y salva la grabación.';
+	@override String get recordingSaved => 'La grabación terminada y salvada.';
+	@override String get recordingActive => 'Recuerda este dispositivo. dejar el playback se detiene y lo salva.';
+	@override String get recordingFormatHelp => 'Para video, seleccione MKV o MPEG-TS. para audio, selecciona MKA o MKV.';
+	@override String get replaceRecordingTitle => '¿Substituir esta grabación?';
+	@override String get replaceRecordingHelp => 'PlezyNG recupera el archivo existente durante la grabación.Si no puede guardar la nueva grabación, plezyNG restaura la copia de seguridad.';
+	@override String get replaceRecording => 'Reemplazo de archivos';
+	@override String get discHelp => 'Abrir un disco en el disco óptico de este ordenador.También puede abrir una imagen ISO desde los archivos del dispositivo.';
+	@override String get discs => 'Discos ópticos';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'El Blu-ray';
+	@override String get audioCd => 'CD de audio';
+	@override String get discAvailability => 'La reproducción de discos requiere una configuración MPV compatible, un disco soportado y permiso del sistema operativo. no puede superar la protección comercial del disco.';
+	@override String get converterTitle => 'Convertir un archivo de medios locales';
+	@override String get converterHelp => 'Utilice FFmpeg para hacer una copia de MP4, M4A o MP3.';
+	@override String get converterIntro => 'Convertir un archivo de audio o vídeo local en un formato que funciona en más dispositivos.';
+	@override String get converterPrivacy => 'FFmpeg debe ser instalado en este ordenador.Conversion lee solo los archivos locales.No descarga flujos ni elimina DRM.';
+	@override String get converterChooseInput => 'Seleccione un archivo de medios locales';
+	@override String get converterFormat => 'Formato de salida';
+	@override String get converterMp4 => 'MP4 · H.264 y AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 y audio';
+	@override String get converterSaveAs => 'Salva los medios convertidos como';
+	@override String get converterExtensionMismatch => 'Seleccione un nombre de fil con la extensión de salida seleccionada.';
+	@override String get converterUnsupportedInput => 'Seleccione un archivo de audio o vídeo.';
+	@override String get converterLocalOnly => 'El archivo seleccionado no está disponible como vía de dispositivo local.';
+	@override String get converterReplaceTitle => '¿Substituir este archivo?';
+	@override String get converterReplaceHelp => 'El PCC recoge el archivo existente hasta que se salve la copia convertida.';
+	@override String get converterStarting => 'Comenzando con FFmpeg...';
+	@override String get converterProgress => 'Convertir en este ordenador...';
+	@override String get converterComplete => 'Conversión completa.El nuevo archivo está listo.';
+	@override String get converterFfmpegMissing => 'Instalar FFmpeg con soporte H.264, AAC y MP3, luego intente de nuevo.';
+	@override String get converterFailed => 'Verifique que el archivo de fuente se puede leer y el destino tiene suficiente espacio libre.';
+	@override String get converterCancelled => 'La conversión fue cancelada. la salida incompleta fue eliminada.';
+	@override String get converterDesktopOnly => 'La conversión local está disponible en ordenadores de escritorio con FFmpeg instalado.';
+	@override String get converterStart => 'Convertir archivos';
+}
+
 
 // Path: fileSources
 class Translations$fileSources$es extends Translations$fileSources$en {
@@ -7622,6 +7757,118 @@ extension on TranslationsEs {
 			'platform.locationPermission' => 'PlezyNG utiliza el acceso a la ubicación cuando iOS lo requiere para detectar tu red local y conectarse a tus servidores multimedia.',
 			'platform.photoLibraryPermission' => 'Elige imágenes de tu fototeca para usarlas como carátulas y otras ilustraciones de tus archivos multimedia.',
 			'platform.cameraPermission' => 'Escanear los códigos QR para unir un Companion Remote.',
+			'universalMedia.title' => 'Medios abiertos',
+			'universalMedia.shortcutHelp' => 'Juega un enlace, playlist o archivo para esta sesión.',
+			'universalMedia.intro' => 'Abra un enlace, lista de reproducción o archivo. Playback utiliza el jugador estándar de PlezyNG y no añade historia a su biblioteca.',
+			'universalMedia.openWhat' => '¿Qué te gustaría abrir?',
+			'universalMedia.stream' => 'Dirección de flujo',
+			'universalMedia.playlist' => 'Playlista',
+			'universalMedia.files' => 'Archivos de dispositivos',
+			'universalMedia.favorites' => 'Los favoritos de los flujos salvos',
+			'universalMedia.address' => 'Dirección de los medios',
+			'universalMedia.addressHelp' => 'URLs con parámetros de credencia o firma reconocidos se utilizan únicamente para esta sesión y no pueden ser guardados como favoritos.',
+			'universalMedia.displayName' => 'Nombre de pantalla (opcional)',
+			'universalMedia.displayNameHelp' => 'Seleccione un nombre corto para el jugador y los controles de medios del sistema.',
+			'universalMedia.allowHttp' => 'Permite una conexión HTTP sin cifrado',
+			'universalMedia.allowHttpHelp' => 'HTTP no cifra la conexión. permita sólo en una red confiada. Use HTTPS cuando sea posible.',
+			'universalMedia.advancedProtocols' => 'Solo MPV: introduzca una dirección RTSP, RTMP/RTMPS, UDP o RTP. Estas direcciones no se pueden guardar como favoritos.',
+			'universalMedia.liveStream' => 'Tratar como vivo',
+			'universalMedia.liveStreamHelp' => 'Utilice esto para video en vivo o radio.La aplicación esconde la barra de tiempo, botones de escape y la opción go-to-time.',
+			'universalMedia.privateSession' => 'Solo esta reproducción utiliza la dirección.Save a un flujo elegible favorito para mantenerlo en este perfil.',
+			'universalMedia.saveFavorite' => 'Salva los favoritos',
+			'universalMedia.playNow' => 'Juega ahora',
+			'universalMedia.favoriteSaved' => 'El flujo favorito se salvó a este perfil',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: 'Descargar ${count} entrada de lista de reproducción no soportada o insegura.', many: 'Descargar ${count} entradas de lista de reproducción no apoyadas o inseguras.', other: 'Descargar ${count} entradas de lista de reproducción no apoyadas o inseguras.', ),
+			'universalMedia.playlistAddress' => 'Dirección Playlist',
+			'universalMedia.playlistAddressHelp' => 'Abre una lista de reproducción M3U, M3u8, o PLS desde un enderezo web. enlaces de flujo directo no salvan la lista de reprodución.',
+			'universalMedia.choosePlaylist' => 'Elegir el archivo de playlist',
+			'universalMedia.openPlaylist' => 'Playlist abierto',
+			'universalMedia.playlistFormatsHelp' => 'Una lista de reproducción puede contener hasta 1.000 artículos y 2 MB. HLS se manifiesta abierto como corrientes para que el jugador pueda elegir una calidad.',
+			'universalMedia.noFavorites' => 'No se ha salvado el flujo de favoritos aún. los favoritos permanecen en este perfil.',
+			'universalMedia.removeFavorite' => 'Eliminar el flujo favorito',
+			'universalMedia.filesHelp' => 'Seleccione los archivos de audio, vídeo o ISO para una cueva temporal.Los archivos y las URL no se añaden a la historia de la biblioteca.',
+			'universalMedia.chooseFiles' => 'Elegir archivos',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: '1 Archivo seleccionado', many: '${count} archivos seleccionados', other: '${count} archivos seleccionados', ),
+			'universalMedia.wifiTransfer' => 'Enviar archivos a través de Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Transferir archivos apoyados de un navegador en la misma red confiada.',
+			'universalMedia.wifiTransferIntro' => 'Abre esta dirección en un navegador en otro dispositivo. Seleccione los archivos para agregarlos a la biblioteca de archivos y libros de este dispositivo.',
+			'universalMedia.wifiTransferPrivacy' => 'Este dispositivo recibe archivos a través de su red local.Cualquier persona que conoce esta dirección puede enviar archivos hasta que se detenga la transferencia o la dirección expire después de 15 minutos.Másimo: 100 archivos, 4 GiB por archivo, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'La preparación de una transferencia privada, a tiempo limitado...',
+			'universalMedia.wifiTransferUnavailable' => 'No puede comenzar la transferencia. comprobar el acceso a la red local y intentarlo de nuevo.',
+			'universalMedia.openThisAddress' => 'Abre una de estas direcciones en el dispositivo de envío',
+			'universalMedia.copyAddress' => 'Copia de la dirección de transferencia',
+			'universalMedia.addressCopied' => 'Dirección de transferencia copiada',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Esta dirección expira en ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: '${count} archivo recibido', many: 'Los archivos ${count} recibidos', other: 'Los archivos ${count} recibidos', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Recogido por ${size}',
+			'universalMedia.stopTransfer' => 'Detener la transferencia y invalidar la dirección',
+			'universalMedia.startTransfer' => 'Inicio Transferencia',
+			'universalMedia.wifiImportedFiles' => 'Transferencia Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Envío de archivos a PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Seleccione archivos de audio, vídeo, ebook o cómics para enviar. Los archivos se almacenan en la biblioteca de archivos y libros de este dispositivo. Máximo: 100 archivos, 4 GiB por archivo, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'Archivos para enviar',
+			'universalMedia.uploadSelected' => 'Descargar archivos seleccionados',
+			'universalMedia.uploadSelectFirst' => 'Seleccione uno o más archivos primero.',
+			'universalMedia.uploading' => 'Envío',
+			'universalMedia.uploadComplete' => 'Archivo añadido a PlezyNG.',
+			'universalMedia.uploadFailed' => 'El archivo no puede ser añadido. mantenga esta página abierta y trate de nuevo.',
+			'universalMedia.liveCue' => 'en vivo',
+			'universalMedia.liveSession' => 'Streaming en vivo',
+			'universalMedia.liveCueHelp' => 'Para el vídeo o la radio en vivo, la aplicación esconde la barra de tiempo y salta los botones. no salva la dirección o ver historia.',
+			'universalMedia.sessionOnly' => 'Este playback es solo sesión',
+			'universalMedia.sessionOnlyHelp' => 'Playback nunca salva el progreso o la historia.Save the stream as a favor to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Adaptación de imágenes',
+			'universalMedia.pictureHelp' => 'Estos cambios de imagen solo afectan a esta reproducción. se resuelven cuando la reproducción termina.',
+			'universalMedia.resetPicture' => 'Recuperar la imagen',
+			'universalMedia.brightness' => 'brillo',
+			'universalMedia.contrast' => 'Contrast',
+			'universalMedia.gamma' => 'El Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturado',
+			'universalMedia.view360' => 'Vista plana para 360° de vídeo',
+			'universalMedia.view360Help' => 'Utilice esto para un vídeo 360° equirectangular. MPV necesita el filtro v360 de FFmpeg para esta vista.',
+			'universalMedia.view360Unavailable' => 'Esta configuración de MPV no podría aplicar el filtro 360°.',
+			'universalMedia.view360Yaw' => 'Vista horizontal',
+			'universalMedia.view360Pitch' => 'Vista Vertical',
+			'universalMedia.view360FieldOfView' => 'El campo de visión',
+			'universalMedia.recordStream' => 'Recuerdo en directo',
+			'universalMedia.stopRecording' => 'Detener y guardar la grabación',
+			'universalMedia.recordingStarted' => 'La grabación está activa. dejar la reproducción se detiene y salva la grabación.',
+			'universalMedia.recordingSaved' => 'La grabación terminada y salvada.',
+			'universalMedia.recordingActive' => 'Recuerda este dispositivo. dejar el playback se detiene y lo salva.',
+			'universalMedia.recordingFormatHelp' => 'Para video, seleccione MKV o MPEG-TS. para audio, selecciona MKA o MKV.',
+			'universalMedia.replaceRecordingTitle' => '¿Substituir esta grabación?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG recupera el archivo existente durante la grabación.Si no puede guardar la nueva grabación, plezyNG restaura la copia de seguridad.',
+			'universalMedia.replaceRecording' => 'Reemplazo de archivos',
+			'universalMedia.discHelp' => 'Abrir un disco en el disco óptico de este ordenador.También puede abrir una imagen ISO desde los archivos del dispositivo.',
+			'universalMedia.discs' => 'Discos ópticos',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'El Blu-ray',
+			'universalMedia.audioCd' => 'CD de audio',
+			'universalMedia.discAvailability' => 'La reproducción de discos requiere una configuración MPV compatible, un disco soportado y permiso del sistema operativo. no puede superar la protección comercial del disco.',
+			'universalMedia.converterTitle' => 'Convertir un archivo de medios locales',
+			'universalMedia.converterHelp' => 'Utilice FFmpeg para hacer una copia de MP4, M4A o MP3.',
+			'universalMedia.converterIntro' => 'Convertir un archivo de audio o vídeo local en un formato que funciona en más dispositivos.',
+			'universalMedia.converterPrivacy' => 'FFmpeg debe ser instalado en este ordenador.Conversion lee solo los archivos locales.No descarga flujos ni elimina DRM.',
+			'universalMedia.converterChooseInput' => 'Seleccione un archivo de medios locales',
+			'universalMedia.converterFormat' => 'Formato de salida',
+			'universalMedia.converterMp4' => 'MP4 · H.264 y AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 y audio',
+			'universalMedia.converterSaveAs' => 'Salva los medios convertidos como',
+			'universalMedia.converterExtensionMismatch' => 'Seleccione un nombre de fil con la extensión de salida seleccionada.',
+			'universalMedia.converterUnsupportedInput' => 'Seleccione un archivo de audio o vídeo.',
+			'universalMedia.converterLocalOnly' => 'El archivo seleccionado no está disponible como vía de dispositivo local.',
+			'universalMedia.converterReplaceTitle' => '¿Substituir este archivo?',
+			'universalMedia.converterReplaceHelp' => 'El PCC recoge el archivo existente hasta que se salve la copia convertida.',
+			'universalMedia.converterStarting' => 'Comenzando con FFmpeg...',
+			'universalMedia.converterProgress' => 'Convertir en este ordenador...',
+			'universalMedia.converterComplete' => 'Conversión completa.El nuevo archivo está listo.',
+			'universalMedia.converterFfmpegMissing' => 'Instalar FFmpeg con soporte H.264, AAC y MP3, luego intente de nuevo.',
+			'universalMedia.converterFailed' => 'Verifique que el archivo de fuente se puede leer y el destino tiene suficiente espacio libre.',
+			'universalMedia.converterCancelled' => 'La conversión fue cancelada. la salida incompleta fue eliminada.',
+			'universalMedia.converterDesktopOnly' => 'La conversión local está disponible en ordenadores de escritorio con FFmpeg instalado.',
+			'universalMedia.converterStart' => 'Convertir archivos',
 			'fileSources.title' => 'Archivos y libros',
 			'fileSources.subtitle' => 'Leer, escuchar y ver de sus propios archivos.',
 			'fileSources.add' => 'añadir fuente',

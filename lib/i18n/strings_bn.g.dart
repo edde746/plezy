@@ -101,6 +101,7 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$bn watchLink = _Translations$watchLink$bn._(_root);
 	@override late final _Translations$homeLayout$bn homeLayout = _Translations$homeLayout$bn._(_root);
 	@override late final _Translations$platform$bn platform = _Translations$platform$bn._(_root);
+	@override late final _Translations$universalMedia$bn universalMedia = _Translations$universalMedia$bn._(_root);
 	@override late final _Translations$fileSources$bn fileSources = _Translations$fileSources$bn._(_root);
 	@override late final _Translations$lending$bn lending = _Translations$lending$bn._(_root);
 	@override late final _Translations$audiobook$bn audiobook = _Translations$audiobook$bn._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$bn extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'আপনার ফটো লাইব্রেরি থেকে ছবিগুলি মিডিয়া শিল্প হিসেবে ব্যবহার করার জন্য নির্বাচন করুন।';
 	@override String get cameraPermission => 'Companion Remote জোড়া লাগাতে QR কোড স্ক্যান করুন।';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$bn extends Translations$universalMedia$en {
+	_Translations$universalMedia$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'খোলা মিডিয়া';
+	@override String get shortcutHelp => 'এই session জন্য একটি লিঙ্ক, Playlist বা ফাইল খেলুন।';
+	@override String get intro => 'একটি লিঙ্ক, Playlist বা ফাইল খোলা. Playback PlezyNG এর স্ট্যান্ডার্ড প্লেয়ার ব্যবহার করে এবং আপনার লাইব্রেরিতে ইতিহাস যোগ করেন না।';
+	@override String get openWhat => 'আপনি কী খুলে দিতে চান?';
+	@override String get stream => 'স্ট্রিম ঠিকানা';
+	@override String get playlist => 'Playlist খেলা';
+	@override String get files => 'ডিভাইস ফাইল';
+	@override String get favorites => 'সুরক্ষিত প্রদর্শন পছন্দ';
+	@override String get address => 'মিডিয়া ঠিকানা';
+	@override String get addressHelp => 'HTTPS preferred. recognized credential বা signature parameters সঙ্গে URLs শুধুমাত্র এই session জন্য ব্যবহার করা হয় এবং পছন্দ হিসাবে সংরক্ষণ করা যাবে না।';
+	@override String get displayName => 'ডাউনলোড নাম (অ্যাপ্লিকেশন)';
+	@override String get displayNameHelp => 'খেলোয়াড় এবং সিস্টেম মিডিয়া কন্ট্রোলগুলির জন্য একটি ছোট নাম নির্বাচন করুন।';
+	@override String get allowHttp => 'একটি অক্রিপ্ট HTTP সংযোগ অনুমোদন';
+	@override String get allowHttpHelp => 'HTTP সংযোগটি সক্রিপ্ট করে না. এটি শুধুমাত্র একটি বিশ্বাসযোগ্য নেটওয়ার্কে অনুমতি দেয়. সম্ভবত HTTPS ব্যবহার করুন.';
+	@override String get advancedProtocols => 'MPV শুধুমাত্র: একটি RTSP, RTMP/RTMPS, UDP বা RTP ঠিকানা লিখুন. এই ঠিকানাগুলি প্রিয় হিসাবে সংরক্ষণ করা যাবে না।';
+	@override String get liveStream => 'বেঁচে থাকার মতো আচরণ';
+	@override String get liveStreamHelp => 'এটি লাইভ ভিডিও বা রেডিও জন্য ব্যবহার করুন. অ্যাপটি টাইম বার, স্কপ বোতল এবং গিয়ে-টাইম অপশনকে ঘুরে রাখে. একটি রেকর্ড করার জন্য এটি বন্ধ করে।';
+	@override String get privateSession => 'শুধুমাত্র এই প্লেব্যাক ঠিকানা ব্যবহার করে. এই প্রোফাইলে রাখার জন্য একটি অনুমোদিত স্ট্রিম প্রিয় সংরক্ষণ করুন.';
+	@override String get saveFavorite => 'পছন্দ সংরক্ষণ';
+	@override String get playNow => 'এখন খেলুন';
+	@override String get favoriteSaved => 'এই প্রোফাইলে সুরক্ষিত পছন্দ স্ট্রিম';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n,
+		one: '${count} অসহায় বা নিরাপদ Playlist প্রবেশ।',
+		other: '${count} সমর্থিত বা নিরাপদ Playlist অন্তর্ভুক্ত।',
+	);
+	@override String get playlistAddress => 'Playlist ঠিকানা';
+	@override String get playlistAddressHelp => 'একটি ওয়েব ঠিকানা থেকে একটি M3U, M3u8, বা PLS প্লেলিস্ট খোঁজ করুন. সরাসরি প্রদর্শন লিঙ্কগুলি প্লেলেস্ট সংরক্ষণ করে না।';
+	@override String get choosePlaylist => 'Playlist ফাইল নির্বাচন করুন';
+	@override String get openPlaylist => 'খোলা Playlist';
+	@override String get playlistFormatsHelp => 'একটি খেলা লিস্টে সর্বাধিক 1,000 পণ্য এবং 2 মিবি রয়েছে. HLS স্ট্রিম হিসাবে খোলা হয়, তাই খেলোয়াড় একটি মান নির্বাচন করতে পারেন।';
+	@override String get noFavorites => 'এখনো কোন প্রেমের পছন্দ সংরক্ষণ করা হয় না. পছন্দের এই प्रोফাইলে থাকুন।';
+	@override String get removeFavorite => 'প্রিয় স্ট্রিম মুছে ফেলুন';
+	@override String get filesHelp => 'অডিও, ভিডিও বা আইএসও ফাইলগুলি একটি temporary quue জন্য নির্বাচন করুন. ফাইল এবং URLs লাইব্রেরির ইতিহাসে যোগ করা হয় না।';
+	@override String get chooseFiles => 'ফাইল নির্বাচন';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n,
+		one: '1 নির্বাচিত ফাইল',
+		other: '${count} নির্বাচিত ফাইল',
+	);
+	@override String get wifiTransfer => 'Wi-Fi এর মাধ্যমে ফাইল পাঠান';
+	@override String get wifiTransferHelp => 'সমর্থিত ফাইলগুলি এক ব্রাউজার থেকে একই বিশ্বাসযোগ্য নেটওয়ার্কে স্থানান্তর করুন।';
+	@override String get wifiTransferIntro => 'অন্য ডিভাইসের একটি ব্রাউজারে এই ঠিকানা খোঁজ করুন. ফাইলগুলি নির্বাচন করে এই ডিভিশনের ফাইল এবং বই লাইব্রিয়ামে যোগ করুন.';
+	@override String get wifiTransferPrivacy => 'এই ডিভাইস আপনার স্থানীয় নেটওয়ার্কের মাধ্যমে ফাইল গ্রহণ করে. যে কেউ এই ঠিকানা জানে, আপনি ট্রান্সফার বন্ধ করা পর্যন্ত ফাইল পাঠাতে পারেন বা ঠিকানা 15 মিনিট পরে শেষ হয়. সর্বোচ্চ: 100 ফাইল, 4 জিবি প্রতি ফিল, 10 জিबी মোট।';
+	@override String get wifiTransferStarting => 'একটি ব্যক্তিগত, সময় সীমিত স্থানান্তর প্রস্তুত ...';
+	@override String get wifiTransferUnavailable => 'স্থানীয় নেটওয়ার্ক অ্যাক্সেস চেক করুন এবং আবার চেষ্টা করুন।';
+	@override String get openThisAddress => 'এই ডিভাইসের একটি ঠিকানা খুলুন';
+	@override String get copyAddress => 'কপি Transfer Address';
+	@override String get addressCopied => 'প্রদর্শন ঠিকানা কপি';
+	@override String transferExpires({required Object time}) => 'এই ঠিকানাটি ${time} এর মধ্যে শেষ হয়।';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n,
+		one: '${count} ফাইল গ্রহণ',
+		other: '${count} ফাইল গ্রহণ',
+	);
+	@override String uploadedData({required Object size}) => '${size} পেয়েছেন';
+	@override String get stopTransfer => 'স্থানান্তর বন্ধ করুন এবং ঠিকানা বাতিল করুন';
+	@override String get startTransfer => 'ট্রেডিং শুরু';
+	@override String get wifiImportedFiles => 'Wi-Fi ট্রান্সফার';
+	@override String get wifiBrowserTitle => 'ফাইল পাঠান PlezyNG';
+	@override String get wifiBrowserIntro => 'অডিও, ভিডিও, ইবুক বা কমিক ফাইলগুলি পাঠানোর জন্য নির্বাচন করুন. ফাইলগুলো এই ডিভাইসের ফাইল এবং বই লাইব্রিয়ামে সংরক্ষণ করা হয়. সর্বোচ্চ: 100 ফাইল, 1 ফাইল প্রতি 4 জিবি, 10 জিबी মোট।';
+	@override String get uploadFilesLabel => 'ফাইল পাঠানো';
+	@override String get uploadSelected => 'নির্বাচিত ফাইল আপলোড করুন';
+	@override String get uploadSelectFirst => 'প্রথমে একটি বা বেশী ফাইল নির্বাচন করুন।';
+	@override String get uploading => 'পাঠান';
+	@override String get uploadComplete => 'ফাইলটি PlezyNGে যোগ করা হয়।';
+	@override String get uploadFailed => 'ফাইলটি যোগ করা যায় না. এই পৃষ্ঠা খোলা রাখুন এবং আবার চেষ্টা করুন।';
+	@override String get liveCue => 'লাইভ';
+	@override String get liveSession => 'লাইভ স্ট্রিম';
+	@override String get liveCueHelp => 'লাইভ ভিডিও বা রেডিও জন্য, অ্যাপটি সময় প্যাকেট সুরক্ষা করে এবং হ্রাস बटन. এটি ঠিকানা সংরক্ষণ করেন না বা ইতিহাস দেখেনি।';
+	@override String get sessionOnly => 'এই গেমটি শুধু সেশন-এই।';
+	@override String get sessionOnlyHelp => 'Playback কখনো উন্নয়ন বা ইতিহাস সংরক্ষণ করে না. এই প্রোফাইলে রাখার জন্য পছন্দ হিসাবে স্ট্রিম সংরক্ষণ করুন, যদি এটি অনুমোদিত হয়।';
+	@override String get pictureAdjustments => 'ছবি সংশোধন';
+	@override String get pictureHelp => 'এই ছবি পরিবর্তনগুলি শুধুমাত্র এই প্লেব্যাককে প্রভাবিত করে. তারা প্লেবেক শেষ হওয়ার পর আবারও স্থাপন করে।';
+	@override String get resetPicture => 'পুনরায় ছবি';
+	@override String get brightness => 'উজ্জ্বল';
+	@override String get contrast => 'প্রতিরোধ';
+	@override String get gamma => 'গেম';
+	@override String get hue => 'হুই';
+	@override String get saturation => 'সুরআন';
+	@override String get view360 => '360° ভিডিও জন্য ফ্ল্যাট প্রদর্শন';
+	@override String get view360Help => 'এছাড়াও 360° ভিডিও ব্যবহার করুন. MPV এর জন্য FFmpeg\'s v360 ফিল্টার প্রয়োজন।';
+	@override String get view360Unavailable => 'এই MPV গঠন 360° ফিল্টার ব্যবহার করতে পারে না।';
+	@override String get view360Yaw => 'Horizontal ভাবনা';
+	@override String get view360Pitch => 'ভার্চিক দৃষ্টিভঙ্গি';
+	@override String get view360FieldOfView => 'দৃষ্টিভঙ্গি জায়গা';
+	@override String get recordStream => 'Live Stream রেকর্ড';
+	@override String get stopRecording => 'রেকর্ডিং বন্ধ এবং সংরক্ষণ করুন';
+	@override String get recordingStarted => 'রেকর্ডিং সক্রিয়. Playback বন্ধ করে এবং রেকডিং সংরক্ষণ করে।';
+	@override String get recordingSaved => 'রেকর্ড শেষ এবং সংরক্ষিত।';
+	@override String get recordingActive => 'এই ডিভাইস থেকে রেকর্ড করুন. Playback বন্ধ করে এবং এটি সংরক্ষণ করে।';
+	@override String get recordingFormatHelp => 'ভিডিও জন্য, MKV বা MPEG-TS নির্বাচন করুন. অডিও জন্য, MKA বা MKV নির্বাচন করুন।';
+	@override String get replaceRecordingTitle => 'এই রেকর্ড পরিবর্তন করবেন?';
+	@override String get replaceRecordingHelp => 'রেকর্ডিংয়ের সময় PlezyNG বর্তমান ফাইলটি পিছিয়ে রাখে. যদি এটি নতুন রেকার্ড সংরক্ষণ করতে পারে না, তাহলে plezyNG সাপোর্ট পুনরাবৃত্তি করে।';
+	@override String get replaceRecording => 'ফাইল পরিবর্তন';
+	@override String get discHelp => 'এই কম্পিউটারের অপটিক ড্রাইভে একটি ডিস্ক খুলুন. আপনি ডিভাইস ফাইল থেকে আইএসও ইমেজ খুলতে পারেন।';
+	@override String get discs => 'অপটিক্যাল ডিভাইস';
+	@override String get dvd => 'ডিভিডি';
+	@override String get bluray => 'ব্লু-রাই';
+	@override String get audioCd => 'অডিও সিডি';
+	@override String get discAvailability => 'ডিভাইস প্লেব্যাক একটি সামঞ্জস্যপূর্ণ MPV গঠন, সমর্থিত ড্রাইভ এবং অপারেটিং সিস্টেম অনুমতি প্রয়োজন. এটি বাণিজ্যিক ডিভিডি রক্ষা অতিক্রম করতে পারে না।';
+	@override String get converterTitle => 'স্থানীয় গণমাধ্যম ফাইল পরিবর্তন';
+	@override String get converterHelp => 'MP4, M4A বা MP3 কপি তৈরি করার জন্য FFmpeg ব্যবহার করুন।';
+	@override String get converterIntro => 'একটি স্থানীয় অডিও বা ভিডিও ফাইলটি একাধিক ডিভাইসের উপর কাজ করে ফর্মটামে পরিদর্শন করুন।';
+	@override String get converterPrivacy => 'FFmpeg এই কম্পিউটারে ইনস্টল করা উচিত. Conversion শুধুমাত্র স্থানীয় ফাইলগুলি পড়বে. এটি স্ট্রিম ডাউনলোড করে না বা DRM মুছে নেয় না।';
+	@override String get converterChooseInput => 'স্থানীয় মিডিয়া ফাইল নির্বাচন করুন';
+	@override String get converterFormat => 'উত্পাদন ফরম্যাট';
+	@override String get converterMp4 => 'MP4 · H.264 এবং AAC';
+	@override String get converterM4a => 'M4A · AAC অডিও';
+	@override String get converterMp3 => 'MP3 অডিও';
+	@override String get converterSaveAs => 'পরিদর্শন মিডিয়ার হিসাবে সংরক্ষণ করুন';
+	@override String get converterExtensionMismatch => 'নির্বাচিত উত্পাদন প্রদর্শন সঙ্গে একটি ফাইল নাম নির্বাচন করুন।';
+	@override String get converterUnsupportedInput => 'একটি অডিও বা ভিডিও ফাইল নির্বাচন করুন।';
+	@override String get converterLocalOnly => 'নির্বাচিত ফাইল একটি স্থানীয় ডিভাইস পথ হিসাবে পাওয়া যায় না।';
+	@override String get converterReplaceTitle => 'এই ফাইলটি পরিবর্তন করবেন?';
+	@override String get converterReplaceHelp => 'PlezyNG বর্তমান ফাইলটি সংরক্ষণ করা পর্যন্ত রেকর্ড করে।';
+	@override String get converterStarting => 'শুরু করে ফিপিএফ...';
+	@override String get converterProgress => 'এই কম্পিউটারের মাধ্যমে পরিদর্শন ...';
+	@override String get converterComplete => 'নতুন ফাইল প্রস্তুত।';
+	@override String get converterFfmpegMissing => 'H.264, AAC এবং MP3 সমর্থন সঙ্গে FFmpeg ইনস্টল করুন, তারপর আবার চেষ্টা করুন।';
+	@override String get converterFailed => 'ফাইলটি পড়তে পারে এবং উদ্দেশ্য पर्याप्त বিনামূল্যে স্থান আছে কিনা নিশ্চিত করুন।';
+	@override String get converterCancelled => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।';
+	@override String get converterDesktopOnly => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।';
+	@override String get converterStart => 'ফাইল পরিবর্তন';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$bn extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsBn {
 			'platform.locationPermission' => 'PlezyNG আপনার স্থানীয় নেটওয়ার্ক এবং আপনার মিডিয়া সার্ভারগুলিতে সংযোগ করার জন্য iOS এর প্রয়োজনীয় অবস্থান অ্যাক্সেস ব্যবহার করে।',
 			'platform.photoLibraryPermission' => 'আপনার ফটো লাইব্রেরি থেকে ছবিগুলি মিডিয়া শিল্প হিসেবে ব্যবহার করার জন্য নির্বাচন করুন।',
 			'platform.cameraPermission' => 'Companion Remote জোড়া লাগাতে QR কোড স্ক্যান করুন।',
+			'universalMedia.title' => 'খোলা মিডিয়া',
+			'universalMedia.shortcutHelp' => 'এই session জন্য একটি লিঙ্ক, Playlist বা ফাইল খেলুন।',
+			'universalMedia.intro' => 'একটি লিঙ্ক, Playlist বা ফাইল খোলা. Playback PlezyNG এর স্ট্যান্ডার্ড প্লেয়ার ব্যবহার করে এবং আপনার লাইব্রেরিতে ইতিহাস যোগ করেন না।',
+			'universalMedia.openWhat' => 'আপনি কী খুলে দিতে চান?',
+			'universalMedia.stream' => 'স্ট্রিম ঠিকানা',
+			'universalMedia.playlist' => 'Playlist খেলা',
+			'universalMedia.files' => 'ডিভাইস ফাইল',
+			'universalMedia.favorites' => 'সুরক্ষিত প্রদর্শন পছন্দ',
+			'universalMedia.address' => 'মিডিয়া ঠিকানা',
+			'universalMedia.addressHelp' => 'HTTPS preferred. recognized credential বা signature parameters সঙ্গে URLs শুধুমাত্র এই session জন্য ব্যবহার করা হয় এবং পছন্দ হিসাবে সংরক্ষণ করা যাবে না।',
+			'universalMedia.displayName' => 'ডাউনলোড নাম (অ্যাপ্লিকেশন)',
+			'universalMedia.displayNameHelp' => 'খেলোয়াড় এবং সিস্টেম মিডিয়া কন্ট্রোলগুলির জন্য একটি ছোট নাম নির্বাচন করুন।',
+			'universalMedia.allowHttp' => 'একটি অক্রিপ্ট HTTP সংযোগ অনুমোদন',
+			'universalMedia.allowHttpHelp' => 'HTTP সংযোগটি সক্রিপ্ট করে না. এটি শুধুমাত্র একটি বিশ্বাসযোগ্য নেটওয়ার্কে অনুমতি দেয়. সম্ভবত HTTPS ব্যবহার করুন.',
+			'universalMedia.advancedProtocols' => 'MPV শুধুমাত্র: একটি RTSP, RTMP/RTMPS, UDP বা RTP ঠিকানা লিখুন. এই ঠিকানাগুলি প্রিয় হিসাবে সংরক্ষণ করা যাবে না।',
+			'universalMedia.liveStream' => 'বেঁচে থাকার মতো আচরণ',
+			'universalMedia.liveStreamHelp' => 'এটি লাইভ ভিডিও বা রেডিও জন্য ব্যবহার করুন. অ্যাপটি টাইম বার, স্কপ বোতল এবং গিয়ে-টাইম অপশনকে ঘুরে রাখে. একটি রেকর্ড করার জন্য এটি বন্ধ করে।',
+			'universalMedia.privateSession' => 'শুধুমাত্র এই প্লেব্যাক ঠিকানা ব্যবহার করে. এই প্রোফাইলে রাখার জন্য একটি অনুমোদিত স্ট্রিম প্রিয় সংরক্ষণ করুন.',
+			'universalMedia.saveFavorite' => 'পছন্দ সংরক্ষণ',
+			'universalMedia.playNow' => 'এখন খেলুন',
+			'universalMedia.favoriteSaved' => 'এই প্রোফাইলে সুরক্ষিত পছন্দ স্ট্রিম',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} অসহায় বা নিরাপদ Playlist প্রবেশ।', other: '${count} সমর্থিত বা নিরাপদ Playlist অন্তর্ভুক্ত।', ),
+			'universalMedia.playlistAddress' => 'Playlist ঠিকানা',
+			'universalMedia.playlistAddressHelp' => 'একটি ওয়েব ঠিকানা থেকে একটি M3U, M3u8, বা PLS প্লেলিস্ট খোঁজ করুন. সরাসরি প্রদর্শন লিঙ্কগুলি প্লেলেস্ট সংরক্ষণ করে না।',
+			'universalMedia.choosePlaylist' => 'Playlist ফাইল নির্বাচন করুন',
+			'universalMedia.openPlaylist' => 'খোলা Playlist',
+			'universalMedia.playlistFormatsHelp' => 'একটি খেলা লিস্টে সর্বাধিক 1,000 পণ্য এবং 2 মিবি রয়েছে. HLS স্ট্রিম হিসাবে খোলা হয়, তাই খেলোয়াড় একটি মান নির্বাচন করতে পারেন।',
+			'universalMedia.noFavorites' => 'এখনো কোন প্রেমের পছন্দ সংরক্ষণ করা হয় না. পছন্দের এই प्रोফাইলে থাকুন।',
+			'universalMedia.removeFavorite' => 'প্রিয় স্ট্রিম মুছে ফেলুন',
+			'universalMedia.filesHelp' => 'অডিও, ভিডিও বা আইএসও ফাইলগুলি একটি temporary quue জন্য নির্বাচন করুন. ফাইল এবং URLs লাইব্রেরির ইতিহাসে যোগ করা হয় না।',
+			'universalMedia.chooseFiles' => 'ফাইল নির্বাচন',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '1 নির্বাচিত ফাইল', other: '${count} নির্বাচিত ফাইল', ),
+			'universalMedia.wifiTransfer' => 'Wi-Fi এর মাধ্যমে ফাইল পাঠান',
+			'universalMedia.wifiTransferHelp' => 'সমর্থিত ফাইলগুলি এক ব্রাউজার থেকে একই বিশ্বাসযোগ্য নেটওয়ার্কে স্থানান্তর করুন।',
+			'universalMedia.wifiTransferIntro' => 'অন্য ডিভাইসের একটি ব্রাউজারে এই ঠিকানা খোঁজ করুন. ফাইলগুলি নির্বাচন করে এই ডিভিশনের ফাইল এবং বই লাইব্রিয়ামে যোগ করুন.',
+			'universalMedia.wifiTransferPrivacy' => 'এই ডিভাইস আপনার স্থানীয় নেটওয়ার্কের মাধ্যমে ফাইল গ্রহণ করে. যে কেউ এই ঠিকানা জানে, আপনি ট্রান্সফার বন্ধ করা পর্যন্ত ফাইল পাঠাতে পারেন বা ঠিকানা 15 মিনিট পরে শেষ হয়. সর্বোচ্চ: 100 ফাইল, 4 জিবি প্রতি ফিল, 10 জিबी মোট।',
+			'universalMedia.wifiTransferStarting' => 'একটি ব্যক্তিগত, সময় সীমিত স্থানান্তর প্রস্তুত ...',
+			'universalMedia.wifiTransferUnavailable' => 'স্থানীয় নেটওয়ার্ক অ্যাক্সেস চেক করুন এবং আবার চেষ্টা করুন।',
+			'universalMedia.openThisAddress' => 'এই ডিভাইসের একটি ঠিকানা খুলুন',
+			'universalMedia.copyAddress' => 'কপি Transfer Address',
+			'universalMedia.addressCopied' => 'প্রদর্শন ঠিকানা কপি',
+			'universalMedia.transferExpires' => ({required Object time}) => 'এই ঠিকানাটি ${time} এর মধ্যে শেষ হয়।',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} ফাইল গ্রহণ', other: '${count} ফাইল গ্রহণ', ),
+			'universalMedia.uploadedData' => ({required Object size}) => '${size} পেয়েছেন',
+			'universalMedia.stopTransfer' => 'স্থানান্তর বন্ধ করুন এবং ঠিকানা বাতিল করুন',
+			'universalMedia.startTransfer' => 'ট্রেডিং শুরু',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi ট্রান্সফার',
+			'universalMedia.wifiBrowserTitle' => 'ফাইল পাঠান PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'অডিও, ভিডিও, ইবুক বা কমিক ফাইলগুলি পাঠানোর জন্য নির্বাচন করুন. ফাইলগুলো এই ডিভাইসের ফাইল এবং বই লাইব্রিয়ামে সংরক্ষণ করা হয়. সর্বোচ্চ: 100 ফাইল, 1 ফাইল প্রতি 4 জিবি, 10 জিबी মোট।',
+			'universalMedia.uploadFilesLabel' => 'ফাইল পাঠানো',
+			'universalMedia.uploadSelected' => 'নির্বাচিত ফাইল আপলোড করুন',
+			'universalMedia.uploadSelectFirst' => 'প্রথমে একটি বা বেশী ফাইল নির্বাচন করুন।',
+			'universalMedia.uploading' => 'পাঠান',
+			'universalMedia.uploadComplete' => 'ফাইলটি PlezyNGে যোগ করা হয়।',
+			'universalMedia.uploadFailed' => 'ফাইলটি যোগ করা যায় না. এই পৃষ্ঠা খোলা রাখুন এবং আবার চেষ্টা করুন।',
+			'universalMedia.liveCue' => 'লাইভ',
+			'universalMedia.liveSession' => 'লাইভ স্ট্রিম',
+			'universalMedia.liveCueHelp' => 'লাইভ ভিডিও বা রেডিও জন্য, অ্যাপটি সময় প্যাকেট সুরক্ষা করে এবং হ্রাস बटन. এটি ঠিকানা সংরক্ষণ করেন না বা ইতিহাস দেখেনি।',
+			'universalMedia.sessionOnly' => 'এই গেমটি শুধু সেশন-এই।',
+			'universalMedia.sessionOnlyHelp' => 'Playback কখনো উন্নয়ন বা ইতিহাস সংরক্ষণ করে না. এই প্রোফাইলে রাখার জন্য পছন্দ হিসাবে স্ট্রিম সংরক্ষণ করুন, যদি এটি অনুমোদিত হয়।',
+			'universalMedia.pictureAdjustments' => 'ছবি সংশোধন',
+			'universalMedia.pictureHelp' => 'এই ছবি পরিবর্তনগুলি শুধুমাত্র এই প্লেব্যাককে প্রভাবিত করে. তারা প্লেবেক শেষ হওয়ার পর আবারও স্থাপন করে।',
+			'universalMedia.resetPicture' => 'পুনরায় ছবি',
+			'universalMedia.brightness' => 'উজ্জ্বল',
+			'universalMedia.contrast' => 'প্রতিরোধ',
+			'universalMedia.gamma' => 'গেম',
+			'universalMedia.hue' => 'হুই',
+			'universalMedia.saturation' => 'সুরআন',
+			'universalMedia.view360' => '360° ভিডিও জন্য ফ্ল্যাট প্রদর্শন',
+			'universalMedia.view360Help' => 'এছাড়াও 360° ভিডিও ব্যবহার করুন. MPV এর জন্য FFmpeg\'s v360 ফিল্টার প্রয়োজন।',
+			'universalMedia.view360Unavailable' => 'এই MPV গঠন 360° ফিল্টার ব্যবহার করতে পারে না।',
+			'universalMedia.view360Yaw' => 'Horizontal ভাবনা',
+			'universalMedia.view360Pitch' => 'ভার্চিক দৃষ্টিভঙ্গি',
+			'universalMedia.view360FieldOfView' => 'দৃষ্টিভঙ্গি জায়গা',
+			'universalMedia.recordStream' => 'Live Stream রেকর্ড',
+			'universalMedia.stopRecording' => 'রেকর্ডিং বন্ধ এবং সংরক্ষণ করুন',
+			'universalMedia.recordingStarted' => 'রেকর্ডিং সক্রিয়. Playback বন্ধ করে এবং রেকডিং সংরক্ষণ করে।',
+			'universalMedia.recordingSaved' => 'রেকর্ড শেষ এবং সংরক্ষিত।',
+			'universalMedia.recordingActive' => 'এই ডিভাইস থেকে রেকর্ড করুন. Playback বন্ধ করে এবং এটি সংরক্ষণ করে।',
+			'universalMedia.recordingFormatHelp' => 'ভিডিও জন্য, MKV বা MPEG-TS নির্বাচন করুন. অডিও জন্য, MKA বা MKV নির্বাচন করুন।',
+			'universalMedia.replaceRecordingTitle' => 'এই রেকর্ড পরিবর্তন করবেন?',
+			'universalMedia.replaceRecordingHelp' => 'রেকর্ডিংয়ের সময় PlezyNG বর্তমান ফাইলটি পিছিয়ে রাখে. যদি এটি নতুন রেকার্ড সংরক্ষণ করতে পারে না, তাহলে plezyNG সাপোর্ট পুনরাবৃত্তি করে।',
+			'universalMedia.replaceRecording' => 'ফাইল পরিবর্তন',
+			'universalMedia.discHelp' => 'এই কম্পিউটারের অপটিক ড্রাইভে একটি ডিস্ক খুলুন. আপনি ডিভাইস ফাইল থেকে আইএসও ইমেজ খুলতে পারেন।',
+			'universalMedia.discs' => 'অপটিক্যাল ডিভাইস',
+			'universalMedia.dvd' => 'ডিভিডি',
+			'universalMedia.bluray' => 'ব্লু-রাই',
+			'universalMedia.audioCd' => 'অডিও সিডি',
+			'universalMedia.discAvailability' => 'ডিভাইস প্লেব্যাক একটি সামঞ্জস্যপূর্ণ MPV গঠন, সমর্থিত ড্রাইভ এবং অপারেটিং সিস্টেম অনুমতি প্রয়োজন. এটি বাণিজ্যিক ডিভিডি রক্ষা অতিক্রম করতে পারে না।',
+			'universalMedia.converterTitle' => 'স্থানীয় গণমাধ্যম ফাইল পরিবর্তন',
+			'universalMedia.converterHelp' => 'MP4, M4A বা MP3 কপি তৈরি করার জন্য FFmpeg ব্যবহার করুন।',
+			'universalMedia.converterIntro' => 'একটি স্থানীয় অডিও বা ভিডিও ফাইলটি একাধিক ডিভাইসের উপর কাজ করে ফর্মটামে পরিদর্শন করুন।',
+			'universalMedia.converterPrivacy' => 'FFmpeg এই কম্পিউটারে ইনস্টল করা উচিত. Conversion শুধুমাত্র স্থানীয় ফাইলগুলি পড়বে. এটি স্ট্রিম ডাউনলোড করে না বা DRM মুছে নেয় না।',
+			'universalMedia.converterChooseInput' => 'স্থানীয় মিডিয়া ফাইল নির্বাচন করুন',
+			'universalMedia.converterFormat' => 'উত্পাদন ফরম্যাট',
+			'universalMedia.converterMp4' => 'MP4 · H.264 এবং AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC অডিও',
+			'universalMedia.converterMp3' => 'MP3 অডিও',
+			'universalMedia.converterSaveAs' => 'পরিদর্শন মিডিয়ার হিসাবে সংরক্ষণ করুন',
+			'universalMedia.converterExtensionMismatch' => 'নির্বাচিত উত্পাদন প্রদর্শন সঙ্গে একটি ফাইল নাম নির্বাচন করুন।',
+			'universalMedia.converterUnsupportedInput' => 'একটি অডিও বা ভিডিও ফাইল নির্বাচন করুন।',
+			'universalMedia.converterLocalOnly' => 'নির্বাচিত ফাইল একটি স্থানীয় ডিভাইস পথ হিসাবে পাওয়া যায় না।',
+			'universalMedia.converterReplaceTitle' => 'এই ফাইলটি পরিবর্তন করবেন?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG বর্তমান ফাইলটি সংরক্ষণ করা পর্যন্ত রেকর্ড করে।',
+			'universalMedia.converterStarting' => 'শুরু করে ফিপিএফ...',
+			'universalMedia.converterProgress' => 'এই কম্পিউটারের মাধ্যমে পরিদর্শন ...',
+			'universalMedia.converterComplete' => 'নতুন ফাইল প্রস্তুত।',
+			'universalMedia.converterFfmpegMissing' => 'H.264, AAC এবং MP3 সমর্থন সঙ্গে FFmpeg ইনস্টল করুন, তারপর আবার চেষ্টা করুন।',
+			'universalMedia.converterFailed' => 'ফাইলটি পড়তে পারে এবং উদ্দেশ্য पर्याप्त বিনামূল্যে স্থান আছে কিনা নিশ্চিত করুন।',
+			'universalMedia.converterCancelled' => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।',
+			'universalMedia.converterDesktopOnly' => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।',
+			'universalMedia.converterStart' => 'ফাইল পরিবর্তন',
 			'fileSources.title' => 'ফাইল ও বই',
 			'fileSources.subtitle' => 'পড়ুন, শুনুন এবং নিজের ফাইল থেকে দেখুন।',
 			'fileSources.add' => 'উৎস যোগ করুন',

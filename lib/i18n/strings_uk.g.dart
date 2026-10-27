@@ -101,6 +101,7 @@ class TranslationsUk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$uk watchLink = _Translations$watchLink$uk._(_root);
 	@override late final _Translations$homeLayout$uk homeLayout = _Translations$homeLayout$uk._(_root);
 	@override late final _Translations$platform$uk platform = _Translations$platform$uk._(_root);
+	@override late final _Translations$universalMedia$uk universalMedia = _Translations$universalMedia$uk._(_root);
 	@override late final _Translations$fileSources$uk fileSources = _Translations$fileSources$uk._(_root);
 	@override late final _Translations$lending$uk lending = _Translations$lending$uk._(_root);
 	@override late final _Translations$audiobook$uk audiobook = _Translations$audiobook$uk._(_root);
@@ -3080,6 +3081,143 @@ class _Translations$platform$uk extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Виберіть зображення з фототеки для обкладинок медіафайлів.';
 	@override String get cameraPermission => 'Сканувати QR-коди, щоб з\'єднати Companion Remote.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$uk extends Translations$universalMedia$en {
+	_Translations$universalMedia$uk._(TranslationsUk root) : this._root = root, super.internal(root);
+
+	final TranslationsUk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Відкриті медіа';
+	@override String get shortcutHelp => 'Передайте посилання, перелік або файл для цієї сесії.';
+	@override String get intro => 'Відкрийте посилання, перелік або файл. Playback використовує стандартний гравець PlezyNG і не додає історії до вашої бібліотеки.';
+	@override String get openWhat => 'Що ви хотіли б відкрити?';
+	@override String get stream => 'Потік адреси';
+	@override String get playlist => 'Ігровий список';
+	@override String get files => 'Файли пристроїв';
+	@override String get favorites => 'Збережений потік улюблених';
+	@override String get address => 'Медіа адреса';
+	@override String get addressHelp => 'URL-адреси з визнаними параметрами акредитації або підпису використовуються тільки для цієї сесії і не можуть бути збережені як улюблені.';
+	@override String get displayName => 'Показати назву (опціонально)';
+	@override String get displayNameHelp => 'Виберіть коротке ім\'я для гравця і системних медіа-контролів.';
+	@override String get allowHttp => 'Дозволити нешифровану HTTP-зв\'язок';
+	@override String get allowHttpHelp => 'HTTP не шифрує зв\'язок. дозволяйте його тільки на надійній мережі. використовуйте HTTPS, коли це можливо.';
+	@override String get advancedProtocols => 'MPV тільки: введіть адресу RTSP, RTMP/RTMPS, UDP або RTP. Ці адреси не можуть бути збережені як улюблені.';
+	@override String get liveStream => 'Лікуйте як живі';
+	@override String get liveStreamHelp => 'Використовуйте це для прямого відео або радіо. Пристрій приховує часовий ряд, скачати кнопки, і опція йти на час. Відключити його для запису.';
+	@override String get privateSession => 'Тільки цей відгук використовує адресу. Зберегти улюблений кваліфікований потік, щоб зберегти його в цьому профілі.';
+	@override String get saveFavorite => 'Зберегти улюблений';
+	@override String get playNow => 'Грати зараз';
+	@override String get favoriteSaved => 'Попередня статтяПопулярні потоки збереглися до цього профілю';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
+		one: 'Завантажити ${count} непідтримлений або небезпечний вхід списку переглядів.',
+		few: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.',
+		many: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.',
+		other: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.',
+	);
+	@override String get playlistAddress => 'Адреса Playlist';
+	@override String get playlistAddressHelp => 'Відкрийте перелік M3U, M3u8 або PLS з веб-адреси. прямий потік посилань не зберігає перелік.';
+	@override String get choosePlaylist => 'Вибір файлу Playlist';
+	@override String get openPlaylist => 'Відкритий playlist';
+	@override String get playlistFormatsHelp => 'Список перегляду може містити до 1000 елементів і 2 Мб. HLS відкривається як потоки, так що гравець може вибрати якість.';
+	@override String get noFavorites => 'Попередня статтяКто чего не любить?Фаворити залишаються в цьому профілі.';
+	@override String get removeFavorite => 'Зняти потік улюблений';
+	@override String get filesHelp => 'Виберіть аудіо, відео або файли ISO для тимчасового перегляду. Файли та URL-адреси не додаються до історії бібліотеки.';
+	@override String get chooseFiles => 'Вибір файлів';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
+		one: '1 Вибрані файли',
+		few: '${count} вибрані файли',
+		many: '${count} вибрані файли',
+		other: '${count} вибрані файли',
+	);
+	@override String get wifiTransfer => 'Завантажити файли через Wi-Fi';
+	@override String get wifiTransferHelp => 'Передача підтримуваних файлів з браузера в тій же надійній мережі.';
+	@override String get wifiTransferIntro => 'Відкрийте цю адресу в браузері на іншому пристрої. Виберіть файли, щоб додати їх до бібліотеки файлів та книг цього пристрою.';
+	@override String get wifiTransferPrivacy => 'Цей пристрій отримує файли через вашу локальну мережу.Кожен, хто знає цю адресу, може відправити файли до припинення передачі або адреса закінчується після 15 хвилин.Максимум: 100 файлів, 4 ГБ за файл, 10 ГБ в цілому.';
+	@override String get wifiTransferStarting => 'Підготовка приватного, тимчасового перевезення...';
+	@override String get wifiTransferUnavailable => 'Перевірте доступ до локальної мережі і спробуйте знову.';
+	@override String get openThisAddress => 'Відкрийте одну з цих адресів на пристрої відправлення';
+	@override String get copyAddress => 'Копія адреси передачі';
+	@override String get addressCopied => 'Передача адреси копіюється';
+	@override String transferExpires({required Object time}) => 'Ця адреса закінчується в ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
+		one: 'Завантажити файл ${count}',
+		few: 'Файли ${count} отримані',
+		many: 'Файли ${count} отримані',
+		other: 'Файли ${count} отримані',
+	);
+	@override String uploadedData({required Object size}) => 'Завантажити ${size}';
+	@override String get stopTransfer => 'Заборона передачі та недійсний адрес';
+	@override String get startTransfer => 'Початок трансферу';
+	@override String get wifiImportedFiles => 'Wi-Fi перевезення';
+	@override String get wifiBrowserTitle => 'Надіслати файли на PlezyNG';
+	@override String get wifiBrowserIntro => 'Виберіть аудіо, відео, електронну книгу або комедійні файли для відправлення. Файли зберігаються в бібліотеці файлів і книг цього пристрою. Максимальна кількість: 100 файлів, 4 ГБ на файл, 10 ГБ загалом.';
+	@override String get uploadFilesLabel => 'Файли для відправлення';
+	@override String get uploadSelected => 'Завантажити вибрані файли';
+	@override String get uploadSelectFirst => 'Перш за все, виберіть один або кілька файлів.';
+	@override String get uploading => 'відправлення';
+	@override String get uploadComplete => 'Файл додано до PlezyNG.';
+	@override String get uploadFailed => 'Файл не може бути доданий. тримайте цю сторінку відкритою і спробуйте знову.';
+	@override String get liveCue => 'Живий';
+	@override String get liveSession => 'Живий потік';
+	@override String get liveCueHelp => 'Для відео або радіо в прямому ефірі додаток приховує час і скачати кнопки. він не зберігає адресу або переглядає історію.';
+	@override String get sessionOnly => 'Цей плей-бак є сеансом тільки';
+	@override String get sessionOnlyHelp => 'Playback ніколи не зберігає прогрес або історію. Зберегти потік як улюблений, щоб зберегти його в цьому профілі, якщо він підходить.';
+	@override String get pictureAdjustments => 'Фоторедагування';
+	@override String get pictureHelp => 'Ці зміни зображення впливають тільки на цей відгук. вони перезавантажуються, коли відгуки закінчуються.';
+	@override String get resetPicture => 'Реставрація фото';
+	@override String get brightness => 'Яскравість';
+	@override String get contrast => 'Контраст';
+	@override String get gamma => 'Гамма';
+	@override String get hue => 'Чайка';
+	@override String get saturation => 'Сатурн';
+	@override String get view360 => 'Прямий перегляд для 360° відео';
+	@override String get view360Help => 'Використовуйте це для одноразового 360-градусного відео. MPV потребує фільтру FFmpeg v360 для цього перегляду.';
+	@override String get view360Unavailable => 'Цей mpv-будівель не міг застосовувати фільтр 360 градусів.';
+	@override String get view360Yaw => 'Горизонтальний погляд';
+	@override String get view360Pitch => 'Вертикальний погляд';
+	@override String get view360FieldOfView => 'Поля зору';
+	@override String get recordStream => 'Рекорд живого потоку';
+	@override String get stopRecording => 'Залишити і зберегти запис';
+	@override String get recordingStarted => 'Реєстрація активна.Leaving playback stops and saves the recording.';
+	@override String get recordingSaved => 'Реєстрація завершена і збережена.';
+	@override String get recordingActive => 'Зареєструватися на цьому пристрої. залишити відтворення зупиняється і збереже його.';
+	@override String get recordingFormatHelp => 'Для відео, виберіть MKV або MPEG-TS. для аудіо, вибрати MKA або MKV.';
+	@override String get replaceRecordingTitle => 'Замінити цей запис?';
+	@override String get replaceRecordingHelp => 'PlezyNG відновлює існуючий файл під час запису. якщо він не може зберегти новий запис, Plezy NG відновляє резервну копію.';
+	@override String get replaceRecording => 'Заміна файлів';
+	@override String get discHelp => 'Відкрийте диск в оптичному дисках цього комп\'ютера. Ви також можете відкрити зображення ISO з файлів пристрою.';
+	@override String get discs => 'Оптичний диск';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Блю-рей';
+	@override String get audioCd => 'аудіо CD';
+	@override String get discAvailability => 'Дисковий відтворювач потребує сумісного MPV-буду, підтримуваного диска і дозволу операційної системи.';
+	@override String get converterTitle => 'Конвертувати локальний медіа-файл';
+	@override String get converterHelp => 'Використовуйте FFmpeg для створення MP4, M4A або MP3 копії.';
+	@override String get converterIntro => 'Конвертуйте місцевий аудіо- або відеофайл в формат, який працює на кількох пристроях.';
+	@override String get converterPrivacy => 'FFmpeg повинен бути встановлений на цьому комп\'ютері. конверсія читає тільки місцеві файли. вона не завантажує потоки або видаляє DRM.';
+	@override String get converterChooseInput => 'Виберіть локальний медіа-файл';
+	@override String get converterFormat => 'Формат виходу';
+	@override String get converterMp4 => 'MP4 · H.264 і AAC';
+	@override String get converterM4a => 'M4A · AAC аудіо';
+	@override String get converterMp3 => 'MP3 · аудіо';
+	@override String get converterSaveAs => 'Зберегти конвертовані медіа як';
+	@override String get converterExtensionMismatch => 'Виберіть прізвище з вибраним розширенням.';
+	@override String get converterUnsupportedInput => 'Виберіть аудіо або відеофайл.';
+	@override String get converterLocalOnly => 'Вибраний файл не доступний як місцевий маршрут пристрою.';
+	@override String get converterReplaceTitle => 'Замінити цей файл?';
+	@override String get converterReplaceHelp => 'PlezyNG відновлює існуючий файл, поки конвертована копія не буде збережена.';
+	@override String get converterStarting => 'Починаючи з FFmpeg...';
+	@override String get converterProgress => 'Перетворення на цей комп\'ютер ...';
+	@override String get converterComplete => 'Конвертація завершена. новий файл готовий.';
+	@override String get converterFfmpegMissing => 'Налаштуйте FFmpeg з підтримкою H.264, AAC і MP3, а потім спробуйте знову.';
+	@override String get converterFailed => 'Перевірте, чи можна читати джерело файлу і дестинація має достатньо вільного простору.';
+	@override String get converterCancelled => 'Конвертація скасована. неповний результат був видалений.';
+	@override String get converterDesktopOnly => 'Місцева конверсія доступна на робочих комп\'ютерах з встановленим FFmpeg.';
+	@override String get converterStart => 'Конвертація файлів';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$uk extends Translations$fileSources$en {
@@ -7656,6 +7794,118 @@ extension on TranslationsUk {
 			'platform.locationPermission' => 'PlezyNG використовує доступ до геопозиції, коли iOS вимагає його для виявлення локальної мережі та підключення до ваших медіасерверів.',
 			'platform.photoLibraryPermission' => 'Виберіть зображення з фототеки для обкладинок медіафайлів.',
 			'platform.cameraPermission' => 'Сканувати QR-коди, щоб з\'єднати Companion Remote.',
+			'universalMedia.title' => 'Відкриті медіа',
+			'universalMedia.shortcutHelp' => 'Передайте посилання, перелік або файл для цієї сесії.',
+			'universalMedia.intro' => 'Відкрийте посилання, перелік або файл. Playback використовує стандартний гравець PlezyNG і не додає історії до вашої бібліотеки.',
+			'universalMedia.openWhat' => 'Що ви хотіли б відкрити?',
+			'universalMedia.stream' => 'Потік адреси',
+			'universalMedia.playlist' => 'Ігровий список',
+			'universalMedia.files' => 'Файли пристроїв',
+			'universalMedia.favorites' => 'Збережений потік улюблених',
+			'universalMedia.address' => 'Медіа адреса',
+			'universalMedia.addressHelp' => 'URL-адреси з визнаними параметрами акредитації або підпису використовуються тільки для цієї сесії і не можуть бути збережені як улюблені.',
+			'universalMedia.displayName' => 'Показати назву (опціонально)',
+			'universalMedia.displayNameHelp' => 'Виберіть коротке ім\'я для гравця і системних медіа-контролів.',
+			'universalMedia.allowHttp' => 'Дозволити нешифровану HTTP-зв\'язок',
+			'universalMedia.allowHttpHelp' => 'HTTP не шифрує зв\'язок. дозволяйте його тільки на надійній мережі. використовуйте HTTPS, коли це можливо.',
+			'universalMedia.advancedProtocols' => 'MPV тільки: введіть адресу RTSP, RTMP/RTMPS, UDP або RTP. Ці адреси не можуть бути збережені як улюблені.',
+			'universalMedia.liveStream' => 'Лікуйте як живі',
+			'universalMedia.liveStreamHelp' => 'Використовуйте це для прямого відео або радіо. Пристрій приховує часовий ряд, скачати кнопки, і опція йти на час. Відключити його для запису.',
+			'universalMedia.privateSession' => 'Тільки цей відгук використовує адресу. Зберегти улюблений кваліфікований потік, щоб зберегти його в цьому профілі.',
+			'universalMedia.saveFavorite' => 'Зберегти улюблений',
+			'universalMedia.playNow' => 'Грати зараз',
+			'universalMedia.favoriteSaved' => 'Попередня статтяПопулярні потоки збереглися до цього профілю',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити ${count} непідтримлений або небезпечний вхід списку переглядів.', few: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', many: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', other: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', ),
+			'universalMedia.playlistAddress' => 'Адреса Playlist',
+			'universalMedia.playlistAddressHelp' => 'Відкрийте перелік M3U, M3u8 або PLS з веб-адреси. прямий потік посилань не зберігає перелік.',
+			'universalMedia.choosePlaylist' => 'Вибір файлу Playlist',
+			'universalMedia.openPlaylist' => 'Відкритий playlist',
+			'universalMedia.playlistFormatsHelp' => 'Список перегляду може містити до 1000 елементів і 2 Мб. HLS відкривається як потоки, так що гравець може вибрати якість.',
+			'universalMedia.noFavorites' => 'Попередня статтяКто чего не любить?Фаворити залишаються в цьому профілі.',
+			'universalMedia.removeFavorite' => 'Зняти потік улюблений',
+			'universalMedia.filesHelp' => 'Виберіть аудіо, відео або файли ISO для тимчасового перегляду. Файли та URL-адреси не додаються до історії бібліотеки.',
+			'universalMedia.chooseFiles' => 'Вибір файлів',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: '1 Вибрані файли', few: '${count} вибрані файли', many: '${count} вибрані файли', other: '${count} вибрані файли', ),
+			'universalMedia.wifiTransfer' => 'Завантажити файли через Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Передача підтримуваних файлів з браузера в тій же надійній мережі.',
+			'universalMedia.wifiTransferIntro' => 'Відкрийте цю адресу в браузері на іншому пристрої. Виберіть файли, щоб додати їх до бібліотеки файлів та книг цього пристрою.',
+			'universalMedia.wifiTransferPrivacy' => 'Цей пристрій отримує файли через вашу локальну мережу.Кожен, хто знає цю адресу, може відправити файли до припинення передачі або адреса закінчується після 15 хвилин.Максимум: 100 файлів, 4 ГБ за файл, 10 ГБ в цілому.',
+			'universalMedia.wifiTransferStarting' => 'Підготовка приватного, тимчасового перевезення...',
+			'universalMedia.wifiTransferUnavailable' => 'Перевірте доступ до локальної мережі і спробуйте знову.',
+			'universalMedia.openThisAddress' => 'Відкрийте одну з цих адресів на пристрої відправлення',
+			'universalMedia.copyAddress' => 'Копія адреси передачі',
+			'universalMedia.addressCopied' => 'Передача адреси копіюється',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Ця адреса закінчується в ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити файл ${count}', few: 'Файли ${count} отримані', many: 'Файли ${count} отримані', other: 'Файли ${count} отримані', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Завантажити ${size}',
+			'universalMedia.stopTransfer' => 'Заборона передачі та недійсний адрес',
+			'universalMedia.startTransfer' => 'Початок трансферу',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi перевезення',
+			'universalMedia.wifiBrowserTitle' => 'Надіслати файли на PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Виберіть аудіо, відео, електронну книгу або комедійні файли для відправлення. Файли зберігаються в бібліотеці файлів і книг цього пристрою. Максимальна кількість: 100 файлів, 4 ГБ на файл, 10 ГБ загалом.',
+			'universalMedia.uploadFilesLabel' => 'Файли для відправлення',
+			'universalMedia.uploadSelected' => 'Завантажити вибрані файли',
+			'universalMedia.uploadSelectFirst' => 'Перш за все, виберіть один або кілька файлів.',
+			'universalMedia.uploading' => 'відправлення',
+			'universalMedia.uploadComplete' => 'Файл додано до PlezyNG.',
+			'universalMedia.uploadFailed' => 'Файл не може бути доданий. тримайте цю сторінку відкритою і спробуйте знову.',
+			'universalMedia.liveCue' => 'Живий',
+			'universalMedia.liveSession' => 'Живий потік',
+			'universalMedia.liveCueHelp' => 'Для відео або радіо в прямому ефірі додаток приховує час і скачати кнопки. він не зберігає адресу або переглядає історію.',
+			'universalMedia.sessionOnly' => 'Цей плей-бак є сеансом тільки',
+			'universalMedia.sessionOnlyHelp' => 'Playback ніколи не зберігає прогрес або історію. Зберегти потік як улюблений, щоб зберегти його в цьому профілі, якщо він підходить.',
+			'universalMedia.pictureAdjustments' => 'Фоторедагування',
+			'universalMedia.pictureHelp' => 'Ці зміни зображення впливають тільки на цей відгук. вони перезавантажуються, коли відгуки закінчуються.',
+			'universalMedia.resetPicture' => 'Реставрація фото',
+			'universalMedia.brightness' => 'Яскравість',
+			'universalMedia.contrast' => 'Контраст',
+			'universalMedia.gamma' => 'Гамма',
+			'universalMedia.hue' => 'Чайка',
+			'universalMedia.saturation' => 'Сатурн',
+			'universalMedia.view360' => 'Прямий перегляд для 360° відео',
+			'universalMedia.view360Help' => 'Використовуйте це для одноразового 360-градусного відео. MPV потребує фільтру FFmpeg v360 для цього перегляду.',
+			'universalMedia.view360Unavailable' => 'Цей mpv-будівель не міг застосовувати фільтр 360 градусів.',
+			'universalMedia.view360Yaw' => 'Горизонтальний погляд',
+			'universalMedia.view360Pitch' => 'Вертикальний погляд',
+			'universalMedia.view360FieldOfView' => 'Поля зору',
+			'universalMedia.recordStream' => 'Рекорд живого потоку',
+			'universalMedia.stopRecording' => 'Залишити і зберегти запис',
+			'universalMedia.recordingStarted' => 'Реєстрація активна.Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => 'Реєстрація завершена і збережена.',
+			'universalMedia.recordingActive' => 'Зареєструватися на цьому пристрої. залишити відтворення зупиняється і збереже його.',
+			'universalMedia.recordingFormatHelp' => 'Для відео, виберіть MKV або MPEG-TS. для аудіо, вибрати MKA або MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Замінити цей запис?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG відновлює існуючий файл під час запису. якщо він не може зберегти новий запис, Plezy NG відновляє резервну копію.',
+			'universalMedia.replaceRecording' => 'Заміна файлів',
+			'universalMedia.discHelp' => 'Відкрийте диск в оптичному дисках цього комп\'ютера. Ви також можете відкрити зображення ISO з файлів пристрою.',
+			'universalMedia.discs' => 'Оптичний диск',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Блю-рей',
+			'universalMedia.audioCd' => 'аудіо CD',
+			'universalMedia.discAvailability' => 'Дисковий відтворювач потребує сумісного MPV-буду, підтримуваного диска і дозволу операційної системи.',
+			'universalMedia.converterTitle' => 'Конвертувати локальний медіа-файл',
+			'universalMedia.converterHelp' => 'Використовуйте FFmpeg для створення MP4, M4A або MP3 копії.',
+			'universalMedia.converterIntro' => 'Конвертуйте місцевий аудіо- або відеофайл в формат, який працює на кількох пристроях.',
+			'universalMedia.converterPrivacy' => 'FFmpeg повинен бути встановлений на цьому комп\'ютері. конверсія читає тільки місцеві файли. вона не завантажує потоки або видаляє DRM.',
+			'universalMedia.converterChooseInput' => 'Виберіть локальний медіа-файл',
+			'universalMedia.converterFormat' => 'Формат виходу',
+			'universalMedia.converterMp4' => 'MP4 · H.264 і AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC аудіо',
+			'universalMedia.converterMp3' => 'MP3 · аудіо',
+			'universalMedia.converterSaveAs' => 'Зберегти конвертовані медіа як',
+			'universalMedia.converterExtensionMismatch' => 'Виберіть прізвище з вибраним розширенням.',
+			'universalMedia.converterUnsupportedInput' => 'Виберіть аудіо або відеофайл.',
+			'universalMedia.converterLocalOnly' => 'Вибраний файл не доступний як місцевий маршрут пристрою.',
+			'universalMedia.converterReplaceTitle' => 'Замінити цей файл?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG відновлює існуючий файл, поки конвертована копія не буде збережена.',
+			'universalMedia.converterStarting' => 'Починаючи з FFmpeg...',
+			'universalMedia.converterProgress' => 'Перетворення на цей комп\'ютер ...',
+			'universalMedia.converterComplete' => 'Конвертація завершена. новий файл готовий.',
+			'universalMedia.converterFfmpegMissing' => 'Налаштуйте FFmpeg з підтримкою H.264, AAC і MP3, а потім спробуйте знову.',
+			'universalMedia.converterFailed' => 'Перевірте, чи можна читати джерело файлу і дестинація має достатньо вільного простору.',
+			'universalMedia.converterCancelled' => 'Конвертація скасована. неповний результат був видалений.',
+			'universalMedia.converterDesktopOnly' => 'Місцева конверсія доступна на робочих комп\'ютерах з встановленим FFmpeg.',
+			'universalMedia.converterStart' => 'Конвертація файлів',
 			'fileSources.title' => 'Файли та книги',
 			'fileSources.subtitle' => 'Читати, слухати і спостерігати за своїми файлами.',
 			'fileSources.add' => 'Додати джерело',
