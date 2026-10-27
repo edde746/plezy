@@ -7,7 +7,7 @@ import '../providers/download_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/watch_actions.dart';
 import 'app_logger.dart';
-import 'dialogs.dart';
+import 'download_deletion_confirmation.dart';
 import 'error_message_utils.dart';
 import 'snackbar_helper.dart';
 
@@ -47,7 +47,7 @@ Future<void> setDownloadsFolderWatched(BuildContext context, MediaItem folder, {
 /// Ask, then delete every downloaded title in [folder]. Returns whether the
 /// downloads were deleted.
 Future<bool> deleteDownloadsFolder(BuildContext context, MediaItem folder) async {
-  final confirmed = await showDeleteConfirmation(
+  final confirmed = await confirmDownloadDeletion(
     context,
     title: t.downloads.deleteCollectionDownloads,
     message: t.downloads.deleteCollectionDownloadsConfirm(title: folder.displayTitle),

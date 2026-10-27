@@ -5,11 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/focusable_slider.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
-import '../../utils/formatters.dart';
 import '../../mpv/mpv.dart';
+import '../../multiview/source_playback_workspace_surface.dart';
+import '../../multiview/workspace_controller.dart';
+import '../../multiview/workspace_models.dart';
+import '../../utils/formatters.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -37,9 +42,15 @@ class SourcePlayerScreen extends StatefulWidget {
 
 class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   SourcePlayback? _session;
+  MultiviewWorkspaceController? _workspace;
+  MultiviewWorkspaceController? _observedWorkspace;
+  String? _workspaceSessionId;
+  bool _workspaceDetached = false;
+  bool _autoJoinScheduled = false;
   bool _full = false;
   double? _dragPosition;
   final _fullscreen = FullscreenStateManager();
+
   @override
   void initState() {
     super.initState();
@@ -49,16 +60,184 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _session ??= context.read<SourcePlayback>();
-    _session!.fullPlayerVisible = true;
+    final playback = context.read<SourcePlayback>();
+    if (_session != playback) {
+      _session?.removeListener(_onPlaybackChanged);
+      _session = playback;
+      playback.addListener(_onPlaybackChanged);
+    }
+    playback.fullPlayerVisible = true;
+
+    final workspace = context.read<MultiviewWorkspaceController>();
+    if (_observedWorkspace != workspace) {
+      _observedWorkspace?.removeListener(_scheduleWorkspaceAutoJoin);
+      _observedWorkspace = workspace;
+      workspace.addListener(_scheduleWorkspaceAutoJoin);
+    }
+    _attachToExistingWorkspaceSession(playback, workspace);
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  String? _stableWorkspaceSessionId(SourcePlayback playback) {
+    final progress = playback.progress;
+    if (progress == null) return null;
+    return "source:${sourceDigest('${progress.key}:${playback.mode.name}')}";
+  }
+
+  void _attachToExistingWorkspaceSession(SourcePlayback playback, MultiviewWorkspaceController workspace) {
+    final id = _stableWorkspaceSessionId(playback);
+    if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
+    _workspace = workspace;
+    _workspaceSessionId = id;
+    _workspaceDetached = workspace.visibleSessions.any((item) => item.descriptor.id == id);
+    playback.fullPlayerVisible = true;
+  }
+
+  void _scheduleWorkspaceAutoJoin() {
+    final workspace = _observedWorkspace;
+    final playback = _session;
+    if (!mounted ||
+        _autoJoinScheduled ||
+        playback == null ||
+        !playback.active ||
+        _workspaceSessionId != null ||
+        workspace == null ||
+        workspace.sessionCount == 0) {
+      return;
+    }
+    _autoJoinScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoJoinScheduled = false;
+      if (mounted &&
+          _session?.active == true &&
+          _workspaceSessionId == null &&
+          (_observedWorkspace?.sessionCount ?? 0) > 0) {
+        _toggleSourceWorkspace();
+      }
+    });
+  }
+
+  void _onPlaybackChanged() {
+    final playback = _session;
+    if (!mounted || playback == null) return;
+    var workspaceChanged = false;
+    if (!playback.active && _workspaceSessionId != null) {
+      final id = _workspaceSessionId!;
+      _workspace?.unregister(id);
+      _workspaceSessionId = null;
+      _workspace = null;
+      _workspaceDetached = false;
+      playback.fullPlayerVisible = false;
+      workspaceChanged = true;
+    }
+    _scheduleWorkspaceAutoJoin();
+    if (workspaceChanged && mounted) setState(() {});
+  }
+
+  void _toggleSourceWorkspace() {
+    final playback = _session;
+    if (playback == null || !playback.active) return;
+    final controller = _workspace ?? context.read<MultiviewWorkspaceController>();
+    final existingId = _workspaceSessionId;
+    if (existingId != null) {
+      if (_workspaceDetached) {
+        if (controller.isRestored(existingId)) {
+          controller.showSessionInWorkspace(existingId);
+          setState(() => _workspaceDetached = true);
+        } else {
+          controller.restore(existingId);
+        }
+      } else if (controller.showSessionInWorkspace(existingId)) {
+        setState(() => _workspaceDetached = true);
+      }
+      return;
+    }
+
+    final id = _stableWorkspaceSessionId(playback);
+    if (id == null) return;
+    final navigator = Navigator.of(context);
+    final sourceRoute = ModalRoute.of(context);
+    final entry = playback.entry;
+    if (entry == null) return;
+    final registration = WorkspaceSurfaceRegistration(
+      descriptor: WorkspaceSessionDescriptor(
+        id: id,
+        kind: playback.video ? MultiviewMediaKind.video : MultiviewMediaKind.audiobook,
+        title: entry.displayTitle.trim().isEmpty ? t.common.unknown : entry.displayTitle,
+        subtitle: playback.currentChapter?.title ?? (entry.narrator.isNotEmpty ? entry.narrator : entry.author),
+        mediaKey: playback.progress?.key,
+        progressOwner: playback.progress?.key,
+        hasAudio: true,
+        hasVideo: playback.video,
+        openedAt: DateTime.now(),
+      ),
+      videoPlayerSlot: playback.videoPlayerSlot,
+      buildSurface: (_) => SourcePlaybackWorkspaceSurface(playback: playback, controller: controller, sessionId: id),
+      onRestore: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _workspaceSessionId != id) return;
+          setState(() => _workspaceDetached = false);
+          final route = sourceRoute;
+          if (navigator.mounted && route?.isActive == true) {
+            navigator.popUntil((candidate) => identical(candidate, route));
+          }
+        });
+      },
+      onClose: () {
+        unawaited(() async {
+          try {
+            await playback.stop();
+          } catch (error, stackTrace) {
+            debugPrint('Source workspace close failed: $error\n$stackTrace');
+          } finally {
+            playback.fullPlayerVisible = false;
+            final route = sourceRoute;
+            if (navigator.mounted && route?.isActive == true) {
+              if (route!.isCurrent) {
+                navigator.pop();
+              } else {
+                navigator.removeRoute(route);
+              }
+            }
+          }
+        }());
+      },
+      onAudioOwnershipChanged: playback.setWorkspaceAudioEnabled,
+    );
+
+    _workspace = controller;
+    _workspaceSessionId = id;
+    _workspaceDetached = true;
+    playback.fullPlayerVisible = true;
+    if (!controller.register(registration)) {
+      _workspace = null;
+      _workspaceSessionId = null;
+      _workspaceDetached = false;
+      playback.fullPlayerVisible = false;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(t.videoControls.pipFailed)));
+      return;
+    }
+    setState(() {});
   }
 
   @override
   void dispose() {
-    final s = _session;
-    if (s != null) {
-      s.fullPlayerVisible = false;
-      if (s.video) unawaited(s.stop());
+    _session?.removeListener(_onPlaybackChanged);
+    _observedWorkspace?.removeListener(_scheduleWorkspaceAutoJoin);
+    final playback = _session;
+    final id = _workspaceSessionId;
+    if (id != null) _workspace?.unregister(id);
+    if (playback != null) {
+      playback.fullPlayerVisible = false;
+      if (playback.video) {
+        unawaited(() async {
+          try {
+            await playback.stop();
+          } catch (error, stackTrace) {
+            debugPrint('Source player route close failed: $error\n$stackTrace');
+          }
+        }());
+      }
     }
     if (_full) unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     if (_fullscreen.scopeOwnsFullscreen) unawaited(_fullscreen.exitFullscreen());
@@ -94,7 +273,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               onPressed: () => Navigator.pop(dialogContext, true),
               label: '${t.common.edit} ${t.fileSources.source}',
               isPrimary: true,
-              icon: const Icon(Icons.edit_rounded),
+              icon: const AppIcon(Symbols.edit_rounded),
             ),
           ],
         ),
@@ -370,10 +549,23 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               },
               icon: const AppIcon(Symbols.fullscreen_rounded),
             ),
+          if (s.video && _full)
+            FocusableButton(
+              autoScroll: false,
+              onPressed: _toggleSourceWorkspace,
+              child: IconButton(
+                tooltip: _workspaceDetached ? t.videoControls.returnToFullPlayer : t.videoControls.openMiniPlayer,
+                onPressed: _toggleSourceWorkspace,
+                icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+              ),
+            ),
         ],
       ),
       if (s.failure != null)
-        Padding(padding: const EdgeInsets.all(16), child: Text(sourceFailureText(SourceException(s.failure!)))),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: SourceErrorMessage(message: sourceFailureText(SourceException(s.failure!))),
+        ),
     ],
   );
   Future<String?> _entryDialog({
@@ -435,10 +627,27 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
     final core = s.player;
     final video = s.video && core != null
-        ? AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Video(player: core),
-          )
+        ? _workspaceDetached
+              ? AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ColoredBox(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const AppIcon(Symbols.picture_in_picture_alt_rounded, size: 36, color: Colors.white),
+                          const SizedBox(height: 8),
+                          Text(t.videoControls.pipButton, style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Video(player: core),
+                )
         : null;
     return Focus(
       onKeyEvent: (_, e) {
@@ -467,9 +676,20 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               ),
             )
           : FocusedScrollScaffold(
-              title: Text(s.entry!.title),
+              title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
+                FocusableButton(
+                  autoScroll: false,
+                  onPressed: _toggleSourceWorkspace,
+                  child: IconButton(
+                    tooltip: _workspaceDetached
+                        ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                        : t.videoControls.openMiniPlayer,
+                    onPressed: _toggleSourceWorkspace,
+                    icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                  ),
+                ),
                 IconButton(
                   tooltip: t.fileSources.stop,
                   onPressed: () => sourceAction(context, () async {
@@ -504,15 +724,26 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    s.entry!.displayTitle,
+                                    isolateDisplayText(s.entry!.displayTitle),
                                     style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.center,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (s.entry!.author.isNotEmpty) Text(s.entry!.author),
+                                  if (s.entry!.author.isNotEmpty)
+                                    Text(
+                                      isolateDisplayText(s.entry!.author),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   if (s.currentChapter != null)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 8),
-                                      child: Text(s.currentChapter!.title),
+                                      child: Text(
+                                        isolateDisplayText(s.currentChapter!.title),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -531,7 +762,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     adaptiveSheet: true,
                                     entriesBuilder: (_) => [
                                       for (final track in core.state.tracks.audio)
-                                        AppMenuItem(value: track.id, label: track.title ?? track.language ?? track.id),
+                                        AppMenuItem(
+                                          value: track.id,
+                                          label: isolateDisplayText(track.title ?? track.language ?? track.id),
+                                        ),
                                     ],
                                     onSelected: (id) =>
                                         sourceAction(context, () => core.selectAudioTrack(AudioTrack(id: id))),
@@ -543,7 +777,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     entriesBuilder: (_) => [
                                       AppMenuItem(value: 'no', label: t.fileSources.none),
                                       for (final track in core.state.tracks.subtitle)
-                                        AppMenuItem(value: track.id, label: track.title ?? track.language ?? track.id),
+                                        AppMenuItem(
+                                          value: track.id,
+                                          label: isolateDisplayText(track.title ?? track.language ?? track.id),
+                                        ),
                                     ],
                                     onSelected: (id) =>
                                         sourceAction(context, () => core.selectSubtitleTrack(SubtitleTrack(id: id))),
@@ -561,7 +798,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   const SizedBox(height: 12),
                                   for (var i = 0; i < s.chapters.length; i++)
                                     SourceTile(
-                                      title: s.chapters[i].title,
+                                      title: isolateDisplayText(s.chapters[i].title),
                                       subtitle: sourceTime(s.chapters[i].startMs),
                                       icon: Symbols.format_list_numbered_rounded,
                                       index: i,
@@ -685,9 +922,13 @@ class SourceMiniPlayer extends StatelessWidget {
                       Expanded(
                         child: ListTile(
                           leading: const AppIcon(Symbols.headphones_rounded),
-                          title: Text(s.entry!.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          title: Text(
+                            isolateDisplayText(s.entry!.displayTitle),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           subtitle: Text(
-                            s.currentChapter?.title ?? s.entry!.author,
+                            isolateDisplayText(s.currentChapter?.title ?? s.entry!.author),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

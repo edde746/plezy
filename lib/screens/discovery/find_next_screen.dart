@@ -9,8 +9,8 @@ import 'package:provider/provider.dart';
 import '../../discovery/discovery_choice.dart';
 import '../../focus/focusable_button.dart';
 import '../../discovery/discovery_store.dart';
-import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -41,6 +41,7 @@ import '../../utils/media_image_helper.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'discovery_artwork.dart';
 import 'discovery_controls.dart';
@@ -634,10 +635,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 runSpacing: 8,
                 children: [
                   for (final item in _DiscoveryFamily.values)
-                    ChoiceChip(
-                      label: Text(_familyLabel(item)),
-                      selected: item == family,
-                      onSelected: (_) => setSheetState(() => family = item),
+                    FocusableButton(
+                      onPressed: () => setSheetState(() => family = item),
+                      autoScroll: false,
+                      child: ChoiceChip(
+                        label: Text(_familyLabel(item)),
+                        selected: item == family,
+                        onSelected: (_) => setSheetState(() => family = item),
+                      ),
                     ),
                 ],
               ),
@@ -648,26 +653,34 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 spacing: 8,
                 children: [
                   for (final item in <int?>[null, 20, 45, 90])
-                    ChoiceChip(
-                      label: Text(
-                        localizeDecimalDigits(switch (item) {
-                          null => t.discover.findNext.anyTime,
-                          20 => t.discover.findNext.twentyMinutes,
-                          45 => t.discover.findNext.fortyFiveMinutes,
-                          _ => t.discover.findNext.ninetyMinutes,
-                        }),
+                    FocusableButton(
+                      onPressed: () => setSheetState(() => maxMinutes = item),
+                      autoScroll: false,
+                      child: ChoiceChip(
+                        label: Text(
+                          localizeDecimalDigits(switch (item) {
+                            null => t.discover.findNext.anyTime,
+                            20 => t.discover.findNext.twentyMinutes,
+                            45 => t.discover.findNext.fortyFiveMinutes,
+                            _ => t.discover.findNext.ninetyMinutes,
+                          }),
+                        ),
+                        selected: item == maxMinutes,
+                        onSelected: (_) => setSheetState(() => maxMinutes = item),
                       ),
-                      selected: item == maxMinutes,
-                      onSelected: (_) => setSheetState(() => maxMinutes = item),
                     ),
                 ],
               ),
               const SizedBox(height: 20),
               Align(
                 alignment: AlignmentDirectional.centerEnd,
-                child: FilledButton(
+                child: FocusableButton(
                   onPressed: () => Navigator.of(sheetContext).pop((family: family, minutes: maxMinutes)),
-                  child: Text(t.discover.findNext.apply),
+                  useBackgroundFocus: true,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(sheetContext).pop((family: family, minutes: maxMinutes)),
+                    child: Text(t.discover.findNext.apply),
+                  ),
                 ),
               ),
             ],
@@ -1017,10 +1030,6 @@ class _FindNextScreenState extends State<FindNextScreen> {
   }
 
   Future<void> _showDetails(DiscoveryChoice choice) async {
-    if (choice.liveProgram != null && choice.liveChannel != null && choice.serverId != null) {
-      unawaited(_openLiveChoice(choice, detailsOnly: true));
-      return;
-    }
     await _openChoice(choice, detailsOnly: true);
   }
 
@@ -1155,7 +1164,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     title: isolateDisplayText(choice.title),
     subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).map(isolateDisplayText).join(' · '),
     facts: [_typeLabel(choice), _durationLabel(choice), if (choice.offlineReady) t.fileSources.offline].join(' · '),
-    summary: choice.summary,
+    summary: isolateDisplayText(choice.summary),
     artwork: _artwork(choice),
     artworkAspectRatio: _artworkAspectRatio(choice),
     enabled: !_committing,
@@ -1382,10 +1391,14 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
       appBar: AppBar(
         title: Text(t.discover.findNext.saved),
         actions: [
-          TextButton.icon(
+          FocusableButton(
             onPressed: _busy || !canUndo || profileChanged ? null : _undo,
-            icon: const AppIcon(Symbols.undo_rounded),
-            label: Text(t.discover.findNext.undo),
+            autoScroll: false,
+            child: TextButton.icon(
+              onPressed: _busy || !canUndo || profileChanged ? null : _undo,
+              icon: const AppIcon(Symbols.undo_rounded),
+              label: Text(t.discover.findNext.undo),
+            ),
           ),
         ],
       ),
@@ -1401,7 +1414,8 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final choice = savedChoices[index];
-                return ListTile(
+                return FocusableListTile(
+                  autofocus: index == 0,
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
                   title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(

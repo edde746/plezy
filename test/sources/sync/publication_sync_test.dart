@@ -140,7 +140,8 @@ void main() {
   test('different local profile and connection IDs resume same provider edition', () async {
     await position(repoA, 'profile-A', entryA, 60000);
     await runA();
-    expect(await repoA.pendingEvents('profile-A'), isEmpty);
+    // A cloud snapshot must not acknowledge writes still owed to the provider.
+    expect(await repoA.pendingEvents('profile-A'), hasLength(1));
     await runB();
     expect(await at(repoB, 'profile-B', entryB), 60000);
     expect(await repoB.allProgress('profile-A'), isEmpty);
@@ -252,7 +253,8 @@ void main() {
     );
     await repoA.saveAnnotation('profile-A', note(false));
     await runA();
-    expect(await repoA.pendingEvents('profile-A'), isEmpty);
+    // A cloud snapshot must not acknowledge writes still owed to the provider.
+    expect(await repoA.pendingEvents('profile-A'), hasLength(1));
     await runB();
     final imported = (await repoB.annotations('profile-B', entryB.key)).single;
     expect(imported.note, 'Remember this');
@@ -260,13 +262,14 @@ void main() {
     expect(imported.filePositionMs, 10000);
     await repoA.saveAnnotation('profile-A', note(true));
     await runA();
-    expect(await repoA.pendingEvents('profile-A'), isEmpty);
+    // A cloud snapshot must not acknowledge writes still owed to the provider.
+    expect(await repoA.pendingEvents('profile-A'), hasLength(1));
     await runB();
     await runA();
     expect(await repoB.annotations('profile-B', entryB.key), isEmpty);
     expect(a.conflicts, isEmpty);
   });
-  test('offline bookmark edits coalesce and only the published snapshot is acknowledged', () async {
+  test('offline bookmark edits coalesce while cloud publication retains provider writes', () async {
     BookAnnotation note(String text, int updatedAt) => BookAnnotation(
       id: 'note-queued',
       entryKey: entryA.key,
@@ -284,7 +287,13 @@ void main() {
     expect(pending.length, 1);
     expect(BookAnnotation.fromJson(sourceMap(jsonDecode(pending.single['payload'] as String))).note, 'final note');
     await runA();
-    expect(await repoA.pendingEvents('profile-A'), isEmpty);
+    // A cloud snapshot must not acknowledge writes still owed to the provider.
+    expect(await repoA.pendingEvents('profile-A'), pending);
+    final published = Map<String, String>.of(store.files);
+    await runA();
+    expect(store.files, published); // An unchanged snapshot is not republished.
+    await runB();
+    expect((await repoB.annotations('profile-B', entryB.key)).single.note, 'final note');
   });
   test('ebook and listening state coexist without conversion of percentage to time', () async {
     await position(repoA, 'profile-A', entryA, 60000);

@@ -69,8 +69,14 @@ class MediaDisplayCriteria {
   final int? width;
   final int? height;
   final int? doviProfile;
+
+  /// Positive Dolby Vision evidence without a reliable numeric profile.
+  final bool dolbyVisionPresent;
   final int? doviLevel;
   final int? doviCompatibilityId;
+  final bool? doviBaseLayerPresent;
+  final bool? doviEnhancementLayerPresent;
+  final bool? doviRpuPresent;
   final String? transfer;
   final String? primaries;
   final String? matrix;
@@ -80,8 +86,12 @@ class MediaDisplayCriteria {
     this.width,
     this.height,
     this.doviProfile,
+    this.dolbyVisionPresent = false,
     this.doviLevel,
     this.doviCompatibilityId,
+    this.doviBaseLayerPresent,
+    this.doviEnhancementLayerPresent,
+    this.doviRpuPresent,
     this.transfer,
     this.primaries,
     this.matrix,
@@ -92,8 +102,12 @@ class MediaDisplayCriteria {
     Object? width,
     Object? height,
     Object? doviProfile,
+    bool dolbyVisionPresent = false,
     Object? doviLevel,
     Object? doviCompatibilityId,
+    Object? doviBaseLayerPresent,
+    Object? doviEnhancementLayerPresent,
+    Object? doviRpuPresent,
     Object? transfer,
     Object? primaries,
     Object? matrix,
@@ -103,8 +117,12 @@ class MediaDisplayCriteria {
       width: flexibleInt(width),
       height: flexibleInt(height),
       doviProfile: flexibleInt(doviProfile),
+      dolbyVisionPresent: dolbyVisionPresent || (flexibleInt(doviProfile) ?? 0) > 0,
       doviLevel: flexibleInt(doviLevel),
       doviCompatibilityId: flexibleInt(doviCompatibilityId),
+      doviBaseLayerPresent: flexibleBoolNullable(doviBaseLayerPresent),
+      doviEnhancementLayerPresent: flexibleBoolNullable(doviEnhancementLayerPresent),
+      doviRpuPresent: flexibleBoolNullable(doviRpuPresent),
       transfer: _stringOrNull(transfer),
       primaries: _stringOrNull(primaries),
       matrix: _stringOrNull(matrix),
@@ -116,14 +134,20 @@ class MediaDisplayCriteria {
   bool get hasFrameRate => (fps ?? 0) > 0;
 
   bool get hasDisplayMetadata =>
-      (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
+      dolbyVisionPresent || (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
-  /// Whether the server said enough to describe a stream: a rate, or
-  /// dimensions plus color/DoVi tags.
-  bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);
+  /// True when the server supplied a DV profile or another explicit DV marker.
+  /// Generic color tags alone cannot distinguish DV from HDR10/HLG.
+  bool get hasDolbyVision => dolbyVisionPresent || (doviProfile ?? 0) > 0;
+
+  /// Whether the server said enough to describe a stream. A positive Dolby
+  /// Vision marker is sufficient for compatibility routing even when a
+  /// server omitted dimensions and frame rate; other display classifications
+  /// still need a rate or dimensions plus color metadata.
+  bool get isUsable => hasDolbyVision || hasFrameRate || (hasDimensions && hasDisplayMetadata);
 
   MediaDisplayColorType get colorType => classifyMediaDisplayColor(
-    isDolbyVision: (doviProfile ?? 0) > 0,
+    isDolbyVision: hasDolbyVision,
     doviCompatibilityId: doviCompatibilityId,
     transfer: transfer,
     primaries: primaries,

@@ -67,6 +67,7 @@ open class MpvPlayerPlugin(
 
   private val channels = PlayerChannelBinding(channelBase, this, this, tag)
   private var playerCore: MpvPlayerCore? = null
+  private var audioFocusEnabled = true
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
   private var applicationContext: Context? = null
@@ -98,9 +99,9 @@ open class MpvPlayerPlugin(
   // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
   // MpvPlayer's companion loads libmpv, so substituting both is the only way
   // a JVM test can drive this plugin's initialization path.
-  internal var createCore: (Context, Boolean, Float, String) -> MpvPlayerCore =
-    { context, hardwareDecoding, subtitleRenderScale, logLevel ->
-      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel)
+  internal var createCore: (Context, Boolean, Float, String, Boolean) -> MpvPlayerCore =
+    { context, hardwareDecoding, subtitleRenderScale, logLevel, experimentalDolbyVision ->
+      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel, experimentalDolbyVision)
     }
   internal var initializeCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
     core.initialize(onInitialized)
@@ -234,9 +235,11 @@ open class MpvPlayerPlugin(
       "observeProperty" -> handleObserveProperty(call, result)
       "command" -> handleCommand(call, result)
       "setVisible" -> handleSetVisible(call, result)
+      "setVideoRect" -> handleSetVideoRect(call, result)
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "setAudioFocusEnabled" -> handleSetAudioFocusEnabled(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
@@ -275,6 +278,7 @@ open class MpvPlayerPlugin(
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
     val logLevel = call.argument<String>("logLevel") ?: "warn"
+    val experimentalDolbyVision = call.argument<Boolean>("experimentalDolbyVision") ?: false
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
     val coreContext: Context? = if (audioOnly) applicationContext else activity
@@ -333,8 +337,9 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel).apply {
+        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel, experimentalDolbyVision).apply {
           delegate = this@MpvPlayerPlugin
+          setAudioFocusEnabled(audioFocusEnabled)
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
@@ -599,6 +604,22 @@ open class MpvPlayerPlugin(
     }
   }
 
+  private fun handleSetVideoRect(call: MethodCall, result: MethodChannel.Result) {
+    val left = call.argument<Number>("left")?.toInt()
+    val top = call.argument<Number>("top")?.toInt()
+    val right = call.argument<Number>("right")?.toInt()
+    val bottom = call.argument<Number>("bottom")?.toInt()
+    val devicePixelRatio = call.argument<Number>("devicePixelRatio")?.toDouble()
+    if (left == null || top == null || right == null || bottom == null ||
+      devicePixelRatio == null || !devicePixelRatio.isFinite() || devicePixelRatio <= 0.0
+    ) {
+      result.error("INVALID_ARGS", "Missing or invalid video rectangle", null)
+      return
+    }
+    playerCore?.setVideoRect(left, top, right, bottom, devicePixelRatio)
+    result.success(null)
+  }
+
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {
     val visible = call.argument<Boolean>("visible")
 
@@ -648,6 +669,17 @@ open class MpvPlayerPlugin(
     PlayerDebugLog.d(tag) { "requestAudioFocus" }
     val granted = playerCore?.requestAudioFocus() ?: false
     result.success(granted)
+  }
+
+  private fun handleSetAudioFocusEnabled(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    audioFocusEnabled = enabled
+    playerCore?.setAudioFocusEnabled(enabled)
+    result.success(null)
   }
 
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
@@ -736,3 +768,6 @@ open class MpvPlayerPlugin(
  * drop a second [MpvPlayerPlugin] registration.
  */
 class MpvAudioPlayerPlugin : MpvPlayerPlugin(channelBase = "com.plezy/mpv_audio_player", audioOnly = true)
+
+/** Independent MPV channel and core for the second retained workspace video. */
+class MpvWorkspacePlayerPlugin : MpvPlayerPlugin(channelBase = "com.plezy/mpv_player/workspace")

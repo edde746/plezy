@@ -16,7 +16,26 @@ internal object GpuVoPolicy {
    * server metadata, which mis-tags DV routinely. Only `auto` routes; the
    * other modes are explicit user choices.
    */
-  fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
+  fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean,
+                       felEngine: Boolean = false): Boolean =
+    (dvProfile == 7L && felEngine) ||
+      (dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively)
+
+  const val FEL_ENGINE_ID = "plezyng-dv-fel-v1"
+
+  fun hasFelEngine(identity: String?): Boolean = identity == FEL_ENGINE_ID
+
+  /**
+   * Whether the user opted into the P7 FEL graph. With opt-in, every P7 file
+   * in `auto` mode is forced through software decode and gpu-next, even when a
+   * device advertises native DV; the caller still confirms that mpv accepts
+   * the filter before switching away from its existing route.
+   */
+  fun wantsP7FelReconstruction(
+    dvProfile: Long?,
+    conversionMode: String,
+    experimentalEnabled: Boolean = false
+  ): Boolean = experimentalEnabled && dvProfile == 7L && conversionMode == "auto"
 
   /**
    * A MediaCodec decoder as [nativeDvDecoder] sees it: the component name,
@@ -62,6 +81,9 @@ internal object GpuVoPolicy {
     return dvDecoderFor(candidates, profileBit)
   }
 
+  /** The hardware decoder the Android FFmpeg fork probes for dual-layer P7. */
+  fun nativeP7Decoder(candidates: List<DvDecoderCandidate>): String? = dvDecoderFor(candidates, DV_PROFILE_DVHE_DTB)
+
   /** FFmpeg's `dv_probe_profile`: the first hardware [DV_MIME] decoder advertising exactly [profileBit]. */
   private fun dvDecoderFor(candidates: List<DvDecoderCandidate>, profileBit: Int): String? = candidates.firstOrNull { candidate ->
     !candidate.isSoftwareOnly &&
@@ -82,7 +104,10 @@ internal object GpuVoPolicy {
     BASE_LAYER("base-layer"),
 
     /** Software decode on gpu-next, which applies the RPU itself (#1902). */
-    RESHAPED("reshaped")
+    RESHAPED("reshaped"),
+
+    /** The P7 FEL filter is active on gpu-next; pixel reconstruction is not independently qualified. */
+    FEL_GRAPH_ACTIVE("fel-graph-active")
   }
 
   /**
@@ -108,10 +133,14 @@ internal object GpuVoPolicy {
     decoderOptions: String?,
     candidates: List<DvDecoderCandidate>,
     hwdecCurrent: String?,
-    currentVo: String?
+    currentVo: String?,
+    felFilterActive: Boolean = false
   ): DvRoute? {
     if (dvProfile == null || hwdecCurrent.isNullOrBlank()) return null
     if (!hwdecCurrent.startsWith("mediacodec")) {
+      if (dvProfile == 7L && felFilterActive && currentVo == "gpu-next") {
+        return DvRoute.FEL_GRAPH_ACTIVE
+      }
       return if (currentVo == "gpu-next") DvRoute.RESHAPED else DvRoute.BASE_LAYER
     }
     // FFmpeg's option defaults: dolby_vision=1, dv_p7_mode=auto.
@@ -159,11 +188,13 @@ internal object GpuVoPolicy {
    * (or another decoder failed to open), but `hwdec-current` says the
    * stream is not on MediaCodec at all, so nothing composites the RPU
    * unless gpu-next does. [dvProfile] is the pending video track's profile
-   * and [conversionMode] the session's; only `auto` routes, as in
-   * [needsDvReshaping]. Reacting to the outcome is what keeps a wrong
-   * prediction from scanning the base layer out as SDR BT.2020.
+   * and [conversionMode] the session's. Even explicit native/P7 modes
+   * cannot make software-decoded P5 into a compatible base layer. Reacting
+   * to the outcome is what keeps a wrong prediction from scanning the base layer out as SDR BT.2020.
    */
-  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?): Boolean = needsSoftwareRender(hwdecCurrent) && dvProfile == 5L && conversionMode == "auto"
+  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?,
+                                     felEngine: Boolean = false): Boolean = needsSoftwareRender(hwdecCurrent) &&
+    ((dvProfile == 7L && felEngine) || (dvProfile == 5L && conversionMode in DV_CONVERSION_MODES))
 
   /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
   data class DvDecoderOptions(val dolbyVision: Boolean, val p7Mode: String)
@@ -194,7 +225,12 @@ internal object GpuVoPolicy {
    * P7 strips to its base layer either way. Throws for an unrecognised mode;
    * validate against [DV_CONVERSION_MODES] first.
    */
-  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, dvProfile: Long?, canPlayP5Natively: Boolean): DvDecoderOptions = when (conversionMode) {
+  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, dvProfile: Long?, canPlayP5Natively: Boolean,
+                       felEngine: Boolean = false): DvDecoderOptions = if (dvProfile == 7L && felEngine) {
+    // The paired decoder needs the original EL and RPU; P7->8.1 and strip
+    // discard the residual before the GPU can reconstruct it.
+    DvDecoderOptions(dolbyVision = true, p7Mode = "native")
+  } else when (conversionMode) {
     "auto" -> when {
       displaySupportsDv -> DvDecoderOptions(dolbyVision = true, p7Mode = "auto")
       else -> DvDecoderOptions(dolbyVision = dvProfile == 5L && canPlayP5Natively, p7Mode = "strip")
@@ -206,7 +242,7 @@ internal object GpuVoPolicy {
   }
 
   /** The conversion mode and display answer the DV routing decides with; see [dvRouting]. */
-  data class DvRouting(val conversionMode: String, val displaySupportsDv: Boolean)
+  data class DvRouting(val conversionMode: String, val displaySupportsDv: Boolean, val allowNativeP5: Boolean = true)
 
   /**
    * What [dvDecoderOptions], [needsDvReshaping] and
@@ -217,16 +253,15 @@ internal object GpuVoPolicy {
    * Dolby Vision, whatever [conversionMode] says: single-layer P8 decodes as
    * plain HEVC and P7 strips to its base layer, so the TV receives the HDR10
    * (or HLG) the file carries instead of a Dolby Vision signal. P5 has no
-   * compatible base layer and keeps that same route — the DV decoder when
-   * the device has one, which still drives a Dolby Vision TV in Dolby
-   * Vision, else software decode with gpu-next reshaping. Stripping P5
-   * instead is the wrong-colour result Kodi's equivalent switch produces
-   * (xbmc#26607).
+   * compatible base layer: disabling DV therefore requires gpu-next reshaping,
+   * even if a DV decoder exists. A native decoder can re-engage DV signaling
+   * despite the setting; it is not a guaranteed HDR10/SDR conversion path.
+   * Keep the embedded RPU for the software renderer; never strip P5.
    */
   fun dvRouting(conversionMode: String, displaySupportsDv: Boolean, dvOutputAllowed: Boolean): DvRouting = if (dvOutputAllowed) {
     DvRouting(conversionMode, displaySupportsDv)
   } else {
-    DvRouting("auto", displaySupportsDv = false)
+    DvRouting("auto", displaySupportsDv = false, allowNativeP5 = false)
   }
 
   /** `hdr-sdr-conversion` values: who converts HDR for a display without HDR output. */
@@ -391,3 +426,4 @@ internal object GpuVoPolicy {
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }
+

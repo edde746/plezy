@@ -1,3 +1,4 @@
+import 'games/games_screen.dart';
 import 'dart:async';
 import '../media/ids.dart';
 import '../media/media_item.dart';
@@ -25,6 +26,7 @@ import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/focusable_list_tile.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
@@ -287,6 +289,33 @@ List<NavigationTab> mainScreenBottomNavigationTabs({
 }
 
 @visibleForTesting
+List<NavigationTab> mainScreenPrimaryMobileBottomNavigationTabs({
+  required List<NavigationTab> visibleTabs,
+  required int maxDestinations,
+}) {
+  if (visibleTabs.length <= maxDestinations) return visibleTabs;
+
+  final primaryCount = (maxDestinations - 1).clamp(1, visibleTabs.length).toInt();
+  const preferredIds = [
+    NavigationTabId.discover,
+    NavigationTabId.libraries,
+    NavigationTabId.search,
+    NavigationTabId.downloads,
+  ];
+  final primaryIds = <NavigationTabId>{};
+  for (final id in preferredIds) {
+    if (primaryIds.length >= primaryCount) break;
+    if (visibleTabs.any((tab) => tab.id == id)) primaryIds.add(id);
+  }
+  for (final tab in visibleTabs) {
+    if (primaryIds.length >= primaryCount) break;
+    primaryIds.add(tab.id);
+  }
+
+  return visibleTabs.where((tab) => primaryIds.contains(tab.id)).toList();
+}
+
+@visibleForTesting
 bool shouldPassTvosMenuToSystem({
   required bool isAppleTV,
   required bool isShowingProfileSelection,
@@ -443,6 +472,7 @@ class _MainScreenState extends State<MainScreen>
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
   ValueListenable<bool>? _showExploreTabListenable;
+  ValueListenable<bool>? _gamesTabListenable;
   ValueListenable<bool>? _profileShowExploreTabListenable;
   String? _boundExploreProfileId;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
@@ -877,6 +907,12 @@ class _MainScreenState extends State<MainScreen>
         ? null
         : settings.listenable(SettingsService.showExploreTabForProfile(profileId));
     _profileShowExploreTabListenable?.addListener(_handleCatalogSourcesChanged);
+    _gamesTabListenable?.removeListener(_handleTabAvailabilityChanged);
+    _gamesTabListenable = profileId == null || settings == null
+        ? null
+        : settings.listenable(SettingsService.showGamesTabForProfile(profileId));
+    _gamesTabListenable?.addListener(_handleTabAvailabilityChanged);
+    _handleTabAvailabilityChanged();
     _handleCatalogSourcesChanged();
   }
 
@@ -1228,6 +1264,7 @@ class _MainScreenState extends State<MainScreen>
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
+    _gamesTabListenable?.removeListener(_handleTabAvailabilityChanged);
     _profileShowExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
@@ -1402,6 +1439,7 @@ class _MainScreenState extends State<MainScreen>
       NavigationTabId.search => SearchScreen(key: _screenKeys[tab]),
       NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab]),
       NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab]),
+      NavigationTabId.games => GamesScreen(key: _screenKeys[tab]),
     };
   }
 
@@ -1417,6 +1455,7 @@ class _MainScreenState extends State<MainScreen>
     isOffline: isOffline,
     hasLiveTv: _hasLiveTv,
     hasExplore: _lastHasExplore,
+    hasGames: _hasGames,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
 
@@ -2306,8 +2345,20 @@ class _MainScreenState extends State<MainScreen>
   /// Updated by _handleLiveTvChanged when the provider notifies.
   bool get _hasLiveTv => _lastHasLiveTv;
 
+  bool get _hasGames {
+    final id = _activeProfileForListener?.activeId ?? context.read<ActiveProfileProvider?>()?.activeId;
+    return id != null &&
+        PlatformDetector.supportsEmbeddedGameStreaming() &&
+        (SettingsService.instanceOrNull?.read(SettingsService.showGamesTabForProfile(id)) ?? false);
+  }
+
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasExplore: _lastHasExplore);
+    return NavigationTab.getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: _hasLiveTv,
+      hasExplore: _lastHasExplore,
+      hasGames: _hasGames,
+    );
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
@@ -2347,33 +2398,64 @@ class _MainScreenState extends State<MainScreen>
   static const _contentTabs = [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search];
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
-    final tabs = _getBottomNavigationTabs(context);
-    final selectedIndex = tabs.indexWhere((tab) => tab.id == _currentTab);
-    final navigationBar = NavigationBar(
-      selectedIndex: selectedIndex >= 0 ? selectedIndex : 0,
-      onDestinationSelected: (i) {
-        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-      },
-      labelBehavior: hideLabels
-          ? NavigationDestinationLabelBehavior.alwaysHide
-          : NavigationDestinationLabelBehavior.alwaysShow,
-      destinations: tabs.map((tab) => tab.toDestination()).toList(),
-    );
-
-    final librariesIndex = tabs.indexWhere((tab) => tab.id == NavigationTabId.libraries);
-    if (tabs.isEmpty) return navigationBar;
+    final visibleTabs = _getBottomNavigationTabs(context);
+    if (visibleTabs.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final maxDestinations = constraints.hasBoundedWidth
+            ? (constraints.maxWidth / 64).floor().clamp(2, 5).toInt()
+            : 5;
+        final tabs = mainScreenPrimaryMobileBottomNavigationTabs(
+          visibleTabs: visibleTabs,
+          maxDestinations: maxDestinations,
+        );
+        final visibleIds = tabs.map((tab) => tab.id).toSet();
+        final overflowTabs = visibleTabs.where((tab) => !visibleIds.contains(tab.id)).toList();
+        final moreLabel = t.companionRemote.remote.tabMore;
+        final destinations = [
+          for (final tab in tabs) tab.toDestination(),
+          if (overflowTabs.isNotEmpty)
+            DefaultTextStyle.merge(
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              child: NavigationDestination(
+                icon: AppIcon(Symbols.more_horiz_rounded, fill: 1),
+                selectedIcon: AppIcon(Symbols.more_horiz_rounded, fill: 1),
+                label: moreLabel,
+                tooltip: moreLabel,
+              ),
+            ),
+        ];
+        final selectedTabIndex = tabs.indexWhere((tab) => tab.id == _currentTab);
+        final selectedIndex = selectedTabIndex >= 0
+            ? selectedTabIndex
+            : overflowTabs.isNotEmpty
+            ? tabs.length
+            : 0;
+        final navigationBar = NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (index) {
+            if (index < tabs.length) {
+              _selectTab(tabs[index].id);
+            } else if (overflowTabs.isNotEmpty) {
+              unawaited(_showMoreNavigationTabs(context, overflowTabs));
+            }
+          },
+          labelBehavior: hideLabels
+              ? NavigationDestinationLabelBehavior.alwaysHide
+              : NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: destinations,
+        );
         if (!constraints.hasBoundedWidth) return navigationBar;
 
-        // A destination gets an equal share of the bar and spends all of it on
-        // the label, so that share is what the labels have to fit into.
-        final itemWidth = constraints.maxWidth / tabs.length;
+        final librariesIndex = tabs.indexWhere((tab) => tab.id == NavigationTabId.libraries);
+        final itemWidth = constraints.maxWidth / destinations.length;
         final bar = hideLabels
             ? navigationBar
             : NavigationLabelScale(
-                labels: [for (final tab in tabs) tab.getLabel()],
+                labels: [for (final tab in tabs) tab.getLabel(), if (overflowTabs.isNotEmpty) moreLabel],
                 labelWidth: itemWidth,
                 style: navigationBarLabelStyle(context),
                 child: navigationBar,
@@ -2405,6 +2487,37 @@ class _MainScreenState extends State<MainScreen>
         );
       },
     );
+  }
+
+  Future<void> _showMoreNavigationTabs(BuildContext context, List<NavigationTab> overflowTabs) async {
+    final controller = OverlaySheetController.of(context);
+    final moreLabel = t.companionRemote.remote.tabMore;
+    final selectedTabIndex = overflowTabs.indexWhere((tab) => tab.id == _currentTab);
+    final selectedTab = await controller.show<NavigationTabId>(
+      showDragHandle: true,
+      builder: (sheetContext) => ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: 8),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+            child: Text(moreLabel, style: Theme.of(sheetContext).textTheme.titleLarge),
+          ),
+          for (var index = 0; index < overflowTabs.length; index++)
+            FocusableListTile(
+              autofocus: index == (selectedTabIndex >= 0 ? selectedTabIndex : 0),
+              dense: false,
+              visualDensity: VisualDensity.standard,
+              selected: overflowTabs[index].id == _currentTab,
+              leading: AppIcon(overflowTabs[index].icon, fill: 1),
+              title: Text(overflowTabs[index].getLabel()),
+              onTap: () => controller.close(overflowTabs[index].id),
+            ),
+        ],
+      ),
+    );
+    if (!mounted || selectedTab == null) return;
+    _selectTab(selectedTab);
   }
 
   /// Report the mobile navigation area's rendered extent to the mini-player

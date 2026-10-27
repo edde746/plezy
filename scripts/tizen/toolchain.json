@@ -1,0 +1,10 @@
+{
+  "flutter_tizen_revision": "22bcec9058fbe1e0943e6c6fda21792f24868e91",
+  "flutter_revision": "6a19cca56475dbfba1478ee68d7bd0c2ef891da1",
+  "sqlite_url": "https://www.sqlite.org/2026/sqlite-amalgamation-3530300.zip",
+  "sqlite_sha256": "646421e12aac110282ef8cc68f1a62d4bb15fc7b8f09da0b53e29ee690500431",
+  "libsmb2_revision": "e94eee9465d55ed094ace2c038a8705b4822dada",
+  "libsmb2_scripts_revision": "83553cb356448f3f7f052ab8d91196b1755ffb35",
+  "dart_smb2_version": "0.2.3",
+  "sqlite_source_sha3_256": "28e484abdaa43630e34040ef6ed92be973a1ad54107803d8af5145b889c23ed7"
+}

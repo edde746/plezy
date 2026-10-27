@@ -13,6 +13,7 @@ Future<bool> confirmInsecureConnection(BuildContext context, String url) async {
   return await showScopedDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          scrollable: true,
           title: Text(t.addServer.insecureTitle),
           content: Text(
             t.addServer.insecureDescription(url: uri.replace(userInfo: '', query: null, fragment: null).toString()),

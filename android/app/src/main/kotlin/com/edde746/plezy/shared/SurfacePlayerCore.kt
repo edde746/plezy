@@ -11,10 +11,12 @@ package com.edde746.plezy.shared
  */
 interface SurfacePlayerCore {
   fun setVisible(visible: Boolean)
+  fun setVideoRect(left: Int, top: Int, right: Int, bottom: Int, devicePixelRatio: Double)
   fun updateFrame()
   fun onPipModeChanged(isInPipMode: Boolean)
   fun requestAudioFocus(): Boolean
   fun abandonAudioFocus()
+  fun setAudioFocusEnabled(enabled: Boolean)
   fun clearVideoFrameRate()
   fun setVideoFrameRate(
     fps: Float,

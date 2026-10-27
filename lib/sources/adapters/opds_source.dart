@@ -15,6 +15,7 @@ class OpdsSourceAdapter extends SourceAdapter {
   final Map<String, ({String template, int count})> _streams = {};
   static const _pse = 'http://vaemendis.net/opds-pse/stream';
   static const _pseNamespace = 'http://vaemendis.net/opds-pse/ns';
+  String _streamKey(Uri catalog, String id) => jsonEncode([catalog.toString(), id]);
   void _stream(String id, Uri catalog, String? href, Object? count, String type) {
     final pages = sourceInt(count);
     if (href == null ||
@@ -27,7 +28,7 @@ class OpdsSourceAdapter extends SourceAdapter {
     }
     final uri = catalog.resolve(href);
     transport.validate(uri);
-    _streams[id] = (template: uri.toString(), count: pages);
+    _streams[_streamKey(catalog, id)] = (template: uri.toString(), count: pages);
   }
 
   PublicationFile _streamFile(Uri uri, String id, String title) => PublicationFile(
@@ -79,6 +80,7 @@ class OpdsSourceAdapter extends SourceAdapter {
   Future<SourcePage> browse({String? parent, String? cursor, String? query}) async {
     final uri = _catalog(Uri.parse(cursor ?? parent ?? source.endpoint));
     _acquisitions.removeWhere((key, _) => sourceMap(jsonDecode(key))['catalog'] == uri.toString());
+    _streams.removeWhere((key, _) => (jsonDecode(key) as List).first == uri.toString());
     final raw = await transport.text(
       'GET',
       uri,
@@ -152,7 +154,6 @@ class OpdsSourceAdapter extends SourceAdapter {
       final image = sourceList(j['images']).map(sourceMap).where((i) => i['href'] is String).firstOrNull;
       if (image != null) _covers[id] = uri.resolve(image['href'] as String);
       final files = <PublicationFile>[];
-      _streams.remove(id);
       for (final link in links.where((l) => _rels(l).contains(_pse))) {
         _stream(
           id,
@@ -171,7 +172,9 @@ class OpdsSourceAdapter extends SourceAdapter {
         _acquisitions[ref] = uri.resolve(link['href'] as String);
         files.add(PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length'])));
       }
-      if (files.isEmpty && _streams.containsKey(id)) files.add(_streamFile(uri, id, _label(meta['title'])));
+      if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) {
+        files.add(_streamFile(uri, id, _label(meta['title'])));
+      }
       if (files.isEmpty) continue;
       entries.add(
         SourceEntry(
@@ -231,7 +234,6 @@ class OpdsSourceAdapter extends SourceAdapter {
           ?.getAttribute('href');
       if (image != null) _covers[id] = uri.resolve(image);
       final files = <PublicationFile>[];
-      _streams.remove(id);
       for (final link in links.where((l) => l.getAttribute('rel') == _pse)) {
         _stream(
           id,
@@ -262,7 +264,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           );
         }
       }
-      if (files.isEmpty && _streams.containsKey(id)) files.add(_streamFile(uri, id, title));
+      if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) files.add(_streamFile(uri, id, title));
       if (files.isNotEmpty) {
         result.add(
           SourceEntry(
@@ -293,7 +295,7 @@ class OpdsSourceAdapter extends SourceAdapter {
     if (file.kind != SourceItemKind.comic) return null;
     final ref = sourceMap(jsonDecode(file.id));
     await browse(parent: ref['catalog'] as String);
-    final stream = _streams[ref['entry']];
+    final stream = _streams[_streamKey(Uri.parse(ref['catalog'] as String), ref['entry'] as String)];
     if (stream == null) return null;
     return ComicPageSource(
       document: ComicDocument([

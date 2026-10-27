@@ -257,6 +257,30 @@ void main() {
     expect(controller.value, 40);
   });
 
+  test('workspace audio mutes before releasing focus and reacquires focus before unmuting', () async {
+    final player = _ControlledVolumePlayer(50)..playing = true;
+    final controller = VideoVolumeController(player: player, settings: settings, initialVolume: 50);
+    addTearDown(controller.dispose);
+
+    final muting = controller.setWorkspaceAudioEnabled(false);
+    await _flush();
+    expect(player.requestedVolumes, [0]);
+    expect(player.focusChanges, isEmpty, reason: 'system focus stays owned until native volume reaches zero');
+    player.succeedNext();
+    await muting;
+    expect(player.focusChanges, [false]);
+
+    final unmuting = controller.setWorkspaceAudioEnabled(true);
+    await _flush();
+    expect(player.focusChanges, [false, true]);
+    expect(player.focusRequests, 1);
+    expect(player.requestedVolumes, [0, 50]);
+    player.succeedNext();
+    await unmuting;
+    await controller.idle;
+    expect(player.volume, 50);
+  });
+
   test('user commands announce their clamped target; previews and player reports stay silent', () async {
     final player = _ControlledVolumePlayer(50);
     final announced = <double>[];
@@ -404,10 +428,14 @@ void main() {
 
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
 
-final class _ControlledVolumePlayer implements Player {
+final class _ControlledVolumePlayer implements Player, PlayerAudioFocusControl {
   _ControlledVolumePlayer(this.volume);
 
   double volume;
+  bool playing = false;
+  bool audioFocusEnabled = true;
+  int focusRequests = 0;
+  final focusChanges = <bool>[];
   final requestedVolumes = <double>[];
   final _requests = <Completer<void>>[];
   final _volumeStream = StreamController<double>.broadcast();
@@ -415,7 +443,7 @@ final class _ControlledVolumePlayer implements Player {
   int maxConcurrentWrites = 0;
 
   @override
-  PlayerState get state => PlayerState(volume: volume);
+  PlayerState get state => PlayerState(volume: volume, playing: playing);
 
   @override
   PlayerStreams get streams => PlayerStreams(
@@ -453,6 +481,18 @@ final class _ControlledVolumePlayer implements Player {
     } finally {
       _activeWrites--;
     }
+  }
+
+  @override
+  Future<void> setAudioFocusEnabled(bool enabled) async {
+    audioFocusEnabled = enabled;
+    focusChanges.add(enabled);
+  }
+
+  @override
+  Future<bool> requestAudioFocus() async {
+    focusRequests++;
+    return true;
   }
 
   void succeedNext() {

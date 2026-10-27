@@ -48,6 +48,7 @@ import '../models/media_grab_operation.dart';
 import '../models/media_subscription.dart';
 import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_sort.dart';
 import '../media/media_version.dart';
 import '../models/subtitles/subtitle_search_result.dart';
@@ -89,6 +90,8 @@ import 'track_selection_service.dart';
 import 'video_decode_capabilities.dart';
 import '../mpv/mpv.dart';
 import '../utils/codec_utils.dart';
+import '../utils/platform_detector.dart';
+import '../media/tizen_playback_profile.dart';
 
 part 'jellyfin_client/parts/account_preferences.dart';
 part 'jellyfin_client/parts/browse.dart';

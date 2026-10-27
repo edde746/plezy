@@ -10,6 +10,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/dpad_select_long_press_controller.dart';
 import '../../focus/focus_theme.dart';
 import '../../theme/mono_tokens.dart';
+import '../../widgets/app_icon.dart';
 
 /// One inline button on a [TvRowOrganizerScreen] row (a toggle such as Hero,
 /// or a one-shot action such as Remove).
@@ -391,7 +392,7 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
                             _startMove();
                           }
                         : null,
-                    icon: Icon(
+                    icon: AppIcon(
                       moving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
                       color: moving
                           ? scheme.primary
@@ -494,7 +495,7 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(action.value == true ? Symbols.check_rounded : action.icon, size: 18, color: fg),
+                    AppIcon(action.value == true ? Symbols.check_rounded : action.icon, size: 18, color: fg),
                     const SizedBox(width: 6),
                     Text(
                       label,

@@ -29,8 +29,10 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
+import com.edde746.plezy.exoplayer.ExoWorkspacePlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.mpv.MpvWorkspacePlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.MediaCodecQuery
@@ -120,6 +122,7 @@ class PlezyActivity : FlutterActivity() {
   private var imeLeakRestartBudget = 0
   private var lastImeLeakRestartUptime = 0L
   private var systemBarsInsetsHost: View? = null
+  private var originalCutoutLayoutMode: Int? = null
   private var systemBarsReassertPending = false
   private var pendingSystemBarsHide: Runnable? = null
   private var lastConfig: Configuration? = null
@@ -128,6 +131,7 @@ class PlezyActivity : FlutterActivity() {
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val gamesChannel = GamesChannel(this)
   private val userCertificateChannel = UserCertificateChannel()
   private val appIconChannel = AppIconChannel(this)
   private val exitDiagnosticsRequested = AtomicBoolean(false)
@@ -482,6 +486,19 @@ class PlezyActivity : FlutterActivity() {
   }
 
   /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun setVideoCutoutMode(enabled: Boolean): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+    if (enabled && isAndroidTvDevice()) return false
+    val attributes = window.attributes
+    attributes.layoutInDisplayCutoutMode = if (enabled) {
+      WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    } else {
+      originalCutoutLayoutMode ?: WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+    }
+    window.attributes = attributes
+    return true
+  }
+
   private fun getDeviceName(): String? {
     // The name the user gave the device; also used by Cast/Nearby.
     val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
@@ -503,6 +520,9 @@ class PlezyActivity : FlutterActivity() {
     ThemeHelper.themeColor(savedTheme)?.let { window.decorView.setBackgroundColor(it) }
 
     super.onCreate(savedInstanceState)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      originalCutoutLayoutMode = window.attributes.layoutInDisplayCutoutMode
+    }
     lastConfig = Configuration(resources.configuration)
 
     // Disable the Android splash screen fade-out animation to avoid
@@ -617,6 +637,7 @@ class PlezyActivity : FlutterActivity() {
 
   override fun onDestroy() {
     externalPlayerChannel.dispose()
+    gamesChannel.dispose()
     systemBarsInsetsHost?.setOnApplyWindowInsetsListener(null)
     systemBarsInsetsHost = null
     cancelPendingSystemBarsHide()
@@ -873,15 +894,42 @@ class PlezyActivity : FlutterActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
+    flutterEngine.plugins.add(MpvWorkspacePlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
+    flutterEngine.plugins.add(ExoWorkspacePlayerPlugin())
     flutterEngine.plugins.add(MpvAudioPlayerPlugin())
+    if (runCatching {
+        Class.forName("org.snapetech.plezyng.games.steam.SteamStreamView", false, classLoader)
+      }.isSuccess) {
+      flutterEngine.platformViewsController.registry.registerViewFactory(
+        SteamStreamPlatformViewFactory.VIEW_TYPE,
+        SteamStreamPlatformViewFactory(flutterEngine.dartExecutor.binaryMessenger),
+      )
+    }
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        "setVideoCutoutMode" -> {
+          val enabled = call.arguments as? Boolean
+          if (enabled == null) {
+            result.error("INVALID_ARGUMENT", "Expected a boolean", null)
+          } else {
+            result.success(setVideoCutoutMode(enabled))
+          }
+        }
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
-        "getVideoDecodeCapabilities" -> result.success(MediaCodecQuery.hardwareVideoDecodeSupport())
+        "getVideoDecodeCapabilities" -> {
+          val capabilities = MediaCodecQuery.hardwareVideoDecodeSupport()
+          result.success(
+            mapOf(
+              "hevc" to (capabilities["hevc"] == true),
+              "av1" to (capabilities["av1"] == true),
+              "dolbyVisionProfiles" to com.edde746.plezy.exoplayer.DoviBridge.supportedDolbyVisionProfiles()
+            )
+          )
+        }
         "getBackgroundWorkSignals" -> result.success(
           BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
         )
@@ -1000,6 +1048,7 @@ class PlezyActivity : FlutterActivity() {
     }
 
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    gamesChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     appIconChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 

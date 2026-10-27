@@ -10,6 +10,7 @@ import 'player_state.dart';
 import 'player_streams.dart';
 import 'platform/player_linux.dart';
 import 'platform/player_webos.dart';
+import 'platform/player_tizen.dart';
 import 'platform/player_windows.dart';
 import '../../utils/platform_detector.dart';
 
@@ -407,7 +408,8 @@ abstract class Player {
   /// vo=mediacodec (with gpu behind it) for hardware sessions, gpu-next for
   /// software ones, where DV reshaping can actually happen (see
   /// MpvPlayerCore.initialVideoOutput; #2010).
-  factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
+  factory Player({bool? useExoPlayer, bool hardwareDecoding = true, bool companionSession = false}) {
+    if (PlatformDetector.isTizenBuild()) return PlayerTizen();
     if (PlatformDetector.isWebOSBuild()) {
       return PlayerWebOS();
     }
@@ -416,18 +418,18 @@ abstract class Player {
       // The caller should pass useExoPlayer based on SettingsService.useExoPlayer.
       final useExo = useExoPlayer ?? false;
       if (useExo) {
-        return PlayerAndroid(); // ExoPlayer (opt-in)
+        return PlayerAndroid(companionSession: companionSession); // ExoPlayer (opt-in)
       }
-      return PlayerNative(hardwareDecoding: hardwareDecoding); // MPV (default)
+      return PlayerNative(hardwareDecoding: hardwareDecoding, companionSession: companionSession); // MPV (default)
     }
     if (Platform.isMacOS || Platform.isIOS) {
-      return PlayerNative();
+      return PlayerNative(companionSession: companionSession);
     }
     if (Platform.isWindows) {
-      return PlayerWindows();
+      return PlayerWindows(companionSession: companionSession);
     }
     if (Platform.isLinux) {
-      return PlayerLinux();
+      return PlayerLinux(companionSession: companionSession);
     }
     throw UnsupportedError('Player is not supported on this platform');
   }
@@ -444,6 +446,7 @@ abstract class Player {
   /// `PlaybackCoordinator`), and the video core only exists while the video
   /// player screen is open.
   factory Player.audio({bool exclusiveAudio = true}) {
+    if (PlatformDetector.isTizenBuild()) return PlayerTizen(audioOnly: true);
     if (PlatformDetector.isWebOSBuild()) {
       return PlayerWebOS(audioOnly: true);
     }

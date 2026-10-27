@@ -26,6 +26,10 @@ dependencies:
   logger: ^2.7.0
   package_info_plus: ^9.0.0
   device_info_plus: ^12.3.0
+  disk_usage:
+    git:
+      url: https://github.com/yj-labs/disk_usage
+      ref: a2d6244e45db6f48760bd79c18445d32ecf2e77e
   provider: ^6.1.2
   flex_color_picker: ^3.8.0
   qr_flutter: ^4.1.0
@@ -79,6 +83,19 @@ dependencies:
   # from the native device log.
   video_player_drm:
     path: packages/webos_plugins/video_player_drm
+  # Samsung's federated implementations. Older package-info/wakelock adapters
+  # intentionally match the platform interfaces pinned by our desktop plugins.
+  shared_preferences_tizen: 2.3.5
+  path_provider_tizen: 2.3.3
+  package_info_plus_tizen: 1.1.2
+  device_info_plus_tizen: 1.4.3
+  connectivity_plus_tizen: 1.3.3
+  url_launcher_tizen: 2.1.7
+  flutter_secure_storage_tizen: 0.1.6
+  wakelock_plus_tizen:
+    path: packages/tizen_plugins/wakelock_plus_tizen
+  video_player_videohole:
+    path: packages/tizen_plugins/video_player_videohole
   path: ^1.9.0
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
@@ -111,10 +128,10 @@ dependencies:
   # partial; 7c341be makes the rerun of a SAF download whose process died write
   # to the document the dead run created instead of a "name (1)" copy. Keep the
   # same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # Exact upstream source is vendored with headless secure-storage registration and
+  # credentialed-task persistence and redirect protections.
   background_downloader:
-    git:
-      url: https://github.com/edde746/background_downloader
-      ref: 7c341be73df8a6a5ddccb06124807ac250a32bc1
+    path: packages/background_downloader
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
@@ -124,6 +141,7 @@ dependencies:
   win_http: ^0.2.3
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
+  multicast_dns: ^0.3.3+1
   xml: ^7.0.1
   string_similarity: ^2.2.0
   unorm_dart: ^0.3.2
@@ -147,6 +165,7 @@ dependencies:
   dart_smb2: ^0.2.3
   flutter_tts: ^4.2.5
 
+  shared_preferences_foundation: ^2.5.6
 dev_dependencies:
   flutter_secure_storage_platform_interface: ^2.1.1
   flutter_test:
@@ -218,7 +237,11 @@ flutter:
     - assets/provider_marks/
     - assets/reader/foliate/
     - assets/certificates/cacert.pem
+    - assets/licenses/Moonlight_GPL_3.txt
+    - assets/licenses/Moonlight_NOTICE.txt
+    - assets/licenses/Steam_NATIVE.txt
     - assets/licenses/SpatialAudioBridge.txt
+    - assets/licenses/LGFlutterWebOSRuntimeNotice.txt
     - assets/licenses/dart_smb2_NOTICE.txt
     - assets/licenses/AMSMB2_NOTICE.txt
     - assets/licenses/AMSMB2_MIT_LICENSE.txt
@@ -226,7 +249,8 @@ flutter:
     - assets/licenses/Unicode.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
-    - assets/branding/plezyng-product-illustration.png
+    - assets/branding/plezyng-product-illustration.webp
+    - assets/branding/plezyng-product-illustration-4k.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg

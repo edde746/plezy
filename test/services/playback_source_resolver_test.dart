@@ -249,12 +249,13 @@ void main() {
       await tmpRoot.delete(recursive: true);
     });
 
-    Future<PlaybackContext> resolveAt720p({required bool downloadOutranksQuality}) {
+    Future<PlaybackContext> resolveAt720p({required bool downloadOutranksQuality, bool forceServerPlayback = false}) {
       return PlaybackSourceResolver(serverManager: manager, database: db).resolve(
         PlaybackInitializationOptions(
           metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
+          forceServerPlayback: forceServerPlayback,
         ),
         offlineLibraryMode: false,
         downloadOutranksQuality: downloadOutranksQuality,
@@ -271,6 +272,13 @@ void main() {
 
     test('a quality picked for this playback streams from the server', () async {
       final context = await resolveAt720p(downloadOutranksQuality: false);
+
+      expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
+      expect(context.result.videoUrl, 'https://example.com/video.mp4');
+    });
+
+    test('automatic server compatibility fallback bypasses a downloaded copy', () async {
+      final context = await resolveAt720p(downloadOutranksQuality: true, forceServerPlayback: true);
 
       expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
       expect(context.result.videoUrl, 'https://example.com/video.mp4');

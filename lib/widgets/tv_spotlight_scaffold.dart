@@ -452,10 +452,8 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
             top: widget.castTop,
             child: _HeroCastRow(item: widget.item!, client: widget.client),
           ),
-        if (widget.hasPrevious)
-          _buildChevron(context, alignment: AlignmentDirectional.centerStart),
-        if (widget.hasNext)
-          _buildChevron(context, alignment: AlignmentDirectional.centerEnd),
+        if (widget.hasPrevious) _buildChevron(context, alignment: AlignmentDirectional.centerStart),
+        if (widget.hasNext) _buildChevron(context, alignment: AlignmentDirectional.centerEnd),
       ],
     );
   }

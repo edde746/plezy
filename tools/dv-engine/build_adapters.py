@@ -21,12 +21,71 @@ def run(args, *, cwd=None, capture=False):
 
 
 def pin_map(data):
-    return {pin["identity"]: (pin["location"], pin["state"]["revision"]) for pin in data["pins"]}
+    pins = data.get("pins")
+    if not isinstance(pins, list):
+        raise ValueError("Swift dependency lock has no pin list")
+    result = {}
+    for pin in pins:
+        identity = pin.get("identity")
+        state = pin.get("state")
+        if (not isinstance(identity, str) or not identity or identity in result
+                or not isinstance(state, dict)):
+            raise ValueError("Swift dependency lock contains an invalid or duplicate pin")
+        result[identity] = (
+            pin.get("kind"), pin.get("location"), state.get("revision"), state.get("version"),
+        )
+    return result
 
 
-def verify_swift_pins(path: Path, expected: list):
-    if pin_map(json.loads(path.read_text())) != pin_map({"pins": expected}):
+def verify_swift_pins(path: Path, expected: list, *, required=()):
+    actual_pins = pin_map(json.loads(path.read_text()))
+    expected_pins = pin_map({"pins": expected})
+    required = set(required)
+    if (not actual_pins or not required.issubset(actual_pins)
+            or not actual_pins.keys() <= expected_pins.keys()
+            or any(actual_pins[name] != expected_pins[name] for name in actual_pins)):
         raise ValueError("Swift dependency resolution drifted; review and pin before compiling")
+
+
+def patch_felbaker_vs_output_key(source: Path) -> str:
+    """Match FelBaker's return declarations to VapourSynth's `clip` output key."""
+    entry = source / "src/VapourSynthEntry.cpp"
+    text = entry.read_text()
+    replacements = (
+        ('"baked:vnode;", bakeFilter', '"clip:vnode;", bakeFilter'),
+        ('"baked_rgb:vnode;", rgbFilter', '"clip:vnode;", rgbFilter'),
+    )
+    for old, new in replacements:
+        if text.count(old) != 1:
+            raise ValueError("FelBaker VapourSynth output signature changed; review the adapter patch")
+        text = text.replace(old, new, 1)
+    entry.write_text(text)
+    return hashlib.sha256(entry.read_bytes()).hexdigest()
+
+
+def build_apple_devices(host: Path, work: Path, platforms: list[str], expected: list, results: dict, required: set[str]) -> None:
+    """Compile actual device SDK slices without installing or signing an app."""
+    if not platforms:
+        return
+    if not shutil.which("xcodegen"):
+        raise ValueError("iOS/tvOS builds require XcodeGen")
+    run(["xcodegen", "generate"], cwd=host)
+    project = host / "PlezyNGDVExperiment.xcodeproj"
+    resolved = project / "project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(host / "Package.resolved", resolved)
+    for name in platforms:
+        scheme, destination = {
+            "ios": ("PlezyNGDVExperimentIOS", "generic/platform=iOS"),
+            "tvos": ("PlezyNGDVExperimentTV", "generic/platform=tvOS"),
+        }[name]
+        run(["xcodebuild", "-project", project, "-scheme", scheme,
+             "-configuration", "Debug", "-destination", destination,
+             "-derivedDataPath", work / ("derived-" + name),
+             "-disableAutomaticPackageResolution", "-onlyUsePackageVersionsFromResolvedFile",
+             "CODE_SIGNING_ALLOWED=NO", "build"], cwd=host)
+        verify_swift_pins(resolved, expected, required=required)
+        results[name] = "compiled-device-sdk; unsigned, not installed or playback-tested"
 
 
 def checkout(source: Path, spec: dict):
@@ -55,9 +114,13 @@ def main():
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--test", action="store_true", help="run upstream tests after building (Apple)")
+    parser.add_argument("--apple-platform", choices=("macos", "ios", "tvos", "all"), default="macos",
+                        help="SDK build selection; iOS/tvOS require XcodeGen and do not sign/install")
     args = parser.parse_args()
     if args.test and not args.build:
         parser.error("--test requires --build")
+    if args.component != "apple" and args.apple_platform != "macos":
+        parser.error("--apple-platform applies only to the Apple adapter")
     if args.component == "apple" and args.build and platform.system() != "Darwin":
         parser.error("Apple builds require a Mac with Xcode 27")
     if args.component == "felbaker" and args.test:
@@ -77,7 +140,8 @@ def main():
     try:
         checkout(source, spec)
         if name == "aether":
-            verify_swift_pins(source / "Package.resolved", spec["swift_pins"])
+            required_pins = spec.get("swift_required_pins", ())
+            verify_swift_pins(source / "Package.resolved", spec["swift_pins"], required=required_pins)
             host = work / "host"
             shutil.copytree(HERE.parent / "dv-apple" / "Host", host)
             shutil.copy2(source / "Package.resolved", host / "Package.resolved")
@@ -85,17 +149,27 @@ def main():
                 report["swift"] = run(["swift", "--version"], capture=True).strip()
                 report["xcode"] = run(["xcodebuild", "-version"], capture=True).strip()
                 run(["swift", "package", "resolve"], cwd=host)
-                verify_swift_pins(host / "Package.resolved", spec["swift_pins"])
-                run(["swift", "build", "--force-resolved-versions", "--product", "PlezyNGDVExperiment"], cwd=host)
-                report["build"] = "passed"
+                verify_swift_pins(host / "Package.resolved", spec["swift_pins"], required=required_pins)
+                platforms = ["macos", "ios", "tvos"] if args.apple_platform == "all" else [args.apple_platform]
+                report["platform_builds"] = {}
+                if "macos" in platforms:
+                    run(["swift", "build", "--force-resolved-versions", "--product", "PlezyNGDVExperiment"], cwd=host)
+                    report["platform_builds"]["macos"] = "compiled; playback not tested"
+                build_apple_devices(host, work, [name for name in platforms if name != "macos"],
+                                    spec["swift_pins"], report["platform_builds"], required_pins)
+                verify_swift_pins(host / "Package.resolved", spec["swift_pins"], required=required_pins)
+                report["build"] = "passed-requested-sdks"
                 if args.test:
                     run(["swift", "test", "--force-resolved-versions", "--traits", "DualLayerDolbyVision",
                          "--filter", "Dovi|DualLayer"], cwd=source)
                     report["tests"] = "passed; real-file/GPU tests may report skips in the log"
         elif args.build:
-            # FelBaker contains VS headers and a pinned libdovi submodule.
-            # No VapourSynth runtime is needed to compile the plugin.
-            run(["meson", "setup", work / "build", source, "--wrap-mode=nofallback", "-Dcpu_tier=generic"])
+            # The plugin uses VS headers and a pinned libdovi submodule. The
+            # upstream Meson integration tests need FFMS2, which is unrelated
+            # to compiling this plugin, so keep them out of this source build.
+            report["patched_vapoursynth_entry_sha256"] = patch_felbaker_vs_output_key(source)
+            run(["meson", "setup", work / "build", source, "--wrap-mode=nofallback",
+                 "-Dcpu_tier=generic", "-Dtests=false"])
             run(["meson", "compile", "-C", work / "build", "-j", "2"])
             report["build"] = "passed"
         report["source_lock_sha256"] = hashlib.sha256((HERE / "adapters.lock.json").read_bytes()).hexdigest()
@@ -108,3 +182,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

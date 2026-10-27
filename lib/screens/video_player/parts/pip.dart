@@ -57,29 +57,99 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
   Future<void> _togglePIPMode() async {
     if (!_pipInitialized) return;
 
-    final supported = await PipService.isSupported();
-    if (!supported) {
-      _onPipRequestFailed(t.videoControls.pipErrors.notSupported);
-      return;
-    }
-
-    // If PiP is already active, exit it
+    // Native PiP remains available as the operating-system background path.
+    // The in-app action below is app-owned and uses the shared workspace on
+    // every Flutter target.
     if (PipService().isPipActive.value) {
       await PipService.exit();
       return;
     }
 
-    // Reset video filter to contain mode before entering PiP. Android, iOS,
-    // and macOS all reuse the inline video surface/layer for PiP.
-    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-      if (_pipInitialized) _preparePipFiltersForEntry();
-      // Wait a frame for the filter change to take effect
-      await Future.delayed(const Duration(milliseconds: 50));
+    final existingId = _workspaceSessionId;
+    final existingController = _workspaceController;
+    if (existingId != null && existingController != null) {
+      if (_workspaceSurfaceDetached) {
+        if (existingController.isRestored(existingId)) {
+          existingController.showSessionInWorkspace(existingId);
+          _setPlayerState(() => _workspaceSurfaceDetached = true);
+        } else {
+          // The PiP control is an on/off toggle: restore this player to its
+          // original route while keeping playback alive. The workspace title
+          // bar owns the separate fullscreen action.
+          existingController.restore(existingId);
+        }
+      } else if (existingController.showSessionInWorkspace(existingId)) {
+        _setPlayerState(() => _workspaceSurfaceDetached = true);
+      }
+      return;
     }
 
-    final dims = await _getVideoDimensions();
-    final result = await PipService.enter(width: dims.$1, height: dims.$2);
-    if (!result.$1) _onPipRequestFailed(result.$2);
+    if (!mounted || player == null) return;
+    _registerVideoWorkspaceSession();
+  }
+
+  /// Retain this route's one real native player and move its widget into the
+  /// shared workspace. Opening another media route while a workspace is active
+  /// calls this before playback starts, so sessions can be composed without a
+  /// second Player owner or a route restart.
+  bool _registerVideoWorkspaceSession([MultiviewWorkspaceController? workspaceOverride]) {
+    if (!mounted || player == null || _workspaceSessionId != null) return false;
+    final workspace = workspaceOverride ?? context.read<MultiviewWorkspaceController>();
+    final mediaNavigator = Navigator.of(context);
+    final mediaRoute = ModalRoute.of(context);
+    final stableMediaId = _currentMetadata.globalKey;
+    final sessionId = 'video:$stableMediaId';
+    final title = _currentMetadata.title;
+
+    _workspaceSessionId = sessionId;
+    _workspaceController = workspace;
+    _workspaceSurfaceDetached = true;
+    _setPlayerState(() {});
+
+    final registration = WorkspaceSurfaceRegistration(
+      descriptor: WorkspaceSessionDescriptor(
+        id: sessionId,
+        kind: widget.isLive ? MultiviewMediaKind.liveTv : MultiviewMediaKind.video,
+        title: title == null || title.isEmpty ? t.videoControls.pipButton : title,
+        mediaKey: _currentMetadata.globalKey,
+        progressOwner: _currentMetadata.globalKey,
+        hasAudio: true,
+        hasVideo: true,
+        openedAt: DateTime.now(),
+      ),
+      videoPlayerSlot: _videoPlayerSlot,
+      buildSurface: (workspaceContext) => OverlaySheetHost(
+        canPop: false,
+        onBack: () => _handleScreenPlayerNavigation(PlayerNavigationKey.back),
+        child: _buildVideoPlayer(workspaceContext, forWorkspace: true),
+      ),
+      onRestore: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _workspaceSessionId != sessionId) return;
+          _workspaceSurfaceDetached = false;
+          _setPlayerState(() {});
+          final route = mediaRoute;
+          if (mediaNavigator.mounted && route?.isActive == true) {
+            mediaNavigator.popUntil((candidate) => identical(candidate, route));
+          }
+        });
+      },
+      onClose: () => unawaited(_handleBackButton()),
+      onAudioOwnershipChanged: (enabled) async {
+        final volumeController = _volumeController;
+        if (volumeController != null) await volumeController.setWorkspaceAudioEnabled(enabled);
+      },
+    );
+
+    if (!workspace.register(registration)) {
+      _workspaceSessionId = null;
+      _workspaceController = null;
+      _workspaceSurfaceDetached = false;
+      _setPlayerState(() {});
+      _onPipRequestFailed(t.videoControls.pipFailed);
+      return false;
+    }
+    return true;
   }
 
   void _onPipRequestFailed(String? error) {
@@ -176,12 +246,16 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
     _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
 
-    if (!_pipInitialized || _videoFilterManager == null) return;
+    if (!_pipInitialized || _videoFilterManager == null) {
+      _setPlayerState(() {});
+      return;
+    }
 
     if (isInPip) {
       _preparePipFiltersForEntry();
     } else {
       _restorePipFiltersAfterExit();
     }
+    _setPlayerState(() {});
   }
 }

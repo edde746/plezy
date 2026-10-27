@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../i18n/strings.g.dart';
+
 import '../comic_document.dart';
 import '../source_models.dart';
 import '../source_transport.dart';
@@ -86,8 +88,8 @@ class KomgaSourceAdapter extends SourceAdapter {
       final libraries = sourceList(await _get('libraries'));
       return SourcePage([
         ...libraries.map(sourceMap).map((l) => _folder('library:${_id('${l['id']}')}', '${l['name']}')),
-        _folder('readlists', 'Reading lists'),
-        _folder('collections', 'Collections'),
+        _folder('readlists', t.comics.readLists),
+        _folder('collections', t.comics.collections),
       ]);
     }
     final parts = (parent ?? '').split(':');
@@ -210,12 +212,13 @@ class KomgaSourceAdapter extends SourceAdapter {
     final finished = remote['completed'] == true;
     final fraction = finished ? 1.0 : page / total;
     // Keep local sub-page location if the server still agrees on the physical page.
-    final locator = local.locator?.page == page && local.finished == finished
+    final samePage = local.locator?.page == (page == 0 ? 1 : page) && local.finished == finished && page > 0;
+    final locator = samePage
         ? local.locator!
         : ReadingLocator(href: '', page: page == 0 ? 1 : page, progression: fraction);
     return local.copyWith(
       locator: locator,
-      fraction: fraction,
+      fraction: samePage ? local.fraction : fraction,
       finished: finished,
       updatedAt: DateTime.tryParse('${remote['lastModified']}')?.millisecondsSinceEpoch ?? 0,
     );

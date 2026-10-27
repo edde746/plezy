@@ -52,7 +52,7 @@ _JVM_PACKAGE = re.compile(r"^\s*package\s+([\w.]+)", re.MULTILINE)
 _JVM_IMPORT = re.compile(r"^\s*import\s+(?:static\s+)?([\w.]+)(?:\s+as\s+(\w+))?\s*;?\s*$", re.MULTILINE)
 # The closing paren keeps a concatenated argument ("pkg." + name) from being
 # half-claimed as a bare literal prefix; such calls fall through to the sweep.
-_JVM_CLASS_FOR_NAME = re.compile(r"\bClass\s*\.\s*forName\s*\(\s*" + _STRING_LITERAL.pattern + r"\s*\)")
+_JVM_CLASS_FOR_NAME = re.compile(r"\bClass\s*\.\s*forName\s*\(\s*" + _STRING_LITERAL.pattern + r"\s*(?:\)|,\s*(?:true|false)\s*,[^)]+\))")
 # Receiver forms this check can resolve statically: Type::class.java (Kotlin) and
 # Type.class (Java). Anything else (javaClass, a variable) leaves group 1 empty.
 _JVM_MEMBER_LOOKUP = re.compile(

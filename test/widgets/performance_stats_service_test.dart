@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_stats.dart';
 import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_stats_service.dart';
@@ -67,8 +68,16 @@ class _NativeStatsPlayer extends _PropertyPlayer {
   Future<String> runtimePlayerType() async => 'exoplayer';
 }
 
-Future<PerformanceStats> _firstStats(_PropertyPlayer player) async {
-  final service = PerformanceStatsService(player);
+Future<PerformanceStats> _firstStats(
+  _PropertyPlayer player, {
+  MediaDisplayCriteria? sourceDisplayCriteria,
+  bool? isTranscoding,
+}) async {
+  final service = PerformanceStatsService(
+    player,
+    sourceDisplayCriteria: sourceDisplayCriteria,
+    isTranscoding: isTranscoding,
+  );
   try {
     final first = service.statsStream.first;
     service.startPolling();
@@ -321,8 +330,47 @@ void main() {
       expect(stats.dvPlaybackPathFormatted, t.performanceOverlay.dvRouteDecoder);
     });
 
+    test('an active FEL graph remains explicitly unqualified', () async {
+      final stats = await mpvStats({'dvSourceProfile': 7, 'dvRoute': 'fel-graph-active', 'video-params/gamma': 'pq'});
+
+      expect(stats.dvPlaybackPathFormatted, '${t.performanceOverlay.dvRouteFelGraphActive} · BL / EL?');
+    });
+
     test('a file without a DOVI record shows no DV rows', () async {
       final stats = await mpvStats({'video-params/gamma': 'pq'});
+
+      expect(stats.dvSourceProfile, isNull);
+      expect(stats.hasDvPlaybackPath, isFalse);
+    });
+
+    test('desktop playback uses source profile and layer flags when the native backend has no DV stats', () async {
+      final stats = await _firstStats(
+        _PropertyPlayer(const {}),
+        sourceDisplayCriteria: const MediaDisplayCriteria(
+          doviProfile: 7,
+          doviBaseLayerPresent: true,
+          doviEnhancementLayerPresent: true,
+          doviRpuPresent: true,
+        ),
+        isTranscoding: false,
+      );
+
+      expect(stats.dvSourceProfile, 7);
+      expect(stats.dvSourceProfileFormatted, 'P7 · BL+ / EL+ / RPU+');
+      expect(stats.dvPlaybackPathFormatted, contains('BL / EL?'));
+    });
+
+    test('source profile is not attributed to a transcoded output', () async {
+      final stats = await _firstStats(
+        _PropertyPlayer(const {}),
+        sourceDisplayCriteria: const MediaDisplayCriteria(
+          doviProfile: 7,
+          doviBaseLayerPresent: true,
+          doviEnhancementLayerPresent: true,
+          doviRpuPresent: true,
+        ),
+        isTranscoding: true,
+      );
 
       expect(stats.dvSourceProfile, isNull);
       expect(stats.hasDvPlaybackPath, isFalse);

@@ -1,4 +1,5 @@
 import '../../utils/insecure_connection_consent.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -306,9 +307,13 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
                   children: [
                     AppIcon(Symbols.lock_rounded, size: 14, color: theme.colorScheme.error),
                     const SizedBox(width: 4),
-                    Text(
-                      t.addServer.plexTokenRequired,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                    Expanded(
+                      child: Text(
+                        t.addServer.plexTokenRequired,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                      ),
                     ),
                   ],
                 )

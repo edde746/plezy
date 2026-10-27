@@ -217,3 +217,4 @@ Smb2ErrorType _errorType(String code) => switch (code) {
   'isADirectory' => Smb2ErrorType.isADirectory,
   _ => Smb2ErrorType.network,
 };
+

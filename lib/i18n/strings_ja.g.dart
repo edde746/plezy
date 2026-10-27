@@ -105,6 +105,8 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ja lending = _Translations$lending$ja._(_root);
 	@override late final _Translations$audiobook$ja audiobook = _Translations$audiobook$ja._(_root);
 	@override late final _Translations$sourceSetup$ja sourceSetup = _Translations$sourceSetup$ja._(_root);
+	@override late final _Translations$comics$ja comics = _Translations$comics$ja._(_root);
+	@override late final _Translations$games$ja games = _Translations$games$ja._(_root);
 }
 
 // Path: app
@@ -3228,17 +3230,17 @@ class _Translations$sourceSetup$ja extends Translations$sourceSetup$en {
 	@override String get nfsTlsHelp => 'RPC-with-TLS は通常の NFS およびマウントサービスのポートを使用し、NAS の RFC 9289 対応が必要です。TLS 1.3 が必須です。ホスト名または IP アドレスは証明書と一致する必要があります。暗号化された通信でも AUTH_SYS UID/GID は引き続き適用されます。';
 	@override String get clientCertificate => 'クライアント証明書（任意）';
 	@override String get clientCertificateHelp => 'NAS がこのクライアントを認証できるようにします。AUTH_SYS ID は引き続き NAS のエクスポートポリシーに従います。';
-	@override String get savedIdentity => '保存済みのクライアント認証情報 を使用します。';
-	@override String get replaceIdentity => '保存済みのクライアント認証情報 を置き換え';
-	@override String get chooseIdentity => 'PKCS#12 クライアント認証情報 を選択';
-	@override String get identityPassphrase => 'クライアント認証情報 のパスフレーズ';
+	@override String get savedIdentity => '保存済みのクライアント認証情報を使用します。';
+	@override String get replaceIdentity => '保存済みのクライアント認証情報を置き換え';
+	@override String get chooseIdentity => 'PKCS#12 クライアント認証情報を選択';
+	@override String get identityPassphrase => 'クライアント認証情報のパスフレーズ';
 	@override String get identityPassphraseHelp => 'ファイルにパスフレーズがない場合は空欄にしてください。';
-	@override String get removeIdentity => '保存済みのクライアント認証情報 を削除';
-	@override String get identityStorageHelp => 'クライアント認証情報 は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報 を維持するには、このセクションを変更しないでください。';
+	@override String get removeIdentity => '保存済みのクライアント認証情報を削除';
+	@override String get identityStorageHelp => 'クライアント認証情報は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報を維持するには、このセクションを変更しないでください。';
 	@override String get nfsLimitations => 'TCP 経由の読み取り専用 NFSv3 です。RPC-with-TLS を使わない場合、NFS 通信は暗号化されません。NAS は、選択した AUTH_SYS ID と非特権クライアントポートを許可する必要があります（通常は「insecure」というエクスポートオプション）。NFSv4 と UDP には対応していません。';
 	@override String get nfsSetupHelp => 'NFS 設定のヘルプ';
 	@override String get nfsSetupHint => '接続できない場合は、これらの設定を確認してください。';
-	@override String get nfsSetupDetails => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報 を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。';
+	@override String get nfsSetupDetails => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。';
 	@override String get ftpHelp => 'FTP はパッシブモードを使用します。暗号化されていない FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。';
 	@override String get openSubtitles => 'OpenSubtitles';
 	@override String get subtitleSetup => '単独の動画ファイルに使用できる、任意の字幕検索機能です。';
@@ -3288,6 +3290,103 @@ class _Translations$sourceSetup$ja extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '選択したクライアント認証情報: ${name}';
 	@override String subtitleRating({required Object rating}) => '評価 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '字幕をダウンロード中: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ja extends Translations$comics$en {
+	_Translations$comics$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => '高さに合わせる';
+	@override String get readingMode => '読書モード';
+	@override String get paged => 'ページ表示';
+	@override String get webtoon => '連続スクロール';
+	@override String get coverAlone => '表紙を単独で表示';
+	@override String get splitWide => '横長のページを分割';
+	@override String get splitWideHelp => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。';
+	@override String get thumbnails => 'ページのサムネイル';
+	@override String get controlsHelp => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。';
+	@override String get savedForComic => 'このプロフィールで、このコミックの表示設定を保存します。';
+	@override String get readLists => '読書リスト';
+	@override String get collections => 'コレクション';
+}
+
+// Path: games
+class _Translations$games$ja extends Translations$games$en {
+	_Translations$games$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Games';
+	@override String get enable => 'Show Games for this profile';
+	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+	@override String get subtitle => 'Your games, from your computers.';
+	@override String get computers => 'Your computers';
+	@override String get nearby => 'Nearby computers';
+	@override String get findComputers => 'Find computers';
+	@override String get addComputer => 'Add computer';
+	@override String get scanHint => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.';
+	@override String get empty => 'Add your gaming computer to get started.';
+	@override String get noNearby => 'No computers found on this network. You can enter an address manually.';
+	@override String get name => 'Computer name';
+	@override String get address => 'IP address or hostname';
+	@override String get port => 'Service port';
+	@override String get protocol => 'Streaming service';
+	@override String get moonlight => 'Sunshine / Moonlight';
+	@override String get steam => 'Steam Remote Play';
+	@override String get save => 'Save computer';
+	@override String get invalidAddress => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.';
+	@override String get pair => 'Connect computer';
+	@override String get pairTitle => 'Approve this device';
+	@override String get pairInstructions => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.';
+	@override String get pairHelp => 'Connect this computer again to approve or renew pairing.';
+	@override String get openPairingPage => 'Open Sunshine PIN page';
+	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
+	@override String get refreshGames => 'Refresh games';
+	@override String get play => 'Play';
+	@override String get recent => 'Recently opened';
+	@override String get favorites => 'Favorites';
+	@override String get allGames => 'All games';
+	@override String get search => 'Find a game';
+	@override String get noMatches => 'No games match this search.';
+	@override String get favorite => 'Save favorite';
+	@override String get unfavorite => 'Remove favorite';
+	@override String get forget => 'Forget computer';
+	@override String get forgetDescription => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.';
+	@override String get unavailable => 'The connection could not complete. Check that the computer is awake and paired, then try again.';
+	@override String get timeout => 'Connection timed out. Check the computer, pairing code and network before trying again.';
+	@override String get libraryHint => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.';
+	@override String get touchControls => 'On-screen controller';
+	@override String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
+	@override String get touchSetup => 'On-screen controls';
+	@override String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
+	@override String get addGame => 'Add game shortcut';
+	@override String get gameName => 'Game name';
+	@override String get gameId => 'Host application ID';
+	@override String get invalidGame => 'Enter a game name and a positive numeric host application ID.';
+	@override String get wake => 'Wake computer';
+	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
+	@override String get mac => 'MAC address (optional)';
+	@override String get help => 'Games help';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+	@override String get cancel => 'Cancel';
+	@override String get scanning => 'Looking for computers…';
+	@override String get saveShortcut => 'Save shortcut';
+	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
+	@override String get engineUnavailable => 'In-app streaming is not available here yet';
+	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
+	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
+	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+	@override String get steamLibrary => 'Steam library';
+	@override String get connecting => 'Connecting…';
+	@override String get disconnect => 'Disconnect';
+	@override String get streamControls => 'Stream controls';
+	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -7359,17 +7458,17 @@ extension on TranslationsJa {
 			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS は通常の NFS およびマウントサービスのポートを使用し、NAS の RFC 9289 対応が必要です。TLS 1.3 が必須です。ホスト名または IP アドレスは証明書と一致する必要があります。暗号化された通信でも AUTH_SYS UID/GID は引き続き適用されます。',
 			'sourceSetup.clientCertificate' => 'クライアント証明書（任意）',
 			'sourceSetup.clientCertificateHelp' => 'NAS がこのクライアントを認証できるようにします。AUTH_SYS ID は引き続き NAS のエクスポートポリシーに従います。',
-			'sourceSetup.savedIdentity' => '保存済みのクライアント認証情報 を使用します。',
-			'sourceSetup.replaceIdentity' => '保存済みのクライアント認証情報 を置き換え',
-			'sourceSetup.chooseIdentity' => 'PKCS#12 クライアント認証情報 を選択',
-			'sourceSetup.identityPassphrase' => 'クライアント認証情報 のパスフレーズ',
+			'sourceSetup.savedIdentity' => '保存済みのクライアント認証情報を使用します。',
+			'sourceSetup.replaceIdentity' => '保存済みのクライアント認証情報を置き換え',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 クライアント認証情報を選択',
+			'sourceSetup.identityPassphrase' => 'クライアント認証情報のパスフレーズ',
 			'sourceSetup.identityPassphraseHelp' => 'ファイルにパスフレーズがない場合は空欄にしてください。',
-			'sourceSetup.removeIdentity' => '保存済みのクライアント認証情報 を削除',
-			'sourceSetup.identityStorageHelp' => 'クライアント認証情報 は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報 を維持するには、このセクションを変更しないでください。',
+			'sourceSetup.removeIdentity' => '保存済みのクライアント認証情報を削除',
+			'sourceSetup.identityStorageHelp' => 'クライアント認証情報は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報を維持するには、このセクションを変更しないでください。',
 			'sourceSetup.nfsLimitations' => 'TCP 経由の読み取り専用 NFSv3 です。RPC-with-TLS を使わない場合、NFS 通信は暗号化されません。NAS は、選択した AUTH_SYS ID と非特権クライアントポートを許可する必要があります（通常は「insecure」というエクスポートオプション）。NFSv4 と UDP には対応していません。',
 			'sourceSetup.nfsSetupHelp' => 'NFS 設定のヘルプ',
 			'sourceSetup.nfsSetupHint' => '接続できない場合は、これらの設定を確認してください。',
-			'sourceSetup.nfsSetupDetails' => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報 を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。',
+			'sourceSetup.nfsSetupDetails' => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。',
 			'sourceSetup.ftpHelp' => 'FTP はパッシブモードを使用します。暗号化されていない FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。',
 			'sourceSetup.openSubtitles' => 'OpenSubtitles',
 			'sourceSetup.subtitleSetup' => '単独の動画ファイルに使用できる、任意の字幕検索機能です。',
@@ -7421,6 +7520,85 @@ extension on TranslationsJa {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '選択したクライアント認証情報: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '評価 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '字幕をダウンロード中: ${title}',
+			'comics.fitHeight' => '高さに合わせる',
+			'comics.readingMode' => '読書モード',
+			'comics.paged' => 'ページ表示',
+			'comics.webtoon' => '連続スクロール',
+			'comics.coverAlone' => '表紙を単独で表示',
+			'comics.splitWide' => '横長のページを分割',
+			'comics.splitWideHelp' => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。',
+			'comics.thumbnails' => 'ページのサムネイル',
+			'comics.controlsHelp' => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。',
+			'comics.savedForComic' => 'このプロフィールで、このコミックの表示設定を保存します。',
+			'comics.readLists' => '読書リスト',
+			'comics.collections' => 'コレクション',
+			'games.title' => 'Games',
+			'games.enable' => 'Show Games for this profile',
+			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.subtitle' => 'Your games, from your computers.',
+			'games.computers' => 'Your computers',
+			'games.nearby' => 'Nearby computers',
+			'games.findComputers' => 'Find computers',
+			'games.addComputer' => 'Add computer',
+			'games.scanHint' => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.',
+			'games.empty' => 'Add your gaming computer to get started.',
+			'games.noNearby' => 'No computers found on this network. You can enter an address manually.',
+			'games.name' => 'Computer name',
+			'games.address' => 'IP address or hostname',
+			'games.port' => 'Service port',
+			'games.protocol' => 'Streaming service',
+			'games.moonlight' => 'Sunshine / Moonlight',
+			'games.steam' => 'Steam Remote Play',
+			'games.save' => 'Save computer',
+			'games.invalidAddress' => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.',
+			'games.pair' => 'Connect computer',
+			'games.pairTitle' => 'Approve this device',
+			'games.pairInstructions' => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.',
+			'games.pairHelp' => 'Connect this computer again to approve or renew pairing.',
+			'games.openPairingPage' => 'Open Sunshine PIN page',
+			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
+			'games.refreshGames' => 'Refresh games',
+			'games.play' => 'Play',
+			'games.recent' => 'Recently opened',
+			'games.favorites' => 'Favorites',
+			'games.allGames' => 'All games',
+			'games.search' => 'Find a game',
+			'games.noMatches' => 'No games match this search.',
+			'games.favorite' => 'Save favorite',
+			'games.unfavorite' => 'Remove favorite',
+			'games.forget' => 'Forget computer',
+			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
+			'games.touchControls' => 'On-screen controller',
+			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			'games.touchSetup' => 'On-screen controls',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
+			'games.addGame' => 'Add game shortcut',
+			'games.gameName' => 'Game name',
+			'games.gameId' => 'Host application ID',
+			'games.invalidGame' => 'Enter a game name and a positive numeric host application ID.',
+			'games.wake' => 'Wake computer',
+			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
+			'games.mac' => 'MAC address (optional)',
+			'games.help' => 'Games help',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.cancel' => 'Cancel',
+			'games.scanning' => 'Looking for computers…',
+			'games.saveShortcut' => 'Save shortcut',
+			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
+			'games.engineUnavailable' => 'In-app streaming is not available here yet',
+			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
+			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
+			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

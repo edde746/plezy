@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -15,6 +17,7 @@ import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_shelf.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
@@ -32,7 +35,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = true;
+  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = false;
   bool _discoveringDlna = false;
   bool _nfsRpcTls = false;
   bool _nfsTlsIdentitySelected = false;
@@ -55,9 +58,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('endpoint').text = old.endpoint;
       field('root').text = old.root;
       field('clientId').text = old.options['clientId'] ?? '';
+      field('mountPort').text = old.options['mountPort'] ?? '';
+      field('uid').text = old.options['uid'] ?? '';
+      field('gid').text = old.options['gid'] ?? '';
+      field('readAhead').text = old.options['readAhead'] ?? '3';
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
-      _onlineMetadata = old.options['onlineMetadata'] != 'false';
+      _onlineMetadata = old.options['onlineMetadata'] == 'true';
       _nfsRpcTls = old.options['rpcTls'] == 'required';
       field('rpcTlsServerCertificatePem').text = old.options['rpcTlsServerCertificatePem'] ?? '';
       if (old.kind == FileSourceKind.nfs) {
@@ -70,6 +77,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
+      field('syncLibrary').text = old.options['syncLibrary'] ?? '';
       field('region').text = old.options['region'] ?? '';
     }
   }
@@ -163,6 +171,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     return null;
   }
 
+  String? _validateSharedLibrary(String? value) {
+    final id = value?.trim() ?? '';
+    if (id.isEmpty) return null;
+    return RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id) ? null : t.sourceSetup.sharedLibraryInvalid;
+  }
+
   Future<void> _pickNfsServerCertificate() async {
     try {
       final selection = await FilePicker.pickFiles(
@@ -239,8 +253,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
               ),
               for (final device in devices)
                 FocusableListTile(
-                  title: Text(device.name),
-                  subtitle: Text(device.location.toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  title: Text(isolateDisplayText(device.name), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    isolateDisplayText(device.location.toString()),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.ltr,
+                  ),
                   onTap: () => Navigator.pop(sheetContext, device),
                 ),
             ],
@@ -271,6 +290,27 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     try {
       await controller.ready;
       controller.requireSession(epoch);
+      final preservedOptions = widget.existing?.kind == _kind
+          ? Map<String, String>.of(widget.existing!.options)
+          : <String, String>{};
+      for (final key in const [
+        'allowHttp',
+        'encryptSmb',
+        'shelves',
+        'onlineMetadata',
+        'mountPort',
+        'uid',
+        'gid',
+        'rpcTls',
+        'rpcTlsServerCertificatePem',
+        'clientId',
+        'region',
+        'syncRoot',
+        'syncLibrary',
+        'readAhead',
+      ]) {
+        preservedOptions.remove(key);
+      }
       final source = FileSource(
         id: widget.existing?.id ?? const Uuid().v4(),
         profileId: controller.profileId!,
@@ -279,6 +319,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         endpoint: field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
+          ...preservedOptions,
           'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
           if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
@@ -289,6 +330,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'uid': normalizeDecimalDigits(field('uid').text.trim()),
           if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty)
             'gid': normalizeDecimalDigits(field('gid').text.trim()),
+          if (_kind == FileSourceKind.nfs)
+            'readAhead': field('readAhead').text.trim().isEmpty ? '3' : field('readAhead').text.trim(),
           if (_kind == FileSourceKind.nfs && _nfsRpcTls) ...{
             'rpcTls': 'required',
             'rpcTlsServerCertificatePem': field('rpcTlsServerCertificatePem').text.trim(),
@@ -298,6 +341,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'region': field('region').text.trim().isEmpty ? 'us-east-1' : field('region').text.trim(),
           if (_kind == FileSourceKind.webdav && field('syncRoot').text.trim().isNotEmpty)
             'syncRoot': field('syncRoot').text.trim(),
+          if (field('syncLibrary').text.trim().isNotEmpty)
+            'syncLibrary': field('syncLibrary').text.trim().toLowerCase(),
         },
       );
       final credentialKeys = [
@@ -438,7 +483,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
                               )
-                            : const Icon(Icons.search_rounded),
+                            : const AppIcon(Symbols.search_rounded),
                         label: Text(_discoveringDlna ? t.sourceSetup.networkSearching : t.sourceSetup.dlnaDiscover),
                       ),
                       const SizedBox(height: 8),
@@ -467,6 +512,23 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             ? t.fileSources.smbFolderHelp
                             : t.fileSources.folderHelp,
                       ),
+                    input(
+                      'syncLibrary',
+                      t.sourceSetup.sharedLibraryId,
+                      hint: t.sourceSetup.sharedLibraryHelp,
+                      validator: _validateSharedLibrary,
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: FocusableButton(
+                        onPressed: _busy ? null : () => setState(() => field('syncLibrary').text = const Uuid().v4()),
+                        child: TextButton.icon(
+                          onPressed: _busy ? null : () => setState(() => field('syncLibrary').text = const Uuid().v4()),
+                          icon: const AppIcon(Symbols.key_rounded),
+                          label: Text(t.sourceSetup.generateSharedLibraryId),
+                        ),
+                      ),
+                    ),
                     if (const {
                       FileSourceKind.webdav,
                       FileSourceKind.opds,
@@ -511,6 +573,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         ),
                       ],
                       if (_kind == FileSourceKind.nfs) ...[
+                        DropdownButtonFormField<int>(
+                          initialValue: int.tryParse(field('readAhead').text) ?? 3,
+                          decoration: InputDecoration(
+                            labelText: t.sourceSetup.nfsReadAhead,
+                            helperText: t.sourceSetup.nfsReadAheadHelp,
+                            helperMaxLines: 3,
+                          ),
+                          items: [
+                            for (var count = 1; count <= 4; count++)
+                              DropdownMenuItem(value: count, child: Text(formatDecimal(count, maximumDecimals: 0))),
+                          ],
+                          onChanged: _busy ? null : (value) => field('readAhead').text = '${value ?? 3}',
+                        ),
+                        const SizedBox(height: 12),
                         input(
                           'mountPort',
                           t.sourceSetup.nfsMountPort,
@@ -559,7 +635,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           ),
                           OutlinedButton.icon(
                             onPressed: _busy ? null : _pickNfsServerCertificate,
-                            icon: const Icon(Icons.upload_file_rounded),
+                            icon: const AppIcon(Symbols.upload_file_rounded),
                             label: Text(
                               _nfsServerCertificateFileName != null
                                   ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsServerCertificateFileName!))
@@ -590,7 +666,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                 ),
                               OutlinedButton.icon(
                                 onPressed: _busy ? null : _pickNfsClientIdentity,
-                                icon: const Icon(Icons.upload_file_rounded),
+                                icon: const AppIcon(Symbols.upload_file_rounded),
                                 label: Text(
                                   _nfsClientIdentityFileName != null
                                       ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsClientIdentityFileName!))
@@ -615,7 +691,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                         field('nfsTlsClientIdentity').clear();
                                         field('nfsTlsClientIdentityPassword').clear();
                                       }),
-                                icon: const Icon(Icons.delete_outline_rounded),
+                                icon: const AppIcon(Symbols.delete_outline_rounded),
                                 label: Text(t.sourceSetup.removeIdentity),
                               ),
                               Padding(
@@ -707,7 +783,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             context,
                             MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                           ),
-                          icon: const Icon(Icons.link_rounded),
+                          icon: const AppIcon(Symbols.link_rounded),
                           label: Text('${t.common.connect} ${t.trakt.title}'),
                         ),
                       ),
@@ -730,13 +806,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            sourceFailureText(_error!),
-                            style: TextStyle(color: Theme.of(context).colorScheme.error),
-                          ),
-                        ),
+                        child: SourceErrorMessage(message: sourceFailureText(_error!)),
                       ),
                     if (_error != null && _kind == FileSourceKind.nfs && _nfsRpcTls)
                       Padding(padding: EdgeInsets.only(bottom: 12), child: Text(t.sourceSetup.nfsEncryptionFailure)),

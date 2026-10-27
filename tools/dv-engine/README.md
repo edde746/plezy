@@ -57,7 +57,7 @@ Download from the workflow run above. These are research artifacts, not signed r
 
 The build proves compilation, selected feature availability, a synthetic GPU composition path and pairing-helper decisions. A local community P7 FEL test clip has since passed the actual single-track mpv graph through both standalone `gpu-next` and embedded `libmpv` `opengl-next` readback on an AMD RX 9070 XT. Its built-in FEL mark is present in the full render and absent from a BL-only control.
 
-Embedded VA-API `vaapi-copy` decode of both layers produced an 8-bit FBO image within one code value of software decode. Two duplicate-RPU warnings in its log still need investigation. This is qualitative real-clip evidence, not an independent numerical reference. The Kodi index claims fair use for testing, evaluation and documentation, but does not publish a formal license for this file; it remains local-only.
+Embedded VA-API `vaapi-copy` decode of both layers produced an 8-bit FBO image within one code value of software decode. Its log contains two pending-RPU replacement warnings, so hardware RPU/frame association remains unqualified. This is qualitative real-clip evidence, not an independent numerical reference. The Kodi index claims fair use for testing, evaluation and documentation, but does not publish a formal license for this file; it remains local-only.
 
 The Linux app builds, but full Plezy playback on its Wayland video plane, zero-copy hardware import, native Dolby Vision HDMI output and non-Linux platform builds remain unqualified. A display's DV badge is not proof of FEL reconstruction; see the [Luna handoff](../../docs/maintainers/dv-engine-luna-handoff.md) for the complete evidence and limits.
 
@@ -114,14 +114,211 @@ The positional time is the capture target in seconds; the helper starts playback
 available, `vaapi-copy`). System runtime libraries required by the engine must
 also be resolvable; see the bundle's `provenance.json`.
 
+### Generate a synthetic Profile 7 FEL graph fixture
+
+The fixture generator creates original four-bar BL and center-patch EL video,
+then uses a pinned 384-byte MIT-licensed FEL RPU test vector from
+[`dovi_tool`](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/assets/tests/fel_orig.bin).
+It does not use film footage. The output is a single-track P7 MP4 with authored
+3840x2160 BL, 1920x1080 EL, 48 frames at 24000/1001 fps, validated RPU/EL/BL
+flags, decoded EL luma codes, and complete PTS/DTS cadence. The default uses
+zero B frames and requires PTS=DTS, keeping BL and EL presentation order
+deterministic for the graph check. Use `--bframes 3` to exercise reordered
+decode timestamps; this records PTS/DTS behavior without requiring identity
+order. Before muxing, it requires one RPU NAL in each AUD-delimited access unit
+of the authored HEVC stream. After muxing, it parses FFprobe's timestamped
+sample packets using the NAL length size from the HEVC configuration record
+and requires one RPU in each packet.
+This is recorded as `container_check.rpu_per_video_packet`; the MP4 demuxed
+Annex-B stream is not used for access-unit grouping because this GPAC output has
+no AUD NALs after muxing. The packet check passed locally against the retained
+48-frame synthetic MP4 (`bdc0da2744554996eaad7918394f7e77fe91c74810ffa5da49d251aee67c7cc4`),
+but has not run on an approved private-JIT job. The source vector's license is
+[MIT](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/LICENSE).
+
+Requirements: `x265`, `dovi_tool`, FFmpeg/`ffprobe`, and GPAC `MP4Box`. The
+generator uses the system Python standard library; it downloads only the pinned
+RPU vector and checks its length and SHA-256 before use. Use a new or empty
+output directory:
+
+```bash
+engine_root=/path/to/plezyng-dv-experimental
+python3 tools/dv-engine/generate_synthetic_p7.py --out-dir build/dv-synthetic-p7
+python3 tools/dv-engine/verify_synthetic_render.py \
+  --runner "$engine_root/bin/plezyng-dv-real-clip" \
+  --input build/dv-synthetic-p7/synthetic-p7-fel.mp4 \
+  --out-dir build/dv-synthetic-p7/render
+```
+
+The renderer helper is shipped in new experimental engine bundles; older
+bundles can compile `real_clip_smoke.c` using the command above. The checked-in
+render verifier captures a neutral-EL frame and a residual-EL frame through
+embedded libmpv `opengl-next`, confirms the P7 splitter, `[el_pair]` and
+`sh_dovi_compose_nlq` in both logs, then checks that the designed center patch
+dominates the output delta. It verifies EL-dependent pixels in this graph; it
+does not compare those pixels against Dolby's reference composer or qualify
+hardware, app presentation, or physical output.
+
+The verifier accepts `--hwdec no` (default) or `--hwdec vaapi-copy`, and
+`--egl-gpu` selects the host EGL/GLES device instead of llvmpipe. It adds a
+neighboring engine bundle's `lib/` automatically. Pass `--library-path DIR`
+for each additional directory needed by the bundle's system dependencies; the
+paths are prepended to the existing `LD_LIBRARY_PATH` for the helper process.
+For example, add `--hwdec vaapi-copy --egl-gpu` to repeat the hardware-decode
+and GPU-render experiment. The JSON report records decode mode and duplicate
+RPU replacement warnings.
+
+The 2026-10-26 software-GLES run used llvmpipe at 1280x720. All 230,400 pixels
+in the designed center patch changed by more than two 8-bit output codes between
+the neutral and residual phases; its mean absolute channel delta was 16.1666.
+The outside-region mean was 0.00517, with 360 outside pixels changing by more
+than two codes. The generated MP4 SHA-256 was
+`bdc0da2744554996eaad7918394f7e77fe91c74810ffa5da49d251aee67c7cc4`; the
+render report SHA-256 was
+`f3efad42a6deb53be1cfe8280a3969c1e58cc4a50fabff6b81f62af168dccf5f`.
+
+A 2026-10-26 local rerun also decoded the generated BL and EL with AMD
+`vaapi-copy` on the RX 9070 XT and rendered through the integrated Radeon 610M
+EGL/GLES device. Both captures confirmed the complete graph and all 230,400
+center-patch pixels changed by more than two codes. Compared with the llvmpipe
+captures, the hardware-decode/GPU-render output differed by at most one 8-bit
+code (mean channel delta 0.00853 neutral, 0.01230 residual). The residual log
+contains three RPU replacement warnings; the neutral and software runs contain
+none. The pinned FFmpeg decoder logs this when its prior RPU buffer is still
+pending as a new RPU is read, then replaces that buffer before frame side data
+is attached ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/hevc/hevcdec.c#L3998-L4009)).
+The synthetic HEVC has 48 access units and exactly one RPU NAL per access unit,
+so the warning is not evidence that the generated file contains duplicate RPU
+NALs within an access unit. A follow-up using the same authored layers and RPU
+with B frames disabled had no replacement warnings on this route; the B-frame
+stress mode reproduced three. This correlates the warning with the reordered
+synthetic timeline on this hardware path, but does not qualify frame identity
+for B-frame media. The verifier now writes its report and fails when any
+replacement warning appears. Zero warnings still do not prove RPU/frame
+identity. Raw reports, images and logs are retained under
+`/home/keith/Documents/plezyng-dv-local-evidence-20261026/`.
+
+The current-source software rerun used a freshly compiled embedded render helper
+with the retained synthetic MP4. It again confirmed the complete graph, reported
+zero RPU replacement warnings, changed all 230,400 center-patch pixels by more
+than two codes, and produced the same 16.1666/255 center mean and 0.00517/255
+outside mean. Its report SHA-256 is
+`76d5e4ad45e92eca9dd89f0486b49889e52de84465967637c75dfd45e5969023`. The packet
+audit found 48 timestamped video packets and exactly one RPU in each. The run
+does not provide an independent Dolby pixel reference or frame-identity proof.
+
+The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled,
+10-bit BL/EL and a 12-bit VDR signal. The EL is authored independently of the
+vector's original mastering pixels, so the fixture tests residual use rather
+than known-correct reconstruction; CM v4.0 is not covered.
+
+### Fresh generator and reorder stress rerun (2026-10-26)
+
+The full 48-frame generator now completes on `kspld0` with the self-contained
+GPAC source-built MP4Box. The default fixture has SHA-256
+`c25ea18f2933bd7d381b0830bbe68cde3d887ffac27256fa960d59660d9c9af9`; all 48
+MP4 packets contain exactly one RPU, and PTS equals DTS. The fresh software
+GLES render report is `453d7fb9007ce38668241728ff3809612a582292fe68f104e6afab03a66a5383`.
+The VA-API-copy decode plus GPU EGL/GLES render report is
+`f49065967c32f2edd3480ad9dd18eaba3d1447ffc772db46549029577d3dfd2f`; both
+reports have zero replacement warnings and all 230,400 center-patch pixels
+changed by more than two codes.
+
+The explicit `--bframes 3` stress fixture also passed the packet audit, with
+PTS/DTS reordering reported. Its hardware residual capture reproduced three
+replacement warnings and the verifier returned a diagnostic failure after
+writing report `1d17ec7087df995ab68e90dedc7b29cc910c665dd53edd0483809224d794f048`.
+This makes the test mode and observed boundary reproducible. It still is not
+frame-identity evidence or a Dolby reference-pixel comparison. The local
+Dolby-experiment suite passed 65/65 contracts; the detailed fixtures, images,
+logs and hashes are retained under
+`/home/keith/Documents/plezyng-dv-local-evidence-20261026/synthetic-graph-postmux-20261026/`.
+
+### Map a parsed Profile 7 FEL RPU into the CCM reference
+
+`profile7_fel_rpu_adapter.py` accepts one parsed `dovi_tool info` JSON object
+and normalizes its BL pivots, polynomial/MMR coefficient pairs and NLQ values
+for `ccm_reference.py`. The committed frame-0 fixture is reduced from the
+384-byte MIT-licensed RPU vector pinned above. It includes the actual parser
+shape and coefficients but no video frames or Dolby display metadata.
+
+The adapter has a hand-calculated Y sample vector: BL code 512 maps to 32768;
+EL code 513 inverse-quantizes to residual 8; reconstruction rounds to 12-bit
+code 2049. The frame fixture also checks all eight luma pieces, both chroma MMR
+curves, and fractional-only Q0.32 coefficient representation. A historical
+local run on `kspld0` on 2026-10-26 passed the focused CCM/adapter suite 14/14
+and the `tools/dv-engine` Python suite 57/57. Current organization policy
+requires new builds and tests to use approved private JIT infrastructure; those
+local runs are historical evidence, not the current merge gate. This remains an
+equation-level sample check, not a full-frame Dolby-reference comparison.
+
+The scope is one RPU with an in-band mapping, 10-bit BL/EL, 12-bit VDR, one
+partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Callers must
+pass `container_dv_md_compression` from the demuxer's Dolby Vision configuration
+record; FFmpeg exposes this field as `dv_md_compression` with values `0` none,
+`1` limited, `2` reserved and `3` extended ([configuration type](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavutil/dovi_meta.h#L1054-L1122), [container parser](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavformat/dovi_isom.c#L527-L546)). The adapter requires it and accepts only `0` (`none`). Nonzero
+`reserved_zero_3bits` (the field name retained by [the pinned dovi_tool parser](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/dolby_vision/src/rpu/rpu_data_header.rs), which [pinned FFmpeg parses as `dm_compression`](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2487-L2523)),
+previous-RPU reuse, extended mapping, and linear-interpolation curves fail
+closed. The adapter does not parse the container record itself; the caller must
+source and pass that value alongside the RPU JSON.
+BT.1886-to-PQ conversion, Dolby display management, spatial resampling, frame
+pairing and rendering are not implemented here. The pinned FFmpeg decoder's
+compliant-mode checks reject metadata compression for profiles below 8 and
+reject previous-RPU reuse on uncompressed RPUs ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2583-L2610)).
+MMR callers must pass already aligned Y/Cb/Cr samples. The final RPU pivot is assigned to its last
+encoded piece because the RPU carries one piece per adjacent pivot interval;
+ETSI's generic terminal-index pseudocode leaves that single endpoint outside
+the encoded piece array. This matches [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260) pivot clamp and `>=` coefficient selection, which selects the final encoded piece at the upper endpoint. That confirms renderer behavior, not Dolby correctness; an independent P7 reference is still needed.
+This is a single-sample equation reference, not a full Dolby-reference pixel
+oracle.
+
+### Verify the generated layers through FelBaker
+
+The pinned FelBaker source builder corrects its VapourSynth v4 output declaration
+to the `clip` key written by `createVideoFilter`; the upstream declaration
+otherwise emits `return value baked is required`. The adapter report records the
+SHA-256 of the exact patched entry source. Install a local VapourSynth runtime,
+NumPy and an FFMS2 v5 plugin that exports `DolbyVisionRPU` frame properties, then
+run the RGB48 verifier on the generated elementary streams:
+
+```bash
+python3 tools/dv-engine/verify_felbaker_synthetic.py \
+  --ffms-plugin /plugins/libffms2.so \
+  --felbaker-plugin build/dv-felbaker/build/libfelbaker.so \
+  --bl build/dv-synthetic-p7/demuxed-base.hevc \
+  --el build/dv-synthetic-p7/demuxed-enhancement.hevc \
+  --report build/dv-synthetic-p7/felbaker-report.json
+```
+
+The verifier requires 48 decoded frames per layer and RPU metadata on both
+sampled EL frames, reads all three RGB48 planes with their actual row strides,
+and compares neutral frame 8 with residual frame 40. The 2026-10-26 run changed
+all 2,073,600 authored center-patch pixels by more than two 16-bit codes; mean
+absolute RGB48 delta was 2392.4089 codes. The outside control mean was 0.000289
+codes, with four of 518,400 pixels changing by more than two codes. This confirms
+EL-dependent output in a companion composer; it is not a Dolby reference or
+accuracy measurement.
+
+The same 48-frame input also completed both offline encodes. `--target hdr10`
+produced 3840x2160 10-bit HEVC/PQ/BT.2020; `--target sdr --peak-nits 1000`
+produced 3840x2160 H.264/BT.709. `ffprobe` counted 48 frames and confirmed each
+target's color tags. These are lossy derived versions with `fel_qualified: false`
+and no Dolby Vision metadata or physical DV output claim.
+
 ## Acceptance still required
 
-- An independent numerical reference for reconstructed pixels. The current
-  real-clip mark proves EL contribution qualitatively, not exact pixel accuracy.
-- A reproducible, redistributable/generated graph fixture that drives paired
-  decoded frames; the local Kodi clip must not be committed or used in public CI.
-- Both single-track and separately tracked layers, end-to-end PTS reorder/seek/flush handling,
-  broken metadata, CM2.9/CM4 cases and frame-specific active areas.
+- A frame-level numeric comparison against an independent composer reference.
+  The local 14-test adapter suite and 47-test DV Python suite pass. The current
+  adapter covers the CCM mapping/NLQ/reconstruction equations for a bounded
+  single-RPU P7 subset; it does not implement BT.1886 conversion or Dolby
+  display management, and its endpoint adaptation still needs independent
+  confirmation. CM 2.9/4.0 behavior and the real-clip mark remain unqualified
+  against reference pixels. Private-JIT checks remain required before merge.
+- Expand the generated single-track graph fixture with separate-track input,
+  PTS pairing and reorder, seek/flush, broken metadata/RPU, CM2.9/CM4 cases,
+  scene changes, active area, malformed or missing EL, crop/chroma edges,
+  queue faults and bounded memory. The local Kodi clip remains private and must
+  not be committed or used in public CI.
 - Full app playback on Linux's Wayland plane, including zero-copy VA-API import,
   FBO precision, color tags, tone-map ownership, resize, subtitles, audio sync,
   suspend and output changes; full Flutter/native checks.
@@ -131,3 +328,16 @@ also be resolvable; see the bundle's `provenance.json`.
 
 The detailed platform research and remaining integration work are in
 [`../../docs/plezyng/dolby-vision-research.md`](../../docs/plezyng/dolby-vision-research.md).
+
+
+## Real-time HDR / SDR output
+
+The standalone launcher accepts `--target auto`, `--target sdr`, or
+`--target hdr10`, plus an optional `--peak-nits` with explicit SDR/HDR targets.
+These render during playback and preserve source RPU/FEL data; they do not
+create a converted movie. See [client conversion](../../docs/maintainers/dv-client-conversion.md)
+for examples, device boundaries, and the distinction from offline companions.
+
+## Native port preparation
+
+[Native FEL ports](../../docs/maintainers/dv-native-ports.md) documents the Windows D3D11 builder and HDR/SDR launcher, explicit Windows app engine selection, Apple device-SDK builds, and production patch-series audit for Android/Apple/Linux/Windows. These are experimental preparations; Android and webOS do not gain a full-FEL player from this change.

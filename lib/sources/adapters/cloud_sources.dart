@@ -1,13 +1,37 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import '../source_models.dart';
+import '../source_oauth.dart';
 import '../source_transport.dart';
 
 typedef SourceAccessToken = Future<String> Function({bool refresh});
+typedef SourceBackgroundCredentials = Future<Map<String, String>> Function();
 
 abstract class OAuthSourceAdapter extends SourceAdapter {
-  OAuthSourceAdapter(super.source, super.transport, this.token);
+  OAuthSourceAdapter(super.source, super.transport, this.token, [this.backgroundCredentials]);
   final SourceAccessToken token;
+  final SourceBackgroundCredentials? backgroundCredentials;
+
+  Future<Map<String, dynamic>?> _backgroundRefresh(
+    String provider,
+    Map<String, String> credentials,
+    Map<String, dynamic> values,
+  ) async {
+    final refreshToken = credentials['refreshToken'];
+    final clientId = SourceOAuthConfig.forSource(source).clientId;
+    if (credentials['nativeGoogle'] == 'true' || refreshToken?.isNotEmpty != true || clientId.isEmpty) return null;
+    return {
+      'provider': provider,
+      'clientId': clientId,
+      'refreshToken': refreshToken,
+      'credentialVersion': sha256.convert(utf8.encode(refreshToken!)).toString(),
+      if (credentials['clientSecret']?.isNotEmpty == true) 'clientSecret': credentials['clientSecret'],
+      ...values,
+    };
+  }
+
   @override
   Future<void> refreshAuthorization() async {
     await token(refresh: true);
@@ -43,7 +67,7 @@ abstract class OAuthSourceAdapter extends SourceAdapter {
 }
 
 class GoogleDriveSourceAdapter extends OAuthSourceAdapter {
-  GoogleDriveSourceAdapter(super.source, super.transport, super.token);
+  GoogleDriveSourceAdapter(super.source, super.transport, super.token, [super.backgroundCredentials]);
   static const _fields =
       'id,name,mimeType,size,modifiedTime,md5Checksum,version,capabilities(canDownload),shortcutDetails(targetId,targetMimeType, targetResourceKey),resourceKey';
   String _quote(String value) => value.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
@@ -127,17 +151,27 @@ class GoogleDriveSourceAdapter extends OAuthSourceAdapter {
       'Authorization': 'Bearer ${await token(refresh: false)}',
       if (ref['resourceKey'] != null) 'X-Goog-Drive-Resource-Keys': '$id/${ref['resourceKey']}',
     };
+    final size = sourceInt(metadata['size']) ?? file.size;
+    final refreshCredentials = await backgroundCredentials?.call() ?? const <String, String>{};
+    final refresh = await _backgroundRefresh('googleDrive', refreshCredentials, {
+      'fileId': id,
+      'revision': revision,
+      if (size != null) 'size': size,
+      if (ref['resourceKey'] is String) 'resourceKey': ref['resourceKey'] as String,
+    });
     return ContentLease(
       Uri.https('www.googleapis.com', '/drive/v3/files/$id', {'alt': 'media', 'supportsAllDrives': 'true'}),
       headers: headers,
-      size: sourceInt(metadata['size']) ?? file.size,
+      size: size,
       expiresAt: DateTime.now().add(const Duration(minutes: 40)),
+      backgroundTransferSafe: refresh != null,
+      backgroundRefresh: refresh,
     );
   }
 }
 
 class OneDriveSourceAdapter extends OAuthSourceAdapter {
-  OneDriveSourceAdapter(super.source, super.transport, super.token);
+  OneDriveSourceAdapter(super.source, super.transport, super.token, [super.backgroundCredentials]);
   String get _drive =>
       source.options['driveId']?.isNotEmpty == true ? '/drives/${source.options['driveId']}' : '/me/drive';
   Uri _uri(String path, [Map<String, String>? query]) => Uri.https('graph.microsoft.com', '/v1.0$_drive$path', query);
@@ -204,12 +238,26 @@ class OneDriveSourceAdapter extends OAuthSourceAdapter {
     final uri = Uri.parse(url);
     if (uri.scheme != 'https') throw const SourceException(SourceFailure.permission);
     // Preauthenticated download URLs must NEVER receive the Graph bearer token.
-    return ContentLease(uri, size: sourceInt(data['size']), expiresAt: DateTime.now().add(const Duration(minutes: 2)));
+    final size = sourceInt(data['size']) ?? file.size;
+    final credentials = await backgroundCredentials?.call() ?? const <String, String>{};
+    final refresh = await _backgroundRefresh('oneDrive', credentials, {
+      'fileId': file.id,
+      if (revision != null) 'revision': revision,
+      if (size != null) 'size': size,
+      if (source.options['driveId']?.isNotEmpty == true) 'driveId': source.options['driveId']!,
+    });
+    return ContentLease(
+      uri,
+      size: size,
+      expiresAt: DateTime.now().add(const Duration(minutes: 2)),
+      backgroundTransferSafe: refresh != null,
+      backgroundRefresh: refresh,
+    );
   }
 }
 
 class DropboxSourceAdapter extends OAuthSourceAdapter {
-  DropboxSourceAdapter(super.source, super.transport, super.token);
+  DropboxSourceAdapter(super.source, super.transport, super.token, [super.backgroundCredentials]);
   Uri _uri(String action) => Uri.https('api.dropboxapi.com', '/2/files/$action');
   @override
   Future<SourcePage> browse({String? parent, String? cursor, String? query}) async {
@@ -255,12 +303,26 @@ class DropboxSourceAdapter extends OAuthSourceAdapter {
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
     final data = await api('POST', _uri('get_temporary_link'), body: {'path': file.id});
-    final revision = sourceMap(data['metadata'])['rev'] as String?;
+    final fileMetadata = sourceMap(data['metadata']);
+    final revision = fileMetadata['rev'] as String?;
     if (file.revision != null && revision != null && file.revision != revision) {
       throw const SourceException(SourceFailure.conflict);
     }
     final uri = Uri.parse(data['link'] as String);
     if (uri.scheme != 'https') throw const SourceException(SourceFailure.permission);
-    return ContentLease(uri, size: file.size, expiresAt: DateTime.now().add(const Duration(hours: 3)));
+    final size = sourceInt(fileMetadata['size']) ?? file.size;
+    final credentials = await backgroundCredentials?.call() ?? const <String, String>{};
+    final refresh = await _backgroundRefresh('dropbox', credentials, {
+      'fileId': file.id,
+      if (revision != null) 'revision': revision,
+      if (size != null) 'size': size,
+    });
+    return ContentLease(
+      uri,
+      size: size,
+      expiresAt: DateTime.now().add(const Duration(hours: 3)),
+      backgroundTransferSafe: refresh != null,
+      backgroundRefresh: refresh,
+    );
   }
 }

@@ -21,7 +21,31 @@ String sourceFailureText(Object error) => switch (error is SourceException ? err
   SourceFailure.invalidData => t.fileSources.errorInvalidData,
   SourceFailure.cancelled => t.fileSources.errorCancelled,
   SourceFailure.conflict => t.fileSources.errorConflict,
+  SourceFailure.quotaExceeded => t.fileSources.errorQuotaExceeded,
+  SourceFailure.storageLow => t.fileSources.errorStorageLow,
+  SourceFailure.storageUnavailable => t.fileSources.errorStorageUnavailable,
 };
+
+class SourceErrorMessage extends StatelessWidget {
+  const SourceErrorMessage({super.key, required this.message, this.textAlign});
+
+  final String message;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      liveRegion: true,
+      child: Text(
+        message,
+        textAlign: textAlign,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+      ),
+    );
+  }
+}
+
 Future<void> sourceAction(BuildContext context, Future<void> Function() action) async {
   try {
     await action();
@@ -113,11 +137,16 @@ class SourceTile extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: theme.textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          isolateDisplayText(title),
+                          style: theme.textTheme.titleMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         if (subtitle?.isNotEmpty == true) ...[
                           const SizedBox(height: 4),
                           Text(
-                            subtitle!,
+                            isolateDisplayText(subtitle!),
                             style: theme.textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -229,14 +258,14 @@ class SourcePosterCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            entry.displayTitle,
+            isolateDisplayText(entry.displayTitle),
             style: Theme.of(context).textTheme.titleSmall,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           if (entry.author.isNotEmpty)
             Text(
-              entry.author,
+              isolateDisplayText(entry.author),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

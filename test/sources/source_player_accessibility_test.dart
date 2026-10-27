@@ -9,6 +9,7 @@ import 'package:plezy/focus/focusable_slider.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/multiview/workspace_controller.dart';
 import 'package:plezy/screens/sources/source_player_screen.dart';
 import 'package:plezy/sources/source_controller.dart';
 import 'package:plezy/sources/source_database.dart';
@@ -22,6 +23,10 @@ import 'fixtures/memory_sources.dart';
 class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   final entry = const SourceEntry(sourceId: 'cloud', id: 'book', title: 'An audiobook', kind: SourceItemKind.audiobook);
+  @override
+  PublicationProgress? get progress => null;
+  @override
+  PublicationMode get mode => PublicationMode.listening;
   @override
   bool get active => true;
   @override
@@ -105,6 +110,7 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider(create: (_) => MultiviewWorkspaceController()),
           ChangeNotifierProvider<SourceController>.value(value: sources),
           ChangeNotifierProvider<SourcePlayback>.value(value: playback),
         ],

@@ -45,6 +45,7 @@ import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
 import '../widgets/fitted_metadata_line.dart';
+import '../widgets/dialog_action_button.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/cycling_media_backdrop.dart';
@@ -58,6 +59,7 @@ import '../utils/content_utils.dart';
 import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
+import '../utils/download_deletion_confirmation.dart';
 import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
 import '../services/watch_actions.dart';
@@ -1762,7 +1764,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         }
 
       case _SyncRuleAction.delete:
-        final confirmed = await showDeleteConfirmation(
+        final confirmed = await confirmDownloadDeletion(
           context,
           title: t.downloads.deleteDownload,
           message: t.downloads.deleteConfirm(title: metadata.displayTitle),

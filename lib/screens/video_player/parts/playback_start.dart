@@ -5,6 +5,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    _autoFullscreenEnteredForPlaybackStart = false;
     bool isCurrentStart() => attempt.isCurrent;
     _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
@@ -103,6 +104,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         await _initVideoFilterAndPip();
         if (!mounted || !attempt.isCurrent) return;
+        if (opened) {
+          final settingsService = await SettingsService.getInstance();
+          if (!attempt.isCurrent) return;
+          await _applyPlaybackStartWindowSettings(settingsService);
+        }
 
         if (mounted) {
           // Live TV never commits a PlaybackSession, so the session-derived
@@ -184,6 +190,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
             startPosition: startPosition,
+            requestCompatibleDolbyVisionRendition: true,
+            supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+            allowExperimentalDolbyVisionProfile7:
+                (Platform.isWindows || Platform.isLinux) &&
+                !PlatformDetector.isWebOSBuild() &&
+                (SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false),
           ),
           offlineLibraryMode: true,
         );
@@ -366,6 +378,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         wtStartupHold: () => wtStartupHold,
         onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
       );
+      if (attempt.isCurrent && primaryMediaOpened) {
+        await _applyPlaybackStartWindowSettings(settingsService);
+      }
     } on PlaybackException catch (e, st) {
       if (attempt.isCurrent && widget.launchObserver?.failure == null) {
         widget.launchObserver?.mark('failed', failure: e.reason.name);

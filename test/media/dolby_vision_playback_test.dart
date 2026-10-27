@@ -3,7 +3,7 @@ import 'package:plezy/media/dolby_vision_playback.dart';
 
 void main() {
   test('P7 decoder and gpu-next advertisements never establish FEL composition', () {
-    for (final route in ['dv-decoder', 'reshaped', null]) {
+    for (final route in ['dv-decoder', 'reshaped', 'fel-graph-active', null]) {
       final report = DolbyVisionPlayback.fromStats({'dvSourceProfile': 7, 'dvRoute': route});
       expect(report.enhancement, DolbyVisionLayerUse.unknown);
       expect(report.layerNotation, 'BL / EL?');

@@ -74,7 +74,7 @@ Initial minimum usable content width: reader 320 logical pixels; general video 2
 
 On dual-screen/foldable devices, avoid hinge and cutout bounds; use one pane per safe region when possible. A resize preserves the reading anchor and zoom intent: reflow EPUB around its logical locator; preserve PDF/comic page and normalized focal point. UI RTL mirrors layout placement and start/end controls, while manga reading direction and media timeline direction retain their own established rules.
 
-Floating panels snap to safe corner/edge locations; remember normalized position within the usable viewport. The drag handle moves the panel, its resize handle changes the panel, and gestures on content retain content meaning. Offer explicit Move and Size menus for every gesture operation. Page controls, subtitle safe regions, keyboard/IME, navigation, game controls and accessibility overlays are keep-clear inputs. Move only when a new obstruction requires it; do not make a panel chase the pointer or focused text continuously.
+Floating panels snap to safe corner/edge locations; remember normalized position within the usable viewport. A long press followed by a drag on any pane surface moves that panel; a short tap keeps its content action, and the header drag handle remains available. The resize handle changes the panel. Offer explicit Move and Size controls for every gesture operation. Page controls, subtitle safe regions, keyboard/IME, navigation, game controls and accessibility overlays are keep-clear inputs. Move only when a new obstruction requires it; do not make a panel chase the pointer or focused text continuously.
 
 Use a clearly reachable collapsed tab only after an explicit tuck action. Do not require an offscreen swipe to recover a panel. On viewport shrink or display removal, bring every title/restore control into a reachable area.
 
@@ -110,7 +110,7 @@ Register commands in the existing shortcut system, checking collisions in MV01. 
 
 On TV, Layout is reachable in the existing action bar. A focused pane header opens pane actions with Select; **Change pane** explicitly moves between pane headers. Direction keys inside reader/game/video content stay with that content. Move mode offers corner presets or controlled D-pad movement, with Select to apply and Back to cancel. Reuse `FocusableActionBar`, focus memory and covered-route boundaries. System Home/Guide buttons retain system ownership.
 
-On touch, tap reveals video chrome, header drag moves floating panels, content pinch zooms readers, and resize handles resize panels. Long press is optional context-menu access, never the only access. Primary touch hit targets meet at least 48 logical pixels where the platform contract permits; native system controls follow system metrics.
+On touch, tap reveals video chrome, a held drag anywhere on a floating pane moves it, header drag remains an immediate alternative, content pinch zooms readers, and resize handles resize panels. Long press is never the only move path: the Move control and keyboard/remote path remain available. Primary touch hit targets meet at least 48 logical pixels where the platform contract permits; native system controls follow system metrics.
 
 Each pane is an accessible region named with content title/type and status. Distinguish “Main view”, “Audio on”, “Controls here”, and “Paused for quick switching” in text/semantics, not color alone. Provide named actions for move, size, promote, swap, audio, park and close. Announce completed layout changes once; do not announce every video frame, progress tick, or pointer move. Focused reading content retains its semantic reading position when its pane moves.
 
@@ -122,11 +122,11 @@ The first eligible use displays a short anchored hint at Layout: “Keep two thi
 
 | Situation | User-facing copy/action intent |
 |---|---|
-| Decoder budget exhausted | “This device can play one video at a time. Keep this open for quick switching?” with Keep open / Replace current / Cancel |
+| Decoder budget exhausted | “This device cannot start another video alongside these sessions. Keep this one open for quick switching?” with Keep open / Replace / Cancel |
 | Native PiP unavailable for a book | Offer Float in Plezy or Pop out where supported; explain “Interactive reading stays inside Plezy on this device.” |
 | Android TV system PiP requested | Explain “Use a floating view inside Plezy on this TV.” Offer it directly |
 | Reader lacks a TV renderer | “This reader is not available on this device yet.” Keep video running; offer another item |
-| Game engine is activity-only | “This game currently opens full screen. Keep your other media ready to return to?” |
+| Game engine is Activity-only | “This game engine currently opens full screen. Keep your other media ready to return to?” Android Steam offers the inline workspace path; Moonlight does not yet expose one. |
 | Mixing conflicts with passthrough | “Mixing needs decoded audio.” Show current output, proposed compatible output, Continue / Keep current |
 | Pair cannot overlap native planes | “Use side by side for these views.” Preserve sessions and offer the valid arrangement |
 | Pop-out/window transfer fails | Restore original pane, keep playback, and show a local Retry action |

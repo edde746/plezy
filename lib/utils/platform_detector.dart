@@ -15,6 +15,7 @@ const _androidFeatureTouchscreen = 'android.hardware.touchscreen';
 const _androidFeatureAutomotive = 'android.hardware.type.automotive';
 
 const bool _webOSBuild = bool.fromEnvironment('PLEZY_WEBOS');
+const bool _tizenBuild = bool.fromEnvironment('PLEZY_TIZEN');
 
 class AndroidTvFeatureDetection {
   final bool isTv;
@@ -96,7 +97,10 @@ class TvDetectionService {
     if (_initialized) return;
 
     final deviceInfo = DeviceInfoPlugin();
-    if (_webOSBuild) {
+    if (_tizenBuild) {
+      _detected = true;
+      _detectionReasons = const ['tizen_build'];
+    } else if (_webOSBuild) {
       _detected = true;
       _detectionReasons = const ['webos_build'];
     } else if (Platform.isAndroid) {
@@ -183,11 +187,13 @@ class TvDetectionService {
   ///
   /// App code goes through the [PlatformDetector] facade ([PlatformDetector.isTV]
   /// and siblings); these raw accessors exist for the facade and tests.
-  static bool isTVSync() => _debugAppleTVOverride ?? (_webOSBuild || (_singleton.instance?.isTV ?? false));
+  static bool isTVSync() =>
+      _debugAppleTVOverride ?? (_webOSBuild || _tizenBuild || (_singleton.instance?.isTV ?? false));
 
   /// Synchronous TV-hardware check: [isTVSync] without the user's force-TV
   /// override (false before initialization).
-  static bool isTVDeviceSync() => _debugAppleTVOverride ?? (_webOSBuild || (_singleton.instance?._detected ?? false));
+  static bool isTVDeviceSync() =>
+      _debugAppleTVOverride ?? (_webOSBuild || _tizenBuild || (_singleton.instance?._detected ?? false));
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
   static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _singleton.instance?._isAppleTV == true);
@@ -223,6 +229,11 @@ class PlatformDetector {
   /// compile-time flag to preserve TV behavior despite `dart:io` reporting Linux.
   static bool isWebOSBuild() => _webOSBuild;
 
+  static bool isTizenBuild() => _tizenBuild;
+
+  /// These TV ports use the manufacturer's media pipeline, without libmpv.
+  static bool usesNativeTvMedia() => _webOSBuild || _tizenBuild;
+
   static bool isTV() {
     return TvDetectionService.isTVSync();
   }
@@ -247,6 +258,9 @@ class PlatformDetector {
   static bool isAutomotive() {
     return TvDetectionService.isAutomotiveSync();
   }
+
+  /// The embedded game streaming engines ship on Android handheld and TV builds.
+  static bool supportsEmbeddedGameStreaming() => Platform.isAndroid && !isAutomotive();
 
   /// Detects if the app should use side navigation (Desktop or TV).
   /// TV is covered because [isMobile] excludes it, so [isDesktop] is true there.
@@ -294,7 +308,8 @@ class PlatformDetector {
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() =>
-      _debugIsDesktopOSOverride ?? (!_webOSBuild && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
+      _debugIsDesktopOSOverride ??
+      (!usesNativeTvMedia() && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
 
   static bool? _debugIsDesktopOSOverride;
 
@@ -306,10 +321,14 @@ class PlatformDetector {
   }
 
   static bool supportsExternalPlayers() {
+    if (usesNativeTvMedia()) return false;
     return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
   }
 
   static bool supportsAudioPassthrough() {
+    // TV audio routing is owned by the firmware; an MPV bitstream toggle
+    // cannot control it.
+    if (usesNativeTvMedia()) return false;
     // Apple platforms (iOS covers iPhone, iPad, and Apple TV) hand AC3/EAC3
     // access units to mpv's AVFoundation output, which feeds the system Dolby
     // decoder — the only path that renders Atmos, on HDMI receivers and on

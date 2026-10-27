@@ -167,7 +167,7 @@ def build(work: Path, jobs: int):
         with tarfile.open(notices / f"{name}.tar.xz", "w:xz") as archive:
             archive.add(source_root / name, arcname=name,
                         filter=lambda item: None if ".git" in Path(item.name).parts else item)
-    for name in ("engine.lock.json", "README.md", "run.py"):
+    for name in ("engine.lock.json", "README.md", "run.py", "output_target.py"):
         shutil.copy2(HERE / name, prefix / name)
     shutil.copytree(HERE / "patches", prefix / "patches")
     integration_source = notices / "integration"
@@ -197,3 +197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

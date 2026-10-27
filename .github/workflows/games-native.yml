@@ -1,0 +1,73 @@
+# ng-runner-policy: private-jit-only-v1
+name: Games embedded engine
+
+# Runs only when selected from Actions.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  steam-transport:
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-steam-transport"]}}', github.run_id)) }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prepare pinned native sources
+        run: python3 scripts/games/prepare_steam.py
+      - name: Install Vulkan loader, headers and software driver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
+      - name: Configure transport and lifecycle tests with sanitizers
+        run: >-
+          cmake -S native/games/steam -B build/games-steam-tests
+          -DPLEZY_STEAM_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+          -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+          -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - name: Build native tests
+        run: cmake --build build/games-steam-tests --parallel 2
+      - name: Run transport and adapter tests
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build/games-steam-tests --output-on-failure
+
+  android-engine:
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-engine"]}}', github.run_id)) }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.47.1'
+          cache: true
+          pub-cache: false
+      - name: Check private manifest and cancellation patches
+        run: python3 -m unittest discover -s scripts/games -p 'test_*.py'
+      - name: Resolve application dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+      - name: Configure Android tools
+        run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
+      - name: Compile both pinned embedded engines, JNI and adapters
+        working-directory: android
+        run: ./gradlew :moonlight:assembleDebug :steam:assembleDebug :steam:testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Run focused game and Multiview regression tests
+        run: >-
+          flutter test test/games test/multiview
+          test/services/gamepad_service_test.dart
+          test/services/playback_coordinator_test.dart
+          test/services/video_volume_controller_test.dart
+          test/services/music/music_playback_service_test.dart
+          test/sources/source_playback_test.dart

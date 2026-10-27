@@ -274,8 +274,8 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.picture_in_picture_alt_rounded,
-              tooltip: t.videoControls.pipButton,
-              semanticLabel: t.videoControls.pipButton,
+              tooltip: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
+              semanticLabel: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
               buttons: buttons,
               onPressed: state.onTogglePIPMode,
             ),

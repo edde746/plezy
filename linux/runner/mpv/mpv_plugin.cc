@@ -1116,10 +1116,15 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_nam
 
 // Static references to keep the plugin instances alive.
 [[maybe_unused]] static MpvPlugin* g_mpv_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_workspace_plugin = nullptr;
 [[maybe_unused]] static MpvPlugin* g_mpv_audio_plugin = nullptr;
 
 void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player", FALSE);
+}
+
+void mpv_workspace_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
+  g_mpv_workspace_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player/workspace", FALSE);
 }
 
 void mpv_audio_plugin_register_with_registrar(FlPluginRegistrar* registrar) {

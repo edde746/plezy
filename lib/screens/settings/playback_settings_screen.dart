@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/input_mode_tracker.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -94,12 +96,18 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
-        // Android mpv and Apple TV only: ExoPlayer is not taking new features, and
-        // elsewhere no Dolby Vision signal ever reaches the display.
+        // The DV output switch is limited to native Android mpv and Apple TV.
         final showDisableDolbyVision = (Platform.isAndroid && !exoActive) || PlatformDetector.isAppleTV();
         // With Dolby Vision disabled mpv strips every Profile 7 file, so the
         // conversion choices would change nothing.
-        final showDvConversionMode = Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision));
+        final showDvConversionMode =
+            (Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision))) ||
+            ((Platform.isIOS || Platform.isMacOS) &&
+                !(PlatformDetector.isAppleTV() && svc.read(SettingsService.disableDolbyVision)));
+        final showExperimentalDolbyVision =
+            (Platform.isLinux && !PlatformDetector.usesNativeTvMedia()) ||
+            Platform.isWindows ||
+            (Platform.isAndroid && !exoActive);
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -109,10 +117,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               children: [
                 if (Platform.isAndroid) _playerBackendSelector(),
                 if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
-                if (!exoActive) _mpvConfigTile(),
-                _hardwareDecodingTile(),
+                if (!exoActive && !PlatformDetector.isTizenBuild()) _mpvConfigTile(),
+                if (!PlatformDetector.isTizenBuild()) _hardwareDecodingTile(),
                 if (exoActive) _playbackBufferTile(),
-                _streamBufferSizeTile(exoActive: exoActive),
+                if (!PlatformDetector.isTizenBuild()) _streamBufferSizeTile(exoActive: exoActive),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
                 if (isMobile && !PlatformDetector.isTV() && !PlatformDetector.isAutomotive())
@@ -135,17 +143,15 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
-                SettingSwitchTile(
-                  pref: SettingsService.experimentalDolbyVision,
-                  icon: Symbols.hdr_on_rounded,
-                  title: t.settings.experimentalDolbyVision,
-                  subtitle: Platform.isLinux && !PlatformDetector.isWebOSBuild()
-                      ? t.settings.experimentalDolbyVisionDescription
-                      : t.settings.dvExperimentUnavailableDescription,
-                  enabled: Platform.isLinux && !PlatformDetector.isWebOSBuild(),
-                ),
+                if (showExperimentalDolbyVision)
+                  SettingSwitchTile(
+                    pref: SettingsService.experimentalDolbyVision,
+                    icon: Symbols.hdr_on_rounded,
+                    title: t.settings.experimentalDolbyVision,
+                    subtitle: t.settings.experimentalDolbyVisionDescription,
+                  ),
                 if (Platform.isLinux &&
-                    !PlatformDetector.isWebOSBuild() &&
+                    !PlatformDetector.usesNativeTvMedia() &&
                     svc.read(SettingsService.experimentalDolbyVision))
                   SettingSwitchTile(
                     pref: SettingsService.dvCompatibilityFallback,
@@ -158,29 +164,35 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   icon: Symbols.info_rounded,
                   title: t.settings.dvExperimentDiagnostics,
                   subtitle: t.settings.dvExperimentDiagnosticsDescription,
-                  enabled: !PlatformDetector.isWebOSBuild(),
+                  enabled: !PlatformDetector.usesNativeTvMedia(),
                 ),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.
                 if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
                 // tile disappears while the ExoPlayer backend is active.
-                if (!exoActive) _deinterlaceTile(),
-                // TODO: "Extend video into display cutout" toggle (#1769)
-                // goes here, Android-only.
+                if (!exoActive && !PlatformDetector.isTizenBuild()) _deinterlaceTile(),
+                if (Platform.isAndroid && !PlatformDetector.isTV())
+                  SettingSwitchTile(
+                    pref: SettingsService.extendVideoIntoDisplayCutout,
+                    icon: Symbols.fullscreen_rounded,
+                    title: t.settings.extendVideoIntoDisplayCutout,
+                    subtitle: t.settings.extendVideoIntoDisplayCutoutDescription,
+                  ),
               ],
             ),
 
-            SettingsGroup(
-              title: t.settings.audio,
-              children: [
-                if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
-                _audioChannelLimitTile(exoActive: exoActive),
-                // Only a stereo fold mixes the center away; any fold can clip.
-                if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
-                if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
-                _maxVolumeTile(),
-              ],
-            ),
+            if (!PlatformDetector.isTizenBuild())
+              SettingsGroup(
+                title: t.settings.audio,
+                children: [
+                  if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
+                  _audioChannelLimitTile(exoActive: exoActive),
+                  // Only a stereo fold mixes the center away; any fold can clip.
+                  if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
+                  if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
+                  _maxVolumeTile(),
+                ],
+              ),
 
             SettingsGroup(
               title: t.settings.quality,
@@ -190,7 +202,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 // Only a phone/tablet has a cellular radio; desktop and TV
                 // never report a cellular-only connection.
                 if (isMobile) _cellularQualityTile(),
-                _directPlayCoveredQualityTile(),
+                if (!PlatformDetector.isTizenBuild()) _directPlayCoveredQualityTile(),
                 // Desktop has no hardware-decode probe, so this is where a
                 // machine too weak for a codec says so (#2443).
                 if (PlatformDetector.isDesktopOS()) _videoCodecsTile(),
@@ -213,18 +225,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   title: t.settings.autoDownloadPreferredSubtitle,
                   subtitle: t.settings.autoDownloadPreferredSubtitleDescription,
                 ),
-                SettingNavigationTile(
-                  icon: Symbols.subtitles_rounded,
-                  title: t.settings.subtitleStyling,
-                  subtitle: t.settings.subtitleStylingDescription,
-                  destinationBuilder: (_) => const SubtitleStylingScreen(),
-                ),
+                if (!PlatformDetector.isTizenBuild())
+                  SettingNavigationTile(
+                    icon: Symbols.subtitles_rounded,
+                    title: t.settings.subtitleStyling,
+                    subtitle: t.settings.subtitleStylingDescription,
+                    destinationBuilder: (_) => const SubtitleStylingScreen(),
+                  ),
               ],
             ),
 
             _seekAndTimingGroup(),
             _autoPlayAndSkipGroup(),
-            _musicPlaybackGroup(),
+            if (!PlatformDetector.isTizenBuild()) _musicPlaybackGroup(),
             _behaviorGroup(context, isMobile),
             if (isMobile) _gesturesGroup(),
             _rememberPlayerChangesGroup(),
@@ -366,15 +379,20 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           title: t.settings.clickVideoTogglesPlayback,
           subtitle: t.settings.clickVideoTogglesPlaybackDescription,
         ),
-      if (PlatformDetector.isDesktopOS())
+      if (PlatformDetector.isDesktopOS()) ...[
+        SettingSwitchTile(
+          pref: SettingsService.enterFullscreenOnPlaybackStart,
+          icon: Symbols.fullscreen_rounded,
+          title: t.settings.enterFullscreenOnPlaybackStart,
+          subtitle: t.settings.enterFullscreenOnPlaybackStartDescription,
+        ),
         SettingSwitchTile(
           pref: SettingsService.exitFullscreenOnPlayerClose,
           icon: Symbols.fullscreen_exit_rounded,
           title: t.settings.exitFullscreenOnPlayerClose,
           subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
         ),
-      // TODO: "Enter fullscreen when playback starts" toggle (#1641) goes
-      // here, desktop-only, paired with exitFullscreenOnPlayerClose.
+      ],
     ],
   );
 
@@ -452,7 +470,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.autoSkipDelay,
         icon: Symbols.timer_rounded,
         title: t.settings.autoSkipDelay,
-        subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
+        subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -528,7 +546,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             ? t.settings.prerollSelectionPickLibraryFirst
             : selectedCount == 0
             ? t.settings.prerollSelectionNoneSelected
-            : t.settings.prerollSelectionCount(count: selectedCount.toString());
+            : t.settings.prerollSelectionCount(count: formatCount(selectedCount));
 
         return SettingsGroup(
           title: t.settings.prerolls,
@@ -773,7 +791,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.downmixCenterBoost,
     icon: Symbols.record_voice_over_rounded,
     title: t.settings.downmixCenterBoost,
-    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: v.toString()),
+    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: formatDecimal(v, maximumDecimals: 0)),
     labelText: t.settings.downmixCenterBoostLabel,
     suffixText: t.settings.downmixCenterBoostShort,
   );
@@ -789,7 +807,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.maxVolume,
     icon: Symbols.volume_up_rounded,
     title: t.settings.maxVolume,
-    subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
+    subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: formatDecimal(v, maximumDecimals: 0)),
     labelText: t.settings.maxVolumeDescription,
     suffixText: '%',
   );
@@ -1037,13 +1055,24 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+    final mediaQuery = MediaQuery.of(context);
+    final availableHeight = mediaQuery.size.height - mediaQuery.viewPadding.vertical - mediaQuery.viewInsets.bottom;
+    final pickerHeight = (availableHeight - 220).clamp(0.0, 560.0).toDouble();
     return AlertDialog(
+      scrollable: true,
       title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
         width: double.maxFinite,
-        height: 400,
+        height: pickerHeight,
         child: _items == null
-            ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
+            ? Center(
+                child: _error != null
+                    ? Semantics(liveRegion: true, child: Text(_error!, textAlign: TextAlign.center))
+                    : const CircularProgressIndicator(),
+              )
+            : _items!.isEmpty
+            ? Center(child: Text(t.messages.noResultsFound, textAlign: TextAlign.center))
             : ListView.builder(
                 itemCount: _items!.length,
                 itemBuilder: (_, index) {
@@ -1052,11 +1081,18 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
                     title: Text(item.title ?? item.id),
                     value: _selected.contains(item.globalKey),
                     onChanged: (checked) => unawaited(_toggle(item.globalKey, checked ?? false)),
+                    autofocus: focusFirstItem && index == 0,
                   );
                 },
               ),
       ),
-      actions: [DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context), label: t.common.close)],
+      actions: [
+        DialogActionButton(
+          autofocus: !focusFirstItem || _items?.isEmpty != false,
+          onPressed: () => Navigator.pop(context),
+          label: t.common.close,
+        ),
+      ],
     );
   }
 }

@@ -317,7 +317,6 @@ class ExploreScreenState extends State<ExploreScreen>
           key: _actionBarKey,
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
-            if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
             FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
             // Append this action so existing TV and keyboard focus positions stay stable.
             FocusableAction(
@@ -328,6 +327,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
               ),
             ),
+            if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
           ],
         ),
       ],
@@ -547,7 +547,6 @@ class ExploreScreenState extends State<ExploreScreen>
             onBack: _navigateToSidebar,
             spacing: 4,
             actions: [
-              if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
               if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
                   debugLabel: 'ExploreSourceSwitcher',
@@ -586,6 +585,7 @@ class ExploreScreenState extends State<ExploreScreen>
                   MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
                 ),
               ),
+              if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
             ],
           ),
         ],

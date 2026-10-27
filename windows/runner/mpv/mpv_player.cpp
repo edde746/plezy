@@ -5,6 +5,9 @@
 #include <windowsx.h>
 
 #include <cmath>
+#include <cstring>
+#include <cstdlib>
+#include <exception>
 #include <unordered_map>
 
 #include "sanitize_utf8.h"
@@ -68,6 +71,38 @@ bool SystemHasQualcommGpu() {
   }
   factory->Release();
   return found;
+}
+
+const mpv_node* FindDvNode(const mpv_node* node, const char* key) {
+  if (!node || node->format != MPV_FORMAT_NODE_MAP || !node->u.list) return nullptr;
+  for (int i = 0; i < node->u.list->num; ++i) {
+    const char* candidate = node->u.list->keys ? node->u.list->keys[i] : nullptr;
+    if (candidate && std::strcmp(candidate, key) == 0) return &node->u.list->values[i];
+  }
+  return nullptr;
+}
+
+std::optional<std::string> DvNodeString(const mpv_node* node) {
+  if (!node || node->format != MPV_FORMAT_STRING || !node->u.string) return std::nullopt;
+  return std::string(node->u.string);
+}
+
+std::optional<int64_t> DvNodeInteger(const mpv_node* node) {
+  if (!node) return std::nullopt;
+  if (node->format == MPV_FORMAT_INT64) return node->u.int64;
+  if (node->format != MPV_FORMAT_STRING || !node->u.string || !node->u.string[0]) return std::nullopt;
+  char* end = nullptr;
+  const long long value = std::strtoll(node->u.string, &end, 10);
+  if (end == node->u.string || *end != '\0') return std::nullopt;
+  return static_cast<int64_t>(value);
+}
+
+std::optional<std::string> DvStringProperty(mpv_handle* player, const char* name) {
+  char* raw = mpv_get_property_string(player, name);
+  if (!raw) return std::nullopt;
+  std::string value(raw);
+  mpv_free(raw);
+  return value;
 }
 
 // Adapts the shared, bounded mpv_node walk onto Flutter's encodable values.
@@ -649,6 +684,21 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
+  if (experimental_dv_ && !audio_only_) {
+    try {
+      dv_hook_stop_ = false;
+      dv_hook_thread_ = std::thread(&MpvPlayer::DolbyVisionHookLoop, this);
+      const int hook_error = mpv_hook_add(mpv_, 0, "on_preloaded", 0);
+      if (hook_error < 0) {
+        LogDolbyVisionRoute("Profile 7 FEL hook unavailable; using the existing route");
+        StopDolbyVisionHookLoop();
+      }
+    } catch (const std::exception& error) {
+      LogDolbyVisionRoute(std::string("Profile 7 FEL hook unavailable: ") + error.what());
+      StopDolbyVisionHookLoop();
+    }
+  }
+
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
   // Native observation so audio recovery doesn't depend on the Dart side
   // choosing to observe the device list.
@@ -662,6 +712,7 @@ bool MpvPlayer::Initialize(HWND view) {
 
 void MpvPlayer::Dispose() {
   StopEventLoop();
+  StopDolbyVisionHookLoop();
 
   auto cancelled = pending_requests_.CancelAll();
   for (auto& callback : cancelled.status) {
@@ -861,6 +912,144 @@ void MpvPlayer::StopEventLoop() {
   }
 }
 
+void MpvPlayer::StopDolbyVisionHookLoop() {
+  {
+    std::lock_guard<std::mutex> lock(dv_hook_mutex_);
+    dv_hook_stop_ = true;
+  }
+  dv_hook_condition_.notify_all();
+  if (dv_hook_thread_.joinable()) dv_hook_thread_.join();
+}
+
+void MpvPlayer::QueueDolbyVisionHook(uint64_t hook_id) {
+  {
+    std::lock_guard<std::mutex> lock(dv_hook_mutex_);
+    if (!dv_hook_stop_ && dv_hook_thread_.joinable()) {
+      dv_hook_ids_.push_back(hook_id);
+      dv_hook_condition_.notify_one();
+      return;
+    }
+  }
+  if (mpv_) mpv_hook_continue(mpv_, hook_id);
+}
+
+void MpvPlayer::DolbyVisionHookLoop() {
+  for (;;) {
+    uint64_t hook_id = 0;
+    {
+      std::unique_lock<std::mutex> lock(dv_hook_mutex_);
+      dv_hook_condition_.wait(lock, [this] { return dv_hook_stop_ || !dv_hook_ids_.empty(); });
+      if (dv_hook_ids_.empty() && dv_hook_stop_) return;
+      hook_id = dv_hook_ids_.front();
+      dv_hook_ids_.pop_front();
+    }
+    ApplyDolbyVisionHook(hook_id);
+  }
+}
+
+std::optional<int64_t> MpvPlayer::PendingDolbyVisionProfile() {
+  if (!mpv_) return std::nullopt;
+
+  const auto requested_video = DvStringProperty(mpv_, "vid");
+  if (requested_video && *requested_video == "no") return std::nullopt;
+
+  auto parse_id = [](const std::optional<std::string>& text) -> std::optional<int64_t> {
+    if (!text || text->empty() || *text == "auto" || *text == "no") return std::nullopt;
+    char* end = nullptr;
+    const long long value = std::strtoll(text->c_str(), &end, 10);
+    if (end == text->c_str() || *end != '\0') return std::nullopt;
+    return static_cast<int64_t>(value);
+  };
+
+  std::optional<int64_t> requested_id = parse_id(requested_video);
+  if (!requested_id) requested_id = parse_id(DvStringProperty(mpv_, "pending-vid"));
+
+  mpv_node tracks{};
+  if (mpv_get_property(mpv_, "track-list", MPV_FORMAT_NODE, &tracks) < 0) return std::nullopt;
+
+  std::optional<int64_t> profile;
+  if (tracks.format == MPV_FORMAT_NODE_ARRAY && tracks.u.list) {
+    const mpv_node_list* list = tracks.u.list;
+    for (int i = 0; i < list->num; ++i) {
+      const mpv_node* track = &list->values[i];
+      if (DvNodeString(FindDvNode(track, "type")) != std::optional<std::string>("video")) continue;
+      const auto id = DvNodeInteger(FindDvNode(track, "id"));
+      if (requested_id && id != requested_id) continue;
+      profile = DvNodeInteger(FindDvNode(track, "dolby-vision-profile"));
+      break;
+    }
+  }
+  mpv_free_node_contents(&tracks);
+  return profile;
+}
+
+void MpvPlayer::LogDolbyVisionRoute(const std::string& text) {
+  flutter::EncodableMap data;
+  data[flutter::EncodableValue("prefix")] = flutter::EncodableValue("dv-route");
+  data[flutter::EncodableValue("level")] = flutter::EncodableValue("info");
+  data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+  SendEvent("log-message", data);
+}
+
+void MpvPlayer::ApplyDolbyVisionHook(uint64_t hook_id) {
+  try {
+    const auto profile = PendingDolbyVisionProfile();
+    if (profile && *profile == 7) {
+      if (!p7_fel_hwdec_overridden_) {
+        const auto hwdec = DvStringProperty(mpv_, "hwdec");
+        if (!hwdec) {
+          LogDolbyVisionRoute("profile=7 experiment=on fallback=hwdec-unavailable");
+        } else {
+          p7_fel_restore_hwdec_ = *hwdec;
+          const int hwdec_error = *hwdec == "no" ? 0 : mpv_set_property_string(mpv_, "hwdec", "no");
+          if (hwdec_error < 0) {
+            p7_fel_restore_hwdec_.clear();
+            LogDolbyVisionRoute("profile=7 experiment=on fallback=software-decode-refused");
+          } else {
+            p7_fel_hwdec_overridden_ = true;
+          }
+        }
+      }
+      if (p7_fel_hwdec_overridden_ && !p7_fel_filter_active_) {
+        const char* command[] = {"vf", "add", "@plezy-dv-fel:format=enhancement-layer=yes", nullptr};
+        const int filter_error = mpv_command(mpv_, command);
+        if (filter_error < 0) {
+          if (p7_fel_restore_hwdec_ != "no") {
+            mpv_set_property_string(mpv_, "hwdec", p7_fel_restore_hwdec_.c_str());
+          }
+          p7_fel_restore_hwdec_.clear();
+          p7_fel_hwdec_overridden_ = false;
+          LogDolbyVisionRoute("profile=7 experiment=on fallback=engine-rejected-fel-filter");
+        } else {
+          p7_fel_filter_active_ = true;
+        }
+      }
+      if (p7_fel_hwdec_overridden_ && p7_fel_filter_active_) {
+        LogDolbyVisionRoute("profile=7 experiment=on vo=gpu-next hwdec=no filter=accepted pixels=unverified");
+      }
+    } else {
+      if (p7_fel_filter_active_) {
+        const char* command[] = {"vf", "remove", "@plezy-dv-fel", nullptr};
+        const int filter_error = mpv_command(mpv_, command);
+        if (filter_error >= 0) p7_fel_filter_active_ = false;
+      }
+      if (p7_fel_hwdec_overridden_) {
+        const int restore_error = mpv_set_property_string(mpv_, "hwdec", p7_fel_restore_hwdec_.c_str());
+        if (restore_error < 0) {
+          LogDolbyVisionRoute("non-P7 route could not restore the saved hwdec setting");
+        }
+        p7_fel_restore_hwdec_.clear();
+        p7_fel_hwdec_overridden_ = false;
+      }
+    }
+  } catch (const std::exception& error) {
+    LogDolbyVisionRoute(std::string("Profile 7 route failed closed: ") + error.what());
+  } catch (...) {
+    LogDolbyVisionRoute("Profile 7 route failed closed: unknown error");
+  }
+  if (mpv_) mpv_hook_continue(mpv_, hook_id);
+}
+
 void MpvPlayer::EventLoop() {
   while (running_) {
     mpv_event* event = mpv_wait_event(mpv_, 0.1);
@@ -905,6 +1094,15 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   }
 
   switch (event->event_id) {
+    case MPV_EVENT_HOOK: {
+      auto* hook = static_cast<mpv_event_hook*>(event->data);
+      if (hook && hook->name && std::strcmp(hook->name, "on_preloaded") == 0 && experimental_dv_) {
+        QueueDolbyVisionHook(hook->id);
+      } else if (hook) {
+        mpv_hook_continue(mpv_, hook->id);
+      }
+      break;
+    }
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       // No OutputDebugStringA mirror here: the record is forwarded to Dart

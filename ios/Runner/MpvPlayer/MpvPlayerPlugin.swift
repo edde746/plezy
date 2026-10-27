@@ -15,6 +15,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
+  func setPlayerVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double
+  ) {
+    playerCore?.setVideoRect(left: left, top: top, right: right, bottom: bottom, devicePixelRatio: devicePixelRatio)
+  }
   func setPlayerVideoZoom(_ scale: Double) { playerCore?.setVideoZoom(scale) }
 
   private var pipController: MpvPipController?
@@ -55,6 +64,23 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
+  /// Registers the isolated in-app workspace decoder. It intentionally has no
+  /// system PiP channel; the workspace owns that presentation and lifecycle.
+  static func registerWorkspace(with registrar: FlutterPluginRegistrar) {
+    let methodChannel = FlutterMethodChannel(
+      name: "com.plezy/mpv_player/workspace",
+      binaryMessenger: registrar.messenger()
+    )
+    let eventChannel = FlutterEventChannel(
+      name: "com.plezy/mpv_player/workspace/events",
+      binaryMessenger: registrar.messenger()
+    )
+    let instance = MpvPlayerPlugin()
+    instance.registrar = registrar
+    registrar.addMethodCallDelegate(instance, channel: methodChannel)
+    eventChannel.setStreamHandler(instance)
+  }
+
   // MARK: - FlutterStreamHandler
 
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)
@@ -89,6 +115,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleAwaitDisplayModeSwitch(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
+    case "setVideoRect":
+      handleSetVideoRect(call: call, result: result)
     case "setVideoZoom":
       handleSetVideoZoom(call: call, result: result)
     case "isInitialized":

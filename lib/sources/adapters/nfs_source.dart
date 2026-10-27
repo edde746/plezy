@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -79,11 +80,26 @@ class NfsSourceAdapter extends SourceAdapter {
   static const int _directory = 2;
   static const int _regularFile = 1;
   static const int _maxFileHandle = 64;
-  static const int _maxRead = 256 * 1024;
+  static const int _maxRead = 1024 * 1024;
+  static const int _minimumRead = 256 * 1024;
   static const List<int> _emptyVerifier = [0, 0, 0, 0, 0, 0, 0, 0];
 
   final Map<String, List<int>> _handles = {};
+  final Map<String, _RpcSession> _rpcSessions = {};
+  final Map<String, Future<_RpcSession>> _rpcSessionOpenings = {};
+  final _readLimiter = _NfsReadLimiter(4);
   Future<List<int>>? _mount;
+  int _readLimit = _maxRead;
+  int _readRequests = 0;
+  int _readBytes = 0;
+  int _readMicros = 0;
+  int get _readAhead => (int.tryParse(source.options['readAhead'] ?? '') ?? 3).clamp(1, 4).toInt();
+  ({int requests, int bytes, int averageMicros, int readAhead}) get readQualificationMetrics => (
+    requests: _readRequests,
+    bytes: _readBytes,
+    averageMicros: _readRequests == 0 ? 0 : _readMicros ~/ _readRequests,
+    readAhead: _readAhead,
+  );
   bool _closed = false;
 
   @override
@@ -195,64 +211,123 @@ class NfsSourceAdapter extends SourceAdapter {
     return handle;
   }
 
-  Future<Uint8List> _rpc(String host, int port, int program, int version, int procedure, Uint8List arguments) async {
+  Future<Uint8List> _rpc(
+    String host,
+    int port,
+    int program,
+    int version,
+    int procedure,
+    Uint8List arguments, {
+    int lane = 0,
+  }) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
-    Socket? socket;
-    _RpcWireReader? wire;
-    try {
-      final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
-      socket = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
-      if (securityContext != null) {
-        socket = await _upgradeRpcTls(socket, host, program, version, securityContext);
+    final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
+    final connectionKey = '$host:$port/$program/$version/${lane == 0 ? 'control' : 'read-$lane'}';
+    final xid = math.Random.secure().nextInt(0xffffffff);
+    final auth = _XdrWriter()
+      ..uint32(DateTime.now().millisecondsSinceEpoch ~/ 1000)
+      ..string('plezyng')
+      ..uint32(_identity('uid'))
+      ..uint32(_identity('gid'))
+      ..uint32(0);
+    final request = _XdrWriter()
+      ..uint32(xid)
+      ..uint32(0)
+      ..uint32(_rpcVersion)
+      ..uint32(program)
+      ..uint32(version)
+      ..uint32(procedure)
+      ..uint32(1)
+      ..opaque(auth.take())
+      ..uint32(0)
+      ..opaque(const <int>[])
+      ..raw(arguments);
+    final payload = request.take();
+    if (payload.length > 1024 * 1024) throw const SourceException(SourceFailure.invalidData);
+    final record = Uint8List(payload.length + 4);
+    ByteData.sublistView(record).setUint32(0, 0x80000000 | payload.length, Endian.big);
+    record.setRange(4, record.length, payload);
+
+    late Uint8List responseBytes;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      _RpcSession? session;
+      try {
+        final acquired = await _rpcSession(connectionKey, host, port, program, version, securityContext);
+        session = acquired;
+        responseBytes = await acquired.exchange(xid, record);
+        break;
+      } on SourceException catch (error) {
+        if (session != null) await _retireRpcSession(connectionKey, session);
+        if (error.reason != SourceFailure.unavailable || attempt == 1) rethrow;
+      } on Object {
+        if (session != null) await _retireRpcSession(connectionKey, session);
+        if (attempt == 1) throw const SourceException(SourceFailure.unavailable);
       }
-      final random = math.Random.secure();
-      final xid = random.nextInt(0xffffffff);
-      final auth = _XdrWriter()
-        ..uint32(DateTime.now().millisecondsSinceEpoch ~/ 1000)
-        ..string('plezyng')
-        ..uint32(_identity('uid'))
-        ..uint32(_identity('gid'))
-        ..uint32(0);
-      final request = _XdrWriter()
-        ..uint32(xid)
-        ..uint32(0)
-        ..uint32(_rpcVersion)
-        ..uint32(program)
-        ..uint32(version)
-        ..uint32(procedure)
-        ..uint32(1)
-        ..opaque(auth.take())
-        ..uint32(0)
-        ..opaque(const <int>[])
-        ..raw(arguments);
-      final payload = request.take();
-      if (payload.length > 1024 * 1024) throw const SourceException(SourceFailure.invalidData);
-      final record = Uint8List(payload.length + 4);
-      ByteData.sublistView(record).setUint32(0, 0x80000000 | payload.length, Endian.big);
-      record.setRange(4, record.length, payload);
-      socket.add(record);
-      await socket.flush().timeout(const Duration(seconds: 15));
-      wire = _RpcWireReader(socket);
-      final responseBytes = await wire.record();
-      final response = _XdrReader(responseBytes);
-      if (response.uint32() != xid || response.uint32() != 1) {
-        throw const SourceException(SourceFailure.invalidData);
-      }
-      final replyStatus = response.uint32();
-      if (replyStatus != 0) throw const SourceException(SourceFailure.unavailable);
-      response.uint32();
-      response.opaque(maxLength: 400);
-      final acceptStatus = response.uint32();
-      if (acceptStatus != 0) throw const SourceException(SourceFailure.unsupported);
-      return response.remaining();
-    } on SourceException {
-      rethrow;
-    } on Object {
-      throw const SourceException(SourceFailure.unavailable);
-    } finally {
-      await wire?.cancel();
-      socket?.destroy();
     }
+
+    final response = _XdrReader(responseBytes);
+    response.uint32(); // XID was checked by the session.
+    response.uint32(); // The session only accepts RPC reply records.
+    final replyStatus = response.uint32();
+    if (replyStatus != 0) throw const SourceException(SourceFailure.unavailable);
+    response.uint32();
+    response.opaque(maxLength: 400);
+    final acceptStatus = response.uint32();
+    if (acceptStatus != 0) throw const SourceException(SourceFailure.unsupported);
+    return response.remaining();
+  }
+
+  Future<_RpcSession> _rpcSession(
+    String key,
+    String host,
+    int port,
+    int program,
+    int version,
+    SecurityContext? securityContext,
+  ) async {
+    final existing = _rpcSessions[key];
+    if (existing != null && !existing.isClosed) return existing;
+    if (existing != null) await _retireRpcSession(key, existing);
+    var opening = _rpcSessionOpenings[key];
+    if (opening == null) {
+      opening = _openRpcSession(key, host, port, program, version, securityContext);
+      _rpcSessionOpenings[key] = opening;
+    }
+    try {
+      return await opening;
+    } finally {
+      if (identical(_rpcSessionOpenings[key], opening)) _rpcSessionOpenings.remove(key);
+    }
+  }
+
+  Future<_RpcSession> _openRpcSession(
+    String key,
+    String host,
+    int port,
+    int program,
+    int version,
+    SecurityContext? securityContext,
+  ) async {
+    if (_closed) throw const SourceException(SourceFailure.cancelled);
+    final raw = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
+    try {
+      final socket = securityContext == null ? raw : await _upgradeRpcTls(raw, host, program, version, securityContext);
+      if (_closed) {
+        socket.destroy();
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      final session = _RpcSession(socket);
+      _rpcSessions[key] = session;
+      return session;
+    } on Object {
+      raw.destroy();
+      rethrow;
+    }
+  }
+
+  Future<void> _retireRpcSession(String key, _RpcSession session) async {
+    if (identical(_rpcSessions[key], session)) _rpcSessions.remove(key);
+    await session.close();
   }
 
   Future<Socket> _upgradeRpcTls(Socket socket, String host, int program, int version, SecurityContext context) async {
@@ -547,31 +622,40 @@ class NfsSourceAdapter extends SourceAdapter {
     var offset = 0;
     while (offset < size) {
       final chunk = await _read(handle, offset, math.min(_maxRead, size - offset));
-      if (chunk.isEmpty) break;
-      bytes.add(chunk);
-      offset += chunk.length;
+      if (chunk.bytes.isEmpty) break;
+      bytes.add(chunk.bytes);
+      offset += chunk.bytes.length;
+      if (chunk.eof && offset < size) break;
     }
     final result = bytes.takeBytes();
     return result.length == size ? result : null;
   }
 
-  Future<Uint8List> _read(List<int> handle, int offset, int count) async {
+  Future<({Uint8List bytes, bool eof})> _read(List<int> handle, int offset, int count, {int lane = 0}) async {
+    final started = DateTime.now();
     final args = _XdrWriter()
       ..opaque(handle)
       ..uint64(offset)
       ..uint32(count);
-    final response = await _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take());
+    final response = lane == 0
+        ? await _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take())
+        : await _readLimiter.run(
+            () => _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take(), lane: lane),
+          );
     final reader = _XdrReader(response);
     final status = reader.uint32();
     if (status != 0) throw _nfsError(status);
     _postAttributes(reader);
     final returned = reader.uint32();
-    reader.boolean();
+    final eof = reader.boolean();
     final bytes = reader.opaque(maxLength: _maxRead);
     if (bytes.length > count || returned != bytes.length) {
       throw const SourceException(SourceFailure.invalidData);
     }
-    return bytes;
+    _readRequests++;
+    _readBytes += bytes.length;
+    _readMicros += DateTime.now().difference(started).inMicroseconds;
+    return (bytes: Uint8List.fromList(bytes), eof: eof);
   }
 
   @override
@@ -653,15 +737,93 @@ class NfsSourceAdapter extends SourceAdapter {
     return (await _getAttributes(await _handleForPath(file.id))).size;
   }
 
+  Future<({int bytes, int elapsedMs, int requests, int readAhead, double mebibytesPerSecond})> qualifyRead(
+    PublicationFile file, {
+    int sampleBytes = 64 * 1024 * 1024,
+  }) async {
+    if (sampleBytes < 1 || sampleBytes > 64 * 1024 * 1024) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final size = await contentSize(file);
+    if (size == null || size <= 0) throw const SourceException(SourceFailure.invalidData);
+    final beforeRequests = _readRequests;
+    final started = DateTime.now();
+    final content = await openContent(file, offset: 0, length: math.min(size, sampleBytes));
+    if (content == null) throw const SourceException(SourceFailure.unsupported);
+    var bytes = 0;
+    await for (final chunk in content.stream.timeout(const Duration(seconds: 45))) {
+      if (_closed) throw const SourceException(SourceFailure.cancelled);
+      bytes += chunk.length;
+    }
+    final elapsed = DateTime.now().difference(started);
+    final seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    if (bytes != content.length) throw const SourceException(SourceFailure.invalidData);
+    if (bytes == 0 || seconds <= 0) throw const SourceException(SourceFailure.unavailable);
+    return (
+      bytes: bytes,
+      elapsedMs: elapsed.inMilliseconds,
+      requests: _readRequests - beforeRequests,
+      readAhead: _readAhead,
+      mebibytesPerSecond: bytes / (1024 * 1024) / seconds,
+    );
+  }
+
+  Future<({Uint8List bytes, bool eof})> _readChunk(List<int> handle, int offset, int count, int lane) async {
+    final bytes = <int>[];
+    var eof = false;
+    while (bytes.length < count) {
+      final part = await _read(handle, offset + bytes.length, count - bytes.length, lane: lane);
+      bytes.addAll(part.bytes);
+      eof = part.eof;
+      if (eof || part.bytes.isEmpty) break;
+    }
+    return (bytes: Uint8List.fromList(bytes), eof: eof);
+  }
+
   Stream<List<int>> _readRange(List<int> handle, int size, int offset, int length) async* {
     var position = offset;
     final end = offset + length;
     while (position < end) {
-      final count = math.min(_maxRead, end - position);
-      final bytes = await _read(handle, position, count);
-      if (bytes.isEmpty) break;
-      yield bytes;
-      position += bytes.length;
+      final batchStart = position;
+      final futures = <Future<({Uint8List bytes, bool eof})>>[];
+      final counts = <int>[];
+      var scheduled = 0;
+      for (var lane = 1; lane <= _readAhead && batchStart + scheduled < end; lane++) {
+        final count = math.min(_readLimit, end - batchStart - scheduled).toInt();
+        counts.add(count);
+        futures.add(_readChunk(handle, batchStart + scheduled, count, lane));
+        scheduled += count;
+      }
+      List<({Uint8List bytes, bool eof})> chunks;
+      try {
+        chunks = await Future.wait(futures);
+      } on SourceException catch (error) {
+        // Some NFS servers reject requests above their configured rsize. Fall
+        // back toward the historical 256 KiB limit and remember it per source.
+        if (error.status == 22 && _readLimit > _minimumRead) {
+          _readLimit = math.max(_minimumRead, _readLimit ~/ 2);
+          continue;
+        }
+        rethrow;
+      }
+      var ended = false;
+      for (var index = 0; index < chunks.length; index++) {
+        final chunk = chunks[index];
+        if (chunk.bytes.isEmpty) {
+          ended = true;
+          break;
+        }
+        if (chunk.bytes.length > counts[index] || position + chunk.bytes.length > end) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        yield chunk.bytes;
+        position += chunk.bytes.length;
+        if (chunk.eof) {
+          ended = true;
+          break;
+        }
+      }
+      if (ended) break;
     }
   }
 
@@ -686,7 +848,38 @@ class NfsSourceAdapter extends SourceAdapter {
     if (_closed) return;
     _closed = true;
     _handles.clear();
+    for (final session in _rpcSessions.values) {
+      unawaited(session.close());
+    }
+    _rpcSessions.clear();
+    _rpcSessionOpenings.clear();
     super.close();
+  }
+}
+
+class _NfsReadLimiter {
+  _NfsReadLimiter(this.maximum);
+  final int maximum;
+  final Queue<Completer<void>> _waiters = Queue();
+  int _active = 0;
+
+  Future<T> run<T>(Future<T> Function() action) async {
+    if (_active < maximum) {
+      _active++;
+    } else {
+      final waiter = Completer<void>();
+      _waiters.addLast(waiter);
+      await waiter.future;
+    }
+    try {
+      return await action();
+    } finally {
+      if (_waiters.isEmpty) {
+        _active--;
+      } else {
+        _waiters.removeFirst().complete();
+      }
+    }
   }
 }
 
@@ -811,10 +1004,17 @@ class _RpcWireReader {
   Object? _error;
   bool _done = false;
   Completer<void>? _changed;
+  bool get isClosed => _done || _error != null;
 
   void _onData(List<int> chunk) {
     if (chunk.isEmpty) return;
     final rest = _buffer.sublist(_offset);
+    if (rest.length + chunk.length > 16 * 1024 * 1024 + 4) {
+      _error = const SourceException(SourceFailure.invalidData);
+      _signal();
+      unawaited(_subscription?.cancel());
+      return;
+    }
     _buffer = [...rest, ...chunk];
     _offset = 0;
     _signal();
@@ -837,7 +1037,10 @@ class _RpcWireReader {
   Future<Uint8List> _readExact(int length) async {
     while (_buffer.length - _offset < length) {
       final error = _error;
-      if (error != null) throw SourceException(SourceFailure.unavailable);
+      if (error != null) {
+        if (error is SourceException) throw error;
+        throw const SourceException(SourceFailure.unavailable);
+      }
       if (_done) throw const SourceException(SourceFailure.unavailable);
       final changed = _changed ??= Completer<void>();
       try {
@@ -864,5 +1067,41 @@ class _RpcWireReader {
       parts.add(await _readExact(length));
     }
     return parts.takeBytes();
+  }
+}
+
+/// One in-flight RPC at a time per authenticated TCP session. NFSv3's record
+/// stream remains open across calls, avoiding a TCP/TLS handshake for every
+/// READ while keeping response framing and transaction IDs checked.
+class _RpcSession {
+  _RpcSession(this.socket) : _wire = _RpcWireReader(socket);
+
+  final Socket socket;
+  final _RpcWireReader _wire;
+  Future<void> _tail = Future.value();
+  bool _closed = false;
+  bool get isClosed => _closed || _wire.isClosed;
+
+  Future<Uint8List> exchange(int xid, Uint8List record) {
+    final operation = _tail.then((_) async {
+      if (isClosed) throw const SourceException(SourceFailure.unavailable);
+      socket.add(record);
+      await socket.flush().timeout(const Duration(seconds: 15));
+      final response = await _wire.record();
+      final reader = _XdrReader(response);
+      if (reader.uint32() != xid || reader.uint32() != 1) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      return response;
+    });
+    _tail = operation.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return operation;
+  }
+
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    socket.destroy();
+    await _wire.cancel();
   }
 }

@@ -1,0 +1,10 @@
+nlohmann/json
+
+This directory contains a vendored copy of nlohmann/json v3.11.2.
+Source: https://github.com/nlohmann/json
+
+The nlohmann/json library is licensed under the MIT License. See LICENSE.
+
+The bundled json.hpp header also contains code derived from Google Abseil
+(absl/utility/utility.h), which is licensed under the Apache License 2.0.
+See LICENSES/Apache-2.0.txt.

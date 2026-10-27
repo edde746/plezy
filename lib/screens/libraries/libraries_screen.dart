@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -933,31 +934,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     List<FocusableAction> appBarActions() => [
-      FocusableAction(
-        icon: Symbols.auto_awesome_rounded,
-        tooltip: t.discover.findNext.open,
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => FindNextScreen(libraryGlobalKey: selectedLibrary?.globalKey)),
-        ),
-      ),
-      FocusableAction(
-        icon: Symbols.folder_open_rounded,
-        tooltip: t.fileSources.title,
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SourcesScreen())),
-      ),
-      if (selectedLibrary?.kind == MediaKind.movie)
-        FocusableAction(
-          icon: Symbols.casino_rounded,
-          tooltip: t.libraries.playRandomMovie,
-          onPressed: _isPreparingRandomPlay ? null : () => _pickRandomMovie(selectedLibrary!),
-        ),
-      if (selectedLibrary?.kind == MediaKind.movie || selectedLibrary?.kind == MediaKind.show)
-        FocusableAction(
-          icon: Symbols.shuffle_rounded,
-          tooltip: t.common.shuffle,
-          onPressed: _isPreparingRandomPlay ? null : () => _shuffleLibrary(selectedLibrary!),
-        ),
+      // Keep the existing actions in their original order so their TV and
+      // keyboard focus positions remain stable as new destinations are added.
       if (allLibraries.isNotEmpty)
         FocusableAction(
           icon: Symbols.edit_rounded,
@@ -997,6 +975,31 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               : null,
         ),
       FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
+      FocusableAction(
+        icon: Symbols.auto_awesome_rounded,
+        tooltip: t.discover.findNext.open,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FindNextScreen(libraryGlobalKey: selectedLibrary?.globalKey)),
+        ),
+      ),
+      FocusableAction(
+        icon: Symbols.folder_open_rounded,
+        tooltip: t.fileSources.title,
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SourcesScreen())),
+      ),
+      if (selectedLibrary?.kind == MediaKind.movie)
+        FocusableAction(
+          icon: Symbols.casino_rounded,
+          tooltip: t.libraries.playRandomMovie,
+          onPressed: _isPreparingRandomPlay ? null : () => _pickRandomMovie(selectedLibrary!),
+        ),
+      if (selectedLibrary?.kind == MediaKind.movie || selectedLibrary?.kind == MediaKind.show)
+        FocusableAction(
+          icon: Symbols.shuffle_rounded,
+          tooltip: t.common.shuffle,
+          onPressed: _isPreparingRandomPlay ? null : () => _shuffleLibrary(selectedLibrary!),
+        ),
     ];
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(

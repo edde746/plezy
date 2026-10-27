@@ -17,8 +17,11 @@ env:
   FLUTTER_VERSION: "3.47.1"
 
 jobs:
+  # These jobs use trusted private JIT pools. Public fork PRs must use a
+  # disposable isolated workflow and must never execute on these runners.
   analyze:
     name: Code Analysis
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -58,7 +61,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang build-essential
           flutter pub get
 
       - name: Install wakelock_plus development dependencies
@@ -117,6 +121,7 @@ jobs:
 
   test:
     name: Unit Tests
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-test"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -141,8 +146,15 @@ jobs:
             ~/.pub-cache
           key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
 
+      - name: Install native reader test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang build-essential
+
       - name: Install dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang build-essential
           flutter clean
           flutter pub get
 
@@ -153,6 +165,23 @@ jobs:
           else
             echo "No tests found, skipping test execution"
           fi
+
+      - name: Setup Node for reader browser checks
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tools/reader-tests/package-lock.json
+
+      - name: Install reader browser dependencies
+        working-directory: tools/reader-tests
+        run: |
+          npm ci --ignore-scripts
+          npm exec -- playwright install --with-deps chromium
+
+      - name: Run real reader browser checks
+        working-directory: tools/reader-tests
+        run: npm test
 
       - name: Install wakelock_plus test dependencies
         working-directory: packages/wakelock_plus
@@ -176,9 +205,12 @@ jobs:
 
   android-test:
     name: Android JVM and Native Tests
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-test"]}}', github.run_id)) }}
     permissions:
+      actions: read
       contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -222,6 +254,14 @@ jobs:
       - name: Configure Android local properties
         run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
 
+      # CodeQL runs inside this private JIT job. Advanced setup must be selected
+      # in repository security settings so SARIF uploads are accepted.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          languages: cpp, java-kotlin
+          build-mode: manual
+
       - name: Configure Android host native tests
         run: |
           cmake -S android/app/src/test/cpp -B build/android-host-tests \
@@ -243,8 +283,21 @@ jobs:
         working-directory: android
         run: ./gradlew :app:lintDebug
 
+      - name: Verify Games embedded manifests and cancellation patches
+        run: python3 -m unittest discover -s scripts/games -p 'test_*.py'
+
+      - name: Build embedded Moonlight and Steam Android modules
+        working-directory: android
+        run: ./gradlew :moonlight:assembleDebug :steam:assembleDebug --stacktrace
+
+      - name: Upload CodeQL analysis
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          category: /language:android
+
   native-format:
     name: Native Formatting
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -265,6 +318,7 @@ jobs:
 
   linux-native-test:
     name: Linux native reliability (${{ matrix.sanitizer }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-linux-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
@@ -296,7 +350,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev liblzma-dev \
             libstdc++-12-dev libmpv-dev libepoxy-dev libcurl4-openssl-dev libevdev-dev \
-            libwayland-dev libegl-dev
+            libwayland-dev libegl-dev libvulkan-dev mesa-vulkan-drivers
 
       - name: Prepare Flutter Linux configuration
         run: |
@@ -334,8 +388,33 @@ jobs:
           ctest --test-dir build/linux-native-${{ matrix.sanitizer }} \
             --output-on-failure --no-tests=error
 
+      - name: Prepare pinned Steam sources
+        if: matrix.sanitizer == 'address'
+        run: python3 scripts/games/prepare_steam.py
+
+      - name: Configure Steam transport tests with sanitizers
+        if: matrix.sanitizer == 'address'
+        run: |
+          cmake -S native/games/steam -B build/games-steam-tests \
+            -DPLEZY_STEAM_TESTS=ON -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+
+      - name: Build Steam transport tests
+        if: matrix.sanitizer == 'address'
+        run: cmake --build build/games-steam-tests --parallel 2
+
+      - name: Run Steam transport and adapter tests
+        if: matrix.sanitizer == 'address'
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build/games-steam-tests --output-on-failure
+
   apple-native-test:
     name: Apple native reliability (${{ matrix.platform }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
@@ -403,9 +482,13 @@ jobs:
         if: matrix.platform == 'tvOS'
         run: tvos/scripts/fetch_engine.sh
 
-      - name: Verify Flutter configuration preserved CocoaPods lockfile
+      - name: Restore and verify committed CocoaPods lockfile
         if: matrix.platform != 'tvOS'
-        run: shasum -a 256 --check "$RUNNER_TEMP/plezy-podfile-lock.sha256"
+        env:
+          PODFILE_LOCK: ${{ matrix.project_directory }}/Podfile.lock
+        run: |
+          git restore --source=HEAD --worktree -- "$PODFILE_LOCK"
+          shasum -a 256 --check "$RUNNER_TEMP/plezy-podfile-lock.sha256"
 
       - name: Install locked CocoaPods dependencies
         if: matrix.platform != 'tvOS'
@@ -481,7 +564,8 @@ jobs:
 
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -567,6 +651,7 @@ jobs:
 
   dependency-check:
     name: Dependency Validation
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dependency-check"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -599,6 +684,7 @@ jobs:
 
   server:
     name: Server checks
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-server"]}}', github.run_id)) }}
     permissions:
       contents: read

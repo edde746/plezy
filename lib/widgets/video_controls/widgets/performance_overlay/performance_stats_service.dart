@@ -5,6 +5,7 @@ import 'dart:io' show Platform, ProcessInfo;
 import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
+import '../../../../media/media_display_criteria.dart';
 import '../../../../utils/app_logger.dart';
 import '../../../../utils/codec_utils.dart';
 import 'performance_stats.dart';
@@ -43,8 +44,31 @@ class PerformanceStatsService {
   StreamSubscription<void>? _backendSwitchedSubscription;
   bool _fetchInProgress = false;
   bool _disposed = false;
+  MediaDisplayCriteria? _sourceDisplayCriteria;
+  bool? _isTranscoding;
 
-  PerformanceStatsService(this.player);
+  PerformanceStatsService(this.player, {MediaDisplayCriteria? sourceDisplayCriteria, bool? isTranscoding}) {
+    _sourceDisplayCriteria = sourceDisplayCriteria;
+    _isTranscoding = isTranscoding;
+  }
+
+  void updateSourceMetadata({MediaDisplayCriteria? displayCriteria, bool? isTranscoding}) {
+    _sourceDisplayCriteria = displayCriteria;
+    _isTranscoding = isTranscoding;
+  }
+
+  int? get _sourceDolbyVisionProfile => _isTranscoding == true ? null : _sourceDisplayCriteria?.doviProfile;
+
+  String? _sourceDolbyVisionLayersFor(int? profile) {
+    if (profile == null || profile != _sourceDolbyVisionProfile) return null;
+    final criteria = _sourceDisplayCriteria!;
+    final flags = <String?>[
+      if (criteria.doviBaseLayerPresent != null) 'BL${criteria.doviBaseLayerPresent! ? '+' : '−'}',
+      if (criteria.doviEnhancementLayerPresent != null) 'EL${criteria.doviEnhancementLayerPresent! ? '+' : '−'}',
+      if (criteria.doviRpuPresent != null) 'RPU${criteria.doviRpuPresent! ? '+' : '−'}',
+    ];
+    return flags.isEmpty ? null : flags.join(' / ');
+  }
 
   Stream<PerformanceStats> get statsStream => _statsController.stream;
 
@@ -193,7 +217,10 @@ class PerformanceStatsService {
         aspectName: statsMap['video-params/aspect-name'] as String?,
         rotate: _parseInt(statsMap['video-params/rotate'] as String?),
         // Dolby Vision: the bitstream's profile and what decodes it
-        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
+        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt() ?? _sourceDolbyVisionProfile,
+        dvSourceLayers: _sourceDolbyVisionLayersFor(
+          (statsMap['dvSourceProfile'] as num?)?.toInt() ?? _sourceDolbyVisionProfile,
+        ),
         dvRoute: DvRoute.fromId(statsMap['dvRoute'] as String?),
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
@@ -232,7 +259,10 @@ class PerformanceStatsService {
         dvRpuConversionFailures: (statsMap['dvRpuConversionFailures'] as num?)?.toInt(),
         dvAvgRpuConversionUs: (statsMap['dvAvgRpuConversionUs'] as num?)?.toInt(),
         dvAvgSampleProcessingUs: (statsMap['dvAvgSampleProcessingUs'] as num?)?.toInt(),
-        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
+        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt() ?? _sourceDolbyVisionProfile,
+        dvSourceLayers: _sourceDolbyVisionLayersFor(
+          (statsMap['dvSourceProfile'] as num?)?.toInt() ?? _sourceDolbyVisionProfile,
+        ),
         dvPlaybackPath: statsMap['dvPlaybackPath'] as String?,
         // App metrics
         appMemoryBytes: appMemory,
@@ -348,7 +378,8 @@ class PerformanceStatsService {
       maxFall: _parseDouble(videoResults?[9]),
       aspectName: videoResults?[10],
       rotate: _parseInt(videoResults?[11]),
-      dvSourceProfile: _parseInt(videoResults?[12]),
+      dvSourceProfile: _parseInt(videoResults?[12]) ?? _sourceDolbyVisionProfile,
+      dvSourceLayers: _sourceDolbyVisionLayersFor(_parseInt(videoResults?[12]) ?? _sourceDolbyVisionProfile),
       dvPlaybackPath: _parseInt(videoResults?[12]) == null ? null : (videoResults?[14] ?? videoResults?[13]),
       appMemoryBytes: appMemory,
       uiFps: _currentUiFps,

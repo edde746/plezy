@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import '../media/tizen_playback_profile.dart';
+import '../utils/platform_detector.dart';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
@@ -152,7 +156,7 @@ const _plexHlsSubtitleTranscodeTarget =
 
 /// Containers the VOD decision must echo back before a start path is handed
 /// to the player (see `requiredContainer` on [_runTranscodeDecision]).
-const _plexHlsVodContainer = 'mp4';
+String get _plexHlsVodContainer => PlatformDetector.isTizenBuild() ? 'mpegts' : 'mp4';
 const _plexHlsVodTsContainer = 'mpegts';
 
 /// Converted-download target: one progressive MKV file with H.264 video,
@@ -173,7 +177,16 @@ String _plexConvertedDownloadProfileExtra(int maxVideoBitrateKbps) => [
 ].join('+');
 
 String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, int? maxVideoBitrateKbps}) {
-  final clauses = <String>['add-settings(DirectPlayStreamSelection=true)'];
+  if (PlatformDetector.isTizenBuild()) {
+    videoTranscodeTarget =
+        'add-transcode-target(type=videoProfile&context=streaming'
+        '&protocol=hls&container=mpegts&videoCodec=h264&audioCodec=aac)';
+  }
+  final clauses = <String>[
+    'add-settings(DirectPlayStreamSelection=true)',
+    if (PlatformDetector.isTizenBuild())
+      'add-limitation(scope=videoAudioCodec&scopeName=*&type=upperBound&name=audio.channels&value=2&replace=true)',
+  ];
   if (maxVideoBitrateKbps != null) {
     clauses.add(
       'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
@@ -3057,6 +3070,7 @@ class PlexClient
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
     bool sourceCodecRefused = false,
+    bool forceVideoEncode = false,
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
@@ -3071,6 +3085,7 @@ class PlexClient
         selectedSubtitleTrack: selectedSubtitleTrack,
         useTsFallbackTarget: useTsFallbackTarget,
         sourceCodecRefused: sourceCodecRefused,
+        forceVideoEncode: forceVideoEncode,
       );
 
       final primary = await _runTranscodeDecision(
@@ -3269,6 +3284,7 @@ class PlexClient
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
     bool sourceCodecRefused = false,
+    bool forceVideoEncode = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
@@ -3297,8 +3313,19 @@ class PlexClient
       // `directStream=1` it copies the audio and encodes the video to the
       // first target codec it can produce, at source resolution and 20 Mbps
       // when no preset caps it.
-      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused ? '1' : '0',
-      'directStream': isOriginal ? '1' : '0',
+      'directPlay':
+          !PlatformDetector.isTizenBuild() &&
+              selectedInternalSubtitle == null &&
+              isOriginal &&
+              !sourceCodecRefused &&
+              !forceVideoEncode
+          ? '1'
+          : '0',
+      'directStream': forceVideoEncode || PlatformDetector.isTizenBuild()
+          ? '0'
+          : isOriginal
+          ? '1'
+          : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
       'location': 'lan',
@@ -3308,10 +3335,13 @@ class PlexClient
       // bitrate limitation clause alone leaves a 4K source at 2160p, starving
       // the encode and breaking the picker's "1080p" promise (issue #1859).
       // Both are honoured by the decision and start endpoints on a real PMS.
-      // Null exactly for the original preset.
-      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      // Null for Original except on the conservative Samsung TV profile.
+      if (PlatformDetector.isTizenBuild())
+        'videoResolution': tizenVideoResolution(preset.videoResolution)
+      else if (preset.videoResolution != null)
+        'videoResolution': preset.videoResolution!,
       if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
-      'directStreamAudio': '1',
+      'directStreamAudio': PlatformDetector.isTizenBuild() ? '0' : '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
       // `subtitles` is the only subtitle knob this endpoint honours. Which
@@ -3346,6 +3376,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
+    bool forceVideoEncode = false,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -3357,6 +3388,7 @@ class PlexClient
       audioStreamId: audioStreamId,
       selectedSubtitleTrack: selectedSubtitleTrack,
       useTsFallbackTarget: useTsFallbackTarget,
+      forceVideoEncode: forceVideoEncode,
     );
   }
 
@@ -3933,11 +3965,34 @@ class PlexClient
       // Tracks consult the music preset — [qualityPreset] is video-shaped
       // (resolution/videoQuality) and is ignored for audio.
       final isTrack = options.metadata.kind == MediaKind.track;
-      final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
+      final requestedAudioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
+      final audioPreset = PlatformDetector.isTizenBuild() && requestedAudioPreset.isOriginal
+          ? AudioQualityPreset.high
+          : requestedAudioPreset;
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
+      final forceCompatibleDolbyVisionTranscode = options.requestsCompatibleDolbyVisionRendition(data.mediaInfo);
+      if (forceCompatibleDolbyVisionTranscode &&
+          !options.hasServerDolbyVisionSdrRoute(data.mediaInfo, backend: DolbyVisionSdrBackend.plex)) {
+        final profile = data.mediaInfo?.displayCriteria?.doviProfile;
+        final label = profile == null ? 'an unknown Dolby Vision profile' : 'Dolby Vision Profile $profile';
+        appLogger.w('Refusing $label: Plex has no known SDR conversion route for this profile');
+        throw PlaybackException(
+          'No supported color-safe SDR conversion route is available for $label on this Plex server.',
+          reason: PlaybackFailureReason.noPlayableSource,
+        );
+      }
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
-          : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
+          : sourceCodecRefused ||
+                forceCompatibleDolbyVisionTranscode ||
+                _presetNeedsTranscode(options.qualityPreset, data);
+      if (forceCompatibleDolbyVisionTranscode) {
+        appLogger.i('Dolby Vision profile detected; requesting a server-generated compatibility rendition');
+      }
+      if ((forceCompatibleDolbyVisionTranscode || (PlatformDetector.isTizenBuild() && wantTranscode)) &&
+          (options.sessionIdentifier == null || options.transcodeSessionId == null)) {
+        throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+      }
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3981,6 +4036,7 @@ class PlexClient
           selectedSubtitleTrack: requestedSubtitleTrack,
           partId: data.mediaInfo?.partId,
           sourceCodecRefused: sourceCodecRefused,
+          forceVideoEncode: forceCompatibleDolbyVisionTranscode,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The
@@ -3993,6 +4049,9 @@ class PlexClient
             _selectedInternalSubtitleForHls(requestedSubtitleTrack) == null;
         if (!burnUndeliverable && result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
+          if (forceCompatibleDolbyVisionTranscode) {
+            await _verifyDolbyVisionSdrManifest(transcodeUrl, options.transcodeSessionId!);
+          }
           final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
@@ -4025,6 +4084,38 @@ class PlexClient
     } catch (error, stackTrace) {
       if (error is PlaybackException) rethrow;
       Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
+  }
+
+  /// A forced Plex video encode does not itself promise HDR-to-SDR conversion.
+  /// Require an explicit SDR declaration in the HLS master before calling it
+  /// a compatibility rendition, and stop the just-started session if the
+  /// output is missing that signal.
+  Future<void> _verifyDolbyVisionSdrManifest(String transcodeUrl, String transcodeSessionId) async {
+    try {
+      final bytes = await _http.getBytes(transcodeUrl, timeout: MediaServerTimeouts.plexProbe, maxBytes: 64 * 1024);
+      final manifest = utf8.decode(bytes, allowMalformed: false);
+      if (hlsMasterDeclaresSdrVideoOutput(manifest)) {
+        appLogger.i('Dolby Vision compatibility transcode declares SDR HLS output');
+        return;
+      }
+      appLogger.w('Plex Dolby Vision encode did not declare SDR output; refusing the unverified rendition');
+      throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+    } catch (error, stackTrace) {
+      try {
+        await _getWithFailover(
+          '/video/:/transcode/universal/stop',
+          queryParameters: {'session': transcodeSessionId},
+          timeout: MediaServerTimeouts.plexProbe,
+        );
+      } catch (stopError, stopStackTrace) {
+        appLogger.d(
+          'Failed to stop an unverified Plex Dolby Vision transcode',
+          error: stopError,
+          stackTrace: stopStackTrace,
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
@@ -4061,6 +4152,9 @@ class PlexClient
   /// hardware probe reports without a decoder still direct-plays, as it
   /// always has on Plex.
   bool _sourceCodecRefused(PlexVideoPlaybackData data) {
+    // The initial Samsung port uses server-normalized video until direct-play
+    // containers, codecs and audio routes have been qualified on hardware.
+    if (PlatformDetector.isTizenBuild()) return true;
     final codec = RankedVideoCodec.fromServerCodec(_selectedVersion(data)?.videoCodec);
     if (codec == null || !VideoDecodeCapabilities.isRefusedByUser(codec)) return false;
     appLogger.i('Source codec ${codec.id} is refused in settings; transcoding');
@@ -4080,6 +4174,9 @@ class PlexClient
     PlaybackInitializationOptions options, {
     int? activeAudioStreamId,
   }) {
+    if (PlatformDetector.isTizenBuild() || options.requestsCompatibleDolbyVisionRendition(data.mediaInfo)) {
+      throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+    }
     final fallbackReason = outcome == TranscodeDecisionOutcome.directPlayOnly
         ? TranscodeFallbackReason.directPlayOnly
         : TranscodeFallbackReason.decisionFailed;

@@ -5,13 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/provider_mark.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/app_menu.dart';
@@ -74,11 +80,15 @@ class SourcesScreen extends StatefulWidget {
 class _SourcesScreenState extends State<SourcesScreen> {
   List<SourceEntry> _entries = [];
   List<PublicationProgress> _progress = [];
+  final TextEditingController _searchController = TextEditingController();
   final Set<String> _offline = {};
+  List<Map<String, dynamic>> _downloadJobs = const [];
   bool _loading = true;
+  bool _usingIndexFallback = false;
   Object? _error;
   String? _next;
   String _query = '';
+  Timer? _searchTimer;
   SourceItemKind? _filter;
   int _request = 0;
   PublicationSort _sort = PublicationSort.title;
@@ -103,7 +113,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> _load({bool more = false}) async {
+    if (!mounted) return;
     final controller = context.read<SourceController>(), request = ++_request;
+    if (!more && widget.source != null) _usingIndexFallback = false;
     setState(() {
       _loading = true;
       _error = null;
@@ -120,9 +132,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
         _preferenceProfile = profile;
       }
       List<SourceEntry> items;
-      if (widget.source == null || widget.offlineOnly) {
-        items = await controller.repository.entries(profile);
-        _next = null;
+      if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+        final page = await controller.repository.entriesPage(
+          profile,
+          source: widget.source?.id,
+          parent: widget.folder?.id,
+          filterParent: widget.source != null,
+          shelf: widget.shelf,
+          query: _query,
+          cursor: more ? _next : null,
+        );
+        items = more ? [..._entries, ...page.items] : page.items;
+        _next = page.cursor;
       } else {
         try {
           final page = await controller.browse(
@@ -134,29 +155,60 @@ class _SourcesScreenState extends State<SourcesScreen> {
           _next = page.next;
         } catch (e) {
           if (more) rethrow;
-          final cached = await controller.repository.entries(profile);
-          items = cached
-              .where((e) => e.sourceId == widget.source!.id && e.parentId == (widget.folder?.id ?? ''))
-              .toList();
+          _usingIndexFallback = true;
+          final page = await controller.repository.entriesPage(
+            profile,
+            source: widget.source!.id,
+            parent: widget.folder?.id,
+            filterParent: true,
+            shelf: widget.shelf,
+            query: _query,
+          );
+          items = page.items;
+          _next = page.cursor;
           _error = e;
         }
       }
-      final progress = await controller.repository.allProgress(profile);
+      if (widget.source == null && !widget.offlineOnly && widget.shelf == null && _query.isEmpty) {
+        final recent = await controller.repository.recentProgressEntries(profile);
+        items = [...items, ...recent.map((pair) => pair.$1)];
+      }
+      final uniqueItems = {for (final entry in items) entry.key: entry}.values.toList(growable: false);
+      final progress = await controller.repository.progressForEntries(profile, uniqueItems.map((entry) => entry.key));
       final downloads = await controller.repository.downloads(profile);
       controller.requireSession(epoch);
       if (!mounted || request != _request) return;
       _offline
         ..clear()
         ..addAll(downloads.where((d) => d['complete'] == 1).map((d) => d['key'] as String));
+      _downloadJobs = downloads
+          .where((d) => d['complete'] != 1 && d['state'] != 'completed' && d['state'] != 'legacy')
+          .toList(growable: false);
       setState(() {
-        _entries = {for (final e in items) e.key: e}.values.toList();
+        _entries = uniqueItems;
         _progress = progress;
       });
     } catch (e) {
-      if (mounted && request == _request) setState(() => _error = e);
+      if (mounted && request == _request) {
+        setState(() {
+          _error = e;
+          if (more &&
+              e is SourceException &&
+              const {SourceFailure.cancelled, SourceFailure.invalidData}.contains(e.reason)) {
+            _next = null;
+          }
+        });
+      }
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _open(SourceEntry entry) async {
@@ -182,6 +234,139 @@ class _SourcesScreenState extends State<SourcesScreen> {
       await context.read<SourceController>().importFiles(files.files, name: t.fileSources.localFiles);
     });
     if (mounted) await _load();
+  }
+
+  String _formatBytes(int bytes) {
+    return ByteFormatter.formatBytes(bytes, decimals: 1);
+  }
+
+  Future<void> _editOfflineQuota(SourceController controller) async {
+    await controller.ready;
+    controller.requireSession();
+    final profile = controller.profileId!;
+    await controller.downloads.reconcileProfile(profile);
+    final current = await controller.repository.downloadQuota(profile);
+    final usage = await controller.repository.downloadStorageUsage(profile);
+    if (!mounted) return;
+    final choices = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1024].map((gb) => gb * 1024 * 1024 * 1024).toList();
+    var selected = choices.reduce((a, b) => (a - current).abs() <= (b - current).abs() ? a : b);
+    final result = await showScopedDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(t.fileSources.offlineQuota),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.fileSources.offlineQuotaHelp),
+              const SizedBox(height: 16),
+              Text(
+                '${t.fileSources.offlineStorageUsage}: ${_formatBytes(usage.usedBytes)} / ${_formatBytes(selected)}',
+              ),
+              if (usage.reservedBytes > usage.usedBytes)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('${_formatBytes(usage.reservedBytes)} ${t.fileSources.reservedStorage}'),
+                ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: selected,
+                decoration: InputDecoration(labelText: t.fileSources.offlineQuota),
+                items: [for (final value in choices) DropdownMenuItem(value: value, child: Text(_formatBytes(value)))],
+                onChanged: (value) => setDialogState(() => selected = value ?? selected),
+              ),
+            ],
+          ),
+          actions: [
+            DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+            DialogActionButton(
+              isPrimary: true,
+              onPressed: () => Navigator.pop(dialogContext, selected),
+              label: t.common.save,
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    await sourceAction(context, () => controller.repository.setDownloadQuota(profile, result));
+    if (mounted) await _load();
+  }
+
+  Widget _downloadJobTile(SourceController sources, Map<String, dynamic> job) {
+    final state = job['state'];
+    final retryable = state == 'failed' || state == 'paused';
+    final actionLabel = retryable ? t.common.retry : t.common.cancel;
+    final statusLabel = switch (state) {
+      'running' => t.fileSources.downloadRunning,
+      'queued' => t.fileSources.downloadQueued,
+      'paused' => t.fileSources.downloadPaused,
+      'failed' => t.fileSources.downloadFailed,
+      'importing' => t.fileSources.importing,
+      'orphaned' => t.fileSources.importInterrupted,
+      _ => t.fileSources.downloadQueued,
+    };
+    final label = (job['label'] as String?)?.trim() ?? '';
+    final key = job['key'] as String;
+    final action = _loading || state == 'orphaned'
+        ? null
+        : () => sourceAction(context, () async {
+            if (retryable) {
+              await sources.retryDownload(key);
+            } else {
+              await sources.cancelDownload(key);
+            }
+            if (mounted) await _load();
+          });
+    return FocusableListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const AppIcon(Symbols.downloading_rounded),
+      title: Text(
+        label.isEmpty ? t.fileSources.offline : isolateDisplayText(label),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(state == 'orphaned' ? statusLabel : '$statusLabel · $actionLabel'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (state != 'orphaned')
+            IconButton(
+              tooltip: actionLabel,
+              icon: AppIcon(retryable ? Symbols.refresh_rounded : Symbols.close_rounded),
+              onPressed: action,
+            ),
+          IconButton(
+            tooltip: t.fileSources.removeDownloadJob,
+            icon: const AppIcon(Symbols.delete_outline_rounded),
+            onPressed: _loading
+                ? null
+                : () => sourceAction(context, () async {
+                    if (!await showConfirmDialog(
+                      context,
+                      title: t.fileSources.removeDownloadJob,
+                      message: t.fileSources.confirmRemoveDownloadJob,
+                      confirmText: t.fileSources.removeDownloadJob,
+                      isDestructive: true,
+                    )) {
+                      return;
+                    }
+                    try {
+                      await sources.removeDownloadJob(key);
+                    } on SourceException catch (error) {
+                      if (error.reason != SourceFailure.conflict) rethrow;
+                      if (!mounted) return;
+                      showSnackBar(context, t.fileSources.downloadAlreadyComplete);
+                    }
+                    if (mounted) await _load();
+                  }),
+          ),
+        ],
+      ),
+      onTap: action,
+    );
   }
 
   Future<void> _sourceAction(String action, FileSource source) async {
@@ -228,6 +413,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
     final filtered = _entries
         .where(
           (e) =>
+              (!e.unavailable || downloaded(e)) &&
               (widget.shelf == null || widget.shelf!.includes(e)) &&
               (!widget.offlineOnly || downloaded(e)) &&
               (_filter == null || e.kind == _filter) &&
@@ -239,11 +425,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
       _progress,
       sort: _sort,
       status: _status,
-      mode: widget.shelf == PublicationShelf.audiobooks
-          ? PublicationMode.listening
-          : widget.shelf != null
-          ? PublicationMode.reading
-          : null,
+      mode: switch (widget.shelf) {
+        PublicationShelf.audiobooks => PublicationMode.listening,
+        PublicationShelf.videos => PublicationMode.watching,
+        PublicationShelf.ebooks || PublicationShelf.comics => PublicationMode.reading,
+        null => null,
+      },
     );
     final continuations =
         _progress.where((p) => !p.finished && p.fraction < 1 && _entries.any((e) => e.key == p.entryKey)).toList()
@@ -298,6 +485,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 label: t.audiobook.syncTitle,
                 icon: Symbols.cloud_sync_rounded,
               ),
+              AppMenuItem(value: 'offline-quota', label: t.fileSources.offlineQuota, icon: Symbols.storage_rounded),
             ],
             const AppMenuDivider(),
             AppMenuItem(
@@ -319,6 +507,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
             } else if (action == 'reading-listening-sync') {
               await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
               if (mounted) await _load();
+            } else if (action == 'offline-quota') {
+              await _editOfflineQuota(sources);
             } else if (action == 'refresh') {
               await _load();
             }
@@ -368,6 +558,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.offlineOnly && _downloadJobs.isNotEmpty) ...[
+                  Text(t.fileSources.downloadQueue, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  for (final job in _downloadJobs) _downloadJobTile(sources, job),
+                  const SizedBox(height: 12),
+                ],
                 if (root) ...[
                   Text(t.fileSources.subtitle, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 24),
@@ -438,12 +634,20 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     ],
                   const SizedBox(height: 16),
                 ],
-                TextField(
+                FocusableTextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     labelText: root ? t.fileSources.searchCached : t.fileSources.search,
                   ),
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: (v) {
+                    setState(() => _query = v);
+                    if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+                      _searchTimer?.cancel();
+                      _searchTimer = Timer(const Duration(milliseconds: 250), () => _load());
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -465,7 +669,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   ],
                 ),
                 if (_error != null)
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(sourceFailureText(_error!))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: SourceErrorMessage(message: sourceFailureText(_error!)),
+                  ),
                 if (_loading)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
                 if (entries.isEmpty && !_loading)
@@ -522,9 +729,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
             child: Column(
               children: [
                 if (_next != null)
-                  OutlinedButton(
+                  FocusableButton(
                     onPressed: _loading ? null : () => _load(more: true),
-                    child: Text(t.fileSources.loadMore),
+                    child: OutlinedButton(
+                      onPressed: _loading ? null : () => _load(more: true),
+                      child: Text(t.fileSources.loadMore),
+                    ),
                   ),
                 if (widget.folder != null && _next != null) Text(t.fileSources.groupHint),
               ],

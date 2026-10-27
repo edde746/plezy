@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../models/catalog/mdblist_explore_shelf.dart';
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/app_icon.dart';
+import '../../models/catalog/mdblist_explore_shelf.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/catalog/mdblist_catalog_source.dart';
@@ -88,25 +91,42 @@ class _MdblistExploreShelvesScreenState extends State<MdblistExploreShelvesScree
 
   Future<void> _rename(int index) async {
     final shelf = _shelves[index];
-    var editedName = shelf.displayName ?? '';
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.explore.mdblistShelves.displayName),
-        content: TextFormField(
-          initialValue: editedName,
-          onChanged: (value) => editedName = value,
-          autofocus: true,
-          maxLength: 100,
-          decoration: InputDecoration(hintText: shelf.sourceName, helperText: t.explore.mdblistShelves.nameHint),
+    final controller = TextEditingController(text: shelf.displayName ?? '');
+    final fieldFocus = FocusNode(debugLabel: 'MdblistShelfRename:Name');
+    final saveFocus = FocusNode(debugLabel: 'MdblistShelfRename:Save');
+    try {
+      final value = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          scrollable: true,
+          title: Text(t.explore.mdblistShelves.displayName),
+          content: FocusableTextField(
+            controller: controller,
+            focusNode: fieldFocus,
+            autofocus: true,
+            maxLength: 100,
+            textInputAction: TextInputAction.done,
+            onNavigateDown: saveFocus.requestFocus,
+            onSubmitted: (_) => saveFocus.requestFocus(),
+            decoration: InputDecoration(hintText: shelf.sourceName, helperText: t.explore.mdblistShelves.nameHint),
+          ),
+          actions: [
+            DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+            DialogActionButton(
+              focusNode: saveFocus,
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              label: t.common.save,
+              isPrimary: true,
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, editedName.trim()), child: Text(t.common.save)),
-        ],
-      ),
-    );
-    if (value != null && mounted) setState(() => _shelves[index] = shelf.copyWith(displayName: value));
+      );
+      if (value != null && mounted) setState(() => _shelves[index] = shelf.copyWith(displayName: value));
+    } finally {
+      controller.dispose();
+      fieldFocus.dispose();
+      saveFocus.dispose();
+    }
   }
 
   void _move(int index, int delta) => setState(() {
@@ -166,9 +186,12 @@ class _MdblistExploreShelvesScreenState extends State<MdblistExploreShelvesScree
 
         Padding(
           padding: const EdgeInsets.all(16),
-          child: FilledButton(
+          child: FocusableButton(
             onPressed: _saving || _loading ? null : _save,
-            child: Text(_saving ? t.common.loading : t.explore.mdblistShelves.save),
+            child: FilledButton(
+              onPressed: _saving || _loading ? null : _save,
+              child: Text(_saving ? t.common.loading : t.explore.mdblistShelves.save),
+            ),
           ),
         ),
       ],
@@ -192,20 +215,32 @@ class _MdblistExploreShelvesScreenState extends State<MdblistExploreShelvesScree
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Wrap(
             children: [
-              IconButton(
-                tooltip: t.explore.mdblistShelves.moveUp(title: shelf.title),
-                icon: const AppIcon(Symbols.arrow_upward_rounded, fill: 1),
+              FocusableButton(
                 onPressed: _saving || index == 0 ? null : () => _move(index, -1),
+                child: IconButton(
+                  tooltip: t.explore.mdblistShelves.moveUp(title: shelf.title),
+                  icon: const AppIcon(Symbols.arrow_upward_rounded, fill: 1),
+                  onPressed: _saving || index == 0 ? null : () => _move(index, -1),
+                ),
               ),
-              IconButton(
-                tooltip: t.explore.mdblistShelves.moveDown(title: shelf.title),
-                icon: const AppIcon(Symbols.arrow_downward_rounded, fill: 1),
+              FocusableButton(
                 onPressed: _saving || index == _shelves.length - 1 ? null : () => _move(index, 1),
+                child: IconButton(
+                  tooltip: t.explore.mdblistShelves.moveDown(title: shelf.title),
+                  icon: const AppIcon(Symbols.arrow_downward_rounded, fill: 1),
+                  onPressed: _saving || index == _shelves.length - 1 ? null : () => _move(index, 1),
+                ),
               ),
-              TextButton(onPressed: _saving ? null : () => _rename(index), child: Text(t.common.edit)),
-              TextButton(
+              FocusableButton(
+                onPressed: _saving ? null : () => _rename(index),
+                child: TextButton(onPressed: _saving ? null : () => _rename(index), child: Text(t.common.edit)),
+              ),
+              FocusableButton(
                 onPressed: _saving ? null : () => setState(() => _shelves.removeAt(index)),
-                child: Text(t.common.delete),
+                child: TextButton(
+                  onPressed: _saving ? null : () => setState(() => _shelves.removeAt(index)),
+                  child: Text(t.common.delete),
+                ),
               ),
             ],
           ),

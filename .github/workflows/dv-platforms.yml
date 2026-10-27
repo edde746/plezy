@@ -93,8 +93,9 @@ jobs:
       - name: Build isolated Apple host and test dual-layer code
         run: |
           set -o pipefail
+          command -v xcodegen
           mkdir -p build
-          python3 tools/dv-engine/build_adapters.py --component apple --work-dir build/dv-apple --build --test 2>&1 | tee build/dv-apple.log
+          python3 tools/dv-engine/build_adapters.py --component apple --apple-platform all --work-dir build/dv-apple --build --test 2>&1 | tee build/dv-apple.log
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
@@ -104,3 +105,62 @@ jobs:
             build/dv-apple/adapter-report.json
             build/dv-apple/host/Package.resolved
           retention-days: 14
+
+  windows-engine:
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-windows-engine"]}}', github.run_id)) }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        with:
+          msystem: UCRT64
+          update: true
+          path-type: minimal
+          install: >-
+            git make nasm
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-shaderc
+            mingw-w64-ucrt-x86_64-spirv-cross
+            mingw-w64-ucrt-x86_64-libass
+            mingw-w64-ucrt-x86_64-lcms2
+            mingw-w64-ucrt-x86_64-libjpeg-turbo
+      - name: Build the pinned D3D11 engine and run upstream checks
+        shell: msys2 {0}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          python tools/dv-engine/build_windows.py --work-dir build/dv-windows --jobs 4 2>&1 | tee build/dv-windows.log
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: dv-windows-x86_64-development
+          path: |
+            build/dv-windows.log
+            build/dv-windows/*.zip
+            build/dv-windows/*.sha256
+            build/dv-windows/bundle/*.json
+            build/dv-windows/*-build/meson-logs/
+          retention-days: 14
+
+  native-patch-audit:
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-patch-audit"]}}', github.run_id)) }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Audit every production native patch stack against the FEL sources
+        run: python3 tools/dv-engine/audit_native_ports.py --platform all --work-dir build/dv-native-audit
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: dv-native-port-audit
+          path: build/dv-native-audit/native-port-audit.json
+          retention-days: 14
+

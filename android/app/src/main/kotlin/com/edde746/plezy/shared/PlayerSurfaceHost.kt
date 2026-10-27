@@ -3,6 +3,7 @@ package com.edde746.plezy.shared
 import android.app.Activity
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.view.Gravity
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.ViewGroup
@@ -82,6 +83,43 @@ internal object PlayerSurfaceHost {
     contentView.addView(container, 0)
     ensureFlutterOverlayOnTop(contentView, container)
     return contentView
+  }
+
+  /**
+   * Place the existing native video surface inside the rectangle reported by
+   * Flutter. Flutter reports physical pixels relative to its render surface;
+   * the native host is a sibling under android.R.id.content, so account for
+   * any wrapper/inset offset before applying physical-pixel layout params.
+   */
+  fun setVideoRect(
+    activity: Activity,
+    container: FrameLayout,
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double,
+  ) {
+    if (!devicePixelRatio.isFinite() || devicePixelRatio <= 0.0) return
+    val width = (right - left).coerceAtLeast(1)
+    val height = (bottom - top).coerceAtLeast(1)
+    val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+    val flutterContainer = FlutterOverlayHelper.findFlutterContainer(contentView, container)
+    val contentOrigin = IntArray(2)
+    val flutterOrigin = IntArray(2)
+    contentView.getLocationOnScreen(contentOrigin)
+    (flutterContainer ?: contentView).getLocationOnScreen(flutterOrigin)
+    val offsetX = flutterOrigin[0] - contentOrigin[0]
+    val offsetY = flutterOrigin[1] - contentOrigin[1]
+
+    container.layoutParams = FrameLayout.LayoutParams(
+      width,
+      height,
+      Gravity.TOP or Gravity.LEFT,
+    ).apply {
+      leftMargin = left + offsetX
+      topMargin = top + offsetY
+    }
   }
 
   fun ensureFlutterOverlayOnTop(contentView: ViewGroup, surfaceContainer: ViewGroup?): Boolean {

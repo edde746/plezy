@@ -84,6 +84,7 @@ class SourceController extends ChangeNotifier {
   );
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
+  final Map<String, _ImportTransfer> _importTransfers = {};
   final Map<String, Future<File?>> _covers = {};
   final Map<String, Future<SourceEntry>> _onlineLookups = {};
   final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
@@ -102,6 +103,24 @@ class SourceController extends ChangeNotifier {
   Timer? _syncTimer;
   Timer? _syncSoon;
   Future<void> _syncQueue = Future.value();
+  final Map<String, int> _sourceSyncFailures = {};
+  final Map<String, DateTime> _sourceSyncRetryAt = {};
+
+  bool _sourceSyncReady(String sourceId) => !(_sourceSyncRetryAt[sourceId]?.isAfter(DateTime.now()) ?? false);
+
+  void _sourceSyncFailed(String sourceId) {
+    final failures = (_sourceSyncFailures[sourceId] ?? 0) + 1;
+    _sourceSyncFailures[sourceId] = failures;
+    final shift = (failures - 1).clamp(0, 7).toInt();
+    final seconds = (30 << shift).clamp(30, 3600).toInt();
+    _sourceSyncRetryAt[sourceId] = DateTime.now().add(Duration(seconds: seconds));
+  }
+
+  void _sourceSyncSucceeded(String sourceId) {
+    _sourceSyncFailures.remove(sourceId);
+    _sourceSyncRetryAt.remove(sourceId);
+  }
+
   void scheduleSync() {
     if (_disposed || blocked || profileId == null) return;
     _syncSoon ??= Timer(const Duration(seconds: 15), () {
@@ -112,6 +131,22 @@ class SourceController extends ChangeNotifier {
 
   void _notify() {
     if (!_disposed) notifyListeners();
+  }
+
+  void _cancelImports({String? sourceId}) {
+    for (final transfer in _importTransfers.values) {
+      if (sourceId == null || transfer.sourceId == sourceId) transfer.cancellation.cancel();
+    }
+  }
+
+  Future<void> _settleImports({String? sourceId}) async {
+    final transfers = _importTransfers.values
+        .where((transfer) => sourceId == null || transfer.sourceId == sourceId)
+        .toList();
+    for (final transfer in transfers) {
+      transfer.cancellation.cancel();
+    }
+    await Future.wait(transfers.map((transfer) => transfer.finished.future));
   }
 
   Future<void> _initialize(SourceRepository? provided) async {
@@ -127,9 +162,12 @@ class SourceController extends ChangeNotifier {
 
   void attachProfile(String? id, {required bool blocked}) {
     if (profileId == id && this.blocked == blocked) return;
+    _cancelImports();
     profileId = id;
     this.blocked = blocked;
     generation++;
+    _sourceSyncFailures.clear();
+    _sourceSyncRetryAt.clear();
     activeProgressKeys.clear();
     syncConfig = null;
     sources = const [];
@@ -147,14 +185,32 @@ class SourceController extends ChangeNotifier {
     unawaited(
       ready
           .then((_) async {
+            await _settleImports();
             downloads.cancelAll();
             oauth.cancel();
             if (id != null && !blocked && current(epoch)) {
-              sources = await repository.sources(id);
+              final loadedSources = await repository.sources(id);
+              if (!current(epoch)) return;
               final config = await cloudSync.config(id);
               if (!current(epoch)) return;
+              // Keep source/config state as one profile-scoped snapshot. A
+              // slower load from the previous profile must never overwrite it.
+              sources = loadedSources.where((source) => source.profileId == id).toList(growable: false);
               cloudSync.resetStatus();
               syncConfig = config;
+              await downloads.restoreProfile(id, (sourceId) {
+                if (!current(epoch) || !sources.any((source) => source.id == sourceId)) return null;
+                try {
+                  return adapter(sourceId);
+                } on Object {
+                  return null;
+                }
+              });
+              if (!current(epoch)) return;
+              for (final imported in sources.where((source) => source.options['imported'] == 'true')) {
+                await downloads.reconcileImportedFiles(id, imported);
+                if (!current(epoch)) return;
+              }
               await _shelves(id, epoch);
               scheduleSync();
             }
@@ -270,25 +326,28 @@ class SourceController extends ChangeNotifier {
       _notify();
       await stopPlayback?.call();
     }
-    await repository.forgetProfile(profile);
+    await _settleImports();
     await downloads.settleCancelled();
+    await repository.forgetProfile(profile);
     final root = Directory(p.join(downloads.directory.path, sourceDigest(profile)));
     if (await root.exists()) await root.delete(recursive: true);
     _covers.clear();
   }
 
   Future<void> _shelves(String profile, int epoch) async {
-    final entries = await repository.entries(profile);
+    final cached = await Future.wait(
+      PublicationShelf.values.map((shelf) => repository.hasShelfEntries(profile, shelf)),
+    );
     if (!current(epoch)) return;
     shelves = {
-      for (final shelf in PublicationShelf.values)
-        if (entries.any(shelf.includes) ||
+      for (var index = 0; index < PublicationShelf.values.length; index++)
+        if (cached[index] ||
             sources.any((source) {
               final configured = source.options['shelves']?.split(',');
               final enabled = configured ?? defaultPublicationShelves(source.kind).map((s) => s.name).toList();
-              return enabled.contains(shelf.name);
+              return enabled.contains(PublicationShelf.values[index].name);
             }))
-          shelf,
+          PublicationShelf.values[index],
     };
   }
 
@@ -306,15 +365,20 @@ class SourceController extends ChangeNotifier {
     scanning[sourceId] = 0;
     _notify();
     final pending = <(String?, int)>[(null, 0)], seen = <String>{};
+    var pendingIndex = 0;
     try {
-      while (pending.isNotEmpty) {
+      final scanGeneration = await repository.beginSourceScan(profile, sourceId);
+      while (pendingIndex < pending.length) {
         checkScan();
-        final (parent, depth) = pending.removeAt(0);
-        if (depth > 32 || !seen.add(parent ?? '') || seen.length > 10000) continue;
+        final (parent, depth) = pending[pendingIndex++];
+        if (!seen.add(parent ?? '')) continue;
+        if (depth > 32 || seen.length > 10000) throw const SourceException(SourceFailure.invalidData);
         String? cursor;
         final cursors = <String>{};
         do {
           final page = await browse(sourceId, parent: parent, cursor: cursor);
+          checkScan();
+          await repository.markScannedEntries(profile, scanGeneration, page.entries);
           checkScan();
           scanning[sourceId] = (scanning[sourceId] ?? 0) + page.entries.length;
           _notify();
@@ -326,6 +390,14 @@ class SourceController extends ChangeNotifier {
           if (cursor != null && !cursors.add(cursor)) throw const SourceException(SourceFailure.invalidData);
         } while (cursor != null);
       }
+      checkScan();
+      await repository.finishSourceScan(
+        profile,
+        sourceId,
+        scanGeneration,
+        isCurrent: () => current(epoch) && identical(_scanSessions[sourceId], session),
+      );
+      checkScan();
       await _shelves(profile, epoch);
     } finally {
       if (current(epoch) && identical(_scanSessions[sourceId], session)) {
@@ -347,41 +419,96 @@ class SourceController extends ChangeNotifier {
     requireSession();
     if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
     final epoch = generation;
+    final oldSource = sources.where((candidate) => candidate.id == source.id).firstOrNull;
+    final identityChanged =
+        oldSource != null &&
+        (oldSource.kind != source.kind ||
+            oldSource.endpoint != source.endpoint ||
+            oldSource.root != source.root ||
+            oldSource.options['syncLibrary'] != source.options['syncLibrary'] ||
+            oldSource.options['driveId'] != source.options['driveId']);
+    final existingEntries = identityChanged
+        ? await repository.entries(source.profileId, source: source.id)
+        : const <SourceEntry>[];
+    requireSession(epoch);
+    if (identityChanged) {
+      final migration = _syncQueue.then((_) async {
+        requireSession(epoch);
+        await cloudSync.migrateSourceIdentity(
+          profile: source.profileId,
+          oldSource: oldSource,
+          newSource: source,
+          entries: existingEntries,
+        );
+        requireSession(epoch);
+      });
+      _syncQueue = migration.catchError((Object _) {});
+      await migration;
+      requireSession(epoch);
+    }
     await repository.saveSource(source, credentials);
     requireSession(epoch);
+    _sourceSyncSucceeded(source.id);
     await reload();
   }
 
   Future<void> reconnect(String id) async {
     _adapters.remove(id)?.close();
+    _sourceSyncSucceeded(id);
   }
 
   Future<void> remove(FileSource source) async {
     requireSession();
-    if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
+    final epoch = generation, profile = profileId!;
+    if (source.profileId != profile) throw const SourceException(SourceFailure.permission);
     if (syncConfig?.sourceId == source.id) await configureCloudSync(null);
+    requireSession(epoch);
     cancelScan(source.id);
     await stopPlayback?.call();
+    requireSession(epoch);
+    await _settleImports(sourceId: source.id);
+    requireSession(epoch);
+    await downloads.cancelSource(profile, source.id);
+    requireSession(epoch);
     _adapters.remove(source.id)?.close();
-    downloads.cancelAll();
-    await repository.removeSource(profileId!, source.id);
+    _sourceSyncSucceeded(source.id);
+    await repository.removeSource(profile, source.id);
+    requireSession(epoch);
     await reload();
   }
 
   SourceAdapter adapter(String id) {
     requireSession();
+    final epoch = generation;
     return _adapters.putIfAbsent(id, () {
       final source = sources.where((s) => s.id == id).firstOrNull;
-      if (source == null) throw const SourceException(SourceFailure.authentication);
+      if (source == null || source.profileId != profileId) {
+        throw const SourceException(SourceFailure.authentication);
+      }
       final transport = SourceTransport(allowHttp: source.options['allowHttp'] == 'true');
-      Future<Map<String, String>> credentials() => repository.credentials(source);
-      Future<String> token({bool refresh = false}) => oauth.accessToken(source, refresh: refresh);
+      Future<Map<String, String>> credentials() async {
+        requireSession(epoch);
+        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
+        final value = await repository.credentials(source);
+        requireSession(epoch);
+        return value;
+      }
+
+      Future<String> token({bool refresh = false}) async {
+        requireSession(epoch);
+        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
+        final value = await oauth.accessToken(source, refresh: refresh);
+        requireSession(epoch);
+        return value;
+      }
+
+      Future<Map<String, String>> backgroundCredentials() => credentials();
       return switch (source.kind) {
         FileSourceKind.local => LocalSourceAdapter(source, transport),
         FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
-        FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token),
-        FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
-        FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
+        FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token, backgroundCredentials),
+        FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token, backgroundCredentials),
+        FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token, backgroundCredentials),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
         FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
@@ -409,7 +536,9 @@ class SourceController extends ChangeNotifier {
       final cached = fresh.kind == SourceItemKind.video ? await repository.entryById(profile, source, fresh.id) : null;
       entries.add(_applyCachedOnlineMetadata(fresh, cached));
     }
+    requireSession(epoch);
     await repository.cacheEntries(profile, entries);
+    requireSession(epoch);
     shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
     return SourcePage(entries, next: page.next, title: page.title);
@@ -481,7 +610,7 @@ class SourceController extends ChangeNotifier {
     if (entry.kind != SourceItemKind.video) return entry;
     final profile = profileId!;
     final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
-    if (source == null || source.options['onlineMetadata'] == 'false') return entry;
+    if (source == null || source.options['onlineMetadata'] != 'true') return entry;
     final key = sourceKey(profile, entry.key);
     final cachedLookup = _onlineLookups[key];
     if (cachedLookup != null) return cachedLookup;
@@ -490,7 +619,7 @@ class SourceController extends ChangeNotifier {
     try {
       return await task;
     } finally {
-      if (identical(_onlineLookups[key], task)) unawaited(_onlineLookups.remove(key));
+      _onlineLookups.removeWhere((key, value) => identical(value, task));
     }
   }
 
@@ -547,7 +676,125 @@ class SourceController extends ChangeNotifier {
     final epoch = generation;
     final local = await downloads.local(profileId!, entry.sourceId, file);
     if (local != null) return local;
-    final result = await downloads.download(profileId!, adapter(entry.sourceId), file, onProgress: onProgress);
+    final result = await downloads.download(
+      profileId!,
+      adapter(entry.sourceId),
+      file,
+      label: entry.displayTitle,
+      onProgress: onProgress,
+    );
+    requireSession(epoch);
+    return result;
+  }
+
+  Future<void> cancelDownload(String downloadKey) async {
+    await ready;
+    requireSession();
+    final importing = _importTransfers[downloadKey];
+    if (importing != null) {
+      importing.cancellation.cancel();
+      await importing.finished.future;
+      return;
+    }
+    final profile = profileId!;
+    final row = await repository.download(profile, downloadKey);
+    if (row == null) return;
+    final sourceId = row['source_id'] as String? ?? '';
+    final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
+    if (sourceId.isEmpty) throw const SourceException(SourceFailure.invalidData);
+    await downloads.cancelAndWait(profile, sourceId, file);
+  }
+
+  Future<void> retryDownload(String downloadKey) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final row = await repository.download(profile, downloadKey);
+    requireSession(epoch);
+    if (row == null) throw const SourceException(SourceFailure.invalidData);
+    if (row['state'] == 'orphaned' || row['state'] == 'importing') {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    final sourceId = row['source_id'] as String? ?? '';
+    final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
+    if (sourceId.isEmpty || file.fingerprint != row['fingerprint'] || sourceKey(sourceId, file.id) != downloadKey) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final source = sources.where((candidate) => candidate.id == sourceId).firstOrNull;
+    if (source == null || source.profileId != profile) throw const SourceException(SourceFailure.permission);
+    final sourceAdapter = adapter(sourceId);
+    requireSession(epoch);
+    await downloads.download(profile, sourceAdapter, file, label: row['label'] as String? ?? '');
+    requireSession(epoch);
+  }
+
+  Future<void> removeDownloadJob(String downloadKey) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final importing = _importTransfers[downloadKey];
+    if (importing != null) {
+      importing.cancellation.cancel();
+      await importing.finished.future;
+      final row = await repository.download(profile, downloadKey);
+      if (row != null && row['complete'] == 1) {
+        final sourceId = row['source_id'] as String? ?? '';
+        final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
+        if (sourceId.isEmpty) throw const SourceException(SourceFailure.invalidData);
+        await downloads.remove(profile, sourceId, file);
+        requireSession(epoch);
+        return;
+      }
+    }
+    await downloads.removeQueuedJob(profile, downloadKey);
+    requireSession(epoch);
+  }
+
+  Future<String?> sharedEntryMapping(SourceEntry entry) async {
+    await ready;
+    requireSession();
+    if (!sources.any((source) => source.id == entry.sourceId))
+      throw const SourceException(SourceFailure.authentication);
+    return cloudSync.sharedEntryMapping(profileId!, entry);
+  }
+
+  Future<void> setSharedEntryMapping(SourceEntry entry, String? sharedEntryId) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final source = sources.where((candidate) => candidate.id == entry.sourceId).firstOrNull;
+    if (source == null || source.options['syncLibrary']?.trim().isNotEmpty != true) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    final operation = _syncQueue.then((_) async {
+      requireSession(epoch);
+      final localEntry = await repository.entryById(profile, source.id, entry.id);
+      requireSession(epoch);
+      if (localEntry == null) throw const SourceException(SourceFailure.permission);
+      await cloudSync.setSharedEntryMapping(
+        profile: profile,
+        source: source,
+        entry: localEntry,
+        sharedEntryId: sharedEntryId,
+      );
+      requireSession(epoch);
+    });
+    _syncQueue = operation.catchError((Object _) {});
+    await operation;
+    scheduleSync();
+    _notify();
+  }
+
+  Future<({int bytes, int elapsedMs, int requests, int readAhead, double mebibytesPerSecond})> qualifyNfsRead(
+    String sourceId,
+    PublicationFile file,
+  ) async {
+    await ready;
+    requireSession();
+    final source = adapter(sourceId);
+    if (source is! NfsSourceAdapter) throw const SourceException(SourceFailure.unsupported);
+    final epoch = generation;
+    final result = await source.qualifyRead(file);
     requireSession(epoch);
     return result;
   }
@@ -660,7 +907,7 @@ class SourceController extends ChangeNotifier {
     var local = await repository.progress(profile, initial.key);
     final owner = sources.where((s) => s.id == entry.sourceId).firstOrNull;
     final syncEntry = owner == null ? entry : _withSyncIdentity(owner, entry);
-    if (owner != null && syncConfig == null) {
+    if (owner != null) {
       final provider = _stateAdapter(syncEntry, initial);
       if (provider != null) {
         try {
@@ -734,48 +981,162 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
-    final root = Directory(p.join(downloads.directory.path, sourceDigest(profile), 'imports'));
-    await root.create(recursive: true);
+    final defaultRoot = p.join(downloads.directory.path, sourceDigest(profile), 'imports');
+    final existingSource = sources
+        .where((s) => s.kind == FileSourceKind.local && s.options['imported'] == 'true')
+        .firstOrNull;
+    if (existingSource != null && !p.equals(existingSource.root, defaultRoot)) {
+      throw const SourceException(SourceFailure.permission);
+    }
     final source =
-        sources.where((s) => s.kind == FileSourceKind.local && s.options['imported'] == 'true').firstOrNull ??
+        existingSource ??
         FileSource(
           id: const Uuid().v4(),
           profileId: profile,
           kind: FileSourceKind.local,
           name: name,
-          root: root.path,
+          root: defaultRoot,
           options: const {'imported': 'true'},
         );
-    for (final file in files) {
+    final importable = files.where((file) => classifySourceFile(file.name) != SourceItemKind.unknown).toList();
+    if (importable.isEmpty) throw const SourceException(SourceFailure.invalidData);
+    final root = Directory(source.root);
+    await root.create(recursive: true);
+    await add(source, {});
+    for (final file in importable) {
       requireSession(epoch);
-      if (classifySourceFile(file.name) == SourceItemKind.unknown) continue;
       var filename = p.basename(file.name).replaceAll(RegExp(r'[\x00-\x1f]'), '');
       if (filename.isEmpty || filename == '.' || filename == '..') {
         throw const SourceException(SourceFailure.invalidData);
       }
-      if (await File(p.join(root.path, filename)).exists()) {
+      if (filename.startsWith('.')) filename = 'imported$filename';
+      var downloadKey = sourceKey(source.id, filename);
+      while (await File(p.join(root.path, filename)).exists() ||
+          await File(p.join(root.path, '.$filename.partial')).exists() ||
+          await repository.download(profile, downloadKey) != null ||
+          _importTransfers.containsKey(downloadKey)) {
         filename =
             '${p.basenameWithoutExtension(filename)}-${const Uuid().v4().substring(0, 8)}${p.extension(filename)}';
+        downloadKey = sourceKey(source.id, filename);
       }
       final partial = File(p.join(root.path, '.$filename.partial'));
+      final finalCopy = File(p.join(root.path, filename));
       final input = file.readStream ?? (file.path == null ? null : File(file.path!).openRead());
       if (input == null) throw const SourceException(SourceFailure.unavailable);
-      final sink = partial.openWrite();
+      final expectedSize = file.size > 0 ? file.size : null;
+      final descriptor = PublicationFile(
+        id: filename,
+        name: filename,
+        mimeType: '',
+        size: expectedSize,
+        revision: 'importing:${const Uuid().v4()}',
+      );
+      final transfer = _ImportTransfer(source.id);
+      _importTransfers[downloadKey] = transfer;
+      var promoted = false;
       try {
-        await sink.addStream(
-          input.map((bytes) {
-            requireSession(epoch);
-            return bytes;
-          }),
+        await repository.reserveDownload(
+          profile: profile,
+          key: downloadKey,
+          sourceId: source.id,
+          file: descriptor,
+          path: partial.path,
+          reservedBytes: expectedSize ?? 0,
+          bytes: 0,
+          state: 'importing',
+          label: filename,
         );
-        await sink.flush();
+        final iterator = StreamIterator<List<int>>(input);
+        final output = await partial.open(mode: FileMode.write);
+        var copiedBytes = 0;
+        try {
+          while (true) {
+            requireSession(epoch);
+            final hasNext = await Future.any<bool>([
+              iterator.moveNext(),
+              transfer.cancellation.aborted.then((_) => false),
+            ]);
+            requireSession(epoch);
+            transfer.cancellation.check();
+            if (!hasNext) break;
+            final chunk = iterator.current;
+            final nextBytes = copiedBytes + chunk.length;
+            if (expectedSize != null && nextBytes > expectedSize) {
+              throw const SourceException(SourceFailure.invalidData);
+            }
+            final releaseStorage = await downloads.reserveStorageWrite(
+              profile: profile,
+              transferKey: sourceKey(profile, downloadKey),
+              chunkBytes: chunk.length,
+              unknownSize: expectedSize == null,
+            );
+            try {
+              requireSession(epoch);
+              transfer.cancellation.check();
+              await repository.reserveDownload(
+                profile: profile,
+                key: downloadKey,
+                sourceId: source.id,
+                file: descriptor,
+                path: partial.path,
+                reservedBytes: expectedSize ?? nextBytes,
+                bytes: nextBytes,
+                state: 'importing',
+                label: filename,
+              );
+              requireSession(epoch);
+              transfer.cancellation.check();
+              await output.writeFrom(chunk);
+              copiedBytes = nextBytes;
+            } finally {
+              releaseStorage();
+            }
+          }
+          await output.flush();
+        } finally {
+          try {
+            await iterator.cancel();
+          } finally {
+            await output.close();
+          }
+        }
+        requireSession(epoch);
+        transfer.cancellation.check();
+        if (copiedBytes == 0 || (expectedSize != null && copiedBytes != expectedSize)) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        await partial.rename(finalCopy.path);
+        promoted = true;
+        final stat = await finalCopy.stat();
+        final importedFile = PublicationFile(
+          id: filename,
+          name: filename,
+          mimeType: '',
+          size: stat.size,
+          revision: '${stat.modified.microsecondsSinceEpoch}:${stat.size}',
+        );
+        await repository.recordDownload(
+          profile,
+          downloadKey,
+          finalCopy.path,
+          importedFile.fingerprint,
+          stat.size,
+          reservedBytes: stat.size,
+          sourceId: source.id,
+          file: importedFile,
+          label: filename,
+        );
+      } catch (_) {
+        if (await partial.exists()) await partial.delete();
+        if (promoted && await finalCopy.exists()) await finalCopy.delete();
+        await repository.forgetDownload(profile, downloadKey);
+        rethrow;
       } finally {
-        await sink.close();
+        _importTransfers.remove(downloadKey);
+        if (!transfer.finished.isCompleted) transfer.finished.complete();
       }
-      requireSession(epoch);
-      await partial.rename(p.join(root.path, filename));
     }
-    await add(source, {});
+    requireSession(epoch);
     await browse(source.id);
     return source;
   }
@@ -821,11 +1182,13 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    Object? firstFailure;
+    StackTrace? firstFailureStack;
     if (syncConfig != null) {
       final config = syncConfig!;
       final source = sources.where((s) => s.id == config.sourceId).firstOrNull;
-      if (source == null) throw const SourceException(SourceFailure.authentication);
       try {
+        if (source == null) throw const SourceException(SourceFailure.authentication);
         await cloudSync.run(
           profile: profile,
           sources: List.of(sources),
@@ -834,78 +1197,153 @@ class SourceController extends ChangeNotifier {
           activeKeys: activeProgressKeys,
           check: () => requireSession(epoch),
         );
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        firstFailure = error;
+        firstFailureStack = stackTrace;
       } finally {
         if (current(epoch)) _notify();
       }
-      return;
     }
-    final entries = await repository.entries(profile);
+    final entriesByKey = <String, SourceEntry?>{};
+    Future<SourceEntry?> entryFor(String key) async {
+      if (entriesByKey.containsKey(key)) return entriesByKey[key];
+      final entry = await repository.entryByKey(profile, key);
+      requireSession(epoch);
+      entriesByKey[key] = entry;
+      return entry;
+    }
+
+    final sourcesById = <String, FileSource>{for (final source in sources) source.id: source};
     final events = await repository.pendingEvents(profile);
     final latest = <String, Map<String, dynamic>>{};
     for (final event in events) {
-      if (event['kind'] != 'annotation') latest[event['key'] as String] = event;
+      if (event['kind'] == 'annotation') continue;
+      final key = event['key'];
+      if (event['kind'] != 'progress' || key is! String || key.isEmpty) {
+        firstFailure ??= const SourceException(SourceFailure.invalidData);
+        firstFailureStack ??= StackTrace.current;
+        continue;
+      }
+      latest[key] = event;
     }
     for (final event in latest.values) {
       requireSession(epoch);
-      final progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      late PublicationProgress progress;
+      try {
+        progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      } catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (onlyKey != null && progress.key != onlyKey) continue;
-      final storedEntry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
+      final storedEntry = await entryFor(progress.entryKey);
       if (storedEntry == null) continue;
-      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
-      final entry = _withSyncIdentity(owner, storedEntry);
-      final source = _stateAdapter(entry, progress);
+      late SourceEntry entry;
+      SourceAdapter? source;
+      try {
+        entry = _withSyncIdentity(owner, storedEntry);
+        source = _stateAdapter(entry, progress);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(owner.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (source == null) continue;
-      PublicationProgress? remote;
       try {
-        remote = await source.readProgress(entry, progress);
-      } on SourceException catch (e) {
-        if (e.status != 404) rethrow;
+        if (!_sourceSyncReady(source.source.id)) continue;
+        PublicationProgress? remote;
+        try {
+          remote = await source.readProgress(entry, progress);
+        } on SourceException catch (e) {
+          if (e.status != 404) rethrow;
+        }
+        requireSession(epoch);
+        if (remote != null && await _diverged(profile, progress, remote)) {
+          await repository.recordRemoteConflict(profile, remote);
+          continue;
+        }
+        try {
+          await source.writeProgress(entry, progress);
+        } on SourceException catch (e) {
+          if (e.reason != SourceFailure.conflict) rethrow;
+          final changed = await source.readProgress(entry, progress);
+          if (changed != null) await repository.recordRemoteConflict(profile, changed);
+          continue;
+        }
+        requireSession(epoch);
+        await _baseline(profile, progress);
+        await repository.acknowledge(profile, progress.key, progress.revision);
+        _sourceSyncSucceeded(source.source.id);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(source.source.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
       }
-      requireSession(epoch);
-      if (remote != null && await _diverged(profile, progress, remote)) {
-        await repository.recordRemoteConflict(profile, remote);
-        continue;
-      }
-      try {
-        await source.writeProgress(entry, progress);
-      } on SourceException catch (e) {
-        if (e.reason != SourceFailure.conflict) rethrow;
-        final changed = await source.readProgress(entry, progress);
-        if (changed != null) await repository.recordRemoteConflict(profile, changed);
-        continue;
-      }
-      requireSession(epoch);
-      await _baseline(profile, progress);
-      await repository.acknowledge(profile, progress.key, progress.revision);
     }
     for (final event in events.where((e) => e['kind'] == 'annotation')) {
       requireSession(epoch);
-      final annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
-      final storedEntry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
+      late BookAnnotation annotation;
+      try {
+        annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      } catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
+      final storedEntry = await entryFor(annotation.entryKey);
       if (storedEntry == null) continue;
-      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
-      final entry = _withSyncIdentity(owner, storedEntry);
-      final annotationProgress = PublicationProgress(
-        entryKey: annotation.entryKey,
-        edition: annotation.edition,
-        mode: annotation.mode,
-        session: '',
-      );
-      final source = _stateAdapter(entry, annotationProgress);
+      late SourceEntry entry;
+      late SourceAdapter? source;
+      try {
+        entry = _withSyncIdentity(owner, storedEntry);
+        final annotationProgress = PublicationProgress(
+          entryKey: annotation.entryKey,
+          edition: annotation.edition,
+          mode: annotation.mode,
+          session: '',
+        );
+        source = _stateAdapter(entry, annotationProgress);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(owner.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (source == null ||
           !source.capabilities.annotations ||
           (source.source.kind == FileSourceKind.audiobookshelf && annotation.mode != PublicationMode.listening)) {
         continue;
       }
-      await source.writeAnnotation(entry, annotation);
-      requireSession(epoch);
-      // The annotation/tombstone remains in its durable table. Only this exact
-      // acknowledged event can be removed; newer edits have a different ID.
-      await repository.database.customStatement('DELETE FROM events WHERE profile=? AND id=?', [profile, event['id']]);
+      try {
+        if (!_sourceSyncReady(source.source.id)) continue;
+        await source.writeAnnotation(entry, annotation);
+        requireSession(epoch);
+        // The annotation/tombstone remains in its durable table. Only this exact
+        // acknowledged event can be removed; newer edits have a different ID.
+        await repository.database.customStatement('DELETE FROM events WHERE profile=? AND id=?', [
+          profile,
+          event['id'],
+        ]);
+        _sourceSyncSucceeded(source.source.id);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(source.source.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+      }
     }
     _notify();
+    if (firstFailure != null) Error.throwWithStackTrace(firstFailure, firstFailureStack!);
   }
 
   Future<void> configureCloudSync(PublicationSyncConfig? config) async {
@@ -944,6 +1382,31 @@ class SourceController extends ChangeNotifier {
     if (config != null) await sync();
   }
 
+  Future<String> exportCloudSyncRecovery() async {
+    await ready;
+    final epoch = generation;
+    requireSession(epoch);
+    await _syncQueue;
+    requireSession(epoch);
+    return cloudSync.exportRecovery(profileId!);
+  }
+
+  Future<void> importCloudSyncRecovery(String text) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final activeSources = List<FileSource>.of(sources);
+    final activeKeys = Set<String>.of(activeProgressKeys);
+    final operation = _syncQueue.then(
+      (_) => cloudSync.importRecovery(profile: profile, text: text, sources: activeSources, activeKeys: activeKeys),
+    );
+    _syncQueue = operation.catchError((Object _) {});
+    await operation;
+    requireSession(epoch);
+    _notify();
+    scheduleSync();
+  }
+
   Future<void> resolveCloudConflict(String key, SyncVersion selected) {
     final operation = _syncQueue.then((_) async {
       requireSession();
@@ -968,6 +1431,7 @@ class SourceController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _cancelImports();
     _syncTimer?.cancel();
     _syncSoon?.cancel();
     generation++;
@@ -980,11 +1444,19 @@ class SourceController extends ChangeNotifier {
     unawaited(
       ready.then((_) async {
         oauth.dispose();
-        downloads.cancelAll();
+        await _settleImports();
+        await downloads.settleCancelled();
         await stopped;
         await repository.database.close();
       }),
     );
     super.dispose();
   }
+}
+
+class _ImportTransfer {
+  _ImportTransfer(this.sourceId);
+  final String sourceId;
+  final TransferCancellation cancellation = TransferCancellation();
+  final Completer<void> finished = Completer<void>();
 }

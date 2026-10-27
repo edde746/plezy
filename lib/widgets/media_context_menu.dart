@@ -25,6 +25,7 @@ import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
+import '../utils/download_deletion_confirmation.dart';
 import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
@@ -1855,7 +1856,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final item = _mediaItem!;
     final globalKey = item.globalKey;
 
-    final confirmed = await showDeleteConfirmation(
+    final confirmed = await confirmDownloadDeletion(
       context,
       title: t.downloads.deleteDownload,
       message: t.downloads.deleteConfirm(title: item.displayTitle),

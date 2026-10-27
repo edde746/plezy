@@ -42,6 +42,7 @@ JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'http
 JellyfinClient _clientWithPlaybackInfo(
   Future<http.Response> Function(http.Request request) playbackInfo, {
   List<Map<String, dynamic>>? itemSources,
+  bool emby = false,
 }) {
   final sources =
       itemSources ??
@@ -55,7 +56,7 @@ JellyfinClient _clientWithPlaybackInfo(
         },
       ];
   return JellyfinClient.forTesting(
-    connection: _conn(),
+    connection: emby ? testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com') : _conn(),
     httpClient: MockClient((request) {
       if (request.url.path == '/Users/user-1/Items/item-1') {
         return Future.value(jsonResponse({'Id': 'item-1', 'Type': 'Movie', 'Name': 'Movie', 'MediaSources': sources}));
@@ -5804,5 +5805,198 @@ void main() {
       expect(page.items, isEmpty);
       expect(requestCount, 0);
     });
+  });
+
+  for (final emby in [false, true]) {
+    test('${emby ? 'Emby' : 'Jellyfin'} requests a full server encode for an identified DV source', () async {
+      late Uri playbackInfoUri;
+      late Map<String, dynamic> playbackInfoBody;
+      final connection = emby
+          ? testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com')
+          : _conn();
+      final client = JellyfinClient.forTesting(
+        connection: connection,
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'DV movie',
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mkv',
+                  'Width': 3840,
+                  'Height': 2160,
+                  'MediaStreams': [
+                    {
+                      'Index': 0,
+                      'Type': 'Video',
+                      'Codec': 'hevc',
+                      'DvProfile': 7,
+                      'DvLevel': 9,
+                      'DvBlSignalCompatibilityId': 6,
+                      'VideoRangeType': 'DOVIWithHDR10',
+                      'VideoRange': 'HDR',
+                    },
+                  ],
+                },
+              ],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUri = request.url;
+            playbackInfoBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return jsonResponse({
+              'PlaySessionId': 'ps-compatible',
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mp4',
+                  'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=ps-compatible',
+                  'MediaStreams': [
+                    {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'VideoRange': 'SDR', 'VideoRangeType': 'SDR'},
+                  ],
+                },
+              ],
+            });
+          }
+          if (request.url.path == '/Videos/item-1/master.m3u8') {
+            return http.Response(
+              '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2"\nstream.m3u8\n',
+              200,
+              headers: {'content-type': 'application/vnd.apple.mpegurl'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(client.close);
+
+      final result = await client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: emby ? MediaBackend.emby : MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      );
+
+      expect(playbackInfoUri.queryParameters['EnableDirectPlay'], 'false');
+      expect(playbackInfoUri.queryParameters['EnableDirectStream'], 'false');
+      expect(playbackInfoUri.queryParameters['EnableTranscoding'], 'true');
+      expect(playbackInfoUri.queryParameters['AllowVideoStreamCopy'], 'false');
+      expect(playbackInfoUri.queryParameters['AllowAudioStreamCopy'], 'true');
+      expect(playbackInfoBody['EnableDirectPlay'], isFalse);
+      expect(playbackInfoBody['EnableDirectStream'], isFalse);
+      expect(playbackInfoBody['EnableTranscoding'], isTrue);
+      expect(playbackInfoBody['AllowVideoStreamCopy'], isFalse);
+      expect(playbackInfoBody['AllowAudioStreamCopy'], isTrue);
+      final deviceProfile = playbackInfoBody['DeviceProfile'] as Map<String, dynamic>;
+      final codecProfiles = deviceProfile['CodecProfiles'] as List<dynamic>;
+      expect(codecProfiles, hasLength(1));
+      final sdrOutputProfile = codecProfiles.single as Map<String, dynamic>;
+      expect(sdrOutputProfile['Type'], 'Video');
+      expect(sdrOutputProfile['Codec'], isNotEmpty);
+      expect(sdrOutputProfile['ApplyConditions'], isEmpty);
+      final rangeCondition = (sdrOutputProfile['Conditions'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(rangeCondition['Condition'], 'Equals');
+      expect(rangeCondition['Property'], 'VideoRangeType');
+      expect(rangeCondition['Value'], 'SDR');
+      expect(rangeCondition['IsRequired'], isTrue);
+      expect(result.isTranscoding, isTrue);
+      expect(result.playMethod, 'Transcode');
+      expect(result.videoUrl, contains('/master.m3u8'));
+    });
+  }
+
+  test('a requested Dolby Vision compatibility route fails closed when PlaybackInfo returns no encode', () async {
+    final client = _clientWithPlaybackInfo(
+      (_) async => jsonResponse({
+        'MediaSources': [
+          {'Id': 'src-1', 'SupportsDirectPlay': true},
+        ],
+      }),
+      itemSources: [
+        {
+          'Id': 'src-1',
+          'Container': 'mkv',
+          'Width': 3840,
+          'Height': 2160,
+          'MediaStreams': [
+            {
+              'Index': 0,
+              'Type': 'Video',
+              'Codec': 'hevc',
+              'DvProfile': 7,
+              'DvBlSignalCompatibilityId': 6,
+              'VideoRangeType': 'DOVIWithHDR10',
+            },
+          ],
+        },
+      ],
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      ),
+      throwsA(
+        isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
+      ),
+    );
+  });
+
+  test('Emby Profile 5 refuses the transcode before PlaybackInfo can return unsafe colors', () async {
+    var playbackInfoRequests = 0;
+    final client = _clientWithPlaybackInfo(
+      (_) async {
+        playbackInfoRequests++;
+        return jsonResponse(const <String, dynamic>{});
+      },
+      emby: true,
+      itemSources: [
+        {
+          'Id': 'src-1',
+          'Container': 'mkv',
+          'Width': 3840,
+          'Height': 2160,
+          'MediaStreams': [
+            {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'DvProfile': 5, 'VideoRangeType': 'DOVI'},
+          ],
+        },
+      ],
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: 'item-1', backend: MediaBackend.emby, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      ),
+      throwsA(
+        isA<PlaybackException>()
+            .having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource)
+            .having((error) => error.message, 'message', contains('color-safe')),
+      ),
+    );
+    expect(playbackInfoRequests, 0);
   });
 }

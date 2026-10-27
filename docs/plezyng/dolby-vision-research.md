@@ -25,7 +25,11 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   an AMD RX 9070 XT. The FEL mark is visible in the full render and absent from
   a same-source BL-only control. Embedded VA-API `vaapi-copy` decoding of both
   layers produced an 8-bit FBO image within one code value of software decode.
-  The VA-API log also reports duplicate RPU warnings that still need investigation.
+  The VA-API log also reports pending-RPU replacement warnings. In the pinned
+  FFmpeg code, a warning means a prior RPU buffer was still pending when a new
+  RPU was read and was replaced before frame attachment. The synthetic stream
+  has exactly one RPU NAL per access unit, so this is not evidence of duplicate
+  NALs in the input; RPU/frame association remains unqualified.
   The Kodi page claims fair use for testing/evaluation/documentation, but has
   no formal file-specific redistribution license; the sample stays local. This proves
   the graph uses EL information qualitatively, not exact Dolby-reference pixel
@@ -38,19 +42,68 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   about MEL/FEL and inventories an explicitly selected standalone mpv binary.
   It can execute a bounded gpu-next playback trial. Its reports never turn a
   process exit or a container flag into an FEL/output qualification.
+- `tools/dv-engine/generate_synthetic_p7.py` now produces an authored,
+  reproducible single-track Profile 7 BL+EL+RPU graph fixture using a pinned
+  MIT RPU test vector. The embedded `libmpv` software-GLES test confirms
+  the patched P7 splitter, paired-frame filter and libplacebo composer execute,
+  and confirms that the designed EL residual changes the corresponding output
+  pixels. It remains qualitative: no Dolby-reference pixel comparison,
+  hardware/app-surface qualification, or physical output is implied. The injected
+  RPU parses as P7 FEL/CM v2.9 with residual enabled; the authored EL pattern is
+  not a matching mastered image and the fixture does not cover CM v4.0. Exact
+  metrics and hashes are in the [engine handoff](../maintainers/dv-engine-luna-handoff.md).
+  A local hardware rerun decoded BL and EL through `vaapi-copy` on the RX 9070 XT
+  and rendered with the integrated Radeon 610M; its output differed from the
+  llvmpipe captures by at most one 8-bit code. Three pending-RPU replacement
+  warnings appeared in the residual hardware log, so RPU/frame association is
+  unqualified. The verifier now treats any such warning as failure and retains
+  its diagnostic report. This does not qualify zero-copy or app presentation.
+- `tools/dv-engine/profile7_fel_rpu_adapter.py` now maps one parsed
+  `dovi_tool` Profile 7 FEL RPU into the sample-level CCM reference. A minimized
+  frame-0 fixture from the pinned MIT RPU covers the real polynomial/MMR and
+  NLQ JSON shape; its hand-calculated Y vector is BL 512 → 32768, EL 513 → 8,
+  reconstructed 12-bit code 2049. Local host tests passed 14/14; the complete
+  `tools/dv-engine` Python suite passed 57/57 and the platform DV Python suite
+  passed 47/47. This adapter is not an independent
+  full-frame or Dolby display-mapper reference. It fails closed on
+  nonzero `reserved_zero_3bits`, previous-RPU reuse, extended mapping, multiple
+  partitions, linear interpolation, and other unsupported forms. FFmpeg's
+  pinned compliant-mode parser disallows metadata compression for profiles
+  below 8 and previous-RPU reuse on uncompressed RPUs. The adapter now requires
+  the demuxer's `dv_md_compression` value and accepts only `0` (`none`); raw RPU
+  JSON alone is not sufficient input. Its upper-pivot handling follows
+  [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260), which clamps to the pivot range and selects coefficients with `>=`. That confirms renderer behavior, not Dolby correctness, and still needs an independent sample-level oracle.
+- The pinned offline FelBaker companion path now runs that generated BL/EL/RPU
+  fixture through FFMS2 5.0 and produces residual-dependent RGB48 output. Every
+  authored center-patch pixel changed; HDR10/PQ HEVC and SDR/BT.709 H.264 outputs
+  both passed frame-count and color-tag probes. These lossy alternate versions
+  provide standard HDR10 and SDR files for supported clients; client playback
+  was not tested. They are not native DV, an app-integrated adapter, or an
+  independent Dolby pixel reference.
+- The Android production app builds and its 46 focused Dolby routing tests pass.
+  Separately, an experimental AAR built from mpv `99b4c12`, FFmpeg `246d0da2`
+  and libplacebo `275f7dea` compiled for all four Android ABIs. On an API 36
+  x86_64 emulator, the actual mpv `gpu-next` Surface output was read back and
+  compared for the same synthetic P7 clip with `enhancement-layer=yes` and an
+  explicit `enhancement-layer=no` control. The authored center patch changed by
+  16.42 average RGB codes; the outside control changed by 0.067, and all 57,600
+  center pixels changed by more than two codes. This proves synthetic EL
+  contribution through that Android render path. The app's production AAR is
+  still pinned to the older engine; the emulator result is not a Plezy UI
+  playback, real-device, reference-pixel, or physical-output qualification.
 - Linux accepts `PLEZYNG_EXPERIMENTAL_RENDER_API=opengl-next` on its existing
   Wayland video plane. This selects the API proposed in mpv PR #18607. Invalid
   values and an unavailable backend fail the experiment explicitly. The normal
   unset/`opengl` path retains the current backend.
 - Focused Python tests and a native backend-selection test cover those contracts.
 
-This is an experimental engine/integration branch, not a shipped universal DV decoder. The
-existing production engine lock is unchanged and does not implement this new
-render API. Production patch rebasing, independent numerical FEL pixel
-qualification, full app/Wayland playback, zero-copy hardware import, physical DV
-output and the HDMI adapter described below remain implementation and
-qualification work. `vaapi-copy` decode is only proven through an embedded EGL
-harness on one AMD GPU.
+This is an experimental engine/integration branch, not a shipped universal DV
+decoder. The existing production engine lock is unchanged; the Android AAR used
+for the emulator comparison is not in that lock. Independent numerical FEL
+pixel qualification, full app/Wayland playback, zero-copy hardware import,
+physical DV output and the HDMI adapter described below remain implementation
+and qualification work. `vaapi-copy` decode is only proven through an embedded
+EGL harness on one AMD GPU.
 
 ## Verified starting point in PlezyNG
 
@@ -60,7 +113,7 @@ and its locked `edde746/mpv-build` commit
 
 | Area | Existing implementation | Consequence |
 | --- | --- | --- |
-| Engine | `mpv-build.lock.json`; build manifest pins mpv 0.41.0 and FFmpeg 8.0.1 | The newly merged FEL work is absent from these upstream version pins. Rebase the application patches with all three media components together. |
+| Engine | `mpv-build.lock.json`; production app pins mpv 0.41.0 and FFmpeg 8.0.1. The separate Android experiment uses exact FEL commits for mpv, FFmpeg and libplacebo. | The experimental Android AAR is not in the production lock. The other app targets still use their existing stable engine pins; each needs its own adapter and qualification. |
 | Linux renderer | `linux/runner/mpv/mpv_player.cc`: `vo=libmpv`, OpenGL ES, legacy render API | Installing a newer libplacebo or setting `vo=gpu-next` in a config does not change this embedded render contract. |
 | Linux presentation | `wayland_video_surface.cc`, `hdr_metadata.h`, `video_params.h` | Already has a separate video plane and Wayland color-management handling. Preserve its surface lifetime, output negotiation and rollback. This is not a DV HDMI transport. |
 | Linux libplacebo | Build manifest pins 7.360.1 | The newer FEL API needs a coordinated library/build upgrade. |
@@ -83,6 +136,9 @@ visual styling through the renderer changes.
 2. **Embedded gpu-next remains separate work.** [PR #18607](https://github.com/mpv-player/mpv/pull/18607)
    is an open RFC exposing `opengl-next` using the shared native renderer. Its
    author reports macOS tests; Linux and Windows runtime testing is outstanding.
+   As of 2026-10-26 it has no reviews. An mpv maintainer calls the single API
+   addition a stopgap and says the render API needs a broader design. Keep this
+   fork-specific selector experimental; do not ship it as a stable embedding ABI.
    [PR #16818](https://github.com/mpv-player/mpv/pull/16818) is still a draft.
    Do not treat either as a stable upstream ABI. The
    [caller-owned Vulkan proposal](https://github.com/mpv-player/mpv/issues/18343)
@@ -93,10 +149,14 @@ visual styling through the renderer changes.
    P5/P7 MEL/P7 FEL/P8/P10 and TV-led output, with Intel/AMD integrated GPU routes
    and experimental discrete GPU support. It explicitly excludes P9, legacy
    profiles and P20. These are project claims, not PlezyNG hardware results.
-4. **Public reconstruction specifications exist.**
+4. **A public composer specification exists.**
    [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf)
-   describes the composer, inverse mapping and residual reconstruction. It is a
-   basis for an independent numerical oracle and missing interoperability code.
+   clause 5 defines BL inverse mapping, EL NLQ, residual reconstruction and PQ
+   conversion. Dolby lists it among standards relevant to Dolby Vision
+   documentation, and ETSI lists Dolby Laboratories among the supporting
+   organizations. The document describes generic Compound Content Management;
+   it does not explicitly name P7 or Dolby Vision. Map P7 RPU syntax and profile
+   rules to its composing metadata before treating it as a P7 accuracy oracle.
    It does not specify every proprietary display-mapping decision.
 
 CB1's [Master Reference contract](https://github.com/CroqueMr/libreelec-x86-DV/blob/5e63e16df862bc3acb658f42a3c2bbb5154880e0/CB1/docs/MASTER-REFERENCE.md)
@@ -178,13 +238,38 @@ rasters, chroma siting and scene transitions. Do not pair layers merely because
 their frame counts or stream ordering look similar. Flush all paired state on
 timeline generation changes; bound queue depth and memory.
 
-Build a CPU numerical reference from the public composer specification and
-compare GPU results for polynomial/MMR reshaping, NLQ, filtering and clipping.
-FEL can change visible image values even when the final display is 10-bit.
-Record separately whether the residual was available, decoded, composed and
-presented. Handle CM2.9 and CM4 presence/default rules, selected target trims,
-active-area metadata and scene resets explicitly. Preserve unknown raw metadata
-when forwarding it, but do not claim an unimplemented control was applied.
+Use [ETSI GS CCM 001 clause 5](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf)
+as the public composer equation source: it specifies BL inverse mapping,
+polynomial/MMR reshaping, EL non-linear inverse quantization, residual addition
+and PQ conversion. Dolby lists this standard among references relevant to its
+Dolby Vision documentation, but the ETSI text describes generic CCM and does not
+name P7. Map actual P7 RPU syntax and profile rules to CCM parameters before
+using it as an accuracy oracle. [ETSI TS 103 572](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf)
+is the separate ST 2094-10 metadata-carriage specification. The public
+[libplacebo RPU API notes](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h)
+help locate fields, but reusing its equations is not an independent cross-check.
+The first bounded adapter now normalizes a single `dovi_tool` RPU's three
+curves and NLQ values into those equations; it rejects previous-RPU reuse and
+nonzero `reserved_zero_3bits`. It also requires the demuxer's container-level
+`dv_md_compression` value and accepts only `0` (`none`); raw RPU JSON alone is
+not sufficient input. It does not implement BT.1886 conversion or Dolby
+display management. Historical sample tests passed
+locally on `kspld0` on 2026-10-26; new tests must use the approved private-JIT
+route. The final RPU
+pivot is assigned to the last encoded interval to reconcile the RPU's one-piece-
+per-interval payload with the generic CCM terminal sentinel. This matches the
+[public libplacebo shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260) pivot clamp and `>=` coefficient selection, but it is not an independent Dolby reference. The rule still needs a trusted Profile 7 sample-level oracle. The synthetic graph also passed locally
+through embedded mpv and software GLES, but its pixel delta only proves the
+authored EL reaches the graph output, not that the output matches Dolby's
+composer. Current organization policy still requires private-JIT checks before
+merge.
+With the mapping and error budget established, compare GPU output for reshaping,
+NLQ, filtering and clipping. FEL can change visible
+image values even when the final display is 10-bit. Record separately whether
+the residual was available, decoded, composed and presented. Handle CM2.9 and
+CM4 presence/default rules, selected target trims, active-area metadata and
+scene resets explicitly. Preserve unknown raw metadata when forwarding it, but
+do not claim an unimplemented control was applied.
 
 ### DV04: Linux TV-led and player-led HDMI transport
 

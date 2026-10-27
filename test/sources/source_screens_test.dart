@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -15,6 +16,7 @@ import 'package:plezy/screens/sources/source_navigation.dart';
 import 'package:plezy/screens/sources/sources_screen.dart';
 import 'package:plezy/screens/sources/publication_reader_screen.dart';
 import 'package:plezy/sources/source_controller.dart';
+import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/publication_shelf.dart';
@@ -72,8 +74,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      ChangeNotifierProvider<SourceController>.value(
-        value: sources,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SourceController>.value(value: sources),
+          ChangeNotifierProvider<TrackersProvider>(create: (_) => TrackersProvider()),
+        ],
         child: RepaintBoundary(
           key: const ValueKey('capture'),
           child: InputModeTracker(
@@ -126,7 +131,7 @@ void main() {
           Size(narrow ? 390 : 1200, narrow ? 844 : 900),
         );
         expect(find.byType(FileSourceMark), findsNWidgets(3));
-        expect(find.text('Google Drive'), findsWidgets);
+        expect(find.text(isolateDisplayText('Google Drive')), findsWidgets);
         await capture(tester, 'sources-${light ? 'light' : 'dark'}-${narrow ? 'phone' : 'desktop'}');
       });
     }
@@ -143,7 +148,7 @@ void main() {
       ],
     });
     await pump(tester, const PublicLibrariesScreen(), MonoPalette.dark, const Size(1200, 900));
-    expect(find.text(t.lending.comingSoon), findsOneWidget);
+    expect(find.text(isolateDisplayText(t.lending.comingSoon)), findsOneWidget);
     expect(find.byType(TextFormField), findsNothing);
     expect(find.byType(ProviderMark), findsNWidgets(2));
     await capture(tester, 'public-libraries-dark');
@@ -154,13 +159,13 @@ void main() {
     expect(tester.takeException(), isNull);
     await capture(tester, 'libby-coming-soon');
   });
-  for (final fixed in [false, true]) {
-    testWidgets('reader preferences fit large text and show applicable controls ($fixed)', (tester) async {
+  for (final (fixed, comic) in [(false, false), (true, false), (true, true)]) {
+    testWidgets('reader preferences fit large text and show applicable controls ($fixed, $comic)', (tester) async {
       await pump(
         tester,
         MediaQuery(
           data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: ReaderSettingsScreen(settings: const {}, fixed: fixed, onChanged: (_) async {}),
+          child: ReaderSettingsScreen(settings: const {}, fixed: fixed, comic: comic, onChanged: (_) async {}),
         ),
         MonoPalette.dark,
         const Size(390, 844),

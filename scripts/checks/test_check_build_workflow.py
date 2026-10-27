@@ -189,8 +189,8 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
     def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "        required: true\n        type: string",
-            "        required: false\n        type: string",
+            'if [[ "$RELEASE_TAG" != "$VERSION" ]]; then',
+            'if false; then',
             1,
         )
         self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
@@ -198,11 +198,11 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must require a release_tag input", result.stderr)
+        self.assertIn("release tags must be checked against pubspec", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "run-name: ${{ format('{0} / {1} / {2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}\n",
+            next(line for line in self._workflow().splitlines(keepends=True) if line.startswith("run-name:")),
             "",
             1,
         )
@@ -211,14 +211,12 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must expose their action, pool, and release tag in the run name", result.stderr)
+        self.assertIn("run names must identify the action, pool, release tag or webOS validation", result.stderr)
 
     def test_build_only_mode_cannot_create_a_draft_release(self) -> None:
         workflow = self._workflow().replace("inputs.action == 'release' && ", "", 1)
         self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches release guard")
-
         result = self._run(workflow)
-
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("draft release creation must require a successful complete build", result.stderr)
 

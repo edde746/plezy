@@ -1,0 +1,207 @@
+diff --git a/include/ihslib/session.h b/include/ihslib/session.h
+index 795423b..cada167 100644
+--- a/include/ihslib/session.h
++++ b/include/ihslib/session.h
+@@ -51,6 +51,7 @@ typedef enum IHS_StreamQuality {
+ typedef struct IHS_SessionConfig {
+     bool enableAudio;
+     bool enableHevc;
++    bool enablePyrowave;
+     /** Cap on the host's encode resolution, framerate and bitrate. 0 = library default. */
+     uint32_t maxWidth;
+     uint32_t maxHeight;
+diff --git a/src/session/channels/ch_control_negotiation.c b/src/session/channels/ch_control_negotiation.c
+index 37866c2..e3747c9 100644
+--- a/src/session/channels/ch_control_negotiation.c
++++ b/src/session/channels/ch_control_negotiation.c
+@@ -79,6 +79,7 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+     IHS_SessionConfig ihsConf = {
+             .enableAudio = true,
+             .enableHevc = false,
++            .enablePyrowave = false,
+             .maxWidth = 1920,
+             .maxHeight = 1080,
+             .maxFps = 60,
+@@ -118,11 +119,13 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+     for (int i = 0; i < message->n_supported_video_codecs; i++) {
+         IHS_SessionLog(session, IHS_LogLevelInfo, "Negotiation", "Host offers video codec %d%s",
+                        message->supported_video_codecs[i],
++                       message->supported_video_codecs[i] == k_EStreamVideoCodecPyrowave ? " (Pyrowave)" :
+                        message->supported_video_codecs[i] == k_EStreamVideoCodecHEVC ? " (HEVC)" :
+                        message->supported_video_codecs[i] == k_EStreamVideoCodecH264 ? " (H264)" : "");
+     }
+     EStreamAudioCodec audioCodec = k_EStreamAudioCodecNone;
+     EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
++    bool pyrowaveSelected = false;
+     if (ihsConf.enableAudio) {
+         for (int i = 0; i < message->n_supported_audio_codecs; i++) {
+             EStreamAudioCodec codec = message->supported_audio_codecs[i];
+@@ -132,7 +135,17 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+             }
+         }
+     }
+-    if (ihsConf.enableHevc) {
++    if (ihsConf.enablePyrowave) {
++        for (int i = 0; i < message->n_supported_video_codecs; i++) {
++            EStreamVideoCodec codec = message->supported_video_codecs[i];
++            if (codec == k_EStreamVideoCodecPyrowave) {
++                videoCodec = codec;
++                pyrowaveSelected = true;
++                break;
++            }
++        }
++    }
++    if (videoCodec == IHS_StreamVideoCodecNone && ihsConf.enableHevc) {
+         for (int i = 0; i < message->n_supported_video_codecs; i++) {
+             EStreamVideoCodec codec = message->supported_video_codecs[i];
+             if (codec == k_EStreamVideoCodecHEVC) {
+@@ -212,6 +225,9 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+         PROTOBUF_C_SET_VALUE(clientConfig, enable_microphone_streaming, true);
+     }
+     PROTOBUF_C_SET_VALUE(clientConfig, enable_video_streaming, true);
++    if (pyrowaveSelected) {
++        PROTOBUF_C_SET_VALUE(clientConfig, enable_video_pyrowave, true);
++    }
+     PROTOBUF_C_SET_VALUE(clientConfig, desired_framerate_numerator, ihsConf.maxFps);
+     PROTOBUF_C_SET_VALUE(clientConfig, desired_framerate_denominator, 1);
+     PROTOBUF_C_SET_VALUE(clientConfig, quality, quality);
+@@ -236,9 +252,15 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+         PROTOBUF_C_SET_VALUE(clientCaps, form_factor, (EStreamDeviceFormFactor)caps->formFactor);
+     /* Current Steam reads the codec list; supports_video_hevc is obsoleted but still
+      * the only thing older hosts look at, so send both. */
+-    EStreamVideoCodec supportedCodecs[] = {k_EStreamVideoCodecHEVC, k_EStreamVideoCodecH264};
+-    clientCaps.supported_video_codecs = ihsConf.enableHevc ? supportedCodecs : &supportedCodecs[1];
+-    clientCaps.n_supported_video_codecs = ihsConf.enableHevc ? 2 : 1;
++    EStreamVideoCodec supportedCodecs[3];
++    size_t supportedVideoCodecCount = 0;
++    if (ihsConf.enablePyrowave)
++        supportedCodecs[supportedVideoCodecCount++] = k_EStreamVideoCodecPyrowave;
++    if (ihsConf.enableHevc)
++        supportedCodecs[supportedVideoCodecCount++] = k_EStreamVideoCodecHEVC;
++    supportedCodecs[supportedVideoCodecCount++] = k_EStreamVideoCodecH264;
++    clientCaps.supported_video_codecs = supportedCodecs;
++    clientCaps.n_supported_video_codecs = supportedVideoCodecCount;
+     EStreamAudioCodec supportedAudioCodecs[] = {k_EStreamAudioCodecOpus};
+     if (ihsConf.enableAudio) {
+         clientCaps.supported_audio_codecs = supportedAudioCodecs;
+diff --git a/src/session/channels/video/ch_data_video.c b/src/session/channels/video/ch_data_video.c
+index 03fc9ae..ffe2c89 100644
+--- a/src/session/channels/video/ch_data_video.c
++++ b/src/session/channels/video/ch_data_video.c
+@@ -562,8 +562,12 @@ static bool AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buff
+                                 const IHS_VideoFrameHeader *header) {
+     if (!data->size || data->size > channel->frame.buffer.maxCapacity)
+         return false;
+-    size_t required =
+-        (header->flags & VideoFrameFlagNeedEscape) ? data->size * 3 / 2 + 5 : data->size;
++    size_t required = data->size;
++    if ((channel->config.codec == IHS_StreamVideoCodecH264 ||
++         channel->config.codec == IHS_StreamVideoCodecHEVC) &&
++        (header->flags & VideoFrameFlagNeedEscape)) {
++        required = data->size * 3 / 2 + 5;
++    }
+     if (required > channel->frame.buffer.maxCapacity - channel->frame.buffer.size)
+         return false;
+     switch (channel->config.codec) {
+@@ -575,6 +579,10 @@ static bool AppendToFrameBuffer(IHS_SessionChannelVideo *channel, const IHS_Buff
+         IHS_SessionVideoFrameAppendHEVC(&channel->frame.buffer, IHS_BufferPointer(data), data->size,
+                                         header);
+         break;
++    case IHS_StreamVideoCodecPyrowave:
++        if (IHS_BufferAppendMem(&channel->frame.buffer, IHS_BufferPointer(data), data->size) != data->size)
++            return false;
++        break;
+     default: {
+         IHS_SessionLog(((IHS_SessionChannel *)channel)->session, IHS_LogLevelFatal, "Video",
+                        "Unsupported codec %u", channel->config.codec);
+diff --git a/tests/session/test_protocol_evidence.c b/tests/session/test_protocol_evidence.c
+index 6dd1166..5166c94 100644
+--- a/tests/session/test_protocol_evidence.c
++++ b/tests/session/test_protocol_evidence.c
+@@ -423,6 +423,77 @@ static void negotiation_capabilities(int preference, unsigned bitrate, int expec
+     IHS_SessionPacketClear(&q->packet, true); IHS_QueueItemFree(q);
+     IHS_SessionDestroy(s);
+ }
++static void negotiation_pyrowave(void) {
++    IHS_Session *s = session_new();
++    s->state.connectionState = IHS_SessionConnectionStateNegotiating;
++    IHS_SessionConfig requested = {.enableAudio = true, .enableHevc = true, .enablePyrowave = true,
++        .maxWidth = 1280, .maxHeight = 720, .maxFps = 60, .maxBitrateKbps = 30000};
++    IHS_StreamSessionCallbacks callbacks = {.configuring = configure_quality};
++    s->callbacks.session = &callbacks;
++    s->callbackContexts.session = &requested;
++    CNegotiationInitMsg message = CNEGOTIATION_INIT_MSG__INIT;
++    EStreamVideoCodec offered[] = {k_EStreamVideoCodecH264, k_EStreamVideoCodecHEVC,
++                                   k_EStreamVideoCodecPyrowave};
++    message.n_supported_video_codecs = sizeof(offered) / sizeof(offered[0]);
++    message.supported_video_codecs = offered;
++    IHS_Buffer body = IHS_BUFFER_INIT(1024, 1024);
++    IHS_BufferAppendMessage(&body, (ProtobufCMessage *)&message);
++    IHS_SessionPacketHeader header = {0};
++    IHS_SessionChannelControlOnNegotiation(s->channels[1], k_EStreamControlNegotiationInit, &body, &header);
++    IHS_QueueItem *q = IHS_QueuePoll(s->sendQueue);
++    assert(q);
++    IHS_BufferOffsetBy(&q->packet.body, 1);
++    IHS_Buffer plain = IHS_BUFFER_INIT(2048, 2048);
++    uint64_t sequence;
++    assert(IHS_SessionFrameDecrypt(s, &q->packet.body, &plain, 0, &sequence) == 0);
++    CNegotiationSetConfigMsg *config = cnegotiation_set_config_msg__unpack(NULL, plain.size, IHS_BufferPointer(&plain));
++    assert(config && config->config && config->streaming_client_config && config->streaming_client_caps);
++    assert(config->config->selected_video_codec == k_EStreamVideoCodecPyrowave);
++    assert(config->streaming_client_config->enable_video_pyrowave);
++    assert(config->streaming_client_caps->n_supported_video_codecs == 3);
++    assert(config->streaming_client_caps->supported_video_codecs[0] == k_EStreamVideoCodecPyrowave);
++    assert(config->streaming_client_caps->supported_video_codecs[1] == k_EStreamVideoCodecHEVC);
++    assert(config->streaming_client_caps->supported_video_codecs[2] == k_EStreamVideoCodecH264);
++    cnegotiation_set_config_msg__free_unpacked(config, NULL);
++    IHS_BufferClear(&plain, true);
++    IHS_BufferClear(&body, true);
++    IHS_SessionPacketClear(&q->packet, true);
++    IHS_QueueItemFree(q);
++    IHS_SessionDestroy(s);
++}
++static void negotiation_pyrowave_unavailable(void) {
++    IHS_Session *s = session_new();
++    s->state.connectionState = IHS_SessionConnectionStateNegotiating;
++    IHS_SessionConfig requested = {.enableAudio = true, .enableHevc = true, .enablePyrowave = true,
++        .maxWidth = 1280, .maxHeight = 720, .maxFps = 60, .maxBitrateKbps = 30000};
++    IHS_StreamSessionCallbacks callbacks = {.configuring = configure_quality};
++    s->callbacks.session = &callbacks;
++    s->callbackContexts.session = &requested;
++    CNegotiationInitMsg message = CNEGOTIATION_INIT_MSG__INIT;
++    EStreamVideoCodec offered[] = {k_EStreamVideoCodecH264, k_EStreamVideoCodecHEVC};
++    message.n_supported_video_codecs = sizeof(offered) / sizeof(offered[0]);
++    message.supported_video_codecs = offered;
++    IHS_Buffer body = IHS_BUFFER_INIT(1024, 1024);
++    IHS_BufferAppendMessage(&body, (ProtobufCMessage *)&message);
++    IHS_SessionPacketHeader header = {0};
++    IHS_SessionChannelControlOnNegotiation(s->channels[1], k_EStreamControlNegotiationInit, &body, &header);
++    IHS_QueueItem *q = IHS_QueuePoll(s->sendQueue);
++    assert(q);
++    IHS_BufferOffsetBy(&q->packet.body, 1);
++    IHS_Buffer plain = IHS_BUFFER_INIT(2048, 2048);
++    uint64_t sequence;
++    assert(IHS_SessionFrameDecrypt(s, &q->packet.body, &plain, 0, &sequence) == 0);
++    CNegotiationSetConfigMsg *config = cnegotiation_set_config_msg__unpack(NULL, plain.size, IHS_BufferPointer(&plain));
++    assert(config && config->config && config->streaming_client_config);
++    assert(config->config->selected_video_codec == k_EStreamVideoCodecHEVC);
++    assert(!config->streaming_client_config->enable_video_pyrowave);
++    cnegotiation_set_config_msg__free_unpacked(config, NULL);
++    IHS_BufferClear(&plain, true);
++    IHS_BufferClear(&body, true);
++    IHS_SessionPacketClear(&q->packet, true);
++    IHS_QueueItemFree(q);
++    IHS_SessionDestroy(s);
++}
+ static void audio_reconfiguration(void) {
+     IHS_Session *s = session_new();
+     CStartAudioDataMsg message = CSTART_AUDIO_DATA_MSG__INIT;
+@@ -475,6 +546,8 @@ int main(void) {
+         negotiation_capabilities(preferences[i], 6000, expected[i]);
+         negotiation_capabilities(preferences[i], 20000, expected[i]);
+     }
++    negotiation_pyrowave();
++    negotiation_pyrowave_unavailable();
+     audio_reconfiguration();
+     IHS_Quit();
+     puts("assembly-derived protocol regressions OK");

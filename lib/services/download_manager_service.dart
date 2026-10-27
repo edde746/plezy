@@ -1012,6 +1012,9 @@ class DownloadManagerService {
     // Protect native writes even while Flutter is suspended. Plex servers can
     // also reject concurrent media downloads.
     await FileDownloader().configure(
+      // Keep the native adaptive live-space guard enabled for both media and
+      // source tasks. Source tasks additionally preflight their known-size
+      // reservation against PlezyNG's stricter 512 MiB reserve.
       globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
     );
     // Bring the downloader's persisted policy in line with the setting (it

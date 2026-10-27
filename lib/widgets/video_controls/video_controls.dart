@@ -37,6 +37,7 @@ import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
 import '../../media/media_backend.dart';
+import '../../media/media_display_criteria.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../media/live_tv_timeline.dart';
@@ -612,6 +613,7 @@ class PlexVideoControls extends StatefulWidget {
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
   final bool isOfflinePlayback;
+  final MediaDisplayCriteria? sourceDisplayCriteria;
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
@@ -623,6 +625,7 @@ class PlexVideoControls extends StatefulWidget {
   final int boxFitMode;
   final double videoZoomScale;
   final VoidCallback? onTogglePIPMode;
+  final String? pipActionLabel;
   final VoidCallback? onCycleBoxFitMode;
   final ValueChanged<double>? onVideoZoomChanged;
   final VoidCallback? onZoomIn;
@@ -752,6 +755,7 @@ class PlexVideoControls extends StatefulWidget {
     this.serverSupportsTranscoding = false,
     this.isTranscoding = false,
     this.isOfflinePlayback = false,
+    this.sourceDisplayCriteria,
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.sourceSubtitleTracks = const [],
@@ -763,6 +767,7 @@ class PlexVideoControls extends StatefulWidget {
     this.boxFitMode = 0,
     this.videoZoomScale = 1.0,
     this.onTogglePIPMode,
+    this.pipActionLabel,
     this.onCycleBoxFitMode,
     this.onVideoZoomChanged,
     this.onZoomIn,
@@ -1591,6 +1596,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               player: widget.player,
                               active: performanceOverlayVisible,
                               isTranscoding: widget.isLive || widget.isOfflinePlayback ? null : widget.isTranscoding,
+                              sourceDisplayCriteria: widget.sourceDisplayCriteria,
                             ),
                           ),
                         ),

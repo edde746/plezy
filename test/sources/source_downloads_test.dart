@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/sources/content_access.dart';
@@ -22,6 +23,16 @@ class DownloadSource extends SourceAdapter {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  setUp(() {
+    messenger.setMockMethodCallHandler(const MethodChannel('disk_usage'), (call) async {
+      expect(call.method, 'getDiskSpace');
+      expect(call.arguments['type'], 'free');
+      return 1024 * 1024 * 1024;
+    });
+  });
+  tearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('disk_usage'), null));
   late Directory directory;
   late SourceDatabase database;
   late PublicationDownloads downloads;

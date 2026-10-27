@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/home_section_config.dart';
 import '../../media/media_item.dart';
@@ -25,6 +26,7 @@ import '../../utils/home_section_builder.dart'
 import '../../services/home_layout_sync_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
@@ -258,8 +260,8 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         title: Text(t.homeLayout.resetHeroTitle),
         content: Text(t.homeLayout.resetHeroBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.reset)),
+          DialogActionButton(onPressed: () => Navigator.pop(context, false), label: t.common.cancel),
+          DialogActionButton(onPressed: () => Navigator.pop(context, true), label: t.common.reset),
         ],
       ),
     );
@@ -329,8 +331,12 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         title: Text(t.homeLayout.removeRowTitle),
         content: Text(t.homeLayout.removeRowBody(title: '"${section.title}"')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.delete)),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext, false), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.common.delete,
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -370,6 +376,33 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   /// start a reorder no matter where it's clicked.
   Widget _maybeDraggable({required bool unlocked, required int index, required Widget child}) =>
       unlocked ? ReorderableDragStartListener(index: index, child: child) : child;
+
+  /// Keeps the row controls beside their title when there's room, then gives
+  /// them a full-width line on narrow screens or when text is enlarged. The
+  /// multi-checkbox controls otherwise squeeze the title and subtitle into a
+  /// very narrow column on phones.
+  Widget _responsiveControlTile({Widget? leading, required Widget title, Widget? subtitle, required Widget controls}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final enlargedText = MediaQuery.textScalerOf(context).scale(14) > 18;
+        final stackControls = constraints.maxWidth < 520 || enlargedText;
+        if (!stackControls) {
+          return ListTile(dense: true, leading: leading, title: title, subtitle: subtitle, trailing: controls);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(dense: true, leading: leading, title: title, subtitle: subtitle),
+            Padding(
+              padding: EdgeInsetsDirectional.only(start: leading == null ? 16 : 56, end: 16, bottom: 8),
+              child: controls,
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   /// A tappable padlock — open means unlocked (rows can be dragged by
   /// clicking anywhere on them), closed means locked (a whole-row click
@@ -849,11 +882,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                         child: _maybeDraggable(
                           unlocked: _organizerReorderUnlocked,
                           index: indexed.$1,
-                          child: ListTile(
-                            dense: true,
+                          child: _responsiveControlTile(
                             leading: const AppIcon(Symbols.drag_indicator_rounded),
                             title: Text(indexed.$2.label),
-                            trailing: Wrap(
+                            controls: Wrap(
                               spacing: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
@@ -1013,11 +1045,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             onReorder: (keys) => _applyLibraryOrder(library, keys),
           )
         else
-          ListTile(
-            dense: true,
+          _responsiveControlTile(
             title: Text(t.homeLayout.continueWatching),
             subtitle: Text(t.homeLayout.continueWatchingLibraryDescription),
-            trailing: Wrap(
+            controls: Wrap(
               spacing: 2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
@@ -1095,12 +1126,11 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                   child: _maybeDraggable(
                     unlocked: _libraryReorderUnlocked[library.globalKey] ?? true,
                     index: index,
-                    child: ListTile(
-                      dense: true,
+                    child: _responsiveControlTile(
                       leading: const AppIcon(Symbols.drag_indicator_rounded),
                       title: Text(rows[index].title),
                       subtitle: rows[index].deletable ? Text(t.homeLayout.customPlexRow) : null,
-                      trailing: Wrap(
+                      controls: Wrap(
                         spacing: 2,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
@@ -1442,6 +1472,7 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     // Nudged above dead-center: on a shorter window the dialog's natural
     // content height (title + dropdown + both checklists) can exceed the
     // available height even after the cap below, and centering split the
@@ -1450,17 +1481,24 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
     alignment: const Alignment(0, -0.3),
     title: Text(widget.initial == null ? t.homeLayout.addHomeRow : t.homeLayout.editHomeRow),
     content: SizedBox(
-      width: 560,
+      width: double.maxFinite,
       // A shrink-wrapped ListView sizes to its content with no ceiling, so a
       // dialog with many libraries/collections checked could grow taller
       // than the window and get clipped at the bottom instead of scrolling.
       // Capping the height here and dropping shrinkWrap makes the list
       // scroll internally once it would otherwise overflow.
-      height: (MediaQuery.sizeOf(context).height - 160).clamp(200, 640),
+      height:
+          (MediaQuery.sizeOf(context).height -
+                  MediaQuery.viewPaddingOf(context).vertical -
+                  MediaQuery.viewInsetsOf(context).bottom -
+                  160)
+              .clamp(0.0, 640.0)
+              .toDouble(),
       child: ListView(
         children: [
-          TextField(
+          FocusableTextField(
             controller: _title,
+            autofocus: true,
             decoration: InputDecoration(labelText: t.homeLayout.rowTitle),
           ),
           const SizedBox(height: 16),
@@ -1575,8 +1613,8 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
       ),
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-      FilledButton(
+      DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+      DialogActionButton(
         onPressed: () {
           final title = _title.text.trim().isEmpty ? _label(_kind) : _title.text.trim();
           Navigator.pop(
@@ -1601,7 +1639,8 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
             ),
           );
         },
-        child: Text(t.common.save),
+        label: t.common.save,
+        isPrimary: true,
       ),
     ],
   );

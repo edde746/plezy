@@ -105,6 +105,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
 	late final Translations$sourceSetup$en sourceSetup = Translations$sourceSetup$en.internal(_root);
+	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
+	late final Translations$games$en games = Translations$games$en.internal(_root);
 }
 
 // Path: app
@@ -305,6 +307,84 @@ class Translations$common$en {
 
 	/// en: 'Close'
 	String get close => 'Close';
+
+	/// en: 'Close mini player'
+	String get closeMiniPlayer => 'Close mini player';
+
+	/// en: 'Close window'
+	String get closeWorkspaceWindow => 'Close window';
+
+	/// en: 'Return to full view'
+	String get returnToFullView => 'Return to full view';
+
+	/// en: 'Manage media sessions'
+	String get manageMediaSessions => 'Manage media sessions';
+
+	/// en: 'Hide media sessions'
+	String get hideMediaSessions => 'Hide media sessions';
+
+	/// en: 'Media sessions'
+	String get mediaSessions => 'Media sessions';
+
+	/// en: 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.'
+	String get mediaSessionsHint => 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.';
+
+	/// en: 'In workspace'
+	String get sessionInWorkspace => 'In workspace';
+
+	/// en: 'Parked'
+	String get sessionParked => 'Parked';
+
+	/// en: 'Full screen'
+	String get sessionFullscreen => 'Full screen';
+
+	/// en: 'Swap with next window'
+	String get switchToNextWindow => 'Swap with next window';
+
+	/// en: 'Move window'
+	String get moveWindow => 'Move window';
+
+	/// en: 'Finish moving window'
+	String get finishMovingWindow => 'Finish moving window';
+
+	/// en: 'Long-press and drag the window to move it. This control also enables arrow-key movement.'
+	String get moveWindowHint => 'Long-press and drag the window to move it. This control also enables arrow-key movement.';
+
+	/// en: 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels'
+	String get movingWindowHelp => 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels';
+
+	/// en: 'Resize window'
+	String get resizeWindow => 'Resize window';
+
+	/// en: 'Drag this handle or use the arrow keys to resize the window.'
+	String get resizeWindowHint => 'Drag this handle or use the arrow keys to resize the window.';
+
+	/// en: 'Use the move control or long-press and drag to move. Use the resize handle to resize.'
+	String get workspaceWindowHint => 'Use the move control or long-press and drag to move. Use the resize handle to resize.';
+
+	/// en: 'Select this pane to focus it. Use its fullscreen control to expand.'
+	String get workspacePaneHint => 'Select this pane to focus it. Use its fullscreen control to expand.';
+
+	/// en: 'Session window: ${title}'
+	String workspaceWindowLabel({required Object title}) => 'Session window: ${title}';
+
+	/// en: 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.'
+	String get workspaceTitleHint => 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.';
+
+	/// en: 'Move to session tray'
+	String get moveToSessionTray => 'Move to session tray';
+
+	/// en: 'Keeps this session available without showing its window.'
+	String get moveToSessionTrayHint => 'Keeps this session available without showing its window.';
+
+	/// en: 'Closes this window and ends its session.'
+	String get closeSessionHint => 'Closes this window and ends its session.';
+
+	/// en: 'Switch to side-by-side layout'
+	String get sideBySideLayout => 'Switch to side-by-side layout';
+
+	/// en: 'Switch to floating windows'
+	String get floatingWindows => 'Switch to floating windows';
 
 	/// en: 'Clear'
 	String get clear => 'Clear';
@@ -1884,6 +1964,18 @@ class Translations$settings$en {
 
 	/// en: 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.'
 	String get metadataLanguageDescription => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.';
+
+	/// en: 'Enter fullscreen when playback starts'
+	String get enterFullscreenOnPlaybackStart => 'Enter fullscreen when playback starts';
+
+	/// en: 'Open desktop video in fullscreen when playback starts'
+	String get enterFullscreenOnPlaybackStartDescription => 'Open desktop video in fullscreen when playback starts';
+
+	/// en: 'Extend video into display cutout'
+	String get extendVideoIntoDisplayCutout => 'Extend video into display cutout';
+
+	/// en: 'Let fullscreen video use the camera cutout on Android phones'
+	String get extendVideoIntoDisplayCutoutDescription => 'Let fullscreen video use the camera cutout on Android phones';
 }
 
 // Path: themeEditor
@@ -2874,6 +2966,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
+
+	/// en: 'Open mini player'
+	String get openMiniPlayer => 'Open mini player';
+
+	/// en: 'Return to full player'
+	String get returnToFullPlayer => 'Return to full player';
 
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
@@ -5934,6 +6032,9 @@ class Translations$performanceOverlay$en {
 	/// en: 'RPU reshaped (gpu-next)'
 	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
+	/// en: 'Experimental P7 FEL graph (unqualified)'
+	String get dvRouteFelGraphActive => 'Experimental P7 FEL graph (unqualified)';
+
 	/// en: 'P7 Conv'
 	String get p7Conversion => 'P7 Conv';
 
@@ -7695,6 +7796,57 @@ class Translations$fileSources$en {
 
 	/// en: 'Google Drive'
 	String get googleDrive => 'Google Drive';
+
+	/// en: 'Offline download limit'
+	String get offlineQuota => 'Offline download limit';
+
+	/// en: 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.'
+	String get offlineQuotaHelp => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.';
+
+	/// en: 'Offline storage'
+	String get offlineStorageUsage => 'Offline storage';
+
+	/// en: 'reserved'
+	String get reservedStorage => 'reserved';
+
+	/// en: 'Download queue'
+	String get downloadQueue => 'Download queue';
+
+	/// en: 'Downloading'
+	String get downloadRunning => 'Downloading';
+
+	/// en: 'Waiting'
+	String get downloadQueued => 'Waiting';
+
+	/// en: 'Paused'
+	String get downloadPaused => 'Paused';
+
+	/// en: 'Needs retry'
+	String get downloadFailed => 'Needs retry';
+
+	/// en: 'Importing'
+	String get importing => 'Importing';
+
+	/// en: 'Import interrupted · remove to clear'
+	String get importInterrupted => 'Import interrupted · remove to clear';
+
+	/// en: 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.'
+	String get errorQuotaExceeded => 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.';
+
+	/// en: 'There is not enough free device storage to keep the protected reserve.'
+	String get errorStorageLow => 'There is not enough free device storage to keep the protected reserve.';
+
+	/// en: 'PlezyNG could not check free device storage, so the write was stopped.'
+	String get errorStorageUnavailable => 'PlezyNG could not check free device storage, so the write was stopped.';
+
+	/// en: 'Remove download'
+	String get removeDownloadJob => 'Remove download';
+
+	/// en: 'This download finished before it could be removed. The item is now available offline.'
+	String get downloadAlreadyComplete => 'This download finished before it could be removed. The item is now available offline.';
+
+	/// en: 'Remove this download and discard any partially downloaded data? Your position and notes will stay.'
+	String get confirmRemoveDownloadJob => 'Remove this download and discard any partially downloaded data? Your position and notes will stay.';
 }
 
 // Path: lending
@@ -7909,8 +8061,8 @@ class Translations$audiobook$en {
 	/// en: 'Last synced at $time'
 	String lastSynced({required Object time}) => 'Last synced at ${time}';
 
-	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.'
-	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.';
+	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.';
 
 	/// en: 'Choose where to resume'
 	String get syncConflicts => 'Choose where to resume';
@@ -8016,6 +8168,24 @@ class Translations$audiobook$en {
 
 	/// en: 'Hours:minutes:seconds, or minutes:seconds'
 	String get timeHelp => 'Hours:minutes:seconds, or minutes:seconds';
+
+	/// en: 'Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.'
+	String get recoveryHelp => 'Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.';
+
+	/// en: 'Export encrypted recovery file'
+	String get recoveryExport => 'Export encrypted recovery file';
+
+	/// en: 'Import encrypted recovery file'
+	String get recoveryImport => 'Import encrypted recovery file';
+
+	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.'
+	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.';
+
+	/// en: 'Encrypted recovery file saved.'
+	String get recoveryExported => 'Encrypted recovery file saved.';
+
+	/// en: 'Recovery data merged.'
+	String get recoveryImported => 'Recovery data merged.';
 }
 
 // Path: sourceSetup
@@ -8307,6 +8477,312 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Downloading subtitle: ${title}'
 	String subtitleDownloading({required Object title}) => 'Downloading subtitle: ${title}';
+
+	/// en: 'Pair this item'
+	String get sharedEntryPair => 'Pair this item';
+
+	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.'
+	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.';
+
+	/// en: 'Shared item ID'
+	String get sharedEntryId => 'Shared item ID';
+
+	/// en: 'Generate shared item ID'
+	String get generateSharedEntryId => 'Generate shared item ID';
+
+	/// en: 'Shared library ID (optional)'
+	String get sharedLibraryId => 'Shared library ID (optional)';
+
+	/// en: 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.'
+	String get sharedLibraryHelp => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.';
+
+	/// en: 'Use 8–100 letters, numbers, dots, underscores or hyphens.'
+	String get sharedLibraryInvalid => 'Use 8–100 letters, numbers, dots, underscores or hyphens.';
+
+	/// en: 'Generate a shared library ID'
+	String get generateSharedLibraryId => 'Generate a shared library ID';
+
+	/// en: 'NFS read-ahead requests'
+	String get nfsReadAhead => 'NFS read-ahead requests';
+
+	/// en: 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.'
+	String get nfsReadAheadHelp => 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.';
+
+	/// en: 'Measure NFS read performance'
+	String get nfsReadTest => 'Measure NFS read performance';
+
+	/// en: 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.'
+	String get nfsReadTestHelp => 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.';
+
+	/// en: 'NFS read measurement'
+	String get nfsQualificationResult => 'NFS read measurement';
+
+	/// en: 'Data read'
+	String get nfsReadBytes => 'Data read';
+
+	/// en: 'Measured speed'
+	String get nfsReadSpeed => 'Measured speed';
+
+	/// en: 'Read requests'
+	String get nfsReadRequests => 'Read requests';
+
+	/// en: 'This shared item ID is already paired with another item in this library. Choose a different ID.'
+	String get sharedEntryConflict => 'This shared item ID is already paired with another item in this library. Choose a different ID.';
+}
+
+// Path: comics
+class Translations$comics$en {
+	Translations$comics$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Fit height'
+	String get fitHeight => 'Fit height';
+
+	/// en: 'Reading mode'
+	String get readingMode => 'Reading mode';
+
+	/// en: 'Pages'
+	String get paged => 'Pages';
+
+	/// en: 'Continuous scroll'
+	String get webtoon => 'Continuous scroll';
+
+	/// en: 'Show cover on its own'
+	String get coverAlone => 'Show cover on its own';
+
+	/// en: 'Split wide pages'
+	String get splitWide => 'Split wide pages';
+
+	/// en: 'Show each half separately, in reading order. Double-page pairing is paused while this is on.'
+	String get splitWideHelp => 'Show each half separately, in reading order. Double-page pairing is paused while this is on.';
+
+	/// en: 'Page thumbnails'
+	String get thumbnails => 'Page thumbnails';
+
+	/// en: 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.'
+	String get controlsHelp => 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.';
+
+	/// en: 'Display settings are remembered for this comic in this profile.'
+	String get savedForComic => 'Display settings are remembered for this comic in this profile.';
+
+	/// en: 'Reading lists'
+	String get readLists => 'Reading lists';
+
+	/// en: 'Collections'
+	String get collections => 'Collections';
+}
+
+// Path: games
+class Translations$games$en {
+	Translations$games$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Games'
+	String get title => 'Games';
+
+	/// en: 'Show Games for this profile'
+	String get enable => 'Show Games for this profile';
+
+	/// en: 'Discover your gaming computers and play with an embedded streaming engine.'
+	String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+
+	/// en: 'Your games, from your computers.'
+	String get subtitle => 'Your games, from your computers.';
+
+	/// en: 'Your computers'
+	String get computers => 'Your computers';
+
+	/// en: 'Nearby computers'
+	String get nearby => 'Nearby computers';
+
+	/// en: 'Find computers'
+	String get findComputers => 'Find computers';
+
+	/// en: 'Add computer'
+	String get addComputer => 'Add computer';
+
+	/// en: 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.'
+	String get scanHint => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.';
+
+	/// en: 'Add your gaming computer to get started.'
+	String get empty => 'Add your gaming computer to get started.';
+
+	/// en: 'No computers found on this network. You can enter an address manually.'
+	String get noNearby => 'No computers found on this network. You can enter an address manually.';
+
+	/// en: 'Computer name'
+	String get name => 'Computer name';
+
+	/// en: 'IP address or hostname'
+	String get address => 'IP address or hostname';
+
+	/// en: 'Service port'
+	String get port => 'Service port';
+
+	/// en: 'Streaming service'
+	String get protocol => 'Streaming service';
+
+	/// en: 'Sunshine / Moonlight'
+	String get moonlight => 'Sunshine / Moonlight';
+
+	/// en: 'Steam Remote Play'
+	String get steam => 'Steam Remote Play';
+
+	/// en: 'Save computer'
+	String get save => 'Save computer';
+
+	/// en: 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.'
+	String get invalidAddress => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.';
+
+	/// en: 'Connect computer'
+	String get pair => 'Connect computer';
+
+	/// en: 'Approve this device'
+	String get pairTitle => 'Approve this device';
+
+	/// en: 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.'
+	String get pairInstructions => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.';
+
+	/// en: 'Connect this computer again to approve or renew pairing.'
+	String get pairHelp => 'Connect this computer again to approve or renew pairing.';
+
+	/// en: 'Open Sunshine PIN page'
+	String get openPairingPage => 'Open Sunshine PIN page';
+
+	/// en: 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.'
+	String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
+
+	/// en: 'Refresh games'
+	String get refreshGames => 'Refresh games';
+
+	/// en: 'Play'
+	String get play => 'Play';
+
+	/// en: 'Recently opened'
+	String get recent => 'Recently opened';
+
+	/// en: 'Favorites'
+	String get favorites => 'Favorites';
+
+	/// en: 'All games'
+	String get allGames => 'All games';
+
+	/// en: 'Find a game'
+	String get search => 'Find a game';
+
+	/// en: 'No games match this search.'
+	String get noMatches => 'No games match this search.';
+
+	/// en: 'Save favorite'
+	String get favorite => 'Save favorite';
+
+	/// en: 'Remove favorite'
+	String get unfavorite => 'Remove favorite';
+
+	/// en: 'Forget computer'
+	String get forget => 'Forget computer';
+
+	/// en: 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.'
+	String get forgetDescription => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.';
+
+	/// en: 'The connection could not complete. Check that the computer is awake and paired, then try again.'
+	String get unavailable => 'The connection could not complete. Check that the computer is awake and paired, then try again.';
+
+	/// en: 'Connection timed out. Check the computer, pairing code and network before trying again.'
+	String get timeout => 'Connection timed out. Check the computer, pairing code and network before trying again.';
+
+	/// en: 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.'
+	String get libraryHint => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.';
+
+	/// en: 'On-screen controller'
+	String get touchControls => 'On-screen controller';
+
+	/// en: 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
+	String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
+
+	/// en: 'On-screen controls'
+	String get touchSetup => 'On-screen controls';
+
+	/// en: 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.'
+	String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
+
+	/// en: 'Add game shortcut'
+	String get addGame => 'Add game shortcut';
+
+	/// en: 'Game name'
+	String get gameName => 'Game name';
+
+	/// en: 'Host application ID'
+	String get gameId => 'Host application ID';
+
+	/// en: 'Enter a game name and a positive numeric host application ID.'
+	String get invalidGame => 'Enter a game name and a positive numeric host application ID.';
+
+	/// en: 'Wake computer'
+	String get wake => 'Wake computer';
+
+	/// en: 'Wake request sent. The computer must support Wake-on-LAN on this network.'
+	String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
+
+	/// en: 'MAC address (optional)'
+	String get mac => 'MAC address (optional)';
+
+	/// en: 'Games help'
+	String get help => 'Games help';
+
+	/// en: 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library. Both Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development. Pairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network. Disconnecting leaves the game running on the computer.'
+	String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Looking for computers…'
+	String get scanning => 'Looking for computers…';
+
+	/// en: 'Save shortcut'
+	String get saveShortcut => 'Save shortcut';
+
+	/// en: 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.'
+	String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
+
+	/// en: 'In-app streaming is not available here yet'
+	String get engineUnavailable => 'In-app streaming is not available here yet';
+
+	/// en: 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.'
+	String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
+
+	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.'
+	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
+
+	/// en: 'Steam beta · Pyrowave'
+	String get steamBetaTitle => 'Steam beta · Pyrowave';
+
+	/// en: 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.'
+	String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+
+	/// en: 'Steam library'
+	String get steamLibrary => 'Steam library';
+
+	/// en: 'Connecting…'
+	String get connecting => 'Connecting…';
+
+	/// en: 'Disconnect'
+	String get disconnect => 'Disconnect';
+
+	/// en: 'Stream controls'
+	String get streamControls => 'Stream controls';
+
+	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
+	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+
+	/// en: 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.'
+	String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -10587,6 +11063,32 @@ extension on Translations {
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
+			'common.closeMiniPlayer' => 'Close mini player',
+			'common.closeWorkspaceWindow' => 'Close window',
+			'common.returnToFullView' => 'Return to full view',
+			'common.manageMediaSessions' => 'Manage media sessions',
+			'common.hideMediaSessions' => 'Hide media sessions',
+			'common.mediaSessions' => 'Media sessions',
+			'common.mediaSessionsHint' => 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.',
+			'common.sessionInWorkspace' => 'In workspace',
+			'common.sessionParked' => 'Parked',
+			'common.sessionFullscreen' => 'Full screen',
+			'common.switchToNextWindow' => 'Swap with next window',
+			'common.moveWindow' => 'Move window',
+			'common.finishMovingWindow' => 'Finish moving window',
+			'common.moveWindowHint' => 'Long-press and drag the window to move it. This control also enables arrow-key movement.',
+			'common.movingWindowHelp' => 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels',
+			'common.resizeWindow' => 'Resize window',
+			'common.resizeWindowHint' => 'Drag this handle or use the arrow keys to resize the window.',
+			'common.workspaceWindowHint' => 'Use the move control or long-press and drag to move. Use the resize handle to resize.',
+			'common.workspacePaneHint' => 'Select this pane to focus it. Use its fullscreen control to expand.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Session window: ${title}',
+			'common.workspaceTitleHint' => 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.',
+			'common.moveToSessionTray' => 'Move to session tray',
+			'common.moveToSessionTrayHint' => 'Keeps this session available without showing its window.',
+			'common.closeSessionHint' => 'Closes this window and ends its session.',
+			'common.sideBySideLayout' => 'Switch to side-by-side layout',
+			'common.floatingWindows' => 'Switch to floating windows',
 			'common.clear' => 'Clear',
 			'common.reset' => 'Reset',
 			'common.later' => 'Later',
@@ -11005,6 +11507,8 @@ extension on Translations {
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
 			'settings.audioChannelLimit' => 'Audio Channels',
 			'settings.audioChannelLimitDescription' => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel',
@@ -11031,8 +11535,6 @@ extension on Translations {
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.experimentalDolbyVision' => 'Experimental Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.experimentalDolbyVisionDescription' => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.',
 			'settings.dvExperimentUnavailableDescription' => 'This experiment is currently available on Linux only.',
 			'settings.dvCompatibilityFallback' => 'Compatibility fallback',
@@ -11125,6 +11627,10 @@ extension on Translations {
 			'settings.regionFormatDescription' => 'Choose how dates, numbers and measurements appear.',
 			'settings.metadataLanguage' => 'Metadata language',
 			'settings.metadataLanguageDescription' => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Enter fullscreen when playback starts',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Open desktop video in fullscreen when playback starts',
+			'settings.extendVideoIntoDisplayCutout' => 'Extend video into display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Let fullscreen video use the camera cutout on Android phones',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -11461,6 +11967,8 @@ extension on Translations {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
+			'videoControls.openMiniPlayer' => 'Open mini player',
+			'videoControls.returnToFullPlayer' => 'Return to full player',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
@@ -11513,6 +12021,8 @@ extension on Translations {
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
@@ -11545,8 +12055,6 @@ extension on Translations {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
@@ -12027,6 +12535,8 @@ extension on Translations {
 			'startup.repairBodySignInsKept' => 'Your servers and profiles should stay signed in.',
 			'startup.repairBodySignInsLost' => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.',
 			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. PlezyNG will tell you exactly what it kept.',
+			_ => null,
+		} ?? switch (path) {
 			'startup.repairConfirm' => 'Repair',
 			'startup.repairSucceeded' => 'Storage repaired',
 			'startup.repairNeedsRestart' => 'Storage repaired — restart required',
@@ -12059,8 +12569,6 @@ extension on Translations {
 			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
 			'explore.mdblistShelves.add' => 'Add shelf',
 			'explore.mdblistShelves.save' => 'Save shelves',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
 			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
@@ -12541,6 +13049,8 @@ extension on Translations {
 			'watchTogether.errors.forbidden' => 'Only the host can do that.',
 			'watchTogether.errors.notInRoom' => 'You\'re not in a room.',
 			'watchTogether.errors.alreadyInRoom' => 'You\'re already in a room.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.errors.resumeFailed' => 'Couldn\'t rejoin the room.',
 			'watchTogether.errors.unsupported' => 'The relay doesn\'t support this.',
 			'watchTogether.errors.generic' => 'Something went wrong. Try again.',
@@ -12573,8 +13083,6 @@ extension on Translations {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -12833,6 +13341,7 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Experimental P7 FEL graph (unqualified)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
@@ -13054,6 +13563,8 @@ extension on Translations {
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
+			_ => null,
+		} ?? switch (path) {
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',
 			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
@@ -13087,8 +13598,6 @@ extension on Translations {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -13413,6 +13922,23 @@ extension on Translations {
 			'fileSources.useFiles' => 'Use files and books',
 			'fileSources.cancelScan' => 'Cancel scan',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.offlineQuota' => 'Offline download limit',
+			'fileSources.offlineQuotaHelp' => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.',
+			'fileSources.offlineStorageUsage' => 'Offline storage',
+			'fileSources.reservedStorage' => 'reserved',
+			'fileSources.downloadQueue' => 'Download queue',
+			'fileSources.downloadRunning' => 'Downloading',
+			'fileSources.downloadQueued' => 'Waiting',
+			'fileSources.downloadPaused' => 'Paused',
+			'fileSources.downloadFailed' => 'Needs retry',
+			'fileSources.importing' => 'Importing',
+			'fileSources.importInterrupted' => 'Import interrupted · remove to clear',
+			'fileSources.errorQuotaExceeded' => 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.',
+			'fileSources.errorStorageLow' => 'There is not enough free device storage to keep the protected reserve.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG could not check free device storage, so the write was stopped.',
+			'fileSources.removeDownloadJob' => 'Remove download',
+			'fileSources.downloadAlreadyComplete' => 'This download finished before it could be removed. The item is now available offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Remove this download and discard any partially downloaded data? Your position and notes will stay.',
 			'lending.title' => 'Public libraries',
 			'lending.add' => 'Add a library',
 			'lending.other' => 'Another library',
@@ -13478,7 +14004,7 @@ extension on Translations {
 			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
 			'audiobook.syncReconnect' => 'Reconnect storage account',
 			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
-			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.',
+			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.',
 			'audiobook.syncConflicts' => 'Choose where to resume',
 			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
@@ -13514,6 +14040,12 @@ extension on Translations {
 			'audiobook.statusFinished' => 'Finished',
 			'audiobook.goToTime' => 'Go to time',
 			'audiobook.timeHelp' => 'Hours:minutes:seconds, or minutes:seconds',
+			'audiobook.recoveryHelp' => 'Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.',
+			'audiobook.recoveryExport' => 'Export encrypted recovery file',
+			'audiobook.recoveryImport' => 'Import encrypted recovery file',
+			'audiobook.recoveryImportConfirm' => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.',
+			'audiobook.recoveryExported' => 'Encrypted recovery file saved.',
+			'audiobook.recoveryImported' => 'Recovery data merged.',
 			'sourceSetup.savedCertificate' => 'Saved server certificate',
 			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
@@ -13545,6 +14077,8 @@ extension on Translations {
 			'sourceSetup.nfsTrustInvalid' => 'Use a CA or server certificate in PEM format. Do not include a private key.',
 			'sourceSetup.addTrustCertificate' => 'Add custom trust certificate',
 			'sourceSetup.replaceTrustCertificate' => 'Replace saved custom certificate',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.',
 			'sourceSetup.clientCertificate' => 'Client certificate (optional)',
 			'sourceSetup.clientCertificateHelp' => 'Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.',
@@ -13601,8 +14135,6 @@ extension on Translations {
 			'sourceSetup.smbEncrypted' => 'SMB3 encryption on',
 			'sourceSetup.smbUnencrypted' => 'SMB3 encryption off',
 			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Check endpoint security',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is required.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.',
@@ -13610,6 +14142,102 @@ extension on Translations {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Pair this item',
+			'sourceSetup.sharedEntryPairHelp' => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.',
+			'sourceSetup.sharedEntryId' => 'Shared item ID',
+			'sourceSetup.generateSharedEntryId' => 'Generate shared item ID',
+			'sourceSetup.sharedLibraryId' => 'Shared library ID (optional)',
+			'sourceSetup.sharedLibraryHelp' => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.',
+			'sourceSetup.sharedLibraryInvalid' => 'Use 8–100 letters, numbers, dots, underscores or hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Generate a shared library ID',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead requests',
+			'sourceSetup.nfsReadAheadHelp' => 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.',
+			'sourceSetup.nfsReadTest' => 'Measure NFS read performance',
+			'sourceSetup.nfsReadTestHelp' => 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.',
+			'sourceSetup.nfsQualificationResult' => 'NFS read measurement',
+			'sourceSetup.nfsReadBytes' => 'Data read',
+			'sourceSetup.nfsReadSpeed' => 'Measured speed',
+			'sourceSetup.nfsReadRequests' => 'Read requests',
+			'sourceSetup.sharedEntryConflict' => 'This shared item ID is already paired with another item in this library. Choose a different ID.',
+			'comics.fitHeight' => 'Fit height',
+			'comics.readingMode' => 'Reading mode',
+			'comics.paged' => 'Pages',
+			'comics.webtoon' => 'Continuous scroll',
+			'comics.coverAlone' => 'Show cover on its own',
+			'comics.splitWide' => 'Split wide pages',
+			'comics.splitWideHelp' => 'Show each half separately, in reading order. Double-page pairing is paused while this is on.',
+			'comics.thumbnails' => 'Page thumbnails',
+			'comics.controlsHelp' => 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.',
+			'comics.savedForComic' => 'Display settings are remembered for this comic in this profile.',
+			'comics.readLists' => 'Reading lists',
+			'comics.collections' => 'Collections',
+			'games.title' => 'Games',
+			'games.enable' => 'Show Games for this profile',
+			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.subtitle' => 'Your games, from your computers.',
+			'games.computers' => 'Your computers',
+			'games.nearby' => 'Nearby computers',
+			'games.findComputers' => 'Find computers',
+			'games.addComputer' => 'Add computer',
+			'games.scanHint' => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.',
+			'games.empty' => 'Add your gaming computer to get started.',
+			'games.noNearby' => 'No computers found on this network. You can enter an address manually.',
+			'games.name' => 'Computer name',
+			'games.address' => 'IP address or hostname',
+			'games.port' => 'Service port',
+			'games.protocol' => 'Streaming service',
+			'games.moonlight' => 'Sunshine / Moonlight',
+			'games.steam' => 'Steam Remote Play',
+			'games.save' => 'Save computer',
+			'games.invalidAddress' => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.',
+			'games.pair' => 'Connect computer',
+			'games.pairTitle' => 'Approve this device',
+			'games.pairInstructions' => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.',
+			'games.pairHelp' => 'Connect this computer again to approve or renew pairing.',
+			'games.openPairingPage' => 'Open Sunshine PIN page',
+			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
+			'games.refreshGames' => 'Refresh games',
+			'games.play' => 'Play',
+			'games.recent' => 'Recently opened',
+			'games.favorites' => 'Favorites',
+			'games.allGames' => 'All games',
+			'games.search' => 'Find a game',
+			'games.noMatches' => 'No games match this search.',
+			'games.favorite' => 'Save favorite',
+			'games.unfavorite' => 'Remove favorite',
+			'games.forget' => 'Forget computer',
+			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
+			'games.touchControls' => 'On-screen controller',
+			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			'games.touchSetup' => 'On-screen controls',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
+			'games.addGame' => 'Add game shortcut',
+			'games.gameName' => 'Game name',
+			'games.gameId' => 'Host application ID',
+			'games.invalidGame' => 'Enter a game name and a positive numeric host application ID.',
+			'games.wake' => 'Wake computer',
+			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
+			'games.mac' => 'MAC address (optional)',
+			'games.help' => 'Games help',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.cancel' => 'Cancel',
+			'games.scanning' => 'Looking for computers…',
+			'games.saveShortcut' => 'Save shortcut',
+			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
+			'games.engineUnavailable' => 'In-app streaming is not available here yet',
+			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
+			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
+			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

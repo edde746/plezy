@@ -367,6 +367,8 @@ class ExoPlayerCore(private val activity: Activity) :
   // Audio focus
   private var audioFocusManager: AudioFocusManager? = null
 
+  @Volatile private var audioFocusEnabled: Boolean = true
+
   // Track state for event emission
   private var lastPosition: Long = 0
 
@@ -559,6 +561,8 @@ class ExoPlayerCore(private val activity: Activity) :
   private var debugDvModeOverride: DvConversionMode? = null
   private var dv7RetryAttempted = false
   private var currentVideoFormat: Format? = null
+  private var dolbyVisionOutputAllowed = true
+  private var hdrSdrConversionMode = "auto"
   private var loggedNativeDvSelectionKey: String? = null
   private var loggedNativeDvFirstFrame = false
   private var loggedDvPlaybackPathKey: String? = null
@@ -1255,6 +1259,7 @@ class ExoPlayerCore(private val activity: Activity) :
     if (videoGroup != null) {
       val vf = videoGroup.mediaTrackGroup.getFormat(0)
       currentVideoFormat = vf
+      if (requestClientColorConversion(vf)) return
       val hdr = vf.colorInfo?.let { ci ->
         val transfer = ci.colorTransfer
         if (transfer != null && transfer != 0) " HDR(transfer=$transfer)" else ""
@@ -1620,6 +1625,41 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun dolbyVisionProfile(format: Format?): Int? {
     val codecs = format?.codecs?.lowercase() ?: return null
     return DV_CODEC_PROFILE_REGEX.find(codecs)?.groupValues?.getOrNull(1)?.toIntOrNull()
+  }
+
+  fun setDolbyVisionOutputAllowed(allowed: Boolean) {
+    dolbyVisionOutputAllowed = allowed
+    currentVideoFormat?.let { requestClientColorConversion(it) }
+  }
+
+  fun setHdrSdrConversionMode(mode: String) {
+    require(mode in setOf("auto", "device", "player"))
+    hdrSdrConversionMode = mode
+    currentVideoFormat?.let { requestClientColorConversion(it) }
+  }
+
+  private fun requestClientColorConversion(format: Format): Boolean {
+    if (disposing) return false
+    val transfer = format.colorInfo?.colorTransfer
+    val needed = DvOutputPolicy.needsClientConversion(
+      profile = dolbyVisionProfile(format),
+      isDolbyVisionFormat = format.sampleMimeType == MimeTypes.VIDEO_DOLBY_VISION,
+      dolbyVisionAllowed = dolbyVisionOutputAllowed,
+      isHdr = transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG,
+      displaySupportsHdr = displayHdrSupported,
+      hdrConversionMode = hdrSdrConversionMode
+    )
+    if (!needed) return false
+    val uri = currentMediaUri ?: return false
+    emitLog("info", "dv-route", "Client color conversion requested; handing off to mpv")
+    requestFormatFallback(
+      mediaGeneration = currentMediaGeneration,
+      uri = uri,
+      positionMs = effectivePosition,
+      playWhenReady = exoPlayer?.playWhenReady ?: true,
+      errorMessage = "Client color conversion requires compatible player"
+    )
+    return true
   }
 
   private fun isDvProfile7Format(format: Format): Boolean = dolbyVisionProfile(format) == 7
@@ -4118,6 +4158,21 @@ class ExoPlayerCore(private val activity: Activity) :
     }
   }
 
+  override fun setVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double,
+  ) {
+    if (disposing) return
+    activity.runOnUiThread {
+      if (disposing) return@runOnUiThread
+      val container = surfaceContainer ?: return@runOnUiThread
+      PlayerSurfaceHost.setVideoRect(activity, container, left, top, right, bottom, devicePixelRatio)
+    }
+  }
+
   override fun updateFrame() {
     if (disposing) return
     activity.runOnUiThread {
@@ -4133,7 +4188,13 @@ class ExoPlayerCore(private val activity: Activity) :
 
   // Audio Focus
 
-  override fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
+  override fun setAudioFocusEnabled(enabled: Boolean) {
+    audioFocusEnabled = enabled
+    if (!enabled) audioFocusManager?.abandonAudioFocus()
+  }
+
+  override fun requestAudioFocus(): Boolean =
+    if (!audioFocusEnabled) true else audioFocusManager?.requestAudioFocus() ?: false
 
   override fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()
@@ -4462,3 +4523,4 @@ class ExoPlayerCore(private val activity: Activity) :
     Log.d(TAG, "Disposed")
   }
 }
+

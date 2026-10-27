@@ -345,7 +345,7 @@ String _sentryRelease() {
 }
 
 Future<String?> _sentryNativeDatabasePath() async {
-  if (kIsWeb || !(Platform.isWindows || Platform.isLinux)) return null;
+  if (kIsWeb || !PlatformDetector.isDesktopOS() || !(Platform.isWindows || Platform.isLinux)) return null;
   try {
     final directory = await getApplicationSupportDirectory();
     return p.join(directory.path, 'sentry-native');
@@ -1058,6 +1058,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   });
 
   bestEffort('Fullscreen monitor', () async {
+    if (PlatformDetector.isTizenBuild()) return;
     FullscreenStateManager().startMonitoring();
     if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
       await FullscreenStateManager().enterFullscreen();
@@ -1065,7 +1066,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   });
 
   bestEffort('Gamepad', () {
-    GamepadService.instance.start();
+    if (!PlatformDetector.isTizenBuild()) GamepadService.instance.start();
     if (PlatformDetector.isAppleTV()) AppleTvRemoteTouchService.instance.start();
   });
 
@@ -1102,6 +1103,7 @@ Future<void> _logEnvironmentDiagnostics() async {
   );
   appLogger.i('Display: ${DevicePerformance.describeDisplay()}');
   appLogger.i('Video decoders: ${VideoDecodeCapabilities.describeSync()}');
+  appLogger.i('Dolby Vision decoder profiles: ${VideoDecodeCapabilities.describeDolbyVisionProfilesSync()}');
   if (Platform.isAndroid) {
     appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
   }
@@ -1227,6 +1229,13 @@ void _registerAppLicenses() {
       'Provider artwork',
     ], await rootBundle.loadString('assets/provider_marks/NOTICE.txt'));
   });
+  if (const bool.fromEnvironment('PLEZY_WEBOS')) {
+    LicenseRegistry.addLicense(() async* {
+      yield LicenseEntryWithLineBreaks(const [
+        'LG Electronics Flutter webOS Runtime',
+      ], await rootBundle.loadString('assets/licenses/LGFlutterWebOSRuntimeNotice.txt'));
+    });
+  }
   // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
   // into libmpv there and not on macOS.
   if (Platform.isIOS) _registerSpatialAudioLicenses();

@@ -19,6 +19,9 @@ WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFL
 # so fixture checks use their local copies rather than the checkout's real ones.
 SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
 WINDOWS_CMAKE = WORKFLOW.parents[2] / "windows/CMakeLists.txt"
+WEBOS_CANDIDATE_BUILDER = ROOT / "tools/webos/build_release_candidate.sh"
+WEBOS_IPK_BUILDER = ROOT / "tools/webos/build_ipk.sh"
+WEBOS_RELEASE_GATE = ROOT / "tools/webos/check_release_eligibility.py"
 text = WORKFLOW.read_text(encoding="utf-8")
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 ci_text = CI_WORKFLOW.read_text(encoding="utf-8") if CI_WORKFLOW.is_file() else ""
@@ -114,17 +117,21 @@ for legacy_job in (
 windows = job("build-windows")
 require(
     '"group":"packer-windows"' in windows
-    and "ng-main-run-{0}" in windows
-    and "gha-{0}-{1}-build-windows" in windows
-    and "runs-on: windows-latest" not in windows
-    and "runs-on: windows-11-arm" not in windows,
-    "Windows matrix must use the private Packer JIT route",
+    and '"Windows","X64"' in windows
+    and '"PlezyNG"' in windows,
+    "Windows x64 must use the private Packer JIT route",
+)
+require(
+    '"group":"packer-windows"' in windows
+    and '"Windows","ARM64"' in windows
+    and '"ng-shared-main-plezyng"' in windows
+    and "matrix.arch == 'x64'" in windows,
+    "Windows ARM64 must use its private JIT route",
 )
 require("fail-fast: false" in windows, "Windows matrix must not cancel its other architecture")
 require(
     re.search(
         r"(?ms)          - arch: x64\n"
-        r"            runner: windows-latest\n"
         r"            flutter_setup: action\n"
         r"            native_cache_path: build/windows/x64/_deps\n",
         windows,
@@ -135,7 +142,6 @@ require(
 require(
     re.search(
         r"(?ms)          - arch: arm64\n"
-        r"            runner: windows-11-arm\n"
         r"            flutter_setup: git\n"
         r"            native_cache_path: build/windows/arm64/_deps\n",
         windows,
@@ -210,17 +216,17 @@ for expected in (
 linux = job("build-linux")
 require(
     '"group":"ng-shared-main-jit"' in linux
-    and "ng-main-run-{0}" in linux
-    and "gha-{0}-{1}-build-linux" in linux
-    and "runs-on: ubuntu-24.04" not in linux
-    and "runs-on: ubuntu-24.04-arm" not in linux,
-    "Linux matrix must use the private shared JIT route",
+    and "ng-shared-main-plezyng" in linux
+    and '"linux","x64"' in linux
+    and '"linux","arm64"' in linux
+    and "matrix.arch == 'x64'" in linux
+    and '"gha-{0}-{1}-build-linux"' in linux,
+    "Linux architectures must use the private JIT route",
 )
 require("fail-fast: false" in linux, "Linux matrix must not cancel its other architecture")
 require(
     re.search(
         r"(?ms)          - arch: x64\n"
-        r"            runner: ubuntu-24.04\n"
         r"            flutter_channel: stable\n"
         r"            pkg_config_arch: x86_64-linux-gnu\n",
         linux,
@@ -231,7 +237,6 @@ require(
 require(
     re.search(
         r"(?ms)          - arch: arm64\n"
-        r"            runner: ubuntu-24.04-arm\n"
         r"            flutter_channel: master\n"
         r"            pkg_config_arch: aarch64-linux-gnu\n",
         linux,
@@ -292,17 +297,109 @@ release_tag_input = re.search(
 )
 require(
     release_tag_input is not None
-    and re.search(r"(?m)^        required: true$", release_tag_input.group("body")) is not None
+    and re.search(r"(?m)^        required: false$", release_tag_input.group("body")) is not None
     and re.search(r"(?m)^        type: string$", release_tag_input.group("body")) is not None,
-    "release workflow must require a release_tag input",
+    "workflow must expose a release_tag input, validated in full-platform mode",
+)
+require(
+    re.search(
+        r"(?ms)^      mode:\n.*?        required: true\n"
+        r"        type: choice\n.*?          - release\n"
+        r"          - webos-validation\n",
+        text,
+    )
+    is not None,
+    "manual workflow must expose required release and webOS validation modes",
+)
+require(
+    re.search(
+        r"(?ms)^      include_webos_release:\n.*?        type: boolean\n"
+        r"        default: false\n",
+        text,
+    )
+    is not None,
+    "public WebOS release inclusion must be an explicit opt-in",
+)
+require(
+    "Validate release tag before building" in job("validate-trusted-ref")
+    and "inputs.mode == 'release'" in job("validate-trusted-ref")
+    and "RELEASE_TAG: ${{ inputs.release_tag }}" in job("validate-trusted-ref"),
+    "release mode must validate its optional release_tag input before building",
+)
+build_webos = job("build-webos")
+require(
+    "inputs.mode == 'webos-validation'" in build_webos
+    and "inputs.mode == 'release' && inputs.include_webos_release" in build_webos
+    and "bash tools/webos/build_release_candidate.sh" in build_webos,
+    "webOS builds must be validation-only or explicitly included in a full release",
+)
+require(
+    "python3 -m unittest discover -s tools/webos/tests -v"
+    in named_step(build_webos, "Test WebOS packaging and release gates"),
+    "private webOS builds must run the headless packaging and release-gate tests",
+)
+require(
+    "python3 tools/webos/check_release_eligibility.py" in named_step(
+        job("validate-trusted-ref"), "Require approval for the exact webOS release artifact"
+    )
+    and "--preflight" in named_step(
+        job("validate-trusted-ref"), "Require approval for the exact webOS release artifact"
+    ),
+    "webOS public-release approval must fail before platform builds start",
+)
+candidate_builder = (
+    WEBOS_CANDIDATE_BUILDER.read_text(encoding="utf-8")
+    if WEBOS_CANDIDATE_BUILDER.is_file()
+    else ""
+)
+ipk_builder = (
+    WEBOS_IPK_BUILDER.read_text(encoding="utf-8")
+    if WEBOS_IPK_BUILDER.is_file()
+    else ""
+)
+release_gate = (
+    WEBOS_RELEASE_GATE.read_text(encoding="utf-8")
+    if WEBOS_RELEASE_GATE.is_file()
+    else ""
+)
+require(
+    'read_lock releaseEligibility validatedSourceCommit' in candidate_builder
+    and "export PLEZY_WEBOS_GIT_COMMIT" in candidate_builder
+    and '"${PLEZY_WEBOS_GIT_COMMIT:-$(git -C "$ROOT" rev-parse HEAD)}"' in ipk_builder,
+    "approved WebOS releases must embed the exact C6-qualified app-source commit",
+)
+require(
+    '"validatedArtifactSha256"' in release_gate
+    and 'actual_hash != expected_hash' in release_gate
+    and "REQUIRED_GATES" in release_gate,
+    "the WebOS public-release guard must check all gates and the exact IPK hash",
+)
+require(
+    "--artifact" in named_step(build_webos, "Verify the exact approved WebOS IPK")
+    and "--version \"$RELEASE_TAG\"" in named_step(
+        build_webos, "Verify the exact approved WebOS IPK"
+    ),
+    "the public release must verify the exact qualified IPK hash, source, and version",
+)
+require(
+    "if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}"
+    in named_step(build_webos, "Upload approved WebOS IPK for public release assembly"),
+    "the WebOS IPK must not be uploaded as a public workflow artifact before release approval",
+)
+validation_evidence = named_step(
+    build_webos, "Upload WebOS validation evidence without vendor runtime binaries"
+)
+require(
+    "webos-validation-evidence" in validation_evidence
+    and "*.ipk" not in validation_evidence,
+    "webOS validation artifacts must contain metadata, not vendor runtime binaries",
 )
 require(
     re.search(
         r"(?ms)^      action:\n.*?^        required: true\n        type: choice\n"
         r".*?^        options:\n          - build\n          - release$",
         text,
-    )
-    is not None,
+    ) is not None,
     "platform workflow must require an explicit build or release action",
 )
 require(
@@ -310,8 +407,7 @@ require(
         r"(?ms)^      runner_pool:\n.*?^        required: true\n        type: choice\n"
         r".*?^        options:\n          - private$",
         text,
-    )
-    is not None,
+    ) is not None,
     "platform workflow must require its supported private runner pool",
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
@@ -329,16 +425,14 @@ require(
 run_name = re.search(r"(?m)^run-name: (.*)$", text)
 run_name_expression = run_name.group(1) if run_name else ""
 require(
-    all(
-        field in run_name_expression
-        for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag")
-    ),
-    "release workflow runs must expose their action, pool, and release tag in the run name",
+    all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag"))
+    and "Validate webOS on main" in run_name_expression,
+    "run names must identify the action, pool, release tag or webOS validation",
 )
 
 release = job("create-release")
 require(
-    "needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
+    "needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
     in release,
     "release dependencies must include the trust gate, all platform builds, and Windows packaging",
 )
@@ -356,12 +450,30 @@ for artifact in (
 ):
     require(f"name: {artifact}" in release, f"release download lost {artifact}")
 
+webos_download = named_step(release, "Download WebOS artifact")
+require(
+    "if: ${{ inputs.include_webos_release }}" in webos_download
+    and "name: webos-ipk" in webos_download,
+    "the WebOS release artifact must be downloaded only after explicit opt-in",
+)
+collect_release_files = named_step(release, "Collect release files")
+require(
+    'if [[ "$INCLUDE_WEBOS_RELEASE" == "true" ]]' in collect_release_files
+    and "artifacts/webos/*.ipk" in collect_release_files,
+    "the WebOS IPK must enter the public release asset list only after approval",
+)
+
 release_if = re.search(r"(?m)^    if: (.+)$", release)
 require(release_if is not None, "release job must have an explicit condition")
 release_condition = release_if.group(1) if release_if else ""
 require(
-    "needs.validate-trusted-ref.result == 'success'" in release_condition
+    "inputs.mode == 'release'" in release_condition
     and "inputs.action == 'release'" in release_condition
+    and all(f"needs.{name}.result == 'success'" in release_condition for name in (
+        "build-android", "build-ios", "build-tvos", "build-macos", "build-windows", "package-windows", "build-linux"))
+    and "needs.validate-trusted-ref.result == 'success'" in release_condition
+    and "needs.build-webos.result == 'success'" in release_condition
+    and "needs.build-webos.result == 'skipped'" in release_condition
     and "contains(needs.*.result, 'failure')" in release_condition
     and "contains(needs.*.result, 'cancelled')" in release_condition,
     "draft release creation must require a successful complete build",
@@ -398,7 +510,7 @@ require(
     and '"$RELEASE_TAG" != "$VERSION"' in trusted_ref
     and '"$RUNNER_POOL" != "private"' in trusted_ref
     and '"$ACTION" != "build"' in trusted_ref,
-    "action, runner pool, and release tag must be validated before platform builds start",
+    "release tags must be checked against pubspec; action and runner pool must be validated before platform builds start",
 )
 for protected_job in (
     "build-android",

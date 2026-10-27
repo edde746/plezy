@@ -8,6 +8,7 @@ MediaDisplayCriteria? jellyfinDisplayCriteriaFromStream(
   if (videoStream == null) return null;
 
   final doviProfile = flexibleInt(videoStream['DvProfile']);
+  final dolbyVisionPresent = jellyfinVideoStreamIsDolbyVision(videoStream);
   final doviCompatibilityId = flexibleInt(videoStream['DvBlSignalCompatibilityId']);
   final videoRangeType = videoStream['VideoRangeType']?.toString().toLowerCase();
   final videoRange = videoStream['VideoRange']?.toString().toLowerCase();
@@ -16,7 +17,7 @@ MediaDisplayCriteria? jellyfinDisplayCriteriaFromStream(
   final matrix = _stringOrNull(videoStream['ColorSpace']);
   final range = '${videoRangeType ?? ''} ${videoRange ?? ''}';
   final defaults = classifyMediaDisplayColor(
-    isDolbyVision: (doviProfile ?? 0) > 0,
+    isDolbyVision: dolbyVisionPresent,
     doviCompatibilityId: doviCompatibilityId,
     range: range,
     transfer: transfer,
@@ -29,8 +30,12 @@ MediaDisplayCriteria? jellyfinDisplayCriteriaFromStream(
     width: videoStream['Width'] ?? source['Width'],
     height: videoStream['Height'] ?? source['Height'],
     doviProfile: doviProfile,
+    dolbyVisionPresent: dolbyVisionPresent,
     doviLevel: videoStream['DvLevel'],
     doviCompatibilityId: doviCompatibilityId,
+    doviBaseLayerPresent: videoStream['BlPresentFlag'],
+    doviEnhancementLayerPresent: videoStream['ElPresentFlag'],
+    doviRpuPresent: videoStream['RpuPresentFlag'],
     transfer: transfer ?? defaults.transfer,
     primaries: primaries ?? defaults.primaries,
     matrix: matrix ?? defaults.matrix,
@@ -48,8 +53,21 @@ bool jellyfinVideoStreamIsDolbyVision(Map<String, dynamic> videoStream) {
     videoStream['VideoRangeType'],
     videoStream['VideoRange'],
     videoStream['VideoDoViTitle'],
+    videoStream['Codec'],
+    videoStream['CodecTag'],
+    videoStream['CodecTagString'],
+    videoStream['Profile'],
+    videoStream['Title'],
+    videoStream['DisplayTitle'],
   ].whereType<Object>().map((value) => value.toString().toLowerCase()).join(' ');
-  return text.contains('dovi') || text.contains('dolby vision') || text.contains('dolbyvision');
+  final tokens = RegExp(r'[a-z0-9]+').allMatches(text).map((match) => match.group(0)!).toSet();
+  final compact = text.replaceAll(RegExp(r'[^a-z0-9]'), '');
+  return compact.contains('dolbyvision') ||
+      tokens.contains('dovi') ||
+      tokens.contains('dolbyvision') ||
+      tokens.contains('dv') ||
+      tokens.contains('dvhe') ||
+      tokens.contains('dvh1');
 }
 
 int? jellyfinDolbyVisionProfile(Map<String, dynamic> videoStream) => flexibleInt(videoStream['DvProfile']);

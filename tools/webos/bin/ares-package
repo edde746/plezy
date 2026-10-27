@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+exec "${WEBOS_PYTHON_BIN:-python3}" "$SCRIPT_DIR/package_ipk.py" "$@"

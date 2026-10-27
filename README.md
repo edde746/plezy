@@ -16,10 +16,18 @@ independent reference-pixel accuracy still need qualification. Linux users can
 opt in under **Settings → Playback**, with a separate compatibility fallback and
 video experiment logging switch. A separate engine build is required.
 
+An experimental Android AAR now passes a synthetic FEL-on versus explicit
+EL-dropped pixel comparison through mpv's real `gpu-next` Surface output on an
+API 36 x86_64 emulator. That proves the authored residual reaches Android
+output; it does not update the production AAR or qualify real-device playback,
+Dolby-reference pixels, or physical Dolby Vision output.
+
 The repository also includes a pinned Apple dual-layer experiment host for
 macOS/iOS/tvOS, an offline FEL-to-HDR/SDR companion pipeline, and platform testing
 instructions. These are experimental paths, not a claim of universal or certified
 Dolby Vision support. P7→P8.1 compatibility discards EL and is labelled separately.
+Cross-platform playback and native Dolby Vision output are qualified separately;
+native Dolby Vision signaling depends on the platform and connected display path.
 See the [buildout, setup and Luna handoff](docs/maintainers/dv-platform-buildout.md)
 and [Linux engine evidence](docs/maintainers/dv-engine-luna-handoff.md).
 
@@ -65,14 +73,13 @@ This table is a snapshot of what PlezyNG has delivered and the limits that still
 
 ## Download
 
-PlezyNG builds are published on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The packages below are the current desktop artifacts; mobile and TV builds are distributed separately when available.
+Published PlezyNG downloads appear on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The 2.24.1 build is currently a draft, so there is no public “latest” download yet. Mobile and TV packages are listed when a release is published.
 
 | Platform | Download |
 | --- | --- |
-| macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
-| Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
-| Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
-| webOS TV | Experimental ARM IPK installed and launched on one LG C6 (webOS 26). Login, artwork, and playback were confirmed on an earlier test build; this is not qualification across LG generations or a published package. See the [port status](docs/maintainers/webos-tv.md) |
+| Desktop and mobile | Download links are added after the corresponding release is published. |
+| webOS TV | Experimental ARMv7 IPK; one LG C6 running webOS 26 has been tested. LG's native Flutter floor is webOS 26 Re:New+, and older firmware or other models are not qualified. No webOS package is published yet; see the [compatibility matrix and port status](docs/maintainers/webos-tv.md) |
+| Samsung Tizen TV | Experimental native-media port and TPK packaging tooling. No signed build or TV qualification yet. See the [research, build guide and rollout plan](docs/maintainers/tizen-tv.md). |
 
 <details>
 <summary>Install with a package manager</summary>
@@ -230,7 +237,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Customizable keyboard shortcuts[^desktop]
 - Metadata and artwork editing
 - Settings import/export
-- Localized in English plus 21 translations
+- Localized across 37 locale choices
 
 [^jf]: Jellyfin only.
 [^mb]: Jellyfin and Emby only.
@@ -347,3 +354,4 @@ Plezy is licensed under [GPL-3.0](LICENSE).
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
 - Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
+

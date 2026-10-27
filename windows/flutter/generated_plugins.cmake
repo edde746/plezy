@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   auto_updater_windows
   connectivity_plus
+  disk_usage
   flutter_inappwebview_windows
   flutter_secure_storage_windows
   flutter_tts

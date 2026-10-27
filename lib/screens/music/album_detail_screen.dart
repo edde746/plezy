@@ -17,7 +17,7 @@ import '../../providers/download_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/dialogs.dart';
+import '../../utils/download_deletion_confirmation.dart';
 import '../../utils/formatters.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
@@ -169,7 +169,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
     }
 
     if (downloadProvider.isDownloaded(globalKey)) {
-      final confirmed = await showDeleteConfirmation(
+      final confirmed = await confirmDownloadDeletion(
         context,
         title: t.downloads.deleteDownload,
         message: t.downloads.deleteConfirm(title: widget.album.displayTitle),

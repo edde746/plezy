@@ -11,4 +11,4 @@ import 'platform_detector.dart';
 /// Its temporary directory is scoped by app ID and is suitable for disposable
 /// artwork and shader caches.
 Future<Directory> getPlezyAppCacheDirectory() =>
-    PlatformDetector.isWebOSBuild() ? getTemporaryDirectory() : getApplicationCacheDirectory();
+    PlatformDetector.usesNativeTvMedia() ? getTemporaryDirectory() : getApplicationCacheDirectory();

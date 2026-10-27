@@ -51,6 +51,7 @@ class VideoPlayerRoute extends PageRouteBuilder<bool> {
   VideoPlayerRoute({required WidgetBuilder builder, this.joinsWatchTogether = false})
     : super(
         settings: const RouteSettings(name: kVideoPlayerRouteName),
+        opaque: false,
         pageBuilder: (context, _, _) => builder(context),
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,

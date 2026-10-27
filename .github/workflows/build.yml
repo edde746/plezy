@@ -1,6 +1,7 @@
 # ng-runner-policy: private-jit-only-v1
+# packer-windows-jit-v1
 name: PlezyNG Release
-run-name: ${{ format('{0} / {1} / {2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
+run-name: ${{ inputs.mode == 'webos-validation' && format('Validate webOS on main ({0})', github.sha) || format('{0} / {1} / {2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
   workflow_dispatch:
@@ -18,10 +19,25 @@ on:
         type: choice
         options:
           - private
-      release_tag:
-        description: Semantic version used for artifact names and, for release actions, the draft release
+      mode:
+        description: Select all release platforms or a webOS-only validation candidate
         required: true
+        type: choice
+        options:
+          - release
+          - webos-validation
+        default: release
+      release_tag:
+        description: Semantic version for artifact names and optional draft release (required in release mode)
+        required: false
         type: string
+      include_webos_release:
+        description: >-
+          Include the LG webOS IPK in a public release after its exact artifact
+          and redistribution gates are approved.
+        required: true
+        type: boolean
+        default: false
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -44,12 +60,13 @@ jobs:
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-trusted-ref"]}}', github.run_id)) }}
     permissions:
       contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: Require the protected main branch
+      - name: Require the main branch
         shell: bash
         run: |
           if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
@@ -57,11 +74,12 @@ jobs:
             exit 1
           fi
 
-      - name: Validate release tag before building
+      - name: Validate action and runner pool
+        shell: bash
         env:
           ACTION: ${{ inputs.action }}
           RUNNER_POOL: ${{ inputs.runner_pool }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
           if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
@@ -72,6 +90,21 @@ jobs:
             echo "This workflow currently supports only the private runner pool." >&2
             exit 1
           fi
+          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
+            echo "Unsupported platform mode: $MODE" >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
+            echo "webOS-only validation requires the build action." >&2
+            exit 1
+          fi
+
+      - name: Validate release tag before building
+        if: ${{ inputs.mode == 'release' }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
           VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
           VERSION=${VERSION%%+*}
           if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -83,8 +116,45 @@ jobs:
             exit 1
           fi
 
+      - name: Require successful CI for this commit
+        if: ${{ inputs.mode == 'release' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          response=$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT_SHA&event=workflow_dispatch&per_page=20")
+          result=$(python3 -c 'import json,sys; sha=sys.argv[1]; data=json.load(sys.stdin); runs=[r for r in data.get("workflow_runs",[]) if r.get("head_sha")==sha and r.get("head_branch")=="main" and r.get("event")=="workflow_dispatch"]; runs.sort(key=lambda r:(r.get("run_number",0),r.get("run_attempt",0)),reverse=True); r=runs[0] if runs else {}; print((r.get("status") or "missing")+" "+(r.get("conclusion") or "missing"))' "$COMMIT_SHA" <<< "$response")
+          if [[ "$result" != "completed success" ]]; then
+            echo "The exact release commit must have a completed successful manually dispatched CI - Sanity Checks run on main. Found: $result" >&2
+            exit 1
+          fi
+
+      - name: Require approval for the exact webOS release artifact
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: >-
+          python3 tools/webos/check_release_eligibility.py
+          --preflight
+          --version "$RELEASE_TAG"
+
+      - name: Validate webOS-only mode input
+        if: ${{ inputs.mode == 'webos-validation' }}
+        run: |
+          echo "This manual run builds only the WebOS ARM package on the private Linux JIT route."
+          echo "No draft release is created."
+
   build-android:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
+    timeout-minutes: 360
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-android"]}}', github.run_id)) }}
     permissions:
       id-token: write
@@ -96,12 +166,14 @@ jobs:
           persist-credentials: false
 
       - name: Setup Java
+        if: ${{ inputs.mode == 'release' }}
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
         with:
           distribution: "temurin"
           java-version: "21"
 
       - name: Setup Flutter
+        if: ${{ inputs.mode == 'release' }}
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
@@ -111,6 +183,7 @@ jobs:
           pub-cache: false
 
       - name: Cache Pub dependencies
+        if: ${{ inputs.mode == 'release' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -118,6 +191,7 @@ jobs:
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache Gradle
+        if: ${{ inputs.mode == 'release' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -126,10 +200,12 @@ jobs:
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Install dependencies
+        if: ${{ inputs.mode == 'release' }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Configure Android signing
         id: android-signing
+        if: ${{ inputs.mode == 'release' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -162,31 +238,34 @@ jobs:
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build APKs
+        if: ${{ inputs.mode == 'release' }}
         run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
       - name: Package APKs
+        if: ${{ inputs.mode == 'release' }}
         run: |
           tar -czf plezy-android-arm64-v8a.tar.gz -C build/app/outputs/flutter-apk app-arm64-v8a-release.apk --transform 's/app-arm64-v8a-release.apk/plezy.apk/'
           tar -czf plezy-android-armeabi-v7a.tar.gz -C build/app/outputs/flutter-apk app-armeabi-v7a-release.apk --transform 's/app-armeabi-v7a-release.apk/plezy.apk/'
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
       - name: Build signed Android App Bundle
-        if: steps.android-signing.outputs.configured == 'true'
+        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         run: |
           flutter build appbundle --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --obfuscate --split-debug-info=debug-info/android-play
           cp build/app/outputs/bundle/release/app-release.aab plezyng-android-play.aab
 
       - name: Build signed Amazon Appstore APK
-        if: steps.android-signing.outputs.configured == 'true'
+        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         run: |
           AMAZON=1 ORG_GRADLE_PROJECT_openiapStore=amazon flutter build apk --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --dart-define=AMAZON_STORE=true --obfuscate --split-debug-info=debug-info/android-amazon
           cp build/app/outputs/flutter-apk/app-release.apk plezyng-amazon-firetv.apk
 
       - name: Clean up keystore
-        if: always()
+        if: ${{ always() && inputs.mode == 'release' }}
         run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Attest APKs
+        if: ${{ inputs.mode == 'release' }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
@@ -195,7 +274,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
       - name: Attest Android App Bundle
-        if: steps.android-signing.outputs.configured == 'true'
+        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
@@ -203,6 +282,7 @@ jobs:
             plezyng-amazon-firetv.apk
 
       - name: Upload APKs
+        if: ${{ inputs.mode == 'release' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-apk
@@ -214,7 +294,97 @@ jobs:
             plezyng-amazon-firetv.apk
           if-no-files-found: warn
 
+  build-webos:
+    if: ${{ inputs.mode == 'webos-validation' || (inputs.mode == 'release' && inputs.include_webos_release) }}
+    needs: validate-trusted-ref
+    name: Build WebOS TV package (ARMv7)
+    timeout-minutes: 360
+    runs-on:
+      group: ng-shared-main-jit
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - ng-shared-main-plezyng
+        - ${{ format('ng-main-run-{0}', github.run_id) }}
+        - ${{ format('gha-{0}-build-webos', github.run_id) }}
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test WebOS packaging and release gates
+        run: python3 -m unittest discover -s tools/webos/tests -v
+
+      - name: Build and verify the WebOS ARM package
+        id: webos-build
+        run: bash tools/webos/build_release_candidate.sh
+        env:
+          PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
+          PLEZY_WEBOS_RELEASE_BUILD: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+
+      - name: Verify the exact approved WebOS IPK
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t ipks < <(find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.ipk' -print)
+          if [[ "${#ipks[@]}" -ne 1 ]]; then
+            echo "Expected exactly one WebOS IPK in the verified output." >&2
+            exit 1
+          fi
+          python3 tools/webos/check_release_eligibility.py \
+            --version "$RELEASE_TAG" \
+            --artifact "${ipks[0]}"
+
+      - name: Attest the WebOS package and provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: |
+            ${{ steps.webos-build.outputs.output_dir }}/*.ipk
+            ${{ steps.webos-build.outputs.output_dir }}/webos-engine-provenance.json
+            ${{ steps.webos-build.outputs.output_dir }}/webos-compatibility.json
+            ${{ steps.webos-build.outputs.output_dir }}/SHA256SUMS.txt
+
+      - name: Upload approved WebOS IPK for public release assembly
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: webos-ipk
+          path: ${{ steps.webos-build.outputs.output_dir }}/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload WebOS validation evidence without vendor runtime binaries
+        if: ${{ inputs.mode == 'webos-validation' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: webos-validation-evidence
+          path: |
+            ${{ steps.webos-build.outputs.output_dir }}/webos-engine-provenance.json
+            ${{ steps.webos-build.outputs.output_dir }}/webos-compatibility.json
+            ${{ steps.webos-build.outputs.output_dir }}/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve WebOS build diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: webos-build-diagnostics
+          path: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}/logs/**
+          if-no-files-found: warn
+          retention-days: 14
+
   build-ios:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
     permissions:
@@ -393,6 +563,7 @@ jobs:
           if-no-files-found: error
 
   build-tvos:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build tvOS developer package (arm64)
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
@@ -586,6 +757,7 @@ jobs:
           if-no-files-found: error
 
   build-macos:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:
@@ -835,9 +1007,10 @@ jobs:
             macos-dmg-size.txt
 
   build-windows:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -845,11 +1018,9 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: windows-latest
             flutter_setup: action
             native_cache_path: build/windows/x64/_deps
           - arch: arm64
-            runner: windows-11-arm
             flutter_setup: git
             native_cache_path: build/windows/arm64/_deps
     steps:
@@ -980,8 +1151,9 @@ jobs:
           path: build/windows/${{ matrix.arch }}/runner/Release/
 
   package-windows:
+    if: ${{ inputs.mode == 'release' }}
     needs: build-windows
-    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package-windows"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-package-windows"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -1196,9 +1368,10 @@ jobs:
           path: release-packages/plezyng.*.nupkg
 
   build-linux:
+    if: ${{ inputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner == 'ubuntu-24.04' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","arm64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","arm64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       id-token: write
       attestations: write
@@ -1208,12 +1381,10 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: ubuntu-24.04
             flutter_channel: stable
             pkg_config_arch: x86_64-linux-gnu
             snap_arch: amd64
           - arch: arm64
-            runner: ubuntu-24.04-arm
             flutter_channel: master
             pkg_config_arch: aarch64-linux-gnu
             snap_arch: arm64
@@ -1494,8 +1665,8 @@ jobs:
           path: plezyng-linux-x86_64.AppImage
 
   create-release:
-    needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && inputs.action == 'release' && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
+    if: ${{ always() && inputs.action == 'release' && inputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (!inputs.include_webos_release && needs.build-webos.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write
@@ -1533,6 +1704,13 @@ jobs:
         with:
           name: android-apk
           path: artifacts/android-apk
+
+      - name: Download WebOS artifact
+        if: ${{ inputs.include_webos_release }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: webos-ipk
+          path: artifacts/webos
 
       - name: Download iOS artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -1693,12 +1871,19 @@ jobs:
         id: release-files
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
+          INCLUDE_WEBOS_RELEASE: ${{ inputs.include_webos_release }}
         run: |
           {
             echo 'files<<EOF'
             echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
             echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
             echo artifacts/android-apk/plezy-android-x86_64.tar.gz
+            if [[ "$INCLUDE_WEBOS_RELEASE" == "true" ]]; then
+              echo artifacts/webos/*.ipk
+              echo artifacts/webos/webos-engine-provenance.json
+              echo artifacts/webos/webos-compatibility.json
+              echo artifacts/webos/SHA256SUMS.txt
+            fi
             echo artifacts/ios-ipa/plezy-ios-unsigned.ipa
             if [ -f artifacts/ios-ipa/plezyng-ios-appstore.ipa ]; then
               echo artifacts/ios-ipa/plezyng-ios-appstore.ipa

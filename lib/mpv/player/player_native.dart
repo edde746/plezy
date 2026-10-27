@@ -7,10 +7,12 @@ import 'package:flutter/services.dart';
 
 import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
+import 'video_rect_support.dart';
 import 'mpv_certificate_trust.dart';
 
 typedef _AudioStateRequest = ({
@@ -26,7 +28,35 @@ typedef _AudioStateRequest = ({
 typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int equalizer, int rate});
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
-class PlayerNative extends PlayerBase {
+class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
+  ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
+
+  @override
+  Future<void> setVideoRect({
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+    required double devicePixelRatio,
+  }) async {
+    if (audioOnly || _nativeCoreUnavailable) return;
+    _pendingVideoRect = (left: left, top: top, right: right, bottom: bottom, devicePixelRatio: devicePixelRatio);
+    if (initialized) await _applyPendingVideoRect();
+  }
+
+  Future<void> _applyPendingVideoRect() async {
+    final rect = _pendingVideoRect;
+    if (rect == null || audioOnly || _nativeCoreUnavailable || !initialized) return;
+    await invoke('setVideoRect', {
+      'left': rect.left,
+      'top': rect.top,
+      'right': rect.right,
+      'bottom': rect.bottom,
+      'devicePixelRatio': rect.devicePixelRatio,
+    });
+    if (_pendingVideoRect == rect) _pendingVideoRect = null;
+  }
+
   /// Video player on the default mpv channels/core.
   ///
   /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
@@ -34,11 +64,12 @@ class PlayerNative extends PlayerBase {
   /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
   /// sessions, gpu-next for software ones (see
   /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
-  PlayerNative({this._hardwareDecoding = true})
-    : methodChannel = const MethodChannel('com.plezy/mpv_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_player/events'),
+  PlayerNative({this._hardwareDecoding = true, bool companionSession = false, bool listenToNativeEvents = true})
+    : methodChannel = MethodChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}'),
+      eventChannel = EventChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}/events'),
       audioOnly = false,
-      _exclusiveAudio = true;
+      _exclusiveAudio = true,
+      super(listenToNativeEvents: listenToNativeEvents);
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer
@@ -85,11 +116,12 @@ class PlayerNative extends PlayerBase {
   static bool? debugUseLinuxVideoPlane;
 
   /// Whether this process drives video through the Linux Wayland plane, which
-  /// is `Platform.isLinux` and nothing finer — Linux has no other render path.
+  /// excludes native TV ports that report Linux but use their own media plane.
   ///
   /// The one place the test override is resolved, so production code and host
   /// tests agree on which path is live without reading a test-only field.
-  static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
+  static bool get usesLinuxVideoPlane =>
+      debugUseLinuxVideoPlane ?? (Platform.isLinux && !PlatformDetector.usesNativeTvMedia());
 
   /// Overrides the Apple audio-output detection in host tests.
   @visibleForTesting
@@ -271,12 +303,12 @@ class PlayerNative extends PlayerBase {
       // ignore them.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
-        if (!audioOnly && usesLinuxVideoPlane) ...{
+        if (!audioOnly && (usesLinuxVideoPlane || Platform.isAndroid || Platform.isWindows))
           'experimentalDolbyVision':
               SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false,
+        if (!audioOnly && usesLinuxVideoPlane)
           'dvCompatibilityFallback':
               SettingsService.instanceOrNull?.read(SettingsService.dvCompatibilityFallback) ?? true,
-        },
         if (!audioOnly && Platform.isAndroid)
           'subtitleRenderScale': SettingsService.instance
               .read(SettingsService.subtitleRenderResolution)
@@ -336,6 +368,7 @@ class PlayerNative extends PlayerBase {
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
       initialized = true;
+      await _applyPendingVideoRect();
     } catch (e) {
       _initFuture = null;
       if (!_nativeCoreUnavailable) {
@@ -1362,6 +1395,12 @@ class PlayerNative extends PlayerBase {
   Future<void> clearVideoFrameRate() async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return;
     await invoke('clearVideoFrameRate');
+  }
+
+  @override
+  Future<void> setAudioFocusEnabled(bool enabled) async {
+    if (_nativeCoreUnavailable || !Platform.isAndroid) return;
+    await invoke('setAudioFocusEnabled', {'enabled': enabled});
   }
 
   @override

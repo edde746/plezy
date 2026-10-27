@@ -2133,5 +2133,96 @@ void main() {
       await expectLater(client.resolveExternalPlayback(item), throwsA(isA<MediaServerHttpException>()));
       await expectLater(client.resolveDownload(item), throwsA(isA<MediaServerHttpException>()));
     });
+
+    test('a DV profile requests a full Plex video encode at Original quality', () async {
+      late Uri decisionUri;
+      final client = makeClient((request) async {
+        if (request.url.path == '/library/metadata/42') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {
+                'Metadata': [
+                  {
+                    'ratingKey': '42',
+                    'type': 'movie',
+                    'Media': [
+                      {
+                        'id': 7,
+                        'container': 'mkv',
+                        'videoCodec': 'hevc',
+                        'width': 3840,
+                        'height': 2160,
+                        'Part': [
+                          {
+                            'id': 99,
+                            'key': '/library/parts/99/dv.mkv',
+                            'Stream': [
+                              {
+                                'streamType': 1,
+                                'codec': 'hevc',
+                                'DOVIPresent': 1,
+                                'DOVIProfile': 7,
+                                'DOVIBLCompatID': 6,
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          decisionUri = request.url;
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {
+                'generalDecisionCode': 1001,
+                'transcodeDecisionCode': 1001,
+                'Metadata': [
+                  {
+                    'Media': [
+                      {'container': 'mp4', 'protocol': 'hls', 'selected': true},
+                    ],
+                  },
+                ],
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == '/video/:/transcode/universal/start.m3u8') {
+          return http.Response(
+            '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2"\nstream.m3u8\n',
+            200,
+            headers: {'content-type': 'application/vnd.apple.mpegurl'},
+          );
+        }
+        return http.Response('unexpected request', 500);
+      });
+      addTearDown(client.close);
+
+      final result = await client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+          sessionIdentifier: 'session-id',
+          transcodeSessionId: 'transcode-id',
+        ),
+      );
+
+      expect(decisionUri.queryParameters['directPlay'], '0');
+      expect(decisionUri.queryParameters['directStream'], '0');
+      expect(result.isTranscoding, isTrue);
+      expect(result.playMethod, 'Transcode');
+      expect(result.videoUrl, contains('/video/:/transcode/universal/start.m3u8'));
+    });
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../utils/async_singleton.dart';
 import '../utils/device_channel.dart';
+import '../utils/platform_detector.dart';
 import 'settings_service.dart';
 
 /// The video codecs Plezy negotiates with a media server, most efficient
@@ -64,6 +65,8 @@ class VideoDecodeCapabilities {
   /// "yes" from an assumed one. Both are set together or not at all.
   bool? _hardwareHevc;
   bool? _hardwareAv1;
+  Set<int> _nativeDolbyVisionProfiles = const {};
+  bool _dolbyVisionProfilesReported = false;
 
   /// Get the singleton, probing the platform's decoders on first call.
   static Future<VideoDecodeCapabilities> getInstance() =>
@@ -72,9 +75,12 @@ class VideoDecodeCapabilities {
   Future<void> _detect() async {
     try {
       final result = await deviceChannel.invokeMapMethod<String, dynamic>('getVideoDecodeCapabilities');
-      if (result == null) return;
-      _hardwareHevc = result['hevc'] == true;
-      _hardwareAv1 = result['av1'] == true;
+      if (result != null) {
+        _hardwareHevc = result['hevc'] == true;
+        _hardwareAv1 = result['av1'] == true;
+        _nativeDolbyVisionProfiles = _parseDolbyVisionProfiles(result['dolbyVisionProfiles']);
+        _dolbyVisionProfilesReported = result.containsKey('dolbyVisionProfiles');
+      }
     } on MissingPluginException {
       // Desktop, or a stale native build — keep advertising both.
     } on PlatformException {
@@ -82,9 +88,21 @@ class VideoDecodeCapabilities {
     }
   }
 
+  Set<int> _parseDolbyVisionProfiles(Object? raw) {
+    if (raw is! Iterable) return const {};
+    return {
+      for (final value in raw)
+        if (value is int) value else ?int.tryParse(value.toString()),
+    };
+  }
+
   /// Whether [codec] should be advertised to a media server. Safe before init.
   static bool accepts(RankedVideoCodec codec) {
     if (isRefusedByUser(codec)) return false;
+    // Samsung's native player has no software decoder fallback. Until a
+    // device probe is implemented/qualified, negotiate the common H.264
+    // baseline instead of inheriting desktop's optimistic HEVC/AV1 default.
+    if (PlatformDetector.isTizenBuild() && codec != RankedVideoCodec.h264) return false;
     final instance = _singleton.instance;
     return switch (codec) {
       RankedVideoCodec.av1 => instance?._hardwareAv1 ?? true,
@@ -99,6 +117,19 @@ class VideoDecodeCapabilities {
     for (final codec in RankedVideoCodec.values)
       if (accepts(codec)) codec,
   ];
+
+  /// Platform-reported profiles that the current native video path can accept.
+  /// This is a decoder/output capability claim, not a pixel-accuracy result.
+  static Set<int> get supportedNativeDolbyVisionProfiles =>
+      Set<int>.unmodifiable(_singleton.instance?._nativeDolbyVisionProfiles ?? const {});
+
+  /// Distinguishes a measured empty profile set from a missing/failed probe.
+  static String describeDolbyVisionProfilesSync() {
+    final instance = _singleton.instance;
+    if (instance == null || !instance._dolbyVisionProfilesReported) return 'unreported';
+    final profiles = instance._nativeDolbyVisionProfiles.toList()..sort();
+    return profiles.isEmpty ? 'none' : profiles.join(',');
+  }
 
   /// Whether the user refused [codec] in settings, independent of the probe.
   static bool isRefusedByUser(RankedVideoCodec codec) {
@@ -127,8 +158,8 @@ class VideoDecodeCapabilities {
   /// Test-only: drop the memoized probe, optionally seeding measured results
   /// so the sync accessors can be exercised without a platform channel.
   @visibleForTesting
-  static void debugReset({bool? hardwareHevc, bool? hardwareAv1}) {
-    if (hardwareHevc == null && hardwareAv1 == null) {
+  static void debugReset({bool? hardwareHevc, bool? hardwareAv1, Set<int>? supportedNativeDolbyVisionProfiles}) {
+    if (hardwareHevc == null && hardwareAv1 == null && supportedNativeDolbyVisionProfiles == null) {
       _singleton.debugReset();
       return;
     }
@@ -136,5 +167,9 @@ class VideoDecodeCapabilities {
     _singleton.debugReset(instance: instance);
     instance._hardwareHevc = hardwareHevc;
     instance._hardwareAv1 = hardwareAv1;
+    if (supportedNativeDolbyVisionProfiles != null) {
+      instance._nativeDolbyVisionProfiles = Set<int>.of(supportedNativeDolbyVisionProfiles);
+      instance._dolbyVisionProfilesReported = true;
+    }
   }
 }

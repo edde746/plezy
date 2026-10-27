@@ -14,8 +14,20 @@
 #ifndef PL_HAVE_DOVI
 #error libplacebo was built without Dolby Vision reshaping
 #endif
+#if defined(PLEZYNG_DV_REQUIRE_D3D11)
+#ifndef PL_HAVE_D3D11
+#error the Windows engine needs libplacebo D3D11 support
+#endif
+#else
 #ifndef PL_HAVE_OPENGL
 #error the experimental embedding needs libplacebo OpenGL support
+#endif
+#endif
+
+#if defined(PLEZYNG_DV_REQUIRE_D3D11)
+#define RENDER_BACKEND "d3d11"
+#else
+#define RENDER_BACKEND "opengl"
 #endif
 
 int main(void) {
@@ -32,9 +44,29 @@ int main(void) {
     fputs("Required dual-layer/FEL engine interfaces are missing\n", stderr);
     return 1;
   }
+  mpv_handle *mpv = mpv_create();
+  if (!mpv)
+    return 1;
+  int result = mpv_set_option_string(mpv, "config", "no");
+  result |= mpv_set_option_string(mpv, "vo", "null");
+  result |= mpv_set_option_string(mpv, "ao", "null");
+  if (result < 0 || mpv_initialize(mpv) < 0) {
+    mpv_terminate_destroy(mpv);
+    return 1;
+  }
+  char *identity = mpv_get_property_string(mpv, "plezyng-dv-engine");
+  int identity_matches = identity && strcmp(identity, "plezyng-dv-fel-v1") == 0;
+  mpv_free(identity);
+  mpv_terminate_destroy(mpv);
+  if (!identity_matches) {
+    fputs("The loaded libmpv lacks the fail-closed FEL integration\n", stderr);
+    return 1;
+  }
   printf("{\"dovi_split\":true,\"paired_frame_api\":true,"
          "\"fel_nlq_api\":true,\"libplacebo_api\":%d,\"libmpv_api\":%lu,"
+         "\"engine_id\":\"plezyng-dv-fel-v1\",\"render_backend\":\"" RENDER_BACKEND "\","
          "\"embedded_api\":\"opengl-next\",\"fel_pixels\":\"not_tested\","
          "\"dv_output\":\"not_tested\"}\n", PL_API_VER, mpv_client_api_version());
   return 0;
 }
+

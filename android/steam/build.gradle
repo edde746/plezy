@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+
+def recipe = rootProject.file('../scripts/games/prepare_steam.py')
+providers.exec {
+    commandLine System.getProperty('os.name').toLowerCase().contains('windows') ? 'python' : 'python3', recipe.absolutePath
+}.result.get().assertNormalExitValue()
+
+android {
+    namespace 'org.snapetech.plezyng.games.steam'
+    compileSdk 37
+    ndkVersion '29.0.14206865'
+    defaultConfig {
+        minSdk 25
+        consumerProguardFiles 'consumer-rules.pro'
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_shared' } }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    externalNativeBuild { cmake { path '../../native/games/steam/CMakeLists.txt'; version '3.22.1' } }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

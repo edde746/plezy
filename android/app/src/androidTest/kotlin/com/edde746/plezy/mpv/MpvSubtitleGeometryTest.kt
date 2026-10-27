@@ -134,7 +134,7 @@ class MpvSubtitleGeometryTest {
       try {
         core.get()?.let { player ->
           val disposed = CountDownLatch(1)
-          instrumentation.runOnMainSync { player.dispose(disposed::countDown) }
+          instrumentation.runOnMainSync { player.dispose(onComplete = disposed::countDown) }
           await(disposed, "dispose")
         }
       } finally {

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -23,6 +24,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
@@ -123,7 +125,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Future<void> _identifyStandaloneMetadata(SourceController sources, int epoch) async {
     if (_entry.kind != SourceItemKind.video) return;
     final source = sources.sources.where((item) => item.id == _entry.sourceId).firstOrNull;
-    if (source == null || source.options['onlineMetadata'] == 'false') return;
+    if (source == null || source.options['onlineMetadata'] != 'true') return;
     final entryKey = _entry.key;
     setState(() {
       _metadataLookupPending = true;
@@ -150,37 +152,156 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     }
   }
 
-  Future<String?> _metadataSearchQuery() async {
-    final controller = TextEditingController(text: _entry.displayTitle);
-    final query = await showDialog<String>(
+  Future<void> _qualifyNfsRead() async {
+    final controller = context.read<SourceController>();
+    if (_entry.files.isEmpty) return;
+    final file = _entry.files.reduce((a, b) => (a.size ?? 0) >= (b.size ?? 0) ? a : b);
+    setState(() => _busy = true);
+    try {
+      final result = await controller.qualifyNfsRead(_entry.sourceId, file);
+      if (!mounted) return;
+      await showScopedDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.sourceSetup.nfsQualificationResult),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.sourceSetup.nfsReadTestHelp),
+              const SizedBox(height: 12),
+              Text(
+                '${t.sourceSetup.nfsReadBytes}: '
+                '${formatDecimal(result.bytes / (1024 * 1024), minimumDecimals: 1, maximumDecimals: 1)} MiB',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadSpeed}: '
+                '${formatDecimal(result.mebibytesPerSecond, minimumDecimals: 2, maximumDecimals: 2)} MiB/s',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadRequests}: ${formatCount(result.requests)} · '
+                '${t.sourceSetup.nfsReadAhead}: ${formatCount(result.readAhead)}',
+              ),
+            ],
+          ),
+          actions: [
+            DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(dialogContext), label: t.common.close),
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _editSharedEntryMapping() async {
+    final controller = context.read<SourceController>();
+    final current = await controller.sharedEntryMapping(_entry);
+    if (!mounted) return;
+    final sharedId = TextEditingController(text: current ?? '');
+    final formKey = GlobalKey<FormState>();
+    final save = await showScopedDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(t.common.search),
-        content: SingleChildScrollView(
+        scrollable: true,
+        title: Text(t.sourceSetup.sharedEntryPair),
+        content: Form(
+          key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(t.sourceSetup.metadataSearchPrivacy),
+              Text(t.sourceSetup.sharedEntryPairHelp),
               const SizedBox(height: 12),
-              FocusableTextField(
-                controller: controller,
+              FocusableTextFormField(
+                controller: sharedId,
                 autofocus: true,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
-                onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+                textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
+                enableSuggestions: false,
+                decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
+                validator: (value) {
+                  final id = value?.trim() ?? '';
+                  if (id.isEmpty || RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) return null;
+                  return t.sourceSetup.sharedLibraryInvalid;
+                },
+                onFieldSubmitted: (_) {
+                  if (formKey.currentState?.validate() == true) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: FocusableButton(
+                  onPressed: () => sharedId.text = const Uuid().v4(),
+                  child: TextButton(
+                    onPressed: () => sharedId.text = const Uuid().v4(),
+                    child: Text(t.sourceSetup.generateSharedEntryId),
+                  ),
+                ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(MaterialLocalizations.of(dialogContext).cancelButtonLabel),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
+            isPrimary: true,
+            onPressed: () {
+              if (formKey.currentState?.validate() == true) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            label: t.common.save,
           ),
-          FilledButton(
+        ],
+      ),
+    );
+    final value = sharedId.text.trim();
+    sharedId.dispose();
+    if (save != true || !mounted) return;
+    try {
+      await controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value);
+    } on Object catch (error) {
+      if (!mounted) return;
+      final message = error is SourceException && error.reason == SourceFailure.conflict
+          ? t.sourceSetup.sharedEntryConflict
+          : sourceFailureText(error);
+      showErrorSnackBar(context, message);
+    }
+  }
+
+  Future<String?> _metadataSearchQuery() async {
+    final controller = TextEditingController(text: _entry.displayTitle);
+    final query = await showScopedDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        title: Text(t.common.search),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.sourceSetup.metadataSearchPrivacy),
+            const SizedBox(height: 12),
+            FocusableTextField(
+              controller: controller,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
+              onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+            ),
+          ],
+        ),
+        actions: [
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: Text(t.common.search),
+            label: t.common.search,
+            isPrimary: true,
           ),
         ],
       ),
@@ -361,9 +482,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     if (PlatformDetector.isTV()) throw const SourceException(SourceFailure.unsupported);
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      PageRouteBuilder<void>(
         settings: const RouteSettings(name: 'publication-reader'),
-        builder: (_) => PublicationReaderScreen(entry: _entry, file: file),
+        opaque: false,
+        pageBuilder: (_, __, ___) => PublicationReaderScreen(entry: _entry, file: file),
       ),
     );
     if (mounted) await _load();
@@ -488,16 +610,34 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
     final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
-    final automaticMetadataEnabled = source?.options['onlineMetadata'] != 'false';
+    final automaticMetadataEnabled = source?.options['onlineMetadata'] == 'true';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
       actions: [
+        if (source?.kind == FileSourceKind.nfs && _entry.files.isNotEmpty)
+          IconButton(
+            tooltip: t.sourceSetup.nfsReadTest,
+            onPressed: _busy ? null : () => sourceAction(context, _qualifyNfsRead),
+            icon: const AppIcon(Symbols.speed_rounded),
+          ),
         if (_entry.kind == SourceItemKind.video && hasTrakt)
           IconButton(
             tooltip: t.sourceSetup.metadataSearch,
             onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
             icon: const AppIcon(Symbols.search_rounded),
+          ),
+        if (source?.options['syncLibrary']?.trim().isNotEmpty == true &&
+            !_entry.isFolder &&
+            !_entry.id.startsWith('group:'))
+          FocusableButton(
+            autoScroll: false,
+            onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+            child: IconButton(
+              tooltip: t.sourceSetup.sharedEntryPair,
+              onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+              icon: const AppIcon(Symbols.link_rounded),
+            ),
           ),
         IconButton(
           tooltip: t.audiobook.syncTitle,
@@ -610,6 +750,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                     icon: const AppIcon(Symbols.movie_rounded),
                                     label: Text(t.tooltips.playTrailer),
                                   ),
+                                if (source?.options['syncLibrary']?.trim().isNotEmpty == true)
+                                  FocusableButton(
+                                    onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+                                    child: TextButton.icon(
+                                      onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+                                      icon: const AppIcon(Symbols.link_rounded),
+                                      label: Text(t.sourceSetup.sharedEntryPair),
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
@@ -665,7 +814,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           child: Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: Chip(
-                              avatar: Icon(Icons.public_rounded, size: 18),
+                              avatar: const AppIcon(Symbols.public_rounded, size: 18),
                               label: Text(t.sourceSetup.metadataFromTrakt),
                             ),
                           ),
@@ -680,7 +829,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataNoAutomaticMatch)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -695,7 +844,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataFailed)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: const Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -713,7 +862,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -734,7 +883,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 context,
                                 MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                               ),
-                              icon: const Icon(Icons.link_rounded),
+                              icon: const AppIcon(Symbols.link_rounded),
                               label: Text('${t.common.connect} ${t.trakt.title}'),
                             ),
                           ],
@@ -743,7 +892,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(liveRegion: true, child: Text(sourceFailureText(_error!))),
+                        child: SourceErrorMessage(message: sourceFailureText(_error!)),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(

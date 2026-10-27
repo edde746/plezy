@@ -1,15 +1,23 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/sync/publication_sync.dart';
 import '../../sources/sync/sync_document.dart';
 import '../../sources/sync/sync_store.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_widgets.dart';
@@ -89,6 +97,85 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     setState(() => _source ??= sources.lastOrNull?.id);
   }
 
+  Future<void> _confirmSync(SourceController controller, PublicationSyncConfig config) async {
+    final confirmed = await showScopedDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        title: Text(t.audiobook.syncTitle),
+        content: Text(t.audiobook.syncPrivacy),
+        actions: [
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.saveSync,
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _action(() => controller.configureCloudSync(config));
+  }
+
+  Future<void> _exportRecovery(SourceController controller) async {
+    await _action(() async {
+      final content = await controller.exportCloudSyncRecovery();
+      final saved = await FilePicker.saveFile(
+        dialogTitle: t.audiobook.recoveryExport,
+        fileName: 'plezyng-recovery.json',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        bytes: Uint8List.fromList(utf8.encode(content)),
+      );
+      if (saved != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.audiobook.recoveryExported)));
+      }
+    });
+  }
+
+  Future<void> _importRecovery(SourceController controller) async {
+    final confirmed = await showScopedDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        title: Text(t.audiobook.recoveryImport),
+        content: Text(t.audiobook.recoveryImportConfirm),
+        actions: [
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.recoveryImport,
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _action(() async {
+      final selection = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        withData: true,
+      );
+      if (selection == null || selection.files.isEmpty) return;
+      final bytes = selection.files.first.bytes;
+      if (bytes == null || bytes.length > 7 * 1024 * 1024) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      await controller.importCloudSyncRecovery(utf8.decode(bytes));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.audiobook.recoveryImported)));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SourceController>();
@@ -96,6 +183,34 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     final selected = sources.where((s) => s.id == _source).firstOrNull;
     final configured = controller.syncConfig != null;
     final sync = controller.cloudSync;
+    final addSource = _busy ? null : _addSource;
+    final generateCode = _busy
+        ? null
+        : () => setState(() {
+            _code.text = SyncCipher.newCode();
+            _reveal = true;
+          });
+    final saveSync = _busy || selected == null
+        ? null
+        : () => _confirmSync(
+            controller,
+            PublicationSyncConfig(sourceId: selected.id, code: _code.text.trim(), folder: _folder.text.trim()),
+          );
+    final syncNow = _busy ? null : () => _action(controller.sync);
+    final disableSync = _busy ? null : () => _action(() => controller.configureCloudSync(null));
+    final exportRecovery = _busy ? null : () => _exportRecovery(controller);
+    final importRecovery = _busy ? null : () => _importRecovery(controller);
+    final reconnect = _busy || selected == null
+        ? null
+        : () => _action(() async {
+            final saved = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(builder: (_) => AddSourceScreen(existing: selected)),
+            );
+            if (saved == true && controller.syncConfig?.sourceId == selected.id) {
+              await controller.sync();
+            }
+          });
     return FocusedScrollScaffold(
       title: Text(t.audiobook.syncTitle),
       slivers: [
@@ -114,10 +229,13 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       Text(t.audiobook.addSyncSource),
                       Align(
                         alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: _busy ? null : _addSource,
-                          icon: const AppIcon(Symbols.add_rounded),
-                          label: Text(t.fileSources.add),
+                        child: FocusableButton(
+                          onPressed: addSource,
+                          child: TextButton.icon(
+                            onPressed: addSource,
+                            icon: const AppIcon(Symbols.add_rounded),
+                            label: Text(t.fileSources.add),
+                          ),
                         ),
                       ),
                     ] else ...[
@@ -129,7 +247,11 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                           for (final s in sources)
                             DropdownMenuItem(
                               value: s.id,
-                              child: Text('${s.name} · ${sourceKindName(s.kind)}', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                '${isolateDisplayText(s.name)} · ${sourceKindName(s.kind)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: _busy ? null : (v) => setState(() => _source = v),
@@ -139,6 +261,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         FocusableTextField(
                           controller: _folder,
                           enabled: !_busy,
+                          textDirection: TextDirection.ltr,
                           autocorrect: false,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
@@ -152,6 +275,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       FocusableTextField(
                         controller: _code,
                         enabled: !_busy,
+                        textDirection: TextDirection.ltr,
                         obscureText: !_reveal,
                         autocorrect: false,
                         enableSuggestions: false,
@@ -170,68 +294,75 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       if (!configured)
                         Align(
                           alignment: AlignmentDirectional.centerStart,
-                          child: TextButton.icon(
-                            onPressed: _busy
-                                ? null
-                                : () => setState(() {
-                                    _code.text = SyncCipher.newCode();
-                                    _reveal = true;
-                                  }),
-                            icon: const AppIcon(Symbols.add_rounded),
-                            label: Text(t.audiobook.newSyncCode),
+                          child: FocusableButton(
+                            onPressed: generateCode,
+                            child: TextButton.icon(
+                              onPressed: generateCode,
+                              icon: const AppIcon(Symbols.add_rounded),
+                              label: Text(t.audiobook.newSyncCode),
+                            ),
                           ),
                         ),
                       const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _busy || selected == null
-                            ? null
-                            : () => _action(
-                                () => controller.configureCloudSync(
-                                  PublicationSyncConfig(
-                                    sourceId: selected.id,
-                                    code: _code.text.trim(),
-                                    folder: _folder.text.trim(),
-                                  ),
-                                ),
-                              ),
-                        child: Text(t.audiobook.saveSync),
+                      FocusableButton(
+                        onPressed: saveSync,
+                        child: FilledButton(onPressed: saveSync, child: Text(t.audiobook.saveSync)),
                       ),
                     ],
                     if (configured) ...[
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: _busy ? null : () => _action(controller.sync),
-                        icon: const AppIcon(Symbols.sync_rounded),
-                        label: Text(t.fileSources.sync),
+                      FocusableButton(
+                        onPressed: syncNow,
+                        child: OutlinedButton.icon(
+                          onPressed: syncNow,
+                          icon: const AppIcon(Symbols.sync_rounded),
+                          label: Text(t.fileSources.sync),
+                        ),
                       ),
-                      TextButton(
-                        onPressed: _busy ? null : () => _action(() => controller.configureCloudSync(null)),
-                        child: Text(t.audiobook.disableSync),
+                      FocusableButton(
+                        onPressed: disableSync,
+                        child: TextButton(onPressed: disableSync, child: Text(t.audiobook.disableSync)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(t.audiobook.recoveryHelp, style: Theme.of(context).textTheme.bodySmall),
+                      FocusableButton(
+                        onPressed: exportRecovery,
+                        child: OutlinedButton.icon(
+                          onPressed: exportRecovery,
+                          icon: const AppIcon(Symbols.file_upload_rounded),
+                          label: Text(t.audiobook.recoveryExport),
+                        ),
+                      ),
+                      FocusableButton(
+                        onPressed: importRecovery,
+                        child: OutlinedButton.icon(
+                          onPressed: importRecovery,
+                          icon: const AppIcon(Symbols.file_download_rounded),
+                          label: Text(t.audiobook.recoveryImport),
+                        ),
                       ),
                     ],
-                    if (_busy || sync.running) const LinearProgressIndicator(),
+                    if (_busy || sync.running)
+                      Semantics(
+                        label: _busy ? t.audiobook.saveSync : t.fileSources.sync,
+                        liveRegion: true,
+                        child: const LinearProgressIndicator(),
+                      ),
                     if (configured &&
                         selected != null &&
                         (sync.failure == SourceFailure.authentication || sync.failure == SourceFailure.permission))
-                      OutlinedButton.icon(
-                        onPressed: _busy
-                            ? null
-                            : () => _action(() async {
-                                final saved = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => AddSourceScreen(existing: selected)),
-                                );
-                                if (saved == true && controller.syncConfig?.sourceId == selected.id) {
-                                  await controller.sync();
-                                }
-                              }),
-                        icon: const AppIcon(Symbols.link_rounded),
-                        label: Text(t.audiobook.syncReconnect),
+                      FocusableButton(
+                        onPressed: reconnect,
+                        child: OutlinedButton.icon(
+                          onPressed: reconnect,
+                          icon: const AppIcon(Symbols.link_rounded),
+                          label: Text(t.audiobook.syncReconnect),
+                        ),
                       ),
                     if (_error != null || sync.failure != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(sourceFailureText(_error ?? SourceException(sync.failure!))),
+                        child: SourceErrorMessage(message: sourceFailureText(_error ?? SourceException(sync.failure!))),
                       ),
                     if (sync.lastSuccess != null)
                       Padding(
@@ -256,7 +387,12 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(conflict.entry.title, style: Theme.of(context).textTheme.titleMedium),
+                              Text(
+                                isolateDisplayText(conflict.entry.displayTitle),
+                                style: Theme.of(context).textTheme.titleMedium,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               for (final (index, version) in conflict.values.indexed)
                                 SourceTile(
                                   title: _device(version),

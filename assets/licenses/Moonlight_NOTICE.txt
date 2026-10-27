@@ -1,0 +1,25 @@
+Moonlight Android / moonlight-common-c
+
+The embedded Android game streaming engine is built from Moonlight Android 12.2,
+revision b48494cb96bff23d8886c4775cc4f39a1075495d, including moonlight-common-c at
+874ac9548f1bd6f095ef2b435c42cdde460e7821 and its pinned submodules.
+
+Copyright belongs to the Moonlight contributors and the respective dependency
+owners. Moonlight Android source is available under GNU GPL version 3 (source
+files may offer later versions). The complete GPL text accompanies this notice.
+
+Upstream source: https://github.com/moonlight-stream/moonlight-android
+PlezyNG adapter and reproducible source preparation:
+https://github.com/snapetech-org/PlezyNG/tree/main/android/moonlight
+https://github.com/snapetech-org/PlezyNG/blob/main/scripts/games/prepare_moonlight.py
+
+PlezyNG modifications make the engine app-private, add pending-request
+cancellation/deadlines, and connect pairing, libraries and touch controls to the
+PlezyNG interface. The application ID remains org.snapetech.plezyng.
+
+This is an independent integration. Moonlight, Sunshine and Steam names identify
+interoperable software and do not indicate endorsement.
+
+Release distributors must include corresponding source, build recipes, and all
+transitive dependency notices for the binaries they distribute. The repository's
+docs/games/VALIDATION.md records that release requirement.

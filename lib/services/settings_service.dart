@@ -738,6 +738,14 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Explore visibility setting.
   static BoolPref showExploreTabForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'show_explore_tab'), defaultValue: true);
+
+  /// Games is explicitly enabled per profile; streaming credentials belong to the client.
+  static BoolPref showGamesTabForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
+  static BoolPref gameTouchControlsForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
+  static BoolPref gamePyrowaveForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
@@ -1202,6 +1210,8 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
+  static const enterFullscreenOnPlaybackStart = BoolPref('enter_fullscreen_on_playback_start');
+  static const extendVideoIntoDisplayCutout = BoolPref('extend_video_into_display_cutout');
   static const playPrerollsBeforeMovies = BoolPref('play_prerolls_before_movies');
 
   static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
@@ -1931,6 +1941,7 @@ class SettingsService extends BaseSharedPreferencesService {
     autoDownloadContinueWatching,
     askDownloadQualityEachTime,
     defaultQualityPreset,
+    downloadQualityPreset,
     cellularQualityPreset,
     remoteQualityPreset,
     musicQualityPreset,
@@ -1941,6 +1952,8 @@ class SettingsService extends BaseSharedPreferencesService {
     enableCompanionRemoteServer,
     startInFullscreen,
     exitFullscreenOnPlayerClose,
+    enterFullscreenOnPlaybackStart,
+    extendVideoIntoDisplayCutout,
   ];
 
   /// Group three: reset but *not* exported — device-local paths, endpoints and

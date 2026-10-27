@@ -18,6 +18,7 @@ import '../mpv/player/player_native.dart';
 
 import '../services/scrub_preview_source.dart';
 import '../media/media_backend.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_display_criteria.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
@@ -76,6 +77,7 @@ import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/video_decode_capabilities.dart';
 import '../services/storage_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
@@ -86,6 +88,8 @@ import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
+import '../multiview/workspace_controller.dart';
+import '../multiview/workspace_models.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/account_preferences_controller.dart';
@@ -97,6 +101,7 @@ import '../utils/live_tv_player_navigation.dart';
 import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
+import '../utils/device_channel.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
@@ -947,6 +952,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
   bool _exitFullscreenOnPlayerClose = false;
+  bool _autoFullscreenEnteredForPlaybackStart = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
   VoidCallback? _autoPipEnteringCallback;
@@ -1020,6 +1026,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
   bool _pipInitialized = false;
+  String? _workspaceSessionId;
+  VideoPlayerSlot? _videoPlayerSlot;
+  VideoPlayerLease? _videoPlayerLease;
+  MultiviewWorkspaceController? _workspaceController;
+  bool _workspaceSurfaceDetached = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
 
@@ -1275,6 +1286,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
+  _PlaybackOpenRequest? _dolbyVisionFallbackAttemptedFor;
+  bool _dolbyVisionCompatibilityFallbackInFlight = false;
 
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController(
@@ -1778,6 +1791,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _runPlayerInitializationAttempt(int generation, {required bool replaceCurrent}) async {
     var initPhase = 'starting';
     Player? attemptPlayer;
+    VideoPlayerLease? attemptVideoLease;
     var committed = false;
     String? failureMessage;
     try {
@@ -1873,6 +1887,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            // The backend applies this only to identified DV whose exact
+            // profile is not reported by this platform's playback path. That
+            // makes the decision before local decoding can produce a valid
+            // open with invalid colors.
+            requestCompatibleDolbyVisionRendition: true,
+            supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+            allowExperimentalDolbyVisionProfile7:
+                (Platform.isWindows || Platform.isLinux) &&
+                !PlatformDetector.isWebOSBuild() &&
+                settingsService.read(SettingsService.experimentalDolbyVision),
             // The same resume the open will land on (see
             // _resolveOpenResumePosition): a stacked item opens the file
             // holding it.
@@ -1918,21 +1942,45 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         _releaseFullscreenListener ??= bindListenable(FullscreenStateManager(), _onFullscreenChanged);
       }
 
-      // One-native-instance rule: a live music session owns the only audio
-      // core — stop it and wait for its dispose before constructing the
-      // video core (see PlaybackCoordinator).
+      // A music session explicitly retained in the app-owned workspace is a
+      // separate audio core and stays alive beside this video. Outside the
+      // workspace, keep the existing playback replacement policy.
       initPhase = 'claiming playback session';
       if (!mounted) return;
-      if (widget.launchObserver != null && context.read<MusicPlaybackService>().currentTrack != null) {
+      MultiviewWorkspaceController? workspace;
+      try {
+        workspace = context.read<MultiviewWorkspaceController>();
+      } catch (_) {
+        // Standalone player tests and embedders may not mount the profile shell.
+      }
+      final retainsMusic = workspace?.hasSessionOfKind(MultiviewMediaKind.music) ?? false;
+      if (widget.launchObserver != null && context.read<MusicPlaybackService>().currentTrack != null && !retainsMusic) {
         widget.launchObserver?.mark('blocked', blocker: 'playbackActive');
         return;
       }
-      await PlaybackCoordinator.instance.claimVideo();
+      final coordinator = PlaybackCoordinator.instance;
+      final existingLease = _videoPlayerLease;
+      if (existingLease == null) {
+        attemptVideoLease = await coordinator.claimVideoSlot();
+        _videoPlayerLease = attemptVideoLease;
+      } else {
+        attemptVideoLease = existingLease;
+        await coordinator.claimVideoForLease(existingLease);
+      }
       if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
-      final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
+      final videoSlot = attemptVideoLease.slot;
+      _videoPlayerSlot = videoSlot;
+      final allowInitialWorkspaceAudio =
+          workspace == null || (!workspace.hasAudioSelection && videoSlot == VideoPlayerSlot.primary);
+      final currentPlayer = Player(
+        useExoPlayer: useExoPlayer,
+        hardwareDecoding: enableHardwareDecoding,
+        companionSession: videoSlot == VideoPlayerSlot.companion,
+      );
       attemptPlayer = currentPlayer;
+      await currentPlayer.setWorkspaceAudioFocusEnabled(allowInitialWorkspaceAudio);
       if (!mounted || generation != _playerInitializationGeneration) return;
       if (Platform.isAndroid) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
@@ -2290,16 +2338,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      await currentPlayer.setVolume(savedVolume);
+      await currentPlayer.setVolume(allowInitialWorkspaceAudio ? savedVolume : 0);
       if (!_isPlayerInitializationCurrent(generation)) return;
       _volumeController = VideoVolumeController(
         player: currentPlayer,
         settings: settingsService,
         initialVolume: savedVolume,
+        initialWorkspaceAudioEnabled: allowInitialWorkspaceAudio,
         onUserChange: _announceVolumeCommand,
       );
 
       player = currentPlayer;
+      if (workspace != null && workspace.sessionCount > 0) {
+        this._registerVideoWorkspaceSession(workspace);
+      }
       _playerBackendLabel = currentPlayer.playerType;
 
       initPhase = 'wiring player streams';
@@ -2377,6 +2429,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final failedAttempt = attemptPlayer;
       if (!committed && failedAttempt != null) {
         await _disposePlayerInitializationAttempt(failedAttempt);
+      }
+      if (!committed && _isPlayerInitializationCurrent(generation) && attemptVideoLease != null) {
+        if (identical(_videoPlayerLease, attemptVideoLease)) {
+          _videoPlayerLease = null;
+          _videoPlayerSlot = null;
+          attemptVideoLease.release();
+        }
       }
     }
 
@@ -2517,6 +2576,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// caller — dispose after an accepted exit — from re-issuing the platform
   /// requests, and the route guard is what refuses to start at all once
   /// another player owns the screen.
+  Future<void> _applyPlaybackStartWindowSettings(SettingsService settingsService) async {
+    if (PlatformDetector.isDesktopOS() &&
+        settingsService.read(SettingsService.enterFullscreenOnPlaybackStart) &&
+        !_autoFullscreenEnteredForPlaybackStart) {
+      _autoFullscreenEnteredForPlaybackStart = true;
+      try {
+        await FullscreenStateManager().enterFullscreen();
+      } catch (error, stackTrace) {
+        _autoFullscreenEnteredForPlaybackStart = false;
+        appLogger.w('Failed to enter fullscreen when playback starts', error: error, stackTrace: stackTrace);
+      }
+    }
+    if (Platform.isAndroid && !PlatformDetector.isTV()) {
+      final extendIntoCutout = settingsService.read(SettingsService.extendVideoIntoDisplayCutout);
+      try {
+        await deviceChannel.invokeMethod<bool>('setVideoCutoutMode', extendIntoCutout);
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to apply display cutout layout preference', error: error, stackTrace: stackTrace);
+      }
+    }
+  }
+
   Future<void> _restoreSystemUiAndOrientation() {
     // Before the overlays are shown below: the re-show callback that follows
     // must find no owner, or it would hide them again.
@@ -2526,6 +2607,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
     if (PlatformDetector.isDesktopOS() && _exitFullscreenOnPlayerClose) {
       unawaited(FullscreenStateManager().exitFullscreen());
+    }
+    if (Platform.isAndroid && !_isReplacingWithVideo) {
+      unawaited(
+        deviceChannel.invokeMethod<void>('setVideoCutoutMode', false).catchError((Object error) {
+          appLogger.w('Failed to restore display cutout layout', error: error);
+        }),
+      );
     }
 
     // Independent requests: a missing system-UI reply must not prevent the
@@ -2542,13 +2630,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    final workspaceSessionId = _workspaceSessionId;
+    if (workspaceSessionId != null) {
+      _workspaceController?.unregister(workspaceSessionId);
+      _workspaceSessionId = null;
+      _workspaceSurfaceDetached = false;
+    }
     PlaybackCoordinator.instance.unregisterVideoSession(
       _shutdownVideo,
       retirement: () async {
         // Capture cleanup only after synchronous disposal has assigned every
         // operation. Route navigation itself never awaits this retirement.
-        await _routeDisposed.future;
-        await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
+        try {
+          await _routeDisposed.future;
+          await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
+        } finally {
+          _releaseVideoPlayerLease();
+        }
       }(),
     );
     _retireLaunchObserver();
@@ -2711,6 +2809,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     super.dispose();
     _routeDisposed.complete();
+  }
+
+  void _releaseVideoPlayerLease() {
+    final lease = _videoPlayerLease;
+    _videoPlayerLease = null;
+    _videoPlayerSlot = null;
+    lease?.release();
   }
 
   /// When focus leaves the entire video player subtree, reclaim it.

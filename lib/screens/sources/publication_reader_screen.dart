@@ -14,21 +14,29 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../focus/focusable_text_field.dart';
+import '../../multiview/workspace_controller.dart';
+import '../../multiview/workspace_models.dart';
 import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
+import '../../sources/comic_document.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/reader_preferences.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_notes_screen.dart';
 import 'source_sync_screen.dart';
@@ -64,12 +72,31 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   String _chapter = '';
   String? _selectedCFI, _selectedText, _overlayHref;
   int _pages = 0;
-  bool _fixed = false;
+  bool _fixed = false, _comic = false, _streamingComic = false;
+  String get _readerTitle {
+    final comicTitle = widget.file.kind == SourceItemKind.comic
+        ? _server?.archive.comicDocument?.metadata['Title']?.trim()
+        : null;
+    if (comicTitle?.isNotEmpty == true) return comicTitle!;
+    // Local file entries use the filename as their title; keep its format
+    // suffix in the file list but leave it out of the reading chrome.
+    if (widget.entry.title == widget.file.name) return p.withoutExtension(widget.file.name);
+    return widget.entry.title;
+  }
+
+  String get _preferenceKey => widget.file.kind == SourceItemKind.comic
+      ? 'comicReader:${widget.entry.key}:${widget.file.fingerprint}'
+      : 'reader';
   Object _viewZoom = 'fit-page';
+  MultiviewWorkspaceController? _workspaceController;
+  MultiviewWorkspaceController? _observedWorkspaceController;
+  String? _workspaceSessionId;
+  bool _workspaceDetached = false;
+  bool _autoJoinScheduled = false;
   Timer? _saveTimer;
   Future<void> _writes = Future.value();
   FlutterTts? _tts;
-  bool get pdf => p.extension(widget.file.name).toLowerCase() == '.pdf';
+  bool get pdf => !_streamingComic && p.extension(widget.file.name).toLowerCase() == '.pdf';
   bool get valid =>
       !_disposed &&
       _sources?.current(_generation) == true &&
@@ -83,11 +110,135 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final workspace = context.read<MultiviewWorkspaceController>();
+    if (_observedWorkspaceController != workspace) {
+      _observedWorkspaceController?.removeListener(_scheduleWorkspaceAutoJoin);
+      _observedWorkspaceController = workspace;
+      workspace.addListener(_scheduleWorkspaceAutoJoin);
+    }
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  void _markReaderReady({List<Map<String, dynamic>>? toc}) {
+    if (!mounted) return;
+    setState(() {
+      _ready = true;
+      if (toc != null) _toc = toc;
+    });
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  void _scheduleWorkspaceAutoJoin() {
+    final workspace = _observedWorkspaceController;
+    if (!mounted ||
+        !_ready ||
+        _autoJoinScheduled ||
+        _workspaceSessionId != null ||
+        workspace == null ||
+        workspace.sessionCount == 0) {
+      return;
+    }
+    _autoJoinScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoJoinScheduled = false;
+      if (mounted && _ready && _workspaceSessionId == null && (_observedWorkspaceController?.sessionCount ?? 0) > 0) {
+        _toggleReaderWorkspace();
+      }
+    });
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       unawaited(_flush());
       unawaited(_stopSpeech());
     }
+  }
+
+  void _toggleReaderWorkspace() {
+    final controller = _workspaceController ?? context.read<MultiviewWorkspaceController>();
+    final existingId = _workspaceSessionId;
+    if (existingId != null) {
+      if (_workspaceDetached) {
+        if (controller.isRestored(existingId)) {
+          controller.showSessionInWorkspace(existingId);
+          setState(() => _workspaceDetached = true);
+        } else {
+          controller.restore(existingId);
+        }
+      } else if (controller.showSessionInWorkspace(existingId)) {
+        setState(() => _workspaceDetached = true);
+      }
+      return;
+    }
+
+    final idSeed = '${widget.entry.key}:${widget.file.fingerprint}';
+    final id = 'publication:${sourceDigest(idSeed)}';
+    final navigator = Navigator.of(context);
+    final readerRoute = ModalRoute.of(context);
+    _workspaceController = controller;
+    _workspaceSessionId = id;
+    _workspaceDetached = true;
+    final descriptor = WorkspaceSessionDescriptor(
+      id: id,
+      kind: widget.file.kind == SourceItemKind.comic ? MultiviewMediaKind.comic : MultiviewMediaKind.publication,
+      title: widget.entry.title.trim().isEmpty ? t.common.unknown : widget.entry.title,
+      subtitle: widget.file.name,
+      mediaKey: idSeed,
+      progressOwner: '${_profile ?? 'profile'}:${widget.entry.key}:${widget.file.fingerprint}',
+      hasAudio: _speaking || _readAlong,
+      hasVideo: false,
+      openedAt: DateTime.now(),
+    );
+    final registered = controller.register(
+      WorkspaceSurfaceRegistration(
+        descriptor: descriptor,
+        buildSurface: _buildReaderSurface,
+        onRestore: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _workspaceSessionId != id) return;
+            setState(() => _workspaceDetached = false);
+            final route = readerRoute;
+            if (navigator.mounted && route?.isActive == true) {
+              navigator.popUntil((candidate) => identical(candidate, route));
+            }
+          });
+        },
+        onClose: () {
+          final route = readerRoute;
+          if (!navigator.mounted || route?.isActive != true) return;
+          if (route!.isCurrent) {
+            navigator.pop();
+          } else {
+            navigator.removeRoute(route);
+          }
+        },
+        onAudioOwnershipChanged: _onReaderAudioOwnershipChanged,
+      ),
+    );
+    if (!registered) {
+      _workspaceSessionId = null;
+      _workspaceController = null;
+      _workspaceDetached = false;
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _syncReaderWorkspaceAudioCapability() {
+    final id = _workspaceSessionId;
+    final controller = _workspaceController;
+    if (id == null || controller == null) return;
+    final registration = controller.session(id);
+    if (registration == null) return;
+    controller.updateDescriptor(registration.descriptor.copyWith(hasAudio: _speaking || _readAlong));
+  }
+
+  Future<void> _onReaderAudioOwnershipChanged(bool enabled) async {
+    if (_readAlong) await _playback?.setWorkspaceAudioEnabled(enabled);
+    if (!enabled && _speaking) await _stopSpeech();
   }
 
   Future<void> _open() async {
@@ -117,19 +268,34 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
         throw const SourceException(SourceFailure.conflict);
       }
-      _settings = normalizeReaderPreferences(await sources.repository.preference(_profile!, 'reader'));
+      final defaults = await sources.repository.preference(_profile!, 'reader');
+      _settings = normalizeReaderPreferences({
+        ...defaults,
+        if (_preferenceKey != 'reader') ...await sources.repository.preference(_profile!, _preferenceKey),
+      });
       _annotations = (await sources.repository.annotations(
         _profile!,
         widget.entry.key,
       )).where((a) => a.edition == widget.file.fingerprint && a.mode == PublicationMode.reading).toList();
       final temp = await getTemporaryDirectory();
       final cached = await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
-      final pages = cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)
-          ? await sources.adapter(widget.entry.sourceId).comicPages(widget.file)
-          : null;
+      ComicPageSource? pages;
+      if (cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)) {
+        try {
+          pages = await sources.adapter(widget.entry.sourceId).comicPages(widget.file);
+        } on SourceException catch (error) {
+          // Some servers expose acquisitions without enabling their page API.
+          // Authentication, malformed data and session errors still surface.
+          if (widget.file.streamOnly ||
+              !const {SourceFailure.unavailable, SourceFailure.unsupported}.contains(error.reason)) {
+            rethrow;
+          }
+        }
+      }
       if (!valid) return;
       if (pages == null) _file = await sources.content(widget.entry, widget.file);
       if (!valid) return;
+      _streamingComic = pages != null;
       if (!pdf || pages != null) {
         final archive = pages != null
             ? await PublicationArchive.stream(pages, temp)
@@ -208,11 +374,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     switch (message['type']) {
       case 'engineReady':
         await _js('open', {
-          'title': widget.entry.title,
+          'title': _readerTitle,
           'interfaceLocale': LocaleSettings.currentLocale.languageTag,
           'formattingLocale': LocalePreferences.formattingLocaleName.replaceAll('_', '-'),
           'interfaceDirection': Directionality.of(context) == TextDirection.rtl ? 'rtl' : 'ltr',
           'cfi': _progress?.locator?.cfi,
+          'page': _progress?.locator?.page,
           'settings': readerSettings(),
           'iconStyle': {'fill': AppIconDefaults.fill, 'weight': AppIconDefaults.weight},
           'icons': {
@@ -249,6 +416,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             'reset': t.fileSources.resetReader,
             'fitPage': t.fileSources.fitPage,
             'fitWidth': t.fileSources.fitWidth,
+            'fitHeight': t.comics.fitHeight,
+            'comicMode': t.comics.readingMode,
+            'paged': t.comics.paged,
+            'webtoon': t.comics.webtoon,
+            'coverAlone': t.comics.coverAlone,
+            'splitWide': t.comics.splitWide,
+            'thumbnails': t.comics.thumbnails,
+            'comicHelp': '${t.fileSources.readerControlsHelp}\n\n${t.comics.controlsHelp}',
+            'retry': t.common.retry,
+
             'pageLayout': t.fileSources.pageLayout,
             'singlePage': t.fileSources.singlePage,
             'twoPages': t.fileSources.twoPages,
@@ -295,11 +472,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           await _sources!.saveCover(widget.entry, base64Decode(data.split(',').last));
         }
       case 'ready':
+        _comic = message['comic'] == true;
         _toc = sourceList(message['toc']).map(sourceMap).toList();
         _overlays = sourceList(
           message['overlays'],
         ).take(100000).map(sourceMap).where((m) => _server!.archive.files.containsKey(m['audio'])).toList();
-        if (mounted) setState(() => _ready = true);
+        _markReaderReady();
       case 'location':
         if (_progress == null) return;
         final fraction = (message['fraction'] as num?)?.toDouble() ?? 0;
@@ -337,13 +515,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           if (value is num && value.isFinite) {
             _settings['$key'] = value.clamp(key == 'zoom' ? .25 : 12, key == 'zoom' ? 6 : 72);
           }
-          if (key == 'zoom' && const ['fit-page', 'fit-width'].contains(value)) _settings['zoom'] = value;
-          await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+          if (key == 'zoom' && const ['fit-page', 'fit-width', 'fit-height'].contains(value)) _settings['zoom'] = value;
+          await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         }
       case 'browserSettings':
         final value = sourceMap(message['settings']);
         _settings = normalizeReaderPreferences(message['reset'] == true ? {} : {..._settings, ...value});
-        await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+        await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         await _js('settings', readerSettings());
       case 'browserSpeech':
         if (Platform.isLinux) {
@@ -503,20 +681,23 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   Future<void> _jumpToPage() async {
     if (_pages < 1) return;
+    final actionLabel = pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection;
     final input = TextEditingController(
       text: formatDecimal(pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1), maximumDecimals: 0),
     );
     final form = GlobalKey<FormState>();
-    final page = await showDialog<int>(
+    final page = await showScopedDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection),
+        title: Text(actionLabel),
         content: Form(
           key: form,
-          child: TextFormField(
+          child: FocusableTextFormField(
             controller: input,
             autofocus: true,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            textDirection: TextDirection.ltr,
             decoration: InputDecoration(helperText: t.fileSources.pageRange(count: formatCount(_pages))),
             validator: (value) {
               final n = parseLocalizedInteger(value ?? '');
@@ -528,12 +709,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(context), label: t.fileSources.cancel),
+          DialogActionButton(
             onPressed: () {
               if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
-            child: Text(t.fileSources.goToPage),
+            label: actionLabel,
+            isPrimary: true,
           ),
         ],
       ),
@@ -559,7 +741,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   Future<void> _contents() async {
     final target = await Navigator.push<Map<String, dynamic>>(
       context,
-      MaterialPageRoute(builder: (_) => _ReaderContents(items: _toc)),
+      MaterialPageRoute(
+        builder: (_) => _ReaderContents(
+          items: _toc,
+          comic: _comic,
+          origin: _server?.origin,
+          currentPage: _progress?.locator?.page ?? 1,
+        ),
+      ),
     );
     if (!valid || target == null) return;
     if (pdf) {
@@ -593,10 +782,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         builder: (_) => ReaderSettingsScreen(
           settings: _settings,
           fixed: _fixed,
+          comic: _comic,
           onChanged: (value) async {
             if (!valid) return;
             _settings = normalizeReaderPreferences(value);
-            await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+            await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
             await _js('settings', readerSettings());
           },
         ),
@@ -610,7 +800,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       return;
     }
     await _playback!.stop();
-    await PlaybackCoordinator.instance.claimFiles();
+    await PlaybackCoordinator.instance.claimFiles(preserveWorkspaceVideo: true, preserveWorkspaceMusic: true);
     String text;
     if (pdf) {
       text = (await _pdf.document.pages[(_pdf.pageNumber ?? 1) - 1].loadText())?.fullText ?? '';
@@ -619,18 +809,23 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     }
     if (text.trim().isEmpty || !valid) return;
     _tts ??= FlutterTts();
-    _tts!.setCompletionHandler(() {
-      if (mounted) setState(() => _speaking = false);
-    });
-    _tts!.setErrorHandler((_) {
-      if (mounted) setState(() => _speaking = false);
-    });
+    _tts!.setCompletionHandler(_onSpeechEnded);
+    _tts!.setErrorHandler((_) => _onSpeechEnded());
     await _tts!.setSpeechRate(.5);
     if (widget.entry.language.isNotEmpty) await _tts!.setLanguage(widget.entry.language);
     if (valid) {
       setState(() => _speaking = true);
+      _syncReaderWorkspaceAudioCapability();
+      final id = _workspaceSessionId;
+      if (id != null) await _workspaceController?.setAudibleSession(id);
       await _tts!.speak(text);
     }
+  }
+
+  void _onSpeechEnded() {
+    if (!mounted || !_speaking) return;
+    setState(() => _speaking = false);
+    _syncReaderWorkspaceAudioCapability();
   }
 
   Future<void> _stopSpeech() async {
@@ -642,7 +837,10 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         // A closed browser has already stopped speech and retired its socket.
       }
     }
-    if (mounted && !_disposed && _speaking) setState(() => _speaking = false);
+    if (mounted && !_disposed && _speaking) {
+      setState(() => _speaking = false);
+      _syncReaderWorkspaceAudioCapability();
+    }
   }
 
   Future<void> _startReadAlong() async {
@@ -650,6 +848,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       await _playback!.pause();
       _playback!.removeListener(_followAudio);
       setState(() => _readAlong = false);
+      _syncReaderWorkspaceAudioCapability();
       return;
     }
     await _stopSpeech();
@@ -680,6 +879,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     if (!valid) return;
     _playback!.addListener(_followAudio);
     setState(() => _readAlong = true);
+    _syncReaderWorkspaceAudioCapability();
+    final workspaceId = _workspaceSessionId;
+    if (workspaceId != null) {
+      await _workspaceController?.setAudibleSession(workspaceId);
+      await _playback!.setWorkspaceAudioEnabled(true);
+    }
     _followAudio();
   }
 
@@ -715,15 +920,18 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         .toList();
     final outline = await document.loadOutline();
     if (valid && mounted) {
-      setState(() {
-        _ready = true;
-        _toc = flatten(outline, 0);
-      });
+      _markReaderReady(toc: flatten(outline, 0));
     }
   }
 
   @override
   void dispose() {
+    final workspaceSessionId = _workspaceSessionId;
+    if (workspaceSessionId != null) {
+      _workspaceController?.unregister(workspaceSessionId);
+      _workspaceSessionId = null;
+      _workspaceDetached = false;
+    }
     final syncSources = _sources, syncKey = _progress?.key;
     if (syncSources != null && syncKey != null) {
       unawaited(
@@ -736,6 +944,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _sources?.removeListener(_profileChanged);
+    _observedWorkspaceController?.removeListener(_scheduleWorkspaceAutoJoin);
     _playback?.removeListener(_followAudio);
     PlaybackCoordinator.instance.unregisterNarrationSession(_stopSpeech);
     _saveTimer?.cancel();
@@ -758,6 +967,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   @override
   Widget build(BuildContext context) {
+    if (_workspaceDetached) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: IgnorePointer(child: SizedBox.expand()),
+      );
+    }
+    return _buildReaderSurface(context);
+  }
+
+  Widget _buildReaderSurface(BuildContext context) {
     final body = _error != null
         ? Center(
             child: SingleChildScrollView(
@@ -765,7 +984,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(sourceFailureText(_error!), textAlign: TextAlign.center),
+                  SourceErrorMessage(message: sourceFailureText(_error!), textAlign: TextAlign.center),
                   if (_cloudConflict) ...[
                     const SizedBox(height: 12),
                     TextButton.icon(
@@ -903,18 +1122,28 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           );
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(isolateDisplayText(_readerTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          FocusableButton(
+            autoScroll: false,
+            onPressed: _ready ? _toggleReaderWorkspace : null,
+            child: IconButton(
+              tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
+              onPressed: _ready ? _toggleReaderWorkspace : null,
+              icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+            ),
+          ),
           IconButton(
-            tooltip: t.fileSources.contents,
+            tooltip: _comic ? t.comics.thumbnails : t.fileSources.contents,
             onPressed: _ready ? () => sourceAction(context, _contents) : null,
             icon: const AppIcon(Symbols.format_list_bulleted_rounded),
           ),
-          IconButton(
-            tooltip: t.fileSources.searchBook,
-            onPressed: _ready ? () => sourceAction(context, _search) : null,
-            icon: const AppIcon(Symbols.search_rounded),
-          ),
+          if (!_comic)
+            IconButton(
+              tooltip: t.fileSources.searchBook,
+              onPressed: _ready ? () => sourceAction(context, _search) : null,
+              icon: const AppIcon(Symbols.search_rounded),
+            ),
           AppMenuButton<String>(
             icon: const AppIcon(Symbols.more_vert_rounded),
             tooltip: t.fileSources.preferences,
@@ -935,11 +1164,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               if (pdf || _fixed) ...[
                 AppMenuItem(value: 'fit-page', label: t.fileSources.fitPage, icon: Symbols.fit_screen_rounded),
                 AppMenuItem(value: 'fit-width', label: t.fileSources.fitWidth, icon: Symbols.width_rounded),
+                if (_comic) AppMenuItem(value: 'fit-height', label: t.comics.fitHeight, icon: Symbols.height_rounded),
                 AppMenuItem(value: 'actual', label: t.fileSources.actualSize, icon: Symbols.zoom_in_rounded),
               ],
               if (!pdf)
                 AppMenuItem(value: 'settings', label: t.fileSources.readerSettings, icon: Symbols.text_fields_rounded),
-              if (!Platform.isLinux)
+              if (!Platform.isLinux && !_comic)
                 AppMenuItem(
                   value: 'tts',
                   label: _speaking ? t.fileSources.stopReading : t.fileSources.readAloud,
@@ -959,6 +1189,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                   await _jumpToPage();
                 case 'fit-page':
                 case 'fit-width':
+                case 'fit-height':
                 case 'actual':
                   await _zoom(action == 'actual' && !pdf ? 'actual' : action);
                 case 'note':
@@ -1018,10 +1249,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               ),
               Expanded(
                 child: Text(
-                  [
-                    _chapter,
-                    if (_progress != null) formatPercent(_progress!.fraction),
-                  ].where((part) => part.isNotEmpty).join(' · '),
+                  isolateDisplayText(
+                    [
+                      _chapter,
+                      if (_progress != null) formatPercent(_progress!.fraction),
+                    ].where((part) => part.isNotEmpty).join(' · '),
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -1055,27 +1288,89 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 }
 
 class _ReaderContents extends StatelessWidget {
-  const _ReaderContents({required this.items});
+  const _ReaderContents({required this.items, this.comic = false, this.origin, this.currentPage = 1});
   final List<Map<String, dynamic>> items;
+  final bool comic;
+  final Uri? origin;
+  final int currentPage;
   @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
-    title: Text(t.fileSources.contents),
+    title: Text(comic ? t.comics.thumbnails : t.fileSources.contents),
     slivers: [
       SliverPadding(
         padding: const EdgeInsets.all(24),
-        sliver: SliverList.builder(
-          itemCount: items.length,
-          itemBuilder: (context, i) => Padding(
-            padding: EdgeInsetsDirectional.only(start: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
-            child: SourceTile(
-              title: items[i]['title'] as String? ?? '',
-              index: i,
-              count: items.length,
-              onTap: () => Navigator.pop(context, items[i]),
-              icon: Symbols.menu_book_rounded,
-            ),
-          ),
-        ),
+        sliver: comic && origin != null
+            ? SliverGrid.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220,
+                  mainAxisExtent: 200 + MediaQuery.textScalerOf(context).scale(60),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, i) {
+                  final selected = i + 1 == currentPage;
+                  final radius = tokens(context).radiusMd;
+                  final theme = Theme.of(context);
+                  return Semantics(
+                    selected: selected,
+                    child: FocusableWrapper(
+                      disableScale: true,
+                      borderRadius: radius,
+                      onSelect: () => Navigator.pop(context, items[i]),
+                      child: Material(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(radius),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          canRequestFocus: false,
+                          onTap: () => Navigator.pop(context, items[i]),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: selected ? theme.colorScheme.primary.withValues(alpha: 0.12) : null,
+                              borderRadius: BorderRadius.circular(radius),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Image.network(
+                                    origin!.resolve('book/${Uri.encodeComponent('${items[i]['href']}')}').toString(),
+                                    cacheWidth: 240,
+                                    excludeFromSemantics: true,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const AppIcon(Symbols.image_not_supported_rounded),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Text(
+                                    t.fileSources.page(number: i + 1),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+            : SliverList.builder(
+                itemCount: items.length,
+                itemBuilder: (context, i) => Padding(
+                  padding: EdgeInsetsDirectional.only(start: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
+                  child: SourceTile(
+                    title: items[i]['title'] as String? ?? '',
+                    index: i,
+                    count: items.length,
+                    onTap: () => Navigator.pop(context, items[i]),
+                    icon: Symbols.menu_book_rounded,
+                  ),
+                ),
+              ),
       ),
     ],
   );
@@ -1089,9 +1384,11 @@ class _BookSearchScreen extends StatefulWidget {
 }
 
 class _BookSearchScreenState extends State<_BookSearchScreen> {
+  final _query = TextEditingController();
   List<Map<String, dynamic>> _results = [];
   bool _searching = false;
   int _epoch = 0;
+
   Future<void> _search(String query) async {
     final epoch = ++_epoch;
     setState(() => _searching = true);
@@ -1104,6 +1401,12 @@ class _BookSearchScreenState extends State<_BookSearchScreen> {
   }
 
   @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
     title: Text(t.fileSources.searchBook),
     slivers: [
@@ -1112,9 +1415,11 @@ class _BookSearchScreenState extends State<_BookSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onSubmitted: (q) => sourceAction(context, () => _search(q)),
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   labelText: t.fileSources.searchBook,
                   suffixIcon: const AppIcon(Symbols.search_rounded),
@@ -1151,6 +1456,8 @@ class _PdfSearchScreen extends StatefulWidget {
 }
 
 class _PdfSearchScreenState extends State<_PdfSearchScreen> {
+  final _query = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -1164,6 +1471,7 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
   @override
   void dispose() {
     widget.search.removeListener(_changed);
+    _query.dispose();
     super.dispose();
   }
 
@@ -1176,9 +1484,11 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onChanged: widget.search.startTextSearch,
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(labelText: t.fileSources.searchBook),
               ),
               if (widget.search.isSearching) const LinearProgressIndicator(),
@@ -1199,8 +1509,14 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
 }
 
 class ReaderSettingsScreen extends StatefulWidget {
-  const ReaderSettingsScreen({super.key, required this.settings, required this.onChanged, this.fixed = false});
-  final bool fixed;
+  const ReaderSettingsScreen({
+    super.key,
+    required this.settings,
+    required this.onChanged,
+    this.fixed = false,
+    this.comic = false,
+  });
+  final bool fixed, comic;
   final Map<String, dynamic> settings;
   final Future<void> Function(Map<String, dynamic>) onChanged;
   @override
@@ -1224,8 +1540,42 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(t.fileSources.readerControlsHelp),
+              Text(
+                widget.comic
+                    ? '${t.fileSources.readerControlsHelp}\n\n${t.comics.controlsHelp}'
+                    : t.fileSources.readerControlsHelp,
+              ),
+              if (widget.comic) Text(t.comics.savedForComic),
               const SizedBox(height: 24),
+              if (widget.comic) ...[
+                DropdownButtonFormField<String>(
+                  key: ValueKey('comicMode:${value['comicMode']}'),
+                  isExpanded: true,
+                  initialValue: value['comicMode'] as String,
+                  decoration: InputDecoration(labelText: t.comics.readingMode),
+                  items: [
+                    DropdownMenuItem(value: 'paged', child: Text(t.comics.paged)),
+                    DropdownMenuItem(value: 'webtoon', child: Text(t.comics.webtoon)),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) set('comicMode', v);
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.comics.coverAlone),
+                  value: value['coverAlone'] == true,
+                  onChanged: value['comicMode'] == 'webtoon' ? null : (v) => set('coverAlone', v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.comics.splitWide),
+                  subtitle: Text(t.comics.splitWideHelp),
+                  value: value['splitWide'] == true,
+                  onChanged: value['comicMode'] == 'webtoon' ? null : (v) => set('splitWide', v),
+                ),
+                const SizedBox(height: 24),
+              ],
               if (widget.fixed)
                 for (final option in [
                   (
@@ -1256,9 +1606,14 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
                       for (final entry in option.$3.entries)
                         DropdownMenuItem(value: entry.key, child: Text(entry.value)),
                     ],
-                    onChanged: (v) {
-                      if (v != null) set(option.$1, v);
-                    },
+                    onChanged:
+                        widget.comic &&
+                            option.$1 == 'spread' &&
+                            (value['comicMode'] == 'webtoon' || value['splitWide'] == true)
+                        ? null
+                        : (v) {
+                            if (v != null) set(option.$1, v);
+                          },
                   ),
                   const SizedBox(height: 24),
                 ],

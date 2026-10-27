@@ -248,7 +248,7 @@ class _PreferredServerTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(currentLabel, overflow: TextOverflow.ellipsis),
+          Flexible(child: Text(currentLabel, maxLines: 1, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 8),
           AppIcon(_inlineEndChevron(context), fill: 1),
         ],

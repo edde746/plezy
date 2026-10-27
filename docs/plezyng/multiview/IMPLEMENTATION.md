@@ -5,7 +5,7 @@ All packages start **not implemented** in this handoff. Read the audited main re
 ## Working procedure
 
 1. Fetch current main using the approved GitHub connector/workflow. Read applicable repository instructions. Preserve concurrent comic, localization, Games, sources, audiobook and DV work.
-2. Identify changes since `b32e396c036b465136228b6ddc2e7c5b7fec3c4b`, particularly player lifecycle/native ownership and any newly landed Games interfaces. Update the evidence ledger without treating this old baseline as current code.
+2. Identify changes since `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`, particularly player lifecycle/native ownership and any newly landed Games interfaces. Update the evidence ledger without treating this old baseline as current code.
 3. Establish existing analysis/test results before refactoring. Separate pre-existing failures from changes caused by Multiview.
 4. Implement packages in dependency order, committing coherent slices and preserving single-player regression coverage. Follow the user's current publication/merge instructions; this plan does not authorize unrelated code or infrastructure changes.
 5. Maintain DELIVERY.md with package status, commit, tests actually run, device evidence, unresolved issues and the next exact action. The implementation package creates that file; do not overwrite this plan's status with “complete” merely because an initial UI lands.

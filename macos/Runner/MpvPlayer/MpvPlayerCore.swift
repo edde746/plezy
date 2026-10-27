@@ -32,6 +32,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   private weak var window: NSWindow?
   private var containerLayer: MpvVideoContainerLayer?
+  private var requestedVideoFrame: CGRect?
   private var playbackActivity: NSObjectProtocol?
   private var layerHiddenForOcclusion = false
   private var layerHiddenForScreenSleep = false
@@ -202,6 +203,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     let targetFrame: CGRect
     if let frame {
       targetFrame = frame
+    } else if let requestedVideoFrame {
+      targetFrame = requestedVideoFrame
     } else if let contentView = window?.contentView {
       targetFrame = contentView.bounds
     } else {
@@ -221,6 +224,26 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   /// destroys HDR/Dolby Vision passthrough. The transform sits on the display
   /// layer itself, as on iOS; its bounds never change, so the VO's bounds
   /// observer stays quiet and the OSD sibling keeps its geometry.
+  /// Place the existing AVFoundation surface in the app-owned workspace.
+  /// The Flutter rectangle is top-origin physical pixels; AppKit layer geometry
+  /// is in points and follows the content view's flipped-coordinate contract.
+  func setVideoRect(left: Int, top: Int, right: Int, bottom: Int, devicePixelRatio: Double) {
+    guard right > left, bottom > top, devicePixelRatio.isFinite, devicePixelRatio > 0,
+      let contentView = window?.contentView
+    else { return }
+    let scale = CGFloat(devicePixelRatio)
+    let x = contentView.bounds.minX + CGFloat(left) / scale
+    let width = CGFloat(right - left) / scale
+    let height = CGFloat(bottom - top) / scale
+    let topOffset = CGFloat(top) / scale
+    let y = contentView.isFlipped
+      ? contentView.bounds.minY + topOffset
+      : contentView.bounds.maxY - topOffset - height
+    let frame = CGRect(x: x, y: y, width: width, height: height)
+    requestedVideoFrame = frame
+    updateFrame(frame)
+  }
+
   func setVideoZoom(_ scale: Double) {
     let clamped = min(max(scale, 0.25), 4.0)
     DispatchQueue.main.async { [weak self] in

@@ -3,13 +3,39 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, smb, ftp, sftp, nfs, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf, komga }
+enum FileSourceKind {
+  local,
+  webdav,
+  smb,
+  ftp,
+  sftp,
+  nfs,
+  dlna,
+  googleDrive,
+  oneDrive,
+  dropbox,
+  s3,
+  opds,
+  audiobookshelf,
+  komga,
+}
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
 enum PublicationMode { reading, listening, watching }
 
-enum SourceFailure { authentication, permission, unavailable, unsupported, invalidData, cancelled, conflict }
+enum SourceFailure {
+  authentication,
+  permission,
+  unavailable,
+  unsupported,
+  invalidData,
+  cancelled,
+  conflict,
+  quotaExceeded,
+  storageLow,
+  storageUnavailable,
+}
 
 /// Deliberately carries no URL, token or provider response into UI/logging.
 class SourceException implements Exception {
@@ -174,7 +200,8 @@ class PublicationFile {
   final bool primary;
   final bool streamOnly;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
-  String get fingerprint => sourceDigest(jsonEncode([id, revision, size, streamOnly]));
+  // Delivery permissions do not change the content edition or its saved progress.
+  String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -239,6 +266,7 @@ class SourceEntry {
     this.cast = const [],
     this.onlineMetadataProvider,
     this.onlineMetadataCheckedAt,
+    this.unavailable = false,
   });
   final String sourceId;
   final String id;
@@ -266,6 +294,10 @@ class SourceEntry {
   final String? onlineMetadataProvider;
   final int? onlineMetadataCheckedAt;
 
+  /// True when the catalogue item is no longer present on its configured
+  /// source. A completed local download may still make it usable offline.
+  final bool unavailable;
+
   SourceEntry copyWith({
     String? parentId,
     String? title,
@@ -282,6 +314,7 @@ class SourceEntry {
     List<String>? cast,
     String? onlineMetadataProvider,
     int? onlineMetadataCheckedAt,
+    bool? unavailable,
   }) => SourceEntry(
     sourceId: sourceId,
     id: id,
@@ -308,6 +341,7 @@ class SourceEntry {
     cast: cast ?? this.cast,
     onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
     onlineMetadataCheckedAt: onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
+    unavailable: unavailable ?? this.unavailable,
   );
 
   String get key => sourceKey(sourceId, id);
@@ -356,6 +390,7 @@ class SourceEntry {
     if (cast.isNotEmpty) 'cast': cast,
     if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
     if (onlineMetadataCheckedAt != null) 'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
+    if (unavailable) 'unavailable': true,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -383,6 +418,7 @@ class SourceEntry {
     cast: sourceList(j['cast']).whereType<String>().toList(),
     onlineMetadataProvider: j['onlineMetadataProvider'] as String?,
     onlineMetadataCheckedAt: sourceInt(j['onlineMetadataCheckedAt']),
+    unavailable: j['unavailable'] == true,
   );
 }
 
@@ -393,14 +429,98 @@ class SourcePage {
   final String? title;
 }
 
-/// Ephemeral. Never serialized, cached in catalog records, or sent to OS media
-/// metadata. A lease can be renewed before each range request.
+/// Transient by default; never cached in catalogue records or sent to OS
+/// media metadata. Native background tasks may persist an adapter-attested
+/// direct URL, stable HTTPS request, or encrypted provider renewal recipe.
 class ContentLease {
-  const ContentLease(this.uri, {this.headers = const {}, this.expiresAt, this.size});
+  const ContentLease(
+    this.uri, {
+    this.headers = const {},
+    this.expiresAt,
+    this.size,
+    this.backgroundTransferSafe = false,
+    this.backgroundRefresh,
+  });
   final Uri uri;
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+
+  /// Provider renewal data is persisted only after the native task encrypts it.
+  final Map<String, dynamic>? backgroundRefresh;
+
+  /// Only adapters that know a URL is a direct resource may opt it into a
+  /// persistent native task. Never infer this from empty headers alone:
+  /// signed URLs can carry credentials in their query string.
+  final bool backgroundTransferSafe;
+
+  bool get canPersistForBackgroundTransfer =>
+      backgroundTransferSafe &&
+      headers.isEmpty &&
+      expiresAt == null &&
+      uri.host.isNotEmpty &&
+      uri.userInfo.isEmpty &&
+      !uri.hasQuery &&
+      !uri.hasFragment &&
+      const {'http', 'https'}.contains(uri.scheme);
+
+  /// Time-limited provider URLs are persisted only as encrypted renewal recipes;
+  /// the plaintext expiring URL is never stored in the native task row.
+  bool get canPersistEncryptedRefreshForBackgroundTransfer {
+    final refresh = backgroundRefresh;
+    if (!backgroundTransferSafe ||
+        refresh == null ||
+        expiresAt == null ||
+        size == null ||
+        size! <= 0 ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        uri.toString().length > 8192 ||
+        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox'}.contains(refresh['provider'])) {
+      return false;
+    }
+    try {
+      return jsonEncode(refresh).length <= 10000;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Stable HTTPS requests may put authentication headers in a native task
+  /// only after encrypting the entire descriptor with the OS credential vault.
+  bool get canPersistEncryptedAuthForBackgroundTransfer {
+    if (!backgroundTransferSafe ||
+        expiresAt != null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        uri.toString().length > 4096 ||
+        headers.isEmpty ||
+        headers.length > 4) {
+      return false;
+    }
+    var hasAuthorization = false;
+    final seenHeaders = <String>{};
+    for (final entry in headers.entries) {
+      final name = entry.key.toLowerCase();
+      if (!seenHeaders.add(name)) return false;
+      if (name == 'authorization') {
+        final value = entry.value;
+        if (!(value.startsWith('Basic ') || value.startsWith('Bearer '))) return false;
+        hasAuthorization = true;
+      } else if (name != 'if-match') {
+        return false;
+      }
+      if (entry.value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(entry.key + entry.value)) {
+        return false;
+      }
+    }
+    return hasAuthorization;
+  }
 }
 
 /// Provider-native byte stream for sources without an HTTP media URL.

@@ -105,6 +105,8 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ko lending = _Translations$lending$ko._(_root);
 	@override late final _Translations$audiobook$ko audiobook = _Translations$audiobook$ko._(_root);
 	@override late final _Translations$sourceSetup$ko sourceSetup = _Translations$sourceSetup$ko._(_root);
+	@override late final _Translations$comics$ko comics = _Translations$comics$ko._(_root);
+	@override late final _Translations$games$ko games = _Translations$games$ko._(_root);
 }
 
 // Path: app
@@ -3029,7 +3031,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress sync 폴더 (선택)';
 	@override String get syncLocationHint => 'PlezyNG 상태를 위한 전용 WebDAV 폴더.조건적인 글쓰기를 사용; 미디어는 변함없이 남아 있습니다.';
 	@override String get audiobooks => '오디오 책';
-	@override String get comics => '코미디';
+	@override String get comics => '만화';
 	@override String get scan => '책과 미디어를 위한 스캔';
 	@override String get browserReader => '오픈 리더';
 	@override String get browserReaderHelp => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.';
@@ -3054,7 +3056,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get letterSpacing => '우주 편지';
 	@override String get wordSpacing => '단어 스페셜';
 	@override String get readerControlsHelp => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.';
-	@override String get imagePage => '코미디 페이지';
+	@override String get imagePage => '만화 페이지';
 	@override String get resetReader => '읽기 선호도를 다시 설정';
 	@override String get zoom => '확대/축소';
 	@override String get useFiles => '파일과 책을 사용하십시오';
@@ -3288,6 +3290,103 @@ class _Translations$sourceSetup$ko extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '선택한 클라이언트 인증 정보: ${name}';
 	@override String subtitleRating({required Object rating}) => '평점 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '자막 다운로드 중: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ko extends Translations$comics$en {
+	_Translations$comics$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => '높이에 맞춤';
+	@override String get readingMode => '읽기 모드';
+	@override String get paged => '페이지';
+	@override String get webtoon => '연속 스크롤';
+	@override String get coverAlone => '표지 따로 표시';
+	@override String get splitWide => '가로로 긴 페이지 나누기';
+	@override String get splitWideHelp => '각 절반을 읽는 순서대로 따로 표시합니다. 이 옵션을 켜면 두 페이지 나란히 보기가 일시 중지됩니다.';
+	@override String get thumbnails => '페이지 미리보기';
+	@override String get controlsHelp => '스와이프하여 페이지를 넘기세요. 두 번 탭하여 맞춤 방식을 바꾸세요. 연속 스크롤에서는 세로로 스와이프하거나 Page Up 및 Page Down을 사용하세요.';
+	@override String get savedForComic => '이 프로필에서 이 만화의 표시 설정을 기억합니다.';
+	@override String get readLists => '읽기 목록';
+	@override String get collections => '컬렉션';
+}
+
+// Path: games
+class _Translations$games$ko extends Translations$games$en {
+	_Translations$games$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Games';
+	@override String get enable => 'Show Games for this profile';
+	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+	@override String get subtitle => 'Your games, from your computers.';
+	@override String get computers => 'Your computers';
+	@override String get nearby => 'Nearby computers';
+	@override String get findComputers => 'Find computers';
+	@override String get addComputer => 'Add computer';
+	@override String get scanHint => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.';
+	@override String get empty => 'Add your gaming computer to get started.';
+	@override String get noNearby => 'No computers found on this network. You can enter an address manually.';
+	@override String get name => 'Computer name';
+	@override String get address => 'IP address or hostname';
+	@override String get port => 'Service port';
+	@override String get protocol => 'Streaming service';
+	@override String get moonlight => 'Sunshine / Moonlight';
+	@override String get steam => 'Steam Remote Play';
+	@override String get save => 'Save computer';
+	@override String get invalidAddress => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.';
+	@override String get pair => 'Connect computer';
+	@override String get pairTitle => 'Approve this device';
+	@override String get pairInstructions => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.';
+	@override String get pairHelp => 'Connect this computer again to approve or renew pairing.';
+	@override String get openPairingPage => 'Open Sunshine PIN page';
+	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
+	@override String get refreshGames => 'Refresh games';
+	@override String get play => 'Play';
+	@override String get recent => 'Recently opened';
+	@override String get favorites => 'Favorites';
+	@override String get allGames => 'All games';
+	@override String get search => 'Find a game';
+	@override String get noMatches => 'No games match this search.';
+	@override String get favorite => 'Save favorite';
+	@override String get unfavorite => 'Remove favorite';
+	@override String get forget => 'Forget computer';
+	@override String get forgetDescription => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.';
+	@override String get unavailable => 'The connection could not complete. Check that the computer is awake and paired, then try again.';
+	@override String get timeout => 'Connection timed out. Check the computer, pairing code and network before trying again.';
+	@override String get libraryHint => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.';
+	@override String get touchControls => 'On-screen controller';
+	@override String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
+	@override String get touchSetup => 'On-screen controls';
+	@override String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
+	@override String get addGame => 'Add game shortcut';
+	@override String get gameName => 'Game name';
+	@override String get gameId => 'Host application ID';
+	@override String get invalidGame => 'Enter a game name and a positive numeric host application ID.';
+	@override String get wake => 'Wake computer';
+	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
+	@override String get mac => 'MAC address (optional)';
+	@override String get help => 'Games help';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+	@override String get cancel => 'Cancel';
+	@override String get scanning => 'Looking for computers…';
+	@override String get saveShortcut => 'Save shortcut';
+	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
+	@override String get engineUnavailable => 'In-app streaming is not available here yet';
+	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
+	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
+	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+	@override String get steamLibrary => 'Steam library';
+	@override String get connecting => 'Connecting…';
+	@override String get disconnect => 'Disconnect';
+	@override String get streamControls => 'Stream controls';
+	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -7187,7 +7286,7 @@ extension on TranslationsKo {
 			'fileSources.syncLocation' => 'Progress sync 폴더 (선택)',
 			'fileSources.syncLocationHint' => 'PlezyNG 상태를 위한 전용 WebDAV 폴더.조건적인 글쓰기를 사용; 미디어는 변함없이 남아 있습니다.',
 			'fileSources.audiobooks' => '오디오 책',
-			'fileSources.comics' => '코미디',
+			'fileSources.comics' => '만화',
 			'fileSources.scan' => '책과 미디어를 위한 스캔',
 			'fileSources.browserReader' => '오픈 리더',
 			'fileSources.browserReaderHelp' => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.',
@@ -7212,7 +7311,7 @@ extension on TranslationsKo {
 			'fileSources.letterSpacing' => '우주 편지',
 			'fileSources.wordSpacing' => '단어 스페셜',
 			'fileSources.readerControlsHelp' => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.',
-			'fileSources.imagePage' => '코미디 페이지',
+			'fileSources.imagePage' => '만화 페이지',
 			'fileSources.resetReader' => '읽기 선호도를 다시 설정',
 			'fileSources.zoom' => '확대/축소',
 			'fileSources.useFiles' => '파일과 책을 사용하십시오',
@@ -7421,6 +7520,85 @@ extension on TranslationsKo {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '선택한 클라이언트 인증 정보: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '평점 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '자막 다운로드 중: ${title}',
+			'comics.fitHeight' => '높이에 맞춤',
+			'comics.readingMode' => '읽기 모드',
+			'comics.paged' => '페이지',
+			'comics.webtoon' => '연속 스크롤',
+			'comics.coverAlone' => '표지 따로 표시',
+			'comics.splitWide' => '가로로 긴 페이지 나누기',
+			'comics.splitWideHelp' => '각 절반을 읽는 순서대로 따로 표시합니다. 이 옵션을 켜면 두 페이지 나란히 보기가 일시 중지됩니다.',
+			'comics.thumbnails' => '페이지 미리보기',
+			'comics.controlsHelp' => '스와이프하여 페이지를 넘기세요. 두 번 탭하여 맞춤 방식을 바꾸세요. 연속 스크롤에서는 세로로 스와이프하거나 Page Up 및 Page Down을 사용하세요.',
+			'comics.savedForComic' => '이 프로필에서 이 만화의 표시 설정을 기억합니다.',
+			'comics.readLists' => '읽기 목록',
+			'comics.collections' => '컬렉션',
+			'games.title' => 'Games',
+			'games.enable' => 'Show Games for this profile',
+			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.subtitle' => 'Your games, from your computers.',
+			'games.computers' => 'Your computers',
+			'games.nearby' => 'Nearby computers',
+			'games.findComputers' => 'Find computers',
+			'games.addComputer' => 'Add computer',
+			'games.scanHint' => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.',
+			'games.empty' => 'Add your gaming computer to get started.',
+			'games.noNearby' => 'No computers found on this network. You can enter an address manually.',
+			'games.name' => 'Computer name',
+			'games.address' => 'IP address or hostname',
+			'games.port' => 'Service port',
+			'games.protocol' => 'Streaming service',
+			'games.moonlight' => 'Sunshine / Moonlight',
+			'games.steam' => 'Steam Remote Play',
+			'games.save' => 'Save computer',
+			'games.invalidAddress' => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.',
+			'games.pair' => 'Connect computer',
+			'games.pairTitle' => 'Approve this device',
+			'games.pairInstructions' => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.',
+			'games.pairHelp' => 'Connect this computer again to approve or renew pairing.',
+			'games.openPairingPage' => 'Open Sunshine PIN page',
+			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
+			'games.refreshGames' => 'Refresh games',
+			'games.play' => 'Play',
+			'games.recent' => 'Recently opened',
+			'games.favorites' => 'Favorites',
+			'games.allGames' => 'All games',
+			'games.search' => 'Find a game',
+			'games.noMatches' => 'No games match this search.',
+			'games.favorite' => 'Save favorite',
+			'games.unfavorite' => 'Remove favorite',
+			'games.forget' => 'Forget computer',
+			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
+			'games.touchControls' => 'On-screen controller',
+			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			'games.touchSetup' => 'On-screen controls',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
+			'games.addGame' => 'Add game shortcut',
+			'games.gameName' => 'Game name',
+			'games.gameId' => 'Host application ID',
+			'games.invalidGame' => 'Enter a game name and a positive numeric host application ID.',
+			'games.wake' => 'Wake computer',
+			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
+			'games.mac' => 'MAC address (optional)',
+			'games.help' => 'Games help',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.cancel' => 'Cancel',
+			'games.scanning' => 'Looking for computers…',
+			'games.saveShortcut' => 'Save shortcut',
+			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
+			'games.engineUnavailable' => 'In-app streaming is not available here yet',
+			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
+			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
+			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

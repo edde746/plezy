@@ -78,7 +78,15 @@ class SyncReconcileSummary {
   /// Total episodes queued across all rules.
   final int queuedCount;
 
-  const SyncReconcileSummary({this.deletedTitles = const [], this.syncedTitles = const [], this.queuedCount = 0});
+  /// Enabled rules that failed or could not reach their server.
+  final int failedRuleCount;
+
+  const SyncReconcileSummary({
+    this.deletedTitles = const [],
+    this.syncedTitles = const [],
+    this.queuedCount = 0,
+    this.failedRuleCount = 0,
+  });
 
   int get deletedCount => deletedTitles.length;
 
@@ -3050,8 +3058,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return '$title (${r.queuedCount})';
     }).toList();
     final queuedCount = results.fold<int>(0, (sum, r) => sum + r.queuedCount);
+    final failedRuleCount = results.where((r) => r.failed).length;
 
-    return SyncReconcileSummary(deletedTitles: deletedTitles, syncedTitles: syncedTitles, queuedCount: queuedCount);
+    return SyncReconcileSummary(
+      deletedTitles: deletedTitles,
+      syncedTitles: syncedTitles,
+      queuedCount: queuedCount,
+      failedRuleCount: failedRuleCount,
+    );
   }
 
   /// Guarded global reconcile for the manual "Sync now" button. Always forces

@@ -1,6 +1,8 @@
 part of '../media_detail_screen.dart';
 
 /// What the download action button shows for one download state.
+enum _CancelledDownloadChoice { retry, delete }
+
 class _DownloadButtonSpec {
   final Widget icon;
   final String? tooltip;
@@ -696,19 +698,37 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
 
     if (progress?.status == DownloadStatus.cancelled) {
-      final retry = await showConfirmDialog(
-        context,
-        title: t.downloads.cancelledDownloadTitle,
-        message: t.downloads.cancelledDownloadMessage,
-        cancelText: t.common.delete,
-        confirmText: t.common.retry,
+      final choice = await showScopedDialog<_CancelledDownloadChoice>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.downloads.cancelledDownloadTitle),
+          content: Text(t.downloads.cancelledDownloadMessage),
+          actions: [
+            DialogActionButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              label: t.common.cancel,
+            ),
+            DialogActionButton(
+              onPressed: () => Navigator.of(dialogContext).pop(_CancelledDownloadChoice.delete),
+              label: t.common.delete,
+              style: TextButton.styleFrom(foregroundColor: Theme.of(dialogContext).colorScheme.error),
+            ),
+            DialogActionButton(
+              onPressed: () => Navigator.of(dialogContext).pop(_CancelledDownloadChoice.retry),
+              label: t.common.retry,
+              isPrimary: true,
+            ),
+          ],
+        ),
       );
       if (!_canUseDetail || !context.mounted) return;
 
-      if (!retry) {
+      if (choice == _CancelledDownloadChoice.delete) {
+        if (!await requestDownloadDeletionPin(context) || !_canUseDetail || !context.mounted) return;
         await downloadProvider.deleteDownload(globalKey);
         if (_canUseDetail && context.mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
-      } else {
+      } else if (choice == _CancelledDownloadChoice.retry) {
         await _retryDownload(downloadProvider, metadata, globalKey);
       }
       return;
@@ -743,7 +763,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
       final canDownloadMore = metadata.isShow || metadata.isSeason;
       Future<void> confirmAndDelete() async {
-        final confirmed = await showDeleteConfirmation(
+        final confirmed = await confirmDownloadDeletion(
           context,
           title: t.downloads.deleteDownload,
           message: t.downloads.deleteConfirm(title: metadata.displayTitle),

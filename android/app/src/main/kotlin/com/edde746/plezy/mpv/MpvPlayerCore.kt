@@ -53,6 +53,7 @@ class MpvPlayerCore private constructor(
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
   private val initialLogLevel: String,
+  private val experimentalDolbyVision: Boolean,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   /**
    * Test seam standing in for the native player's command path: returns what
@@ -69,21 +70,22 @@ class MpvPlayerCore private constructor(
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
-    initialLogLevel: String = "warn"
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
+    initialLogLevel: String = "warn",
+    experimentalDolbyVision: Boolean = false
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, experimentalDolbyVision, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
+  ) : this(context, audioOnly, true, 1f, "warn", false, propertyWriter, null, true)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?,
     commandRunner: suspend (Array<String>) -> Long?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
+  ) : this(context, audioOnly, true, 1f, "warn", false, propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -342,6 +344,14 @@ class MpvPlayerCore private constructor(
    * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome
    * and by a mid-file [applyDvConversionMode]. */
   @Volatile private var pendingDvProfile: Long? = null
+
+  /** Set only after mpv accepted the named P7 FEL format filter. This proves
+   * graph configuration, not that the EL was paired or the output is accurate. */
+  @Volatile private var p7FelFilterActive: Boolean = false
+
+  /** Present only in the paired-frame experimental engine, queried from the
+   * loaded libmpv after initialization rather than inferred from an AAR name. */
+  @Volatile private var felEngineAvailable: Boolean = false
 
   /** Whether this core already decided its GL surface colorspace; set by the
    * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
@@ -753,6 +763,8 @@ class MpvPlayerCore private constructor(
 
   private var audioFocusManager: AudioFocusManager? = null
 
+  @Volatile private var audioFocusEnabled: Boolean = true
+
   @Volatile private var cachedPaused: Boolean = true
 
   @Volatile private var desiredPaused: Boolean = true
@@ -942,6 +954,7 @@ class MpvPlayerCore private constructor(
       currentDvConversionMode = "auto"
       dvOutputAllowed = true
       pendingDvProfile = null
+      p7FelFilterActive = false
       hdrSurfaceDecided = false
       hdrDisplayActive = false
       displayHdrSupported = false
@@ -1126,6 +1139,8 @@ class MpvPlayerCore private constructor(
           }
           // libmpv and FFmpeg are loaded by now; see NativeModuleCache.
           NativeModuleCache.invalidate()
+          felEngineAvailable = GpuVoPolicy.hasFelEngine(p.getString("plezyng-dv-engine"))
+          emitLog("info", "dv-engine", if (felEngineAvailable) "paired FEL engine available" else "compatibility engine")
           if (demuxerBudget != null) {
             appliedDemuxerBudget = demuxerBudget
             steadyDemuxerBudget = demuxerBudget
@@ -1383,7 +1398,16 @@ class MpvPlayerCore private constructor(
 
   // Audio Focus
 
+  override fun setAudioFocusEnabled(enabled: Boolean) {
+    audioFocusEnabled = enabled
+    if (!enabled) {
+      audioFocusManager?.abandonAudioFocus()
+      if (pausedForAudioFocusLoss) resumeAfterAudioFocusGain("workspace audio focus disabled")
+    }
+  }
+
   override fun requestAudioFocus(): Boolean {
+    if (!audioFocusEnabled) return true
     val granted = audioFocusManager?.requestAudioFocus() ?: false
     if (granted && pausedForAudioFocusLoss) {
       resumeAfterAudioFocusGain("audio focus request granted")
@@ -1591,36 +1615,80 @@ class MpvPlayerCore private constructor(
    * correct on the panel. That capture once cost this file a MediaTek
    * exclusion that sent every P5 file into software decode.
    */
-  private suspend fun applyDvReshapePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
-    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
+  private suspend fun applyDvReshapePolicy(
+    p: MpvPlayer,
+    track: org.json.JSONObject?,
+    profileOverride: Long? = null
+  ) {
+    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile") ?: profileOverride
     pendingDvProfile = profile
     val routing = dvRouting()
     val mode = routing.conversionMode
     val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
-    val needs = GpuVoPolicy.needsDvReshaping(
+    val p7Decoder = GpuVoPolicy.nativeP7Decoder(dvDecoderCandidates)
+    val wantsP7Fel = GpuVoPolicy.wantsP7FelReconstruction(
       dvProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = p5Decoder != null
+      experimentalEnabled = experimentalDolbyVision
     )
-    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null)
+    val felActive = configureP7FelFilter(p, wantsP7Fel)
+    val needsP7Fel = (wantsP7Fel && felActive) || (profile == 7L && felEngineAvailable)
+    val needsP5Reshape = profile == 5L && GpuVoPolicy.needsDvReshaping(
+      dvProfile = profile,
+      conversionMode = mode,
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5,
+      felEngine = felEngineAvailable
+    )
+    val needs = needsP5Reshape || needsP7Fel
+    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile,
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5, felEngine = needsP7Fel)
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
       // report is diagnosed from, on the device and in the uploaded log.
       // `decoder` is what FFmpeg would open for this profile were the DV
       // path enabled; `dolby_vision` is whether it is.
-      val fileDecoder = if (profile == 5L) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
+      val fileDecoder = when (profile) {
+        5L -> p5Decoder
+        7L -> p7Decoder
+        else -> GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
+      }
       val decision = "profile=$profile mode=$mode dvOutput=${if (dvOutputAllowed) "yes" else "no"} " +
-        "decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
+        "decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} nativeP7Decoder=${p7Decoder ?: "none"} " +
         "displayDv=$displayDvSupported dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode} " +
-        "path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
+        "felFilter=${if (felActive) "active" else "unavailable"} " +
+        "path=${when {
+          needsP7Fel -> "software decode + gpu-next P7 FEL graph (unqualified)"
+          needsP5Reshape -> "software decode + gpu-next P5 reshaping"
+          else -> "video plane"
+        }}"
       Log.i(TAG, "DV routing: $decision")
       emitLog("info", "dv-route", decision)
     }
     if (holdHwdec(p, GpuVoPolicy.REASON_DV_RESHAPE, needs) && needs) {
-      Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
+      Log.i(TAG, if (needsP7Fel) "DV P7: software decode + gpu-next FEL graph" else "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, needs)
+  }
+
+  /** Add/remove only Plezy's named filter; existing user filters remain intact.
+   * A command failure means this engine cannot take the experimental route. */
+  private fun configureP7FelFilter(p: MpvPlayer, enabled: Boolean): Boolean {
+    if (enabled == p7FelFilterActive) return p7FelFilterActive
+    val command = if (enabled) {
+      arrayOf("vf", "add", "@plezy-dv-fel:format=enhancement-layer=yes")
+    } else {
+      arrayOf("vf", "remove", "@plezy-dv-fel")
+    }
+    return try {
+      p.command(*command)
+      p7FelFilterActive = enabled
+      p7FelFilterActive
+    } catch (error: Exception) {
+      Log.i(TAG, "P7 FEL filter ${if (enabled) "unavailable" else "could not be removed"}: ${error.message}")
+      emitLog("info", "dv-fel-filter", "active=$p7FelFilterActive requested=$enabled result=failed")
+      p7FelFilterActive
+    }
   }
 
   /**
@@ -1649,11 +1717,26 @@ class MpvPlayerCore private constructor(
   private suspend fun applySoftwareDvReshapeOutput(track: org.json.JSONObject?) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
-    val mode = dvRouting().conversionMode
-    val needs = GpuVoPolicy.needsDvReshaping(profile, mode, canPlayP5Natively = false)
+    val routing = dvRouting()
+    val mode = routing.conversionMode
+    val p = player ?: return
+    val wantsP7Fel = GpuVoPolicy.wantsP7FelReconstruction(
+      dvProfile = profile,
+      conversionMode = mode,
+      experimentalEnabled = experimentalDolbyVision
+    )
+    val felActive = configureP7FelFilter(p, wantsP7Fel)
+    val needsP7Fel = (wantsP7Fel && felActive) || (profile == 7L && felEngineAvailable)
+    val needsP5Reshape = profile == 5L && GpuVoPolicy.softwareDecodeNeedsDvReshaping(profile, mode, hwdecCurrent = "no")
+    val needs = needsP5Reshape || needsP7Fel
+    if (needsP7Fel) {
+      writeDvDecoderOptions(GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv,
+        profile, canPlayP5Natively = false, felEngine = true))
+    }
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
-    val decision = "profile=$profile mode=$mode path=software decode, vo=$output"
+    val decision = "profile=$profile mode=$mode felFilter=${if (felActive) "active" else "unavailable"} " +
+      "path=software decode, vo=$output${if (needsP7Fel) " (P7 FEL graph unqualified)" else ""}"
     Log.i(TAG, "DV routing: $decision")
     emitLog("info", "dv-route", decision)
     writeProperty("vo", output)
@@ -1908,9 +1991,22 @@ class MpvPlayerCore private constructor(
    * file too — the next file's hook re-evaluates it.
    */
   private fun onDecoderState(hwdecCurrent: String) {
-    if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, hwdecCurrent)) {
+    if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, hwdecCurrent, felEngineAvailable)) {
       Log.i(TAG, "DV P5 decoded in software (hwdec-current=$hwdecCurrent): gpu-next reshaping")
       setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
+    }
+    // A device may advertise a dual-layer decoder but reject a particular
+    // stream after opening it. Re-check the explicit P7 experiment on the
+    // observed software fallback. The policy already forces software output
+    // before decode when its filter is available.
+    val fallbackProfile = pendingDvProfile
+    if (usesMediaCodecVo && fallbackProfile == 7L && hwdecCurrent == "no") {
+      val p = player ?: return
+      launchMpvWrite("P7 software decoder fallback") {
+        if (pendingDvProfile == fallbackProfile) {
+          applyDvReshapePolicy(p, null, profileOverride = fallbackProfile)
+        }
+      }
     }
   }
 
@@ -2597,21 +2693,18 @@ class MpvPlayerCore private constructor(
   /** Writes the DV decoder options the current routing inputs give the loaded file. */
   private fun reapplyDvDecoderOptions(change: String, onComplete: ((Result<Unit>) -> Unit)?) {
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      val profile = pendingDvProfile
-      val routing = dvRouting()
-      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
-      val options = GpuVoPolicy.dvDecoderOptions(
-        routing.conversionMode,
-        routing.displaySupportsDv,
-        profile,
-        canPlayP5Natively = p5Decoder != null
-      )
-      Log.i(
-        TAG,
-        "$change (displayDV=$displayDvSupported dvOutput=${if (dvOutputAllowed) "yes" else "no"} profile=$profile " +
-          "p5Decoder=${p5Decoder ?: "none"}) -> dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
-      )
-      writeDvDecoderOptions(options)
+      val p = player ?: throw CancellationException("MPV player unavailable")
+      val track = pendingVideoTrack(p)
+      emitLog("info", "dv-route", change)
+      // Decoder options alone are insufficient: disabling DV on P5 also
+      // needs a renderer that consumes RPU. Reuse the preloaded policy so
+      // a live change cannot leave plain IPT-PQ frames on the video plane.
+      if (usesMediaCodecVo) {
+        applyDvReshapePolicy(p, track)
+        applyFramedropPolicy()
+      } else if (!audioOnly) {
+        applySoftwareDvReshapeOutput(track)
+      }
     }
   }
 
@@ -2798,7 +2891,7 @@ class MpvPlayerCore private constructor(
         publicPauseIntentGeneration == pauseIntent.generation && pausedForAudioFocusLoss
       }
       if (shouldReclaimAudioFocus) {
-        val focusGranted = audioFocusManager?.requestAudioFocus() == true
+        val focusGranted = !audioFocusEnabled || audioFocusManager?.requestAudioFocus() == true
         if (!focusGranted) {
           Log.w(TAG, "Audio focus request denied; keeping public resume pending")
           completePublicResumeNoOp(onComplete)
@@ -3026,7 +3119,8 @@ class MpvPlayerCore private constructor(
           decoderOptions = readProperty("vd-lavc-o"),
           candidates = dvDecoderCandidates,
           hwdecCurrent = stats["hwdec-current"] as String?,
-          currentVo = readProperty("current-vo")
+          currentVo = readProperty("current-vo"),
+          felFilterActive = p7FelFilterActive
         )?.id
       }
     }
@@ -3071,6 +3165,21 @@ class MpvPlayerCore private constructor(
         val p = player ?: throw IllegalStateException("MPV player unavailable")
         p.command(*args)
       }
+    }
+  }
+
+  fun setVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double,
+  ) {
+    if (audioOnly || disposing) return
+    runOnMain {
+      if (disposing) return@runOnMain
+      val container = surfaceContainer ?: return@runOnMain
+      PlayerSurfaceHost.setVideoRect(activity, container, left, top, right, bottom, devicePixelRatio)
     }
   }
 
@@ -3350,3 +3459,4 @@ class MpvPlayerCore private constructor(
     }
   }
 }
+

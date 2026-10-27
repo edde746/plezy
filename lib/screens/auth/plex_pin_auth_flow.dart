@@ -363,6 +363,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
       runSpacing: 8,
       children: [
         FocusableButton(
+          autofocus: PlatformDetector.isTV(),
           onPressed: _retry,
           child: OutlinedButton(
             onPressed: _retry,

@@ -5,6 +5,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -16,11 +18,21 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/provider_mark.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../libraries/state_messages.dart';
 import '../sources/source_widgets.dart';
+
+Widget _focusedLendingButton({
+  required VoidCallback? onPressed,
+  required Widget Function(VoidCallback? onPressed) buildButton,
+  bool primary = false,
+}) {
+  return FocusableButton(onPressed: onPressed, useBackgroundFocus: primary, child: buildButton(onPressed));
+}
 
 class PublicLibrariesScreen extends StatefulWidget {
   const PublicLibrariesScreen({super.key});
@@ -32,6 +44,7 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   LendingService? _service;
   List<LendingLibrary> _libraries = [];
   Object? _error;
+  bool _loading = false;
   @override
   void initState() {
     super.initState();
@@ -39,9 +52,15 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final sources = context.read<SourceController>();
       await sources.ready;
+      if (!mounted) return;
       sources.requireSession();
       final epoch = sources.generation;
       _service ??= LendingService(
@@ -58,11 +77,13 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
       }
     } catch (error) {
       if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _add([LendingProvider? provider]) async {
-    if (_service == null) return;
+    if (_service == null || _loading) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -73,21 +94,23 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   }
 
   Future<void> _open(LendingLibrary library) async {
+    final service = _service;
+    if (service == null) return;
     if (library.native && LendingService.overdriveEnabled) {
-      if (!await _service!.connected(library)) {
-        if (mounted) await _signIn(context, _service!, library);
-        if (!await _service!.connected(library)) return;
+      if (!await service.connected(library)) {
+        if (mounted) await _signIn(context, service, library);
+        if (!await service.connected(library)) return;
       }
       if (mounted) {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LibraryCatalogueScreen(service: _service!, library: library),
+            builder: (_) => LibraryCatalogueScreen(service: service, library: library),
           ),
         );
       }
     } else {
-      await _service!.openPage(lendingHttps(library.home));
+      await service.openPage(lendingHttps(library.home));
     }
   }
 
@@ -101,7 +124,13 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   Widget build(BuildContext context) => FocusedScrollScaffold(
     title: Text(t.lending.title),
     focusableAppBarActions: true,
-    actions: [IconButton(tooltip: t.lending.add, onPressed: () => _add(), icon: const AppIcon(Symbols.add_rounded))],
+    actions: [
+      IconButton(
+        tooltip: t.lending.add,
+        onPressed: _service == null || _loading ? null : () => _add(),
+        icon: const AppIcon(Symbols.add_rounded),
+      ),
+    ],
     slivers: [
       SliverPadding(
         padding: const EdgeInsets.all(24),
@@ -114,19 +143,39 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
                 children: [
                   Text(t.lending.intro, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 24),
+                  if (_loading)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 12),
+                          Text(t.common.loading, style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    )
+                  else if (_error != null)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 240),
+                      child: ErrorStateWidget(
+                        message: sourceFailureText(_error!),
+                        icon: Symbols.error_outline_rounded,
+                        onRetry: () => unawaited(_load()),
+                        actionAutofocus: true,
+                        actionUseBackgroundFocus: true,
+                      ),
+                    ),
                   SourceTile(
                     title: 'Open Library',
                     subtitle: t.lending.openLibraryNote,
                     icon: Symbols.menu_book_rounded,
-                    onTap: _service == null
+                    onTap: _service == null || _loading
                         ? null
                         : () => Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => LibraryCatalogueScreen(service: _service!)),
                           ),
                   ),
-                  if (_error != null)
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(sourceFailureText(_error!))),
                   if (_libraries.isNotEmpty) ...[
                     const SizedBox(height: 32),
                     for (var i = 0; i < _libraries.length; i++)
@@ -186,7 +235,7 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
                               ? const ProviderMark('libby.png', size: 24)
                               : null,
                           label: Text(provider.label),
-                          onPressed: () => _add(provider),
+                          onPressed: _service == null || _loading ? null : () => _add(provider),
                         ),
                     ],
                   ),
@@ -243,12 +292,13 @@ class _SignInDialogState extends State<_SignInDialog> {
     title: Text(t.lending.signIn),
     content: Text(t.lending.waiting),
     actions: [
-      TextButton(
+      DialogActionButton(
+        autofocus: true,
         onPressed: () {
           widget.service.cancelAuthorization();
           Navigator.pop(context);
         },
-        child: Text(t.lending.cancel),
+        label: t.lending.cancel,
       ),
     ],
   );
@@ -347,12 +397,12 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                   ],
                   Text(t.lending.handoff),
                   const SizedBox(height: 24),
-                  TextField(
+                  FocusableTextField(
                     controller: _name,
                     decoration: InputDecoration(labelText: t.lending.libraryName),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  FocusableTextField(
                     controller: _url,
                     keyboardType: TextInputType.url,
                     autocorrect: false,
@@ -379,12 +429,12 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                       title: Text(t.lending.advanced),
                       tilePadding: EdgeInsets.zero,
                       children: [
-                        TextField(
+                        FocusableTextField(
                           controller: _gateway,
                           autocorrect: false,
                           decoration: InputDecoration(labelText: t.lending.gateway, helperText: t.lending.gatewayHint),
                         ),
-                        TextButton(
+                        _focusedLendingButton(
                           onPressed: _busy
                               ? null
                               : () => sourceAction(context, () async {
@@ -396,7 +446,8 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                                     if (mounted) setState(() => _busy = false);
                                   }
                                 }),
-                          child: Text(t.lending.loadLibraries),
+                          buildButton: (onPressed) =>
+                              TextButton(onPressed: onPressed, child: Text(t.lending.loadLibraries)),
                         ),
                         if (_available.isNotEmpty)
                           DropdownButtonFormField<String>(
@@ -412,9 +463,13 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                       ],
                     ),
                   const SizedBox(height: 24),
-                  FilledButton(
+                  _focusedLendingButton(
                     onPressed: _busy ? null : () => sourceAction(context, _save),
-                    child: Text(_selected == null ? t.lending.add : t.lending.signIn),
+                    primary: true,
+                    buildButton: (onPressed) => FilledButton(
+                      onPressed: onPressed,
+                      child: Text(_selected == null ? t.lending.add : t.lending.signIn),
+                    ),
                   ),
                 ],
               ),
@@ -533,7 +588,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                   ),
                 ),
               if (_shelf == 'catalogue')
-                TextField(
+                FocusableTextField(
                   controller: _search,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _load(),
@@ -551,9 +606,23 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                   ),
                 ),
               if (_busy) const Padding(padding: EdgeInsets.only(top: 20), child: LinearProgressIndicator()),
-              if (_error != null)
-                Padding(padding: const EdgeInsets.only(top: 20), child: Text(sourceFailureText(_error!))),
-              if (!_busy && _books.isEmpty)
+              if (_error != null && _books.isEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 240),
+                  child: ErrorStateWidget(
+                    message: sourceFailureText(_error!),
+                    icon: Symbols.error_outline_rounded,
+                    onRetry: () => unawaited(_load()),
+                    actionAutofocus: true,
+                    actionUseBackgroundFocus: true,
+                  ),
+                )
+              else if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: SourceErrorMessage(message: sourceFailureText(_error!)),
+                ),
+              if (!_busy && _books.isEmpty && _error == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 32),
                   child: Text(widget.library == null ? t.lending.openLibraryNote : t.lending.empty),
@@ -618,7 +687,10 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: TextButton(onPressed: _busy ? null : () => _load(more: true), child: Text(t.lending.more)),
+            child: _focusedLendingButton(
+              onPressed: _busy ? null : () => _load(more: true),
+              buildButton: (onPressed) => TextButton(onPressed: onPressed, child: Text(t.lending.more)),
+            ),
           ),
         ),
     ],
@@ -678,23 +750,27 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
       final controller = TextEditingController();
       email = await showScopedDialog<String>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(t.lending.placeHold),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(labelText: t.lending.email),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t.lending.cancel)),
-            FilledButton(
-              onPressed: () {
-                if (controller.text.contains('@')) Navigator.pop(ctx, controller.text.trim());
-              },
-              child: Text(t.lending.placeHold),
+        builder: (ctx) {
+          void submit() {
+            if (controller.text.contains('@')) Navigator.pop(ctx, controller.text.trim());
+          }
+
+          return AlertDialog(
+            title: Text(t.lending.placeHold),
+            content: FocusableTextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => submit(),
+              decoration: InputDecoration(labelText: t.lending.email),
             ),
-          ],
-        ),
+            actions: [
+              DialogActionButton(onPressed: () => Navigator.pop(ctx), label: t.lending.cancel),
+              DialogActionButton(onPressed: submit, label: t.lending.placeHold, isPrimary: true),
+            ],
+          );
+        },
       );
       // Dialog route may still be animating when its result completes.
       unawaited(Future<void>.delayed(const Duration(seconds: 1), controller.dispose));
@@ -753,21 +829,27 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                       runSpacing: 12,
                       children: [
                         if (book.loan && !expired && !_changed)
-                          FilledButton.icon(
+                          _focusedLendingButton(
                             onPressed: _busy
                                 ? null
                                 : () => sourceAction(context, () => widget.service.fulfill(library!, book)),
-                            icon: const AppIcon(Symbols.menu_book_rounded),
-                            label: Text(t.lending.getBook),
+                            primary: true,
+                            buildButton: (onPressed) => FilledButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.menu_book_rounded),
+                              label: Text(t.lending.getBook),
+                            ),
                           ),
                         if (book.hold && book.action('checkout') != null && library?.circulation == true && !_changed)
-                          FilledButton(
+                          _focusedLendingButton(
                             onPressed: _busy ? null : () => sourceAction(context, () => _borrow()),
-                            child: Text(t.lending.borrow),
+                            primary: true,
+                            buildButton: (onPressed) =>
+                                FilledButton(onPressed: onPressed, child: Text(t.lending.borrow)),
                           ),
                         if (book.hold && library?.circulation == true && !_changed) ...[
                           if (book.action('addSuspension') != null || book.action('releaseSuspension') != null)
-                            TextButton(
+                            _focusedLendingButton(
                               onPressed: _busy
                                   ? null
                                   : () => sourceAction(context, () async {
@@ -781,12 +863,17 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                         await _act(() => widget.service.suspendHold(library!, book, resume: resume));
                                       }
                                     }),
-                              child: Text(
-                                book.action('releaseSuspension') != null ? t.lending.resumeHold : t.lending.suspendHold,
+                              buildButton: (onPressed) => TextButton(
+                                onPressed: onPressed,
+                                child: Text(
+                                  book.action('releaseSuspension') != null
+                                      ? t.lending.resumeHold
+                                      : t.lending.suspendHold,
+                                ),
                               ),
                             ),
                           if (book.action('editHold') != null)
-                            TextButton(
+                            _focusedLendingButton(
                               onPressed: _busy
                                   ? null
                                   : () => sourceAction(context, () async {
@@ -795,46 +882,59 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                       );
                                       final email = await showScopedDialog<String>(
                                         context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: Text(t.lending.editEmail),
-                                          content: TextField(
-                                            controller: input,
-                                            keyboardType: TextInputType.emailAddress,
-                                            decoration: InputDecoration(labelText: t.lending.email),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(ctx),
-                                              child: Text(t.lending.cancel),
+                                        builder: (ctx) {
+                                          void submit() {
+                                            if (input.text.contains('@')) Navigator.pop(ctx, input.text.trim());
+                                          }
+
+                                          return AlertDialog(
+                                            title: Text(t.lending.editEmail),
+                                            content: FocusableTextField(
+                                              controller: input,
+                                              autofocus: true,
+                                              keyboardType: TextInputType.emailAddress,
+                                              textInputAction: TextInputAction.done,
+                                              onSubmitted: (_) => submit(),
+                                              decoration: InputDecoration(labelText: t.lending.email),
                                             ),
-                                            FilledButton(
-                                              onPressed: () {
-                                                if (input.text.contains('@')) Navigator.pop(ctx, input.text.trim());
-                                              },
-                                              child: Text(t.fileSources.save),
-                                            ),
-                                          ],
-                                        ),
+                                            actions: [
+                                              DialogActionButton(
+                                                onPressed: () => Navigator.pop(ctx),
+                                                label: t.lending.cancel,
+                                              ),
+                                              DialogActionButton(
+                                                onPressed: submit,
+                                                label: t.fileSources.save,
+                                                isPrimary: true,
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       );
                                       unawaited(Future<void>.delayed(const Duration(seconds: 1), input.dispose));
                                       if (email != null && mounted) {
                                         await _act(() => widget.service.editHoldEmail(library!, book, email));
                                       }
                                     }),
-                              child: Text(t.lending.editEmail),
+                              buildButton: (onPressed) =>
+                                  TextButton(onPressed: onPressed, child: Text(t.lending.editEmail)),
                             ),
                         ],
                         if (book.page != null)
-                          FilledButton.icon(
+                          _focusedLendingButton(
                             onPressed: _busy
                                 ? null
                                 : () => sourceAction(context, () => widget.service.openPage(book.page!)),
-                            icon: const AppIcon(Symbols.open_in_new_rounded),
-                            label: Text(t.lending.continueService),
+                            primary: true,
+                            buildButton: (onPressed) => FilledButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.open_in_new_rounded),
+                              label: Text(t.lending.continueService),
+                            ),
                           ),
                         if (library != null && !book.loan && !book.hold && !_changed) ...[
                           if (_availability == null)
-                            FilledButton(
+                            _focusedLendingButton(
                               onPressed: _busy
                                   ? null
                                   : () => sourceAction(context, () async {
@@ -846,18 +946,24 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                         if (mounted) setState(() => _busy = false);
                                       }
                                     }),
-                              child: Text(t.lending.checkAvailability),
+                              primary: true,
+                              buildButton: (onPressed) =>
+                                  FilledButton(onPressed: onPressed, child: Text(t.lending.checkAvailability)),
                             )
                           else if (library.circulation)
-                            FilledButton(
+                            _focusedLendingButton(
                               onPressed: _busy ? null : () => sourceAction(context, () => _borrow(hold: !available)),
-                              child: Text(available ? t.lending.borrow : t.lending.placeHold),
+                              primary: true,
+                              buildButton: (onPressed) => FilledButton(
+                                onPressed: onPressed,
+                                child: Text(available ? t.lending.borrow : t.lending.placeHold),
+                              ),
                             ),
                         ],
                         if (library?.circulation == true &&
                             !_changed &&
                             (book.action('earlyReturn') != null || book.action('removeHold') != null))
-                          TextButton(
+                          _focusedLendingButton(
                             onPressed: _busy
                                 ? null
                                 : () => sourceAction(context, () async {
@@ -870,7 +976,10 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                       await _act(() => widget.service.returnOrCancel(library!, book));
                                     }
                                   }),
-                            child: Text(book.hold ? t.lending.cancelHold : t.lending.returnBook),
+                            buildButton: (onPressed) => TextButton(
+                              onPressed: onPressed,
+                              child: Text(book.hold ? t.lending.cancelHold : t.lending.returnBook),
+                            ),
                           ),
                       ],
                     ),

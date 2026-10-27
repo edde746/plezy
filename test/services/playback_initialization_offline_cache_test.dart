@@ -227,6 +227,134 @@ void main() {
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
   });
 
+  test('unsupported downloaded DV is replaced by a server compatibility route before decode', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(
+      ServerId('srv-1'),
+      '/library/metadata/movie-1',
+      _plexMetadataEnvelope(dolbyVisionProfile: 5),
+    );
+    final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
+
+    final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        requestCompatibleDolbyVisionRendition: true,
+      ),
+      preferOffline: true,
+    );
+
+    expect(result.isOffline, isFalse);
+    expect(result.videoUrl, 'https://server/stream/0');
+    expect(client.playbackInitializationCalls, 1);
+    expect(client.lastOptions?.requestCompatibleDolbyVisionRendition, isTrue);
+  });
+
+  test('an explicit server retry bypasses a downloaded copy when cached DV metadata is missing', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
+
+    final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        forceServerPlayback: true,
+      ),
+      preferOffline: true,
+    );
+
+    expect(result.isOffline, isFalse);
+    expect(client.playbackInitializationCalls, 1);
+  });
+
+  test('downloaded DV stays local when its profile is reported by the native path', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(
+      ServerId('srv-1'),
+      '/library/metadata/movie-1',
+      _plexMetadataEnvelope(dolbyVisionProfile: 5),
+    );
+    final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
+
+    final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        requestCompatibleDolbyVisionRendition: true,
+        supportedNativeDolbyVisionProfiles: const {5},
+      ),
+      preferOffline: true,
+    );
+
+    expect(result.isOffline, isTrue);
+    expect(client.playbackInitializationCalls, 0);
+  });
+
+  test('offline-only playback fails clearly when no local DV profile route is reported', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(
+      ServerId('srv-1'),
+      '/library/metadata/movie-1',
+      _plexMetadataEnvelope(dolbyVisionProfile: 5),
+    );
+
+    await expectLater(
+      PlaybackInitializationService(database: db).getPlaybackData(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'movie-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            serverId: ServerId('srv-1'),
+          ),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+        preferOffline: true,
+        requireOffline: true,
+      ),
+      throwsA(
+        isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
+      ),
+    );
+  });
+
   test('pure-offline playback uses cached Plex media source for selected version', () async {
     await _insertDownloaded(
       db,
@@ -563,10 +691,12 @@ class _StreamingPlaybackClient implements MediaServerClient {
   final ServerId serverId;
 
   int playbackInitializationCalls = 0;
+  PlaybackInitializationOptions? lastOptions;
 
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     playbackInitializationCalls++;
+    lastOptions = options;
     return PlaybackInitializationResult(
       availableVersions: const [],
       videoUrl: 'https://server/stream/${options.selectedMediaIndex}',
@@ -628,7 +758,11 @@ Future<void> _insertDownloaded(
       );
 }
 
-Map<String, dynamic> _plexMetadataEnvelope({bool includeSecondVersion = false, bool malformedExtras = false}) {
+Map<String, dynamic> _plexMetadataEnvelope({
+  bool includeSecondVersion = false,
+  bool malformedExtras = false,
+  int? dolbyVisionProfile,
+}) {
   final chapters = <Map<String, dynamic>>[
     if (malformedExtras) {'id': 'bad'},
     {'id': 1, 'index': 0, 'startTimeOffset': 0, 'endTimeOffset': 10000, 'tag': 'Intro'},
@@ -638,7 +772,7 @@ Map<String, dynamic> _plexMetadataEnvelope({bool includeSecondVersion = false, b
     {'id': 2, 'type': 'credits', 'startTimeOffset': 90000, 'endTimeOffset': 100000},
   ];
   final media = <Map<String, dynamic>>[
-    _plexMediaWithAudio('English', 'eng'),
+    _plexMediaWithAudio('English', 'eng', dolbyVisionProfile: dolbyVisionProfile),
     if (includeSecondVersion) _plexMediaWithAudio('French', 'fre'),
   ];
   return {
@@ -657,11 +791,22 @@ Map<String, dynamic> _plexMetadataEnvelope({bool includeSecondVersion = false, b
   };
 }
 
-Map<String, dynamic> _plexMediaWithAudio(String language, String languageCode) {
+Map<String, dynamic> _plexMediaWithAudio(String language, String languageCode, {int? dolbyVisionProfile}) {
   return {
+    'width': 1920,
+    'height': 1080,
     'Part': [
       {
         'Stream': [
+          if (dolbyVisionProfile != null)
+            {
+              'id': 9,
+              'streamType': 1,
+              'index': 0,
+              'codec': 'hevc',
+              'DOVIPresent': 1,
+              'DOVIProfile': dolbyVisionProfile,
+            },
           {'id': 10, 'streamType': 2, 'index': 1, 'language': language, 'languageCode': languageCode},
         ],
       },

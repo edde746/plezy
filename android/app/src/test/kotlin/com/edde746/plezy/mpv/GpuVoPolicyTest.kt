@@ -16,6 +16,21 @@ import org.junit.Test
  * the reshaping path the only vo that composites RPU metadata (#1902).
  */
 class GpuVoPolicyTest {
+  @Test fun felEngineRoutesP7ThroughSoftwareAndPreservesEnhancement() {
+    assertFalse(GpuVoPolicy.hasFelEngine(null))
+    assertFalse(GpuVoPolicy.hasFelEngine("mpv 0.41"))
+    assertTrue(GpuVoPolicy.hasFelEngine(GpuVoPolicy.FEL_ENGINE_ID))
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      assertTrue(GpuVoPolicy.needsDvReshaping(7L, mode, false, felEngine = true))
+      assertTrue(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, mode, "no", felEngine = true))
+      val options = GpuVoPolicy.dvDecoderOptions(mode, false, 7L, false, felEngine = true)
+      assertTrue(options.dolbyVision)
+      assertEquals("native", options.p7Mode)
+    }
+    assertFalse(GpuVoPolicy.needsDvReshaping(7L, "auto", false))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "no"))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "mediacodec", felEngine = true))
+  }
   @Test
   fun `P5 without native support is routed`() {
     assertTrue(GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = false))
@@ -24,6 +39,20 @@ class GpuVoPolicyTest {
   @Test
   fun `P5 with native support stays on the plane`() {
     assertFalse(GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = true))
+  }
+
+  @Test
+  fun `P7 experiment forces the FEL graph regardless of advertised native support`() {
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto"))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", experimentalEnabled = true))
+  }
+
+  @Test
+  fun `P7 experiment remains off for explicit compatibility modes`() {
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "native", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "hevc_strip", experimentalEnabled = true))
   }
 
   @Test
@@ -136,7 +165,7 @@ class GpuVoPolicyTest {
 
   private fun disabledDvOptions(mode: String, profile: Long?, p5Decoder: Boolean): GpuVoPolicy.DvDecoderOptions {
     val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
-    return GpuVoPolicy.dvDecoderOptions(routing.conversionMode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder)
+    return GpuVoPolicy.dvDecoderOptions(routing.conversionMode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder && routing.allowNativeP5)
   }
 
   @Test
@@ -163,8 +192,8 @@ class GpuVoPolicyTest {
   @Test
   fun `disabling Dolby Vision never strips P5, which has no base layer to fall back to`() {
     for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
-      // A converting decoder keeps P5 on the DV path.
-      assertTrue(mode, disabledDvOptions(mode, 5L, p5Decoder = true).dolbyVision)
+      // Even an advertised native decoder must not re-enable DV output.
+      assertFalse(mode, disabledDvOptions(mode, 5L, p5Decoder = true).dolbyVision)
       // Without one, software decode reshapes it, from the prediction and from
       // a decoder that landed in software anyway.
       val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
@@ -218,6 +247,11 @@ class GpuVoPolicyTest {
     val both = listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x20, 0x40, 0x100)))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, 7L))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, null))
+    assertEquals(
+      "c2.vendor.dv.p7",
+      GpuVoPolicy.nativeP7Decoder(listOf(candidate("c2.vendor.dv.p7", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_DTB))))
+    )
+    assertNull(GpuVoPolicy.nativeP7Decoder(listOf(candidate("c2.vendor.dv.p8", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST)))))
   }
 
   @Test
@@ -253,7 +287,11 @@ class GpuVoPolicyTest {
     // Base-layer-compatible profiles and explicit modes follow needsDvReshaping.
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(8L, "auto", hwdecCurrent = "no"))
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(null, "auto", hwdecCurrent = "no"))
-    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "native", hwdecCurrent = "no"))
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      assertTrue(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "no"))
+      assertTrue(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "mediacodec-copy"))
+      assertFalse(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "mediacodec"))
+    }
   }
 
   // The overlay's DV Path reports what FFmpeg's dolby_vision_override does
@@ -268,6 +306,22 @@ class GpuVoPolicyTest {
     hwdec: String? = "mediacodec",
     vo: String? = "mediacodec"
   ) = GpuVoPolicy.dvRoute(profile, options, candidates, hwdec, vo)
+
+  @Test
+  fun `P7 FEL graph is reported only after filter and output route are active`() {
+    assertEquals(
+      DvRoute.FEL_GRAPH_ACTIVE,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu-next", felFilterActive = true)
+    )
+    assertEquals(
+      DvRoute.RESHAPED,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu-next", felFilterActive = false)
+    )
+    assertEquals(
+      DvRoute.BASE_LAYER,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu", felFilterActive = true)
+    )
+  }
 
   @Test
   fun `P8 with the DV decoder off is its base layer, not the DV decoder`() {
@@ -524,3 +578,4 @@ class GpuVoPolicyTest {
     )
   }
 }
+

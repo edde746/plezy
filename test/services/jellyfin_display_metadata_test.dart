@@ -80,6 +80,9 @@ void main() {
         'DvProfile': 8,
         'DvBlSignalCompatibilityId': 1,
         'DvVersionMajor': 1,
+        'BlPresentFlag': true,
+        'ElPresentFlag': true,
+        'RpuPresentFlag': true,
         'Width': 3840,
         'Height': 2160,
       };
@@ -87,6 +90,17 @@ void main() {
       expect(jellyfinVideoStreamIsDolbyVision(dovi), isTrue);
       expect(jellyfinDolbyVisionProfile(dovi), 8);
       expect(jellyfinVideoStreamIsHdr(const {}, dovi), isTrue);
+      final criteria = jellyfinDisplayCriteriaFromStream(const {}, dovi)!;
+      expect(criteria.doviBaseLayerPresent, isTrue);
+      expect(criteria.doviEnhancementLayerPresent, isTrue);
+      expect(criteria.doviRpuPresent, isTrue);
+    });
+
+    test('a positive Dolby Vision profile remains usable without dimensions or frame rate', () {
+      const sparseDolbyVision = <String, dynamic>{'Type': 'Video', 'Codec': 'hevc', 'DvProfile': 5};
+
+      expect(jellyfinVideoStreamIsDolbyVision(sparseDolbyVision), isTrue);
+      expect(jellyfinDisplayCriteriaFromStream(const {}, sparseDolbyVision)?.hasDolbyVision, isTrue);
     });
 
     test('a stream carrying no range signal at all is treated as SDR, not unknown', () {

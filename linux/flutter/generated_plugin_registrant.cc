@@ -7,6 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <app_links_linux/app_links_plugin_linux.h>
+#include <disk_usage/disk_usage_plugin.h>
 #include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
 #include <os_media_controls/os_media_controls_plugin.h>
 #include <screen_retriever_linux/screen_retriever_linux_plugin.h>
@@ -19,6 +20,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) app_links_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "AppLinksPluginLinux");
   app_links_plugin_linux_register_with_registrar(app_links_linux_registrar);
+  g_autoptr(FlPluginRegistrar) disk_usage_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "DiskUsagePlugin");
+  disk_usage_plugin_register_with_registrar(disk_usage_registrar);
   g_autoptr(FlPluginRegistrar) flutter_secure_storage_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterSecureStorageLinuxPlugin");
   flutter_secure_storage_linux_plugin_register_with_registrar(flutter_secure_storage_linux_registrar);

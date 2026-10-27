@@ -9,8 +9,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../models/download_models.dart';
-import '../profiles/profile_activation.dart';
-import '../utils/dialogs.dart';
+import '../utils/download_deletion_confirmation.dart';
 import '../utils/formatters.dart';
 import '../utils/global_key_utils.dart';
 import '../mixins/unsuppress_focus_mixin.dart';
@@ -937,8 +936,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   Future<bool> _confirmDeleteAfterProfilePin() async {
-    if (!await requestActiveProfileActionPin(context) || !mounted) return false;
-    return showDeleteConfirmation(
+    if (!mounted) return false;
+    return confirmDownloadDeletion(
       context,
       title: t.downloads.deleteDownload,
       message: t.downloads.deleteConfirm(title: widget.node.title),

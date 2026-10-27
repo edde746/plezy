@@ -21,7 +21,9 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
-class ExoPlayerPlugin :
+open class ExoPlayerPlugin(
+  private val methodChannelName: String = "com.plezy/exo_player"
+) :
   FlutterPlugin,
   MethodChannel.MethodCallHandler,
   EventChannel.StreamHandler,
@@ -35,10 +37,11 @@ class ExoPlayerPlugin :
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
   }
 
-  private val channels = PlayerChannelBinding(METHOD_CHANNEL, this, this, TAG)
+  private val channels = PlayerChannelBinding(methodChannelName, this, this, TAG)
   private val mainHandler get() = channels.mainHandler
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
   private var playerCore: ExoPlayerCore? = null
+  private var audioFocusEnabled = true
 
   // The Dart instanceId that created the current core. A `dispose` carrying a
   // different token lost the ownership race to a successor and must not tear
@@ -250,8 +253,10 @@ class ExoPlayerPlugin :
       "addSubtitleTrack" -> handleAddSubtitleTrack(call, result)
       "setVisible" -> handleSetVisible(call, result)
       "updateFrame" -> handleUpdateFrame(result)
+      "setVideoRect" -> handleSetVideoRect(call, result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "setAudioFocusEnabled" -> handleSetAudioFocusEnabled(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "isInitialized" -> result.success(
@@ -351,6 +356,7 @@ class ExoPlayerPlugin :
         val core = ExoPlayerCore(currentActivity).apply {
           delegate = this@ExoPlayerPlugin
           this.debugLoggingEnabled = this@ExoPlayerPlugin.debugLoggingEnabled
+          setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled)
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
@@ -369,6 +375,9 @@ class ExoPlayerPlugin :
         if (core.setDebugDvConversionMode(dvConversionMode) != true) {
           Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
         }
+        // Replay output preferences accepted before the core existed.
+        core.setDolbyVisionOutputAllowed(pendingMpvProperties["dolby-vision-output"] != "no")
+        core.setHdrSdrConversionMode(pendingMpvProperties["hdr-sdr-conversion"] ?: "auto")
         // Seed from this device's persisted calibration, falling back to the Dart perf-tier proxy.
         core.seedAssVideoLatencyFrames(assVideoLatencyFrames)
         core.setVisible(false)
@@ -598,7 +607,7 @@ class ExoPlayerPlugin :
     oldCore.dispose(preserveDisplayMode = true)
 
     val replacementCore = try {
-      createMpvCore(act)
+      createMpvCore(act).apply { setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled) }
     } catch (error: Exception) {
       failMpvReplacementInitialization(
         request.mediaGeneration,
@@ -1022,6 +1031,22 @@ class ExoPlayerPlugin :
     result.success(null)
   }
 
+  private fun handleSetVideoRect(call: MethodCall, result: MethodChannel.Result) {
+    val left = call.argument<Number>("left")?.toInt()
+    val top = call.argument<Number>("top")?.toInt()
+    val right = call.argument<Number>("right")?.toInt()
+    val bottom = call.argument<Number>("bottom")?.toInt()
+    val devicePixelRatio = call.argument<Number>("devicePixelRatio")?.toDouble()
+    if (left == null || top == null || right == null || bottom == null ||
+      devicePixelRatio == null || !devicePixelRatio.isFinite() || devicePixelRatio <= 0.0
+    ) {
+      result.error("INVALID_ARGS", "Missing or invalid video rectangle", null)
+      return
+    }
+    activeSurfaceCore?.setVideoRect(left, top, right, bottom, devicePixelRatio)
+    result.success(null)
+  }
+
   private fun handleUpdateFrame(result: MethodChannel.Result) {
     activeSurfaceCore?.updateFrame()
     result.success(null)
@@ -1060,6 +1085,18 @@ class ExoPlayerPlugin :
     Log.d(TAG, "requestAudioFocus")
     val granted = activeSurfaceCore?.requestAudioFocus() ?: false
     result.success(granted)
+  }
+
+  private fun handleSetAudioFocusEnabled(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    audioFocusEnabled = enabled
+    playerCore?.setAudioFocusEnabled(enabled)
+    mpvCore?.setAudioFocusEnabled(enabled)
+    result.success(null)
   }
 
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
@@ -1258,8 +1295,20 @@ class ExoPlayerPlugin :
       return
     }
 
-    // Apply sync offsets to ExoPlayer when active
+    if ((name == "dolby-vision-output" && value !in setOf("yes", "no")) ||
+      (name == "hdr-sdr-conversion" && value !in setOf("auto", "device", "player"))
+    ) {
+      result.error("INVALID_ARGS", "Invalid color conversion property: $name", null)
+      return
+    }
+    // Queue BEFORE triggering a handoff: the replacement must inherit the
+    // preference that required it, including when fallback starts synchronously.
+    pendingMpvProperties[name] = value
+
+    // Apply preferences that ExoPlayer can honor or hand off to mpv.
     when (name) {
+      "dolby-vision-output" -> playerCore?.setDolbyVisionOutputAllowed(value == "yes")
+      "hdr-sdr-conversion" -> playerCore?.setHdrSdrConversionMode(value)
       "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
       "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
       // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
@@ -1269,7 +1318,6 @@ class ExoPlayerPlugin :
     }
 
     // Before fallback this is queue acceptance, not a completed MPV write.
-    pendingMpvProperties[name] = value
     result.success(null)
   }
 
@@ -1515,7 +1563,7 @@ class ExoPlayerPlugin :
           val act = activity ?: return@post
 
           try {
-            val core = createMpvCore(act)
+            val core = createMpvCore(act).apply { setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled) }
             core.delegate = MpvDelegate(core)
             mpvCore = core
 
@@ -1576,3 +1624,6 @@ class ExoPlayerPlugin :
     return true
   }
 }
+
+/** Independent ExoPlayer/fallback-MPV channel and core for the second workspace video. */
+class ExoWorkspacePlayerPlugin : ExoPlayerPlugin("com.plezy/exo_player/workspace")

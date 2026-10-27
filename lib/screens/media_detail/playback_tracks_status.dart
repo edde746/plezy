@@ -282,7 +282,13 @@ class _PrePlaybackTrackDialogState extends State<_PrePlaybackTrackDialog> {
   @override
   void initState() {
     super.initState();
-    final preview = previewPlaybackTracks(widget.item, widget.source, profile: widget.profile);
+    final preview = previewPlaybackTracks(
+      widget.item,
+      widget.source,
+      profile: widget.profile,
+      alwaysShowSubtitlesOnDevice:
+          SettingsService.instanceOrNull?.read(SettingsService.alwaysShowSubtitlesOnDevice) ?? false,
+    );
     _audio = preview?.audio == null
         ? AudioTrack.auto
         : _audioOptions.firstWhere(
@@ -349,11 +355,13 @@ class _PrePlaybackTrackDialogState extends State<_PrePlaybackTrackDialog> {
       ),
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.cancel)),
-      FilledButton(
+      DialogActionButton(onPressed: () => Navigator.of(context).pop(), label: t.common.cancel),
+      DialogActionButton(
+        autofocus: true,
         onPressed: () =>
             Navigator.of(context).pop((audio: _audio.id == AudioTrack.auto.id ? null : _audio, subtitle: _subtitle)),
-        child: Text(t.common.play),
+        label: t.common.play,
+        isPrimary: true,
       ),
     ],
   );

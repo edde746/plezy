@@ -1,0 +1,67 @@
+# ng-runner-policy: private-jit-only-v1
+name: Dolby Vision fork validation
+
+# Runs only when selected from Actions.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dv-fork-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    if: ${{ github.repository == 'snapetech-org/PlezyNG' }}
+    runs-on:
+      group: gvisor-sandbox
+      labels: gvisor-sandbox
+    timeout-minutes: 45
+    steps:
+      - name: Checkout pull request source
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout pushed or dispatched revision
+        if: ${{ github.event_name != 'pull_request_target' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Install portable Python in the disposable Debian sandbox
+        env:
+          PYTHON_ARCHIVE_URL: https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16%2B20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+          PYTHON_ARCHIVE_SHA256: ce4f6d0a6cfdb3bed6e44c2f9affd85943c76a42e25ad3a259002f31d6fb8a20
+        run: |
+          set -euo pipefail
+          runtime_dir="${RUNNER_TEMP}/plezy-dv-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          archive_path="${RUNNER_TEMP}/plezy-dv-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tar.gz"
+          mkdir -p "$runtime_dir"
+          if command -v curl >/dev/null 2>&1; then
+            curl --fail --location --retry 3 --retry-delay 1 "$PYTHON_ARCHIVE_URL" --output "$archive_path"
+          elif command -v wget >/dev/null 2>&1; then
+            wget --quiet "$PYTHON_ARCHIVE_URL" --output-document "$archive_path"
+          else
+            echo "curl or wget is required to fetch the pinned Python runtime" >&2
+            exit 1
+          fi
+          printf '%s  %s\n' "$PYTHON_ARCHIVE_SHA256" "$archive_path" | sha256sum --check
+          tar -xzf "$archive_path" -C "$runtime_dir"
+          python_bin="$runtime_dir/python/bin"
+          test -x "$python_bin/python3.12"
+          echo "$python_bin" >> "$GITHUB_PATH"
+          "$python_bin/python3.12" --version
+      - name: Run Dolby experiment contracts in the isolated sandbox
+        run: python3 scripts/test_dv_experiments.py
+      - name: Remove temporary Python runtime
+        if: always()
+        run: |
+          runtime_dir="${RUNNER_TEMP}/plezy-dv-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          archive_path="${RUNNER_TEMP}/plezy-dv-python-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tar.gz"
+          rm -rf -- "$runtime_dir" "$archive_path"

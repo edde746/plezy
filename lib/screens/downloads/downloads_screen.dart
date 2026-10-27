@@ -9,7 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_types.dart';
 import '../../media/media_kind.dart';
@@ -42,6 +42,7 @@ import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/error_message_utils.dart';
 import '../../services/orphan_download_cleanup_service.dart';
 import '../libraries/library_browse_grouping.dart';
 import '../main_screen.dart';
@@ -131,7 +132,20 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 
   void _retryDownloads(List<String> globalKeys) {
-    unawaited(context.read<DownloadProvider>().retryDownloads(globalKeys, _clientForDownload));
+    final clients = <String, MediaServerClient>{};
+    var unavailable = false;
+    for (final globalKey in globalKeys) {
+      final client = _clientForDownload(globalKey);
+      if (client == null) {
+        unavailable = true;
+      } else {
+        clients[globalKey] = client;
+      }
+    }
+    if (clients.isNotEmpty) {
+      unawaited(context.read<DownloadProvider>().retryDownloads(clients.keys, (key) => clients[key]));
+    }
+    if (unavailable) showErrorSnackBar(context, t.errors.connectionFailed);
   }
 
   Future<void> _reviewOrphanDownloads() async {
@@ -219,17 +233,28 @@ class DownloadsScreenState extends State<DownloadsScreen>
   Future<void> _handleManualSync(BuildContext context) async {
     final downloadProvider = context.read<DownloadProvider>();
     final serverManager = context.read<MultiServerProvider>().serverManager;
-    final summary = await downloadProvider.reconcileNow(
-      serverManager,
-      activeGlobalKey: VideoPlayerScreenState.activeGlobalKey,
-    );
+    late final SyncReconcileSummary? summary;
+    try {
+      summary = await downloadProvider.reconcileNow(
+        serverManager,
+        activeGlobalKey: VideoPlayerScreenState.activeGlobalKey,
+      );
+    } catch (error, stackTrace) {
+      if (context.mounted) {
+        showErrorSnackBar(context, localizedLoadErrorMessage(error, stackTrace, context: t.downloads.title));
+      }
+      return;
+    }
     if (!context.mounted || summary == null) return;
     if (summary.changed) {
       showSuccessSnackBar(
         context,
         t.downloads.syncComplete(queued: summary.queuedCount, removed: summary.deletedCount),
       );
-    } else {
+    }
+    if (summary.failedRuleCount > 0) {
+      showErrorSnackBar(context, t.messages.errorLoading(error: t.errors.reasonUnexpected));
+    } else if (!summary.changed) {
       showAppSnackBar(context, t.downloads.downloadsUpToDate);
     }
   }
@@ -279,6 +304,24 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           focusNode: _retryFailedFocusNode,
                           onPressed: () => _retryDownloads(context.read<DownloadProvider>().failedDownloadKeys),
                         ),
+                      FocusableAction(
+                        icon: Symbols.rule_settings_rounded,
+                        tooltip: t.downloads.activeSyncRules,
+                        debugLabel: 'downloads_sync_rules',
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                      ),
+                      // Mobile mirrors the library browse options action; desktop
+                      // and TV expose the same options as per-tab chips instead.
+                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
+                        FocusableAction(
+                          icon: Symbols.tune_rounded,
+                          tooltip: t.downloads.options,
+                          debugLabel: 'downloads_options',
+                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
+                        ),
+                      // Keep additions after the existing actions to preserve
+                      // their TV and keyboard focus positions.
                       if (showSync)
                         FocusableAction(
                           debugLabel: 'downloads_sync_now',
@@ -299,28 +342,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
                                 )
                               : null,
                         ),
-                      FocusableAction(
-                        icon: Symbols.rule_settings_rounded,
-                        tooltip: t.downloads.activeSyncRules,
-                        debugLabel: 'downloads_sync_rules',
-                        onPressed: () =>
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
-                      ),
                       if (downloadProvider.canReviewOrphanDownloads)
                         FocusableAction(
                           icon: Symbols.delete_sweep_rounded,
                           tooltip: t.downloads.reviewOrphanFiles,
                           debugLabel: 'downloads_review_orphans',
                           onPressed: _reviewOrphanDownloads,
-                        ),
-                      // Mobile mirrors the library browse options action; desktop
-                      // and TV expose the same options as per-tab chips instead.
-                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
-                        FocusableAction(
-                          icon: Symbols.tune_rounded,
-                          tooltip: t.downloads.options,
-                          debugLabel: 'downloads_options',
-                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
                         ),
                       // Append this action so existing TV action positions stay stable.
                       FocusableAction(
@@ -391,12 +418,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                                   downloadProvider.resumeDownload(globalKey, client);
                                 }
                               },
-                              onRetry: (globalKey) {
-                                final client = _clientForDownload(globalKey);
-                                if (client != null) {
-                                  downloadProvider.retryDownload(globalKey, client);
-                                }
-                              },
+                              onRetry: (globalKey) => _retryDownloads([globalKey]),
                               onRetryAll: _retryDownloads,
                               onCancel: downloadProvider.cancelDownload,
                               onDelete: downloadProvider.deleteDownload,
@@ -744,9 +766,8 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
                 itemCount: scan.files.length,
                 itemBuilder: (context, index) {
                   final file = scan.files[index];
-                  return FocusableButton(
-                    autofocus: index == 0,
-                    onPressed: () {},
+                  return FocusableWrapper(
+                    borderRadius: 8,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                       child: Row(

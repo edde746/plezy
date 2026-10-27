@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
+  disk_usage
   flutter_secure_storage_linux
   os_media_controls
   screen_retriever_linux

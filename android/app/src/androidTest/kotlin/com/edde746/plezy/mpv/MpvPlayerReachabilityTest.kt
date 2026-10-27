@@ -68,7 +68,7 @@ class MpvPlayerReachabilityTest {
       assertCompletes(nativeLogReceived, "native log callback")
     } finally {
       val disposed = CountDownLatch(1)
-      instrumentation.runOnMainSync { core.get().dispose(disposed::countDown) }
+      instrumentation.runOnMainSync { core.get().dispose(onComplete = disposed::countDown) }
       assertCompletes(disposed, "native teardown")
     }
   }

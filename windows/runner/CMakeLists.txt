@@ -79,7 +79,7 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
       TARGET ${test_target}
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${MPV_LIB_DIR}/libmpv-2.dll"
+        ${MPV_RUNTIME_DLLS}
         "$<TARGET_FILE_DIR:${test_target}>"
     )
   endforeach()
@@ -105,3 +105,4 @@ if(PLEZY_BUILD_DISPLAY_RECOVERY_TESTS)
 
   add_test(NAME display_mode_manager_test COMMAND display_mode_manager_test)
 endif()
+

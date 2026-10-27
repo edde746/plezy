@@ -2,18 +2,99 @@
 
 ## [Unreleased]
 
+- Restore shared focus navigation across source browsing and dialogs, announce source and sync errors accessibly, and explain shared-ID requirements before recovery imports.
+- Use shared focus controls for source search and page loading; make the exclusive sync confirmation scrollable with remote focus support.
+- Make NFS read measurement results accurately labelled, locale-formatted, and usable with remote focus and smaller screens.
+- Improve locale-aware metrics, remote focus and responsive dialogs across source browsing, NFS measurements, offline storage and sync recovery.
+- Improve locale-aware metrics, remote focus and responsive dialogs across source browsing, item pairing, NFS measurements, offline storage and sync recovery.
+- Improve source browsing and pairing with locale-aware metrics, clearer removal guidance, TV focus and responsive dialogs for offline storage and sync recovery.
+- Improve source browsing and pairing with locale-aware metrics, clearer download-removal and recovery-import guidance, TV focus and responsive dialogs.
+- Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync.
+- Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync, with remote-focusable actions and scrollable privacy copy.
+- Confirm encrypted sync setup with a privacy summary and keep provider progress/bookmark writes on separate retry paths.
+- Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
+- Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.
+- Reuse NFSv3 RPC/TLS sessions across calls and limit publication downloads to two active transfers, preserving durable records for partial recovery.
+- Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded SQLite shelf/search/progress queries.
+- Page cached source and shelf browsing in SQLite, use trigram FTS when supported, fetch progress only for visible entries, and reuse bounded local directory snapshots across pages.
+- Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync, with remote-focusable dialog actions.
+- Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded folder/progress queries.
+- Bind cloud settings backups and restore writes to the initiating profile, enforce a 4 MiB download bound, and roll back an import if ownership changes.
+- Require successful CI for the exact release commit while keeping release validation on private JIT runners.
+- Corroborate StoreKit purchase events against verified transaction history and resume eligible direct-source downloads.
+
+- Increase Multiview title-bar, session-tray, and resize controls to consistent 48dp focus targets.
+- Release embedded game input when focus moves into workspace controls, and restore it when focus returns to the game surface.
+- Keep the Multiview dock and session tray inside safe areas and fit the tray to short, narrow windows.
+- Give Multiview, Games, and media workspace actions the shared TV focus indicator and D-pad activation behavior.
+- Use shared TV focus and dialog controls for Games setup, search, and pairing; clear the search when the active profile changes.
+- Give Android Steam touch controls at least 48dp hit areas, resolve overlaps by nearest control, and expose their localized description only while visible.
+- Keep the Multiview dock and session tray clear of display cutouts; give the Steam touch controller usable 48dp targets, nearest-control overlap handling, and a localized description while active.
+- Add an app-owned Multiview workspace for retained video, music, source playback and publication surfaces, with floating/split layouts, shared audio and input ownership, and independent native channels for two simultaneous video sessions.
+- Add a retained Android Steam game surface to Multiview with workspace audio ownership and gamepad, touch, and mouse input restricted to the selected pane; other game engines remain on their existing launch paths.
+
+
+- Route identified Dolby Vision sources through a profile-aware policy before opening them: keep profiles reported by the native path (or an explicit Profile 7 experiment), otherwise request an SDR encode and refuse the rendition unless every HLS video variant declares SDR.
+- Gate server conversions by source profile and backend: retain Jellyfin's P5/P8 route and HDR10-compatible P7, allow only known HDR10-compatible P7/P8.1 on Plex/Emby, and refuse unsupported or unknown combinations instead of direct-playing them.
+- Send unsupported downloaded Dolby Vision files through the server route when online, bypass downloaded copies on an explicit retry, and fail clearly when offline playback has no reported local profile path.
+- Prepare native FEL ports with a Windows D3D11 engine builder and verified app bundle selection, unsigned Apple device-SDK build targets, and a production patch audit. Full Android/webOS FEL and cross-platform device qualification remain pending.
+
+- Honor Android Dolby Vision output and player tone-mapping preferences through the in-app compatibility player; preserve Profile 5 reshaping on software fallback. Add display-constrained experimental routing and real-time HDR/SDR output targets to the isolated DV launcher.
+
+- Add a pinned experimental LG webOS ARMv7 engine/IPK build, manual JIT-only validation, an LG-supported Ubuntu/toolchain preflight, and an evidence-based Re:New matrix. Keep the IPK out of public workflow artifacts and ordinary releases until runtime redistribution and exact-device qualification pass; release opt-in checks the approved source, version, and package hash.
+- Record the exact 2026 C6H model/firmware evidence and list additional 2026 LG firmware cohorts as unqualified test candidates.
+- Reconcile C6 install/launch logs with the distinct IPK hashes; keep visible-frame qualification tied to the exact candidate.
+- Route Windows x64 release builds and package-manager submissions through private JIT runners.
+- Keep Games gated on supported platforms and use shared focus, text-input, and dialog controls for its embedded game flows.
+- Keep mobile navigation destinations at usable widths with a focusable More sheet for overflow tabs.
+- Align settings and navigation with localized values, RTL direction cues, and stable keyboard/TV focus order; bound long metadata and announce sync feedback.
+- Polish focus and dialog flows across playback, Settings, sources (including notes), lending, and discovery; keep compact artwork retry focusable, align subtitle previews with device preferences, keep search keyboard-safe, isolate external metadata for RTL, and filter Videos by watch progress.
+- Let the preroll item picker use the dialog's available results viewport, up to 560dp.
+- Route Games search, page actions, and dialogs through the shared TV focus controls; keep mobile navigation destinations usable with optional tabs in a focusable More sheet.
+- Add a pinned experimental LG webOS ARMv7 engine/IPK build and verification path, with a webOS 26 Re:New+ compatibility matrix.
+- Show public-library loading progress and a keyboard/remote-friendly retry action when its saved libraries cannot load.
+- Add TV-aware text input and shared focus controls to Games search, setup, pairing, shortcuts, and actions.
+- Route compact artwork retry through shared remote focus and isolate provider text in discovery cards.
+- Keep Find your next decisions on labelled actions; D-pad arrows move focus and Select activates the focused card or action.
+- Keep mobile navigation destinations readable with a localized overflow sheet on narrow phones.
+- Fit the preroll item picker to its available viewport on short screens.
+- Refresh the embedded login background from the current PlezyNG website artwork, including a 4K asset for large displays.
+- Keep Dolby Vision source-layer flags under the localized source label and identify the experimental P7 FEL route as unqualified in the performance overlay.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
+- Route comic reader pull request checks through private JIT and skip external forks.
+- Respect the app text scale in the browser reader and correct comic terminology in affected translations.
+- Keep the selected publication thumbnail visible and let reader dialogs scroll without losing their actions.
+- Expand comic reading with responsive spreads, RTL wide-page splitting, continuous scroll, thumbnails, touch zoom and per-comic display settings; harden page streaming and add reproducible browser test dependencies.
+- Keep comic page images resident during pinch gestures; apply zoom once when the gesture ends.
+- Announce comic page load failures, preserve reader focus on retry, and focus the first thumbnail when the page picker opens.
+- Repair source-reader merge compatibility and complete missing source setup translations.
+- With explicit opt-in, force Android mpv P7 playback through the experimental software FEL graph even when native DV is advertised; switch only after mpv accepts the filter, and keep the existing fallback on unsupported engines.
+
+- Add Windows' opt-in P7 FEL hook on the existing `gpu-next` path, with per-file software decode, fail-closed filter negotiation and decoder-setting restoration.
+
+- Expose the existing Apple P7 conversion controls in Playback settings for the AVFoundation route.
+
+- Add a checksum-verified local Android AAR override for building Plezy against an experimental FEL engine without changing the production engine pin.
+
+- Record synthetic Android FEL Surface evidence and per-platform Dolby Vision playback/output qualification gates; the experimental engine remains separate from production builds.
+
+- Route compact artwork retry through shared remote focus and isolate provider text in discovery cards.
+- Keep Find your next decisions on labelled actions; D-pad arrows move focus and Select activates the focused card or action.
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
 - Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
 
 ### Added
 
+- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Add an experimental embedded Android Steam PIN/streaming adapter with encrypted device trust, direct game-ID launch, H.264/HEVC/Opus and a mobile controller. Steam account catalog import and native streaming ports remain in development; Pyrowave is opt-in experimental Android support and still needs real-host and device performance qualification; Games never hands a stream to another app.
+
+- Add an experimental Samsung Tizen TV player, conservative server playback profiles, signed-TPK build and inspection tooling, and a disabled Apps2Samsung catalogue recipe. Device builds and hardware qualification remain pending.
+
 - Route every GitHub Actions workflow through compatible private JIT capacity, with no GitHub-hosted fallback.
 - Require an explicit build or release action and private runner pool for platform builds; add a build-only mode that leaves draft releases untouched.
 
 - Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
-
+- Route trusted-main release validation, Android artifacts, and draft-release assembly through the private JIT runner pool.
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
 - Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; NFS can require TLS 1.3 RPC-with-TLS, custom trust certificates, or a PKCS#12 client identity. Add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
 - Automatically match standalone video filenames against Trakt with confidence and ambiguity checks; add online posters, cast, ratings, IDs, and validated trailer links. Manual matching remains available.
@@ -84,12 +165,24 @@
 
 ### Changed
 
+- Route Windows release packaging through PlezyNG's private Windows runner.
+- Use shared focus controls for Home row dialogs, subtitle styling and video equalizer sliders, with TV text input for Home row names.
+- Use Plezy's shared Material Symbols icons for file-source, source-detail, player and standalone subtitle-search actions.
+- Keep library/publication-reader search, page entry and bookmark notes on shared focus-aware fields and scoped dialog actions.
+- Route public-library forms and email dialogs through shared focus-aware fields and dialog actions for keyboard and TV navigation.
+- Show source, audiobook sync and lending search errors with the same live, theme-colored feedback.
+- Report failed sync rules and unavailable-server retries, and give orphan review one safe initial focus target.
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
+- Validate Seerr sign-in fields before asking users to allow an unencrypted HTTP connection.
+- Keep Games entry points limited to supported Android handheld and TV builds; style Steam stream controls and dialogs with Mono surfaces, focus states and localized touch accessibility text.
 - Refresh sign-in with the crisp PlezyNG product artwork and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
+- Refresh sign-in with current plezyng.app product artwork bundled for offline use, including a high-resolution variant and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
 - Polish catalog, source, TV and cross-media discovery surfaces to match Plezy's Mono focus, artwork, responsive layout and localized error patterns.
 - Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
 - Mirror navigation affordances and tree controls for right-to-left reading order.
+- Keep Steam touch-control hit areas at least 48dp, resolve overlapping targets by nearest control, and expose the localized controller label to Android accessibility.
+- Route reader, source-setup, audiobook-sync and player text entry and dialog actions through Plezy's shared focus controls for keyboard and TV navigation.
 - Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.
@@ -108,6 +201,14 @@
 
 ### Fixed
 
+- Restore TV remote focus to the Retry action while Plex sign-in is waiting.
+- Stop Games host setup when saving fails, and show a retry state when the game library cannot load.
+- Respect reduced motion in Supporter sheet scrolling, expose mobile profile PIN entry to screen readers, and retain D-pad focus on the locked-settings action; let PIN controls wrap at large text sizes.
+- Restore visible keyboard and remote focus in workspace controls and Games forms; show full pane titles in pointer tooltips and isolate game and host metadata in right-to-left labels.
+- Re-check a protected local profile PIN before every explicit download deletion, keep cancelled-download dismissal safe, and use explicit button actions for keyboard and remote Find Next controls.
+- Keep compact Find Next artwork retries in the focus order and isolate recommendation summaries for mixed-direction text.
+- Use shared focus-aware fields and viewport-sized dialogs for cloud backup, custom players, MDBList shelf editing, searchable settings, and Home Layout.
+- Keep Games search scoped to the active profile, size pairing dialogs and QR codes for the available viewport, and report when the Sunshine PIN page cannot be opened.
 - Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
@@ -124,3 +225,4 @@
 ### Removed
 
 - Remove unused upstream website, legacy app-store and Sentry upload automation, and funding links.
+

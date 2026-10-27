@@ -293,6 +293,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final preset = options.qualityPreset;
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
+    final forceCompatibleDolbyVisionTranscode = !isTrack && options.requestsCompatibleDolbyVisionRendition(mediaInfo);
+    if (forceCompatibleDolbyVisionTranscode &&
+        !options.hasServerDolbyVisionSdrRoute(
+          mediaInfo,
+          backend: dialect == MediaBrowserDialect.emby ? DolbyVisionSdrBackend.emby : DolbyVisionSdrBackend.jellyfin,
+        )) {
+      final profile = mediaInfo.displayCriteria?.doviProfile;
+      final label = profile == null ? 'an unknown Dolby Vision profile' : 'Dolby Vision Profile $profile';
+      appLogger.w('Refusing $label: $dialect has no known SDR conversion route for this profile');
+      throw PlaybackException(
+        'No supported color-safe SDR conversion route is available for $label on this server.',
+        reason: PlaybackFailureReason.noPlayableSource,
+      );
+    }
     final requestedAudioStreamId = options.selectedAudioStreamId == null
         ? options.preferredAudioTrack == null
               ? null
@@ -332,7 +346,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         ? audioPreset.bitrateKbps! * 1000
         : (preset.videoBitrateKbps ?? 100_000) * 1000;
     final resumeOffsetMs = metadata.viewOffsetMs;
-    final int? transcodeStartTimeTicks = !wantsOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
+    final int? transcodeStartTimeTicks =
+        (!wantsOriginal || forceCompatibleDolbyVisionTranscode) && resumeOffsetMs != null && resumeOffsetMs > 0
         ? msToJellyfinTicks(resumeOffsetMs)
         : null;
     Map<String, dynamic>? negotiation;
@@ -346,15 +361,16 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         audioStreamIndex: requestedAudioStreamId,
         subtitleStreamIndex: requestedSubtitleStreamId,
         audioProfile: isTrack,
+        forceVideoTranscode: forceCompatibleDolbyVisionTranscode,
         // A capped preset is the only way a transcode is asked for, and on one the server
         // burns the selected embedded stream in rather than serving it as a file the client
         // would fetch as well. A selected external *file* keeps `External`, so it is still
         // delivered as a file - the one case where the client genuinely holds it.
-        burnSubtitles: !wantsOriginal && !requestedSubtitleIsExternalFile,
+        burnSubtitles: (!wantsOriginal || forceCompatibleDolbyVisionTranscode) && !requestedSubtitleIsExternalFile,
       );
       chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
     } catch (error, stackTrace) {
-      if (!_canUseJellyfinStaticStreamFallback(error)) {
+      if (forceCompatibleDolbyVisionTranscode || !_canUseJellyfinStaticStreamFallback(error)) {
         Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
       }
       appLogger.w(
@@ -365,6 +381,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     }
 
     if (chosenSource == null) {
+      if (forceCompatibleDolbyVisionTranscode) {
+        throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+      }
       fallbackReason = TranscodeFallbackReason.decisionFailed;
       appLogger.w('Jellyfin playback negotiation returned no usable source; using the static stream');
     } else {
@@ -382,7 +401,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       }
 
       final transcodingUrl = chosenSource['TranscodingUrl'];
-      if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
+      if ((!wantsOriginal || forceCompatibleDolbyVisionTranscode) &&
+          transcodingUrl is String &&
+          transcodingUrl.isNotEmpty) {
         // TranscodingUrl is server-relative and already encodes container,
         // codecs, MediaSourceId, and PlaySessionId; we just append the
         // dialect's token query parameter for auth.
@@ -391,6 +412,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         playSessionId = urlSessionId != null && urlSessionId.isNotEmpty
             ? urlSessionId
             : (negotiatedSessionId is String ? negotiatedSessionId : null);
+        if (forceCompatibleDolbyVisionTranscode) {
+          await _verifyDolbyVisionSdrManifest(
+            transcodingUrl,
+            itemId: metadata.id,
+            playSessionId: playSessionId,
+            position: options.startPosition ?? Duration.zero,
+          );
+        }
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
@@ -400,6 +429,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         // `TranscodingUrl`, which is the capped request succeeding.
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
+    }
+
+    if (forceCompatibleDolbyVisionTranscode && !isTranscoding) {
+      throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
     }
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
@@ -450,6 +483,43 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playMethod: playMethod,
       selectedMediaIndex: bundle.selectedSourceIndex,
     );
+  }
+
+  /// Verify the negotiated HLS output before a DV compatibility transcode is
+  /// exposed to the player. Jellyfin/Emby's PlaybackInfo response describes
+  /// the source, while the HLS master declares the actual output range.
+  Future<void> _verifyDolbyVisionSdrManifest(
+    String transcodingUrl, {
+    required String itemId,
+    required String? playSessionId,
+    required Duration position,
+  }) async {
+    try {
+      final bytes = await _http.getBytes(
+        _withApiKey(transcodingUrl),
+        timeout: MediaServerTimeouts.jellyfinProbe,
+        maxBytes: 64 * 1024,
+      );
+      final manifest = utf8.decode(bytes, allowMalformed: false);
+      if (!hlsMasterDeclaresSdrVideoOutput(manifest)) {
+        appLogger.w(
+          'Dolby Vision compatibility transcode did not declare SDR output; refusing the unverified rendition',
+        );
+        throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+      }
+      appLogger.i('Dolby Vision compatibility transcode declares SDR HLS output');
+    } catch (error, stackTrace) {
+      try {
+        await reportPlaybackStopped(itemId: itemId, position: position, playSessionId: playSessionId);
+      } catch (stopError, stopStackTrace) {
+        appLogger.d(
+          'Failed to stop an unverified Jellyfin Dolby Vision transcode',
+          error: stopError,
+          stackTrace: stopStackTrace,
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   /// [position] is ignored: a MediaBrowser item is never stacked across
@@ -906,6 +976,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool? allowAudioStreamCopy,
     bool isLiveTv = false,
     bool audioProfile = false,
+    bool forceVideoTranscode = false,
 
     /// Drop `External` subtitle delivery from the profile, so the server burns
     /// the selected subtitle into a transcode instead of serving it alongside.
@@ -921,11 +992,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       'AudioStreamIndex': ?audioStreamIndex,
       'SubtitleStreamIndex': ?subtitleStreamIndex,
       'AutoOpenLiveStream': ?autoOpenLiveStream,
-      'EnableDirectPlay': ?enableDirectPlay,
-      'EnableDirectStream': ?enableDirectStream,
-      'EnableTranscoding': ?enableTranscoding,
-      'AllowVideoStreamCopy': ?allowVideoStreamCopy,
-      'AllowAudioStreamCopy': ?allowAudioStreamCopy,
+      'EnableDirectPlay': ?(forceVideoTranscode ? false : enableDirectPlay),
+      'EnableDirectStream': ?(forceVideoTranscode ? false : enableDirectStream),
+      'EnableTranscoding': ?(forceVideoTranscode ? true : enableTranscoding),
+      'AllowVideoStreamCopy': ?(forceVideoTranscode ? false : allowVideoStreamCopy),
+      'AllowAudioStreamCopy': ?(forceVideoTranscode ? true : allowAudioStreamCopy),
     };
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
@@ -945,7 +1016,24 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'DeviceProfile': <String, Object?>{
           'Name': 'PlezyNG',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
-          'CodecProfiles': const <Map<String, Object?>>[],
+          // A compatibility transcode must land in SDR rather than simply
+          // re-encode the Dolby Vision signal with incompatible HDR metadata.
+          // Jellyfin's StreamBuilder applies these CodecProfile conditions to
+          // the selected output codec and forwards VideoRangeType as a
+          // transcode target constraint. The server still needs a working DV /
+          // HDR tone-mapping path for the selected source profile.
+          'CodecProfiles': forceVideoTranscode
+              ? <Map<String, Object?>>[
+                  {
+                    'Type': 'Video',
+                    'Codec': _jellyfinTranscodeVideoCodecs(dialect),
+                    'Conditions': <Map<String, Object?>>[
+                      {'Condition': 'Equals', 'Property': 'VideoRangeType', 'Value': 'SDR', 'IsRequired': true},
+                    ],
+                    'ApplyConditions': const <Map<String, Object?>>[],
+                  },
+                ]
+              : const <Map<String, Object?>>[],
           // fMP4 segments instead of MPEG-TS (#2131): ts cannot carry AV1,
           // so a server with an AV1 hardware encoder could never pick it.
           // Every mpv backend already consumes fMP4 HLS — the Plex VOD
@@ -1057,6 +1145,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
               {'Format': 'vtt', 'Method': 'External'},
             ],
           ],
+          if (PlatformDetector.isTizenBuild())
+            ...tizenPlaybackProfile(audio: audioProfile, burnSubtitles: burnSubtitles),
         },
       },
     );

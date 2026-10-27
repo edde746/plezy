@@ -131,10 +131,36 @@ class S3SourceAdapter extends SourceAdapter {
   Future<ContentLease> resolve(PublicationFile file) async {
     _checkKey(file.id);
     final uri = _base.replace(pathSegments: [..._base.pathSegments.where((s) => s.isNotEmpty), ...file.id.split('/')]);
+    final credentialValues = await credentials();
+    final accessKey = credentialValues['accessKey'];
+    final secretKey = credentialValues['secretKey'];
+    final region = source.options['region'] ?? 'us-east-1';
+    final hasTemporarySessionToken = credentialValues['sessionToken']?.isNotEmpty == true;
+    final renewal =
+        accessKey == null ||
+            secretKey == null ||
+            hasTemporarySessionToken ||
+            file.revision?.isNotEmpty != true ||
+            uri.scheme != 'https' ||
+            uri.hasQuery ||
+            uri.hasFragment
+        ? null
+        : <String, dynamic>{
+            'provider': 's3',
+            'uri': uri.toString(),
+            'accessKey': accessKey,
+            'secretKey': secretKey,
+            'region': region,
+            'revision': file.revision,
+            'size': file.size,
+            if (credentialValues['sessionToken']?.isNotEmpty == true) 'sessionToken': credentialValues['sessionToken'],
+          };
     return ContentLease(
       await _signed(uri),
       size: file.size,
       expiresAt: DateTime.now().add(const Duration(minutes: 14)),
+      backgroundTransferSafe: renewal != null,
+      backgroundRefresh: renewal,
     );
   }
 }

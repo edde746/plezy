@@ -13,6 +13,12 @@ void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef regis
       flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
 }
 
+void MpvWorkspacePlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
+  mpv::MpvPlayerPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
+      "com.plezy/mpv_player/workspace", /*audio_only=*/false, WM_APP + 0x04D2);
+}
+
 void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
   mpv::MpvPlayerPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
@@ -27,17 +33,21 @@ constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x04D1;
 }  // namespace
 
 void MpvPlayerPlugin::RegisterWithRegistrar(
-    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only) {
-  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar, channel_name, audio_only);
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only,
+    UINT platform_task_message) {
+  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar, channel_name, audio_only, platform_task_message);
   registrar->AddPlugin(std::move(plugin));
 }
 
 MpvPlayerPlugin::MpvPlayerPlugin(
-    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only)
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only,
+    UINT platform_task_message)
     : registrar_(registrar),
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
-      platform_task_message_(audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage) {
+      platform_task_message_(platform_task_message != 0
+                                 ? platform_task_message
+                                 : (audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage)) {
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
 
@@ -182,8 +192,20 @@ void MpvPlayerPlugin::HandleMethodCall(
     // core is windowless, so it gets no view at all.
     HWND view = audio_only_ ? nullptr : GetChildWindow();
 
+    bool experimental_dolby_vision = false;
+    const auto* initialization_arguments = method_call.arguments();
+    if (initialization_arguments &&
+        std::holds_alternative<flutter::EncodableMap>(*initialization_arguments)) {
+      const auto& arguments = std::get<flutter::EncodableMap>(*initialization_arguments);
+      const auto experimental = arguments.find(flutter::EncodableValue("experimentalDolbyVision"));
+      if (experimental != arguments.end() && std::holds_alternative<bool>(experimental->second)) {
+        experimental_dolby_vision = std::get<bool>(experimental->second);
+      }
+    }
+
     const uint64_t generation = player_generation_.fetch_add(1, std::memory_order_acq_rel) + 1;
     player_ = std::make_unique<MpvPlayer>(audio_only_);
+    player_->ConfigureDolbyVisionExperiment(experimental_dolby_vision);
     bool success = player_->Initialize(view);
 
     if (success) {

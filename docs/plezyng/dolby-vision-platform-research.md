@@ -24,13 +24,13 @@ The inspected [Apple metadata bridge](https://github.com/superuser404notfound/Ae
 
 **Linux TV-led output — moderate confidence on an admitted display chain.** [CB1](https://github.com/CroqueMr/libreelec-x86-DV) provides a concrete custom Kodi/LibreELEC route. Its [Master Reference contract](https://github.com/CroqueMr/libreelec-x86-DV/blob/main/CB1/docs/MASTER-REFERENCE.md) defines restricted integer reconstruction and transport. Its [CM4 qualification](https://github.com/CroqueMr/libreelec-x86-DV/blob/main/CB1/docs/CM4-QUALIFICATION.md) distinguishes metadata preserved from controls executed by an independent mapper. Adapt a small transport interface and maintain the exact driver/display allowlist; a normal Wayland HDR surface does not provide the same transport.
 
-**Offline and companion processing — high confidence in feasibility; throughput depends on hardware.** [FelBaker](https://github.com/bbeny123/felbaker) implements CPU BL/EL/RPU composition to PQ12 through VapourSynth on desktop platforms. It is a useful reference and a route to optimized media versions. FelBaker and DoViBaker share implementation ancestry and should not be counted as two independent correctness oracles. Their short benchmark examples do not establish end-to-end real-time 4K streaming.
+**Offline and companion processing — high confidence in feasibility; throughput depends on hardware.** [FelBaker](https://github.com/bbeny123/felbaker) implements CPU BL/EL/RPU composition to PQ12 through VapourSynth on desktop platforms. It is a comparison implementation and a route to optimized media versions, not an independent correctness oracle. FelBaker and DoViBaker share implementation ancestry and should not be counted as two independent correctness oracles. Their short benchmark examples do not establish end-to-end real-time 4K streaming.
 
 # Architecture
 
 Treat each presented frame as one unit: source generation, picture identity/timestamp, raw base and enhancement surfaces, original RPU, parsed composition parameters, color description, and processing status. Pair by picture identity with explicit reorder/seek handling. Preserve raw decoded sample values until reconstruction; an enhancement layer is residual data and must not be tone-mapped or color-converted as an ordinary picture.
 
-Separate reconstruction from display mapping and physical output. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) supplies composer mathematics and an informative resampling reference. It does not define every modern proprietary display-mapping behavior. An exact comparison with a stated decoded-image contract is possible even though the source compression is lossy; equality to the original uncompressed master is a different claim.
+Separate reconstruction from display mapping and physical output. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) supplies composer mathematics and an informative resampling reference, but its text does not name Profile 7; map P7 RPU and profile-specific semantics before treating an implementation as reference-accurate. HDR-Analyze's [published FEL plan](https://github.com/tinof/hdr-analyze/blob/main/docs/FEL_PLAN.md) says its earlier composer was removed after real-disc comparisons found major errors in scaling, pivots, chroma mapping, precision and upsampling. It recommends specification-derived vectors and says public evidence does not establish bit-exact agreement with Dolby hardware. Use FelBaker and libplacebo as pinned comparison targets, not ground truth. An exact comparison with a stated decoded-image contract is possible even though the source compression is lossy; equality to the original uncompressed master is a different claim.
 
 | Stage | PlezyNG-owned contract |
 | --- | --- |
@@ -42,6 +42,62 @@ Separate reconstruction from display mapping and physical output. [ETSI GS CCM 0
 | Select | Device, driver, surface, display chain and measured capability; re-evaluate after route changes |
 
 The most useful hybrid is: reconstruct the enhancement contribution first, then hand a single reconstructed image to an existing native display pipeline. The mapping metadata must describe the new pixels, so the native pipeline does not apply the original reshape twice. If raw-frame re-entry is unavailable, reconstruct and encode a compatible stream. Encoding introduces its own quality and latency costs; a single-layer result can nevertheless retain the FEL contribution.
+
+# Universal support target
+
+“Universal Dolby Vision support” has two separately measured outcomes:
+
+1. **Cross-platform playback:** every PlezyNG target can play a supported Dolby
+   Vision source with a correct image. That route may be native Dolby Vision,
+   reconstructed video mapped to HDR10/HLG/SDR, a source-compatible base layer,
+   or a server/companion conversion. A profile with no compatible base layer
+   must use a real converter or fail with a clear playback error.
+2. **Native Dolby Vision output:** the operating system, decoder, display path,
+   sink and content profile all support the selected Dolby Vision route. PlezyNG
+   can select and report this route; app software cannot make an unsupported
+   HDMI/display path emit a Dolby Vision signal.
+
+Platform APIs make that split concrete. Android's baseline HDR requirements are
+HDR10/HLG; OEMs may add Dolby Vision, so support is device-specific. Apple's
+documented AVFoundation example covers Dolby Vision 8.4 through AVPlayer when
+the current device is eligible for HDR. Microsoft's documented display metadata
+formats expose HDR10 and HDR10+ signaling. These interfaces do not establish a
+single Dolby Vision output contract for every device ([Android formats](https://developer.android.com/media/platform/supported-formats),
+[Apple Dolby Vision playback](https://developer.apple.com/av-foundation/Incorporating-HDR-video-with-Dolby-Vision-into-your-apps.pdf),
+[Windows HDR metadata formats](https://learn.microsoft.com/en-us/uwp/api/windows.graphics.display.hdrmetadataformat)).
+
+The product target is therefore **universal correct playback with the best
+qualified output available per device**, plus native Dolby Vision on each
+platform/device that exposes a supported path. FEL reconstruction is a separate
+per-engine capability: Profile 7 requires paired BL/EL data, the correct RPU,
+stable frame identity, and measured output. A source profile, decoder name, or
+EL-present flag alone cannot qualify it.
+
+## Completion gates
+
+Call cross-platform playback complete only after each supported app target has:
+
+- source identification for profile, compatibility ID, BL/EL/RPU presence,
+  metadata version/compression, and container signaling;
+- a tested native path or a correct software/server fallback, with Profile 5
+  treated as Dolby-only when no usable base layer exists;
+- for P7 FEL, a paired-frame compositor that passes BL-only, EL-only, metadata-
+  only, seek/reorder, missing-layer, malformed-RPU, and scene-boundary controls;
+- pixel comparisons against the public-spec scalar vectors and a second
+  implementation or trusted reference with a documented color-space,
+  resampling, precision, and error contract;
+- output qualification for each advertised mode (Dolby Vision, HDR10, HLG,
+  scRGB/EDR, or SDR), including target-device playback and metadata/signal
+  evidence where the mode requires it;
+- sustained playback checks for frame pacing, thermal limits, audio/subtitle
+  sync, seeks, output changes, and recovery from route failure.
+
+Current experimental evidence is narrower: Android's experimental AAR changes
+synthetic EL-on pixels on one emulator Surface; Linux's isolated graph uses a
+real P7 sample qualitatively. Neither establishes cross-platform playback,
+Dolby-reference accuracy, physical Dolby Vision output, or a production-engine
+release. Keep the platform table below as a per-target gate rather than rolling
+these results into one universal pass.
 
 # Platform priorities
 

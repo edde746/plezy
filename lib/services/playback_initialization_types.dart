@@ -3,6 +3,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_part_timeline.dart';
 import '../media/media_source_info.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
@@ -72,6 +73,38 @@ class PlaybackInitializationOptions {
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
+  /// Ask the server for a video encode when the selected source is identified
+  /// as Dolby Vision when its profile is not reported by the local native
+  /// playback path. This is decided before opening the video so a decoder that
+  /// accepts a stream but displays wrong colors cannot bypass compatibility
+  /// routing. The HLS output still needs server-side tone mapping.
+  final bool requestCompatibleDolbyVisionRendition;
+
+  /// Exact Dolby Vision profiles the active platform path reports as
+  /// supported. An empty set is deliberately conservative and sends known DV
+  /// sources through the server's SDR compatibility route.
+  final Set<int> supportedNativeDolbyVisionProfiles;
+
+  /// Let an explicit Windows/Linux FEL experiment keep Profile 7 local. The
+  /// experiment remains opt-in and unqualified; production defaults use the
+  /// server rendition on those targets.
+  final bool allowExperimentalDolbyVisionProfile7;
+
+  /// Keep a downloaded copy from intercepting an automatic server-rendition
+  /// retry after the device-local DV route failed. Offline library mode still
+  /// takes precedence and never sets this flag.
+  final bool forceServerPlayback;
+
+  bool requestsCompatibleDolbyVisionRendition(MediaSourceInfo? source) => shouldRequestCompatibleDolbyVisionRendition(
+    requested: requestCompatibleDolbyVisionRendition,
+    source: source?.displayCriteria,
+    supportedNativeProfiles: supportedNativeDolbyVisionProfiles,
+    allowExperimentalProfile7: allowExperimentalDolbyVisionProfile7,
+  );
+
+  bool hasServerDolbyVisionSdrRoute(MediaSourceInfo? source, {required DolbyVisionSdrBackend backend}) =>
+      serverHasDolbyVisionSdrRoute(backend: backend, source: source?.displayCriteria);
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -86,6 +119,10 @@ class PlaybackInitializationOptions {
     this.sessionIdentifier,
     this.transcodeSessionId,
     this.startPosition,
+    this.requestCompatibleDolbyVisionRendition = false,
+    this.supportedNativeDolbyVisionProfiles = const {},
+    this.allowExperimentalDolbyVisionProfile7 = false,
+    this.forceServerPlayback = false,
   });
 }
 
