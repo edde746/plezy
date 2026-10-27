@@ -6285,8 +6285,8 @@ class Translations$videoSettings$en {
 
 	/// en: 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.'
 	String get motionClarityDescription => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.';
-	/// en: 'Switch presets while playback continues. Use Compare without motion processing for A/B; Custom opens temporal-filter, engine, search-effort and generated-rate controls.'
-	String get motionClarityControlsHint => 'Switch presets while playback continues. Use Compare without motion processing for A/B; Custom opens temporal-filter, engine, search-effort and generated-rate controls.';
+	/// en: 'Desktop: use the player’s Motion & clarity button. Mobile: open Video settings > Motion & clarity. Presets and A/B comparison work during playback; Custom opens the filter, engine, search-effort and generated-rate controls.'
+	String get motionClarityControlsHint => 'Desktop: use the player’s Motion & clarity button. Mobile: open Video settings > Motion & clarity. Presets and A/B comparison work during playback; Custom opens the filter, engine, search-effort and generated-rate controls.';
 
 	/// en: 'Original'
 	String get motionClarityOriginal => 'Original';

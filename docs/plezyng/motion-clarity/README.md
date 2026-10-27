@@ -21,7 +21,7 @@ format, and preserve ordinary playback whenever processing is unavailable.
 
 Motion & clarity provides Original, Cinema, Balanced, Smooth, Animation, Sports,
 OLED and Custom profiles in Playback Settings and the in-player Video settings
-sheet. Temporal blend exposes a filter kernel and interpolation threshold.
+sheet. The player control bar also has a Motion & clarity quick button on desktop; on mobile, open the Video settings submenu. Presets and A/B comparison stay available during playback. Temporal blend exposes a filter kernel and interpolation threshold.
 Motion compensation uses FFmpeg `minterpolate` with a generated-rate target and
 Fast/Balanced/High search effort. OLED selects motion compensation at the current
 renderer-reported display cadence. Preferences share global, library or title

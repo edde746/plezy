@@ -4,7 +4,7 @@ Motion & clarity gives PlezyNG playback its own controls for cadence, motion smo
 
 ## Open the controls
 
-- **While watching:** open the player’s Video settings and select **Motion & clarity**. This keeps the movie running while you switch presets and use **Compare without motion processing**.
+- **While watching:** on desktop, select the player’s **Motion & clarity** button. On mobile, open **Video settings → Motion & clarity**. Presets and A/B comparison keep playback running while you compare the picture.
 - **For saved defaults:** open **Settings → Playback → Video and display** and choose a preset. The same entry shows the selected preset and its short description.
 - **Choose a preference scope:** set motion preferences for all playback, a library, or a title from the Motion & clarity scope selector.
 

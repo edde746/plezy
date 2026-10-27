@@ -2707,7 +2707,7 @@
     "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
     "motionClarity": "Motion & clarity",
     "motionClarityDescription": "Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.",
-    "motionClarityControlsHint": "Switch presets while playback continues. Use Compare without motion processing for A/B; Custom opens temporal-filter, engine, search-effort and generated-rate controls.",
+    "motionClarityControlsHint": "Desktop: use the player’s Motion & clarity button. Mobile: open Video settings > Motion & clarity. Presets and A/B comparison work during playback; Custom opens the filter, engine, search-effort and generated-rate controls.",
     "motionClarityOriginal": "Original",
     "motionClarityOriginalDescription": "Preserve the source cadence and the player's existing configuration.",
     "motionClarityCinema": "Cinema",
