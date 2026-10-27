@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../mpv/player/player.dart';
 import '../models/motion_clarity.dart';
 import '../utils/app_logger.dart';
@@ -75,6 +77,10 @@ class MotionClarityService {
   MotionTemporalKernel _currentKernel = MotionTemporalKernel.linear;
   int _currentThresholdPercent = 1;
   String? _statusReason;
+  Timer? _healthTimer;
+  bool _samplingHealth = false;
+  int? _lastDropCount;
+  int _sustainedDropWindows = 0;
 
   MotionClarityService._(this._player);
 
@@ -88,6 +94,9 @@ class MotionClarityService {
   void markSourceOpened() {
     _sourceHasOpened = true;
     _requiresSourceReload = false;
+    if (_currentEngine == MotionClarityEngine.motionCompensated && _currentPreset.interpolationEnabled) {
+      _startHealthMonitor();
+    }
   }
 
   Future<MotionClarityApplyResult> inspect() async {
@@ -189,6 +198,7 @@ class MotionClarityService {
     }
 
     if (!preset.interpolationEnabled) {
+      _stopHealthMonitor();
       await _restoreOriginalValues();
       _statusReason = null;
       _currentPreset = MotionClarityPreset.original;
@@ -293,6 +303,7 @@ class MotionClarityService {
     }
     _currentKernel = effectiveKernel;
     _currentThresholdPercent = effectiveThreshold;
+    _stopHealthMonitor();
     _statusReason = null;
     final result = MotionClarityApplyResult(
       isSupported: true,
@@ -455,6 +466,7 @@ class MotionClarityService {
     _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
     _comparisonBypass = false;
     _requiresSourceReload = beforeSourceOpen ? false : needsReload;
+    if (!beforeSourceOpen) _startHealthMonitor();
     return MotionClarityApplyResult(
       isSupported: true,
       isConfigured: true,
@@ -504,7 +516,76 @@ class MotionClarityService {
     );
   }
 
+  /// Watches mpv's cumulative dropped-frame counter while MCI is active.
+  ///
+  /// Three consecutive 2-second windows with new output drops trigger a
+  /// session-only fallback to temporal blending. This is a conservative
+  /// circuit breaker, not a hardware benchmark or sustainable-rate estimator.
+  void _startHealthMonitor() {
+    if (_healthTimer != null) return;
+    _lastDropCount = null;
+    _sustainedDropWindows = 0;
+    _healthTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      unawaited(_sampleMotionHealth());
+    });
+  }
+
+  void _stopHealthMonitor() {
+    _healthTimer?.cancel();
+    _healthTimer = null;
+    _lastDropCount = null;
+    _sustainedDropWindows = 0;
+  }
+
+  Future<void> _sampleMotionHealth() async {
+    if (_samplingHealth) return;
+    if (_currentEngine != MotionClarityEngine.motionCompensated || !_currentPreset.interpolationEnabled) {
+      _stopHealthMonitor();
+      return;
+    }
+    _samplingHealth = true;
+    try {
+      final count = int.tryParse((await _readProperty('frame-drop-count') ?? '').trim());
+      if (count == null) return;
+      final previous = _lastDropCount;
+      _lastDropCount = count;
+      if (previous == null || count < previous) return;
+      if (count > previous) {
+        _sustainedDropWindows++;
+      } else {
+        _sustainedDropWindows = 0;
+      }
+      if (_sustainedDropWindows < 3) return;
+
+      final preset = _currentPreset;
+      final kernel = _currentKernel;
+      final threshold = _currentThresholdPercent;
+      final outputRate = _currentOutputRate;
+      final quality = _currentMciQuality;
+      _stopHealthMonitor();
+      final result = await configure(
+        preset: preset,
+        kernel: kernel,
+        thresholdPercent: threshold,
+        beforeSourceOpen: false,
+        engine: MotionClarityEngine.temporalBlend,
+        outputRate: outputRate,
+        mciQuality: quality,
+        applyPresetRouting: false,
+      );
+      _statusReason = result.isConfigured
+          ? 'Motion compensation was switched to temporal blending after repeated dropped frames. Select the preset again to retry.'
+          : 'Motion compensation was overloaded and the temporal fallback could not be enabled.';
+    } catch (error, stackTrace) {
+      appLogger.w('MotionClarityService: playback-health fallback failed', error: error, stackTrace: stackTrace);
+      _statusReason = 'Playback is dropping frames; motion compensation may not be keeping up.';
+    } finally {
+      _samplingHealth = false;
+    }
+  }
+
   void _resetActiveProcessing() {
+    _stopHealthMonitor();
     _currentPreset = MotionClarityPreset.original;
     _currentEngine = MotionClarityEngine.temporalBlend;
     _currentOutputRate = MotionClarityOutputRate.currentDisplay;
