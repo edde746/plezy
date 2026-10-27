@@ -1080,7 +1080,18 @@ class MpvPlayerCoreBase: NSObject {
       // Host-clock presentation: samples carry mpv's scheduled display
       // time against a free-running timebase, so audio-clock drift never
       // accumulates in the VO (#1776). Media-time presentation is only
-      // needed for PiP, which tvOS does not have.
+      // needed for AVPictureInPictureController, which tvOS does not have.
+      checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
+      checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+    #elseif os(macOS)
+      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
+      // Host-clock presentation, as on tvOS. With media time the layer's
+      // timebase jumps back on every backward seek and to 0 on stop; on
+      // macOS 27 that can leave frames already taken for display stamped
+      // ahead of the clock, and WindowServer stops updating the screen
+      // until the clock reaches them, or its watchdog panics the Mac
+      // first (#2823). macOS PiP moves the layers into PIP.framework's
+      // window and never reads the timebase.
       checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
     #else
