@@ -81,6 +81,7 @@ class MotionClarityService {
   String? _statusReason;
   Timer? _healthTimer;
   bool _samplingHealth = false;
+  int? _lastDelayedFrameCount;
   int? _lastDropCount;
   int _healthReadFailures = 0;
   int _sustainedDropWindows = 0;
@@ -524,13 +525,15 @@ class MotionClarityService {
     );
   }
 
-  /// Watches mpv's cumulative dropped-frame counter while MCI is active.
+  /// Watches mpv's estimated late-vsync counter while MCI is active, with the
+  /// cumulative dropped-frame counter as a compatibility fallback.
   ///
-  /// Three consecutive 2-second windows with new output drops trigger a
-  /// session-only fallback to temporal blending. This is a conservative
-  /// circuit breaker, not a hardware benchmark or sustainable-rate estimator.
+  /// Three consecutive 2-second windows with new late-vsyncs (or new drops when
+  /// delayed-vsync telemetry is unavailable) trigger a session-only fallback.
+  /// Both counters are heuristics, not a hardware benchmark or cause detector.
   void _startHealthMonitor() {
     if (_healthTimer != null) return;
+    _lastDelayedFrameCount = null;
     _lastDropCount = null;
     _healthReadFailures = 0;
     _sustainedDropWindows = 0;
@@ -542,6 +545,7 @@ class MotionClarityService {
   void _stopHealthMonitor() {
     _healthTimer?.cancel();
     _healthTimer = null;
+    _lastDelayedFrameCount = null;
     _lastDropCount = null;
     _healthReadFailures = 0;
     _sustainedDropWindows = 0;
@@ -555,13 +559,15 @@ class MotionClarityService {
     }
     _samplingHealth = true;
     try {
-      final rawCount = await _readProperty('frame-drop-count');
+      final rawDelayedCount = await _readProperty('vo-delayed-frame-count');
+      final rawDropCount = await _readProperty('frame-drop-count');
       if (_currentEngine != MotionClarityEngine.motionCompensated || !_currentPreset.interpolationEnabled) {
         _stopHealthMonitor();
         return;
       }
-      final count = int.tryParse((rawCount ?? '').trim());
-      if (count == null) {
+      final delayedCount = int.tryParse((rawDelayedCount ?? '').trim());
+      final dropCount = int.tryParse((rawDropCount ?? '').trim());
+      if (delayedCount == null && dropCount == null) {
         _healthReadFailures++;
         if (_healthReadFailures >= 3) {
           _stopHealthMonitor();
@@ -570,9 +576,19 @@ class MotionClarityService {
         return;
       }
       _healthReadFailures = 0;
-      final previous = _lastDropCount;
-      _lastDropCount = count;
-      if (previous == null) return;
+
+      final previousDelayedCount = _lastDelayedFrameCount;
+      final previousDropCount = _lastDropCount;
+      _lastDelayedFrameCount = delayedCount;
+      _lastDropCount = dropCount;
+
+      // A late-vsync estimate is the more direct signal for renderer load.
+      // Use the broader drop counter only when that property is unavailable.
+      final useDelayedCount = delayedCount != null && previousDelayedCount != null;
+      final useDropCount = !useDelayedCount && delayedCount == null && dropCount != null && previousDropCount != null;
+      if (!useDelayedCount && !useDropCount) return;
+      final count = useDelayedCount ? delayedCount! : dropCount!;
+      final previous = useDelayedCount ? previousDelayedCount! : previousDropCount!;
       if (count < previous) {
         _sustainedDropWindows = 0;
         return;

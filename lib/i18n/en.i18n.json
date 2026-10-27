@@ -2764,7 +2764,7 @@
     "motionClarityConfigured": "Processing options were accepted. Presented frame rate depends on the active renderer and display.",
     "motionClarityMciConfigured": "Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.",
     "motionClarityReportedDisplayRate": "Renderer-reported display rate",
-    "motionClaritySourceRate": "Container-reported source rate",
+    "motionClaritySourceRate": "Container-reported nominal rate",
     "motionClarityPassthroughWarning": "Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.",
     "motionClarityCompareWithoutProcessing": "Compare without motion processing",
     "motionClarityReturnToProcessing": "Return to motion processing",

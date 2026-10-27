@@ -6374,8 +6374,8 @@ class Translations$videoSettings$en {
 	String get motionClarityConfigured => 'Processing options were accepted. Presented frame rate depends on the active renderer and display.';
 	/// en: 'Renderer-reported display rate'
 	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
-	/// en: 'Container-reported source rate'
-	String get motionClaritySourceRate => 'Container-reported source rate';
+	/// en: 'Container-reported nominal rate'
+	String get motionClaritySourceRate => 'Container-reported nominal rate';
 	/// en: 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.'
 	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.';
 	/// en: 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.'

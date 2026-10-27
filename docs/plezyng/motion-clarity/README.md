@@ -63,13 +63,18 @@ physical emission time or remove camera/exposure blur already captured in the so
 OLED refresh modes, response, processing limits and viewing conditions vary by set; It does not add neural RIFE interpolation,
 NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
 adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
-search-effort choices are manual and unqualified. A limited runtime guard watches
-mpv's cumulative dropped-frame count. After three consecutive 2-second windows
-with new drops it steps MCI search effort down from High to Balanced to Fast,
-then switches to temporal blending if drops continue. The saved preference stays
-unchanged. This is not a device benchmark or a multi-signal resource governor: it
-does not measure GPU/CPU headroom, thermal state, power use or physical scanout. If the drop counter is unavailable, the
-guard reports that automatic fallback is unavailable and stops polling. No TV
+search-effort choices remain unqualified. A limited runtime guard prefers mpv's
+cumulative `vo-delayed-frame-count` estimate of late vsyncs, and falls back to
+`frame-drop-count` only when delayed-vsync telemetry is unavailable. After three
+consecutive 2-second windows with an increase in the selected counter, it steps
+MCI search effort down from High to Balanced to Fast, then switches to temporal
+blending if overload continues. The saved preference stays unchanged. These
+counters are heuristics, not a cause detector: drop counts can include playback
+hiccups and source-to-display cadence mismatch, while late-vsync counts do not
+identify which pipeline stage missed its deadline. This is not a device benchmark
+or a multi-signal resource governor: it does not measure GPU/CPU headroom, thermal
+state, power use or physical scanout. If neither signal is available, the guard
+reports that automatic fallback is unavailable and stops polling. No TV
 superiority, image-quality, frame-rate, HDR, battery or performance result has been
 established. The broader
 architecture and gates below remain the plan for that work.

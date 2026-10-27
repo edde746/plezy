@@ -15,7 +15,9 @@ A settings surface or successful property write does not complete the full featu
 - Adds portable preset, kernel, threshold, engine, generated-rate and MCI search-effort
   preferences. One global/library/title scope applies to every motion preference.
 - Adds Playback Settings and in-player controls, including custom temporal kernel,
-  threshold selection and a quick A/B switch that bypasses the active motion filter.
+  threshold selection, a quick A/B switch that bypasses the active motion filter,
+  and a diagnostic readout of valid container-reported nominal source rate distinct
+  from the renderer-reported display rate.
 - Resolves scoped motion preferences in VOD and live-stream pre-open paths, before
   mpv allocates decoder surfaces. Temporal blend configures display sync, kernel,
   threshold and renderer status. The optional experimental MCI path installs a labelled
@@ -30,13 +32,14 @@ A settings surface or successful property write does not complete the full featu
 
 This delivers cadence blending and a usable experimental block-motion synthesis path.
 It is not a qualified real-time renderer: filter support, CPU headroom, frame deadlines,
-color paths and actual panel cadence remain unmeasured. The app does not yet have a
-resource governor or adaptive quality fallback for overload. It also lacks a full multi-signal resource governor or hardware benchmark.
-A limited runtime guard watches mpv's dropped-frame counter, stepping search
-effort from High to Balanced to Fast after consecutive 2-second windows with new
-drops, then falling back to temporal blending if drops continue. The stored user
-preference is unchanged. This is not a hardware benchmark or full resource governor;
-it does not measure processor headroom, thermals, power or scanout. Neural RIFE, custom confidence/occlusion analysis,
+color paths and actual panel cadence remain unmeasured. A limited runtime guard
+prefers mpv's estimated late-vsync counter and falls back to the cumulative dropped-
+frame counter only when the preferred signal is unavailable. Three consecutive
+2-second windows with a rising selected counter lower MCI search effort from High
+to Balanced to Fast, then fall back to temporal blending if overload continues.
+The stored preference is unchanged. This is not a full resource governor or
+hardware benchmark; it does not measure processor headroom, thermals, power or
+physical scanout. Neural RIFE, custom confidence/occlusion analysis,
 camera-blur restoration, capability-qualified scaling, native Android/Apple/TV
 frame adapters, verified model packaging and TV comparison remain unimplemented.
 This PR has no device qualification evidence.

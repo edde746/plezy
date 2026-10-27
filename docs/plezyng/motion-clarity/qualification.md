@@ -80,7 +80,7 @@ count; metrics; confidence interval where meaningful; failures and raw evidence.
 | RES-03 | Native + neural copy-heavy path | Report actual transfer bytes/times; admission includes transfers |
 | RES-04 | Main + companion video, PiP, background/resume | Shared budget; per-session epochs and release; focused session priority |
 | RES-05 | 100 repeated seek/start/stop/dispose cycles | No growing retained buffers, stale callbacks, leaking decoder surfaces or deadlocks |
-| RES-06 | Missing or invalid mpv `frame-drop-count` | Report adaptive fallback unavailable, stop polling after bounded retries, and leave the selected MCI path/preferences unchanged |
+| RES-06 | Missing or invalid mpv `vo-delayed-frame-count` and `frame-drop-count` | Use a valid signal when one exists; otherwise report adaptive fallback unavailable, stop polling after bounded retries, and leave the selected MCI path/preferences unchanged |
 | INT-01 | Plex/Jellyfin/Emby/local/SMB/download playback | Same feature contract; credentials never appear in logs/cache keys |
 | INT-02 | Audio passthrough/PCM/Apple audio, subtitle types and offsets | A/V/sub timing retained; rendering capability does not change track selection |
 | INT-03 | Episode transition, multiversion, chapters and Watch Together | Source timeline and explicit play intent preserved |
@@ -90,6 +90,7 @@ count; metrics; confidence interval where meaningful; failures and raw evidence.
 | UX-02 | Scope/title identity/import/export/reset/profile switch | Correct precedence, safe migration, no stale capability claims |
 | UX-03 | Remote/keyboard/touch/screen reader/large text/RTL/CJK | Controls/help/actions reachable and clearly labelled |
 | UX-04 | Requested120/effective60, unsupported HDR/model, temporary load | Clear status; no inactive control masquerading as successful processing |
+| UX-05 | Missing/invalid nominal source rate and variable-frame-rate media | Omit unavailable metadata; distinguish container nominal rate from renderer-reported display rate |
 | SEC-01 | Malformed dimensions/PTS/schema/model metadata/config | Native boundary rejects safely; overflow/fuzz/sanitizer checks |
 | SEC-02 | Modified/truncated/wrong model pack or stale compiled cache | Hash/manifest rejection and known-good fallback; no runtime pickle execution |
 | SEC-03 | Malicious media URL/title/credential in diagnostics | Redacted structured reports; no shell argument construction or media exfiltration |
