@@ -76,6 +76,7 @@ class MotionClarityService {
   double? _currentTargetFps;
   MotionClarityMciQuality _currentMciQuality = MotionClarityMciQuality.balanced;
   MotionClarityPreset _currentPreset = MotionClarityPreset.original;
+  MotionClarityPreset _lastEnabledPreset = MotionClarityPreset.balanced;
   MotionTemporalKernel _currentKernel = MotionTemporalKernel.linear;
   int _currentThresholdPercent = 1;
   String? _statusReason;
@@ -89,9 +90,14 @@ class MotionClarityService {
   MotionClarityService._(this._player);
 
   MotionClarityPreset get currentPreset => _currentPreset;
+  MotionClarityPreset get lastEnabledPreset => _lastEnabledPreset;
   MotionTemporalKernel get currentKernel => _currentKernel;
   int get currentThresholdPercent => _currentThresholdPercent;
+  MotionClarityEngine get currentEngine => _currentEngine;
+  MotionClarityOutputRate get currentOutputRate => _currentOutputRate;
   MotionClarityMciQuality get currentMciQuality => _currentMciQuality;
+  bool get isComparisonBypass => _comparisonBypass;
+  bool get isMotionProcessingActive => _currentPreset.interpolationEnabled && !_comparisonBypass;
 
   /// Call once the player has opened a source, before applying per-item
   /// overrides. Decoder surface pools are allocated at source open.
@@ -295,6 +301,7 @@ class MotionClarityService {
     }
 
     _currentPreset = preset;
+    if (preset.interpolationEnabled) _lastEnabledPreset = preset;
     _currentEngine = MotionClarityEngine.temporalBlend;
     _currentOutputRate = requestedOutputRate;
     _currentMciQuality = requestedMciQuality;
@@ -463,6 +470,7 @@ class MotionClarityService {
     }
 
     _currentPreset = preset;
+    if (preset.interpolationEnabled) _lastEnabledPreset = preset;
     _currentEngine = MotionClarityEngine.motionCompensated;
     _currentOutputRate = outputRate;
     _currentMciQuality = mciQuality;

@@ -1409,6 +1409,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           mciQuality: _motionMciQuality,
         );
         try {
+          if (preset.interpolationEnabled) {
+            await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, _state.metadata, preset);
+          }
           await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, _state.metadata, preset);
         } catch (_) {
           await _motionService.configure(

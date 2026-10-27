@@ -6282,11 +6282,17 @@ class Translations$videoSettings$en {
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
 	/// en: 'Motion & clarity'
 	String get motionClarity => 'Motion & clarity';
+	/// en: 'Motion & clarity. Tap to toggle processing; hold to choose a preset.'
+	String get motionClarityQuickToggle => 'Motion & clarity. Tap to toggle processing; hold to choose a preset.';
+	/// en: 'Motion is on. Tap to turn it off; hold for presets.'
+	String get motionClarityQuickToggleOn => 'Motion is on. Tap to turn it off; hold for presets.';
+	/// en: 'Motion is off. Tap to turn on the last preset; hold for presets.'
+	String get motionClarityQuickToggleOff => 'Motion is off. Tap to turn on the last preset; hold for presets.';
 
 	/// en: 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.'
 	String get motionClarityDescription => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.';
-	/// en: 'Desktop: use the player’s Motion & clarity button. Mobile: open Video settings > Motion & clarity. Presets and A/B comparison work during playback; Custom opens the filter, engine, search-effort and generated-rate controls.'
-	String get motionClarityControlsHint => 'Desktop: use the player’s Motion & clarity button. Mobile: open Video settings > Motion & clarity. Presets and A/B comparison work during playback; Custom opens the filter, engine, search-effort and generated-rate controls.';
+	/// en: 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.'
+	String get motionClarityControlsHint => 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.';
 
 	/// en: 'Original'
 	String get motionClarityOriginal => 'Original';

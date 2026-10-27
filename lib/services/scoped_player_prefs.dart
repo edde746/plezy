@@ -73,6 +73,15 @@ abstract final class ScopedPlayerPrefs {
     (preset) => preset.name,
   );
 
+  /// Remembers the last enabled profile so the player-bar toggle can restore it.
+  static final motionClarityLastPreset = ScopedPlayerPref<MotionClarityPreset>._(
+    'motion_clarity_last_preset',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityLastPreset,
+    _decodeMotionClarityPreset,
+    (preset) => preset.name,
+  );
+
   /// Custom motion controls share the profile's configured scope so per-title
   /// and per-library edits never silently fall back to global kernel values.
   static final motionClarityKernel = ScopedPlayerPref<MotionTemporalKernel>._(

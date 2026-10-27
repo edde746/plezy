@@ -912,6 +912,12 @@ class SettingsService extends BaseSharedPreferencesService {
     values: MotionClarityPreset.values,
     defaultValue: MotionClarityPreset.original,
   );
+  /// Preset restored when the player-bar motion toggle is turned back on.
+  static const motionClarityLastPreset = EnumPref<MotionClarityPreset>(
+    'motion_clarity_last_preset',
+    values: MotionClarityPreset.values,
+    defaultValue: MotionClarityPreset.balanced,
+  );
   static const motionClarityKernel = EnumPref<MotionTemporalKernel>(
     'motion_clarity_kernel',
     values: MotionTemporalKernel.values,
@@ -1211,6 +1217,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
   static final motionClarityScope = PlayerSettingScopePref('motion_clarity_scope', [
     motionClarityPreset,
+    motionClarityLastPreset,
     motionClarityKernel,
     motionClarityThreshold,
     motionClarityEngine,
@@ -1868,6 +1875,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentFrameRate,
     matchContentResolution,
     motionClarityPreset,
+    motionClarityLastPreset,
     motionClarityKernel,
     motionClarityThreshold,
     motionClarityEngine,
