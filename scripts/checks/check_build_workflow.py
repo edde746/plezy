@@ -282,7 +282,10 @@ require(
 
 package_windows = job("package-windows")
 validate_windows_signing(package_windows)
-require("needs: build-windows" in package_windows, "Windows packaging must fan in the matrix")
+require(
+    "needs: [validate-trusted-ref, build-windows]" in package_windows,
+    "Windows packaging must depend on the trust check and complete Windows matrix",
+)
 for artifact in (
     "windows-x64-build",
     "windows-arm64-build",
@@ -292,16 +295,6 @@ for artifact in (
 ):
     require(f"name: {artifact}" in package_windows, f"Windows packaging lost {artifact}")
 
-release_tag_input = re.search(
-    r"(?ms)^      release_tag:\n(?P<body>.*?)(?=^      [A-Za-z0-9_-]+:\n|^env:\n)",
-    text,
-)
-require(
-    release_tag_input is not None
-    and re.search(r"(?m)^        required: false$", release_tag_input.group("body")) is not None
-    and re.search(r"(?m)^        type: string$", release_tag_input.group("body")) is not None,
-    "workflow must expose a release_tag input, validated in full-platform mode",
-)
 require(
     re.search(
         r"(?ms)^      mode:\n.*?        required: true\n"
@@ -341,9 +334,11 @@ require(
 )
 request_resolver = named_step(job("validate-trusted-ref"), "Resolve release request")
 require(
-    'INCLUDE_WEBOS_BUILD=true' in request_resolver
-    and 'INCLUDE_TIZEN_BUILD=true' in request_resolver,
-    "versioned tags must build both ARM TV candidates by default",
+    'INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"' in request_resolver
+    and 'INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"' in request_resolver
+    and '"$REF_TYPE" != "tag"' in request_resolver
+    and '"$RELEASE_TAG" =~ ^v[0-9]+' in request_resolver,
+    "manual release actions must preserve default platform choices and require a v-tag ref",
 )
 require(
     "Validate release tag before building" in job("validate-trusted-ref")
@@ -470,11 +465,19 @@ require(
     ) is not None,
     "platform workflow must require its supported private runner pool",
 )
-require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
-    re.search(r"(?ms)^  push:\n    tags:\n      - ['\"]v\*['\"]", text) is not None
-    and re.search(r"(?m)^  pull_request:", text) is None,
-    "release builds must run only for v* tags, not commits or pull requests",
+    "inputs.build_android" not in text
+    and "inputs.build_ios" not in text
+    and "inputs.build_windows" not in text
+    and "inputs.build_linux" not in text,
+    "full-platform builds must not expose per-platform skip switches",
+)
+workflow_events = re.search(r"(?ms)^on:\n(?P<body>.*?)(?=^env:\n)", text)
+event_body = workflow_events.group("body") if workflow_events else ""
+require(
+    "  workflow_dispatch:" in event_body
+    and re.search(r"(?m)^  (?:push|pull_request|workflow_call):", event_body) is None,
+    "platform builds must be manually dispatched with an explicit action and pool",
 )
 require(
     "if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}"
@@ -486,10 +489,10 @@ require(
 run_name = re.search(r"(?m)^run-name: (.*)$", text)
 run_name_expression = run_name.group(1) if run_name else ""
 require(
-    "github.event_name == 'push'" in run_name_expression
-    and all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag"))
-    and all(marker in run_name_expression for marker in ("action:", "pool:", "tag:")),
-    "run names must expose the action, pool, and tag claim for manual and pushed releases",
+    all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "github.ref_name"))
+    and all(marker in run_name_expression for marker in ("action:", "pool:", "tag:"))
+    and "inputs.action == 'release'" in run_name_expression,
+    "run names must expose the manual action and pool, plus the selected ref for releases",
 )
 
 for action_pool_job in (
@@ -506,7 +509,11 @@ for action_pool_job in (
 ):
     block = job(action_pool_job)
     if action_pool_job == "validate-trusted-ref":
-        gated = "github.event_name == 'push'" in block and "inputs.runner_pool == 'private'" in block
+        gated = (
+            "inputs.runner_pool == 'private'" in block
+            and "inputs.action == 'build'" in block
+            and "inputs.action == 'release'" in block
+        )
     else:
         gated = (
             "needs.validate-trusted-ref.outputs.action == 'build'" in block
@@ -595,10 +602,11 @@ require(
 require(
     "Validate release tag before building" in trusted_ref
     and '"$VERSION" != "$PACKAGE_VERSION"' in trusted_ref
-    and '"$EVENT_NAME" == "push" && "$RELEASE_TAG" != "v$PACKAGE_VERSION"' in trusted_ref
+    and '"$ACTION" == "release" && "$RELEASE_TAG" != "v$PACKAGE_VERSION"' in trusted_ref
     and '"$RUNNER_POOL" != "private"' in trusted_ref
-    and '"$ACTION" != "build"' in trusted_ref,
-    "release tags must be checked against pubspec; action and runner pool must be validated before platform builds start",
+    and '"$ACTION" != "build" && "$ACTION" != "release"' in trusted_ref
+    and '"$REF_TYPE" != "tag"' in request_resolver,
+    "selected release tags must match pubspec, and action/pool/ref must be validated before builds",
 )
 for protected_job in (
     "build-android",

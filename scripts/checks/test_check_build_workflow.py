@@ -187,9 +187,9 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("fetch_linux_libmpv.py", result.stderr)
 
-    def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
+    def test_draft_release_with_tag_mismatched_to_pubspec_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            'if [[ "$VERSION" != "$PACKAGE_VERSION" ]]; then',
+            'if [[ "$ACTION" == "release" && "$RELEASE_TAG" != "v$PACKAGE_VERSION" ]]; then',
             'if false; then',
             1,
         )
@@ -198,7 +198,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("release mode must validate the requested version and pushed v-tag", result.stderr)
+        self.assertIn("selected release tags must match pubspec", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
@@ -211,7 +211,20 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("run names must expose the action, pool, and tag claim for manual and pushed releases", result.stderr)
+        self.assertIn("run names must expose the manual action and pool", result.stderr)
+
+    def test_automatic_release_triggers_are_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "on:\n  workflow_dispatch:\n",
+            "on:\n  push:\n    tags: ['v*']\n  workflow_dispatch:\n",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must be manually dispatched", result.stderr)
 
     def test_build_only_mode_cannot_create_a_draft_release(self) -> None:
         workflow = self._workflow().replace("needs.validate-trusted-ref.outputs.action == 'release' && ", "", 1)

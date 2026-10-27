@@ -26,8 +26,8 @@ def job(name: str) -> str:
 
 require(
     re.search(
-        r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
-        r".*?        required: true\n",
+        r"(?ms)^  workflow_dispatch:\n    inputs:\n.*?^      release_tag:\n"
+        r".*?^        required: true$",
         text,
     )
     is not None,
