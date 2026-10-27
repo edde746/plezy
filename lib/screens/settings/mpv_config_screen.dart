@@ -254,6 +254,10 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with ListenableBindin
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SettingsHelpHint(text: t.mpvConfig.description),
+                    ),
                     _buildConfigEditor(),
                     if (Platform.isLinux) ...[
                       const SizedBox(height: 8),

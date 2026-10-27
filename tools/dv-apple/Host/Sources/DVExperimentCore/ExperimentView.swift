@@ -1,5 +1,6 @@
 import SwiftUI
 import AetherEngine
+import UniformTypeIdentifiers
 
 /// Isolated research host. It neither changes PlezyNG's production Apple
 /// engine nor promotes a selected route into a FEL/output qualification.
@@ -32,12 +33,20 @@ private struct ExperimentView: View {
     @State private var generation = 0
     @State private var errorText: String?
     @State private var requestedRoute = "No source loaded"
+    @State private var fileImporterPresented = false
+    @State private var selectedFileURL: URL?
+    @State private var activeScopedFileURL: URL?
 
     var body: some View {
         VStack(spacing: 12) {
             AetherPlayerSurface(engine: engine)
                 .frame(minHeight: 180)
-            TextField("Local file URL or HTTPS media URL", text: $location)
+            HStack {
+                TextField("HTTPS media URL or choose a local video", text: $location)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Choose file") { fileImporterPresented = true }
+            }
             Toggle("Reconstruct FEL (experimental)", isOn: $reconstruct)
             Text("Experimental metadata attachments are undocumented. A selected route or DV badge does not verify FEL pixels.")
                 .font(.caption)
@@ -55,24 +64,40 @@ private struct ExperimentView: View {
             if let errorText { Text(errorText).foregroundStyle(.red) }
         }
         .padding()
+        .fileImporter(isPresented: $fileImporterPresented,
+                      allowedContentTypes: [.movie, .video],
+                      allowsMultipleSelection: false) { result in
+            do {
+                guard let url = try result.get().first else { return }
+                selectedFileURL = url
+                location = url.absoluteString
+                errorText = nil
+            } catch {
+                errorText = "Could not open the selected file: \(error.localizedDescription)"
+            }
+        }
         .onDisappear { stop() }
     }
 
     private func load() {
-        guard let url = URL(string: location),
+        let importedURL = selectedFileURL?.absoluteString == location ? selectedFileURL : nil
+        guard let url = importedURL ?? URL(string: location),
               url.scheme == "https" || url.isFileURL,
               url.user == nil, url.password == nil else {
-            errorText = "Use a local file URL or HTTPS URL without embedded credentials."
+            errorText = "Choose a local video or use an HTTPS media URL without embedded credentials."
             return
         }
         guard !reconstruct || AetherEngine.OptionalComponent.dualLayerDolbyVision.isBuiltIn else {
             errorText = "This build is missing the dual-layer component."
             return
         }
-        loadTask?.cancel()
+        stop()
         generation += 1
         let epoch = generation
         let selected = reconstruct
+        if url.isFileURL && url.startAccessingSecurityScopedResource() {
+            activeScopedFileURL = url
+        }
         errorText = nil
         requestedRoute = selected ? "Requested: dual-layer FEL experiment" : "Requested: native compatibility"
         loadTask = Task {
@@ -83,7 +108,10 @@ private struct ExperimentView: View {
             } catch is CancellationError {
                 // A newer load or Stop owns the surface now.
             } catch {
-                if generation == epoch { errorText = "Playback failed: \(error.localizedDescription)" }
+                if generation == epoch {
+                    errorText = "Playback failed: \(error.localizedDescription)"
+                    releaseScopedFile()
+                }
             }
         }
     }
@@ -93,5 +121,11 @@ private struct ExperimentView: View {
         loadTask?.cancel()
         loadTask = nil
         engine.stop()
+        releaseScopedFile()
+    }
+
+    private func releaseScopedFile() {
+        activeScopedFileURL?.stopAccessingSecurityScopedResource()
+        activeScopedFileURL = nil
     }
 }

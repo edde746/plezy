@@ -1,6 +1,7 @@
 import java.io.FileInputStream
 import java.util.Properties
 import java.util.UUID
+import java.util.zip.ZipFile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -40,15 +41,103 @@ val mpvAndroid = run {
 val mpvAar = mpvAndroid["aar"] as? Map<String, String>
   ?: throw GradleException("$mpvLockFile artifacts.android has no aar; run scripts/set_native_revision.sh")
 val mpvVerificationFile = rootProject.file("gradle/verification-metadata.xml")
+val allMpvAbis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+val requestedFelAbis = providers.gradleProperty("plezyngFelAbis").orNull?.split(',')?.map(String::trim)
+  ?.also { abis ->
+    if (abis.isEmpty() || abis.any { it !in allMpvAbis } || abis.distinct().size != abis.size) {
+      throw GradleException("plezyngFelAbis must be a comma-separated subset of ${allMpvAbis.joinToString()}")
+    }
+  }
+val mpvAbis = requestedFelAbis ?: allMpvAbis
 if (!mpvVerificationFile.readText().contains("<sha256 value=\"${mpvAar.getValue("checksum")}\"")) {
   throw GradleException(
     "$mpvVerificationFile doesn't check mpv-android against $mpvLockFile's sha256; run scripts/set_native_revision.sh"
   )
 }
-// Local-only path for validating Plezy against an experimental FEL AAR before
-// mpv-build publishes it. Both properties are required, and the file must
-// match the caller-supplied digest. Normal builds continue to resolve and
-// verify the production artifact above.
+repositories {
+  exclusiveContent {
+    forRepository {
+      ivy {
+        name = "mpv-build"
+        url = uri(mpvAndroid.getValue("assetBase") as String)
+        patternLayout { artifact("[artifact]-[revision].[ext]") }
+        metadataSources { artifact() }
+      }
+    }
+    filter { includeModule("edde746", "mpv-android") }
+  }
+}
+// A locally built FEL AAR is selected only by an explicit Gradle property and
+// a matching SHA-256. The Android app and Media3 share FFmpeg from this same
+// archive, so swapping only libmpv cannot accidentally create an ABI split.
+val felAarPath = providers.gradleProperty("plezyngFelAar").orNull
+val felAarSha256 = providers.gradleProperty("plezyngFelAarSha256").orNull
+if (requestedFelAbis != null && felAarPath == null) {
+  throw GradleException("plezyngFelAbis requires an experimental FEL AAR")
+}
+if ((felAarPath == null) != (felAarSha256 == null)) {
+  throw GradleException("Set both -PplezyngFelAar and -PplezyngFelAarSha256 for an experimental FEL build")
+}
+val felAarFile = felAarPath?.let { path ->
+  val file = File(path).canonicalFile
+  if (!file.isFile || file.extension != "aar") {
+    throw GradleException("plezyngFelAar must name an existing .aar file: $file")
+  }
+  if (felAarSha256?.matches(Regex("[0-9a-fA-F]{64}")) != true) {
+    throw GradleException("plezyngFelAarSha256 must be 64 hexadecimal digits")
+  }
+  verifySha256(file, felAarSha256, "experimental FEL AAR")
+  val requiredEntries = buildSet {
+    add("AndroidManifest.xml")
+    add("classes.jar")
+    add("META-INF/plezyng-dv-engine.json")
+    for (abi in mpvAbis) {
+      add("jni/$abi/libplayer.so")
+      add("jni/$abi/libmpv.so")
+      add("jni/$abi/libavcodec.so")
+      add("jni/$abi/libavfilter.so")
+      add("jni/$abi/libavformat.so")
+      add("jni/$abi/libavutil.so")
+      add("jni/$abi/libswscale.so")
+      add("jni/$abi/libswresample.so")
+      add("jni/$abi/libc++_shared.so")
+    }
+  }
+  ZipFile(file).use { archive ->
+    val missing = requiredEntries.filter { archive.getEntry(it) == null }
+    if (missing.isNotEmpty()) {
+      throw GradleException("Experimental FEL AAR is missing required player/Media3 ABI files: ${missing.joinToString()}")
+    }
+    val metadata = archive.getInputStream(archive.getEntry("META-INF/plezyng-dv-engine.json")).bufferedReader().use {
+      groovy.json.JsonSlurper().parseText(it.readText()) as? Map<*, *>
+    } ?: throw GradleException("Experimental FEL AAR has invalid engine metadata")
+    if (metadata["schema_version"] != 1 || metadata["engine_id"] != "plezyng-dv-fel-v1" ||
+      metadata["ffmpeg_headers"] != "META-INF/plezyng-dv/ffmpeg-headers/") {
+      throw GradleException("Experimental FEL AAR metadata does not describe the paired engine and its matching FFmpeg headers")
+    }
+    val declaredAbis = (metadata["abis"] as? List<*>)?.filterIsInstance<String>()?.sorted()
+    if (declaredAbis == null || !declaredAbis.containsAll(mpvAbis)) {
+      throw GradleException("Experimental FEL AAR metadata does not cover requested app ABIs: ${mpvAbis.joinToString()}")
+    }
+    val headerPrefix = metadata["ffmpeg_headers"] as String
+    val headerEntries = archive.entries().asSequence().map { it.name }
+      .filter { it.startsWith(headerPrefix) && !it.endsWith("/") }.toSet()
+    val requiredHeaders = setOf(
+      "${headerPrefix}libavcodec/avcodec.h",
+      "${headerPrefix}libavcodec/mediacodec.h",
+      "${headerPrefix}libavcodec/jni.h",
+      "${headerPrefix}libavutil/avconfig.h",
+      "${headerPrefix}libavutil/channel_layout.h",
+      "${headerPrefix}libswresample/swresample.h",
+    )
+    if (!headerEntries.containsAll(requiredHeaders)) {
+      throw GradleException("Experimental FEL AAR is missing FFmpeg headers required by the shared Media3 bridge: ${(requiredHeaders - headerEntries).joinToString()}")
+    }
+  }
+  file
+}
+// Preserve the newer generic local-AAR override already used by main. The
+// FEL-specific override below adds metadata, shared-header and ABI checks.
 val experimentalMpvAarPath = providers.gradleProperty("plezyExperimentalMpvAar").orNull
 val experimentalMpvAarSha256 = providers.gradleProperty("plezyExperimentalMpvAarSha256").orNull
 val experimentalMpvAar = when {
@@ -66,22 +155,17 @@ val experimentalMpvAar = when {
     file
   }
 }
-repositories {
-  exclusiveContent {
-    forRepository {
-      ivy {
-        name = "mpv-build"
-        url = uri(mpvAndroid.getValue("assetBase") as String)
-        patternLayout { artifact("[artifact]-[revision].[ext]") }
-        metadataSources { artifact() }
-      }
-    }
-    filter { includeModule("edde746", "mpv-android") }
-  }
+if (felAarPath != null && experimentalMpvAar != null) {
+  throw GradleException("Choose either plezyngFelAar or plezyExperimentalMpvAar, not both")
 }
-val mpvAarDependency: Any = experimentalMpvAar?.let { files(it) }
+
+// A local AAR must be wrapped as a Gradle file collection. Passing File
+// directly is not valid dependency notation in the Kotlin DSL; the published
+// Ivy module remains a coordinate as before.
+val selectedLocalMpvAar = felAarFile ?: experimentalMpvAar
+val mpvAarDependency: Any = selectedLocalMpvAar?.let { files(it) }
   ?: "edde746:mpv-android:${mpvAar.getValue("key")}@aar"
-val mpvAarDependencyLabel = experimentalMpvAar?.absolutePath ?: mpvAarDependency.toString()
+val mpvAarDependencyLabel = selectedLocalMpvAar?.absolutePath ?: mpvAarDependency.toString()
 
 // The AAR's native libraries this build reads itself: the FFmpeg libraries the
 // Media3 adapter links (CMake then packages those same bytes), and the libc++
@@ -93,7 +177,6 @@ val mpvAarNatives = configurations.create("mpvAarNatives") {
 val mpvNativeDir = layout.buildDirectory.dir("mpv-android").get().asFile
 val mpvFfmpegJniDir = File(mpvNativeDir, "ffmpeg/jni")
 val mpvLibcxxJniDir = File(mpvNativeDir, "libcxx/jni")
-val mpvAbis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
   from(provider { zipTree(mpvAarNatives.singleFile) }) {
     include("jni/*/libavcodec.so", "jni/*/libavutil.so", "jni/*/libswresample.so")
@@ -108,7 +191,7 @@ val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
   doLast {
     val missing = mpvAbis.map { abi -> File(mpvLibcxxJniDir, "$abi/libc++_shared.so") }.filterNot(File::isFile)
     if (missing.isNotEmpty()) {
-      throw GradleException("$mpvAarDependencyLabel carries no libc++ runtime for: ${missing.joinToString { it.parentFile.name }}")
+      throw GradleException("$mpvAarDependency carries no libc++ runtime for: ${missing.joinToString { it.parentFile.name }}")
     }
   }
 }
@@ -130,9 +213,13 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
   val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
   val libraries = listOf("avcodec", "avutil", "swresample")
   inputs.dir(mpvFfmpegJniDir)
-  inputs.property("ffmpegVersion", mpvFfmpegVersion)
-  inputs.property("sourceUrl", mpvFfmpegSourceUrl)
-  inputs.property("sourceSha256", mpvFfmpegSourceSha256)
+  if (felAarFile != null) {
+    inputs.file(felAarFile)
+  } else {
+    inputs.property("ffmpegVersion", mpvFfmpegVersion)
+    inputs.property("sourceUrl", mpvFfmpegSourceUrl)
+    inputs.property("sourceSha256", mpvFfmpegSourceSha256)
+  }
   outputs.files(
     mpvAbis.flatMap { abi ->
       libraries.map { library -> File(mpvFfmpegDevelopmentDir, "native/$abi/lib$library.so") }
@@ -150,53 +237,95 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       "${mpvFfmpegDevelopmentDir.name}.staging-${UUID.randomUUID()}"
     )
     try {
-      val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.xz")
       val includeDir = File(staging, "include")
       val nativeDir = File(staging, "native")
       staging.mkdirs()
-      try {
-        providers.exec {
-          commandLine("curl", "-sfL", mpvFfmpegSourceUrl, "-o", sourceArchive.absolutePath)
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to download FFmpeg $mpvFfmpegVersion headers", error)
-      }
-      verifySha256(sourceArchive, mpvFfmpegSourceSha256, "FFmpeg $mpvFfmpegVersion source")
-
-      val extractedSource = File(staging, "source").apply { mkdirs() }
-      try {
-        providers.exec {
-          commandLine(
-            "tar",
-            "-xJf",
-            sourceArchive.absolutePath,
-            "--strip-components=1",
-            "-C",
-            extractedSource.absolutePath
-          )
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
-      }
-      listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
-        project.copy {
-          from(File(extractedSource, library)) {
-            include("*.h")
+      val ffmpegIdentity: String
+      if (felAarFile != null) {
+        val headerPrefix = "META-INF/plezyng-dv/ffmpeg-headers/"
+        val sourceCommit = ZipFile(felAarFile).use { archive ->
+          val metadata = archive.getInputStream(archive.getEntry("META-INF/plezyng-dv-engine.json")).bufferedReader().use {
+            groovy.json.JsonSlurper().parseText(it.readText()) as Map<*, *>
           }
-          into(File(includeDir, library))
+          val sourceCommit = metadata["ffmpeg_commit"] as? String
+            ?: throw GradleException("Experimental FEL AAR metadata has no FFmpeg source commit")
+          archive.entries().asSequence()
+            .filter { !it.isDirectory && it.name.startsWith(headerPrefix) }
+            .forEach { entry ->
+              val relative = entry.name.removePrefix(headerPrefix)
+              if (relative.isBlank() || relative.split('/').any { it == ".." }) {
+                throw GradleException("Experimental FEL AAR contains an unsafe FFmpeg header path")
+              }
+              val destination = File(includeDir, relative).canonicalFile
+              if (!destination.toPath().startsWith(includeDir.canonicalFile.toPath())) {
+                throw GradleException("Experimental FEL AAR FFmpeg header escapes its include directory")
+              }
+              destination.parentFile.mkdirs()
+              archive.getInputStream(entry).use { input ->
+                destination.outputStream().use { output -> input.copyTo(output) }
+              }
+            }
+          sourceCommit
         }
+        val requiredHeaders = listOf(
+          "libavcodec/avcodec.h", "libavcodec/mediacodec.h", "libavcodec/jni.h",
+          "libavutil/avconfig.h", "libavutil/channel_layout.h", "libswresample/swresample.h"
+        )
+        val missingHeaders = requiredHeaders.map { File(includeDir, it) }.filterNot(File::isFile)
+        if (missingHeaders.isNotEmpty()) {
+          throw GradleException("Experimental FEL AAR is missing matching FFmpeg headers: ${missingHeaders.joinToString()}")
+        }
+        ffmpegIdentity = sourceCommit
+      } else {
+        val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.xz")
+        try {
+          providers.exec {
+            commandLine("curl", "-sfL", mpvFfmpegSourceUrl, "-o", sourceArchive.absolutePath)
+          }.result.get().assertNormalExitValue()
+        } catch (error: Exception) {
+          throw GradleException("Failed to download FFmpeg $mpvFfmpegVersion headers", error)
+        }
+        verifySha256(sourceArchive, mpvFfmpegSourceSha256, "FFmpeg $mpvFfmpegVersion source")
+
+        val extractedSource = File(staging, "source").apply { mkdirs() }
+        try {
+          providers.exec {
+            commandLine(
+              "tar",
+              "-xJf",
+              sourceArchive.absolutePath,
+              "--no-same-owner",
+              "--strip-components=1",
+              "-C",
+              extractedSource.absolutePath
+            )
+          }.result.get().assertNormalExitValue()
+        } catch (error: Exception) {
+          throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
+        }
+        listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
+          project.copy {
+            from(File(extractedSource, library)) {
+              include("*.h")
+            }
+            into(File(includeDir, library))
+          }
+        }
+        File(includeDir, "libavutil/avconfig.h").writeText(
+          """
+          |/* Generated for Plezy's little-endian Android ABIs. */
+          |#ifndef AVUTIL_AVCONFIG_H
+          |#define AVUTIL_AVCONFIG_H
+          |#define AV_HAVE_BIGENDIAN 0
+          |#define AV_HAVE_FAST_UNALIGNED 0
+          |#endif /* AVUTIL_AVCONFIG_H */
+          |
+          """.trimMargin()
+        )
+        sourceArchive.delete()
+        extractedSource.deleteRecursively()
+        ffmpegIdentity = "$mpvFfmpegVersion:$mpvFfmpegSourceSha256"
       }
-      File(includeDir, "libavutil/avconfig.h").writeText(
-        """
-        |/* Generated for Plezy's little-endian Android ABIs. */
-        |#ifndef AVUTIL_AVCONFIG_H
-        |#define AVUTIL_AVCONFIG_H
-        |#define AV_HAVE_BIGENDIAN 0
-        |#define AV_HAVE_FAST_UNALIGNED 0
-        |#endif /* AVUTIL_AVCONFIG_H */
-        |
-        """.trimMargin()
-      )
 
       project.copy {
         from(mpvFfmpegJniDir) {
@@ -215,10 +344,8 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
         )
       }
       File(staging, ".manifest").writeText(
-        "ffmpeg=$mpvFfmpegVersion\nsourceSha256=$mpvFfmpegSourceSha256\n"
+        "ffmpeg=$ffmpegIdentity\n"
       )
-      sourceArchive.delete()
-      extractedSource.deleteRecursively()
       promoteDirectory(staging, mpvFfmpegDevelopmentDir)
     } finally {
       staging.deleteRecursively()
@@ -246,25 +373,32 @@ val doviArtifacts = mapOf(
     "eba59678f89b792f5c6f802962e237542fe8328f6aa03a0a90ee77353dac3194"
   )
 )
+// A local engine AAR may intentionally contain only the ABI being qualified.
+// Download and validate just the matching libdovi archive for that build.
+val requiredDoviArtifacts = if (felAarFile != null) {
+  doviArtifacts.filterKeys { it in mpvAbis }
+} else {
+  doviArtifacts
+}
 val doviBaseUrl = "https://github.com/edde746/libdovi-builds/releases/download/v$doviVersion"
 
 val downloadLibdovi = tasks.register("downloadLibdovi") {
   val manifest = File(doviDir, ".manifest")
   inputs.property("version", doviVersion)
   inputs.property("baseUrl", doviBaseUrl)
-  doviArtifacts.forEach { (abi, artifact) ->
+  requiredDoviArtifacts.forEach { (abi, artifact) ->
     inputs.property("$abi.triple", artifact.first)
     inputs.property("$abi.sha256", artifact.second)
     inputs.property("$abi.sourceUrl", "$doviBaseUrl/libdovi-${artifact.first}.tar.gz")
   }
-  outputs.files(doviArtifacts.keys.map { abi -> File(doviDir, "$abi/lib/libdovi.a") } + manifest)
+  outputs.files(requiredDoviArtifacts.keys.map { abi -> File(doviDir, "$abi/lib/libdovi.a") } + manifest)
   doLast {
     doviDir.parentFile.mkdirs()
     val staging = File(doviDir.parentFile, "${doviDir.name}.staging-${UUID.randomUUID()}")
     try {
       staging.mkdirs()
       val downloads = File(staging, ".downloads").apply { mkdirs() }
-      doviArtifacts.forEach { (abi, artifact) ->
+      requiredDoviArtifacts.forEach { (abi, artifact) ->
         val (triple, expectedSha256) = artifact
         val archiveName = "libdovi-$triple.tar.gz"
         val archive = File(downloads, archiveName)
@@ -281,7 +415,10 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
         val outDir = File(staging, "$abi/lib").apply { mkdirs() }
         try {
           providers.exec {
-            commandLine("tar", "-xzf", archive.absolutePath, "-C", outDir.absolutePath)
+            // Release archives preserve the packager's uid/gid. This build
+            // runs unprivileged on CI and in development containers, where
+            // restoring those owners makes GNU tar exit nonzero.
+            commandLine("tar", "-xzf", archive.absolutePath, "--no-same-owner", "-C", outDir.absolutePath)
           }.result.get().assertNormalExitValue()
         } catch (error: Exception) {
           throw GradleException("Failed to extract $archiveName", error)
@@ -295,7 +432,7 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
       }
       val manifestText = buildString {
         append("version=$doviVersion\n")
-        doviArtifacts.forEach { (abi, artifact) ->
+        requiredDoviArtifacts.forEach { (abi, artifact) ->
           append("$abi=${artifact.first},${artifact.second}\n")
         }
       }
@@ -331,11 +468,26 @@ android {
 
   defaultConfig {
     applicationId = "org.snapetech.plezyng"
+    if (felAarFile != null) {
+      // Keep experimental native builds installable beside the signed app.
+      // This avoids asking testers to uninstall their normal client and lose
+      // its local state just to try a locally built FEL engine.
+      applicationIdSuffix = ".dvfel"
+      versionNameSuffix = "-dvfel"
+    }
     minSdk = 25 // Fire OS 6.x (API 25); the mpv-android AAR shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
     versionName = flutter.versionName
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    buildConfigField("boolean", "PLEZYNG_DV_FEL_EXPERIMENTAL", if (felAarFile != null) "true" else "false")
+
+    if (felAarFile != null) {
+      ndk {
+        abiFilters.clear()
+        abiFilters += mpvAbis
+      }
+    }
 
     externalNativeBuild {
       cmake {
@@ -347,7 +499,7 @@ android {
       }
     }
 
-    if (System.getenv("AMAZON") != null) {
+    if (System.getenv("AMAZON") != null && felAarFile == null) {
       versionCode = (flutter.versionCode ?: 0) + 3000
       ndk {
         abiFilters += listOf("armeabi-v7a", "arm64-v8a")
@@ -508,9 +660,7 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 }
 
 dependencies {
-  if (findProject(":moonlight") != null) implementation(project(":moonlight"))
-  if (findProject(":steam") != null) implementation(project(":steam"))
-  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
   // mpv-build's mpv-android library: libmpv, FFmpeg and the JNI glue with
   // its Kotlin API (com.edde746.mpv).

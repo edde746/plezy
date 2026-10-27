@@ -1,0 +1,57 @@
+--- a/platforms/android/lib/src/main/cpp/main.cpp
++++ b/platforms/android/lib/src/main/cpp/main.cpp
+@@ -60,6 +60,7 @@
+     // native methods with RegisterNatives - see consumer-rules.pro. Resolved
+     // here, on a Java-entered thread whose class loader sees app classes;
+     // libavcodec's own threads could not FindClass it.
++#if !defined(PLEZYNG_DV_FEL_ENGINE)
+     jclass bridge = env->FindClass("com/edde746/mpv/MediaCodecCallbackBridge");
+     if (bridge) {
+       jobject global_bridge = env->NewGlobalRef(bridge);
+@@ -68,6 +69,7 @@
+     } else {
+       env->ExceptionClear();
+     }
++#endif
+
+     init_methods_cache(env);
+   });
+--- a/platforms/android/lib/src/main/cpp/render.cpp
++++ b/platforms/android/lib/src/main/cpp/render.cpp
+@@ -80,8 +80,14 @@
+     return MPV_ERROR_NOMEM;
+   }
+
++#if defined(PLEZYNG_DV_FEL_ENGINE)
++  // The FEL experiment renders subtitles in gpu-next on the video Surface.
++  // The upstream Android MediaCodec OSD option is not part of this mpv port.
++  int result = 0;
++#else
+   int64_t osd_wid = static_cast<int64_t>(reinterpret_cast<uintptr_t>(next_osd));
+   int result = mpv_set_option(guard.mpv, "vo-mediacodec-osd-surface", MPV_FORMAT_INT64, &osd_wid);
++#endif
+   if (result < 0) {
+     if (!same_video) env->DeleteGlobalRef(next_surface);
+     if (!same_osd && next_osd) env->DeleteGlobalRef(next_osd);
+@@ -98,9 +104,11 @@
+     result = mpv_set_option(guard.mpv, "wid", MPV_FORMAT_INT64, &wid);
+   }
+   if (result < 0) {
++#if !defined(PLEZYNG_DV_FEL_ENGINE)
+     osd_wid = static_cast<int64_t>(reinterpret_cast<uintptr_t>(s.osd_surface));
+     const int rollback = mpv_set_option(guard.mpv, "vo-mediacodec-osd-surface", MPV_FORMAT_INT64, &osd_wid);
+     if (rollback < 0) ALOGE("OSD surface rollback failed: %s", mpv_error_string(rollback));
++#endif
+     if (!same_video) env->DeleteGlobalRef(next_surface);
+     return result;
+   }
+--- a/platforms/android/lib/src/main/cpp/CMakeLists.txt
++++ b/platforms/android/lib/src/main/cpp/CMakeLists.txt
+@@ -54,6 +54,7 @@
+   CXX_STANDARD_REQUIRED ON
+   CXX_EXTENSIONS OFF)
+ target_include_directories(player PRIVATE "${MPV_NATIVE_INCLUDE_DIR}")
++target_compile_definitions(player PRIVATE PLEZYNG_DV_FEL_ENGINE=1)
+ # The prefix map keeps the checkout path out of the binary, so the same sources
+ # build to the same bytes wherever they are checked out.
+ target_compile_options(player PRIVATE -Wall -Werror "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")

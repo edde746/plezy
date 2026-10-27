@@ -1321,9 +1321,18 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
               pref: SettingsService.heroCardTapAction,
               icon: Symbols.touch_app_rounded,
               title: t.homeLayout.tapHeroCard,
+              description: t.homeLayout.tapHeroCardDescription,
               segments: [
-                ButtonSegment(value: HeroCardTapAction.play, label: Text(t.common.play)),
-                ButtonSegment(value: HeroCardTapAction.details, label: Text(t.homeLayout.openDetails)),
+                ButtonSegment(
+                  value: HeroCardTapAction.play,
+                  label: Text(t.common.play),
+                  tooltip: t.homeLayout.heroTapPlayDescription,
+                ),
+                ButtonSegment(
+                  value: HeroCardTapAction.details,
+                  label: Text(t.homeLayout.openDetails),
+                  tooltip: t.homeLayout.heroTapDetailsDescription,
+                ),
               ],
             ),
             SettingSwitchTile(

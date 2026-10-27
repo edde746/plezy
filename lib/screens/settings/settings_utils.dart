@@ -19,6 +19,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/scroll_ink_boundary.dart';
+import '../../widgets/settings_section.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
 
@@ -66,6 +67,29 @@ void showSettingsFailure(
   if (context.mounted) showErrorSnackBar(context, t.settings.saveFailed);
 }
 
+/// Consistent title and help affordance for settings dialogs.
+class SettingsDialogTitle extends StatelessWidget {
+  final String title;
+  final String? description;
+
+  const SettingsDialogTitle({super.key, required this.title, this.description});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title),
+        if (description != null && description!.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          SettingsHelpHint(text: description!),
+        ],
+      ],
+    );
+  }
+}
+
 /// Runs [body] and reports the recoverable failures that every settings
 /// file/platform operation shares — [PlatformException], [FileSystemException]
 /// and the site-specific domain exception [E] — through [showSettingsFailure].
@@ -108,6 +132,7 @@ void _popDialogIfCurrent<T>(BuildContext dialogContext, [T? result]) {
 void _showSettingsInputDialog({
   required BuildContext context,
   required String title,
+  String? description,
   required _SettingsDialogContentBuilder contentBuilder,
   required Future<bool> Function(BuildContext dialogContext) onSave,
   _SettingsDialogActionsBuilder? leadingActionsBuilder,
@@ -117,6 +142,7 @@ void _showSettingsInputDialog({
     context: context,
     builder: (_) => _SettingsInputDialog(
       title: title,
+      description: description,
       contentBuilder: contentBuilder,
       onSave: onSave,
       leadingActionsBuilder: leadingActionsBuilder,
@@ -127,6 +153,7 @@ void _showSettingsInputDialog({
 
 class _SettingsInputDialog extends StatefulWidget {
   final String title;
+  final String? description;
   final _SettingsDialogContentBuilder contentBuilder;
   final Future<bool> Function(BuildContext dialogContext) onSave;
   final _SettingsDialogActionsBuilder? leadingActionsBuilder;
@@ -134,6 +161,7 @@ class _SettingsInputDialog extends StatefulWidget {
 
   const _SettingsInputDialog({
     required this.title,
+    this.description,
     required this.contentBuilder,
     required this.onSave,
     this.leadingActionsBuilder,
@@ -170,7 +198,7 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.title),
+      title: SettingsDialogTitle(title: widget.title, description: widget.description),
       content: widget.contentBuilder(context, context, setState, _saveFocusNode),
       actions: [
         ...?widget.leadingActionsBuilder?.call(context, setState),
@@ -190,6 +218,7 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
 Future<DialogOption<T>?> showSelectionDialog<T>({
   required BuildContext context,
   required String title,
+  String? description,
   required List<DialogOption<T>> options,
   required T currentValue,
   bool searchable = false,
@@ -197,14 +226,19 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
   if (searchable) {
     return showScopedDialog<DialogOption<T>>(
       context: context,
-      builder: (_) => _SearchableSelectionDialog<T>(title: title, options: options, currentValue: currentValue),
+      builder: (_) => _SearchableSelectionDialog<T>(
+        title: title,
+        description: description,
+        options: options,
+        currentValue: currentValue,
+      ),
     );
   }
   final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<DialogOption<T>>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Text(title),
+      title: SettingsDialogTitle(title: title, description: description),
       contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
       content: ScrollInkBoundary(
         child: SingleChildScrollView(
@@ -234,9 +268,15 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
 
 class _SearchableSelectionDialog<T> extends StatefulWidget {
   final String title;
+  final String? description;
   final List<DialogOption<T>> options;
   final T currentValue;
-  const _SearchableSelectionDialog({required this.title, required this.options, required this.currentValue});
+  const _SearchableSelectionDialog({
+    required this.title,
+    this.description,
+    required this.options,
+    required this.currentValue,
+  });
   @override
   State<_SearchableSelectionDialog<T>> createState() => _SearchableSelectionDialogState<T>();
 }
@@ -264,7 +304,8 @@ class _SearchableSelectionDialogState<T> extends State<_SearchableSelectionDialo
         .toList();
     return AlertDialog(
       scrollable: true,
-      title: Text(widget.title),
+      title: SettingsDialogTitle(title: widget.title, description: widget.description),
+
       content: SizedBox(
         width: double.maxFinite,
         height:
@@ -356,6 +397,7 @@ class _SearchableSelectionDialogState<T> extends State<_SearchableSelectionDialo
 void showChecklistDialog<T>({
   required BuildContext context,
   required String title,
+  required String description,
   required List<DialogOption<T>> options,
   required Set<T> checked,
   Set<T> locked = const {},
@@ -368,6 +410,7 @@ void showChecklistDialog<T>({
   _showSettingsInputDialog(
     context: context,
     title: title,
+    description: description,
     contentBuilder: (_, _, setDialogState, _) => ScrollInkBoundary(
       child: SingleChildScrollView(
         child: Column(
@@ -416,6 +459,7 @@ void showChecklistDialog<T>({
 void showNumericInputDialog({
   required BuildContext context,
   required String title,
+  required String description,
   required String labelText,
   required String suffixText,
   required int min,
@@ -431,6 +475,7 @@ void showNumericInputDialog({
     _showNumericInputDialogTV(
       context: context,
       title: title,
+      description: description,
       suffixText: suffixText,
       min: min,
       max: max,
@@ -443,6 +488,7 @@ void showNumericInputDialog({
     _showNumericInputDialogStandard(
       context: context,
       title: title,
+      description: description,
       labelText: labelText,
       suffixText: suffixText,
       min: min,
@@ -458,6 +504,7 @@ void showNumericInputDialog({
 void _showNumericInputDialogTV({
   required BuildContext context,
   required String title,
+  required String description,
   required String suffixText,
   required int min,
   required int max,
@@ -471,6 +518,7 @@ void _showNumericInputDialogTV({
   _showSettingsInputDialog(
     context: context,
     title: title,
+    description: description,
     contentBuilder: (dialogContext, context, setDialogState, saveFocusNode) {
       return Column(
         mainAxisSize: .min,
@@ -514,6 +562,7 @@ void _showNumericInputDialogTV({
 void _showNumericInputDialogStandard({
   required BuildContext context,
   required String title,
+  required String description,
   required String labelText,
   required String suffixText,
   required int min,
@@ -529,6 +578,7 @@ void _showNumericInputDialogStandard({
   _showSettingsInputDialog(
     context: context,
     title: title,
+    description: description,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return FocusableTextField(
         controller: controller,
@@ -603,6 +653,7 @@ String colorToHex(Color color) {
 void showColorInputDialog({
   required BuildContext context,
   required String title,
+  required String description,
   required String currentHex,
   required Future<void> Function(String hex) onSave,
   ValueChanged<String>? onPreview,
@@ -612,6 +663,7 @@ void showColorInputDialog({
     _showColorInputDialogTV(
       context: context,
       title: title,
+      description: description,
       currentHex: currentHex,
       onSave: onSave,
       onPreview: onPreview,
@@ -622,6 +674,7 @@ void showColorInputDialog({
       _showColorInputDialogStandard(
         context: context,
         title: title,
+        description: description,
         currentHex: currentHex,
         onSave: onSave,
       ).whenComplete(() => onPreviewEnd?.call()),
@@ -632,6 +685,7 @@ void showColorInputDialog({
 Future<void> _showColorInputDialogStandard({
   required BuildContext context,
   required String title,
+  required String description,
   required String currentHex,
   required Future<void> Function(String hex) onSave,
 }) async {
@@ -639,7 +693,7 @@ Future<void> _showColorInputDialogStandard({
   final selected = await showColorPickerDialog(
     context,
     initial,
-    title: Text(title),
+    title: SettingsDialogTitle(title: title, description: description),
     barrierColor: Colors.black54,
     width: 40,
     height: 40,
@@ -674,6 +728,7 @@ Future<void> _showColorInputDialogStandard({
 void _showColorInputDialogTV({
   required BuildContext context,
   required String title,
+  required String description,
   required String currentHex,
   required Future<void> Function(String hex) onSave,
   ValueChanged<String>? onPreview,
@@ -683,6 +738,7 @@ void _showColorInputDialogTV({
   _showSettingsInputDialog(
     context: context,
     title: title,
+    description: description,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return TvColorPicker(
         initialColor: picked,
@@ -704,6 +760,7 @@ void _showColorInputDialogTV({
 void showRegexInputDialog({
   required BuildContext context,
   required String title,
+  String? description,
   required String currentValue,
   required String defaultValue,
   required Future<void> Function(String value) onSave,
@@ -722,6 +779,7 @@ void showRegexInputDialog({
   _showSettingsInputDialog(
     context: context,
     title: title,
+    description: description,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       dialogState = setDialogState;
       return FocusableTextField(

@@ -27,6 +27,9 @@ class AccessibilitySettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(t.accessibility.textSize, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  SettingsHelpHint(text: t.accessibility.textSizeDescription),
+                  const SizedBox(height: 6),
                   FocusableSlider(
                     value: value,
                     min: 1,
@@ -49,6 +52,7 @@ class AccessibilitySettingsScreen extends StatelessWidget {
             pref: SettingsService.boldInterfaceText,
             icon: Symbols.format_bold_rounded,
             title: t.accessibility.boldText,
+            subtitle: t.accessibility.boldTextHint,
           ),
           SettingSwitchTile(
             pref: SettingsService.highContrast,

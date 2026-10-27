@@ -23,6 +23,7 @@ import 'trakt_settings_screen.dart';
 class TrackerServiceInfo {
   final TrackerService service;
   final String displayName;
+  final String description;
 
   /// Which brand mark to draw; the asset path itself lives only in
   /// `CatalogSourceLogo`.
@@ -37,6 +38,7 @@ class TrackerServiceInfo {
   const TrackerServiceInfo({
     required this.service,
     required this.displayName,
+    required this.description,
     required this.logoSource,
     required this.ratingSource,
     required this.isConnected,
@@ -49,6 +51,7 @@ class TrackerServiceInfo {
   /// carries the name and the [TrackersProvider] accessors.
   TrackerServiceInfo.shared(
     TrackerConfig config, {
+    required this.description,
     required this.logoSource,
     required this.ratingSource,
     required this.startConnection,
@@ -64,6 +67,7 @@ class TrackerServiceInfo {
     TrackerServiceInfo(
       service: TrackerService.trakt,
       displayName: t.trakt.title,
+      description: t.services.trackerDescriptions.trakt,
       logoSource: CatalogSourceId.trakt,
       ratingSource: TraktTracker.instance,
       isConnected: (context) => context.watch<TrackersProvider>().isTraktConnected,
@@ -73,24 +77,28 @@ class TrackerServiceInfo {
     ),
     TrackerServiceInfo.shared(
       TrackerConfig.mal(),
+      description: t.services.trackerDescriptions.mal,
       logoSource: CatalogSourceId.mal,
       ratingSource: MalTracker.instance,
       startConnection: startMalConnection,
     ),
     TrackerServiceInfo.shared(
       TrackerConfig.anilist(),
+      description: t.services.trackerDescriptions.anilist,
       logoSource: CatalogSourceId.anilist,
       ratingSource: AnilistTracker.instance,
       startConnection: startAnilistConnection,
     ),
     TrackerServiceInfo.shared(
       TrackerConfig.simkl(),
+      description: t.services.trackerDescriptions.simkl,
       logoSource: CatalogSourceId.simkl,
       ratingSource: SimklTracker.instance,
       startConnection: startSimklConnection,
     ),
     TrackerServiceInfo.shared(
       TrackerConfig.mdblist(),
+      description: t.services.trackerDescriptions.mdblist,
       logoSource: CatalogSourceId.mdblist,
       ratingSource: MdblistTracker.instance,
       startConnection: startMdblistConnection,

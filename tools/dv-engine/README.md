@@ -9,9 +9,11 @@ P8.1 or deliberately discard the enhancement layer. Native DV HDMI transport and
 proprietary display-mapper equivalence are separate.
 
 The first recipe targets native Linux x86_64/aarch64 with OpenGL. The workflow
-builds x86_64. Vulkan/D3D11, Windows, Apple, Android and webOS packages still need
-their own toolchain/adapters and qualification. The production mpv-build patches
-have **not** been rebased into this engine; treat app playback as an experiment.
+builds x86_64. An experimental ARM64 Android FEL AAR/APK build now has a
+separate native builder; see [phone testing](../../docs/maintainers/dv-phone-test.md).
+Vulkan/D3D11, Windows, Apple and webOS packages still need their own toolchains
+or adapters and qualification. Production mpv-build patches have **not** been
+rebased into the Android experiment; treat its app playback as experimental.
 
 ## Build
 
@@ -340,4 +342,4 @@ for examples, device boundaries, and the distinction from offline companions.
 
 ## Native port preparation
 
-[Native FEL ports](../../docs/maintainers/dv-native-ports.md) documents the Windows D3D11 builder and HDR/SDR launcher, explicit Windows app engine selection, Apple device-SDK builds, and production patch-series audit for Android/Apple/Linux/Windows. These are experimental preparations; Android and webOS do not gain a full-FEL player from this change.
+[Native FEL ports](../../docs/maintainers/dv-native-ports.md) documents the Windows D3D11 builder and HDR/SDR launcher, explicit Windows app engine selection, Apple device-SDK builds, and production patch-series audit for Android/Apple/Linux/Windows. Android has an experimental client-side FEL route and a checksum-verified ARM64 AAR/APK test build, but device output remains unqualified; neither Android nor webOS is claimed to provide universal full-FEL playback.

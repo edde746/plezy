@@ -10,6 +10,7 @@ import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/scroll_ink_boundary.dart';
+import '../widgets/settings_section.dart';
 import 'focus_utils.dart';
 
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
@@ -550,6 +551,7 @@ typedef OptionPickerToggle = ({String label, IconData? icon, bool value, ValueCh
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
+  String? description,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
   List<OptionPickerToggle> toggles = const [],
@@ -559,6 +561,7 @@ Future<T?> showOptionPickerDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(
       title: title,
+      description: description,
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
@@ -569,6 +572,7 @@ Future<T?> showOptionPickerDialog<T>(
 
 class _OptionPickerDialog<T> extends StatefulWidget {
   final String title;
+  final String? description;
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
@@ -576,6 +580,7 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
   const _OptionPickerDialog({
     required this.title,
+    this.description,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
@@ -617,7 +622,17 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
     }
 
     return SimpleDialog(
-      title: Text(widget.title),
+      title: widget.description == null
+          ? Text(widget.title)
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.title),
+                const SizedBox(height: 10),
+                SettingsHelpHint(text: widget.description!),
+              ],
+            ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
       constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),

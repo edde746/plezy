@@ -109,6 +109,7 @@ class GeneralSettingsScreen extends StatelessWidget {
         final picked = await showSelectionDialog<String>(
           context: context,
           title: t.settings.language,
+          description: t.settings.languageDescription,
           searchable: true,
           options: [
             DialogOption(value: '', title: t.settings.followSystem),
@@ -154,6 +155,7 @@ class GeneralSettingsScreen extends StatelessWidget {
         final picked = await showSelectionDialog<String>(
           context: context,
           title: t.settings.regionFormat,
+          description: t.settings.regionFormatDescription,
           currentValue: current,
           searchable: true,
           options: [
@@ -187,6 +189,7 @@ class GeneralSettingsScreen extends StatelessWidget {
         final picked = await showSelectionDialog<String>(
           context: context,
           title: t.settings.metadataLanguage,
+          description: t.settings.metadataLanguageDescription,
           currentValue: SettingsService.instance.read(SettingsService.metadataLocale),
           searchable: true,
           options: [
@@ -221,9 +224,20 @@ class GeneralSettingsScreen extends StatelessWidget {
     pref: SettingsService.startupSection,
     icon: Symbols.start_rounded,
     title: t.settings.startupSection,
+    description: t.settings.startupSectionDescription,
     subtitleBuilder: _startupSectionLabel,
-    options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
+    options: _startupSectionOptions
+        .map((id) => DialogOption(value: id, title: _startupSectionLabel(id), subtitle: _startupSectionDescription(id)))
+        .toList(),
   );
+
+  String _startupSectionDescription(NavigationTabId id) => switch (id) {
+    NavigationTabId.discover => t.settings.startupSectionOptions.discover,
+    NavigationTabId.libraries => t.settings.startupSectionOptions.libraries,
+    NavigationTabId.liveTv => t.settings.startupSectionOptions.liveTv,
+    NavigationTabId.search => t.settings.startupSectionOptions.search,
+    _ => t.settings.startupSectionDescription,
+  };
 }
 
 class _PreferredServerTile extends StatelessWidget {
@@ -258,6 +272,7 @@ class _PreferredServerTile extends StatelessWidget {
         final picked = await showSelectionDialog<String>(
           context: context,
           title: t.settings.preferredServer,
+          description: t.settings.preferredServerDescription,
           options: [
             DialogOption(value: '', title: t.settings.preferredServerAutomatic),
             for (final id in ids) DialogOption(value: id, title: manager.serverDisplayName(ServerId(id))),

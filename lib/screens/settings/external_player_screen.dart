@@ -129,6 +129,11 @@ class _PlayerTile extends StatelessWidget {
     return FocusableListTile(
       leading: leading,
       title: Text(player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
+      subtitle: Text(
+        player.id == 'system_default'
+            ? t.externalPlayer.systemDefaultDescription
+            : t.externalPlayer.playerOptionDescription(player: player.name),
+      ),
       trailing: Row(
         mainAxisSize: .min,
         children: [
@@ -228,6 +233,7 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
               decoration: InputDecoration(
                 labelText: t.externalPlayer.playerName,
                 hintText: t.externalPlayer.playerNameHint,
+                helperText: t.externalPlayer.playerNameDescription,
               ),
               autofocus: true,
               textInputAction: TextInputAction.next,
@@ -240,8 +246,15 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
                   ButtonSegment(
                     value: CustomPlayerType.command,
                     label: Text(Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand),
+                    tooltip: Platform.isAndroid
+                        ? t.externalPlayer.playerPackageDescription
+                        : t.externalPlayer.playerCommandDescription,
                   ),
-                  ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
+                  ButtonSegment(
+                    value: CustomPlayerType.urlScheme,
+                    label: Text(t.externalPlayer.playerUrlScheme),
+                    tooltip: t.externalPlayer.playerUrlSchemeDescription,
+                  ),
                 ],
                 selected: _selectedType,
                 onChanged: (value) => setState(() => _selectedType = value),
@@ -251,7 +264,15 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
             FocusableTextField(
               controller: _valueController,
               focusNode: _valueFocusNode,
-              decoration: InputDecoration(labelText: label, hintText: hint),
+              decoration: InputDecoration(
+                labelText: label,
+                hintText: hint,
+                helperText: _selectedType == CustomPlayerType.urlScheme
+                    ? t.externalPlayer.playerUrlSchemeDescription
+                    : Platform.isAndroid
+                    ? t.externalPlayer.playerPackageDescription
+                    : t.externalPlayer.playerCommandDescription,
+              ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _saveFocusNode.requestFocus(),
             ),

@@ -181,7 +181,11 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
     final picked = await showSelectionDialog<settings.ThemeMode?>(
       context: context,
       title: t.themeEditor.startFrom,
-      options: [for (final mode in _sourceThemes) DialogOption(value: mode, title: themeModeLabel(mode))],
+      description: t.themeEditor.startFromDescription,
+      options: [
+        for (final mode in _sourceThemes)
+          DialogOption(value: mode, title: themeModeLabel(mode), subtitle: _themeSourceDescription(mode)),
+      ],
       currentValue: null,
     );
     final palette = picked?.value == null ? null : ThemeProvider.paletteFor(picked!.value!);
@@ -191,6 +195,18 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
       _syncEditedColor();
     });
   }
+
+  String _themeSourceDescription(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.light => t.themeEditor.themeLightDescription,
+    settings.ThemeMode.dark => t.themeEditor.themeDarkDescription,
+    settings.ThemeMode.oled => t.themeEditor.themeOledDescription,
+    settings.ThemeMode.ember => t.themeEditor.themeEmberDescription,
+    settings.ThemeMode.glacier => t.themeEditor.themeGlacierDescription,
+    settings.ThemeMode.forest => t.themeEditor.themeForestDescription,
+    settings.ThemeMode.plum => t.themeEditor.themePlumDescription,
+    settings.ThemeMode.paper => t.themeEditor.themePaperDescription,
+    _ => t.themeEditor.themeSystemDescription,
+  };
 
   void _reset() {
     setState(() {
@@ -337,6 +353,10 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
     List<PaletteContrastCheck> slotWarnings,
   ) {
     return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: SettingsHelpHint(text: t.themeEditor.editorDescription),
+      ),
       SettingsGroup(
         children: [
           FocusableListTile(

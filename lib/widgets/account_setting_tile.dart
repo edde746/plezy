@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../screens/settings/settings_utils.dart';
 import 'app_icon.dart';
 import 'focusable_list_tile.dart';
+import 'settings_section.dart';
 
 /// Settings rows for values stored on a media-server account instead of in
 /// `SettingsService`.
@@ -82,7 +83,7 @@ class AccountSettingSwitchTile extends StatefulWidget {
   final bool? value;
 
   final String title;
-  final String? subtitle;
+  final String subtitle;
   final IconData icon;
 
   /// Performs the write. Must complete with an error when the write failed:
@@ -98,7 +99,7 @@ class AccountSettingSwitchTile extends StatefulWidget {
     required this.title,
     required this.icon,
     required this.onChanged,
-    this.subtitle,
+    required this.subtitle,
     this.enabled = true,
     this.focusNode,
   });
@@ -118,7 +119,7 @@ class _AccountSettingSwitchTileState extends State<AccountSettingSwitchTile>
       focusNode: widget.focusNode,
       secondary: AppIcon(widget.icon, fill: 1),
       title: Text(widget.title),
-      subtitle: widget.subtitle != null ? Text(widget.subtitle!) : null,
+      subtitle: SettingsHelpHint(text: widget.subtitle),
       value: shownValue ?? false,
       onChanged: widget.enabled ? (next) => commit(next, widget.onChanged) : null,
     );
@@ -133,6 +134,7 @@ class AccountSettingSelectionTile<T extends Object> extends StatefulWidget {
 
   final IconData icon;
   final String title;
+  final String description;
 
   /// Builds the row subtitle. Receives `null` when the account has no value.
   final String Function(T? value) subtitleBuilder;
@@ -149,6 +151,7 @@ class AccountSettingSelectionTile<T extends Object> extends StatefulWidget {
     required this.value,
     required this.icon,
     required this.title,
+    required this.description,
     required this.subtitleBuilder,
     required this.options,
     required this.onChanged,
@@ -174,6 +177,7 @@ class _AccountSettingSelectionTileState<T extends Object> extends State<AccountS
     final picked = await showSelectionDialog<T?>(
       context: context,
       title: widget.title,
+      description: widget.description,
       options: widget.options,
       currentValue: current,
     );
@@ -188,9 +192,14 @@ class _AccountSettingSelectionTileState<T extends Object> extends State<AccountS
       focusNode: widget.focusNode,
       leading: AppIcon(widget.icon, fill: 1),
       title: Text(widget.title),
-      subtitle: Text(widget.subtitleBuilder(shownValue)),
+      subtitle: SettingsHelpHint(text: _accountSettingSummary(widget.subtitleBuilder(shownValue), widget.description)),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: _pick,
     );
   }
+}
+
+String _accountSettingSummary(String value, String description) {
+  if (description.isEmpty || value.contains(description)) return value;
+  return '$value · $description';
 }

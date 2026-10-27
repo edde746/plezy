@@ -52,6 +52,14 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
     };
   }
 
+  String _assOverrideDescription(SubAssOverride value) => switch (value) {
+    SubAssOverride.no => t.subtitlingStyling.assOverrideOptions.no,
+    SubAssOverride.yes => t.subtitlingStyling.assOverrideOptions.yes,
+    SubAssOverride.scale => t.subtitlingStyling.assOverrideOptions.scale,
+    SubAssOverride.force => t.subtitlingStyling.assOverrideOptions.force,
+    SubAssOverride.strip => t.subtitlingStyling.assOverrideOptions.strip,
+  };
+
   String _formatPosition(int value) {
     if (value == 0) return t.subtitlingStyling.positionTop;
     if (value == 100) return t.subtitlingStyling.positionBottom;
@@ -69,6 +77,15 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
     };
   }
 
+  String _renderResolutionDescription(SubtitleRenderResolution value) => switch (value) {
+    SubtitleRenderResolution.screen => t.subtitlingStyling.renderResolutionOptions.screen,
+    SubtitleRenderResolution.video => t.subtitlingStyling.renderResolutionOptions.video,
+    SubtitleRenderResolution.threeQuarter => t.subtitlingStyling.renderResolutionOptions.threeQuarter,
+    SubtitleRenderResolution.half => t.subtitlingStyling.renderResolutionOptions.half,
+    SubtitleRenderResolution.third => t.subtitlingStyling.renderResolutionOptions.third,
+    SubtitleRenderResolution.quarter => t.subtitlingStyling.renderResolutionOptions.quarter,
+  };
+
   @override
   Widget build(BuildContext context) {
     // Each backend exposes its own text-subtitle placement preference.
@@ -83,8 +100,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               pref: SettingsService.subAssOverride,
               icon: Symbols.subtitles_rounded,
               title: t.subtitlingStyling.assOverride,
+              description: t.subtitlingStyling.assOverrideDescription,
               subtitleBuilder: _assOverrideLabel,
-              options: SubAssOverride.values.map((v) => DialogOption(value: v, title: _assOverrideLabel(v))).toList(),
+              options: SubAssOverride.values
+                  .map((v) => DialogOption(value: v, title: _assOverrideLabel(v), subtitle: _assOverrideDescription(v)))
+                  .toList(),
             ),
             // Apple avfoundation VO: screen vs video-resolution basis.
             if (Platform.isIOS || Platform.isMacOS)
@@ -92,11 +112,17 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
+                description: t.subtitlingStyling.renderResolutionDescription,
                 subtitleBuilder: _renderResolutionLabel,
-                options: const [
-                  SubtitleRenderResolution.screen,
-                  SubtitleRenderResolution.video,
-                ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
+                options: const [SubtitleRenderResolution.screen, SubtitleRenderResolution.video]
+                    .map(
+                      (v) => DialogOption(
+                        value: v,
+                        title: _renderResolutionLabel(v),
+                        subtitle: _renderResolutionDescription(v),
+                      ),
+                    )
+                    .toList(),
               ),
             // Android libass overlay: full or a fractional render scale (perf knob for
             // render-bound low-end TVs; heavy/animated signs raster faster at < 1).
@@ -105,14 +131,24 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
+                description: t.subtitlingStyling.renderResolutionDescription,
                 subtitleBuilder: _renderResolutionLabel,
-                options: const [
-                  SubtitleRenderResolution.screen,
-                  SubtitleRenderResolution.threeQuarter,
-                  SubtitleRenderResolution.half,
-                  SubtitleRenderResolution.third,
-                  SubtitleRenderResolution.quarter,
-                ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
+                options:
+                    const [
+                          SubtitleRenderResolution.screen,
+                          SubtitleRenderResolution.threeQuarter,
+                          SubtitleRenderResolution.half,
+                          SubtitleRenderResolution.third,
+                          SubtitleRenderResolution.quarter,
+                        ]
+                        .map(
+                          (v) => DialogOption(
+                            value: v,
+                            title: _renderResolutionLabel(v),
+                            subtitle: _renderResolutionDescription(v),
+                          ),
+                        )
+                        .toList(),
               ),
             SettingNumberTile(
               pref: SettingsService.subtitleFontSize,
@@ -120,7 +156,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleFontSize.key, null),
               icon: Symbols.format_size_rounded,
               title: t.subtitlingStyling.fontSize,
+              description: t.subtitlingStyling.fontSizeDescription,
               subtitleBuilder: (v) => formatDecimal(v, maximumDecimals: 0),
+
               labelText: t.subtitlingStyling.fontSize,
               suffixText: '',
             ),
@@ -130,6 +168,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleTextColor.key, null),
               icon: Symbols.format_color_text_rounded,
               title: t.subtitlingStyling.textColor,
+              description: t.subtitlingStyling.textColorDescription,
             ),
             SettingNumberTile(
               pref: SettingsService.subtitlePosition,
@@ -137,6 +176,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitlePosition.key, null),
               icon: Symbols.vertical_align_bottom_rounded,
               title: t.subtitlingStyling.position,
+              description: t.subtitlingStyling.positionDescription,
               subtitleBuilder: _formatPosition,
               labelText: t.subtitlingStyling.position,
               suffixText: '%',
@@ -159,11 +199,13 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               pref: SettingsService.subtitleBold,
               icon: Symbols.format_bold_rounded,
               title: t.subtitlingStyling.bold,
+              subtitle: t.subtitlingStyling.boldDescription,
             ),
             SettingSwitchTile(
               pref: SettingsService.subtitleItalic,
               icon: Symbols.format_italic_rounded,
               title: t.subtitlingStyling.italic,
+              subtitle: t.subtitlingStyling.italicDescription,
             ),
           ],
         ),
@@ -177,7 +219,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBorderSize.key, null),
               icon: Symbols.border_style_rounded,
               title: t.subtitlingStyling.borderSize,
+              description: t.subtitlingStyling.borderSizeDescription,
               subtitleBuilder: (v) => formatDecimal(v, maximumDecimals: 0),
+
               labelText: t.subtitlingStyling.borderSize,
               suffixText: '',
             ),
@@ -187,6 +231,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBorderColor.key, null),
               icon: Symbols.border_color_rounded,
               title: t.subtitlingStyling.borderColor,
+              description: t.subtitlingStyling.borderColorDescription,
             ),
           ],
         ),
@@ -200,6 +245,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBackgroundOpacity.key, null),
               icon: Symbols.opacity_rounded,
               title: t.subtitlingStyling.backgroundOpacity,
+              description: t.subtitlingStyling.backgroundOpacityDescription,
               subtitleBuilder: (v) => formatPercent(v / 100),
               labelText: t.subtitlingStyling.backgroundOpacity,
               suffixText: '%',
@@ -210,6 +256,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBackgroundColor.key, null),
               icon: Symbols.format_color_fill_rounded,
               title: t.subtitlingStyling.backgroundColor,
+              description: t.subtitlingStyling.backgroundColorDescription,
             ),
           ],
         ),

@@ -256,6 +256,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.seekTimeSmall,
         icon: Symbols.replay_10_rounded,
         title: t.settings.smallSkipDuration,
+        description: t.settings.smallSkipDurationDescription,
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
@@ -264,6 +265,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.seekTimeLarge,
         icon: Symbols.replay_30_rounded,
         title: t.settings.largeSkipDuration,
+        description: t.settings.largeSkipDurationDescription,
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
@@ -272,6 +274,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.rewindOnResume,
         icon: Symbols.replay_rounded,
         title: t.settings.rewindOnResume,
+        description: t.settings.rewindOnResumeDescription,
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
@@ -280,6 +283,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.sleepTimerDuration,
         icon: Symbols.bedtime_rounded,
         title: t.settings.defaultSleepTimer,
+        description: t.settings.defaultSleepTimerDescription,
         subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v),
         labelText: t.settings.minutesLabel,
         suffixText: t.settings.minutesShort,
@@ -321,9 +325,22 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: pref,
     icon: icon,
     title: title,
+    description: t.settings.rememberPlayerChangesDescription,
     subtitleBuilder: (scope) => '${_playerScopeLabel(scope)} · ${t.settings.rememberPlayerChangesDescription}',
-    options: PlayerSettingScope.values.map((s) => DialogOption(value: s, title: _playerScopeLabel(s))).toList(),
+    options: PlayerSettingScope.values
+        .map(
+          (scope) =>
+              DialogOption(value: scope, title: _playerScopeLabel(scope), subtitle: _playerScopeDescription(scope)),
+        )
+        .toList(),
   );
+
+  String _playerScopeDescription(PlayerSettingScope scope) => switch (scope) {
+    PlayerSettingScope.off => t.settings.scopeOffDescription,
+    PlayerSettingScope.global => t.settings.scopeGlobalDescription,
+    PlayerSettingScope.library => t.settings.scopeLibraryDescription,
+    PlayerSettingScope.title => t.settings.scopeTitleDescription,
+  };
 
   String _playerScopeLabel(PlayerSettingScope scope) => switch (scope) {
     PlayerSettingScope.off => t.settings.playerScopeOff,
@@ -369,8 +386,17 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.specialsOrdering,
         icon: Symbols.low_priority_rounded,
         title: t.settings.specialsOrdering,
+        description: t.settings.specialsOrderingDescription,
         subtitleBuilder: (mode) => '${_specialsOrderingLabel(mode)} · ${t.settings.specialsOrderingDescription}',
-        options: SpecialsOrdering.values.map((m) => DialogOption(value: m, title: _specialsOrderingLabel(m))).toList(),
+        options: SpecialsOrdering.values
+            .map(
+              (mode) => DialogOption(
+                value: mode,
+                title: _specialsOrderingLabel(mode),
+                subtitle: _specialsOrderingDescription(mode),
+              ),
+            )
+            .toList(),
       ),
       if (!isMobile)
         SettingSwitchTile(
@@ -402,6 +428,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     SpecialsOrdering.specialsLast => t.settings.specialsOrderingLast,
   };
 
+  String _specialsOrderingDescription(SpecialsOrdering mode) => switch (mode) {
+    SpecialsOrdering.respectServer => t.settings.specialsOrderingServerDescription,
+    SpecialsOrdering.airDate => t.settings.specialsOrderingAirDateDescription,
+    SpecialsOrdering.specialsLast => t.settings.specialsOrderingLastDescription,
+  };
+
   Widget _autoPlayAndSkipGroup() => SettingsGroup(
     title: t.settings.autoPlayAndSkip,
     children: [
@@ -429,6 +461,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.playNextCountdown,
         icon: Symbols.timer_rounded,
         title: t.settings.playNextCountdown,
+        description: t.settings.playNextCountdownDescription,
         subtitleBuilder: (v) => v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
@@ -437,22 +470,46 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.skipIntroMode,
         icon: Symbols.fast_forward_rounded,
         title: t.settings.skipIntroMode,
+        description: t.settings.skipIntroModeDescription,
         subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipIntroModeDescription(mode)}',
-        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
+        options: SkipMarkerMode.values
+            .map(
+              (mode) => DialogOption(
+                value: mode,
+                title: _skipMarkerModeLabel(mode),
+                subtitle: _skipIntroModeDescription(mode),
+              ),
+            )
+            .toList(),
       ),
       SettingSelectionTile<SkipMarkerMode>(
         pref: SettingsService.skipCreditsMode,
         icon: Symbols.skip_next_rounded,
         title: t.settings.skipCreditsMode,
+        description: t.settings.skipCreditsModeDescription,
         subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipCreditsModeDescription(mode)}',
-        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
+        options: SkipMarkerMode.values
+            .map(
+              (mode) => DialogOption(
+                value: mode,
+                title: _skipMarkerModeLabel(mode),
+                subtitle: _skipCreditsModeDescription(mode),
+              ),
+            )
+            .toList(),
       ),
       SettingSelectionTile<SkipMarkerMode>(
         pref: SettingsService.skipAdsMode,
         icon: Symbols.fast_forward_rounded,
         title: t.settings.skipAdsMode,
+        description: t.settings.skipAdsModeDescription,
         subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipAdsModeDescription(mode)}',
-        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
+        options: SkipMarkerMode.values
+            .map(
+              (mode) =>
+                  DialogOption(value: mode, title: _skipMarkerModeLabel(mode), subtitle: _skipAdsModeDescription(mode)),
+            )
+            .toList(),
       ),
       SettingSwitchTile(
         pref: SettingsService.forceSkipMarkerFallback,
@@ -470,7 +527,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.autoSkipDelay,
         icon: Symbols.timer_rounded,
         title: t.settings.autoSkipDelay,
+        description: t.settings.autoSkipDelaySettingDescription,
         subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v),
+
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -561,14 +620,15 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               SettingNavigationTile(
                 icon: Symbols.video_library_rounded,
                 title: t.settings.prerollLibrary,
-                subtitle: library?.title ?? t.settings.prerollLibraryNotSet,
+                subtitle:
+                    '${library?.title ?? t.settings.prerollLibraryNotSet} · ${t.settings.prerollLibraryDescription}',
                 onTap: () => _showPrerollLibraryPicker(context, libraries),
               ),
             if (enabled && library != null)
               SettingNavigationTile(
                 icon: Symbols.checklist_rounded,
                 title: t.settings.prerollSelection,
-                subtitle: selectionSubtitle,
+                subtitle: '$selectionSubtitle · ${t.settings.prerollSelectionDescription}',
                 onTap: () => _showPrerollItemPicker(context, library!),
               ),
           ],
@@ -585,6 +645,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     final picked = await showOptionPickerDialog<MediaLibrary>(
       context,
       title: t.settings.prerollLibrary,
+      description: t.settings.prerollLibraryDescription,
       options: [for (final library in libraries) (icon: null, label: library.title, value: library)],
     );
     if (picked == null) return;
@@ -652,9 +713,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.useExoPlayer,
     icon: Symbols.play_circle_rounded,
     title: t.settings.playerBackend,
+    description: t.settings.playerBackendDescription,
     segments: [
-      ButtonSegment(value: true, label: Text(t.settings.exoPlayer)),
-      ButtonSegment(value: false, label: Text(t.settings.mpv)),
+      ButtonSegment(value: true, label: Text(t.settings.exoPlayer), tooltip: t.settings.exoPlayerDescription),
+      ButtonSegment(value: false, label: Text(t.settings.mpv), tooltip: t.settings.mpvDescription),
     ],
   );
 
@@ -668,10 +730,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         icon: Symbols.open_in_new_rounded,
         title: t.externalPlayer.title,
         subtitle: !useExt
-            ? t.externalPlayer.off
+            ? '${t.externalPlayer.off} · ${t.externalPlayer.description}'
             : !player.isAvailable
-            ? t.externalPlayer.selectPlayer
-            : (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
+            ? '${t.externalPlayer.selectPlayer} · ${t.externalPlayer.description}'
+            : '${player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name} · ${t.externalPlayer.description}',
         destinationBuilder: (_) => const ExternalPlayerScreen(),
       );
     },
@@ -726,6 +788,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.deinterlaceMode,
     icon: Symbols.deblur_rounded,
     title: t.settings.deinterlace,
+    description: t.settings.deinterlaceDescription,
     subtitleBuilder: (mode) => '${_deinterlaceModeLabel(mode)} · ${t.settings.deinterlaceDescription}',
     options: [
       DialogOption(
@@ -779,6 +842,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.audioChannelLimit,
     icon: Symbols.speaker_group_rounded,
     title: t.settings.audioChannelLimit,
+    description: t.settings.audioChannelLimitDescription,
     subtitleBuilder: (limit) =>
         '${audioChannelLimitLabel(exoActive ? limit.onExoPlayer : limit)} · ${t.settings.audioChannelLimitDescription}',
     options: [
@@ -791,7 +855,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.downmixCenterBoost,
     icon: Symbols.record_voice_over_rounded,
     title: t.settings.downmixCenterBoost,
+    description: t.settings.downmixCenterBoostDescription,
     subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: formatDecimal(v, maximumDecimals: 0)),
+
     labelText: t.settings.downmixCenterBoostLabel,
     suffixText: t.settings.downmixCenterBoostShort,
   );
@@ -807,8 +873,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.maxVolume,
     icon: Symbols.volume_up_rounded,
     title: t.settings.maxVolume,
+    description: t.settings.maxVolumeDescription,
     subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: formatDecimal(v, maximumDecimals: 0)),
-    labelText: t.settings.maxVolumeDescription,
+    labelText: t.settings.maxVolumeInputLabel,
+
     suffixText: '%',
   );
 
@@ -818,6 +886,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.displaySwitchDelay,
     icon: Symbols.timer_rounded,
     title: t.settings.displaySwitchDelay,
+    description: t.settings.displaySwitchDelayDescription,
     subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
     labelText: t.settings.secondsLabel,
     suffixText: t.settings.secondsShort,
@@ -841,11 +910,25 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.dvConversionMode,
     icon: Symbols.hdr_strong_rounded,
     title: t.settings.dvConversionMode,
+    description: t.settings.dvConversionModeDescription,
     subtitleBuilder: (mode) => '${_dvConversionModeLabel(mode)} · ${t.settings.dvConversionModeDescription}',
     options: DvConversionModePreference.values
-        .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
+        .map(
+          (mode) => DialogOption(
+            value: mode,
+            title: _dvConversionModeLabel(mode),
+            subtitle: _dvConversionModeDescription(mode),
+          ),
+        )
         .toList(),
   );
+
+  String _dvConversionModeDescription(DvConversionModePreference mode) => switch (mode) {
+    DvConversionModePreference.auto => t.settings.dvConversionAutoDescription,
+    DvConversionModePreference.disabled => t.settings.dvConversionNativeDescription,
+    DvConversionModePreference.dv81 => t.settings.dvConversionDv81Description,
+    DvConversionModePreference.hevcStrip => t.settings.dvConversionHevcStripDescription,
+  };
 
   String _dvConversionModeLabel(DvConversionModePreference mode) => switch (mode) {
     DvConversionModePreference.auto => t.settings.dvConversionAuto,
@@ -858,6 +941,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.hdrSdrConversion,
     icon: Symbols.tonality_rounded,
     title: t.settings.hdrSdrConversion,
+    description: t.settings.hdrSdrConversionDescription,
     subtitleBuilder: (mode) => '${_hdrSdrConversionLabel(mode)} · ${t.settings.hdrSdrConversionDescription}',
     options: [
       DialogOption(
@@ -888,9 +972,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.playbackBufferTier,
     icon: Symbols.hourglass_top_rounded,
     title: t.settings.playbackBuffer,
+    description: t.settings.playbackBufferDescription,
     subtitleBuilder: (tier) => '${_playbackBufferLabel(tier)} · ${t.settings.playbackBufferDescription}',
     options: PlaybackBufferTier.values
-        .map((tier) => DialogOption(value: tier, title: _playbackBufferLabel(tier)))
+        .map(
+          (tier) =>
+              DialogOption(value: tier, title: _playbackBufferLabel(tier), subtitle: _playbackBufferDescription(tier)),
+        )
         .toList(),
   );
 
@@ -899,6 +987,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.streamBufferMb,
     icon: Symbols.memory_rounded,
     title: t.settings.streamBufferSize,
+    description: exoActive
+        ? '${t.settings.streamBufferSizeDescription} · ${t.settings.streamBufferSizeExoNote}'
+        : t.settings.streamBufferSizeDescription,
     subtitleBuilder: (v) => [
       v == 0 ? t.settings.playbackBufferAuto : t.settings.streamBufferSizeValue(size: v),
       t.settings.streamBufferSizeDescription,
@@ -914,13 +1005,26 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     PlaybackBufferTier.extraLarge => t.settings.playbackBufferExtraLarge,
   };
 
+  String _playbackBufferDescription(PlaybackBufferTier tier) => switch (tier) {
+    PlaybackBufferTier.auto => t.settings.playbackBufferAutoDescription,
+    PlaybackBufferTier.large => t.settings.playbackBufferLargeDescription,
+    PlaybackBufferTier.extraLarge => t.settings.playbackBufferExtraLargeDescription,
+  };
+
   Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset>(
     pref: SettingsService.defaultQualityPreset,
     icon: Symbols.high_quality_rounded,
     title: t.settings.defaultQualityTitle,
+    description: t.settings.defaultQualityDescription,
     subtitleBuilder: qualityPresetLabel,
     options: TranscodeQualityPreset.displayOrder
-        .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
+        .map(
+          (preset) => DialogOption(
+            value: preset,
+            title: qualityPresetLabel(preset),
+            subtitle: _qualityPresetDescription(preset),
+          ),
+        )
         .toList(),
   );
 
@@ -928,11 +1032,20 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.cellularQualityPreset,
     icon: Symbols.signal_cellular_alt_rounded,
     title: t.settings.cellularQualityTitle,
+    description: t.settings.cellularQualityDescription,
     subtitleBuilder: (p) => p == null ? t.settings.cellularQualitySameAsDefault : qualityPresetLabel(p),
     options: [
-      DialogOption<TranscodeQualityPreset?>(value: null, title: t.settings.cellularQualitySameAsDefault),
+      DialogOption<TranscodeQualityPreset?>(
+        value: null,
+        title: t.settings.cellularQualitySameAsDefault,
+        subtitle: t.settings.qualityPresetSameAsDefaultDescription,
+      ),
       ...TranscodeQualityPreset.displayOrder.map(
-        (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
+        (preset) => DialogOption<TranscodeQualityPreset?>(
+          value: preset,
+          title: qualityPresetLabel(preset),
+          subtitle: _qualityPresetDescription(preset),
+        ),
       ),
     ],
   );
@@ -941,14 +1054,27 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.remoteQualityPreset,
     icon: Symbols.public_rounded,
     title: t.settings.remoteQualityTitle,
+    description: t.settings.remoteQualityDescription,
     subtitleBuilder: (p) => p == null ? t.settings.remoteQualitySameAsDefault : qualityPresetLabel(p),
     options: [
-      DialogOption<TranscodeQualityPreset?>(value: null, title: t.settings.remoteQualitySameAsDefault),
+      DialogOption<TranscodeQualityPreset?>(
+        value: null,
+        title: t.settings.remoteQualitySameAsDefault,
+        subtitle: t.settings.qualityPresetSameAsDefaultDescription,
+      ),
       ...TranscodeQualityPreset.displayOrder.map(
-        (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
+        (preset) => DialogOption<TranscodeQualityPreset?>(
+          value: preset,
+          title: qualityPresetLabel(preset),
+          subtitle: _qualityPresetDescription(preset),
+        ),
       ),
     ],
   );
+
+  String _qualityPresetDescription(TranscodeQualityPreset preset) => preset.isOriginal
+      ? t.settings.qualityPresetOriginalDescription
+      : t.settings.qualityPresetTranscodeOptionDescription;
 
   // Plex-only effect: MediaBrowser servers make the equivalent
   // direct-play-vs-transcode call server-side (#2152, #2193).
@@ -969,7 +1095,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         DialogOption(
           value: codec.id,
           title: CodecUtils.formatVideoCodec(codec.id),
-          subtitle: codec.isRefusable ? null : t.settings.videoCodecsAlwaysAccepted,
+          subtitle: codec.isRefusable ? t.settings.videoCodecOptionDescription : t.settings.videoCodecsAlwaysAccepted,
         ),
     ],
     locked: {
@@ -982,8 +1108,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.musicQualityPreset,
     icon: Symbols.music_note_rounded,
     title: t.settings.musicQualityTitle,
+    description: t.settings.musicQualityDescription,
     subtitleBuilder: _musicQualityLabel,
-    options: AudioQualityPreset.values.map((p) => DialogOption(value: p, title: _musicQualityLabel(p))).toList(),
+    options: AudioQualityPreset.values
+        .map(
+          (preset) => DialogOption(
+            value: preset,
+            title: _musicQualityLabel(preset),
+            subtitle: preset.isOriginal
+                ? t.settings.musicQualityOriginalDescription
+                : t.settings.musicQualityTranscodeOptionDescription,
+          ),
+        )
+        .toList(),
   );
 
   String _musicQualityLabel(AudioQualityPreset preset) =>
@@ -1061,7 +1198,11 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
     final pickerHeight = (availableHeight - 220).clamp(0.0, 560.0).toDouble();
     return AlertDialog(
       scrollable: true,
-      title: Text(t.settings.prerollItemPicker),
+      title: SettingsDialogTitle(
+        title: t.settings.prerollItemPicker,
+        description: t.settings.prerollSelectionDescription,
+      ),
+
       content: SizedBox(
         width: double.maxFinite,
         height: pickerHeight,

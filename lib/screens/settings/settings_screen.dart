@@ -379,7 +379,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       builder: (context, themeProvider, _) => SettingValueBuilder<int>(
         pref: settings.SettingsService.libraryDensity,
         builder: (context, libraryDensity, _) {
-          final summary = '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.libraryDensity} $libraryDensity';
+          final summary =
+              '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.libraryDensity} $libraryDensity · ${t.settings.appearanceDescription}';
           return SettingNavigationTile(
             focusNode: _focusTracker.get(_kAppearance),
             icon: Symbols.palette_rounded,
@@ -421,7 +422,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             if (info.isConnected(context)) info.displayName,
           if (seerr.isConnected) t.services.names.seerr,
         ];
-        final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
+        final subtitle = connectedNames.isEmpty
+            ? t.settings.servicesDescription
+            : '${connectedNames.join(' · ')} · ${t.settings.servicesDescription}';
         return SettingNavigationTile(
           focusNode: _focusTracker.get(_kServices),
           icon: Symbols.sync_rounded,
@@ -466,9 +469,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   /// with. Hidden when no account is reachable — an empty picker is noise.
   Widget _buildAccountPreferencesTile(BuildContext context) {
     final accounts = context.select<AccountPreferencesController, List<AccountPreferenceAccount>>((c) => c.accounts);
-    final subtitle = accounts.length == 1
+    final accountSummary = accounts.length == 1
         ? t.accountPreferences.hubSubtitleSingle(account: accounts.single.target.label)
         : t.accountPreferences.hubSubtitleMultiple(count: accounts.length);
+    final subtitle = '$accountSummary · ${t.accountPreferences.hubDescription}';
     return SettingNavigationTile(
       focusNode: _focusTracker.get(_kAccountPreferences),
       icon: Symbols.manage_accounts_rounded,
@@ -519,7 +523,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
-                subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
+                subtitle: Text(
+                  '$currentPath · ${t.settings.downloadLocationDescription}',
+                  maxLines: 3,
+                  overflow: .ellipsis,
+                ),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
               );
@@ -537,9 +545,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           pref: settings.SettingsService.downloadQualityPreset,
           icon: Symbols.high_quality_rounded,
           title: t.settings.downloadQuality,
+          description: t.settings.downloadQualityDescription,
           subtitleBuilder: (p) => '${qualityPresetLabel(p)} · ${t.settings.downloadQualityDescription}',
           options: TranscodeQualityPreset.displayOrder
-              .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
+              .map(
+                (p) => DialogOption(
+                  value: p,
+                  title: qualityPresetLabel(p),
+                  subtitle: p.isOriginal
+                      ? t.settings.qualityPresetOriginalDescription
+                      : t.settings.qualityPresetTranscodeOptionDescription,
+                ),
+              )
               .toList(),
         ),
         SettingSwitchTile(
@@ -806,6 +823,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             focusNode: _focusTracker.get(_kCheckForUpdates),
             icon: Symbols.system_update_rounded,
             title: t.settings.checkForUpdates,
+            subtitle: t.settings.checkForUpdatesDescription,
             onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
           ),
           _buildAutoCheckUpdatesOnStartupTile(),

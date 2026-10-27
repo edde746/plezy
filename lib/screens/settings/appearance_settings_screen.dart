@@ -141,12 +141,15 @@ class AppearanceSettingsScreen extends StatelessWidget {
               pref: SettingsService.contentScreensaverDelayMinutes,
               icon: Symbols.timer_rounded,
               title: t.settings.contentScreensaverDelay,
+              description: t.settings.contentScreensaverDelayDescription,
               subtitleBuilder: (minutes) => '${formatDecimal(minutes, maximumDecimals: 0)} ${t.settings.minutesShort}',
+
               options: [
                 for (final minutes in [1, 5, 10, 15, 30, 60])
                   DialogOption(
                     value: minutes,
                     title: '${formatDecimal(minutes, maximumDecimals: 0)} ${t.settings.minutesShort}',
+                    subtitle: t.settings.contentScreensaverDelayOptionDescription,
                   ),
               ],
             ),
@@ -155,11 +158,15 @@ class AppearanceSettingsScreen extends StatelessWidget {
               builder: (context, selectedLibraries, _) => SettingNavigationTile(
                 icon: Symbols.video_library_rounded,
                 title: t.settings.contentScreensaverLibraries,
-                subtitle: selectedLibraries.isEmpty
-                    ? t.settings.contentScreensaverAllLibraries
-                    : selectedLibraries.contains('__none__')
-                    ? t.settings.contentScreensaverNoLibraries
-                    : t.settings.contentScreensaverSelectedLibraries(count: formatCount(selectedLibraries.length)),
+                subtitle: [
+                  selectedLibraries.isEmpty
+                      ? t.settings.contentScreensaverAllLibraries
+                      : selectedLibraries.contains('__none__')
+                      ? t.settings.contentScreensaverNoLibraries
+                      : t.settings.contentScreensaverSelectedLibraries(count: formatCount(selectedLibraries.length)),
+                  t.settings.contentScreensaverLibrariesDescription,
+                ].join(' · '),
+
                 destinationBuilder: (_) => const ContentScreensaverLibrariesScreen(),
               ),
             ),
@@ -167,6 +174,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               pref: SettingsService.continueWatchingRowSize,
               icon: Symbols.photo_size_select_large_rounded,
               title: t.settings.continueWatchingRowSize,
+              description: t.settings.continueWatchingRowSizeDescription,
               subtitleBuilder: (size) => t.settings.continueWatchingRowSizeValue(
                 label: switch (size) {
                   ContinueWatchingRowSize.compact => t.settings.rowSizeCompact,
@@ -175,9 +183,21 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 },
               ),
               options: [
-                DialogOption(value: ContinueWatchingRowSize.compact, title: t.settings.rowSizeCompact),
-                DialogOption(value: ContinueWatchingRowSize.standard, title: t.settings.rowSizeStandard),
-                DialogOption(value: ContinueWatchingRowSize.large, title: t.settings.rowSizeLarge),
+                DialogOption(
+                  value: ContinueWatchingRowSize.compact,
+                  title: t.settings.rowSizeCompact,
+                  subtitle: t.settings.rowSizeCompactDescription,
+                ),
+                DialogOption(
+                  value: ContinueWatchingRowSize.standard,
+                  title: t.settings.rowSizeStandard,
+                  subtitle: t.settings.rowSizeStandardDescription,
+                ),
+                DialogOption(
+                  value: ContinueWatchingRowSize.large,
+                  title: t.settings.rowSizeLarge,
+                  subtitle: t.settings.rowSizeLargeDescription,
+                ),
               ],
             ),
             _continueWatchingActionSelector(),
@@ -298,7 +318,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return SettingNavigationTile(
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
-          subtitle: themeModeLabel(themeProvider.themeMode),
+          subtitle: '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.themeDescription}',
           destinationBuilder: (_) => const ThemeSettingsScreen(),
         );
       },
@@ -323,6 +343,11 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Text(t.settings.libraryDensity, style: settingsOptionTitleStyle(context)),
                 ],
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 40),
+                child: SettingsHelpHint(text: t.settings.libraryDensityDescription),
               ),
               const SizedBox(height: 12),
               FocusableSlider(
@@ -367,6 +392,11 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 40),
+                child: SettingsHelpHint(text: t.settings.displayScaleDescription),
+              ),
               const SizedBox(height: 12),
               FocusableSlider(
                 value: scale,
@@ -400,6 +430,11 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   Text(formatPercent(volume / 100), style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 40),
+                child: SettingsHelpHint(text: t.settings.themeSongVolumeDescription),
+              ),
               const SizedBox(height: 12),
               FocusableSlider(
                 value: volume,
@@ -419,9 +454,10 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.viewMode,
     icon: Symbols.view_list_rounded,
     title: t.settings.viewMode,
+    description: t.settings.viewModeDescription,
     segments: [
-      ButtonSegment(value: ViewMode.grid, label: Text(t.settings.gridView)),
-      ButtonSegment(value: ViewMode.list, label: Text(t.settings.listView)),
+      ButtonSegment(value: ViewMode.grid, label: Text(t.settings.gridView), tooltip: t.settings.gridViewDescription),
+      ButtonSegment(value: ViewMode.list, label: Text(t.settings.listView), tooltip: t.settings.listViewDescription),
     ],
   );
 
@@ -429,10 +465,23 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.gridSpacing,
     icon: Symbols.padding_rounded,
     title: t.settings.gridSpacing,
+    description: t.settings.gridSpacingDescription,
     segments: [
-      ButtonSegment(value: GridSpacing.tight, label: Text(t.settings.gridSpacingTight)),
-      ButtonSegment(value: GridSpacing.normal, label: Text(t.settings.gridSpacingNormal)),
-      ButtonSegment(value: GridSpacing.spacious, label: Text(t.settings.gridSpacingSpacious)),
+      ButtonSegment(
+        value: GridSpacing.tight,
+        label: Text(t.settings.gridSpacingTight),
+        tooltip: t.settings.gridSpacingTightDescription,
+      ),
+      ButtonSegment(
+        value: GridSpacing.normal,
+        label: Text(t.settings.gridSpacingNormal),
+        tooltip: t.settings.gridSpacingNormalDescription,
+      ),
+      ButtonSegment(
+        value: GridSpacing.spacious,
+        label: Text(t.settings.gridSpacingSpacious),
+        tooltip: t.settings.gridSpacingSpaciousDescription,
+      ),
     ],
   );
 
@@ -440,10 +489,23 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.episodePosterMode,
     icon: Symbols.image_rounded,
     title: t.settings.episodePosterMode,
+    description: t.settings.episodePosterModeDescription,
     segments: [
-      ButtonSegment(value: EpisodePosterMode.seriesPoster, label: Text(t.settings.seriesPoster)),
-      ButtonSegment(value: EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
-      ButtonSegment(value: EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
+      ButtonSegment(
+        value: EpisodePosterMode.seriesPoster,
+        label: Text(t.settings.seriesPoster),
+        tooltip: t.settings.seriesPosterDescription,
+      ),
+      ButtonSegment(
+        value: EpisodePosterMode.seasonPoster,
+        label: Text(t.settings.seasonPoster),
+        tooltip: t.settings.seasonPosterDescription,
+      ),
+      ButtonSegment(
+        value: EpisodePosterMode.episodeThumbnail,
+        label: Text(t.settings.episodeThumbnail),
+        tooltip: t.settings.episodeThumbnailDescription,
+      ),
     ],
   );
 
@@ -451,9 +513,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.continueWatchingAction,
     icon: Symbols.play_circle_rounded,
     title: t.settings.continueWatchingAction,
+    description: t.settings.continueWatchingActionDescription,
     segments: [
-      ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
-      ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
+      ButtonSegment(
+        value: ContinueWatchingAction.play,
+        label: Text(t.settings.continueWatchingPlay),
+        tooltip: t.settings.continueWatchingPlayDescription,
+      ),
+      ButtonSegment(
+        value: ContinueWatchingAction.details,
+        label: Text(t.settings.continueWatchingDetails),
+        tooltip: t.settings.continueWatchingDetailsDescription,
+      ),
     ],
   );
 
@@ -461,9 +532,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.episodeAction,
     icon: Symbols.tv_rounded,
     title: t.settings.episodeAction,
+    description: t.settings.episodeActionDescription,
     segments: [
-      ButtonSegment(value: EpisodeAction.play, label: Text(t.settings.episodePlay)),
-      ButtonSegment(value: EpisodeAction.details, label: Text(t.settings.episodeDetails)),
+      ButtonSegment(
+        value: EpisodeAction.play,
+        label: Text(t.settings.episodePlay),
+        tooltip: t.settings.episodePlayDescription,
+      ),
+      ButtonSegment(
+        value: EpisodeAction.details,
+        label: Text(t.settings.episodeDetails),
+        tooltip: t.settings.episodeDetailsDescription,
+      ),
     ],
   );
 
@@ -477,6 +557,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
     pref: SettingsService.visualEffects,
     icon: Symbols.animation_rounded,
     title: t.settings.visualEffects,
+    description: t.settings.visualEffectsDescription,
     subtitleBuilder: _visualEffectsLabel,
     options: [
       DialogOption(
@@ -484,7 +565,11 @@ class AppearanceSettingsScreen extends StatelessWidget {
         title: t.settings.visualEffectsAuto,
         subtitle: t.settings.visualEffectsAutoDescription,
       ),
-      DialogOption(value: VisualEffectsSetting.full, title: t.settings.visualEffectsFull),
+      DialogOption(
+        value: VisualEffectsSetting.full,
+        title: t.settings.visualEffectsFull,
+        subtitle: t.settings.visualEffectsFullDescription,
+      ),
       DialogOption(
         value: VisualEffectsSetting.reduced,
         title: t.settings.visualEffectsReduced,

@@ -50,8 +50,6 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
         final settings = SettingsService.instance;
         final mode = settings.read(modePref);
         final selectedIds = settings.read(idsPref).toSet();
-        final theme = Theme.of(context);
-
         return Consumer<LibrariesProvider>(
           builder: (context, provider, _) {
             final libraries = provider.libraries;
@@ -77,11 +75,10 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
             final children = <Widget>[
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Text(
-                  mode == TrackerLibraryFilterMode.blacklist
+                child: SettingsHelpHint(
+                  text: mode == TrackerLibraryFilterMode.blacklist
                       ? t.services.libraryFilter.modeHintBlacklist
                       : t.services.libraryFilter.modeHintWhitelist,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
               SettingsGroup(
@@ -90,14 +87,17 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
                     pref: modePref,
                     icon: Symbols.filter_list_rounded,
                     title: t.services.libraryFilter.mode,
+                    description: t.services.libraryFilter.modeDescription,
                     segments: [
                       ButtonSegment(
                         value: TrackerLibraryFilterMode.blacklist,
                         label: Text(t.services.libraryFilter.modeBlacklist),
+                        tooltip: t.services.libraryFilter.modeHintBlacklist,
                       ),
                       ButtonSegment(
                         value: TrackerLibraryFilterMode.whitelist,
                         label: Text(t.services.libraryFilter.modeWhitelist),
+                        tooltip: t.services.libraryFilter.modeHintWhitelist,
                       ),
                     ],
                   ),

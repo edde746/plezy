@@ -1,0 +1,18 @@
+diff --git a/src/opengl/gpu.c b/src/opengl/gpu.c
+index 0ac0696..48af8cf 100644
+--- a/src/opengl/gpu.c
++++ b/src/opengl/gpu.c
+@@ -204,9 +204,11 @@ pl_gpu pl_gpu_create_gl(pl_log log, pl_opengl pl_gl, const struct pl_opengl_params *params)
+     limits->thread_safe = params->make_current;
+     limits->callbacks = gl_test_ext(gpu, "GL_ARB_sync", 32, 30);
+     limits->align_vertex_stride = 1;
+-    if (gl_test_ext(gpu, "GL_ARB_pixel_buffer_object", 31, 0)) {
++    // Buffers are core in GLES 3.0 (UBOs/PBOs included); the ARB extension
++    // strings below only ever match desktop GL
++    if (gl_test_ext(gpu, "GL_ARB_pixel_buffer_object", 31, 30)) {
+         limits->max_buf_size = SIZE_MAX; // no restriction imposed by GL
+-        if (gl_test_ext(gpu, "GL_ARB_uniform_buffer_object", 31, 0))
++        if (gl_test_ext(gpu, "GL_ARB_uniform_buffer_object", 31, 30))
+             get(GL_MAX_UNIFORM_BLOCK_SIZE, &limits->max_ubo_size);
+         if (gl_test_ext(gpu, "GL_ARB_shader_storage_buffer_object", 43, 0) &&
+             gpu->glsl.version >= 140)

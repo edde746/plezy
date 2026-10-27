@@ -83,11 +83,11 @@ class ThemeSettingsScreen extends StatelessWidget {
       locked: locked && mode.requiresFullAccess,
       // The radio follows what paints; the saved-but-locked choice says it
       // is kept, so losing the entitlement doesn't read as losing the theme.
-      subtitle: mode == lockedStored
-          ? t.themeEditor.savedLocked
-          : mode == settings.ThemeMode.custom && customPalette == null
-          ? t.themeEditor.customEmpty
-          : null,
+      subtitle: [
+        _themeModeDescription(mode),
+        if (mode == lockedStored) t.themeEditor.savedLocked,
+        if (mode == settings.ThemeMode.custom && customPalette == null) t.themeEditor.customEmpty,
+      ].join(' · '),
       onTap: () => _choose(context, mode),
     );
 
@@ -119,6 +119,19 @@ class ThemeSettingsScreen extends StatelessWidget {
       ],
     );
   }
+
+  String _themeModeDescription(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.system => t.themeEditor.themeSystemDescription,
+    settings.ThemeMode.light => t.themeEditor.themeLightDescription,
+    settings.ThemeMode.dark => t.themeEditor.themeDarkDescription,
+    settings.ThemeMode.oled => t.themeEditor.themeOledDescription,
+    settings.ThemeMode.ember => t.themeEditor.themeEmberDescription,
+    settings.ThemeMode.glacier => t.themeEditor.themeGlacierDescription,
+    settings.ThemeMode.forest => t.themeEditor.themeForestDescription,
+    settings.ThemeMode.plum => t.themeEditor.themePlumDescription,
+    settings.ThemeMode.paper => t.themeEditor.themePaperDescription,
+    settings.ThemeMode.custom => t.themeEditor.themeCustomDescription,
+  };
 
   /// Applies [mode]. A locked perk first offers the Supporter sheet; Custom
   /// with no saved palette opens the editor instead, which applies it on Save.

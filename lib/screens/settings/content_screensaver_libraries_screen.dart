@@ -78,13 +78,9 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
   }
 
   Widget _description(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-      child: Text(
-        t.settings.contentScreensaverLibrariesDescription,
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      ),
+      child: SettingsHelpHint(text: t.settings.contentScreensaverLibrariesDescription),
     );
   }
 

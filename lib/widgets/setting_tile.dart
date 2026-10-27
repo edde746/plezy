@@ -69,7 +69,7 @@ class SettingSwitchTile extends StatelessWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
-  final String? subtitle;
+  final String subtitle;
   final FutureOr<void> Function(bool)? onAfterWrite;
   final bool enabled;
   final FocusNode? focusNode;
@@ -79,7 +79,7 @@ class SettingSwitchTile extends StatelessWidget {
     required this.pref,
     required this.icon,
     required this.title,
-    this.subtitle,
+    this.subtitle = '',
     this.onAfterWrite,
     this.enabled = true,
     this.focusNode,
@@ -93,7 +93,7 @@ class SettingSwitchTile extends StatelessWidget {
         focusNode: focusNode,
         secondary: AppIcon(icon, fill: 1),
         title: Text(title),
-        subtitle: subtitle != null ? Text(subtitle!) : null,
+        subtitle: SettingsHelpHint(text: subtitle),
         value: value,
         onChanged: enabled ? (v) => _writeAndNotify(context, pref, v, onAfterWrite) : null,
       ),
@@ -105,7 +105,7 @@ class SettingSwitchTile extends StatelessWidget {
 class SettingNavigationTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String? subtitle;
+  final String subtitle;
   final WidgetBuilder? destinationBuilder;
   final VoidCallback? onTap;
   final FocusNode? focusNode;
@@ -115,7 +115,7 @@ class SettingNavigationTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    this.subtitle,
+    required this.subtitle,
     this.destinationBuilder,
     this.onTap,
     this.focusNode,
@@ -128,7 +128,7 @@ class SettingNavigationTile extends StatelessWidget {
       focusNode: focusNode,
       icon: icon,
       title: title,
-      subtitle: subtitle != null ? Text(subtitle!) : null,
+      subtitle: SettingsHelpHint(text: subtitle),
       trailing: AppIcon(trailingIcon, fill: 1),
       onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
     );
@@ -141,6 +141,7 @@ class SettingNumberTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String Function(int) subtitleBuilder;
+  final String description;
   final String labelText;
   final String suffixText;
   final FutureOr<void> Function(int)? onAfterWrite;
@@ -156,6 +157,7 @@ class SettingNumberTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitleBuilder,
+    this.description = '',
     required this.labelText,
     required this.suffixText,
     this.onAfterWrite,
@@ -172,11 +174,12 @@ class SettingNumberTile extends StatelessWidget {
       builder: (_, value, _) => _SettingRow(
         icon: icon,
         title: title,
-        subtitle: Text(subtitleBuilder(value)),
+        subtitle: SettingsHelpHint(text: _settingSummary(subtitleBuilder(value), description)),
         onTap: () => showNumericInputDialog(
           context: context,
           title: title,
           labelText: labelText,
+          description: description,
           suffixText: suffixText,
           min: bounds.$1.toInt(),
           max: bounds.$2.toInt(),
@@ -196,6 +199,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
   final IconData icon;
   final String title;
   final String Function(T) subtitleBuilder;
+  final String description;
   final List<DialogOption<T>> options;
   final FutureOr<void> Function(T)? onAfterWrite;
   final FocusNode? focusNode;
@@ -206,6 +210,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitleBuilder,
+    this.description = '',
     required this.options,
     this.onAfterWrite,
     this.focusNode,
@@ -219,11 +224,12 @@ class SettingSelectionTile<T> extends StatelessWidget {
         focusNode: focusNode,
         icon: icon,
         title: title,
-        subtitle: Text(subtitleBuilder(value)),
+        subtitle: SettingsHelpHint(text: _settingSummary(subtitleBuilder(value), description)),
         onTap: () async {
           final picked = await showSelectionDialog<T>(
             context: context,
             title: title,
+            description: description,
             options: options,
             currentValue: value,
           );
@@ -255,7 +261,7 @@ class SettingChecklistTile extends StatelessWidget {
     required this.uncheckedPref,
     required this.icon,
     required this.title,
-    required this.description,
+    this.description = '',
     required this.options,
     this.locked = const {},
   });
@@ -272,10 +278,15 @@ class SettingChecklistTile extends StatelessWidget {
         return _SettingRow(
           icon: icon,
           title: title,
-          subtitle: Text('${checked.map((option) => option.title).join(', ')} · $description'),
+          subtitle: SettingsHelpHint(
+            text: description.isEmpty
+                ? checked.map((option) => option.title).join(', ')
+                : '${checked.map((option) => option.title).join(', ')} · $description',
+          ),
           onTap: () => showChecklistDialog<String>(
             context: context,
             title: title,
+            description: description,
             options: options,
             checked: {for (final option in checked) option.value},
             locked: locked,
@@ -316,10 +327,11 @@ class SettingRegexTile extends StatelessWidget {
       builder: (_, value, _) => _SettingRow(
         icon: icon,
         title: title,
-        subtitle: Text(subtitle),
+        subtitle: SettingsHelpHint(text: subtitle),
         onTap: () => showRegexInputDialog(
           context: context,
           title: title,
+          description: subtitle,
           currentValue: value,
           defaultValue: defaultValue,
           onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
@@ -334,6 +346,7 @@ class SettingSegmentedTile<T> extends StatelessWidget {
   final Pref<T> pref;
   final IconData icon;
   final String title;
+  final String description;
   final List<ButtonSegment<T>> segments;
   final FutureOr<void> Function(T)? onAfterWrite;
 
@@ -342,6 +355,7 @@ class SettingSegmentedTile<T> extends StatelessWidget {
     required this.pref,
     required this.icon,
     required this.title,
+    this.description = '',
     required this.segments,
     this.onAfterWrite,
   });
@@ -353,6 +367,7 @@ class SettingSegmentedTile<T> extends StatelessWidget {
       builder: (_, value, _) => SegmentedSetting<T>(
         icon: icon,
         title: title,
+        description: description,
         segments: segments,
         selected: value,
         onChanged: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
@@ -367,7 +382,7 @@ class SettingColorTile extends StatelessWidget {
   final Pref<String> pref;
   final IconData icon;
   final String title;
-  final String? subtitle;
+  final String description;
   final FutureOr<void> Function(String hex)? onAfterWrite;
 
   /// Intermediate colours while the dialog is open, and a signal when it
@@ -380,7 +395,7 @@ class SettingColorTile extends StatelessWidget {
     required this.pref,
     required this.icon,
     required this.title,
-    this.subtitle,
+    this.description = '',
     this.onAfterWrite,
     this.onPreview,
     this.onPreviewEnd,
@@ -393,7 +408,7 @@ class SettingColorTile extends StatelessWidget {
       builder: (_, hex, _) => _SettingRow(
         icon: icon,
         title: title,
-        subtitle: subtitle != null ? Text(subtitle!) : null,
+        subtitle: SettingsHelpHint(text: description),
         trailing: Container(
           width: 28,
           height: 28,
@@ -406,6 +421,7 @@ class SettingColorTile extends StatelessWidget {
         onTap: () => showColorInputDialog(
           context: context,
           title: title,
+          description: description,
           currentHex: hex,
           onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
           onPreview: onPreview,
@@ -414,4 +430,9 @@ class SettingColorTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _settingSummary(String value, String description) {
+  if (description.isEmpty || value.contains(description)) return value;
+  return '$value · $description';
 }

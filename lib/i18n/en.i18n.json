@@ -56,7 +56,8 @@
       "strata": "Strata",
       "facet": "Facet",
       "tilde": "Tilde"
-    }
+    },
+    "description": "Choose the icon shown by your device launcher. The previews show how each option looks."
   },
   "auth": {
     "signInWithPlex": "Sign in with Plex",
@@ -665,7 +666,83 @@
     "enterFullscreenOnPlaybackStart": "Enter fullscreen when playback starts",
     "enterFullscreenOnPlaybackStartDescription": "Open desktop video in fullscreen when playback starts",
     "extendVideoIntoDisplayCutout": "Extend video into display cutout",
-    "extendVideoIntoDisplayCutoutDescription": "Let fullscreen video use the camera cutout on Android phones"
+    "extendVideoIntoDisplayCutoutDescription": "Let fullscreen video use the camera cutout on Android phones",
+    "languageDescription": "Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.",
+    "themeDescription": "Choose the colors and contrast used throughout the app.",
+    "libraryDensityDescription": "Change how many library cards fit in each row.",
+    "displayScaleDescription": "Resize the interface on this car display without changing your device-wide text size.",
+    "themeSongVolumeDescription": "Set the volume of theme songs relative to other audio.",
+    "viewModeDescription": "Choose whether library items appear as posters in a grid or as a compact list.",
+    "gridViewDescription": "Arrange library items in rows and columns of posters.",
+    "listViewDescription": "Show library items in a vertical list with more text per item.",
+    "gridSpacingDescription": "Set the gap between posters in library grids.",
+    "gridSpacingTightDescription": "Fit more posters across the screen with smaller gaps.",
+    "gridSpacingNormalDescription": "Use the standard gap between posters.",
+    "gridSpacingSpaciousDescription": "Add larger gaps between posters for more separation.",
+    "episodePosterModeDescription": "Choose which artwork appears on episode cards.",
+    "seriesPosterDescription": "Use the show’s series poster for every episode.",
+    "seasonPosterDescription": "Use the season poster for each episode when available.",
+    "episodeThumbnailDescription": "Use a frame from the episode when available.",
+    "continueWatchingActionDescription": "Choose what happens when you activate a Continue Watching card.",
+    "continueWatchingPlayDescription": "Start the movie or episode immediately.",
+    "continueWatchingDetailsDescription": "Open the title page first so you can review details and choose an action.",
+    "episodeActionDescription": "Choose what happens when you activate an episode card.",
+    "episodePlayDescription": "Start the episode immediately.",
+    "episodeDetailsDescription": "Open the episode page before playback.",
+    "contentScreensaverDelayDescription": "Choose how long PlezyNG waits without input before showing artwork.",
+    "continueWatchingRowSizeDescription": "Choose how large the cards are in the Continue Watching row.",
+    "rowSizeCompactDescription": "Show smaller cards so more items fit across the row.",
+    "rowSizeStandardDescription": "Use the standard card size.",
+    "rowSizeLargeDescription": "Show larger cards with more artwork detail.",
+    "visualEffectsDescription": "Choose the animation and artwork effects budget for this device.",
+    "visualEffectsFullDescription": "Use the full animation and artwork effects on every device.",
+    "startupSectionDescription": "Choose which section opens when PlezyNG starts.",
+    "startupSectionOptions": {
+      "discover": "Open recommendations and items from connected discovery sources.",
+      "libraries": "Open your connected media libraries.",
+      "liveTv": "Open Live TV when a server provides it; otherwise startup falls back to Home.",
+      "search": "Open media search."
+    },
+    "smallSkipDurationDescription": "Set the distance moved by the short backward and forward seek controls.",
+    "largeSkipDurationDescription": "Set the distance moved by the long backward and forward seek controls.",
+    "rewindOnResumeDescription": "Move playback back by this amount when resuming a video.",
+    "defaultSleepTimerDescription": "Set the initial duration used when you start the sleep timer.",
+    "playNextCountdownDescription": "Wait this long before starting the next episode. Set to 0 to start immediately.",
+    "autoSkipDelaySettingDescription": "Applies when an intro, credits, or ad is set to skip automatically.",
+    "downmixCenterBoostDescription": "Raise dialogue in the center channel when surround audio is mixed down to stereo.",
+    "displaySwitchDelayDescription": "Wait before changing display mode so the TV or receiver can finish its previous switch.",
+    "playerBackendDescription": "Choose which playback engine decodes and renders video on this device.",
+    "exoPlayerDescription": "Use Android’s native Media3-based player and supported hardware paths.",
+    "mpvDescription": "Use mpv, which exposes additional playback, subtitle, and video processing controls.",
+    "scopeOffDescription": "Keep changes for the current playback session only.",
+    "scopeGlobalDescription": "Reuse the same value for every library and title.",
+    "scopeLibraryDescription": "Remember a separate value for each library.",
+    "scopeTitleDescription": "Remember a separate value for each show or movie.",
+    "specialsOrderingServerDescription": "Keep the episode order supplied by the media server.",
+    "specialsOrderingAirDateDescription": "Place specials among regular episodes by their air date.",
+    "specialsOrderingLastDescription": "Place every special after the regular seasons.",
+    "skipIntroModeDescription": "Choose whether intro markers play normally, show a skip button, or skip automatically.",
+    "skipCreditsModeDescription": "Choose whether credits play normally, show a skip button, or skip automatically.",
+    "skipAdsModeDescription": "Choose whether detected ads play normally, show a skip button, or skip automatically.",
+    "playbackBufferAutoDescription": "Let the active player choose its normal buffer size.",
+    "playbackBufferLargeDescription": "Keep more media ready ahead of playback; this uses more memory.",
+    "playbackBufferExtraLargeDescription": "Keep the largest read-ahead buffer; this uses the most memory.",
+    "defaultQualityDescription": "Set the default video resolution and bitrate ceiling for streams that the server transcodes.",
+    "cellularQualityDescription": "Override Default Quality when the device is using a cellular-only connection.",
+    "remoteQualityDescription": "Override Default Quality when connecting to a server over a remote connection.",
+    "qualityPresetOriginalDescription": "Play the source at its available quality without asking the server to transcode it.",
+    "qualityPresetTranscodeOptionDescription": "Ask the server for a converted stream using the resolution and bitrate shown above.",
+    "qualityPresetSameAsDefaultDescription": "Use the quality selected in Default Quality.",
+    "musicQualityDescription": "Set the maximum audio bitrate requested from the server; Original keeps the source stream.",
+    "musicQualityOriginalDescription": "Play the source audio without a bitrate-capped transcode.",
+    "musicQualityTranscodeOptionDescription": "Request a server transcode capped near the bitrate shown above; the actual output can vary.",
+    "maxVolumeInputLabel": "Maximum volume (%)",
+    "checkForUpdatesDescription": "Check now whether a newer version of PlezyNG is available.",
+    "appearanceDescription": "Choose the app theme and adjust library cards, Home rows, and navigation.",
+    "prerollLibraryDescription": "Choose the library that contains the clips available as movie pre-rolls.",
+    "prerollSelectionDescription": "Choose which clips from the selected library can play before movies.",
+    "contentScreensaverDelayOptionDescription": "Wait this many minutes without input before showing screensaver artwork.",
+    "videoCodecOptionDescription": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server."
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -709,7 +786,18 @@
     "previewCardTitle": "Episode ${number}",
     "previewCardSubtitle": "${minutes} min left",
     "previewSwitch": "Autoplay",
-    "previewMutedText": "Secondary text reads like this"
+    "previewMutedText": "Secondary text reads like this",
+    "themeSystemDescription": "Follow your device appearance and switch between light and dark automatically.",
+    "themeLightDescription": "Use a bright background with dark text.",
+    "themeDarkDescription": "Use a dark background with light text.",
+    "themeOledDescription": "Use near-black surfaces that reduce light on OLED screens.",
+    "themeEmberDescription": "Use warm red and amber accent colors.",
+    "themeGlacierDescription": "Use cool blue accent colors.",
+    "themeForestDescription": "Use muted green and natural accent colors.",
+    "themePlumDescription": "Use violet and plum accent colors.",
+    "themePaperDescription": "Use warm paper-like surfaces and ink-inspired colors.",
+    "themeCustomDescription": "Use the color palette you created in the custom theme editor.",
+    "editorDescription": "Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color."
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -977,7 +1065,9 @@
     "reduceMotionHint": "Keep focus, page transitions and decorative effects still.",
     "largeTargets": "Larger touch targets",
     "largeTargetsHint": "Give shared controls more room for touch and assistive navigation.",
-    "navigationHint": "Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open."
+    "navigationHint": "Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.",
+    "textSizeDescription": "Scale interface text in PlezyNG in addition to your device’s system text-size setting.",
+    "boldTextHint": "Use a heavier weight for interface labels and messages to make them easier to distinguish."
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -1194,7 +1284,33 @@
     "italic": "Italic",
     "renderResolution": "Render Resolution",
     "renderResolutionScreen": "Screen resolution",
-    "renderResolutionVideo": "Video resolution"
+    "renderResolutionVideo": "Video resolution",
+    "fontSizeDescription": "Set the subtitle text size on this device.",
+    "textColorDescription": "Choose the color used for subtitle text.",
+    "borderSizeDescription": "Set the thickness of the outline around subtitle text.",
+    "borderColorDescription": "Choose the color used for the subtitle outline.",
+    "backgroundColorDescription": "Choose the color behind subtitle text.",
+    "backgroundOpacityDescription": "Set how transparent the subtitle background is: 0% is clear and 100% is solid.",
+    "positionDescription": "Move subtitles vertically. 0% is the top of the video and 100% is the bottom.",
+    "assOverrideDescription": "Choose whether the player follows, adjusts, replaces, or removes styling embedded in ASS subtitles.",
+    "assOverrideOptions": {
+      "no": "Keep the fonts, colors, sizes, and placement authored in the subtitle file.",
+      "yes": "Allow the player’s subtitle style settings to adjust ASS subtitles.",
+      "scale": "Apply player styling and scale embedded sizes to match the video dimensions.",
+      "force": "Replace embedded ASS styles with the player’s subtitle style.",
+      "strip": "Remove embedded ASS formatting and render the subtitle text plainly."
+    },
+    "renderResolutionDescription": "Choose the resolution used to rasterize image and ASS subtitles. Lower Android scales can reduce rendering work but look softer.",
+    "renderResolutionOptions": {
+      "screen": "Render at the full display surface resolution for the sharpest result.",
+      "video": "Render using the video resolution as the reference, which can reduce work on high-resolution displays.",
+      "threeQuarter": "Render at 75% of the display surface resolution for a modest performance saving.",
+      "half": "Render at 50% of the display surface resolution to reduce work, with softer edges.",
+      "third": "Render at one-third of the display surface resolution to reduce work, with softer edges.",
+      "quarter": "Render at one-quarter of the display surface resolution to reduce work, with the softest result."
+    },
+    "boldDescription": "Draw subtitle text in a heavier weight.",
+    "italicDescription": "Draw subtitle text in italics."
   },
   "mpvConfig": {
     "title": "mpv.conf",
@@ -1345,14 +1461,22 @@
       "preferNonSdh": "Prefer non-SDH subtitles",
       "preferSdh": "Prefer SDH subtitles",
       "onlySdh": "Only SDH subtitles",
-      "onlyNonSdh": "Only non-SDH subtitles"
+      "onlyNonSdh": "Only non-SDH subtitles",
+      "preferNonSdhDescription": "Prefer standard subtitles when both standard and SDH versions are available.",
+      "preferSdhDescription": "Prefer SDH subtitles when available, but allow standard subtitles as a fallback.",
+      "onlySdhDescription": "Use SDH subtitles only; do not fall back to standard subtitles.",
+      "onlyNonSdhDescription": "Use standard subtitles only; exclude SDH subtitles."
     },
     "forcedSubtitles": "Forced subtitles",
     "forcedSubtitleOptions": {
       "preferNonForced": "Prefer non-forced subtitles",
       "preferForced": "Prefer forced subtitles",
       "onlyForced": "Only forced subtitles",
-      "onlyNonForced": "Only non-forced subtitles"
+      "onlyNonForced": "Only non-forced subtitles",
+      "preferNonForcedDescription": "Prefer regular subtitles, but allow forced tracks as a fallback.",
+      "preferForcedDescription": "Prefer forced tracks when available, but allow regular subtitles as a fallback.",
+      "onlyForcedDescription": "Use only tracks marked as forced.",
+      "onlyNonForcedDescription": "Exclude tracks marked as forced."
     },
     "displayMissingEpisodes": "Show missing episodes",
     "displayMissingEpisodesDescription": "List episodes the server knows about but has no file for.",
@@ -1367,15 +1491,31 @@
       "none": "Never",
       "moviesAndShows": "Movies and TV shows",
       "movies": "Movies only",
-      "shows": "TV shows only"
+      "shows": "TV shows only",
+      "noneDescription": "Do not show watched checkmarks.",
+      "moviesAndShowsDescription": "Show watched checkmarks for movies and TV shows.",
+      "moviesDescription": "Show watched checkmarks for movies only.",
+      "showsDescription": "Show watched checkmarks for TV shows only."
     },
     "mediaReviewsVisibility": "Ratings & reviews",
     "mediaReviewsOptions": {
       "usersAndCritics": "Users and critics",
       "usersOnly": "Users only",
       "criticsOnly": "Critics only",
-      "nobody": "Hidden"
-    }
+      "nobody": "Hidden",
+      "usersAndCriticsDescription": "Show both user ratings and critic ratings.",
+      "usersOnlyDescription": "Show ratings and reviews submitted by users.",
+      "criticsOnlyDescription": "Show critic ratings and reviews.",
+      "nobodyDescription": "Hide ratings and reviews."
+    },
+    "preferredAudioLanguageDescription": "Prefer audio tracks in this language when the server or player selects a track automatically.",
+    "preferredSubtitleLanguageDescription": "Prefer subtitle tracks in this language when subtitles are selected automatically.",
+    "subtitleAccessibilityDescription": "Choose whether SDH captions are preferred or required during automatic subtitle selection.",
+    "forcedSubtitleDescription": "Choose whether forced subtitle tracks are preferred or required during automatic selection.",
+    "watchedIndicatorDescription": "Choose which media types receive a watched checkmark in the server interface.",
+    "mediaReviewsVisibilityDescription": "Choose which audience and critic ratings the server shows on media pages.",
+    "subtitleModeDescription": "Choose when subtitles turn on automatically for this server account.",
+    "hubDescription": "These preferences are stored on your media-server account and may apply on other clients too."
   },
   "discover": {
     "title": "Discover",
@@ -2639,7 +2779,14 @@
     "off": "Off",
     "launchFailed": "Failed to open external player",
     "appNotInstalled": "${name} is not installed",
-    "playInExternalPlayer": "Play in External Player"
+    "playInExternalPlayer": "Play in External Player",
+    "description": "Choose another app to open videos in. Available players depend on your device and installed apps.",
+    "systemDefaultDescription": "Let the operating system open the video with its default app.",
+    "playerOptionDescription": "Open videos with ${player}.",
+    "playerNameDescription": "The label shown in the player list.",
+    "playerPackageDescription": "Enter the Android package name of the player app, such as com.example.player.",
+    "playerCommandDescription": "Enter the installed player command or executable path for this device.",
+    "playerUrlSchemeDescription": "Enter the URL scheme and optional URL template used to launch the player."
   },
   "metadataEdit": {
     "editMetadata": "Edit...",
@@ -2851,7 +2998,16 @@
       "modeHintBlacklist": "Sync every library except the ones checked below.",
       "modeHintWhitelist": "Sync only the libraries checked below.",
       "libraries": "Libraries",
-      "noLibraries": "No libraries available"
+      "noLibraries": "No libraries available",
+      "modeDescription": "Choose whether the checked libraries are blocked from syncing or are the only libraries that sync."
+    },
+    "seerrDescription": "Connect to Seerr or Overseerr to search for titles and submit media requests.",
+    "trackerDescriptions": {
+      "trakt": "Sync watched episodes and movies with your Trakt account.",
+      "mal": "Sync anime lists and watch progress with MyAnimeList.",
+      "anilist": "Sync anime lists and watch progress with AniList.",
+      "simkl": "Sync watched movies, TV shows, and anime with Simkl.",
+      "mdblist": "Show MDBList ratings and lists in recommendations and Explore."
     }
   },
   "addServer": {
@@ -3025,7 +3181,10 @@
     "pressAgainToDelete": "Press again to delete",
     "actionState": "${action}: ${state}",
     "on": "On",
-    "resetHeroButtonDescription": "Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept."
+    "resetHeroButtonDescription": "Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.",
+    "tapHeroCardDescription": "Choose whether tapping or selecting a Hero card starts playback or opens its details.",
+    "heroTapPlayDescription": "Start the selected item right away.",
+    "heroTapDetailsDescription": "Open the selected item’s details before choosing an action."
   },
   "platform": {
     "localNetworkPermission": "PlezyNG connects to your media servers and playback devices on your local network.",

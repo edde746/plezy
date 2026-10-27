@@ -213,6 +213,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           preferenceKey: AccountPreferenceKey.preferredAudioLanguage,
           icon: Symbols.audiotrack_rounded,
           title: t.accountPreferences.preferredAudioLanguage,
+          description: t.accountPreferences.preferredAudioLanguageDescription,
           code1: preferences.preferredAudioLanguageCode1,
           options: languageOptions,
         ),
@@ -229,6 +230,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           preferenceKey: AccountPreferenceKey.preferredSubtitleLanguage,
           icon: Symbols.subtitles_rounded,
           title: t.accountPreferences.preferredSubtitleLanguage,
+          description: t.accountPreferences.preferredSubtitleLanguageDescription,
           code1: preferences.preferredSubtitleLanguageCode1,
           options: languageOptions,
         ),
@@ -237,6 +239,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           value: preferences.subtitlePlaybackMode,
           icon: Symbols.closed_caption_rounded,
           title: t.accountPreferences.subtitleMode,
+          description: t.accountPreferences.subtitleModeDescription,
           subtitleBuilder: (mode) => mode == null ? t.accountPreferences.notSet : _subtitleModeLabel(mode),
           options: [
             // Enum order, not set order, so the list reads the same every time.
@@ -251,10 +254,11 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           value: preferences.subtitleAccessibility,
           icon: Symbols.hearing_rounded,
           title: t.accountPreferences.subtitleAccessibility,
+          description: t.accountPreferences.subtitleAccessibilityDescription,
           subtitleBuilder: (value) => value == null ? t.accountPreferences.notSet : _accessibilityLabel(value),
           options: [
             for (final value in SubtitleAccessibilityPreference.values)
-              DialogOption(value: value, title: _accessibilityLabel(value)),
+              DialogOption(value: value, title: _accessibilityLabel(value), subtitle: _accessibilityDescription(value)),
           ],
           onChanged: (value) => _write(AccountPreferenceKey.subtitleAccessibility, value),
         ),
@@ -263,9 +267,11 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
           value: preferences.forcedSubtitles,
           icon: Symbols.flag_rounded,
           title: t.accountPreferences.forcedSubtitles,
+          description: t.accountPreferences.forcedSubtitleDescription,
           subtitleBuilder: (value) => value == null ? t.accountPreferences.notSet : _forcedLabel(value),
           options: [
-            for (final value in ForcedSubtitlePreference.values) DialogOption(value: value, title: _forcedLabel(value)),
+            for (final value in ForcedSubtitlePreference.values)
+              DialogOption(value: value, title: _forcedLabel(value), subtitle: _forcedDescription(value)),
           ],
           onChanged: (value) => _write(AccountPreferenceKey.forcedSubtitles, value),
         ),
@@ -313,10 +319,15 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
         value: preferences.watchedIndicator,
         icon: Symbols.visibility_rounded,
         title: t.accountPreferences.watchedIndicator,
+        description: t.accountPreferences.watchedIndicatorDescription,
         subtitleBuilder: (value) => value == null ? t.accountPreferences.notSet : _watchedIndicatorLabel(value),
         options: [
           for (final value in WatchedIndicatorScope.values)
-            DialogOption(value: value, title: _watchedIndicatorLabel(value)),
+            DialogOption(
+              value: value,
+              title: _watchedIndicatorLabel(value),
+              subtitle: _watchedIndicatorDescription(value),
+            ),
         ],
         onChanged: (value) => _write(AccountPreferenceKey.watchedIndicator, value),
       ),
@@ -325,9 +336,11 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
         value: preferences.mediaReviewsVisibility,
         icon: Symbols.reviews_rounded,
         title: t.accountPreferences.mediaReviewsVisibility,
+        description: t.accountPreferences.mediaReviewsVisibilityDescription,
         subtitleBuilder: (value) => value == null ? t.accountPreferences.notSet : _reviewsLabel(value),
         options: [
-          for (final value in MediaReviewsVisibility.values) DialogOption(value: value, title: _reviewsLabel(value)),
+          for (final value in MediaReviewsVisibility.values)
+            DialogOption(value: value, title: _reviewsLabel(value), subtitle: _reviewsDescription(value)),
         ],
         onChanged: (value) => _write(AccountPreferenceKey.mediaReviewsVisibility, value),
       ),
@@ -337,6 +350,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
     required AccountPreferenceKey preferenceKey,
     required IconData icon,
     required String title,
+    required String description,
     required String? code1,
     required List<DialogOption<String>> options,
   }) {
@@ -344,6 +358,7 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
       value: code1 ?? _noLanguage,
       icon: icon,
       title: title,
+      description: description,
       subtitleBuilder: (code) => code == null || code == _noLanguage
           ? t.accountPreferences.noPreference
           : LanguageCodes.getLanguageName(code) ?? code,
@@ -378,11 +393,26 @@ String _accessibilityLabel(SubtitleAccessibilityPreference value) => switch (val
   SubtitleAccessibilityPreference.onlyNonSdh => t.accountPreferences.subtitleAccessibilityOptions.onlyNonSdh,
 };
 
+String _accessibilityDescription(SubtitleAccessibilityPreference value) => switch (value) {
+  SubtitleAccessibilityPreference.preferNonSdh =>
+    t.accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription,
+  SubtitleAccessibilityPreference.preferSdh => t.accountPreferences.subtitleAccessibilityOptions.preferSdhDescription,
+  SubtitleAccessibilityPreference.onlySdh => t.accountPreferences.subtitleAccessibilityOptions.onlySdhDescription,
+  SubtitleAccessibilityPreference.onlyNonSdh => t.accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription,
+};
+
 String _forcedLabel(ForcedSubtitlePreference value) => switch (value) {
   ForcedSubtitlePreference.preferNonForced => t.accountPreferences.forcedSubtitleOptions.preferNonForced,
   ForcedSubtitlePreference.preferForced => t.accountPreferences.forcedSubtitleOptions.preferForced,
   ForcedSubtitlePreference.onlyForced => t.accountPreferences.forcedSubtitleOptions.onlyForced,
   ForcedSubtitlePreference.onlyNonForced => t.accountPreferences.forcedSubtitleOptions.onlyNonForced,
+};
+
+String _forcedDescription(ForcedSubtitlePreference value) => switch (value) {
+  ForcedSubtitlePreference.preferNonForced => t.accountPreferences.forcedSubtitleOptions.preferNonForcedDescription,
+  ForcedSubtitlePreference.preferForced => t.accountPreferences.forcedSubtitleOptions.preferForcedDescription,
+  ForcedSubtitlePreference.onlyForced => t.accountPreferences.forcedSubtitleOptions.onlyForcedDescription,
+  ForcedSubtitlePreference.onlyNonForced => t.accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription,
 };
 
 String _watchedIndicatorLabel(WatchedIndicatorScope value) => switch (value) {
@@ -392,9 +422,23 @@ String _watchedIndicatorLabel(WatchedIndicatorScope value) => switch (value) {
   WatchedIndicatorScope.shows => t.accountPreferences.watchedIndicatorOptions.shows,
 };
 
+String _watchedIndicatorDescription(WatchedIndicatorScope value) => switch (value) {
+  WatchedIndicatorScope.none => t.accountPreferences.watchedIndicatorOptions.noneDescription,
+  WatchedIndicatorScope.moviesAndShows => t.accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription,
+  WatchedIndicatorScope.movies => t.accountPreferences.watchedIndicatorOptions.moviesDescription,
+  WatchedIndicatorScope.shows => t.accountPreferences.watchedIndicatorOptions.showsDescription,
+};
+
 String _reviewsLabel(MediaReviewsVisibility value) => switch (value) {
   MediaReviewsVisibility.usersAndCritics => t.accountPreferences.mediaReviewsOptions.usersAndCritics,
   MediaReviewsVisibility.usersOnly => t.accountPreferences.mediaReviewsOptions.usersOnly,
   MediaReviewsVisibility.criticsOnly => t.accountPreferences.mediaReviewsOptions.criticsOnly,
   MediaReviewsVisibility.nobody => t.accountPreferences.mediaReviewsOptions.nobody,
+};
+
+String _reviewsDescription(MediaReviewsVisibility value) => switch (value) {
+  MediaReviewsVisibility.usersAndCritics => t.accountPreferences.mediaReviewsOptions.usersAndCriticsDescription,
+  MediaReviewsVisibility.usersOnly => t.accountPreferences.mediaReviewsOptions.usersOnlyDescription,
+  MediaReviewsVisibility.criticsOnly => t.accountPreferences.mediaReviewsOptions.criticsOnlyDescription,
+  MediaReviewsVisibility.nobody => t.accountPreferences.mediaReviewsOptions.nobodyDescription,
 };

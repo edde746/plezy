@@ -226,6 +226,9 @@ class Translations$appIcon$en {
 	String get tvLauncherHint => 'The new banner appears once you leave PlezyNG. Android TV can keep showing the old one until the TV restarts.';
 
 	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
+
+	/// en: 'Choose the icon shown by your device launcher. The previews show how each option looks.'
+	String get description => 'Choose the icon shown by your device launcher. The previews show how each option looks.';
 }
 
 // Path: auth
@@ -1976,6 +1979,218 @@ class Translations$settings$en {
 
 	/// en: 'Let fullscreen video use the camera cutout on Android phones'
 	String get extendVideoIntoDisplayCutoutDescription => 'Let fullscreen video use the camera cutout on Android phones';
+
+	/// en: 'Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.'
+	String get languageDescription => 'Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.';
+
+	/// en: 'Choose the colors and contrast used throughout the app.'
+	String get themeDescription => 'Choose the colors and contrast used throughout the app.';
+
+	/// en: 'Change how many library cards fit in each row.'
+	String get libraryDensityDescription => 'Change how many library cards fit in each row.';
+
+	/// en: 'Resize the interface on this car display without changing your device-wide text size.'
+	String get displayScaleDescription => 'Resize the interface on this car display without changing your device-wide text size.';
+
+	/// en: 'Set the volume of theme songs relative to other audio.'
+	String get themeSongVolumeDescription => 'Set the volume of theme songs relative to other audio.';
+
+	/// en: 'Choose whether library items appear as posters in a grid or as a compact list.'
+	String get viewModeDescription => 'Choose whether library items appear as posters in a grid or as a compact list.';
+
+	/// en: 'Arrange library items in rows and columns of posters.'
+	String get gridViewDescription => 'Arrange library items in rows and columns of posters.';
+
+	/// en: 'Show library items in a vertical list with more text per item.'
+	String get listViewDescription => 'Show library items in a vertical list with more text per item.';
+
+	/// en: 'Set the gap between posters in library grids.'
+	String get gridSpacingDescription => 'Set the gap between posters in library grids.';
+
+	/// en: 'Fit more posters across the screen with smaller gaps.'
+	String get gridSpacingTightDescription => 'Fit more posters across the screen with smaller gaps.';
+
+	/// en: 'Use the standard gap between posters.'
+	String get gridSpacingNormalDescription => 'Use the standard gap between posters.';
+
+	/// en: 'Add larger gaps between posters for more separation.'
+	String get gridSpacingSpaciousDescription => 'Add larger gaps between posters for more separation.';
+
+	/// en: 'Choose which artwork appears on episode cards.'
+	String get episodePosterModeDescription => 'Choose which artwork appears on episode cards.';
+
+	/// en: 'Use the show’s series poster for every episode.'
+	String get seriesPosterDescription => 'Use the show’s series poster for every episode.';
+
+	/// en: 'Use the season poster for each episode when available.'
+	String get seasonPosterDescription => 'Use the season poster for each episode when available.';
+
+	/// en: 'Use a frame from the episode when available.'
+	String get episodeThumbnailDescription => 'Use a frame from the episode when available.';
+
+	/// en: 'Choose what happens when you activate a Continue Watching card.'
+	String get continueWatchingActionDescription => 'Choose what happens when you activate a Continue Watching card.';
+
+	/// en: 'Start the movie or episode immediately.'
+	String get continueWatchingPlayDescription => 'Start the movie or episode immediately.';
+
+	/// en: 'Open the title page first so you can review details and choose an action.'
+	String get continueWatchingDetailsDescription => 'Open the title page first so you can review details and choose an action.';
+
+	/// en: 'Choose what happens when you activate an episode card.'
+	String get episodeActionDescription => 'Choose what happens when you activate an episode card.';
+
+	/// en: 'Start the episode immediately.'
+	String get episodePlayDescription => 'Start the episode immediately.';
+
+	/// en: 'Open the episode page before playback.'
+	String get episodeDetailsDescription => 'Open the episode page before playback.';
+
+	/// en: 'Choose how long PlezyNG waits without input before showing artwork.'
+	String get contentScreensaverDelayDescription => 'Choose how long PlezyNG waits without input before showing artwork.';
+
+	/// en: 'Choose how large the cards are in the Continue Watching row.'
+	String get continueWatchingRowSizeDescription => 'Choose how large the cards are in the Continue Watching row.';
+
+	/// en: 'Show smaller cards so more items fit across the row.'
+	String get rowSizeCompactDescription => 'Show smaller cards so more items fit across the row.';
+
+	/// en: 'Use the standard card size.'
+	String get rowSizeStandardDescription => 'Use the standard card size.';
+
+	/// en: 'Show larger cards with more artwork detail.'
+	String get rowSizeLargeDescription => 'Show larger cards with more artwork detail.';
+
+	/// en: 'Choose the animation and artwork effects budget for this device.'
+	String get visualEffectsDescription => 'Choose the animation and artwork effects budget for this device.';
+
+	/// en: 'Use the full animation and artwork effects on every device.'
+	String get visualEffectsFullDescription => 'Use the full animation and artwork effects on every device.';
+
+	/// en: 'Choose which section opens when PlezyNG starts.'
+	String get startupSectionDescription => 'Choose which section opens when PlezyNG starts.';
+
+	late final Translations$settings$startupSectionOptions$en startupSectionOptions = Translations$settings$startupSectionOptions$en.internal(_root);
+
+	/// en: 'Set the distance moved by the short backward and forward seek controls.'
+	String get smallSkipDurationDescription => 'Set the distance moved by the short backward and forward seek controls.';
+
+	/// en: 'Set the distance moved by the long backward and forward seek controls.'
+	String get largeSkipDurationDescription => 'Set the distance moved by the long backward and forward seek controls.';
+
+	/// en: 'Move playback back by this amount when resuming a video.'
+	String get rewindOnResumeDescription => 'Move playback back by this amount when resuming a video.';
+
+	/// en: 'Set the initial duration used when you start the sleep timer.'
+	String get defaultSleepTimerDescription => 'Set the initial duration used when you start the sleep timer.';
+
+	/// en: 'Wait this long before starting the next episode. Set to 0 to start immediately.'
+	String get playNextCountdownDescription => 'Wait this long before starting the next episode. Set to 0 to start immediately.';
+
+	/// en: 'Applies when an intro, credits, or ad is set to skip automatically.'
+	String get autoSkipDelaySettingDescription => 'Applies when an intro, credits, or ad is set to skip automatically.';
+
+	/// en: 'Raise dialogue in the center channel when surround audio is mixed down to stereo.'
+	String get downmixCenterBoostDescription => 'Raise dialogue in the center channel when surround audio is mixed down to stereo.';
+
+	/// en: 'Wait before changing display mode so the TV or receiver can finish its previous switch.'
+	String get displaySwitchDelayDescription => 'Wait before changing display mode so the TV or receiver can finish its previous switch.';
+
+	/// en: 'Choose which playback engine decodes and renders video on this device.'
+	String get playerBackendDescription => 'Choose which playback engine decodes and renders video on this device.';
+
+	/// en: 'Use Android’s native Media3-based player and supported hardware paths.'
+	String get exoPlayerDescription => 'Use Android’s native Media3-based player and supported hardware paths.';
+
+	/// en: 'Use mpv, which exposes additional playback, subtitle, and video processing controls.'
+	String get mpvDescription => 'Use mpv, which exposes additional playback, subtitle, and video processing controls.';
+
+	/// en: 'Keep changes for the current playback session only.'
+	String get scopeOffDescription => 'Keep changes for the current playback session only.';
+
+	/// en: 'Reuse the same value for every library and title.'
+	String get scopeGlobalDescription => 'Reuse the same value for every library and title.';
+
+	/// en: 'Remember a separate value for each library.'
+	String get scopeLibraryDescription => 'Remember a separate value for each library.';
+
+	/// en: 'Remember a separate value for each show or movie.'
+	String get scopeTitleDescription => 'Remember a separate value for each show or movie.';
+
+	/// en: 'Keep the episode order supplied by the media server.'
+	String get specialsOrderingServerDescription => 'Keep the episode order supplied by the media server.';
+
+	/// en: 'Place specials among regular episodes by their air date.'
+	String get specialsOrderingAirDateDescription => 'Place specials among regular episodes by their air date.';
+
+	/// en: 'Place every special after the regular seasons.'
+	String get specialsOrderingLastDescription => 'Place every special after the regular seasons.';
+
+	/// en: 'Choose whether intro markers play normally, show a skip button, or skip automatically.'
+	String get skipIntroModeDescription => 'Choose whether intro markers play normally, show a skip button, or skip automatically.';
+
+	/// en: 'Choose whether credits play normally, show a skip button, or skip automatically.'
+	String get skipCreditsModeDescription => 'Choose whether credits play normally, show a skip button, or skip automatically.';
+
+	/// en: 'Choose whether detected ads play normally, show a skip button, or skip automatically.'
+	String get skipAdsModeDescription => 'Choose whether detected ads play normally, show a skip button, or skip automatically.';
+
+	/// en: 'Let the active player choose its normal buffer size.'
+	String get playbackBufferAutoDescription => 'Let the active player choose its normal buffer size.';
+
+	/// en: 'Keep more media ready ahead of playback; this uses more memory.'
+	String get playbackBufferLargeDescription => 'Keep more media ready ahead of playback; this uses more memory.';
+
+	/// en: 'Keep the largest read-ahead buffer; this uses the most memory.'
+	String get playbackBufferExtraLargeDescription => 'Keep the largest read-ahead buffer; this uses the most memory.';
+
+	/// en: 'Set the default video resolution and bitrate ceiling for streams that the server transcodes.'
+	String get defaultQualityDescription => 'Set the default video resolution and bitrate ceiling for streams that the server transcodes.';
+
+	/// en: 'Override Default Quality when the device is using a cellular-only connection.'
+	String get cellularQualityDescription => 'Override Default Quality when the device is using a cellular-only connection.';
+
+	/// en: 'Override Default Quality when connecting to a server over a remote connection.'
+	String get remoteQualityDescription => 'Override Default Quality when connecting to a server over a remote connection.';
+
+	/// en: 'Play the source at its available quality without asking the server to transcode it.'
+	String get qualityPresetOriginalDescription => 'Play the source at its available quality without asking the server to transcode it.';
+
+	/// en: 'Ask the server for a converted stream using the resolution and bitrate shown above.'
+	String get qualityPresetTranscodeOptionDescription => 'Ask the server for a converted stream using the resolution and bitrate shown above.';
+
+	/// en: 'Use the quality selected in Default Quality.'
+	String get qualityPresetSameAsDefaultDescription => 'Use the quality selected in Default Quality.';
+
+	/// en: 'Set the maximum audio bitrate requested from the server; Original keeps the source stream.'
+	String get musicQualityDescription => 'Set the maximum audio bitrate requested from the server; Original keeps the source stream.';
+
+	/// en: 'Play the source audio without a bitrate-capped transcode.'
+	String get musicQualityOriginalDescription => 'Play the source audio without a bitrate-capped transcode.';
+
+	/// en: 'Request a server transcode capped near the bitrate shown above; the actual output can vary.'
+	String get musicQualityTranscodeOptionDescription => 'Request a server transcode capped near the bitrate shown above; the actual output can vary.';
+
+	/// en: 'Maximum volume (%)'
+	String get maxVolumeInputLabel => 'Maximum volume (%)';
+
+	/// en: 'Check now whether a newer version of PlezyNG is available.'
+	String get checkForUpdatesDescription => 'Check now whether a newer version of PlezyNG is available.';
+
+	/// en: 'Choose the app theme and adjust library cards, Home rows, and navigation.'
+	String get appearanceDescription => 'Choose the app theme and adjust library cards, Home rows, and navigation.';
+
+	/// en: 'Choose the library that contains the clips available as movie pre-rolls.'
+	String get prerollLibraryDescription => 'Choose the library that contains the clips available as movie pre-rolls.';
+
+	/// en: 'Choose which clips from the selected library can play before movies.'
+	String get prerollSelectionDescription => 'Choose which clips from the selected library can play before movies.';
+
+	/// en: 'Wait this many minutes without input before showing screensaver artwork.'
+	String get contentScreensaverDelayOptionDescription => 'Wait this many minutes without input before showing screensaver artwork.';
+
+	/// en: 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.'
+	String get videoCodecOptionDescription => 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.';
 }
 
 // Path: themeEditor
@@ -2064,6 +2279,39 @@ class Translations$themeEditor$en {
 
 	/// en: 'Secondary text reads like this'
 	String get previewMutedText => 'Secondary text reads like this';
+
+	/// en: 'Follow your device appearance and switch between light and dark automatically.'
+	String get themeSystemDescription => 'Follow your device appearance and switch between light and dark automatically.';
+
+	/// en: 'Use a bright background with dark text.'
+	String get themeLightDescription => 'Use a bright background with dark text.';
+
+	/// en: 'Use a dark background with light text.'
+	String get themeDarkDescription => 'Use a dark background with light text.';
+
+	/// en: 'Use near-black surfaces that reduce light on OLED screens.'
+	String get themeOledDescription => 'Use near-black surfaces that reduce light on OLED screens.';
+
+	/// en: 'Use warm red and amber accent colors.'
+	String get themeEmberDescription => 'Use warm red and amber accent colors.';
+
+	/// en: 'Use cool blue accent colors.'
+	String get themeGlacierDescription => 'Use cool blue accent colors.';
+
+	/// en: 'Use muted green and natural accent colors.'
+	String get themeForestDescription => 'Use muted green and natural accent colors.';
+
+	/// en: 'Use violet and plum accent colors.'
+	String get themePlumDescription => 'Use violet and plum accent colors.';
+
+	/// en: 'Use warm paper-like surfaces and ink-inspired colors.'
+	String get themePaperDescription => 'Use warm paper-like surfaces and ink-inspired colors.';
+
+	/// en: 'Use the color palette you created in the custom theme editor.'
+	String get themeCustomDescription => 'Use the color palette you created in the custom theme editor.';
+
+	/// en: 'Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.'
+	String get editorDescription => 'Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.';
 }
 
 // Path: search
@@ -2777,6 +3025,12 @@ class Translations$accessibility$en {
 
 	/// en: 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.'
 	String get navigationHint => 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.';
+
+	/// en: 'Scale interface text in PlezyNG in addition to your device’s system text-size setting.'
+	String get textSizeDescription => 'Scale interface text in PlezyNG in addition to your device’s system text-size setting.';
+
+	/// en: 'Use a heavier weight for interface labels and messages to make them easier to distinguish.'
+	String get boldTextHint => 'Use a heavier weight for interface labels and messages to make them easier to distinguish.';
 }
 
 // Path: tooltips
@@ -3400,6 +3654,43 @@ class Translations$subtitlingStyling$en {
 
 	/// en: 'Video resolution'
 	String get renderResolutionVideo => 'Video resolution';
+
+	/// en: 'Set the subtitle text size on this device.'
+	String get fontSizeDescription => 'Set the subtitle text size on this device.';
+
+	/// en: 'Choose the color used for subtitle text.'
+	String get textColorDescription => 'Choose the color used for subtitle text.';
+
+	/// en: 'Set the thickness of the outline around subtitle text.'
+	String get borderSizeDescription => 'Set the thickness of the outline around subtitle text.';
+
+	/// en: 'Choose the color used for the subtitle outline.'
+	String get borderColorDescription => 'Choose the color used for the subtitle outline.';
+
+	/// en: 'Choose the color behind subtitle text.'
+	String get backgroundColorDescription => 'Choose the color behind subtitle text.';
+
+	/// en: 'Set how transparent the subtitle background is: 0% is clear and 100% is solid.'
+	String get backgroundOpacityDescription => 'Set how transparent the subtitle background is: 0% is clear and 100% is solid.';
+
+	/// en: 'Move subtitles vertically. 0% is the top of the video and 100% is the bottom.'
+	String get positionDescription => 'Move subtitles vertically. 0% is the top of the video and 100% is the bottom.';
+
+	/// en: 'Choose whether the player follows, adjusts, replaces, or removes styling embedded in ASS subtitles.'
+	String get assOverrideDescription => 'Choose whether the player follows, adjusts, replaces, or removes styling embedded in ASS subtitles.';
+
+	late final Translations$subtitlingStyling$assOverrideOptions$en assOverrideOptions = Translations$subtitlingStyling$assOverrideOptions$en.internal(_root);
+
+	/// en: 'Choose the resolution used to rasterize image and ASS subtitles. Lower Android scales can reduce rendering work but look softer.'
+	String get renderResolutionDescription => 'Choose the resolution used to rasterize image and ASS subtitles. Lower Android scales can reduce rendering work but look softer.';
+
+	late final Translations$subtitlingStyling$renderResolutionOptions$en renderResolutionOptions = Translations$subtitlingStyling$renderResolutionOptions$en.internal(_root);
+
+	/// en: 'Draw subtitle text in a heavier weight.'
+	String get boldDescription => 'Draw subtitle text in a heavier weight.';
+
+	/// en: 'Draw subtitle text in italics.'
+	String get italicDescription => 'Draw subtitle text in italics.';
 }
 
 // Path: mpvConfig
@@ -3847,6 +4138,30 @@ class Translations$accountPreferences$en {
 	String get mediaReviewsVisibility => 'Ratings & reviews';
 
 	late final Translations$accountPreferences$mediaReviewsOptions$en mediaReviewsOptions = Translations$accountPreferences$mediaReviewsOptions$en.internal(_root);
+
+	/// en: 'Prefer audio tracks in this language when the server or player selects a track automatically.'
+	String get preferredAudioLanguageDescription => 'Prefer audio tracks in this language when the server or player selects a track automatically.';
+
+	/// en: 'Prefer subtitle tracks in this language when subtitles are selected automatically.'
+	String get preferredSubtitleLanguageDescription => 'Prefer subtitle tracks in this language when subtitles are selected automatically.';
+
+	/// en: 'Choose whether SDH captions are preferred or required during automatic subtitle selection.'
+	String get subtitleAccessibilityDescription => 'Choose whether SDH captions are preferred or required during automatic subtitle selection.';
+
+	/// en: 'Choose whether forced subtitle tracks are preferred or required during automatic selection.'
+	String get forcedSubtitleDescription => 'Choose whether forced subtitle tracks are preferred or required during automatic selection.';
+
+	/// en: 'Choose which media types receive a watched checkmark in the server interface.'
+	String get watchedIndicatorDescription => 'Choose which media types receive a watched checkmark in the server interface.';
+
+	/// en: 'Choose which audience and critic ratings the server shows on media pages.'
+	String get mediaReviewsVisibilityDescription => 'Choose which audience and critic ratings the server shows on media pages.';
+
+	/// en: 'Choose when subtitles turn on automatically for this server account.'
+	String get subtitleModeDescription => 'Choose when subtitles turn on automatically for this server account.';
+
+	/// en: 'These preferences are stored on your media-server account and may apply on other clients too.'
+	String get hubDescription => 'These preferences are stored on your media-server account and may apply on other clients too.';
 }
 
 // Path: discover
@@ -6196,6 +6511,27 @@ class Translations$externalPlayer$en {
 
 	/// en: 'Play in External Player'
 	String get playInExternalPlayer => 'Play in External Player';
+
+	/// en: 'Choose another app to open videos in. Available players depend on your device and installed apps.'
+	String get description => 'Choose another app to open videos in. Available players depend on your device and installed apps.';
+
+	/// en: 'Let the operating system open the video with its default app.'
+	String get systemDefaultDescription => 'Let the operating system open the video with its default app.';
+
+	/// en: 'Open videos with ${player}.'
+	String playerOptionDescription({required Object player}) => 'Open videos with ${player}.';
+
+	/// en: 'The label shown in the player list.'
+	String get playerNameDescription => 'The label shown in the player list.';
+
+	/// en: 'Enter the Android package name of the player app, such as com.example.player.'
+	String get playerPackageDescription => 'Enter the Android package name of the player app, such as com.example.player.';
+
+	/// en: 'Enter the installed player command or executable path for this device.'
+	String get playerCommandDescription => 'Enter the installed player command or executable path for this device.';
+
+	/// en: 'Enter the URL scheme and optional URL template used to launch the player.'
+	String get playerUrlSchemeDescription => 'Enter the URL scheme and optional URL template used to launch the player.';
 }
 
 // Path: metadataEdit
@@ -6734,6 +7070,11 @@ class Translations$services$en {
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
 	late final Translations$services$libraryFilter$en libraryFilter = Translations$services$libraryFilter$en.internal(_root);
+
+	/// en: 'Connect to Seerr or Overseerr to search for titles and submit media requests.'
+	String get seerrDescription => 'Connect to Seerr or Overseerr to search for titles and submit media requests.';
+
+	late final Translations$services$trackerDescriptions$en trackerDescriptions = Translations$services$trackerDescriptions$en.internal(_root);
 }
 
 // Path: addServer
@@ -7262,6 +7603,15 @@ class Translations$homeLayout$en {
 
 	/// en: 'Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.'
 	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
+
+	/// en: 'Choose whether tapping or selecting a Hero card starts playback or opens its details.'
+	String get tapHeroCardDescription => 'Choose whether tapping or selecting a Hero card starts playback or opens its details.';
+
+	/// en: 'Start the selected item right away.'
+	String get heroTapPlayDescription => 'Start the selected item right away.';
+
+	/// en: 'Open the selected item’s details before choosing an action.'
+	String get heroTapDetailsDescription => 'Open the selected item’s details before choosing an action.';
 }
 
 // Path: platform
@@ -8956,6 +9306,27 @@ class Translations$common$mediaKind$en {
 	String get folder => 'Folder';
 }
 
+// Path: settings.startupSectionOptions
+class Translations$settings$startupSectionOptions$en {
+	Translations$settings$startupSectionOptions$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Open recommendations and items from connected discovery sources.'
+	String get discover => 'Open recommendations and items from connected discovery sources.';
+
+	/// en: 'Open your connected media libraries.'
+	String get libraries => 'Open your connected media libraries.';
+
+	/// en: 'Open Live TV when a server provides it; otherwise startup falls back to Home.'
+	String get liveTv => 'Open Live TV when a server provides it; otherwise startup falls back to Home.';
+
+	/// en: 'Open media search.'
+	String get search => 'Open media search.';
+}
+
 // Path: themeEditor.slots
 class Translations$themeEditor$slots$en {
 	Translations$themeEditor$slots$en.internal(this._root);
@@ -9142,6 +9513,57 @@ class Translations$videoControls$pipErrors$en {
 	String unknown({required Object error}) => 'An error occurred: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class Translations$subtitlingStyling$assOverrideOptions$en {
+	Translations$subtitlingStyling$assOverrideOptions$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Keep the fonts, colors, sizes, and placement authored in the subtitle file.'
+	String get no => 'Keep the fonts, colors, sizes, and placement authored in the subtitle file.';
+
+	/// en: 'Allow the player’s subtitle style settings to adjust ASS subtitles.'
+	String get yes => 'Allow the player’s subtitle style settings to adjust ASS subtitles.';
+
+	/// en: 'Apply player styling and scale embedded sizes to match the video dimensions.'
+	String get scale => 'Apply player styling and scale embedded sizes to match the video dimensions.';
+
+	/// en: 'Replace embedded ASS styles with the player’s subtitle style.'
+	String get force => 'Replace embedded ASS styles with the player’s subtitle style.';
+
+	/// en: 'Remove embedded ASS formatting and render the subtitle text plainly.'
+	String get strip => 'Remove embedded ASS formatting and render the subtitle text plainly.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class Translations$subtitlingStyling$renderResolutionOptions$en {
+	Translations$subtitlingStyling$renderResolutionOptions$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Render at the full display surface resolution for the sharpest result.'
+	String get screen => 'Render at the full display surface resolution for the sharpest result.';
+
+	/// en: 'Render using the video resolution as the reference, which can reduce work on high-resolution displays.'
+	String get video => 'Render using the video resolution as the reference, which can reduce work on high-resolution displays.';
+
+	/// en: 'Render at 75% of the display surface resolution for a modest performance saving.'
+	String get threeQuarter => 'Render at 75% of the display surface resolution for a modest performance saving.';
+
+	/// en: 'Render at 50% of the display surface resolution to reduce work, with softer edges.'
+	String get half => 'Render at 50% of the display surface resolution to reduce work, with softer edges.';
+
+	/// en: 'Render at one-third of the display surface resolution to reduce work, with softer edges.'
+	String get third => 'Render at one-third of the display surface resolution to reduce work, with softer edges.';
+
+	/// en: 'Render at one-quarter of the display surface resolution to reduce work, with the softest result.'
+	String get quarter => 'Render at one-quarter of the display surface resolution to reduce work, with the softest result.';
+}
+
 // Path: accountPreferences.groups
 class Translations$accountPreferences$groups$en {
 	Translations$accountPreferences$groups$en.internal(this._root);
@@ -9218,6 +9640,18 @@ class Translations$accountPreferences$subtitleAccessibilityOptions$en {
 
 	/// en: 'Only non-SDH subtitles'
 	String get onlyNonSdh => 'Only non-SDH subtitles';
+
+	/// en: 'Prefer standard subtitles when both standard and SDH versions are available.'
+	String get preferNonSdhDescription => 'Prefer standard subtitles when both standard and SDH versions are available.';
+
+	/// en: 'Prefer SDH subtitles when available, but allow standard subtitles as a fallback.'
+	String get preferSdhDescription => 'Prefer SDH subtitles when available, but allow standard subtitles as a fallback.';
+
+	/// en: 'Use SDH subtitles only; do not fall back to standard subtitles.'
+	String get onlySdhDescription => 'Use SDH subtitles only; do not fall back to standard subtitles.';
+
+	/// en: 'Use standard subtitles only; exclude SDH subtitles.'
+	String get onlyNonSdhDescription => 'Use standard subtitles only; exclude SDH subtitles.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -9239,6 +9673,18 @@ class Translations$accountPreferences$forcedSubtitleOptions$en {
 
 	/// en: 'Only non-forced subtitles'
 	String get onlyNonForced => 'Only non-forced subtitles';
+
+	/// en: 'Prefer regular subtitles, but allow forced tracks as a fallback.'
+	String get preferNonForcedDescription => 'Prefer regular subtitles, but allow forced tracks as a fallback.';
+
+	/// en: 'Prefer forced tracks when available, but allow regular subtitles as a fallback.'
+	String get preferForcedDescription => 'Prefer forced tracks when available, but allow regular subtitles as a fallback.';
+
+	/// en: 'Use only tracks marked as forced.'
+	String get onlyForcedDescription => 'Use only tracks marked as forced.';
+
+	/// en: 'Exclude tracks marked as forced.'
+	String get onlyNonForcedDescription => 'Exclude tracks marked as forced.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -9260,6 +9706,18 @@ class Translations$accountPreferences$watchedIndicatorOptions$en {
 
 	/// en: 'TV shows only'
 	String get shows => 'TV shows only';
+
+	/// en: 'Do not show watched checkmarks.'
+	String get noneDescription => 'Do not show watched checkmarks.';
+
+	/// en: 'Show watched checkmarks for movies and TV shows.'
+	String get moviesAndShowsDescription => 'Show watched checkmarks for movies and TV shows.';
+
+	/// en: 'Show watched checkmarks for movies only.'
+	String get moviesDescription => 'Show watched checkmarks for movies only.';
+
+	/// en: 'Show watched checkmarks for TV shows only.'
+	String get showsDescription => 'Show watched checkmarks for TV shows only.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -9281,6 +9739,18 @@ class Translations$accountPreferences$mediaReviewsOptions$en {
 
 	/// en: 'Hidden'
 	String get nobody => 'Hidden';
+
+	/// en: 'Show both user ratings and critic ratings.'
+	String get usersAndCriticsDescription => 'Show both user ratings and critic ratings.';
+
+	/// en: 'Show ratings and reviews submitted by users.'
+	String get usersOnlyDescription => 'Show ratings and reviews submitted by users.';
+
+	/// en: 'Show critic ratings and reviews.'
+	String get criticsOnlyDescription => 'Show critic ratings and reviews.';
+
+	/// en: 'Hide ratings and reviews.'
+	String get nobodyDescription => 'Hide ratings and reviews.';
 }
 
 // Path: discover.findNext
@@ -10985,6 +11455,33 @@ class Translations$services$libraryFilter$en {
 
 	/// en: 'No libraries available'
 	String get noLibraries => 'No libraries available';
+
+	/// en: 'Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.'
+	String get modeDescription => 'Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.';
+}
+
+// Path: services.trackerDescriptions
+class Translations$services$trackerDescriptions$en {
+	Translations$services$trackerDescriptions$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Sync watched episodes and movies with your Trakt account.'
+	String get trakt => 'Sync watched episodes and movies with your Trakt account.';
+
+	/// en: 'Sync anime lists and watch progress with MyAnimeList.'
+	String get mal => 'Sync anime lists and watch progress with MyAnimeList.';
+
+	/// en: 'Sync anime lists and watch progress with AniList.'
+	String get anilist => 'Sync anime lists and watch progress with AniList.';
+
+	/// en: 'Sync watched movies, TV shows, and anime with Simkl.'
+	String get simkl => 'Sync watched movies, TV shows, and anime with Simkl.';
+
+	/// en: 'Show MDBList ratings and lists in recommendations and Explore.'
+	String get mdblist => 'Show MDBList ratings and lists in recommendations and Explore.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -11042,6 +11539,7 @@ extension on Translations {
 			'appIcon.names.strata' => 'Strata',
 			'appIcon.names.facet' => 'Facet',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Choose the icon shown by your device launcher. The previews show how each option looks.',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -11506,9 +12004,9 @@ extension on Translations {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
-			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
 			'settings.audioChannelLimit' => 'Audio Channels',
 			'settings.audioChannelLimitDescription' => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel',
@@ -11631,6 +12129,80 @@ extension on Translations {
 			'settings.enterFullscreenOnPlaybackStartDescription' => 'Open desktop video in fullscreen when playback starts',
 			'settings.extendVideoIntoDisplayCutout' => 'Extend video into display cutout',
 			'settings.extendVideoIntoDisplayCutoutDescription' => 'Let fullscreen video use the camera cutout on Android phones',
+			'settings.languageDescription' => 'Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.',
+			'settings.themeDescription' => 'Choose the colors and contrast used throughout the app.',
+			'settings.libraryDensityDescription' => 'Change how many library cards fit in each row.',
+			'settings.displayScaleDescription' => 'Resize the interface on this car display without changing your device-wide text size.',
+			'settings.themeSongVolumeDescription' => 'Set the volume of theme songs relative to other audio.',
+			'settings.viewModeDescription' => 'Choose whether library items appear as posters in a grid or as a compact list.',
+			'settings.gridViewDescription' => 'Arrange library items in rows and columns of posters.',
+			'settings.listViewDescription' => 'Show library items in a vertical list with more text per item.',
+			'settings.gridSpacingDescription' => 'Set the gap between posters in library grids.',
+			'settings.gridSpacingTightDescription' => 'Fit more posters across the screen with smaller gaps.',
+			'settings.gridSpacingNormalDescription' => 'Use the standard gap between posters.',
+			'settings.gridSpacingSpaciousDescription' => 'Add larger gaps between posters for more separation.',
+			'settings.episodePosterModeDescription' => 'Choose which artwork appears on episode cards.',
+			'settings.seriesPosterDescription' => 'Use the show’s series poster for every episode.',
+			'settings.seasonPosterDescription' => 'Use the season poster for each episode when available.',
+			'settings.episodeThumbnailDescription' => 'Use a frame from the episode when available.',
+			'settings.continueWatchingActionDescription' => 'Choose what happens when you activate a Continue Watching card.',
+			'settings.continueWatchingPlayDescription' => 'Start the movie or episode immediately.',
+			'settings.continueWatchingDetailsDescription' => 'Open the title page first so you can review details and choose an action.',
+			'settings.episodeActionDescription' => 'Choose what happens when you activate an episode card.',
+			'settings.episodePlayDescription' => 'Start the episode immediately.',
+			'settings.episodeDetailsDescription' => 'Open the episode page before playback.',
+			'settings.contentScreensaverDelayDescription' => 'Choose how long PlezyNG waits without input before showing artwork.',
+			'settings.continueWatchingRowSizeDescription' => 'Choose how large the cards are in the Continue Watching row.',
+			'settings.rowSizeCompactDescription' => 'Show smaller cards so more items fit across the row.',
+			'settings.rowSizeStandardDescription' => 'Use the standard card size.',
+			'settings.rowSizeLargeDescription' => 'Show larger cards with more artwork detail.',
+			'settings.visualEffectsDescription' => 'Choose the animation and artwork effects budget for this device.',
+			'settings.visualEffectsFullDescription' => 'Use the full animation and artwork effects on every device.',
+			'settings.startupSectionDescription' => 'Choose which section opens when PlezyNG starts.',
+			'settings.startupSectionOptions.discover' => 'Open recommendations and items from connected discovery sources.',
+			'settings.startupSectionOptions.libraries' => 'Open your connected media libraries.',
+			'settings.startupSectionOptions.liveTv' => 'Open Live TV when a server provides it; otherwise startup falls back to Home.',
+			'settings.startupSectionOptions.search' => 'Open media search.',
+			'settings.smallSkipDurationDescription' => 'Set the distance moved by the short backward and forward seek controls.',
+			'settings.largeSkipDurationDescription' => 'Set the distance moved by the long backward and forward seek controls.',
+			'settings.rewindOnResumeDescription' => 'Move playback back by this amount when resuming a video.',
+			'settings.defaultSleepTimerDescription' => 'Set the initial duration used when you start the sleep timer.',
+			'settings.playNextCountdownDescription' => 'Wait this long before starting the next episode. Set to 0 to start immediately.',
+			'settings.autoSkipDelaySettingDescription' => 'Applies when an intro, credits, or ad is set to skip automatically.',
+			'settings.downmixCenterBoostDescription' => 'Raise dialogue in the center channel when surround audio is mixed down to stereo.',
+			'settings.displaySwitchDelayDescription' => 'Wait before changing display mode so the TV or receiver can finish its previous switch.',
+			'settings.playerBackendDescription' => 'Choose which playback engine decodes and renders video on this device.',
+			'settings.exoPlayerDescription' => 'Use Android’s native Media3-based player and supported hardware paths.',
+			'settings.mpvDescription' => 'Use mpv, which exposes additional playback, subtitle, and video processing controls.',
+			'settings.scopeOffDescription' => 'Keep changes for the current playback session only.',
+			'settings.scopeGlobalDescription' => 'Reuse the same value for every library and title.',
+			'settings.scopeLibraryDescription' => 'Remember a separate value for each library.',
+			'settings.scopeTitleDescription' => 'Remember a separate value for each show or movie.',
+			'settings.specialsOrderingServerDescription' => 'Keep the episode order supplied by the media server.',
+			'settings.specialsOrderingAirDateDescription' => 'Place specials among regular episodes by their air date.',
+			'settings.specialsOrderingLastDescription' => 'Place every special after the regular seasons.',
+			'settings.skipIntroModeDescription' => 'Choose whether intro markers play normally, show a skip button, or skip automatically.',
+			'settings.skipCreditsModeDescription' => 'Choose whether credits play normally, show a skip button, or skip automatically.',
+			'settings.skipAdsModeDescription' => 'Choose whether detected ads play normally, show a skip button, or skip automatically.',
+			'settings.playbackBufferAutoDescription' => 'Let the active player choose its normal buffer size.',
+			'settings.playbackBufferLargeDescription' => 'Keep more media ready ahead of playback; this uses more memory.',
+			'settings.playbackBufferExtraLargeDescription' => 'Keep the largest read-ahead buffer; this uses the most memory.',
+			'settings.defaultQualityDescription' => 'Set the default video resolution and bitrate ceiling for streams that the server transcodes.',
+			'settings.cellularQualityDescription' => 'Override Default Quality when the device is using a cellular-only connection.',
+			'settings.remoteQualityDescription' => 'Override Default Quality when connecting to a server over a remote connection.',
+			'settings.qualityPresetOriginalDescription' => 'Play the source at its available quality without asking the server to transcode it.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Ask the server for a converted stream using the resolution and bitrate shown above.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Use the quality selected in Default Quality.',
+			'settings.musicQualityDescription' => 'Set the maximum audio bitrate requested from the server; Original keeps the source stream.',
+			'settings.musicQualityOriginalDescription' => 'Play the source audio without a bitrate-capped transcode.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Request a server transcode capped near the bitrate shown above; the actual output can vary.',
+			'settings.maxVolumeInputLabel' => 'Maximum volume (%)',
+			'settings.checkForUpdatesDescription' => 'Check now whether a newer version of PlezyNG is available.',
+			'settings.appearanceDescription' => 'Choose the app theme and adjust library cards, Home rows, and navigation.',
+			'settings.prerollLibraryDescription' => 'Choose the library that contains the clips available as movie pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Choose which clips from the selected library can play before movies.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Wait this many minutes without input before showing screensaver artwork.',
+			'settings.videoCodecOptionDescription' => 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -11669,6 +12241,17 @@ extension on Translations {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
 			'themeEditor.previewSwitch' => 'Autoplay',
 			'themeEditor.previewMutedText' => 'Secondary text reads like this',
+			'themeEditor.themeSystemDescription' => 'Follow your device appearance and switch between light and dark automatically.',
+			'themeEditor.themeLightDescription' => 'Use a bright background with dark text.',
+			'themeEditor.themeDarkDescription' => 'Use a dark background with light text.',
+			'themeEditor.themeOledDescription' => 'Use near-black surfaces that reduce light on OLED screens.',
+			'themeEditor.themeEmberDescription' => 'Use warm red and amber accent colors.',
+			'themeEditor.themeGlacierDescription' => 'Use cool blue accent colors.',
+			'themeEditor.themeForestDescription' => 'Use muted green and natural accent colors.',
+			'themeEditor.themePlumDescription' => 'Use violet and plum accent colors.',
+			'themeEditor.themePaperDescription' => 'Use warm paper-like surfaces and ink-inspired colors.',
+			'themeEditor.themeCustomDescription' => 'Use the color palette you created in the custom theme editor.',
+			'themeEditor.editorDescription' => 'Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -11914,6 +12497,8 @@ extension on Translations {
 			'accessibility.largeTargets' => 'Larger touch targets',
 			'accessibility.largeTargetsHint' => 'Give shared controls more room for touch and assistive navigation.',
 			'accessibility.navigationHint' => 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.',
+			'accessibility.textSizeDescription' => 'Scale interface text in PlezyNG in addition to your device’s system text-size setting.',
+			'accessibility.boldTextHint' => 'Use a heavier weight for interface labels and messages to make them easier to distinguish.',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
@@ -11933,6 +12518,8 @@ extension on Translations {
 			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
@@ -12021,8 +12608,6 @@ extension on Translations {
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
@@ -12114,6 +12699,28 @@ extension on Translations {
 			'subtitlingStyling.renderResolution' => 'Render Resolution',
 			'subtitlingStyling.renderResolutionScreen' => 'Screen resolution',
 			'subtitlingStyling.renderResolutionVideo' => 'Video resolution',
+			'subtitlingStyling.fontSizeDescription' => 'Set the subtitle text size on this device.',
+			'subtitlingStyling.textColorDescription' => 'Choose the color used for subtitle text.',
+			'subtitlingStyling.borderSizeDescription' => 'Set the thickness of the outline around subtitle text.',
+			'subtitlingStyling.borderColorDescription' => 'Choose the color used for the subtitle outline.',
+			'subtitlingStyling.backgroundColorDescription' => 'Choose the color behind subtitle text.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Set how transparent the subtitle background is: 0% is clear and 100% is solid.',
+			'subtitlingStyling.positionDescription' => 'Move subtitles vertically. 0% is the top of the video and 100% is the bottom.',
+			'subtitlingStyling.assOverrideDescription' => 'Choose whether the player follows, adjusts, replaces, or removes styling embedded in ASS subtitles.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Keep the fonts, colors, sizes, and placement authored in the subtitle file.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Allow the player’s subtitle style settings to adjust ASS subtitles.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Apply player styling and scale embedded sizes to match the video dimensions.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Replace embedded ASS styles with the player’s subtitle style.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Remove embedded ASS formatting and render the subtitle text plainly.',
+			'subtitlingStyling.renderResolutionDescription' => 'Choose the resolution used to rasterize image and ASS subtitles. Lower Android scales can reduce rendering work but look softer.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render at the full display surface resolution for the sharpest result.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render using the video resolution as the reference, which can reduce work on high-resolution displays.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render at 75% of the display surface resolution for a modest performance saving.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render at 50% of the display surface resolution to reduce work, with softer edges.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render at one-third of the display surface resolution to reduce work, with softer edges.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render at one-quarter of the display surface resolution to reduce work, with the softest result.',
+			'subtitlingStyling.boldDescription' => 'Draw subtitle text in a heavier weight.',
+			'subtitlingStyling.italicDescription' => 'Draw subtitle text in italics.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
@@ -12250,11 +12857,19 @@ extension on Translations {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Prefer SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Only SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Only non-SDH subtitles',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Prefer standard subtitles when both standard and SDH versions are available.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Prefer SDH subtitles when available, but allow standard subtitles as a fallback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Use SDH subtitles only; do not fall back to standard subtitles.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Use standard subtitles only; exclude SDH subtitles.',
 			'accountPreferences.forcedSubtitles' => 'Forced subtitles',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Prefer non-forced subtitles',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Prefer forced subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Only forced subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Only non-forced subtitles',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Prefer regular subtitles, but allow forced tracks as a fallback.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Prefer forced tracks when available, but allow regular subtitles as a fallback.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Use only tracks marked as forced.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Exclude tracks marked as forced.',
 			'accountPreferences.displayMissingEpisodes' => 'Show missing episodes',
 			'accountPreferences.displayMissingEpisodesDescription' => 'List episodes the server knows about but has no file for.',
 			'accountPreferences.hidePlayedInLatest' => 'Hide watched items in Latest',
@@ -12268,11 +12883,27 @@ extension on Translations {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Movies and TV shows',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Movies only',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Do not show watched checkmarks.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Show watched checkmarks for movies and TV shows.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Show watched checkmarks for movies only.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Show watched checkmarks for TV shows only.',
 			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Show both user ratings and critic ratings.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Show ratings and reviews submitted by users.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Show critic ratings and reviews.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Hide ratings and reviews.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Prefer audio tracks in this language when the server or player selects a track automatically.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Prefer subtitle tracks in this language when subtitles are selected automatically.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Choose whether SDH captions are preferred or required during automatic subtitle selection.',
+			'accountPreferences.forcedSubtitleDescription' => 'Choose whether forced subtitle tracks are preferred or required during automatic selection.',
+			'accountPreferences.watchedIndicatorDescription' => 'Choose which media types receive a watched checkmark in the server interface.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Choose which audience and critic ratings the server shows on media pages.',
+			'accountPreferences.subtitleModeDescription' => 'Choose when subtitles turn on automatically for this server account.',
+			'accountPreferences.hubDescription' => 'These preferences are stored on your media-server account and may apply on other clients too.',
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
@@ -12401,6 +13032,8 @@ extension on Translations {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
@@ -12535,8 +13168,6 @@ extension on Translations {
 			'startup.repairBodySignInsKept' => 'Your servers and profiles should stay signed in.',
 			'startup.repairBodySignInsLost' => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.',
 			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. PlezyNG will tell you exactly what it kept.',
-			_ => null,
-		} ?? switch (path) {
 			'startup.repairConfirm' => 'Repair',
 			'startup.repairSucceeded' => 'Storage repaired',
 			'startup.repairNeedsRestart' => 'Storage repaired — restart required',
@@ -12915,6 +13546,8 @@ extension on Translations {
 			'watchTogether.connecting' => 'Connecting...',
 			'watchTogether.relayPublic' => 'Rooms use the public Open Watch Party relays.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rooms use your relay at ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.roomActions' => 'Room actions',
 			'watchTogether.renameRoom' => 'Rename Room',
@@ -13049,8 +13682,6 @@ extension on Translations {
 			'watchTogether.errors.forbidden' => 'Only the host can do that.',
 			'watchTogether.errors.notInRoom' => 'You\'re not in a room.',
 			'watchTogether.errors.alreadyInRoom' => 'You\'re already in a room.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.resumeFailed' => 'Couldn\'t rejoin the room.',
 			'watchTogether.errors.unsupported' => 'The relay doesn\'t support this.',
 			'watchTogether.errors.generic' => 'Something went wrong. Try again.',
@@ -13393,6 +14024,13 @@ extension on Translations {
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
+			'externalPlayer.description' => 'Choose another app to open videos in. Available players depend on your device and installed apps.',
+			'externalPlayer.systemDefaultDescription' => 'Let the operating system open the video with its default app.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Open videos with ${player}.',
+			'externalPlayer.playerNameDescription' => 'The label shown in the player list.',
+			'externalPlayer.playerPackageDescription' => 'Enter the Android package name of the player app, such as com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Enter the installed player command or executable path for this device.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Enter the URL scheme and optional URL template used to launch the player.',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
@@ -13422,6 +14060,8 @@ extension on Translations {
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
@@ -13563,8 +14203,6 @@ extension on Translations {
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',
 			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
@@ -13584,6 +14222,13 @@ extension on Translations {
 			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
 			'services.libraryFilter.libraries' => 'Libraries',
 			'services.libraryFilter.noLibraries' => 'No libraries available',
+			'services.libraryFilter.modeDescription' => 'Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.',
+			'services.seerrDescription' => 'Connect to Seerr or Overseerr to search for titles and submit media requests.',
+			'services.trackerDescriptions.trakt' => 'Sync watched episodes and movies with your Trakt account.',
+			'services.trackerDescriptions.mal' => 'Sync anime lists and watch progress with MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Sync anime lists and watch progress with AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync watched movies, TV shows, and anime with Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Show MDBList ratings and lists in recommendations and Explore.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
@@ -13751,6 +14396,9 @@ extension on Translations {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'homeLayout.tapHeroCardDescription' => 'Choose whether tapping or selecting a Hero card starts playback or opens its details.',
+			'homeLayout.heroTapPlayDescription' => 'Start the selected item right away.',
+			'homeLayout.heroTapDetailsDescription' => 'Open the selected item’s details before choosing an action.',
 			'platform.localNetworkPermission' => 'PlezyNG connects to your media servers and playback devices on your local network.',
 			'platform.locationPermission' => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.',
 			'platform.photoLibraryPermission' => 'Choose images from your photo library to use as media artwork.',
@@ -13926,6 +14574,8 @@ extension on Translations {
 			'fileSources.offlineQuotaHelp' => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.',
 			'fileSources.offlineStorageUsage' => 'Offline storage',
 			'fileSources.reservedStorage' => 'reserved',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Download queue',
 			'fileSources.downloadRunning' => 'Downloading',
 			'fileSources.downloadQueued' => 'Waiting',
@@ -14077,8 +14727,6 @@ extension on Translations {
 			'sourceSetup.nfsTrustInvalid' => 'Use a CA or server certificate in PEM format. Do not include a private key.',
 			'sourceSetup.addTrustCertificate' => 'Add custom trust certificate',
 			'sourceSetup.replaceTrustCertificate' => 'Replace saved custom certificate',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.',
 			'sourceSetup.clientCertificate' => 'Client certificate (optional)',
 			'sourceSetup.clientCertificateHelp' => 'Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.',

@@ -32,6 +32,34 @@ class SettingsSectionHeader extends StatelessWidget {
   }
 }
 
+/// Compact, visible help text used by settings controls and their dialogs.
+/// Keeping the icon and copy together makes descriptions easy to spot without
+/// adding another focus stop to every settings row.
+class SettingsHelpHint extends StatelessWidget {
+  final String text;
+
+  const SettingsHelpHint({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(Icons.info_outline_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ),
+      ],
+    );
+  }
+}
+
 /// M3E grouped list section: each child gets its own rounded surface card —
 /// large radii on the section's outer corners, small radii between adjacent
 /// items, hairline gaps — with an optional [SettingsSectionHeader] above.
@@ -97,6 +125,7 @@ class SettingsGroup extends StatelessWidget {
 class SegmentedSetting<T> extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String description;
   final List<ButtonSegment<T>> segments;
   final T selected;
   final ValueChanged<T> onChanged;
@@ -105,6 +134,7 @@ class SegmentedSetting<T> extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.description = '',
     required this.segments,
     required this.selected,
     required this.onChanged,
@@ -124,7 +154,14 @@ class SegmentedSetting<T> extends StatelessWidget {
               Text(title, style: settingsOptionTitleStyle(context)),
             ],
           ),
-          const SizedBox(height: 12),
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 40),
+              child: SettingsHelpHint(text: description),
+            ),
+            const SizedBox(height: 12),
+          ],
           ExpressiveButtonGroup<T>(segments: segments, selected: selected, onChanged: onChanged),
         ],
       ),

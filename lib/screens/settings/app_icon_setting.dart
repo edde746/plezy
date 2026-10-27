@@ -42,7 +42,7 @@ class AppIconSetting extends StatelessWidget {
     return SettingNavigationTile(
       icon: Symbols.apps_rounded,
       title: t.appIcon.title,
-      subtitle: appIconById(currentId)?.label(t),
+      subtitle: '${appIconById(currentId)?.label(t) ?? t.appIcon.defaultIcon} · ${t.appIcon.description}',
       onTap: () => OverlaySheetController.showAdaptive<void>(
         context,
         isScrollControlled: true,
@@ -112,6 +112,8 @@ class _AppIconPickerSheetState extends State<AppIconPickerSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (!unlocked) ...[Text(t.appIcon.lockedHint, style: hintStyle), const SizedBox(height: 12)],
+                Text(t.appIcon.description, style: hintStyle),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final spacing = tokensRef.space * 1.5;
