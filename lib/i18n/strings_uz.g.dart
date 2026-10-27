@@ -101,6 +101,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$uz watchLink = _Translations$watchLink$uz._(_root);
 	@override late final _Translations$homeLayout$uz homeLayout = _Translations$homeLayout$uz._(_root);
 	@override late final _Translations$platform$uz platform = _Translations$platform$uz._(_root);
+	@override late final _Translations$universalMedia$uz universalMedia = _Translations$universalMedia$uz._(_root);
 	@override late final _Translations$fileSources$uz fileSources = _Translations$fileSources$uz._(_root);
 	@override late final _Translations$lending$uz lending = _Translations$lending$uz._(_root);
 	@override late final _Translations$audiobook$uz audiobook = _Translations$audiobook$uz._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$uz extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Media muqovasi sifatida ishlatish uchun foto kutubxonangizdan rasmlarni tanlang.';
 	@override String get cameraPermission => 'Companion Remote pultini ulash uchun QR kodlarini skanerlang.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$uz extends Translations$universalMedia$en {
+	_Translations$universalMedia$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Open media';
+	@override String get shortcutHelp => 'Bir linki, playlist, ya da fildi bu seanslar üçün oynay.';
+	@override String get intro => 'Bir link, playlist, o‘fili. Playback PlezyNG\'nin standart oynatıcını kullanır ve librariyizga istorik qoşmaz.';
+	@override String get openWhat => 'Siz o‘zʻqʻqqʻʻqō qʻq?';
+	@override String get stream => 'Adresi';
+	@override String get playlist => 'Playlist';
+	@override String get files => 'Filmi';
+	@override String get favorites => 'Rashida rashida favoritlar';
+	@override String get address => 'Medya adresi';
+	@override String get addressHelp => 'HTTPS is preferred. identifyated credential o signature parametrisli URL\'lar yalnız bu sesyon için kullanılır və favoritlar olarak kaydılamaz.';
+	@override String get displayName => 'U‘zizni nom (opcional)';
+	@override String get displayNameHelp => 'O\'qiz o’qiz, sistem media kontrollar üçün bir shortname seçin.';
+	@override String get allowHttp => 'Bir HTTP-i qaplan qoʻyadi.';
+	@override String get allowHttpHelp => 'HTTP ko‘qifida ko’qifoda. yalnız bir güvenilir ağda qifata. mümkün olduğunca HTTPS qifta.';
+	@override String get advancedProtocols => 'MPV: RTSP, RTMP/RTMPS, UDP, ya RTP adresi girdi. Bu adreslar favoritlar olarak kayganmaz.';
+	@override String get liveStream => 'Ya\'qga qaytadi';
+	@override String get liveStreamHelp => 'Live video o radyo için bunu kullan. App zaman bar, skip buttons, and go-to-time option saklar.';
+	@override String get privateSession => 'Bu playback bu adresi kullanır. Bu profilda tutmaq üçün bir eligibli stream favoritini kaymazlar.';
+	@override String get saveFavorite => 'Favoritini salama';
+	@override String get playNow => 'O‘zadi';
+	@override String get favoriteSaved => 'Bu profili yo‘zadi bu profilga salaydi.';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n,
+		one: '${count}\'dan kaygan oʻshayni oʻsayni playlist entry.',
+		other: '${count}\'dan kaygan oʻshaydi oʻsayan playlist entradi.',
+	);
+	@override String get playlistAddress => 'Playlist adresi';
+	@override String get playlistAddressHelp => 'M3U, m3U8 ya PLS playlist o‘z web adresi. Direct stream link ko‘z bu playlist.';
+	@override String get choosePlaylist => 'Playlist fildi seçin';
+	@override String get openPlaylist => 'Open Playlist';
+	@override String get playlistFormatsHelp => 'Bir playlist 1000\'dan fazla o‘yadi, 2 MB. HLS-i qaytarlar olarak açılır, bu yüzden oyungan bir kalite seçib.';
+	@override String get noFavorites => 'U\'yadi bu profili yo‘zilgan.Favoritlar bu profilda qalib.';
+	@override String get removeFavorite => 'Riyadh preferni qaytadi.';
+	@override String get filesHelp => 'Audio, video, o ISO fillar bir temporary quue. Fillar və URL\'ler library istoriyaya qo‘zilmaydi.';
+	@override String get chooseFiles => 'Filmi seçin';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n,
+		one: '1 seçkin fildi',
+		other: '${count} seçkin fillar',
+	);
+	@override String get wifiTransfer => 'Filmi Wi-Fi-dan qaytadi';
+	@override String get wifiTransferHelp => 'Transfer supported files from a browser on the same trusted network.';
+	@override String get wifiTransferIntro => 'Bu adresi başka bir cihazda bir browser\'da açın. Fillar seçin bu cihazın Fillar və kitaplar kütüphanaya eklemek.';
+	@override String get wifiTransferPrivacy => 'This device receives files via your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 fil, 4 GiB per file, 10 GiB total.';
+	@override String get wifiTransferStarting => 'Bir privat, tim-limited transfer hazırlar.';
+	@override String get wifiTransferUnavailable => 'Transferni başlatmaygan. lokal-netk qapsi kontrollar ve qaytdan koʻyagan.';
+	@override String get openThisAddress => 'Bu adreslardan birini sending cihazda açın.';
+	@override String get copyAddress => 'Transfer adresi kopyadi';
+	@override String get addressCopied => 'Transfer adresi kopyadi';
+	@override String transferExpires({required Object time}) => 'Bu adres ${time}\'da boʻyadi.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n,
+		one: '${count} faili qaytadi',
+		other: '${count} faili qaytadi',
+	);
+	@override String uploadedData({required Object size}) => '${size} qaytadi';
+	@override String get stopTransfer => 'Transfer o‘yadi, adresi boʻyadi.';
+	@override String get startTransfer => 'Transfer başlar';
+	@override String get wifiImportedFiles => 'Wi-Fi transferi';
+	@override String get wifiBrowserTitle => 'Filmi Plezyng’a qaytadi.';
+	@override String get wifiBrowserIntro => 'Video, video, ebook o komik dosyalar seçin. Dosyalar bu cihazın Files and books library\'da kaydedilir. Maximum: 100 dosylar, 4 GiB per file, 10 GiB total.';
+	@override String get uploadFilesLabel => 'Filmi qaytadi';
+	@override String get uploadSelected => 'Seçkin fillar qaytadi';
+	@override String get uploadSelectFirst => 'Bir o‘zari fillar ilk seçin.';
+	@override String get uploading => 'Tadiya';
+	@override String get uploadComplete => 'Filmi PlezyNG\'i qaytadi.';
+	@override String get uploadFailed => 'Fildi ko‘yadi. Bu sayid o\'yadi, qaytmayga koʻyadi!';
+	@override String get liveCue => 'Live';
+	@override String get liveSession => 'Live Stream';
+	@override String get liveCueHelp => 'Live video ya radyo, app koʻshayni zaman barga and skip buttons. Bu adresi o‘shaydi kaymazmaz.';
+	@override String get sessionOnly => 'Bu playback o‘yadi.';
+	@override String get sessionOnlyHelp => 'Playback ko‘yadi bilan o‘shistori.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Foto ayatlar';
+	@override String get pictureHelp => 'Bu film o\'qizmi bilan bilan bilan qaytadi. Playback o‘qizdi bu film o’qizdir.';
+	@override String get resetPicture => 'Reset foto';
+	@override String get brightness => 'Tadiq';
+	@override String get contrast => 'Kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hui';
+	@override String get saturation => 'Saturniya';
+	@override String get view360 => '360° video-ga xiyimadi.';
+	@override String get view360Help => 'Bu 360° video\'ni xiyim. MPV bu view için FFmpeg v360 filtremni gerektirir.';
+	@override String get view360Unavailable => 'Bu mpv build 360° filtremni ko‘yadi.';
+	@override String get view360Yaw => 'Horisontalizmi';
+	@override String get view360Pitch => 'Vertikal görünüş';
+	@override String get view360FieldOfView => 'Viewing o‘zadi';
+	@override String get recordStream => 'Rekord Live Stream';
+	@override String get stopRecording => 'Rekorga ko‘z, rekorga o‘z';
+	@override String get recordingStarted => 'Rekording aktivir. Playback o‘yadi, rekording o’yadi.';
+	@override String get recordingSaved => 'Rekordlar bilan bilan bilan qaytadi, saldi.';
+	@override String get recordingActive => 'Playback o‘yadi. playback o’yadi ko‘yaddi.';
+	@override String get recordingFormatHelp => 'Video, MKV o MPEG-TS. Audio, MKA o MKV seçin.';
+	@override String get replaceRecordingTitle => 'Bu filmini qaytadi?';
+	@override String get replaceRecordingHelp => 'PlezyNG kaymazda mevcut dosyaya geri qaytadi. Yeni kaymazga kaymazmazsa, Plezy NG kaymazdan geri qaytarır.';
+	@override String get replaceRecording => 'Filmi qaytadi';
+	@override String get discHelp => 'Bu kompüteri\'nin optikal diskda bir disk o‘yadi. Siz da Device fillardan bir ISO image o’yadi olabildi.';
+	@override String get discs => 'Optik diski';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disk playback, compatible MPV build, supported drive, and operating-system permission. Bu komercial disk protection o‘yadi.';
+	@override String get converterTitle => 'Bir lokal medya dosyaya qaytadi.';
+	@override String get converterHelp => 'FFmpeg, MP4, M4A ya MP3 kopiyadi.';
+	@override String get converterIntro => 'Bir lokal audio o video file\'i bir formatga qaytadi, daha fazla cihazda çalışgan.';
+	@override String get converterPrivacy => 'FFmpeg bu kompüterda installadi. Conversion o‘yani lokal faili lugaydi. O‘yaki streamlar ko‘yadi ya DRM\'i salmaydi.';
+	@override String get converterChooseInput => 'Bir lokal media file seçin.';
+	@override String get converterFormat => 'Formati';
+	@override String get converterMp4 => 'MP4 · H.264 və AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 · Audio';
+	@override String get converterSaveAs => 'Konvertirdi mediyadi';
+	@override String get converterExtensionMismatch => 'Bir filnamni seçin, seçkin output extension.';
+	@override String get converterUnsupportedInput => 'Bir audio o video fildi seçin.';
+	@override String get converterLocalOnly => 'Siz seçkin dosyadi lokal bir cihaz yolu olarak kullanılmaz.';
+	@override String get converterReplaceTitle => 'Bu fildi qaytadi?';
+	@override String get converterReplaceHelp => 'PlezyNG bilan faili qaytadi, konverti o\'qizga saladi.';
+	@override String get converterStarting => 'U’qmqga qaytadi...';
+	@override String get converterProgress => 'Bu kompüterga qaytadi...';
+	@override String get converterComplete => 'Konveksiyiz. yeni dosay hazırdır.';
+	@override String get converterFfmpegMissing => 'FFmpeg bir koder bulhatmaydi. H.264, AAC, MP3 support ile FFmpEG\'i install, sonra qaytarga ko‘tadi.';
+	@override String get converterFailed => 'Konveksiyon bilan bo‘di. Kayda dosyadi lugaydan, destinasiyaydi dost free space.';
+	@override String get converterCancelled => 'Konveksiyon i‘cull. Incomplete output is removed.';
+	@override String get converterDesktopOnly => 'Lokal konveksiyon FFmpeg-i installasiya olan desktop kompüterlarda mevcuttur.';
+	@override String get converterStart => 'Konveksiya';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$uz extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsUz {
 			'platform.locationPermission' => 'Mahalliy tarmoqni aniqlash va media serverlaringizga ulanish uchun iOS talab qilganida, PlezyNG joylashuv ma’lumotlaridan foydalanish ruxsatidan foydalanadi.',
 			'platform.photoLibraryPermission' => 'Media muqovasi sifatida ishlatish uchun foto kutubxonangizdan rasmlarni tanlang.',
 			'platform.cameraPermission' => 'Companion Remote pultini ulash uchun QR kodlarini skanerlang.',
+			'universalMedia.title' => 'Open media',
+			'universalMedia.shortcutHelp' => 'Bir linki, playlist, ya da fildi bu seanslar üçün oynay.',
+			'universalMedia.intro' => 'Bir link, playlist, o‘fili. Playback PlezyNG\'nin standart oynatıcını kullanır ve librariyizga istorik qoşmaz.',
+			'universalMedia.openWhat' => 'Siz o‘zʻqʻqqʻʻqō qʻq?',
+			'universalMedia.stream' => 'Adresi',
+			'universalMedia.playlist' => 'Playlist',
+			'universalMedia.files' => 'Filmi',
+			'universalMedia.favorites' => 'Rashida rashida favoritlar',
+			'universalMedia.address' => 'Medya adresi',
+			'universalMedia.addressHelp' => 'HTTPS is preferred. identifyated credential o signature parametrisli URL\'lar yalnız bu sesyon için kullanılır və favoritlar olarak kaydılamaz.',
+			'universalMedia.displayName' => 'U‘zizni nom (opcional)',
+			'universalMedia.displayNameHelp' => 'O\'qiz o’qiz, sistem media kontrollar üçün bir shortname seçin.',
+			'universalMedia.allowHttp' => 'Bir HTTP-i qaplan qoʻyadi.',
+			'universalMedia.allowHttpHelp' => 'HTTP ko‘qifida ko’qifoda. yalnız bir güvenilir ağda qifata. mümkün olduğunca HTTPS qifta.',
+			'universalMedia.advancedProtocols' => 'MPV: RTSP, RTMP/RTMPS, UDP, ya RTP adresi girdi. Bu adreslar favoritlar olarak kayganmaz.',
+			'universalMedia.liveStream' => 'Ya\'qga qaytadi',
+			'universalMedia.liveStreamHelp' => 'Live video o radyo için bunu kullan. App zaman bar, skip buttons, and go-to-time option saklar.',
+			'universalMedia.privateSession' => 'Bu playback bu adresi kullanır. Bu profilda tutmaq üçün bir eligibli stream favoritini kaymazlar.',
+			'universalMedia.saveFavorite' => 'Favoritini salama',
+			'universalMedia.playNow' => 'O‘zadi',
+			'universalMedia.favoriteSaved' => 'Bu profili yo‘zadi bu profilga salaydi.',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '${count}\'dan kaygan oʻshayni oʻsayni playlist entry.', other: '${count}\'dan kaygan oʻshaydi oʻsayan playlist entradi.', ),
+			'universalMedia.playlistAddress' => 'Playlist adresi',
+			'universalMedia.playlistAddressHelp' => 'M3U, m3U8 ya PLS playlist o‘z web adresi. Direct stream link ko‘z bu playlist.',
+			'universalMedia.choosePlaylist' => 'Playlist fildi seçin',
+			'universalMedia.openPlaylist' => 'Open Playlist',
+			'universalMedia.playlistFormatsHelp' => 'Bir playlist 1000\'dan fazla o‘yadi, 2 MB. HLS-i qaytarlar olarak açılır, bu yüzden oyungan bir kalite seçib.',
+			'universalMedia.noFavorites' => 'U\'yadi bu profili yo‘zilgan.Favoritlar bu profilda qalib.',
+			'universalMedia.removeFavorite' => 'Riyadh preferni qaytadi.',
+			'universalMedia.filesHelp' => 'Audio, video, o ISO fillar bir temporary quue. Fillar və URL\'ler library istoriyaya qo‘zilmaydi.',
+			'universalMedia.chooseFiles' => 'Filmi seçin',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '1 seçkin fildi', other: '${count} seçkin fillar', ),
+			'universalMedia.wifiTransfer' => 'Filmi Wi-Fi-dan qaytadi',
+			'universalMedia.wifiTransferHelp' => 'Transfer supported files from a browser on the same trusted network.',
+			'universalMedia.wifiTransferIntro' => 'Bu adresi başka bir cihazda bir browser\'da açın. Fillar seçin bu cihazın Fillar və kitaplar kütüphanaya eklemek.',
+			'universalMedia.wifiTransferPrivacy' => 'This device receives files via your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 fil, 4 GiB per file, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Bir privat, tim-limited transfer hazırlar.',
+			'universalMedia.wifiTransferUnavailable' => 'Transferni başlatmaygan. lokal-netk qapsi kontrollar ve qaytdan koʻyagan.',
+			'universalMedia.openThisAddress' => 'Bu adreslardan birini sending cihazda açın.',
+			'universalMedia.copyAddress' => 'Transfer adresi kopyadi',
+			'universalMedia.addressCopied' => 'Transfer adresi kopyadi',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Bu adres ${time}\'da boʻyadi.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '${count} faili qaytadi', other: '${count} faili qaytadi', ),
+			'universalMedia.uploadedData' => ({required Object size}) => '${size} qaytadi',
+			'universalMedia.stopTransfer' => 'Transfer o‘yadi, adresi boʻyadi.',
+			'universalMedia.startTransfer' => 'Transfer başlar',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi transferi',
+			'universalMedia.wifiBrowserTitle' => 'Filmi Plezyng’a qaytadi.',
+			'universalMedia.wifiBrowserIntro' => 'Video, video, ebook o komik dosyalar seçin. Dosyalar bu cihazın Files and books library\'da kaydedilir. Maximum: 100 dosylar, 4 GiB per file, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'Filmi qaytadi',
+			'universalMedia.uploadSelected' => 'Seçkin fillar qaytadi',
+			'universalMedia.uploadSelectFirst' => 'Bir o‘zari fillar ilk seçin.',
+			'universalMedia.uploading' => 'Tadiya',
+			'universalMedia.uploadComplete' => 'Filmi PlezyNG\'i qaytadi.',
+			'universalMedia.uploadFailed' => 'Fildi ko‘yadi. Bu sayid o\'yadi, qaytmayga koʻyadi!',
+			'universalMedia.liveCue' => 'Live',
+			'universalMedia.liveSession' => 'Live Stream',
+			'universalMedia.liveCueHelp' => 'Live video ya radyo, app koʻshayni zaman barga and skip buttons. Bu adresi o‘shaydi kaymazmaz.',
+			'universalMedia.sessionOnly' => 'Bu playback o‘yadi.',
+			'universalMedia.sessionOnlyHelp' => 'Playback ko‘yadi bilan o‘shistori.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Foto ayatlar',
+			'universalMedia.pictureHelp' => 'Bu film o\'qizmi bilan bilan bilan qaytadi. Playback o‘qizdi bu film o’qizdir.',
+			'universalMedia.resetPicture' => 'Reset foto',
+			'universalMedia.brightness' => 'Tadiq',
+			'universalMedia.contrast' => 'Kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hui',
+			'universalMedia.saturation' => 'Saturniya',
+			'universalMedia.view360' => '360° video-ga xiyimadi.',
+			'universalMedia.view360Help' => 'Bu 360° video\'ni xiyim. MPV bu view için FFmpeg v360 filtremni gerektirir.',
+			'universalMedia.view360Unavailable' => 'Bu mpv build 360° filtremni ko‘yadi.',
+			'universalMedia.view360Yaw' => 'Horisontalizmi',
+			'universalMedia.view360Pitch' => 'Vertikal görünüş',
+			'universalMedia.view360FieldOfView' => 'Viewing o‘zadi',
+			'universalMedia.recordStream' => 'Rekord Live Stream',
+			'universalMedia.stopRecording' => 'Rekorga ko‘z, rekorga o‘z',
+			'universalMedia.recordingStarted' => 'Rekording aktivir. Playback o‘yadi, rekording o’yadi.',
+			'universalMedia.recordingSaved' => 'Rekordlar bilan bilan bilan qaytadi, saldi.',
+			'universalMedia.recordingActive' => 'Playback o‘yadi. playback o’yadi ko‘yaddi.',
+			'universalMedia.recordingFormatHelp' => 'Video, MKV o MPEG-TS. Audio, MKA o MKV seçin.',
+			'universalMedia.replaceRecordingTitle' => 'Bu filmini qaytadi?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG kaymazda mevcut dosyaya geri qaytadi. Yeni kaymazga kaymazmazsa, Plezy NG kaymazdan geri qaytarır.',
+			'universalMedia.replaceRecording' => 'Filmi qaytadi',
+			'universalMedia.discHelp' => 'Bu kompüteri\'nin optikal diskda bir disk o‘yadi. Siz da Device fillardan bir ISO image o’yadi olabildi.',
+			'universalMedia.discs' => 'Optik diski',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disk playback, compatible MPV build, supported drive, and operating-system permission. Bu komercial disk protection o‘yadi.',
+			'universalMedia.converterTitle' => 'Bir lokal medya dosyaya qaytadi.',
+			'universalMedia.converterHelp' => 'FFmpeg, MP4, M4A ya MP3 kopiyadi.',
+			'universalMedia.converterIntro' => 'Bir lokal audio o video file\'i bir formatga qaytadi, daha fazla cihazda çalışgan.',
+			'universalMedia.converterPrivacy' => 'FFmpeg bu kompüterda installadi. Conversion o‘yani lokal faili lugaydi. O‘yaki streamlar ko‘yadi ya DRM\'i salmaydi.',
+			'universalMedia.converterChooseInput' => 'Bir lokal media file seçin.',
+			'universalMedia.converterFormat' => 'Formati',
+			'universalMedia.converterMp4' => 'MP4 · H.264 və AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 · Audio',
+			'universalMedia.converterSaveAs' => 'Konvertirdi mediyadi',
+			'universalMedia.converterExtensionMismatch' => 'Bir filnamni seçin, seçkin output extension.',
+			'universalMedia.converterUnsupportedInput' => 'Bir audio o video fildi seçin.',
+			'universalMedia.converterLocalOnly' => 'Siz seçkin dosyadi lokal bir cihaz yolu olarak kullanılmaz.',
+			'universalMedia.converterReplaceTitle' => 'Bu fildi qaytadi?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG bilan faili qaytadi, konverti o\'qizga saladi.',
+			'universalMedia.converterStarting' => 'U’qmqga qaytadi...',
+			'universalMedia.converterProgress' => 'Bu kompüterga qaytadi...',
+			'universalMedia.converterComplete' => 'Konveksiyiz. yeni dosay hazırdır.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg bir koder bulhatmaydi. H.264, AAC, MP3 support ile FFmpEG\'i install, sonra qaytarga ko‘tadi.',
+			'universalMedia.converterFailed' => 'Konveksiyon bilan bo‘di. Kayda dosyadi lugaydan, destinasiyaydi dost free space.',
+			'universalMedia.converterCancelled' => 'Konveksiyon i‘cull. Incomplete output is removed.',
+			'universalMedia.converterDesktopOnly' => 'Lokal konveksiyon FFmpeg-i installasiya olan desktop kompüterlarda mevcuttur.',
+			'universalMedia.converterStart' => 'Konveksiya',
 			'fileSources.title' => 'Fillar və kitablar',
 			'fileSources.subtitle' => 'O‘z fayllaringizni o‘qing, tinglang va tomosha qiling.',
 			'fileSources.add' => 'Kaynaklar',

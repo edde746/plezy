@@ -348,9 +348,97 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Configure Java downloads for the private JIT proxy
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
+          if [[ -z "$proxy" ]]; then
+            echo "The private JIT HTTPS proxy is required for Android toolchain downloads." >&2
+            exit 1
+          fi
+          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
+          import sys
+          from urllib.parse import urlsplit
+
+          raw = sys.argv[1]
+          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
+          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
+              raise SystemExit("The private JIT proxy URL is invalid for Android toolchain downloads.")
+          print(parsed.hostname)
+          print(parsed.port)
+          PY
+          )
+          if (( ${#proxy_parts[@]} != 2 )); then
+            echo "Could not parse the private JIT proxy for Java downloads." >&2
+            exit 1
+          fi
+          proxy_options=(
+            "-Dhttp.proxyHost=${proxy_parts[0]}"
+            "-Dhttp.proxyPort=${proxy_parts[1]}"
+            "-Dhttps.proxyHost=${proxy_parts[0]}"
+            "-Dhttps.proxyPort=${proxy_parts[1]}"
+            "-Dhttp.nonProxyHosts=localhost|127.*|[::1]"
+          )
+          if [[ -n "${JAVA_TOOL_OPTIONS:-}" ]]; then
+            proxy_options+=("$JAVA_TOOL_OPTIONS")
+          fi
+          printf 'JAVA_TOOL_OPTIONS=%s\n' "${proxy_options[*]}" >> "$GITHUB_ENV"
+
       - name: Setup Android SDK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+
+      - name: Install the pinned Android SDK, NDK, and CMake
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "$sdk_root" || ! -d "$sdk_root/cmdline-tools" ]]; then
+            echo "Android command-line tools were not provisioned by setup-android." >&2
+            exit 1
+          fi
+          sdkmanager="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          if [[ -z "$sdkmanager" ]]; then
+            echo "Could not locate sdkmanager under $sdk_root/cmdline-tools." >&2
+            exit 1
+          fi
+          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
+          if [[ -z "$proxy" ]]; then
+            echo "The private JIT HTTPS proxy is required for Android SDK downloads." >&2
+            exit 1
+          fi
+          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
+          import sys
+          from urllib.parse import urlsplit
+
+          raw = sys.argv[1]
+          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
+          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
+              raise SystemExit("The private JIT proxy URL is invalid for Android SDK downloads.")
+          print(parsed.hostname)
+          print(parsed.port)
+          PY
+          )
+          if (( ${#proxy_parts[@]} != 2 )); then
+            echo "Could not parse the private JIT proxy for Android SDK downloads." >&2
+            exit 1
+          fi
+          proxy_args=(--proxy=http --proxy_host="${proxy_parts[0]}" --proxy_port="${proxy_parts[1]}")
+          packages=("platform-tools" "platforms;android-37" "build-tools;36.1.0" "ndk;29.0.14206865" "cmake;4.1.2")
+          set +o pipefail
+          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --licenses
+          license_status="${PIPESTATUS[1]}"
+          set -o pipefail
+          if (( license_status != 0 )); then exit "$license_status"; fi
+          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --install "${packages[@]}"
+          test -f "$sdk_root/platforms/android-37/android.jar"
+          test -x "$sdk_root/build-tools/36.1.0/aapt2"
+          test -f "$sdk_root/ndk/29.0.14206865/source.properties"
+          test -x "$sdk_root/cmake/4.1.2/bin/cmake"
+          java -version
 
       - name: Setup Flutter
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -527,6 +615,59 @@ jobs:
           mkdir -p "$PLEZY_WEBOS_TEST_TMP"
           python3 -m unittest discover -s tools/webos/tests -v
 
+      - name: Install WebOS host prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          free_kib="$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 { print $4 }')"
+          minimum_free_kib=$((60 * 1024 * 1024))
+          if [[ ! "$free_kib" =~ ^[0-9]+$ ]] || (( free_kib < minimum_free_kib )); then
+            echo "The WebOS engine build needs 60 GiB free under RUNNER_TEMP before toolchain installation." >&2
+            df -h "$RUNNER_TEMP" >&2
+            exit 1
+          fi
+          packages=(build-essential clang cmake curl file git-lfs libgtk-3-dev liblzma-dev ninja-build pkg-config unzip)
+          for attempt in 1 2 3; do
+            if sudo apt-get update -o Acquire::Retries=3 \
+              && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 "${packages[@]}"; then
+              break
+            fi
+            if (( attempt == 3 )); then exit 1; fi
+            sudo apt-get clean
+            sudo rm -rf /var/lib/apt/lists/*
+            sleep $((attempt * 15))
+          done
+          git lfs version
+          cmake --version
+          pkg-config --modversion gtk+-3.0
+          clang --version
+
+      - name: Setup pinned WebOS Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.14.8"
+          architecture: "x64"
+
+      - name: Install and verify pinned WebOS Ninja
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3.14 --version
+          archive="$RUNNER_TEMP/ninja-linux.zip"
+          tools_dir="$RUNNER_TEMP/webos-host-tools"
+          mkdir -p "$tools_dir"
+          curl --fail --location --retry 3 --connect-timeout 30 \
+            --output "$archive" \
+            https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-linux.zip
+          expected_archive="$(python3 -c 'import json; print(json.load(open("tools/webos/compatibility.json"))["engineBuild"]["ninjaArchiveSha256"])')"
+          printf '%s  %s\n' "$expected_archive" "$archive" | sha256sum --check --status
+          unzip -q "$archive" -d "$tools_dir"
+          chmod 0755 "$tools_dir/ninja"
+          expected_binary="$(python3 -c 'import json; print(json.load(open("tools/webos/compatibility.json"))["engineBuild"]["ninjaSha256"])')"
+          printf '%s  %s\n' "$expected_binary" "$tools_dir/ninja" | sha256sum --check --status
+          test "$("$tools_dir/ninja" --version)" = "1.13.2"
+          echo "WEBOS_NINJA_BIN=$tools_dir/ninja" >> "$GITHUB_ENV"
+
       - name: Build and verify the WebOS ARM package
         id: webos-build
         run: bash tools/webos/build_release_candidate.sh
@@ -628,7 +769,7 @@ jobs:
   build-ios:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -831,7 +972,7 @@ jobs:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build tvOS developer package (arm64)
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -1044,7 +1185,7 @@ jobs:
   build-macos:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'release' || needs.validate-trusted-ref.outputs.mode == 'macos-validation') }}
     needs: validate-trusted-ref
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write

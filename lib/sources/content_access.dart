@@ -1665,15 +1665,47 @@ class SourceStreamGateway {
   final _secret = SourceOAuthService.randomSecret();
   final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
   final Map<String, ContentLease> _leases = {};
+  final LinkedHashMap<String, Uri> _directUris = LinkedHashMap();
+  final Map<String, String> _directIdsByUri = {};
+  var _directCounter = 0;
   final _abort = Completer<void>();
+
+  Future<void> _ensureServer() async {
+    if (_server != null) return;
+    _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    _server!.listen((request) => unawaited(_serve(request)));
+  }
+
   Future<Uri> register(SourceAdapter adapter, PublicationFile file) async {
     if (!valid()) throw const SourceException(SourceFailure.cancelled);
-    if (_server == null) {
-      _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      _server!.listen((request) => unawaited(_serve(request)));
-    }
+    await _ensureServer();
     final id = sourceDigest(sourceKey(adapter.source.id, file.id));
     _files[id] = (adapter: adapter, file: file);
+    return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
+  }
+
+  /// Registers a user-entered HTTP(S) address behind this session's loopback
+  /// capability. The native player sees only localhost; credentials and
+  /// signed query strings stay in this in-memory proxy and are never logged by
+  /// the player or written to the source database.
+  Future<Uri> registerUri(Uri uri) async {
+    if (!valid()) throw const SourceException(SourceFailure.cancelled);
+    if (uri.hasFragment || uri.userInfo.isNotEmpty || !const {'http', 'https'}.contains(uri.scheme)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    SourceTransport(allowHttp: uri.scheme == 'http').validate(uri);
+    await _ensureServer();
+    final uriText = uri.toString();
+    final existing = _directIdsByUri[uriText];
+    if (existing != null) return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
+    final id = sourceDigest('direct:$_secret:${_directCounter++}');
+    _directUris[id] = uri;
+    _directIdsByUri[uriText] = id;
+    while (_directUris.length > 4096) {
+      final oldest = _directUris.keys.first;
+      final removed = _directUris.remove(oldest);
+      if (removed != null) _directIdsByUri.remove(removed.toString());
+    }
     return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
   }
 
@@ -1692,7 +1724,12 @@ class SourceStreamGateway {
       }
       final ref = _files[segments[1]];
       if (ref == null) {
-        request.response.statusCode = 404;
+        final uri = _directUris[segments[1]];
+        if (uri == null) {
+          request.response.statusCode = 404;
+          return;
+        }
+        await _serveDirect(request, uri);
         return;
       }
       final range = request.headers.value(HttpHeaders.rangeHeader);
@@ -1799,9 +1836,111 @@ class SourceStreamGateway {
     }
   }
 
+  Future<String> _registerManifestUri(Uri base, String value) async {
+    final raw = value.trim();
+    final uri = base.resolve(raw);
+    final scheme = uri.scheme.toLowerCase();
+    // FairPlay's skd: key URI is handled by the platform DRM path. Inline
+    // data: URIs are self-contained. Never hand file: or another network
+    // scheme from a remote manifest to the native player.
+    if (scheme == 'skd' || scheme == 'data') return raw;
+    if (!const {'http', 'https'}.contains(scheme) || (base.scheme == 'https' && scheme != 'https')) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final local = await registerUri(uri);
+    return local.toString();
+  }
+
+  Future<String> _rewriteHlsManifest(String value, Uri base) async {
+    final lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+    var rewrittenUris = 0;
+    final attributeUri = RegExp(r'URI="([^"]+)"');
+    for (var index = 0; index < lines.length; index++) {
+      var line = lines[index];
+      if (line.trim().isEmpty) continue;
+      if (!line.startsWith('#')) {
+        line = await _registerManifestUri(base, line);
+        rewrittenUris++;
+      } else {
+        final matches = attributeUri.allMatches(line).toList();
+        for (final match in matches.reversed) {
+          final local = await _registerManifestUri(base, match.group(1)!);
+          line = line.replaceRange(match.start, match.end, 'URI="$local"');
+          rewrittenUris++;
+        }
+      }
+      if (rewrittenUris > 2000) throw const SourceException(SourceFailure.invalidData);
+      lines[index] = line;
+    }
+    return lines.join('\n');
+  }
+
+  Future<void> _serveDirect(HttpRequest request, Uri uri) async {
+    final range = request.headers.value(HttpHeaders.rangeHeader);
+    if (range != null && !RegExp(r'^bytes=(\d+-\d*|-\d+)$').hasMatch(range)) {
+      request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+      return;
+    }
+    final transport = SourceTransport(allowHttp: uri.scheme == 'http');
+    try {
+      final upstream = await transport.send(
+        request.method,
+        uri,
+        headers: {HttpHeaders.rangeHeader: ?range},
+        redirects: true,
+        abort: _abort.future,
+      );
+      request.response.statusCode = upstream.statusCode;
+      request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
+      for (final name in [
+        HttpHeaders.contentTypeHeader,
+        HttpHeaders.contentLengthHeader,
+        HttpHeaders.contentRangeHeader,
+        HttpHeaders.acceptRangesHeader,
+        'etag',
+        'last-modified',
+      ]) {
+        final value = upstream.headers[name];
+        if (value != null) request.response.headers.set(name, value);
+      }
+      if (request.method == 'HEAD') {
+        await upstream.stream.listen(null).cancel();
+        return;
+      }
+
+      final contentType = upstream.headers[HttpHeaders.contentTypeHeader]?.toLowerCase() ?? '';
+      final isHls = uri.path.toLowerCase().endsWith('.m3u8') || contentType.contains('mpegurl');
+      if (!isHls || upstream.statusCode < 200 || upstream.statusCode >= 300) {
+        await request.response.addStream(
+          upstream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+            if (!valid()) throw const SourceException(SourceFailure.cancelled);
+            return bytes;
+          }),
+        );
+        return;
+      }
+
+      const maxManifestBytes = 2 * 1024 * 1024;
+      final bytes = <int>[];
+      await for (final chunk in upstream.stream.timeout(const Duration(seconds: 30))) {
+        if (bytes.length + chunk.length > maxManifestBytes) throw const SourceException(SourceFailure.invalidData);
+        bytes.addAll(chunk);
+      }
+      final manifest = utf8.decode(bytes, allowMalformed: true);
+      final manifestBase = upstream.request?.url ?? uri;
+      final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase));
+      request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
+      await request.response.addStream(Stream<List<int>>.value(rewritten));
+    } finally {
+      transport.close();
+    }
+  }
+
   Future<void> close() async {
     _files.clear();
     _leases.clear();
+    _directUris.clear();
+    _directIdsByUri.clear();
     if (!_abort.isCompleted) _abort.complete();
     await _server?.close(force: true);
     _server = null;

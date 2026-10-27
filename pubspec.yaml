@@ -235,6 +235,7 @@ flutter:
     # flutter_inappwebview_macos 1.2.0-beta.3 fails SwiftPM builds on Xcode 26.
     enable-swift-package-manager: false
   assets:
+    - assets/wifi_transfer/upload_page.html
     - assets/reader/
     - assets/provider_marks/
     - assets/reader/foliate/

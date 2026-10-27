@@ -101,6 +101,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$cs watchLink = _Translations$watchLink$cs._(_root);
 	@override late final _Translations$homeLayout$cs homeLayout = _Translations$homeLayout$cs._(_root);
 	@override late final _Translations$platform$cs platform = _Translations$platform$cs._(_root);
+	@override late final _Translations$universalMedia$cs universalMedia = _Translations$universalMedia$cs._(_root);
 	@override late final _Translations$fileSources$cs fileSources = _Translations$fileSources$cs._(_root);
 	@override late final _Translations$lending$cs lending = _Translations$lending$cs._(_root);
 	@override late final _Translations$audiobook$cs audiobook = _Translations$audiobook$cs._(_root);
@@ -3080,6 +3081,143 @@ class _Translations$platform$cs extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Vyberte si obrázky z vaší knihovny fotografií pro použití jako umělecké dílo.';
 	@override String get cameraPermission => 'Skenování QR kódů pro párování s Companion Remote.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$cs extends Translations$universalMedia$en {
+	_Translations$universalMedia$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Otevřené média';
+	@override String get shortcutHelp => 'Zahrajte si odkaz, playlist nebo soubor pro tuto sezení.';
+	@override String get intro => 'Otevřete odkaz, playlist nebo soubor. Playback používá standardní přehrávač PlezyNG a do vaší knihovny nepřidá historii.';
+	@override String get openWhat => 'Co byste chtěli otevřít?';
+	@override String get stream => 'Streamová adresa';
+	@override String get playlist => 'Playlisty';
+	@override String get files => 'Přístrojové soubory';
+	@override String get favorites => 'Úsporný stream oblíbené';
+	@override String get address => 'Mediální adresa';
+	@override String get addressHelp => 'URL s uznanými parametry ověřování nebo podpisů se používají pouze pro tuto schůzku a nelze je uložit jako oblíbené.';
+	@override String get displayName => 'Název zobrazení (volitelné)';
+	@override String get displayNameHelp => 'Vyberte krátký název pro hráče a systémové médií ovládacích prvků.';
+	@override String get allowHttp => 'Umožňuje nekryptované připojení HTTP';
+	@override String get allowHttpHelp => 'HTTP nešifruje připojení. dovolte ho pouze na důvěryhodné síti. použijte HTTPS kdykoli je to možné.';
+	@override String get advancedProtocols => 'MPV pouze: zadejte adresu RTSP, RTMP/RTMPS, UDP nebo RTP. Tyto adresy nelze uložit jako oblíbené.';
+	@override String get liveStream => 'Léčba jako živá';
+	@override String get liveStreamHelp => 'Použijte to pro živé video nebo rádio. aplikace skrývá časovou řádku, skok tlačítka a možnost go-to-time. vypněte ji pro záznam.';
+	@override String get privateSession => 'Pouze tento přehrávač používá adresu.Save an eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Zachraňte oblíbené';
+	@override String get playNow => 'Hrajte nyní';
+	@override String get favoriteSaved => 'Stream oblíbené uložené do tohoto profilu';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.',
+		few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+		many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+		other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+	);
+	@override String get playlistAddress => 'Playlistová adresa';
+	@override String get playlistAddressHelp => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.';
+	@override String get choosePlaylist => 'Vyberte soubor playlist';
+	@override String get openPlaylist => 'Otevřená playlist';
+	@override String get playlistFormatsHelp => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.';
+	@override String get noFavorites => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.';
+	@override String get removeFavorite => 'Odstranit stream oblíbené';
+	@override String get filesHelp => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.';
+	@override String get chooseFiles => 'Vyberte soubory';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '1 vybrané soubory',
+		few: '${count} vybrané soubory',
+		many: '${count} vybrané soubory',
+		other: '${count} vybrané soubory',
+	);
+	@override String get wifiTransfer => 'Odesílání souborů přes Wi-Fi';
+	@override String get wifiTransferHelp => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.';
+	@override String get wifiTransferIntro => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.';
+	@override String get wifiTransferPrivacy => 'Toto zařízení přijímá soubory přes vaši místní síť.Každý, kdo zná tuto adresu může poslat soubory až do zastavení přenosu nebo adresa vyprší po 15 minutách. Maximální: 100 souborů, 4 GiB na soubor, 10 GiB celkem.';
+	@override String get wifiTransferStarting => 'Příprava soukromého, časově omezeného převodu...';
+	@override String get wifiTransferUnavailable => 'Nemohla jsem začít přenosu. zkontrolujte přístup k místní síti a zkuste znovu.';
+	@override String get openThisAddress => 'Otevřete jednu z těchto adres na odesílací zařízení';
+	@override String get copyAddress => 'Kopírování transferové adresy';
+	@override String get addressCopied => 'Přenosová adresa kopírovaná';
+	@override String transferExpires({required Object time}) => 'Tato adresa vyprší v ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '${count} soubor přijatý',
+		few: '${count} soubory obdržené',
+		many: '${count} soubory obdržené',
+		other: '${count} soubory obdržené',
+	);
+	@override String uploadedData({required Object size}) => 'Obdržel ${size}';
+	@override String get stopTransfer => 'Zastavení přenosu a zrušení adresy';
+	@override String get startTransfer => 'Začátek transferu';
+	@override String get wifiImportedFiles => 'Přenos Wi-Fi';
+	@override String get wifiBrowserTitle => 'Odeslat soubory do PlezyNG';
+	@override String get wifiBrowserIntro => 'Vyberte audio, video, ebook nebo komiksové soubory k odeslání. Soubory jsou uloženy v knihovně souborů a knih tohoto zařízení. Maximální: 100 souboru, 4 GiB na soubor, 10 GiB celkem.';
+	@override String get uploadFilesLabel => 'Soubory k odesílání';
+	@override String get uploadSelected => 'Stáhnout vybrané soubory';
+	@override String get uploadSelectFirst => 'Nejprve vyberte jeden nebo více souborů.';
+	@override String get uploading => 'Odesílání';
+	@override String get uploadComplete => 'Soubor přidán do PlezyNG.';
+	@override String get uploadFailed => 'Soubor nelze přidat. Držte tuto stránku otevřenou a zkuste znovu.';
+	@override String get liveCue => 'Životní';
+	@override String get liveSession => 'Živý stream';
+	@override String get liveCueHelp => 'V případě živého videa nebo rozhlasu aplikace ukrývá časovou řádku a skáče tlačítka. nezachovává adresu ani sleduje historii.';
+	@override String get sessionOnly => 'Tento playback je pouze session-';
+	@override String get sessionOnlyHelp => 'Playback nikdy nezachrání pokrok nebo historii. Zachraňte tok jako oblíbený, abyste ho udrželi v tomto profilu, pokud je způsobilý.';
+	@override String get pictureAdjustments => 'Fotografické úpravy';
+	@override String get pictureHelp => 'Tyto změny obrazu ovlivňují pouze tento playback. Oni reset, když playback skončí.';
+	@override String get resetPicture => 'Reset obrázek';
+	@override String get brightness => 'Světlo';
+	@override String get contrast => 'kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturace';
+	@override String get view360 => 'Flat View pro 360° video';
+	@override String get view360Help => 'Použijte toto pro rovnoměrné 360° video. MPV potřebuje filtr v360 FFmpeg pro tento pohled.';
+	@override String get view360Unavailable => 'Tento mpv stav by nemohl použít 360° filtr.';
+	@override String get view360Yaw => 'Horizontální pohled';
+	@override String get view360Pitch => 'Vertikální pohled';
+	@override String get view360FieldOfView => 'Oblast pohledu';
+	@override String get recordStream => 'Rekordní živý stream';
+	@override String get stopRecording => 'Zastavte a ušetřete záznam';
+	@override String get recordingStarted => 'Záznam je aktivní.Leaving playback zastaví a ukládá záznam.';
+	@override String get recordingSaved => 'Záznam byl dokončen a zachráněn.';
+	@override String get recordingActive => 'Zanechání playback se zastaví a ukládá.';
+	@override String get recordingFormatHelp => 'Pro video, vyberte MKV nebo MPEG-TS. pro audio, zvolte MKA nebo MKV.';
+	@override String get replaceRecordingTitle => 'Změníte tuto nahrávku?';
+	@override String get replaceRecordingHelp => 'PlezyNG obnovuje stávající soubor při zaznamenávání. Pokud nemůže uložit novou záznam, Plezy NG obnovuje zálohu.';
+	@override String get replaceRecording => 'nahrazení souborů';
+	@override String get discHelp => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.';
+	@override String get discs => 'Optický disk';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disk playback vyžaduje kompatibilní MPV stavbu, podporovaný disk a oprávnění operačního systému.';
+	@override String get converterTitle => 'Konvertovat soubor místních médií';
+	@override String get converterHelp => 'Použijte FFmpeg, abyste vytvořili MP4, M4A nebo MP3 kopii.';
+	@override String get converterIntro => 'Konvertovat místní audio nebo video soubor do formátu, který funguje na více zařízeních.';
+	@override String get converterPrivacy => 'FFmpeg musí být nainstalován na tomto počítači. konverze čte pouze místní soubory. nedodává toky nebo odstraňuje DRM.';
+	@override String get converterChooseInput => 'Vyberte si místní mediální soubor';
+	@override String get converterFormat => 'Výstupní formát';
+	@override String get converterMp4 => 'MP4 · H.264 a AAC';
+	@override String get converterM4a => 'M4A - AAC audio';
+	@override String get converterMp3 => 'MP3 a audio';
+	@override String get converterSaveAs => 'Shromažďování převedených médií jako';
+	@override String get converterExtensionMismatch => 'Vyberte název s vybraným rozšířením výstupu.';
+	@override String get converterUnsupportedInput => 'Vyberte si audio nebo video soubor.';
+	@override String get converterLocalOnly => 'Vybraný soubor není k dispozici jako místní zařízení.';
+	@override String get converterReplaceTitle => 'Změnit tento soubor?';
+	@override String get converterReplaceHelp => 'PlezyNG obnovuje stávající soubor, dokud se neukládá převedená kopie.';
+	@override String get converterStarting => 'Začínáme s FFmpeg...';
+	@override String get converterProgress => 'Přeměna na tento počítač...';
+	@override String get converterComplete => 'Konverze je hotová, nový soubor je připraven.';
+	@override String get converterFfmpegMissing => 'Instalujte FFmpeg s podporou H.264, AAC a MP3, pak zkuste znovu.';
+	@override String get converterFailed => 'Přesvědčte se, že zdrojový soubor lze přečíst a destinace má dostatek volného prostoru.';
+	@override String get converterCancelled => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.';
+	@override String get converterDesktopOnly => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.';
+	@override String get converterStart => 'Převod souborů';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$cs extends Translations$fileSources$en {
@@ -7656,6 +7794,118 @@ extension on TranslationsCs {
 			'platform.locationPermission' => 'PlezyNG používá přístup k místu, když iOS vyžaduje, aby detekovala vaši místní síť a připojila se k vašim mediálním serverům.',
 			'platform.photoLibraryPermission' => 'Vyberte si obrázky z vaší knihovny fotografií pro použití jako umělecké dílo.',
 			'platform.cameraPermission' => 'Skenování QR kódů pro párování s Companion Remote.',
+			'universalMedia.title' => 'Otevřené média',
+			'universalMedia.shortcutHelp' => 'Zahrajte si odkaz, playlist nebo soubor pro tuto sezení.',
+			'universalMedia.intro' => 'Otevřete odkaz, playlist nebo soubor. Playback používá standardní přehrávač PlezyNG a do vaší knihovny nepřidá historii.',
+			'universalMedia.openWhat' => 'Co byste chtěli otevřít?',
+			'universalMedia.stream' => 'Streamová adresa',
+			'universalMedia.playlist' => 'Playlisty',
+			'universalMedia.files' => 'Přístrojové soubory',
+			'universalMedia.favorites' => 'Úsporný stream oblíbené',
+			'universalMedia.address' => 'Mediální adresa',
+			'universalMedia.addressHelp' => 'URL s uznanými parametry ověřování nebo podpisů se používají pouze pro tuto schůzku a nelze je uložit jako oblíbené.',
+			'universalMedia.displayName' => 'Název zobrazení (volitelné)',
+			'universalMedia.displayNameHelp' => 'Vyberte krátký název pro hráče a systémové médií ovládacích prvků.',
+			'universalMedia.allowHttp' => 'Umožňuje nekryptované připojení HTTP',
+			'universalMedia.allowHttpHelp' => 'HTTP nešifruje připojení. dovolte ho pouze na důvěryhodné síti. použijte HTTPS kdykoli je to možné.',
+			'universalMedia.advancedProtocols' => 'MPV pouze: zadejte adresu RTSP, RTMP/RTMPS, UDP nebo RTP. Tyto adresy nelze uložit jako oblíbené.',
+			'universalMedia.liveStream' => 'Léčba jako živá',
+			'universalMedia.liveStreamHelp' => 'Použijte to pro živé video nebo rádio. aplikace skrývá časovou řádku, skok tlačítka a možnost go-to-time. vypněte ji pro záznam.',
+			'universalMedia.privateSession' => 'Pouze tento přehrávač používá adresu.Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Zachraňte oblíbené',
+			'universalMedia.playNow' => 'Hrajte nyní',
+			'universalMedia.favoriteSaved' => 'Stream oblíbené uložené do tohoto profilu',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ),
+			'universalMedia.playlistAddress' => 'Playlistová adresa',
+			'universalMedia.playlistAddressHelp' => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.',
+			'universalMedia.choosePlaylist' => 'Vyberte soubor playlist',
+			'universalMedia.openPlaylist' => 'Otevřená playlist',
+			'universalMedia.playlistFormatsHelp' => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.',
+			'universalMedia.noFavorites' => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.',
+			'universalMedia.removeFavorite' => 'Odstranit stream oblíbené',
+			'universalMedia.filesHelp' => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.',
+			'universalMedia.chooseFiles' => 'Vyberte soubory',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ),
+			'universalMedia.wifiTransfer' => 'Odesílání souborů přes Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.',
+			'universalMedia.wifiTransferIntro' => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.',
+			'universalMedia.wifiTransferPrivacy' => 'Toto zařízení přijímá soubory přes vaši místní síť.Každý, kdo zná tuto adresu může poslat soubory až do zastavení přenosu nebo adresa vyprší po 15 minutách. Maximální: 100 souborů, 4 GiB na soubor, 10 GiB celkem.',
+			'universalMedia.wifiTransferStarting' => 'Příprava soukromého, časově omezeného převodu...',
+			'universalMedia.wifiTransferUnavailable' => 'Nemohla jsem začít přenosu. zkontrolujte přístup k místní síti a zkuste znovu.',
+			'universalMedia.openThisAddress' => 'Otevřete jednu z těchto adres na odesílací zařízení',
+			'universalMedia.copyAddress' => 'Kopírování transferové adresy',
+			'universalMedia.addressCopied' => 'Přenosová adresa kopírovaná',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Tato adresa vyprší v ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Obdržel ${size}',
+			'universalMedia.stopTransfer' => 'Zastavení přenosu a zrušení adresy',
+			'universalMedia.startTransfer' => 'Začátek transferu',
+			'universalMedia.wifiImportedFiles' => 'Přenos Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Odeslat soubory do PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Vyberte audio, video, ebook nebo komiksové soubory k odeslání. Soubory jsou uloženy v knihovně souborů a knih tohoto zařízení. Maximální: 100 souboru, 4 GiB na soubor, 10 GiB celkem.',
+			'universalMedia.uploadFilesLabel' => 'Soubory k odesílání',
+			'universalMedia.uploadSelected' => 'Stáhnout vybrané soubory',
+			'universalMedia.uploadSelectFirst' => 'Nejprve vyberte jeden nebo více souborů.',
+			'universalMedia.uploading' => 'Odesílání',
+			'universalMedia.uploadComplete' => 'Soubor přidán do PlezyNG.',
+			'universalMedia.uploadFailed' => 'Soubor nelze přidat. Držte tuto stránku otevřenou a zkuste znovu.',
+			'universalMedia.liveCue' => 'Životní',
+			'universalMedia.liveSession' => 'Živý stream',
+			'universalMedia.liveCueHelp' => 'V případě živého videa nebo rozhlasu aplikace ukrývá časovou řádku a skáče tlačítka. nezachovává adresu ani sleduje historii.',
+			'universalMedia.sessionOnly' => 'Tento playback je pouze session-',
+			'universalMedia.sessionOnlyHelp' => 'Playback nikdy nezachrání pokrok nebo historii. Zachraňte tok jako oblíbený, abyste ho udrželi v tomto profilu, pokud je způsobilý.',
+			'universalMedia.pictureAdjustments' => 'Fotografické úpravy',
+			'universalMedia.pictureHelp' => 'Tyto změny obrazu ovlivňují pouze tento playback. Oni reset, když playback skončí.',
+			'universalMedia.resetPicture' => 'Reset obrázek',
+			'universalMedia.brightness' => 'Světlo',
+			'universalMedia.contrast' => 'kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturace',
+			'universalMedia.view360' => 'Flat View pro 360° video',
+			'universalMedia.view360Help' => 'Použijte toto pro rovnoměrné 360° video. MPV potřebuje filtr v360 FFmpeg pro tento pohled.',
+			'universalMedia.view360Unavailable' => 'Tento mpv stav by nemohl použít 360° filtr.',
+			'universalMedia.view360Yaw' => 'Horizontální pohled',
+			'universalMedia.view360Pitch' => 'Vertikální pohled',
+			'universalMedia.view360FieldOfView' => 'Oblast pohledu',
+			'universalMedia.recordStream' => 'Rekordní živý stream',
+			'universalMedia.stopRecording' => 'Zastavte a ušetřete záznam',
+			'universalMedia.recordingStarted' => 'Záznam je aktivní.Leaving playback zastaví a ukládá záznam.',
+			'universalMedia.recordingSaved' => 'Záznam byl dokončen a zachráněn.',
+			'universalMedia.recordingActive' => 'Zanechání playback se zastaví a ukládá.',
+			'universalMedia.recordingFormatHelp' => 'Pro video, vyberte MKV nebo MPEG-TS. pro audio, zvolte MKA nebo MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Změníte tuto nahrávku?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG obnovuje stávající soubor při zaznamenávání. Pokud nemůže uložit novou záznam, Plezy NG obnovuje zálohu.',
+			'universalMedia.replaceRecording' => 'nahrazení souborů',
+			'universalMedia.discHelp' => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.',
+			'universalMedia.discs' => 'Optický disk',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disk playback vyžaduje kompatibilní MPV stavbu, podporovaný disk a oprávnění operačního systému.',
+			'universalMedia.converterTitle' => 'Konvertovat soubor místních médií',
+			'universalMedia.converterHelp' => 'Použijte FFmpeg, abyste vytvořili MP4, M4A nebo MP3 kopii.',
+			'universalMedia.converterIntro' => 'Konvertovat místní audio nebo video soubor do formátu, který funguje na více zařízeních.',
+			'universalMedia.converterPrivacy' => 'FFmpeg musí být nainstalován na tomto počítači. konverze čte pouze místní soubory. nedodává toky nebo odstraňuje DRM.',
+			'universalMedia.converterChooseInput' => 'Vyberte si místní mediální soubor',
+			'universalMedia.converterFormat' => 'Výstupní formát',
+			'universalMedia.converterMp4' => 'MP4 · H.264 a AAC',
+			'universalMedia.converterM4a' => 'M4A - AAC audio',
+			'universalMedia.converterMp3' => 'MP3 a audio',
+			'universalMedia.converterSaveAs' => 'Shromažďování převedených médií jako',
+			'universalMedia.converterExtensionMismatch' => 'Vyberte název s vybraným rozšířením výstupu.',
+			'universalMedia.converterUnsupportedInput' => 'Vyberte si audio nebo video soubor.',
+			'universalMedia.converterLocalOnly' => 'Vybraný soubor není k dispozici jako místní zařízení.',
+			'universalMedia.converterReplaceTitle' => 'Změnit tento soubor?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG obnovuje stávající soubor, dokud se neukládá převedená kopie.',
+			'universalMedia.converterStarting' => 'Začínáme s FFmpeg...',
+			'universalMedia.converterProgress' => 'Přeměna na tento počítač...',
+			'universalMedia.converterComplete' => 'Konverze je hotová, nový soubor je připraven.',
+			'universalMedia.converterFfmpegMissing' => 'Instalujte FFmpeg s podporou H.264, AAC a MP3, pak zkuste znovu.',
+			'universalMedia.converterFailed' => 'Přesvědčte se, že zdrojový soubor lze přečíst a destinace má dostatek volného prostoru.',
+			'universalMedia.converterCancelled' => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.',
+			'universalMedia.converterDesktopOnly' => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.',
+			'universalMedia.converterStart' => 'Převod souborů',
 			'fileSources.title' => 'Soubory a knihy',
 			'fileSources.subtitle' => 'Číst, poslouchat a sledovat z vlastních souborů.',
 			'fileSources.add' => 'Přidat zdroj',

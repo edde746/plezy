@@ -57,7 +57,6 @@ import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/deep_link_dialog.dart';
 import '../widgets/tag_edit_dialog.dart';
-import '../widgets/watch_link_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';

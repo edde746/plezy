@@ -139,7 +139,7 @@ if [[ -z "$NINJA_BIN" || ! -x "$NINJA_BIN" ]]; then
 fi
 
 LOCKED_PYTHON_VERSION="$(read_lock engineBuild pythonVersion)"
-LOCKED_PYTHON_SHA256="$(read_lock engineBuild pythonSha256)"
+LOCKED_PYTHON_SHA256="$(read_lock engineBuild pythonSha256ByUbuntu "$HOST_OS_VERSION")"
 LOCKED_NINJA_VERSION="$(read_lock engineBuild ninjaVersion)"
 LOCKED_NINJA_SHA256="$(read_lock engineBuild ninjaSha256)"
 ACTUAL_PYTHON_VERSION="$("$PYTHON_BIN" --version 2>&1)"

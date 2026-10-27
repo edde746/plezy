@@ -54,6 +54,7 @@ void main() {
           MediaChapter(id: 2, startTimeOffset: 30000, endTimeOffset: 120000, title: 'Episode'),
         ],
         markers: [],
+        classifier: classifier,
       );
 
       expect(extras.markers.where((marker) => marker.isCommercial), isEmpty);
@@ -67,6 +68,7 @@ void main() {
           MediaChapter(id: 2, startTimeOffset: 30000, endTimeOffset: 120000, title: 'Episode'),
         ],
         markers: [commercial],
+        classifier: classifier,
         forceChapterFallback: true,
       );
 

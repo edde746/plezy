@@ -25,6 +25,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_detail_screen.dart';
 import 'source_widgets.dart';
+import 'open_media_screen.dart';
 import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
 import 'source_sync_screen.dart';
@@ -567,6 +568,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 if (root) ...[
                   Text(t.fileSources.subtitle, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 24),
+                  SourceTile(
+                    title: t.universalMedia.title,
+                    subtitle: t.universalMedia.shortcutHelp,
+                    icon: Symbols.play_circle_rounded,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OpenMediaScreen())),
+                  ),
                   SourceTile(
                     title: t.lending.title,
                     icon: Symbols.local_library_rounded,

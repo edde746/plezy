@@ -101,6 +101,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$nb watchLink = _Translations$watchLink$nb._(_root);
 	@override late final _Translations$homeLayout$nb homeLayout = _Translations$homeLayout$nb._(_root);
 	@override late final _Translations$platform$nb platform = _Translations$platform$nb._(_root);
+	@override late final _Translations$universalMedia$nb universalMedia = _Translations$universalMedia$nb._(_root);
 	@override late final _Translations$fileSources$nb fileSources = _Translations$fileSources$nb._(_root);
 	@override late final _Translations$lending$nb lending = _Translations$lending$nb._(_root);
 	@override late final _Translations$audiobook$nb audiobook = _Translations$audiobook$nb._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$nb extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Velg bilder fra bildebiblioteket som omslag og illustrasjoner til medieinnhold.';
 	@override String get cameraPermission => 'Skann QR-koder for å pare en Companion Remote.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$nb extends Translations$universalMedia$en {
+	_Translations$universalMedia$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Åpne medier';
+	@override String get shortcutHelp => 'Spill en lenke, spillliste eller fil for denne sesjonen.';
+	@override String get intro => 'Åpne en lenke, spillliste eller fil. Playback bruker PlezyNGs standardspiller og legger ikke til historie i biblioteket ditt.';
+	@override String get openWhat => 'Hva vil du gjerne åpne?';
+	@override String get stream => 'Stream adresse';
+	@override String get playlist => 'Playlist';
+	@override String get files => 'Device filer';
+	@override String get favorites => 'Saved stream favoritter';
+	@override String get address => 'Media adresser';
+	@override String get addressHelp => 'URLer med anerkjente akkrediterings- eller signaturparameter brukes kun for denne sesjonen og kan ikke lagres som favoritter.';
+	@override String get displayName => 'Visningsnavnet (alternativt)';
+	@override String get displayNameHelp => 'Velg et kort navn for spilleren og systemmediakontrollene.';
+	@override String get allowHttp => 'Tillat en ukryptert HTTP-tilkobling';
+	@override String get allowHttpHelp => 'HTTP krypterer ikke koblingen. Tillat den bare på et pålitelig nettverk. Bruk HTTPS når det er mulig.';
+	@override String get advancedProtocols => 'MPV bare: Skriv inn en RTSP, RTMP/RTMPS, UDP eller RTP-adresse.';
+	@override String get liveStream => 'Behandle som levende';
+	@override String get liveStreamHelp => 'Bruk dette for live-video eller radio. appen skjuler tidsboken, skip knopper og go-to-time alternativet. slå det av for en opptak.';
+	@override String get privateSession => 'Bare denne tilbakemeldingen bruker adressen.Save a eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Spar favoritt';
+	@override String get playNow => 'Spill nå';
+	@override String get favoriteSaved => 'Stream favoritt lagret til denne profilen';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n,
+		one: 'Skipet ${count} ustøttet eller usikkert playlist inngang.',
+		other: 'Skipede ${count} ustøttet eller usikre playlist-inntekter.',
+	);
+	@override String get playlistAddress => 'Playlist adresser';
+	@override String get playlistAddressHelp => 'Åpne en M3U, M3u8, eller PLS-spillliste fra en nettadresse. direkte strømlinjer sparer ikke spilllisten.';
+	@override String get choosePlaylist => 'Velg Playlist filer';
+	@override String get openPlaylist => 'Åpne playlist';
+	@override String get playlistFormatsHelp => 'En spillliste kan inneholde opptil 1000 elementer og 2 MB. HLS manifesterer seg åpent som strømmer slik at spilleren kan velge en kvalitet.';
+	@override String get noFavorites => 'Ingen sparte stream favoritter ennå. Favoritter forblir i denne profilen.';
+	@override String get removeFavorite => 'Fjern stream favoritt';
+	@override String get filesHelp => 'Velg audio, video eller ISO-filer for en midlertidig kue. filer og URL\'er er ikke lagt til bibliotekets historie.';
+	@override String get chooseFiles => 'Velg filer';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n,
+		one: '1 utvalgte filer',
+		other: '${count} utvalgte filer',
+	);
+	@override String get wifiTransfer => 'Send filer via Wi-Fi';
+	@override String get wifiTransferHelp => 'Overføring av støttet filer fra en nettleser på samme pålitelige nettverk.';
+	@override String get wifiTransferIntro => 'Åpne denne adressen i en nettleser på en annen enhet.Velg filer for å legge dem til filer og bøker biblioteket på denne enheten.';
+	@override String get wifiTransferPrivacy => 'Denne enheten mottar filer over ditt lokale nettverk. Enhver som kjenner denne adressen kan sende filer til du stopper overføringen eller adressen utløper etter 15 minutter. Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.';
+	@override String get wifiTransferStarting => 'Forberedelse av en privat, tidsbegrenset overføring ...';
+	@override String get wifiTransferUnavailable => 'Kan ikke starte overføringen. sjekk lokalt nettverkstilgang og prøv igjen.';
+	@override String get openThisAddress => 'Åpne en av disse adressene på senderenheten';
+	@override String get copyAddress => 'Kopierer overføringsadresse';
+	@override String get addressCopied => 'Overføringsadresse kopieres';
+	@override String transferExpires({required Object time}) => 'Denne adressen utløper i ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n,
+		one: '${count} filen mottatt',
+		other: '${count} filer mottatt',
+	);
+	@override String uploadedData({required Object size}) => 'Oppsatt av ${size}';
+	@override String get stopTransfer => 'Stopp overføring og invalidere adressen';
+	@override String get startTransfer => 'Start overføring';
+	@override String get wifiImportedFiles => 'Wi-Fi overføring';
+	@override String get wifiBrowserTitle => 'Send filer til PlezyNG';
+	@override String get wifiBrowserIntro => 'Velg lyd, video, e-bok eller komiksfiler for å sende. filene lagres i denne enhetens Filer og bøker bibliotek. Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.';
+	@override String get uploadFilesLabel => 'Filer å sende';
+	@override String get uploadSelected => 'Last opp utvalgte filer';
+	@override String get uploadSelectFirst => 'Velg en eller flere filer først.';
+	@override String get uploading => 'Sending';
+	@override String get uploadComplete => 'Filet er lagt til PlezyNG.';
+	@override String get uploadFailed => 'Filen kan ikke legges til. Hold denne siden åpen og prøv igjen.';
+	@override String get liveCue => 'Livet';
+	@override String get liveSession => 'Live Stream';
+	@override String get liveCueHelp => 'For live-video eller radio, skjuler appen tidsboken og hopper knapper. Det sparar ikke adressen eller se historie.';
+	@override String get sessionOnly => 'Dette spillet er sesjon-only';
+	@override String get sessionOnlyHelp => 'Playback sparer aldri fremgang eller historie.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Bilder justeringer';
+	@override String get pictureHelp => 'Disse endringene i bildet påvirker bare denne playback. De resetter når playback avsluttes.';
+	@override String get resetPicture => 'Resett bilde';
+	@override String get brightness => 'Skjønnhet';
+	@override String get contrast => 'Kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturasjon';
+	@override String get view360 => 'Flat visning for 360° video';
+	@override String get view360Help => 'MPV trenger FFmpegs v360-filter for denne visningen.';
+	@override String get view360Unavailable => 'Denne MPV-byggingen kan ikke bruke 360°-filteret.';
+	@override String get view360Yaw => 'Horisontell utsikt';
+	@override String get view360Pitch => 'Vertikalt syn';
+	@override String get view360FieldOfView => 'Felt av syn';
+	@override String get recordStream => 'Rekord live stream';
+	@override String get stopRecording => 'Stoppe og lagre opptak';
+	@override String get recordingStarted => 'Opptaket er aktivt.Letting playback stopper og sparer innspillingen.';
+	@override String get recordingSaved => 'Oppskriften er avsluttet og reddet.';
+	@override String get recordingActive => 'Oppdatering av denne enheten.Leaving playback stopper og sparer det.';
+	@override String get recordingFormatHelp => 'For video, velg MKV eller MPEG-TS. for lyd, velge MKA eller MKV.';
+	@override String get replaceRecordingTitle => 'Vil du erstatte denne innspillingen?';
+	@override String get replaceRecordingHelp => 'PlezyNG gjenoppretter den eksisterende filen under opptak. Hvis det ikke kan lagre den nye opptak, plezyNG restaurerer sikkerhetskopien.';
+	@override String get replaceRecording => 'erstatte filer';
+	@override String get discHelp => 'Åpne en disk i denne datamaskinens optiske skjerm. Du kan også åpne et ISO-bilde fra Device-filer.';
+	@override String get discs => 'Optikal disk';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disc playback trenger en kompatibel MPV-bygging, støttet drive og operativsystem tillatelse. Det kan ikke gå glipp av kommersiell diskbeskyttelse.';
+	@override String get converterTitle => 'Konverter en lokal mediefil';
+	@override String get converterHelp => 'Bruk FFmpeg til å lage en MP4, M4A eller MP3 kopi.';
+	@override String get converterIntro => 'Konverter en lokal lyd- eller videofil til et format som fungerer på flere enheter.';
+	@override String get converterPrivacy => 'FFmpeg må installeres på denne datamaskinen. Conversion leser bare lokale filer. Det lastes ikke ned strømmer eller fjerner DRM.';
+	@override String get converterChooseInput => 'Velg en lokal mediefil';
+	@override String get converterFormat => 'Utgangsformatet';
+	@override String get converterMp4 => 'MP4 · H.264 og AAC';
+	@override String get converterM4a => 'M4A · AAC lyd';
+	@override String get converterMp3 => 'MP3 og Audio';
+	@override String get converterSaveAs => 'Lagre konverterte medier som';
+	@override String get converterExtensionMismatch => 'Velg et filnavn med den valgte utvidelsen.';
+	@override String get converterUnsupportedInput => 'Velg en audio eller video fil.';
+	@override String get converterLocalOnly => 'Den valgte filen er ikke tilgjengelig som en lokal enhetsvei.';
+	@override String get converterReplaceTitle => 'Vil du erstatte denne filen?';
+	@override String get converterReplaceHelp => 'PlezyNG gjenoppretter den eksisterende filen til den konverterte kopien er lagret.';
+	@override String get converterStarting => 'Start med FFmpeg...';
+	@override String get converterProgress => 'For å konvertere til denne datamaskinen...';
+	@override String get converterComplete => 'Konversjonen er fullført. den nye filen er klar.';
+	@override String get converterFfmpegMissing => 'Installere FFmpeg med H.264, AAC, og MP3 støtte, så prøv igjen.';
+	@override String get converterFailed => 'Kontroller at kildefilen kan leses og destinasjonen har nok gratis plass.';
+	@override String get converterCancelled => 'Konverteringen ble avlyst. den ufullstendige utgaven ble fjernet.';
+	@override String get converterDesktopOnly => 'Lokalt konvertering er tilgjengelig på skrivebord datamaskiner med FFmpeg installert.';
+	@override String get converterStart => 'Konverter filer';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$nb extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsNb {
 			'platform.locationPermission' => 'PlezyNG bruker lokasjonstilgang når iOS krever det for å oppdage ditt lokale nettverk og koble til dine medie servere.',
 			'platform.photoLibraryPermission' => 'Velg bilder fra bildebiblioteket som omslag og illustrasjoner til medieinnhold.',
 			'platform.cameraPermission' => 'Skann QR-koder for å pare en Companion Remote.',
+			'universalMedia.title' => 'Åpne medier',
+			'universalMedia.shortcutHelp' => 'Spill en lenke, spillliste eller fil for denne sesjonen.',
+			'universalMedia.intro' => 'Åpne en lenke, spillliste eller fil. Playback bruker PlezyNGs standardspiller og legger ikke til historie i biblioteket ditt.',
+			'universalMedia.openWhat' => 'Hva vil du gjerne åpne?',
+			'universalMedia.stream' => 'Stream adresse',
+			'universalMedia.playlist' => 'Playlist',
+			'universalMedia.files' => 'Device filer',
+			'universalMedia.favorites' => 'Saved stream favoritter',
+			'universalMedia.address' => 'Media adresser',
+			'universalMedia.addressHelp' => 'URLer med anerkjente akkrediterings- eller signaturparameter brukes kun for denne sesjonen og kan ikke lagres som favoritter.',
+			'universalMedia.displayName' => 'Visningsnavnet (alternativt)',
+			'universalMedia.displayNameHelp' => 'Velg et kort navn for spilleren og systemmediakontrollene.',
+			'universalMedia.allowHttp' => 'Tillat en ukryptert HTTP-tilkobling',
+			'universalMedia.allowHttpHelp' => 'HTTP krypterer ikke koblingen. Tillat den bare på et pålitelig nettverk. Bruk HTTPS når det er mulig.',
+			'universalMedia.advancedProtocols' => 'MPV bare: Skriv inn en RTSP, RTMP/RTMPS, UDP eller RTP-adresse.',
+			'universalMedia.liveStream' => 'Behandle som levende',
+			'universalMedia.liveStreamHelp' => 'Bruk dette for live-video eller radio. appen skjuler tidsboken, skip knopper og go-to-time alternativet. slå det av for en opptak.',
+			'universalMedia.privateSession' => 'Bare denne tilbakemeldingen bruker adressen.Save a eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Spar favoritt',
+			'universalMedia.playNow' => 'Spill nå',
+			'universalMedia.favoriteSaved' => 'Stream favoritt lagret til denne profilen',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: 'Skipet ${count} ustøttet eller usikkert playlist inngang.', other: 'Skipede ${count} ustøttet eller usikre playlist-inntekter.', ),
+			'universalMedia.playlistAddress' => 'Playlist adresser',
+			'universalMedia.playlistAddressHelp' => 'Åpne en M3U, M3u8, eller PLS-spillliste fra en nettadresse. direkte strømlinjer sparer ikke spilllisten.',
+			'universalMedia.choosePlaylist' => 'Velg Playlist filer',
+			'universalMedia.openPlaylist' => 'Åpne playlist',
+			'universalMedia.playlistFormatsHelp' => 'En spillliste kan inneholde opptil 1000 elementer og 2 MB. HLS manifesterer seg åpent som strømmer slik at spilleren kan velge en kvalitet.',
+			'universalMedia.noFavorites' => 'Ingen sparte stream favoritter ennå. Favoritter forblir i denne profilen.',
+			'universalMedia.removeFavorite' => 'Fjern stream favoritt',
+			'universalMedia.filesHelp' => 'Velg audio, video eller ISO-filer for en midlertidig kue. filer og URL\'er er ikke lagt til bibliotekets historie.',
+			'universalMedia.chooseFiles' => 'Velg filer',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: '1 utvalgte filer', other: '${count} utvalgte filer', ),
+			'universalMedia.wifiTransfer' => 'Send filer via Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Overføring av støttet filer fra en nettleser på samme pålitelige nettverk.',
+			'universalMedia.wifiTransferIntro' => 'Åpne denne adressen i en nettleser på en annen enhet.Velg filer for å legge dem til filer og bøker biblioteket på denne enheten.',
+			'universalMedia.wifiTransferPrivacy' => 'Denne enheten mottar filer over ditt lokale nettverk. Enhver som kjenner denne adressen kan sende filer til du stopper overføringen eller adressen utløper etter 15 minutter. Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.',
+			'universalMedia.wifiTransferStarting' => 'Forberedelse av en privat, tidsbegrenset overføring ...',
+			'universalMedia.wifiTransferUnavailable' => 'Kan ikke starte overføringen. sjekk lokalt nettverkstilgang og prøv igjen.',
+			'universalMedia.openThisAddress' => 'Åpne en av disse adressene på senderenheten',
+			'universalMedia.copyAddress' => 'Kopierer overføringsadresse',
+			'universalMedia.addressCopied' => 'Overføringsadresse kopieres',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Denne adressen utløper i ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: '${count} filen mottatt', other: '${count} filer mottatt', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Oppsatt av ${size}',
+			'universalMedia.stopTransfer' => 'Stopp overføring og invalidere adressen',
+			'universalMedia.startTransfer' => 'Start overføring',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi overføring',
+			'universalMedia.wifiBrowserTitle' => 'Send filer til PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Velg lyd, video, e-bok eller komiksfiler for å sende. filene lagres i denne enhetens Filer og bøker bibliotek. Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.',
+			'universalMedia.uploadFilesLabel' => 'Filer å sende',
+			'universalMedia.uploadSelected' => 'Last opp utvalgte filer',
+			'universalMedia.uploadSelectFirst' => 'Velg en eller flere filer først.',
+			'universalMedia.uploading' => 'Sending',
+			'universalMedia.uploadComplete' => 'Filet er lagt til PlezyNG.',
+			'universalMedia.uploadFailed' => 'Filen kan ikke legges til. Hold denne siden åpen og prøv igjen.',
+			'universalMedia.liveCue' => 'Livet',
+			'universalMedia.liveSession' => 'Live Stream',
+			'universalMedia.liveCueHelp' => 'For live-video eller radio, skjuler appen tidsboken og hopper knapper. Det sparar ikke adressen eller se historie.',
+			'universalMedia.sessionOnly' => 'Dette spillet er sesjon-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback sparer aldri fremgang eller historie.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Bilder justeringer',
+			'universalMedia.pictureHelp' => 'Disse endringene i bildet påvirker bare denne playback. De resetter når playback avsluttes.',
+			'universalMedia.resetPicture' => 'Resett bilde',
+			'universalMedia.brightness' => 'Skjønnhet',
+			'universalMedia.contrast' => 'Kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturasjon',
+			'universalMedia.view360' => 'Flat visning for 360° video',
+			'universalMedia.view360Help' => 'MPV trenger FFmpegs v360-filter for denne visningen.',
+			'universalMedia.view360Unavailable' => 'Denne MPV-byggingen kan ikke bruke 360°-filteret.',
+			'universalMedia.view360Yaw' => 'Horisontell utsikt',
+			'universalMedia.view360Pitch' => 'Vertikalt syn',
+			'universalMedia.view360FieldOfView' => 'Felt av syn',
+			'universalMedia.recordStream' => 'Rekord live stream',
+			'universalMedia.stopRecording' => 'Stoppe og lagre opptak',
+			'universalMedia.recordingStarted' => 'Opptaket er aktivt.Letting playback stopper og sparer innspillingen.',
+			'universalMedia.recordingSaved' => 'Oppskriften er avsluttet og reddet.',
+			'universalMedia.recordingActive' => 'Oppdatering av denne enheten.Leaving playback stopper og sparer det.',
+			'universalMedia.recordingFormatHelp' => 'For video, velg MKV eller MPEG-TS. for lyd, velge MKA eller MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Vil du erstatte denne innspillingen?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG gjenoppretter den eksisterende filen under opptak. Hvis det ikke kan lagre den nye opptak, plezyNG restaurerer sikkerhetskopien.',
+			'universalMedia.replaceRecording' => 'erstatte filer',
+			'universalMedia.discHelp' => 'Åpne en disk i denne datamaskinens optiske skjerm. Du kan også åpne et ISO-bilde fra Device-filer.',
+			'universalMedia.discs' => 'Optikal disk',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disc playback trenger en kompatibel MPV-bygging, støttet drive og operativsystem tillatelse. Det kan ikke gå glipp av kommersiell diskbeskyttelse.',
+			'universalMedia.converterTitle' => 'Konverter en lokal mediefil',
+			'universalMedia.converterHelp' => 'Bruk FFmpeg til å lage en MP4, M4A eller MP3 kopi.',
+			'universalMedia.converterIntro' => 'Konverter en lokal lyd- eller videofil til et format som fungerer på flere enheter.',
+			'universalMedia.converterPrivacy' => 'FFmpeg må installeres på denne datamaskinen. Conversion leser bare lokale filer. Det lastes ikke ned strømmer eller fjerner DRM.',
+			'universalMedia.converterChooseInput' => 'Velg en lokal mediefil',
+			'universalMedia.converterFormat' => 'Utgangsformatet',
+			'universalMedia.converterMp4' => 'MP4 · H.264 og AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC lyd',
+			'universalMedia.converterMp3' => 'MP3 og Audio',
+			'universalMedia.converterSaveAs' => 'Lagre konverterte medier som',
+			'universalMedia.converterExtensionMismatch' => 'Velg et filnavn med den valgte utvidelsen.',
+			'universalMedia.converterUnsupportedInput' => 'Velg en audio eller video fil.',
+			'universalMedia.converterLocalOnly' => 'Den valgte filen er ikke tilgjengelig som en lokal enhetsvei.',
+			'universalMedia.converterReplaceTitle' => 'Vil du erstatte denne filen?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG gjenoppretter den eksisterende filen til den konverterte kopien er lagret.',
+			'universalMedia.converterStarting' => 'Start med FFmpeg...',
+			'universalMedia.converterProgress' => 'For å konvertere til denne datamaskinen...',
+			'universalMedia.converterComplete' => 'Konversjonen er fullført. den nye filen er klar.',
+			'universalMedia.converterFfmpegMissing' => 'Installere FFmpeg med H.264, AAC, og MP3 støtte, så prøv igjen.',
+			'universalMedia.converterFailed' => 'Kontroller at kildefilen kan leses og destinasjonen har nok gratis plass.',
+			'universalMedia.converterCancelled' => 'Konverteringen ble avlyst. den ufullstendige utgaven ble fjernet.',
+			'universalMedia.converterDesktopOnly' => 'Lokalt konvertering er tilgjengelig på skrivebord datamaskiner med FFmpeg installert.',
+			'universalMedia.converterStart' => 'Konverter filer',
 			'fileSources.title' => 'Filer og bøker',
 			'fileSources.subtitle' => 'Les, lytte og se fra dine egne filer.',
 			'fileSources.add' => 'Legg til kilde',

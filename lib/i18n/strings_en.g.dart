@@ -102,6 +102,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 	late final Translations$platform$en platform = Translations$platform$en.internal(_root);
+	late final Translations$universalMedia$en universalMedia = Translations$universalMedia$en.internal(_root);
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
@@ -7642,6 +7643,361 @@ class Translations$platform$en {
 	String get cameraPermission => 'Scan QR codes to pair a Companion Remote.';
 }
 
+// Path: universalMedia
+class Translations$universalMedia$en {
+	Translations$universalMedia$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Open media'
+	String get title => 'Open media';
+
+	/// en: 'Play a link, playlist, or file for this session.'
+	String get shortcutHelp => 'Play a link, playlist, or file for this session.';
+
+	/// en: 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.'
+	String get intro => 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.';
+
+	/// en: 'What would you like to open?'
+	String get openWhat => 'What would you like to open?';
+
+	/// en: 'Stream address'
+	String get stream => 'Stream address';
+
+	/// en: 'Playlist'
+	String get playlist => 'Playlist';
+
+	/// en: 'Device files'
+	String get files => 'Device files';
+
+	/// en: 'Saved stream favorites'
+	String get favorites => 'Saved stream favorites';
+
+	/// en: 'Media address'
+	String get address => 'Media address';
+
+	/// en: 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.'
+	String get addressHelp => 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.';
+
+	/// en: 'Display name (optional)'
+	String get displayName => 'Display name (optional)';
+
+	/// en: 'Choose a short name for the player and system media controls.'
+	String get displayNameHelp => 'Choose a short name for the player and system media controls.';
+
+	/// en: 'Allow an unencrypted HTTP connection'
+	String get allowHttp => 'Allow an unencrypted HTTP connection';
+
+	/// en: 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.'
+	String get allowHttpHelp => 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.';
+
+	/// en: 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.'
+	String get advancedProtocols => 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.';
+
+	/// en: 'Treat as live'
+	String get liveStream => 'Treat as live';
+
+	/// en: 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.'
+	String get liveStreamHelp => 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.';
+
+	/// en: 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.'
+	String get privateSession => 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.';
+
+	/// en: 'Save favorite'
+	String get saveFavorite => 'Save favorite';
+
+	/// en: 'Play now'
+	String get playNow => 'Play now';
+
+	/// en: 'Stream favorite saved to this profile'
+	String get favoriteSaved => 'Stream favorite saved to this profile';
+
+	/// en: '(one) {Skipped ${count} unsupported or unsafe playlist entry.} (other) {Skipped ${count} unsupported or unsafe playlist entries.}'
+	String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Skipped ${count} unsupported or unsafe playlist entry.',
+		other: 'Skipped ${count} unsupported or unsafe playlist entries.',
+	);
+
+	/// en: 'Playlist address'
+	String get playlistAddress => 'Playlist address';
+
+	/// en: 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.'
+	String get playlistAddressHelp => 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.';
+
+	/// en: 'Choose playlist file'
+	String get choosePlaylist => 'Choose playlist file';
+
+	/// en: 'Open playlist'
+	String get openPlaylist => 'Open playlist';
+
+	/// en: 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.'
+	String get playlistFormatsHelp => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.';
+
+	/// en: 'No saved stream favorites yet. Favorites stay in this profile.'
+	String get noFavorites => 'No saved stream favorites yet. Favorites stay in this profile.';
+
+	/// en: 'Remove stream favorite'
+	String get removeFavorite => 'Remove stream favorite';
+
+	/// en: 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.'
+	String get filesHelp => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.';
+
+	/// en: 'Choose files'
+	String get chooseFiles => 'Choose files';
+
+	/// en: '(one) {1 selected file} (other) {${count} selected files}'
+	String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '1 selected file',
+		other: '${count} selected files',
+	);
+
+	/// en: 'Send files over Wi-Fi'
+	String get wifiTransfer => 'Send files over Wi-Fi';
+
+	/// en: 'Transfer supported files from a browser on the same trusted network.'
+	String get wifiTransferHelp => 'Transfer supported files from a browser on the same trusted network.';
+
+	/// en: 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.'
+	String get wifiTransferIntro => 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.';
+
+	/// en: 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.'
+	String get wifiTransferPrivacy => 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.';
+
+	/// en: 'Preparing a private, time-limited transfer…'
+	String get wifiTransferStarting => 'Preparing a private, time-limited transfer…';
+
+	/// en: 'Could not start the transfer. Check local-network access and try again.'
+	String get wifiTransferUnavailable => 'Could not start the transfer. Check local-network access and try again.';
+
+	/// en: 'Open one of these addresses on the sending device'
+	String get openThisAddress => 'Open one of these addresses on the sending device';
+
+	/// en: 'Copy transfer address'
+	String get copyAddress => 'Copy transfer address';
+
+	/// en: 'Transfer address copied'
+	String get addressCopied => 'Transfer address copied';
+
+	/// en: 'This address expires in ${time}.'
+	String transferExpires({required Object time}) => 'This address expires in ${time}.';
+
+	/// en: '(one) {${count} file received} (other) {${count} files received}'
+	String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${count} file received',
+		other: '${count} files received',
+	);
+
+	/// en: 'Received ${size}'
+	String uploadedData({required Object size}) => 'Received ${size}';
+
+	/// en: 'Stop transfer and invalidate address'
+	String get stopTransfer => 'Stop transfer and invalidate address';
+
+	/// en: 'Start transfer'
+	String get startTransfer => 'Start transfer';
+
+	/// en: 'Wi-Fi transfer'
+	String get wifiImportedFiles => 'Wi-Fi transfer';
+
+	/// en: 'Send files to PlezyNG'
+	String get wifiBrowserTitle => 'Send files to PlezyNG';
+
+	/// en: 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.'
+	String get wifiBrowserIntro => 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.';
+
+	/// en: 'Files to send'
+	String get uploadFilesLabel => 'Files to send';
+
+	/// en: 'Upload selected files'
+	String get uploadSelected => 'Upload selected files';
+
+	/// en: 'Choose one or more files first.'
+	String get uploadSelectFirst => 'Choose one or more files first.';
+
+	/// en: 'Sending'
+	String get uploading => 'Sending';
+
+	/// en: 'File added to PlezyNG.'
+	String get uploadComplete => 'File added to PlezyNG.';
+
+	/// en: 'The file could not be added. Keep this page open and try again.'
+	String get uploadFailed => 'The file could not be added. Keep this page open and try again.';
+
+	/// en: 'LIVE'
+	String get liveCue => 'LIVE';
+
+	/// en: 'Live stream'
+	String get liveSession => 'Live stream';
+
+	/// en: 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.'
+	String get liveCueHelp => 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.';
+
+	/// en: 'This playback is session-only'
+	String get sessionOnly => 'This playback is session-only';
+
+	/// en: 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.'
+	String get sessionOnlyHelp => 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.';
+
+	/// en: 'Picture adjustments'
+	String get pictureAdjustments => 'Picture adjustments';
+
+	/// en: 'These picture changes affect only this playback. They reset when playback ends.'
+	String get pictureHelp => 'These picture changes affect only this playback. They reset when playback ends.';
+
+	/// en: 'Reset picture'
+	String get resetPicture => 'Reset picture';
+
+	/// en: 'Brightness'
+	String get brightness => 'Brightness';
+
+	/// en: 'Contrast'
+	String get contrast => 'Contrast';
+
+	/// en: 'Gamma'
+	String get gamma => 'Gamma';
+
+	/// en: 'Hue'
+	String get hue => 'Hue';
+
+	/// en: 'Saturation'
+	String get saturation => 'Saturation';
+
+	/// en: 'Flat view for 360° video'
+	String get view360 => 'Flat view for 360° video';
+
+	/// en: 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.'
+	String get view360Help => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.';
+
+	/// en: 'This mpv build could not apply the 360° filter.'
+	String get view360Unavailable => 'This mpv build could not apply the 360° filter.';
+
+	/// en: 'Horizontal view'
+	String get view360Yaw => 'Horizontal view';
+
+	/// en: 'Vertical view'
+	String get view360Pitch => 'Vertical view';
+
+	/// en: 'Field of view'
+	String get view360FieldOfView => 'Field of view';
+
+	/// en: 'Record live stream'
+	String get recordStream => 'Record live stream';
+
+	/// en: 'Stop and save recording'
+	String get stopRecording => 'Stop and save recording';
+
+	/// en: 'Recording is active. Leaving playback stops and saves the recording.'
+	String get recordingStarted => 'Recording is active. Leaving playback stops and saves the recording.';
+
+	/// en: 'Recording finalized and saved.'
+	String get recordingSaved => 'Recording finalized and saved.';
+
+	/// en: 'Recording to this device. Leaving playback stops and saves it.'
+	String get recordingActive => 'Recording to this device. Leaving playback stops and saves it.';
+
+	/// en: 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.'
+	String get recordingFormatHelp => 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.';
+
+	/// en: 'Replace this recording?'
+	String get replaceRecordingTitle => 'Replace this recording?';
+
+	/// en: 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.'
+	String get replaceRecordingHelp => 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.';
+
+	/// en: 'Replace file'
+	String get replaceRecording => 'Replace file';
+
+	/// en: 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.'
+	String get discHelp => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.';
+
+	/// en: 'Optical disc'
+	String get discs => 'Optical disc';
+
+	/// en: 'DVD'
+	String get dvd => 'DVD';
+
+	/// en: 'Blu-ray'
+	String get bluray => 'Blu-ray';
+
+	/// en: 'Audio CD'
+	String get audioCd => 'Audio CD';
+
+	/// en: 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.'
+	String get discAvailability => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.';
+
+	/// en: 'Convert a local media file'
+	String get converterTitle => 'Convert a local media file';
+
+	/// en: 'Use FFmpeg to make an MP4, M4A, or MP3 copy.'
+	String get converterHelp => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.';
+
+	/// en: 'Convert a local audio or video file to a format that works on more devices.'
+	String get converterIntro => 'Convert a local audio or video file to a format that works on more devices.';
+
+	/// en: 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.'
+	String get converterPrivacy => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.';
+
+	/// en: 'Choose a local media file'
+	String get converterChooseInput => 'Choose a local media file';
+
+	/// en: 'Output format'
+	String get converterFormat => 'Output format';
+
+	/// en: 'MP4 · H.264 and AAC'
+	String get converterMp4 => 'MP4 · H.264 and AAC';
+
+	/// en: 'M4A · AAC audio'
+	String get converterM4a => 'M4A · AAC audio';
+
+	/// en: 'MP3 · audio'
+	String get converterMp3 => 'MP3 · audio';
+
+	/// en: 'Save converted media as'
+	String get converterSaveAs => 'Save converted media as';
+
+	/// en: 'Choose a filename with the selected output extension.'
+	String get converterExtensionMismatch => 'Choose a filename with the selected output extension.';
+
+	/// en: 'Choose an audio or video file.'
+	String get converterUnsupportedInput => 'Choose an audio or video file.';
+
+	/// en: 'The selected file is not available as a local device path.'
+	String get converterLocalOnly => 'The selected file is not available as a local device path.';
+
+	/// en: 'Replace this file?'
+	String get converterReplaceTitle => 'Replace this file?';
+
+	/// en: 'PlezyNG backs up the existing file until the converted copy is saved.'
+	String get converterReplaceHelp => 'PlezyNG backs up the existing file until the converted copy is saved.';
+
+	/// en: 'Starting FFmpeg…'
+	String get converterStarting => 'Starting FFmpeg…';
+
+	/// en: 'Converting on this computer…'
+	String get converterProgress => 'Converting on this computer…';
+
+	/// en: 'Conversion complete. The new file is ready.'
+	String get converterComplete => 'Conversion complete. The new file is ready.';
+
+	/// en: 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.'
+	String get converterFfmpegMissing => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.';
+
+	/// en: 'Conversion failed. Check that the source file can be read and the destination has enough free space.'
+	String get converterFailed => 'Conversion failed. Check that the source file can be read and the destination has enough free space.';
+
+	/// en: 'Conversion cancelled. The incomplete output was removed.'
+	String get converterCancelled => 'Conversion cancelled. The incomplete output was removed.';
+
+	/// en: 'Local conversion is available on desktop computers with FFmpeg installed.'
+	String get converterDesktopOnly => 'Local conversion is available on desktop computers with FFmpeg installed.';
+
+	/// en: 'Convert file'
+	String get converterStart => 'Convert file';
+}
+
+
 // Path: fileSources
 class Translations$fileSources$en {
 	Translations$fileSources$en.internal(this._root);
@@ -14497,6 +14853,118 @@ extension on Translations {
 			'platform.locationPermission' => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.',
 			'platform.photoLibraryPermission' => 'Choose images from your photo library to use as media artwork.',
 			'platform.cameraPermission' => 'Scan QR codes to pair a Companion Remote.',
+			'universalMedia.title' => 'Open media',
+			'universalMedia.shortcutHelp' => 'Play a link, playlist, or file for this session.',
+			'universalMedia.intro' => 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.',
+			'universalMedia.openWhat' => 'What would you like to open?',
+			'universalMedia.stream' => 'Stream address',
+			'universalMedia.playlist' => 'Playlist',
+			'universalMedia.files' => 'Device files',
+			'universalMedia.favorites' => 'Saved stream favorites',
+			'universalMedia.address' => 'Media address',
+			'universalMedia.addressHelp' => 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.',
+			'universalMedia.displayName' => 'Display name (optional)',
+			'universalMedia.displayNameHelp' => 'Choose a short name for the player and system media controls.',
+			'universalMedia.allowHttp' => 'Allow an unencrypted HTTP connection',
+			'universalMedia.allowHttpHelp' => 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.',
+			'universalMedia.advancedProtocols' => 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.',
+			'universalMedia.liveStream' => 'Treat as live',
+			'universalMedia.liveStreamHelp' => 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.',
+			'universalMedia.privateSession' => 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Save favorite',
+			'universalMedia.playNow' => 'Play now',
+			'universalMedia.favoriteSaved' => 'Stream favorite saved to this profile',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ),
+			'universalMedia.playlistAddress' => 'Playlist address',
+			'universalMedia.playlistAddressHelp' => 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.',
+			'universalMedia.choosePlaylist' => 'Choose playlist file',
+			'universalMedia.openPlaylist' => 'Open playlist',
+			'universalMedia.playlistFormatsHelp' => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.',
+			'universalMedia.noFavorites' => 'No saved stream favorites yet. Favorites stay in this profile.',
+			'universalMedia.removeFavorite' => 'Remove stream favorite',
+			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
+			'universalMedia.chooseFiles' => 'Choose files',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '1 selected file', other: '${count} selected files', ),
+			'universalMedia.wifiTransfer' => 'Send files over Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Transfer supported files from a browser on the same trusted network.',
+			'universalMedia.wifiTransferIntro' => 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.',
+			'universalMedia.wifiTransferPrivacy' => 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Preparing a private, time-limited transfer…',
+			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
+			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
+			'universalMedia.copyAddress' => 'Copy transfer address',
+			'universalMedia.addressCopied' => 'Transfer address copied',
+			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Received ${size}',
+			'universalMedia.stopTransfer' => 'Stop transfer and invalidate address',
+			'universalMedia.startTransfer' => 'Start transfer',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi transfer',
+			'universalMedia.wifiBrowserTitle' => 'Send files to PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'Files to send',
+			'universalMedia.uploadSelected' => 'Upload selected files',
+			'universalMedia.uploadSelectFirst' => 'Choose one or more files first.',
+			'universalMedia.uploading' => 'Sending',
+			'universalMedia.uploadComplete' => 'File added to PlezyNG.',
+			'universalMedia.uploadFailed' => 'The file could not be added. Keep this page open and try again.',
+			'universalMedia.liveCue' => 'LIVE',
+			'universalMedia.liveSession' => 'Live stream',
+			'universalMedia.liveCueHelp' => 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.',
+			'universalMedia.sessionOnly' => 'This playback is session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Picture adjustments',
+			'universalMedia.pictureHelp' => 'These picture changes affect only this playback. They reset when playback ends.',
+			'universalMedia.resetPicture' => 'Reset picture',
+			'universalMedia.brightness' => 'Brightness',
+			'universalMedia.contrast' => 'Contrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Flat view for 360° video',
+			'universalMedia.view360Help' => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.',
+			'universalMedia.view360Unavailable' => 'This mpv build could not apply the 360° filter.',
+			'universalMedia.view360Yaw' => 'Horizontal view',
+			'universalMedia.view360Pitch' => 'Vertical view',
+			'universalMedia.view360FieldOfView' => 'Field of view',
+			'universalMedia.recordStream' => 'Record live stream',
+			'universalMedia.stopRecording' => 'Stop and save recording',
+			'universalMedia.recordingStarted' => 'Recording is active. Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => 'Recording finalized and saved.',
+			'universalMedia.recordingActive' => 'Recording to this device. Leaving playback stops and saves it.',
+			'universalMedia.recordingFormatHelp' => 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Replace this recording?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.',
+			'universalMedia.replaceRecording' => 'Replace file',
+			'universalMedia.discHelp' => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.',
+			'universalMedia.discs' => 'Optical disc',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.',
+			'universalMedia.converterTitle' => 'Convert a local media file',
+			'universalMedia.converterHelp' => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.',
+			'universalMedia.converterIntro' => 'Convert a local audio or video file to a format that works on more devices.',
+			'universalMedia.converterPrivacy' => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.',
+			'universalMedia.converterChooseInput' => 'Choose a local media file',
+			'universalMedia.converterFormat' => 'Output format',
+			'universalMedia.converterMp4' => 'MP4 · H.264 and AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 · audio',
+			'universalMedia.converterSaveAs' => 'Save converted media as',
+			'universalMedia.converterExtensionMismatch' => 'Choose a filename with the selected output extension.',
+			'universalMedia.converterUnsupportedInput' => 'Choose an audio or video file.',
+			'universalMedia.converterLocalOnly' => 'The selected file is not available as a local device path.',
+			'universalMedia.converterReplaceTitle' => 'Replace this file?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG backs up the existing file until the converted copy is saved.',
+			'universalMedia.converterStarting' => 'Starting FFmpeg…',
+			'universalMedia.converterProgress' => 'Converting on this computer…',
+			'universalMedia.converterComplete' => 'Conversion complete. The new file is ready.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.',
+			'universalMedia.converterFailed' => 'Conversion failed. Check that the source file can be read and the destination has enough free space.',
+			'universalMedia.converterCancelled' => 'Conversion cancelled. The incomplete output was removed.',
+			'universalMedia.converterDesktopOnly' => 'Local conversion is available on desktop computers with FFmpeg installed.',
+			'universalMedia.converterStart' => 'Convert file',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
 			'fileSources.add' => 'Add source',

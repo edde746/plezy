@@ -101,6 +101,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$hu watchLink = _Translations$watchLink$hu._(_root);
 	@override late final _Translations$homeLayout$hu homeLayout = _Translations$homeLayout$hu._(_root);
 	@override late final _Translations$platform$hu platform = _Translations$platform$hu._(_root);
+	@override late final _Translations$universalMedia$hu universalMedia = _Translations$universalMedia$hu._(_root);
 	@override late final _Translations$fileSources$hu fileSources = _Translations$fileSources$hu._(_root);
 	@override late final _Translations$lending$hu lending = _Translations$lending$hu._(_root);
 	@override late final _Translations$audiobook$hu audiobook = _Translations$audiobook$hu._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$hu extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Válassz képeket a fotókönyvtáradból a médiatartalmak borítóképeihez és illusztrációihoz.';
 	@override String get cameraPermission => 'QR kódok szkennelése a Companion Remote párosításához.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$hu extends Translations$universalMedia$en {
+	_Translations$universalMedia$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nyílt média';
+	@override String get shortcutHelp => 'Játssz egy linket, lejátszási listát vagy fájlt erre az ülésre.';
+	@override String get intro => 'Nyissa meg a linket, a lejátszási listát vagy a fájlt.A Playback használja a PlezyNG szabványos lejátszóját és nem ad hozzá történetet a könyvtárához.';
+	@override String get openWhat => 'Mit szeretne megnyitni?';
+	@override String get stream => 'Stream cím';
+	@override String get playlist => 'játéklisták';
+	@override String get files => 'készülék fájl';
+	@override String get favorites => 'Megtakarított stream kedvencek';
+	@override String get address => 'média cím';
+	@override String get addressHelp => 'Az elismert hitelesítési vagy aláírási paraméterekkel rendelkező URL-k csak ebben az ülésen használhatók, és nem menthetők kedvencként.';
+	@override String get displayName => 'A kijelző neve (opcionális)';
+	@override String get displayNameHelp => 'Válasszon egy rövid nevét a játékos és a rendszer média vezérlők.';
+	@override String get allowHttp => 'A titkosítás nélküli HTTP-kapcsolat engedélyezése';
+	@override String get allowHttpHelp => 'A HTTP nem titkosítja a kapcsolatot. csak megbízható hálózaton engedélyezheti. ha lehetséges, használja a HTTPS-t.';
+	@override String get advancedProtocols => 'Csak MPV: adjon meg egy RTSP, RTMP/RTMPS, UDP vagy RTP címet.';
+	@override String get liveStream => 'Élőként kezeljük';
+	@override String get liveStreamHelp => 'Használja ezt az élő videó vagy rádió. Az alkalmazás elrejti az időzónát, a skip gombokat és a go-to-time opciót.';
+	@override String get privateSession => 'Csak ez a lejátszás használja az címet. mentse meg a jogosult stream kedvenc, hogy ezt tartsa ebben a profilban.';
+	@override String get saveFavorite => 'Megmentse kedvencét';
+	@override String get playNow => 'Játssz most';
+	@override String get favoriteSaved => 'Stream kedvenc mentett erre a profilra';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n,
+		one: 'A ${count} nem támogatott vagy biztonságos lejátszási lista bejárata.',
+		other: 'A ${count} nem támogatott vagy biztonságos lejátszási listájának bejegyzései.',
+	);
+	@override String get playlistAddress => 'Playlist címek';
+	@override String get playlistAddressHelp => 'Nyissa meg a M3U, M3u8 vagy PLS lejátszási listát egy webcímről. közvetlen áramlás linkek nem menthetik meg a lejátszó listát.';
+	@override String get choosePlaylist => 'Válassza ki a Playlist fájlt';
+	@override String get openPlaylist => 'Nyílt Playlist';
+	@override String get playlistFormatsHelp => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.';
+	@override String get noFavorites => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.';
+	@override String get removeFavorite => 'Távolítsa el a kedvenc stream';
+	@override String get filesHelp => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.';
+	@override String get chooseFiles => 'Válasszon fájlokat';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n,
+		one: '1 kiválasztott fájl',
+		other: '${count} kiválasztott fájlok',
+	);
+	@override String get wifiTransfer => 'Fájlok küldése Wi-Fi';
+	@override String get wifiTransferHelp => 'Támogatott fájlok átadása egy böngészőről ugyanazon megbízható hálózaton.';
+	@override String get wifiTransferIntro => 'Nyissa meg ezt a címet egy böngészőben egy másik eszközön. Válassza ki a fájlokat, hogy hozzáadják őket a készülék Fájlok és könyvek könyvtárába.';
+	@override String get wifiTransferPrivacy => 'Ez a készülék fogadja a fájlokat a helyi hálózaton keresztül. Bárki, aki ismeri ezt az címet, elküldheti azokat addig, amíg nem hagyja abba az átutalást vagy a cím 15 perc elteltével megszűnik. Maximum: 100 fájlt, 4 GiB fájlokonként, 10 GiB összesen.';
+	@override String get wifiTransferStarting => 'Személyre szabott, korlátozott átutalás...';
+	@override String get wifiTransferUnavailable => 'Nem tudja elkezdeni az átutalást. ellenőrizze a helyi hálózati hozzáférést, és próbálja meg újra.';
+	@override String get openThisAddress => 'Nyissa meg az egyik címet a küldő eszközön';
+	@override String get copyAddress => 'átviteli cím másolása';
+	@override String get addressCopied => 'átutalási cím másolva';
+	@override String transferExpires({required Object time}) => 'Ez a cím az ${time}-ben lejár.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n,
+		one: '${count} fájl kapott',
+		other: '${count} fájlok kaptak',
+	);
+	@override String uploadedData({required Object size}) => 'Megérkezett ${size}';
+	@override String get stopTransfer => 'Megállapodás átadásáról és cím megsemmisítéséről';
+	@override String get startTransfer => 'Kezdődik a transzfer';
+	@override String get wifiImportedFiles => 'Wi-Fi átutalás';
+	@override String get wifiBrowserTitle => 'Fájlok küldése PlezyNG';
+	@override String get wifiBrowserIntro => 'Válassza ki az audio, videó, ebook vagy képregény fájlokat küldeni. A fájlok tárolódnak a készülék Fájlok és könyvek könyvtárában. Maximum: 100 fájlt, 4 GiB fájlonként, 10 GiB összesen.';
+	@override String get uploadFilesLabel => 'Fájlok küldeni';
+	@override String get uploadSelected => 'A kiválasztott fájlok feltöltése';
+	@override String get uploadSelectFirst => 'Válasszon egy vagy több fájlt először.';
+	@override String get uploading => 'küldés';
+	@override String get uploadComplete => 'Fájl hozzáadva PlezyNG.';
+	@override String get uploadFailed => 'A fájl nem lehet hozzáadni. tartsa nyitva ezt az oldalt, és próbálja meg újra.';
+	@override String get liveCue => 'Élő';
+	@override String get liveSession => 'Élő Stream';
+	@override String get liveCueHelp => 'Az élő videó vagy rádió esetében az alkalmazás elrejti az időzónát és a gombokat. nem mentheti meg a címet vagy a történetet.';
+	@override String get sessionOnly => 'Ez a playback csak szezonális';
+	@override String get sessionOnlyHelp => 'A Playback soha nem mentse meg a haladást vagy a történelmet. mentse az áramlat kedvencnek, hogy ebben a profilban maradjon, ha jogosult.';
+	@override String get pictureAdjustments => 'Kép módosítása';
+	@override String get pictureHelp => 'Ezek a képváltozások csak ezt a lejátszást érintik. újra beállítják, amikor a playback véget ér.';
+	@override String get resetPicture => 'Visszaállítási kép';
+	@override String get brightness => 'fényesség';
+	@override String get contrast => 'kontraszt';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'szaturáció';
+	@override String get view360 => 'A 360 fokos videó megjelenítése';
+	@override String get view360Help => 'Használja ezt az egyenes 360°-os videóhoz. MPV-nek szüksége van a FFmpeg v360 szűrőjére erre a nézőpontra.';
+	@override String get view360Unavailable => 'Ez az MPV szerkezet nem alkalmazhatja a 360 fokos szűrőt.';
+	@override String get view360Yaw => 'Horizontális kilátás';
+	@override String get view360Pitch => 'Vertikális kilátás';
+	@override String get view360FieldOfView => 'A látványterület';
+	@override String get recordStream => 'Live stream rekordok';
+	@override String get stopRecording => 'Állítsa meg és mentse a felvételt';
+	@override String get recordingStarted => 'A lejátszás megszűnik, és megmenti a felvételt.';
+	@override String get recordingSaved => 'A felvétel befejeződött és mentett.';
+	@override String get recordingActive => 'Ez a készülék.Leaving playback megáll és mentse meg.';
+	@override String get recordingFormatHelp => 'Videó esetén válassza ki a MKV vagy MPEG-TS. A hang esetében válasszon MKA vagy MKV.';
+	@override String get replaceRecordingTitle => 'Ezt a felvételt helyettesítjük?';
+	@override String get replaceRecordingHelp => 'A PlezyNG visszaállítja a meglévő fájlt a rögzítés során. ha nem tudja menteni az új rögzítést, a Plezy NG visszaállíthatja a biztonsági mentést.';
+	@override String get replaceRecording => 'Fájl cseréje';
+	@override String get discHelp => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.';
+	@override String get discs => 'Optikai lemez';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'Audió CD';
+	@override String get discAvailability => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.';
+	@override String get converterTitle => 'A helyi média fájl átalakítása';
+	@override String get converterHelp => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.';
+	@override String get converterIntro => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.';
+	@override String get converterPrivacy => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.';
+	@override String get converterChooseInput => 'Válasszon egy helyi média fájlt';
+	@override String get converterFormat => 'kimeneti formátum';
+	@override String get converterMp4 => 'MP4 · H.264 és AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 hangszóró';
+	@override String get converterSaveAs => 'Az átalakított média mentése';
+	@override String get converterExtensionMismatch => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.';
+	@override String get converterUnsupportedInput => 'Válasszon egy audio vagy videó fájlt.';
+	@override String get converterLocalOnly => 'A kiválasztott fájl nem áll rendelkezésre helyi eszközútként.';
+	@override String get converterReplaceTitle => 'A fájl helyettesítése?';
+	@override String get converterReplaceHelp => 'A PlezyNG visszaállítja a meglévő fájlt, amíg az átalakított másolat menthető.';
+	@override String get converterStarting => 'Megkezdődött az FFmpeg...';
+	@override String get converterProgress => 'Ezzel a számítógéppel átalakítva...';
+	@override String get converterComplete => 'Az új fájl készen áll.';
+	@override String get converterFfmpegMissing => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.';
+	@override String get converterFailed => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.';
+	@override String get converterCancelled => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.';
+	@override String get converterDesktopOnly => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.';
+	@override String get converterStart => 'fájl átalakítása';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$hu extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsHu {
 			'platform.locationPermission' => 'A PlezyNG akkor használja a helyadatokhoz való hozzáférést, ha az iOS ezt megköveteli a helyi hálózat felismeréséhez és a médiaszerverekhez való csatlakozáshoz.',
 			'platform.photoLibraryPermission' => 'Válassz képeket a fotókönyvtáradból a médiatartalmak borítóképeihez és illusztrációihoz.',
 			'platform.cameraPermission' => 'QR kódok szkennelése a Companion Remote párosításához.',
+			'universalMedia.title' => 'Nyílt média',
+			'universalMedia.shortcutHelp' => 'Játssz egy linket, lejátszási listát vagy fájlt erre az ülésre.',
+			'universalMedia.intro' => 'Nyissa meg a linket, a lejátszási listát vagy a fájlt.A Playback használja a PlezyNG szabványos lejátszóját és nem ad hozzá történetet a könyvtárához.',
+			'universalMedia.openWhat' => 'Mit szeretne megnyitni?',
+			'universalMedia.stream' => 'Stream cím',
+			'universalMedia.playlist' => 'játéklisták',
+			'universalMedia.files' => 'készülék fájl',
+			'universalMedia.favorites' => 'Megtakarított stream kedvencek',
+			'universalMedia.address' => 'média cím',
+			'universalMedia.addressHelp' => 'Az elismert hitelesítési vagy aláírási paraméterekkel rendelkező URL-k csak ebben az ülésen használhatók, és nem menthetők kedvencként.',
+			'universalMedia.displayName' => 'A kijelző neve (opcionális)',
+			'universalMedia.displayNameHelp' => 'Válasszon egy rövid nevét a játékos és a rendszer média vezérlők.',
+			'universalMedia.allowHttp' => 'A titkosítás nélküli HTTP-kapcsolat engedélyezése',
+			'universalMedia.allowHttpHelp' => 'A HTTP nem titkosítja a kapcsolatot. csak megbízható hálózaton engedélyezheti. ha lehetséges, használja a HTTPS-t.',
+			'universalMedia.advancedProtocols' => 'Csak MPV: adjon meg egy RTSP, RTMP/RTMPS, UDP vagy RTP címet.',
+			'universalMedia.liveStream' => 'Élőként kezeljük',
+			'universalMedia.liveStreamHelp' => 'Használja ezt az élő videó vagy rádió. Az alkalmazás elrejti az időzónát, a skip gombokat és a go-to-time opciót.',
+			'universalMedia.privateSession' => 'Csak ez a lejátszás használja az címet. mentse meg a jogosult stream kedvenc, hogy ezt tartsa ebben a profilban.',
+			'universalMedia.saveFavorite' => 'Megmentse kedvencét',
+			'universalMedia.playNow' => 'Játssz most',
+			'universalMedia.favoriteSaved' => 'Stream kedvenc mentett erre a profilra',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: 'A ${count} nem támogatott vagy biztonságos lejátszási lista bejárata.', other: 'A ${count} nem támogatott vagy biztonságos lejátszási listájának bejegyzései.', ),
+			'universalMedia.playlistAddress' => 'Playlist címek',
+			'universalMedia.playlistAddressHelp' => 'Nyissa meg a M3U, M3u8 vagy PLS lejátszási listát egy webcímről. közvetlen áramlás linkek nem menthetik meg a lejátszó listát.',
+			'universalMedia.choosePlaylist' => 'Válassza ki a Playlist fájlt',
+			'universalMedia.openPlaylist' => 'Nyílt Playlist',
+			'universalMedia.playlistFormatsHelp' => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.',
+			'universalMedia.noFavorites' => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.',
+			'universalMedia.removeFavorite' => 'Távolítsa el a kedvenc stream',
+			'universalMedia.filesHelp' => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.',
+			'universalMedia.chooseFiles' => 'Válasszon fájlokat',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '1 kiválasztott fájl', other: '${count} kiválasztott fájlok', ),
+			'universalMedia.wifiTransfer' => 'Fájlok küldése Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Támogatott fájlok átadása egy böngészőről ugyanazon megbízható hálózaton.',
+			'universalMedia.wifiTransferIntro' => 'Nyissa meg ezt a címet egy böngészőben egy másik eszközön. Válassza ki a fájlokat, hogy hozzáadják őket a készülék Fájlok és könyvek könyvtárába.',
+			'universalMedia.wifiTransferPrivacy' => 'Ez a készülék fogadja a fájlokat a helyi hálózaton keresztül. Bárki, aki ismeri ezt az címet, elküldheti azokat addig, amíg nem hagyja abba az átutalást vagy a cím 15 perc elteltével megszűnik. Maximum: 100 fájlt, 4 GiB fájlokonként, 10 GiB összesen.',
+			'universalMedia.wifiTransferStarting' => 'Személyre szabott, korlátozott átutalás...',
+			'universalMedia.wifiTransferUnavailable' => 'Nem tudja elkezdeni az átutalást. ellenőrizze a helyi hálózati hozzáférést, és próbálja meg újra.',
+			'universalMedia.openThisAddress' => 'Nyissa meg az egyik címet a küldő eszközön',
+			'universalMedia.copyAddress' => 'átviteli cím másolása',
+			'universalMedia.addressCopied' => 'átutalási cím másolva',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Ez a cím az ${time}-ben lejár.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${count} fájl kapott', other: '${count} fájlok kaptak', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Megérkezett ${size}',
+			'universalMedia.stopTransfer' => 'Megállapodás átadásáról és cím megsemmisítéséről',
+			'universalMedia.startTransfer' => 'Kezdődik a transzfer',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi átutalás',
+			'universalMedia.wifiBrowserTitle' => 'Fájlok küldése PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Válassza ki az audio, videó, ebook vagy képregény fájlokat küldeni. A fájlok tárolódnak a készülék Fájlok és könyvek könyvtárában. Maximum: 100 fájlt, 4 GiB fájlonként, 10 GiB összesen.',
+			'universalMedia.uploadFilesLabel' => 'Fájlok küldeni',
+			'universalMedia.uploadSelected' => 'A kiválasztott fájlok feltöltése',
+			'universalMedia.uploadSelectFirst' => 'Válasszon egy vagy több fájlt először.',
+			'universalMedia.uploading' => 'küldés',
+			'universalMedia.uploadComplete' => 'Fájl hozzáadva PlezyNG.',
+			'universalMedia.uploadFailed' => 'A fájl nem lehet hozzáadni. tartsa nyitva ezt az oldalt, és próbálja meg újra.',
+			'universalMedia.liveCue' => 'Élő',
+			'universalMedia.liveSession' => 'Élő Stream',
+			'universalMedia.liveCueHelp' => 'Az élő videó vagy rádió esetében az alkalmazás elrejti az időzónát és a gombokat. nem mentheti meg a címet vagy a történetet.',
+			'universalMedia.sessionOnly' => 'Ez a playback csak szezonális',
+			'universalMedia.sessionOnlyHelp' => 'A Playback soha nem mentse meg a haladást vagy a történelmet. mentse az áramlat kedvencnek, hogy ebben a profilban maradjon, ha jogosult.',
+			'universalMedia.pictureAdjustments' => 'Kép módosítása',
+			'universalMedia.pictureHelp' => 'Ezek a képváltozások csak ezt a lejátszást érintik. újra beállítják, amikor a playback véget ér.',
+			'universalMedia.resetPicture' => 'Visszaállítási kép',
+			'universalMedia.brightness' => 'fényesség',
+			'universalMedia.contrast' => 'kontraszt',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'szaturáció',
+			'universalMedia.view360' => 'A 360 fokos videó megjelenítése',
+			'universalMedia.view360Help' => 'Használja ezt az egyenes 360°-os videóhoz. MPV-nek szüksége van a FFmpeg v360 szűrőjére erre a nézőpontra.',
+			'universalMedia.view360Unavailable' => 'Ez az MPV szerkezet nem alkalmazhatja a 360 fokos szűrőt.',
+			'universalMedia.view360Yaw' => 'Horizontális kilátás',
+			'universalMedia.view360Pitch' => 'Vertikális kilátás',
+			'universalMedia.view360FieldOfView' => 'A látványterület',
+			'universalMedia.recordStream' => 'Live stream rekordok',
+			'universalMedia.stopRecording' => 'Állítsa meg és mentse a felvételt',
+			'universalMedia.recordingStarted' => 'A lejátszás megszűnik, és megmenti a felvételt.',
+			'universalMedia.recordingSaved' => 'A felvétel befejeződött és mentett.',
+			'universalMedia.recordingActive' => 'Ez a készülék.Leaving playback megáll és mentse meg.',
+			'universalMedia.recordingFormatHelp' => 'Videó esetén válassza ki a MKV vagy MPEG-TS. A hang esetében válasszon MKA vagy MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Ezt a felvételt helyettesítjük?',
+			'universalMedia.replaceRecordingHelp' => 'A PlezyNG visszaállítja a meglévő fájlt a rögzítés során. ha nem tudja menteni az új rögzítést, a Plezy NG visszaállíthatja a biztonsági mentést.',
+			'universalMedia.replaceRecording' => 'Fájl cseréje',
+			'universalMedia.discHelp' => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.',
+			'universalMedia.discs' => 'Optikai lemez',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audió CD',
+			'universalMedia.discAvailability' => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.',
+			'universalMedia.converterTitle' => 'A helyi média fájl átalakítása',
+			'universalMedia.converterHelp' => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.',
+			'universalMedia.converterIntro' => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.',
+			'universalMedia.converterPrivacy' => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.',
+			'universalMedia.converterChooseInput' => 'Válasszon egy helyi média fájlt',
+			'universalMedia.converterFormat' => 'kimeneti formátum',
+			'universalMedia.converterMp4' => 'MP4 · H.264 és AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 hangszóró',
+			'universalMedia.converterSaveAs' => 'Az átalakított média mentése',
+			'universalMedia.converterExtensionMismatch' => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.',
+			'universalMedia.converterUnsupportedInput' => 'Válasszon egy audio vagy videó fájlt.',
+			'universalMedia.converterLocalOnly' => 'A kiválasztott fájl nem áll rendelkezésre helyi eszközútként.',
+			'universalMedia.converterReplaceTitle' => 'A fájl helyettesítése?',
+			'universalMedia.converterReplaceHelp' => 'A PlezyNG visszaállítja a meglévő fájlt, amíg az átalakított másolat menthető.',
+			'universalMedia.converterStarting' => 'Megkezdődött az FFmpeg...',
+			'universalMedia.converterProgress' => 'Ezzel a számítógéppel átalakítva...',
+			'universalMedia.converterComplete' => 'Az új fájl készen áll.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.',
+			'universalMedia.converterFailed' => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.',
+			'universalMedia.converterCancelled' => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.',
+			'universalMedia.converterDesktopOnly' => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.',
+			'universalMedia.converterStart' => 'fájl átalakítása',
 			'fileSources.title' => 'Fájlok és könyvek',
 			'fileSources.subtitle' => 'Olvasson, hallgasson és figyelj a saját fájlokat.',
 			'fileSources.add' => 'Hozzáadása forrás',

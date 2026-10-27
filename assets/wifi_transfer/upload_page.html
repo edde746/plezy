@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="@@LANG@@" dir="@@DIR@@">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>@@TITLE@@</title>
+<style>
+  :root{color-scheme:dark light;font:16px system-ui,sans-serif}
+  body{max-width:42rem;margin:0 auto;padding:2rem;line-height:1.5}
+  main{border:1px solid #7777;border-radius:1rem;padding:1.5rem}
+  h1{font-size:1.5rem}label,button{display:block;margin-top:1rem}
+  input,button{font:inherit}button{padding:.7rem 1rem}
+  #status{min-height:3rem}
+</style>
+<main>
+  <h1>@@TITLE@@</h1>
+  <p>@@INTRO@@</p>
+  <label for="files">@@FILES@@</label>
+  <input id="files" type="file" accept="audio/*,video/*,.m4b,.epub,.pdf,.cbz" multiple>
+  <button id="send" type="button">@@ACTION@@</button>
+  <p id="status" role="status" aria-live="polite"></p>
+</main>
+<script>
+const messages=@@MESSAGES@@,picker=document.querySelector('#files'),button=document.querySelector('#send'),status=document.querySelector('#status');
+button.addEventListener('click',async()=>{
+  if(!picker.files.length){status.textContent=messages.selectFirst;return;}
+  button.disabled=true;
+  try{
+    for(const file of picker.files){
+      status.textContent=messages.uploading+' '+file.name+'…';
+      const response=await fetch(location.pathname.replace(/\/$/,'')+'/upload?name='+encodeURIComponent(file.name),{
+        method:'PUT',headers:{'Content-Type':'application/octet-stream'},body:file
+      });
+      if(!response.ok)throw new Error(messages.uploadFailed+' '+file.name+' ('+response.status+').');
+    }
+    status.textContent=messages.uploadComplete;
+    picker.value='';
+  }catch(error){status.textContent=error.message||messages.uploadFailed;}
+  finally{button.disabled=false;}
+});
+</script>
+</html>
