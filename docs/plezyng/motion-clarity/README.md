@@ -68,8 +68,10 @@ mpv's cumulative dropped-frame count. After three consecutive 2-second windows
 with new drops it steps MCI search effort down from High to Balanced to Fast,
 then switches to temporal blending if drops continue. The saved preference stays
 unchanged. This is not a device benchmark or a multi-signal resource governor: it
-does not measure GPU/CPU headroom, thermal state, power use or physical scanout. No TV superiority, image-quality, frame-rate,
-HDR, battery or performance result has been established. The broader
+does not measure GPU/CPU headroom, thermal state, power use or physical scanout. If the drop counter is unavailable, the
+guard reports that automatic fallback is unavailable and stops polling. No TV
+superiority, image-quality, frame-rate, HDR, battery or performance result has been
+established. The broader
 architecture and gates below remain the plan for that work.
 
 The table below describes the broader product target, not the feature coverage
