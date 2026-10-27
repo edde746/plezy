@@ -216,6 +216,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
               ? () => _signOutPlexAccount(profile)
               : null;
           final hasMenu = onManage != null || onShowLink != null || onDelete != null || onSignOut != null;
+          final connections = _chipsFor(profile, activeProvider);
 
           return Padding(
             key: ValueKey(profile.id),
@@ -241,7 +242,8 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                   profile: profile,
                   avatarUrl: activeProvider.avatarUrlFor(profile.id),
                   isActive: isActive && !widget.requireSelection,
-                  chips: _chipsFor(profile, activeProvider),
+                  chips: connections.chips,
+                  hasConnections: connections.hasConnections,
                   onTap: () => _switchTo(profile),
                   onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
                   // Manage available for any profile — adding/removing
@@ -321,17 +323,29 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
   }
 
-  List<_ChipData> _chipsFor(Profile profile, ActiveProfileProvider activeProvider) {
+  /// The chips under [profile]'s name. `hasConnections` is false only when the
+  /// profile reaches no connection at all; `chips` can be empty without it
+  /// when the only chip would repeat the tile's own name.
+  ({List<_ChipData> chips, bool hasConnections}) _chipsFor(Profile profile, ActiveProfileProvider activeProvider) {
     final chips = <_ChipData>[];
+    var hasConnections = false;
+    // With a single Plex account on the device, naming it under every tile
+    // tells no two profiles apart and reads as if each were that account's
+    // owner (#2590).
+    final namesAccount = activeProvider.connectionsById.values.whereType<PlexAccountConnection>().length > 1;
     // Plex Home profiles implicitly own their parent Plex connection (no
     // join-table row), so prepend it before any borrowed connections. The
     // profile *is* the Home user there, so its own name identifies the user
-    // half of the label.
+    // half of the label — and without the account half the chip would only
+    // repeat the tile's title.
     if (profile.isPlexHome) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
         final conn = activeProvider.connectionsById[parentId];
-        if (conn != null) chips.add(_chipFor(conn, user: profile.displayName));
+        if (conn != null) {
+          hasConnections = true;
+          if (namesAccount) chips.add(_chipFor(conn, user: profile.displayName, namesAccount: true));
+        }
       }
     }
     final pcs = visibleProfileConnections(
@@ -340,9 +354,13 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
     for (final pc in pcs) {
       final conn = activeProvider.connectionsById[pc.connectionId];
-      if (conn != null) chips.add(_chipFor(conn, user: _plexHomeUserName(activeProvider, conn, pc.userIdentifier)));
+      if (conn == null) continue;
+      hasConnections = true;
+      chips.add(
+        _chipFor(conn, user: _plexHomeUserName(activeProvider, conn, pc.userIdentifier), namesAccount: namesAccount),
+      );
     }
-    return chips;
+    return (chips: chips, hasConnections: hasConnections);
   }
 
   /// A Plex account connection labels itself with the account owner's name,
@@ -352,12 +370,14 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   ///
   /// Both halves of that relation go through a single translated string so a
   /// locale can order them itself; several put the account first (`ja`, `ko`,
-  /// `tr`, `zh`). [user] is null only when the Home cache cannot resolve the
+  /// `tr`, `zh`). [namesAccount] false drops the account half and leaves the
+  /// user. [user] is null only when the Home cache cannot resolve the
   /// connection's uuid yet, which falls back to naming the account alone.
-  _ChipData _chipFor(Connection conn, {required String? user}) {
+  _ChipData _chipFor(Connection conn, {required String? user, required bool namesAccount}) {
     return _ChipData(
       backend: conn.backend,
       label: switch (conn) {
+        PlexAccountConnection() when user != null && !namesAccount => user,
         PlexAccountConnection(:final accountLabel) when user != null => t.profiles.plexAccountUserChip(
           user: user,
           account: accountLabel,
@@ -415,6 +435,10 @@ class _ProfileTile extends StatelessWidget {
   final bool isActive;
   final BorderRadius borderRadius;
   final List<_ChipData> chips;
+
+  /// False only when the profile reaches no connection at all, which the tile
+  /// reports as an error. Otherwise empty [chips] leave the name on its own.
+  final bool hasConnections;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onManage;
@@ -431,6 +455,7 @@ class _ProfileTile extends StatelessWidget {
     required this.isActive,
     required this.borderRadius,
     required this.chips,
+    required this.hasConnections,
     required this.onTap,
     this.onLongPress,
     this.onManage,
@@ -480,8 +505,10 @@ class _ProfileTile extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  _ConnectionChips(chips: chips),
+                  if (chips.isNotEmpty || !hasConnections) ...[
+                    const SizedBox(height: 4),
+                    _ConnectionChips(chips: chips),
+                  ],
                 ],
               ),
             ),
