@@ -64,10 +64,11 @@ OLED refresh modes, response, processing limits and viewing conditions vary by s
 NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
 adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
 search-effort choices are manual and unqualified. A limited runtime guard watches
-mpv's cumulative dropped-frame count and switches MCI to temporal blending after
-three consecutive 2-second windows with new drops. This is not a device benchmark
-or a multi-signal resource governor: it does not measure GPU/CPU headroom, thermal
-state, power use or physical scanout. No TV superiority, image-quality, frame-rate,
+mpv's cumulative dropped-frame count. After three consecutive 2-second windows
+with new drops it steps MCI search effort down from High to Balanced to Fast,
+then switches to temporal blending if drops continue. The saved preference stays
+unchanged. This is not a device benchmark or a multi-signal resource governor: it
+does not measure GPU/CPU headroom, thermal state, power use or physical scanout. No TV superiority, image-quality, frame-rate,
 HDR, battery or performance result has been established. The broader
 architecture and gates below remain the plan for that work.
 
