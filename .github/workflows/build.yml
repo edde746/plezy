@@ -458,7 +458,11 @@ jobs:
           persist-credentials: false
 
       - name: Test WebOS packaging and release gates
-        run: python3 -m unittest discover -s tools/webos/tests -v
+        env:
+          PLEZY_WEBOS_TEST_TMP: ${{ runner.temp }}/plezy-webos-tests
+        run: |
+          mkdir -p "$PLEZY_WEBOS_TEST_TMP"
+          python3 -m unittest discover -s tools/webos/tests -v
 
       - name: Build and verify the WebOS ARM package
         id: webos-build
@@ -595,6 +599,26 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-ios-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Install CocoaPods
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:$PATH"
+          gem install cocoapods --version 1.17.0 --no-document \
+            --install-dir "$RUNNER_TEMP/cocoapods-gems" \
+            --bindir "$RUNNER_TEMP/cocoapods-bin"
+          gem_path="$RUNNER_TEMP/cocoapods-gems:$(gem env gempath)"
+          {
+            echo "GEM_HOME=$RUNNER_TEMP/cocoapods-gems"
+            echo "GEM_PATH=$gem_path"
+          } >> "$GITHUB_ENV"
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cocoapods-bin" >> "$GITHUB_PATH"
+          export GEM_HOME="$RUNNER_TEMP/cocoapods-gems"
+          export GEM_PATH="$gem_path"
+          export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
+          pod --version
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
@@ -771,6 +795,26 @@ jobs:
         with:
           path: ~/.cache/flutter-tvos-engine
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-${{ hashFiles('tvos/engine.version', 'tvos/engine.sha256') }}
+
+      - name: Install CocoaPods
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:$PATH"
+          gem install cocoapods --version 1.17.0 --no-document \
+            --install-dir "$RUNNER_TEMP/cocoapods-gems" \
+            --bindir "$RUNNER_TEMP/cocoapods-bin"
+          gem_path="$RUNNER_TEMP/cocoapods-gems:$(gem env gempath)"
+          {
+            echo "GEM_HOME=$RUNNER_TEMP/cocoapods-gems"
+            echo "GEM_PATH=$gem_path"
+          } >> "$GITHUB_ENV"
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cocoapods-bin" >> "$GITHUB_PATH"
+          export GEM_HOME="$RUNNER_TEMP/cocoapods-gems"
+          export GEM_PATH="$gem_path"
+          export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
+          pod --version
 
       - name: Install tvOS dependencies with the unsupported SMB native asset stub
         run: tvos/scripts/pub_get.sh
@@ -968,6 +1012,26 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Install CocoaPods
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:$PATH"
+          gem install cocoapods --version 1.17.0 --no-document \
+            --install-dir "$RUNNER_TEMP/cocoapods-gems" \
+            --bindir "$RUNNER_TEMP/cocoapods-bin"
+          gem_path="$RUNNER_TEMP/cocoapods-gems:$(gem env gempath)"
+          {
+            echo "GEM_HOME=$RUNNER_TEMP/cocoapods-gems"
+            echo "GEM_PATH=$gem_path"
+          } >> "$GITHUB_ENV"
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cocoapods-bin" >> "$GITHUB_PATH"
+          export GEM_HOME="$RUNNER_TEMP/cocoapods-gems"
+          export GEM_PATH="$gem_path"
+          export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
+          pod --version
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example

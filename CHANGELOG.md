@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Prepare the versioned 2.25.0 main-tag release with private JIT builds across the supported platforms, including ARM webOS and Tizen candidates.
+- Fix private release builds by provisioning a webOS test temp directory and pinned CocoaPods for the Apple targets.
 
 ## [2.25.0] - 2026-10-27
 
