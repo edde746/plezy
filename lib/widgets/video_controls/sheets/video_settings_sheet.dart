@@ -1542,10 +1542,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         ? t.common.loading
         : !status.isSupported
             ? t.videoSettings.motionClarityOutputUnsupported
-            : status.requiresSourceReload
-                ? t.videoSettings.motionClarityRestartRequired
-                : status.isConfigured && status.effectiveEngine == MotionClarityEngine.motionCompensated
-                    ? t.videoSettings.motionClarityMciConfigured
+            : status.isConfigured && status.effectiveEngine == MotionClarityEngine.motionCompensated
+                ? t.videoSettings.motionClarityMciConfigured
+                : status.requiresSourceReload
+                    ? t.videoSettings.motionClarityRestartRequired
                     : status.isConfigured
                         ? t.videoSettings.motionClarityConfigured
                         : t.videoSettings.motionClarityOriginalDescription;
@@ -1558,6 +1558,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       if (status?.isConfigured == true) _motionEngineTitle(status!.effectiveEngine),
       if (status?.isConfigured == true && status?.effectiveEngine == MotionClarityEngine.motionCompensated)
         _motionMciQualityTitle(status!.effectiveMciQuality),
+      if (status?.requiresSourceReload == true) t.videoSettings.motionClarityRestartRequired,
     ].join(' · ');
     final showPassthroughWarning = status?.isConfigured == true && status?.audioPassthroughActive == true;
     final showEngineReason = status?.reason != null && status!.reason!.isNotEmpty;
@@ -1637,7 +1638,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               onTap: () => _selectMotionClarityOutputRate(rate),
             ),
         ],
-        if (status?.isConfigured == true && status?.requiresSourceReload != true)
+        if (status?.isConfigured == true)
           FocusableListTile(
             title: Text(
               _motionComparisonBypass
