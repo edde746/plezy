@@ -1,7 +1,9 @@
-/// Profiles for mpv temporal blending.
+/// Profiles for PlezyNG's optional motion-processing paths.
 ///
-/// In motion-compensated mode, any non-Original profile enables the filter;
-/// profile names do not change its interpolation strength. Neither engine
+/// Motion-compensated profiles synthesize frames at the configured output
+/// cadence. OLED selects the current display cadence and motion compensation
+/// when available; it can reduce sample-and-hold blur, but full-rate synthesis
+/// may change film motion and panel-specific behavior still varies. No engine
 /// recovers detail that was blurred into the source.
 enum MotionClarityPreset {
   original,
@@ -10,12 +12,13 @@ enum MotionClarityPreset {
   smooth,
   animation,
   sports,
+  oled,
   custom;
 
   bool get interpolationEnabled => this != MotionClarityPreset.original;
 
   MotionTemporalKernel get defaultKernel => switch (this) {
-    MotionClarityPreset.original || MotionClarityPreset.cinema => MotionTemporalKernel.oversample,
+    MotionClarityPreset.original || MotionClarityPreset.cinema || MotionClarityPreset.oled => MotionTemporalKernel.oversample,
     MotionClarityPreset.balanced => MotionTemporalKernel.linear,
     MotionClarityPreset.smooth || MotionClarityPreset.sports => MotionTemporalKernel.gaussian,
     MotionClarityPreset.animation => MotionTemporalKernel.mitchell,

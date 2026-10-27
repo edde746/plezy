@@ -2719,6 +2719,8 @@
     "motionClarityAnimationDescription": "A sharper temporal filter for animation and clean graphic edges.",
     "motionClaritySports": "Sports",
     "motionClaritySportsDescription": "A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.",
+    "motionClarityOled": "OLED",
+    "motionClarityOledDescription": "Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.",
     "motionClarityCustom": "Custom",
     "motionClarityCustomDescription": "Choose the temporal filter and when interpolation engages.",
     "motionClarityKernel": "Temporal filter",

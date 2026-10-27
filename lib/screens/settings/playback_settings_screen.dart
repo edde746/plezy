@@ -477,6 +477,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     MotionClarityPreset.smooth => t.videoSettings.motionClaritySmooth,
     MotionClarityPreset.animation => t.videoSettings.motionClarityAnimation,
     MotionClarityPreset.sports => t.videoSettings.motionClaritySports,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOled,
     MotionClarityPreset.custom => t.videoSettings.motionClarityCustom,
   };
 
@@ -487,6 +488,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     MotionClarityPreset.smooth => t.videoSettings.motionClaritySmoothDescription,
     MotionClarityPreset.animation => t.videoSettings.motionClarityAnimationDescription,
     MotionClarityPreset.sports => t.videoSettings.motionClaritySportsDescription,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOledDescription,
     MotionClarityPreset.custom => t.videoSettings.motionClarityCustomDescription,
   };
 

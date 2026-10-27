@@ -140,7 +140,20 @@ class MotionClarityService {
     MotionClarityOutputRate outputRate = MotionClarityOutputRate.currentDisplay,
     MotionClarityMciQuality mciQuality = MotionClarityMciQuality.balanced,
     double? sourceFps,
+    bool applyPresetRouting = true,
   }) async {
+    // OLED is a display-targeting recipe: fill the active display cadence with
+    // motion-compensated samples when that engine is available. Manual engine
+    // and rate choices remain available through Custom.
+    final requestedEngine = applyPresetRouting && preset == MotionClarityPreset.oled
+        ? MotionClarityEngine.motionCompensated
+        : engine;
+    final requestedOutputRate = applyPresetRouting && preset == MotionClarityPreset.oled
+        ? MotionClarityOutputRate.currentDisplay
+        : outputRate;
+    final requestedMciQuality = applyPresetRouting && preset == MotionClarityPreset.oled
+        ? MotionClarityMciQuality.balanced
+        : mciQuality;
     if (!_eligiblePlayer) {
       final result = MotionClarityApplyResult(
         isSupported: false,
@@ -154,7 +167,7 @@ class MotionClarityService {
     final driver = await _readOutputDriver();
     final fps = double.tryParse((await _readProperty('display-fps') ?? '').trim());
     final passthroughActive = _player.audioPassthroughActive;
-    if (engine == MotionClarityEngine.temporalBlend &&
+    if (requestedEngine == MotionClarityEngine.temporalBlend &&
         driver != null &&
         driver.isNotEmpty &&
         !_supportedOutputs.contains(driver)) {
@@ -178,9 +191,9 @@ class MotionClarityService {
     if (!preset.interpolationEnabled) {
       await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
-      _currentEngine = engine;
-      _currentOutputRate = outputRate;
-      _currentMciQuality = mciQuality;
+      _currentEngine = requestedEngine;
+      _currentOutputRate = requestedOutputRate;
+      _currentMciQuality = requestedMciQuality;
       _currentTargetFps = null;
       _comparisonBypass = false;
       _requiresSourceReload = false;
@@ -196,15 +209,15 @@ class MotionClarityService {
       return result;
     }
 
-    if (engine == MotionClarityEngine.motionCompensated) {
+    if (requestedEngine == MotionClarityEngine.motionCompensated) {
       final resolvedSourceFps = sourceFps ??
           (!beforeSourceOpen ? _readFps(await _readProperty('container-fps')) : null);
       return _configureMotionCompensated(
         preset: preset,
         kernel: kernel,
         thresholdPercent: thresholdPercent,
-        outputRate: outputRate,
-        mciQuality: mciQuality,
+        outputRate: requestedOutputRate,
+        mciQuality: requestedMciQuality,
         sourceFps: resolvedSourceFps,
         beforeSourceOpen: beforeSourceOpen,
         driver: driver,
@@ -268,8 +281,8 @@ class MotionClarityService {
 
     _currentPreset = preset;
     _currentEngine = MotionClarityEngine.temporalBlend;
-    _currentOutputRate = outputRate;
-    _currentMciQuality = mciQuality;
+    _currentOutputRate = requestedOutputRate;
+    _currentMciQuality = requestedMciQuality;
     _currentTargetFps = null;
     _comparisonBypass = false;
     if (beforeSourceOpen) {
@@ -471,6 +484,7 @@ class MotionClarityService {
       beforeSourceOpen: beforeSourceOpen,
       engine: MotionClarityEngine.temporalBlend,
       outputRate: outputRate,
+      applyPresetRouting: false,
     );
     return MotionClarityApplyResult(
       isSupported: result.isSupported,

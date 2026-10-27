@@ -1197,6 +1197,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     MotionClarityPreset.smooth => t.videoSettings.motionClaritySmooth,
     MotionClarityPreset.animation => t.videoSettings.motionClarityAnimation,
     MotionClarityPreset.sports => t.videoSettings.motionClaritySports,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOled,
     MotionClarityPreset.custom => t.videoSettings.motionClarityCustom,
   };
 
@@ -1207,6 +1208,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     MotionClarityPreset.smooth => t.videoSettings.motionClaritySmoothDescription,
     MotionClarityPreset.animation => t.videoSettings.motionClarityAnimationDescription,
     MotionClarityPreset.sports => t.videoSettings.motionClaritySportsDescription,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOledDescription,
     MotionClarityPreset.custom => t.videoSettings.motionClarityCustomDescription,
   };
 
@@ -1657,7 +1659,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           FocusableListTile(
             title: Text(_motionPresetTitle(preset), style: TextStyle(color: _motionPreset == preset ? primary : null)),
             subtitle: Text(
-              _motionEngine == MotionClarityEngine.motionCompensated && preset != MotionClarityPreset.original
+              _motionEngine == MotionClarityEngine.motionCompensated &&
+                      preset != MotionClarityPreset.original &&
+                      preset != MotionClarityPreset.oled
                   ? t.videoSettings.motionClarityMciProfileDescription
                   : _motionPresetDescription(preset),
               style: TextStyle(color: tokens(context).textMuted, fontSize: 12),

@@ -6322,6 +6322,12 @@ class Translations$videoSettings$en {
 	/// en: 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.'
 	String get motionClaritySportsDescription => 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.';
 
+	/// en: 'OLED'
+	String get motionClarityOled => 'OLED';
+
+	/// en: 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.'
+	String get motionClarityOledDescription => 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.';
+
 	/// en: 'Custom'
 	String get motionClarityCustom => 'Custom';
 
