@@ -116,9 +116,13 @@ evidence of panel presentation. The OLED result must be reported independently
 for each display model, firmware, input cadence and picture mode; no general OLED
 or TV superiority claim follows from this profile.
 
-The current adapter has no automatic overload governor, so missed deadlines
-must be reported as a failure, never hidden by the requested target FPS. A successful
-filter insertion is not a qualification result.
+The current adapter has no multi-signal resource governor or device benchmark.
+A runtime circuit breaker watches mpv's cumulative `frame-drop-count` and falls
+back to temporal blending after three consecutive 2-second windows with new drops.
+This counter is a heuristic and cannot identify processor headroom or prove physical
+scanout. Verify the trigger, fallback and visible reason, and still record every
+missed deadline as a qualification failure; the guard must never turn a failed run
+into a pass. A successful filter insertion is not a qualification result.
 
 - Ten-minute nominal run after warmup: zero unexplained missed presentation slots
   caused by the motion pipeline. Explicit cut/source repeats are separately counted.
