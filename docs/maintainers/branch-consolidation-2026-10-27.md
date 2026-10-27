@@ -159,3 +159,24 @@ be reviewed again rather than deleted automatically.
 | `review/pr28-games-ux-fixes-20261026` | `1f3a9ba4f87e6be49c48fe0098be520281922f29` | History retained; remove branch name |
 | `review/pr32-input-ownership-20261026` | `710fe9f10077328dff8fb4bfb0f86379680037ee` | History retained; remove branch name |
 | `codex/tizen-tv-20261026` | `67449a7a5ae59bcd5c43b1f47f70d5cffef7725b` | History retained; remove branch name |
+
+## Branch-name cleanup
+
+The integration is published at `0a56d1c9843e7bda8bac036a0190cc14a0ca9d04`.
+GitHub marked all eight reviewed PRs merged. The connector does not expose branch
+deletion, and the temporary private cleanup workflow produced no Actions run;
+manual-only CI was restored exactly. No branch-name deletion was claimed.
+
+The guarded cleanup helper is ready for an authenticated Git environment:
+
+```sh
+python3 scripts/maintainers/cleanup_consolidated_branches.py
+python3 scripts/maintainers/cleanup_consolidated_branches.py --apply
+```
+
+The first command previews. The second deletes only recorded heads still matching
+the inventory and proven ancestors of the integration commit. It rejects new or
+changed work, preserves `main`/`master`, and uses an atomic push with an exact-SHA
+lease for every deletion. Ten unit tests cover these safety conditions. The helper
+reads the manifest from the current remote main, so a stale local copy cannot
+silently authorize different deletions.
