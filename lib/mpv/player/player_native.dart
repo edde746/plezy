@@ -1243,7 +1243,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     bool forceEqualizer = false,
   }) async {
     if (_nativeCoreUnavailable) return;
-    // Normalization wins over passthrough: loudnorm is a filter and filters
+    // Normalization wins over passthrough: it is an audio filter and filters
     // cannot process a bitstream, so honouring the user's normalization choice
     // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
     // cannot scaletempo compressed audio, and the stereo limit is a promise
@@ -1258,10 +1258,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
         !target.equalizerGains.any((gain) => gain.abs() >= 0.05);
     final normalizationShouldBeActive = target.normalization;
 
-    // Ordering keeps loudnorm off a bitstream in both directions: leave
-    // passthrough before `af` is written below, and when normalization turns
-    // off with passthrough requested, `af` is cleared before `audio-spdif` is
-    // rewritten at the end.
+    // Ordering keeps the normalization filter off a bitstream in both
+    // directions: leave passthrough before `af` is written below, and when
+    // normalization turns off with passthrough requested, `af` is cleared
+    // before `audio-spdif` is rewritten at the end.
     if (_passthroughActive && !passthroughShouldBeActive) {
       await _applyPassthrough(false);
     }

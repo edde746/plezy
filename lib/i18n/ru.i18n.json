@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Сталкивать на устройство",
-    "searching": "Ищут кастрюлевые устройства...",
-    "connectedTo": "Подключен к ${device}",
-    "device": "Кастинг устройства",
-    "readyToCast": "Готов выпустить",
-    "subtitle": "Субтитры",
-    "serverNotAvailable": "Медийный сервер не доступен.",
-    "stopCasting": "Спрете кастировать",
-    "castToDevice": "Сталкивать на устройство",
-    "noEpisodeAvailable": "Нет эпизода, который можно будет выпустить.",
-    "startFailed": "Нельзя начать кастинг. проверьте сервер и попробуйте снова."
-  },
-  "automation": {
-    "noActivePlayback": "Нет активной сессии видео для контроля.",
-    "profileNotFound": "Этот профиль Plezy не был найден."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Новый эпизод",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Значок приложения",
     "defaultIcon": "Стандартный",
@@ -200,30 +179,6 @@
     "viewRelease": "Посмотреть релиз",
     "latestVersion": "У вас последняя версия",
     "checkFailed": "Не удалось проверить обновления"
-  },
-  "appAccess": {
-    "title": "Попробуйте бесплатно каждую функцию в течение 7 дней.",
-    "description": "Запускайте семидневный проб с полным доступом к каждому функционалу PlezyNG. во время проб нет сборов и подписки. После проб один жизнедеятельный покупка по цене вашего магазина отключает PlezyNG на всю жизнь.",
-    "trialEndedDescription": "Отключить каждую функцию в PlezyNG на всю жизнь с одним покупкой по цене вашего магазина.",
-    "startTrial": "Начните свой 7-дневный бесплатный проб",
-    "trialActive": "Ваш 7-дневный полный тест активен.",
-    "trialEnded": "Семьдневный суд закончился",
-    "trialStartFailed": "Не смог бы сэкономить тест на этом устройстве. пожалуйста, попробуйте снова.",
-    "lifetimeTitle": "PlezyNG отключен на всю жизнь",
-    "lifetimeBody": "У вас есть доступа на всю жизнь к каждому из функций PlezyNG.",
-    "manageTitle": "PlezyNG Доступ к жизни",
-    "manageDescription": "Попробуйте каждую функцию бесплатно на 7 дней, затем отключите все на всю жизнь с одной оплатой по цене вашего магазина.",
-    "buy": "Отключение каждой функции для ${price}",
-    "loadingPrice": "Стоимость магазина ...",
-    "retryPrice": "Посмотреть цены Retry",
-    "restore": "Возвращение покупки на всю жизнь",
-    "pending": "Ваш покупка ждет оплаты или одобрения. Доступ на всю жизнь отключается, как только магазин завершает его.",
-    "storeUnavailable": "Проверьте, что вы зарегистрированы в магазине, и покупки разрешаются на этом устройстве.",
-    "productNotFound": "Отключение PlezyNG на всю жизнь пока не доступно в этом магазине.",
-    "productQueryFailed": "Не смог бы загрузить цену магазина. проверьте связь и попробуйте снова.",
-    "purchaseFailed": "Покупка не прошла, попробуйте снова.",
-    "restoreFailed": "Не смог бы добраться до магазина, чтобы восстановить покупку. попробуйте снова.",
-    "nothingToRestore": "No PlezyNG жизнедеятельность покупки была найдена для этого аккаунта магазина."
   },
   "settings": {
     "title": "Настройки",
@@ -1089,12 +1044,6 @@
     "track": "Аудиодорожка ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} фрейм",
-      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} видео рамки",
-      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} видео кадров",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} фремы"
-    },
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитры",
     "addTime": "+${amount}${unit}",
@@ -1131,8 +1080,6 @@
     "unmuteButton": "Включить звук",
     "settingsButton": "Настройки воспроизведения",
     "tracksButton": "Аудио и субтитры",
-    "trackSelectionTitle": "Выбирайте тракты перед репетицией",
-    "trackSelectionAuto": "Автоматический выбор",
     "chaptersButton": "Главы",
     "versionQualityButton": "Версия и качество",
     "versionColumnHeader": "Версия",
@@ -1142,8 +1089,6 @@
     "transcodeUnavailableFallback": "Транскодирование недоступно — воспроизведение в оригинальном качестве",
     "subtitleUnavailableFallback": "Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров",
     "pipButton": "Режим «картинка в картинке»",
-    "openMiniPlayer": "Открытый мини-игратель",
-    "returnToFullPlayer": "Возвращение к полному игроку",
     "aspectRatioButton": "Соотношение сторон",
     "ambientLighting": "Фоновая подсветка",
     "fullscreenButton": "Полноэкранный режим",
@@ -1152,7 +1097,6 @@
     "rotationLockButton": "Блокировка поворота",
     "lockScreen": "Заблокировать экран",
     "screenLockButton": "Блокировка экрана",
-    "longPressToUnlock": "Удерживайте для разблокировки",
     "timelineSlider": "Временная шкала",
     "volumeSlider": "Уровень громкости",
     "endsAt": "Закончится в ${time}",
@@ -1178,8 +1122,6 @@
     "noQueueItems": "В очереди нет элементов",
     "noAudioDevicesAvailable": "Нет доступных аудиоустройств",
     "searchSubtitles": "Поиск субтитров",
-    "loadSubtitleFile": "Загрузить файл подзаголовок...",
-    "subtitleLoadFailed": "Не удается загрузить субтитрированный файл",
     "language": "Язык",
     "noSubtitlesFound": "Субтитры не найдены",
     "subtitleDownloaded": "Субтитры загружены",
@@ -1188,14 +1130,28 @@
     "searchLanguages": "Поиск языков...",
     "skipIntro": "Пропустить заставку",
     "skipCredits": "Пропустить титры",
-    "skipAds": "Скачать Ads",
     "nextEpisode": "Следующий эпизод",
     "subtitleTrack": "Дорожка ${n}",
     "subtitleFile": "Субтитры ${name}",
     "forcedTrack": "${label} (принудительная)",
     "osdSubtitlesOff": "Субтитры: выкл.",
     "osdSubtitles": "Субтитры: ${track}",
-    "osdAudio": "Аудио: ${track}"
+    "osdAudio": "Аудио: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} фрейм",
+      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} видео рамки",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} видео кадров",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} фремы"
+    },
+    "trackSelectionTitle": "Выбирайте тракты перед репетицией",
+    "trackSelectionAuto": "Автоматический выбор",
+    "openMiniPlayer": "Открытый мини-игратель",
+    "returnToFullPlayer": "Возвращение к полному игроку",
+    "loadSubtitleFile": "Загрузить файл подзаголовок...",
+    "subtitleLoadFailed": "Не удается загрузить субтитрированный файл",
+    "skipAds": "Скачать Ads",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1810,9 +1766,6 @@
     "saveLogs": "Защитить записи в файлы",
     "logsSaved": "Запись записывается на ${path}",
     "saveLogsFailed": "Не смог бы сохранить файл."
-  },
-  "detail": {
-    "endsAt": "Закончится в ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG не удалось запустить",
@@ -3114,6 +3067,54 @@
     "allowHttp": "Разрешить HTTP",
     "httpsRequired": "Используйте HTTPS или прямо разрешаете нешифрованное соединение."
   },
+  "cast": {
+    "chooseDevice": "Сталкивать на устройство",
+    "searching": "Ищут кастрюлевые устройства...",
+    "connectedTo": "Подключен к ${device}",
+    "device": "Кастинг устройства",
+    "readyToCast": "Готов выпустить",
+    "subtitle": "Субтитры",
+    "serverNotAvailable": "Медийный сервер не доступен.",
+    "stopCasting": "Спрете кастировать",
+    "castToDevice": "Сталкивать на устройство",
+    "noEpisodeAvailable": "Нет эпизода, который можно будет выпустить.",
+    "startFailed": "Нельзя начать кастинг. проверьте сервер и попробуйте снова."
+  },
+  "automation": {
+    "noActivePlayback": "Нет активной сессии видео для контроля.",
+    "profileNotFound": "Этот профиль Plezy не был найден."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Новый эпизод",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Попробуйте бесплатно каждую функцию в течение 7 дней.",
+    "description": "Запускайте семидневный проб с полным доступом к каждому функционалу PlezyNG. во время проб нет сборов и подписки. После проб один жизнедеятельный покупка по цене вашего магазина отключает PlezyNG на всю жизнь.",
+    "trialEndedDescription": "Отключить каждую функцию в PlezyNG на всю жизнь с одним покупкой по цене вашего магазина.",
+    "startTrial": "Начните свой 7-дневный бесплатный проб",
+    "trialActive": "Ваш 7-дневный полный тест активен.",
+    "trialEnded": "Семьдневный суд закончился",
+    "trialStartFailed": "Не смог бы сэкономить тест на этом устройстве. пожалуйста, попробуйте снова.",
+    "lifetimeTitle": "PlezyNG отключен на всю жизнь",
+    "lifetimeBody": "У вас есть доступа на всю жизнь к каждому из функций PlezyNG.",
+    "manageTitle": "PlezyNG Доступ к жизни",
+    "manageDescription": "Попробуйте каждую функцию бесплатно на 7 дней, затем отключите все на всю жизнь с одной оплатой по цене вашего магазина.",
+    "buy": "Отключение каждой функции для ${price}",
+    "loadingPrice": "Стоимость магазина ...",
+    "retryPrice": "Посмотреть цены Retry",
+    "restore": "Возвращение покупки на всю жизнь",
+    "pending": "Ваш покупка ждет оплаты или одобрения. Доступ на всю жизнь отключается, как только магазин завершает его.",
+    "storeUnavailable": "Проверьте, что вы зарегистрированы в магазине, и покупки разрешаются на этом устройстве.",
+    "productNotFound": "Отключение PlezyNG на всю жизнь пока не доступно в этом магазине.",
+    "productQueryFailed": "Не смог бы загрузить цену магазина. проверьте связь и попробуйте снова.",
+    "purchaseFailed": "Покупка не прошла, попробуйте снова.",
+    "restoreFailed": "Не смог бы добраться до магазина, чтобы восстановить покупку. попробуйте снова.",
+    "nothingToRestore": "No PlezyNG жизнедеятельность покупки была найдена для этого аккаунта магазина."
+  },
+  "detail": {
+    "endsAt": "Закончится в ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Я не мог дойти до сервера Plex для этого ссылки.",
     "notFound": "Не смог бы найти этот спектакль или фильм на ваших серверах Plex.",
@@ -3740,5 +3741,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

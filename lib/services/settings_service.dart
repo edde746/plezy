@@ -2,6 +2,7 @@ import 'dart:convert';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
+import '../media/media_source_info.dart' show PlaybackExtras;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -695,8 +696,8 @@ class _PreferenceGroupListenable extends ChangeNotifier {
 }
 
 class SettingsService extends BaseSharedPreferencesService {
-  static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
-  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+  static const String defaultIntroPattern = PlaybackExtras.defaultIntroPattern;
+  static const String defaultCreditsPattern = PlaybackExtras.defaultCreditsPattern;
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
@@ -2053,13 +2054,7 @@ class SettingsService extends BaseSharedPreferencesService {
         throw const FormatException('Expected a six-digit hex color');
       }
     }
-    if (pref == startupSection &&
-        ![
-          NavigationTabId.discover,
-          NavigationTabId.libraries,
-          NavigationTabId.liveTv,
-          NavigationTabId.search,
-        ].contains(value)) {
+    if (pref == startupSection && !startupSectionTabs.contains(value)) {
       throw const FormatException('Unsupported startup section');
     }
     if (pref is StringListPref) {

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/covered_route_focus_boundary.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/navigation/profile_session_screen.dart';
@@ -205,6 +208,152 @@ void main() {
       expect(content.hasPrimaryFocus, isTrue, reason: 'focus returns to the session leaf that had it');
     },
   );
+
+  testWidgets('switching profiles under the root picker hands the new session its first focus on pop (#2817)', (
+    tester,
+  ) async {
+    final session = await _CoveredSession.pump(tester);
+    // The switch commits the new active id first: the keyed session remounts
+    // under the still-open picker, and its first focus claim waits on the
+    // bind (MainScreen awaits ensureActiveLoaded()).
+    final kidsLoaded = session.gateFor(_kids.id);
+    expect(await session.graph.activeProfile.activate(_kids), isTrue);
+    await tester.pump();
+    await tester.pump();
+    expect(session.contentScopes[_kids.id], isNotNull, reason: 'kids session remounted under the picker');
+
+    // The bind settles: the picker pops, and on a fast server the new
+    // session's claim resumes before the frame that lifts the cover.
+    session.rootNavigator.currentState!.pop();
+    kidsLoaded.complete();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(session.contentScopes[_kids.id]!.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('a session remounted twice under the root picker (bind rollback) still gets its first focus on pop', (
+    tester,
+  ) async {
+    final session = await _CoveredSession.pump(tester);
+    // The chosen profile's bind fails and the switch rolls back: two keyed
+    // remounts under the picker, each claiming first focus while covered.
+    session.gateFor(_kids.id).complete();
+    for (final profile in [_kids, _owner]) {
+      expect(await session.graph.activeProfile.activate(profile), isTrue);
+      await tester.pump();
+      await tester.pump();
+    }
+    expect(session.picker.hasPrimaryFocus, isTrue, reason: 'claims below the picker must not steal it');
+
+    // Choosing the rolled-back profile again neither remounts nor rebinds:
+    // the picker just pops.
+    session.rootNavigator.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(session.contentScopes[_owner.id]!.hasPrimaryFocus, isTrue);
+  });
+}
+
+final _owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+final _kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
+
+/// [_owner]'s focused session under the root-navigator profile picker, with
+/// [_InitialFocusProbe] as the shell.
+class _CoveredSession {
+  _CoveredSession._(this.graph);
+
+  final _SessionGraph graph;
+  final rootNavigator = GlobalKey<NavigatorState>();
+  final picker = FocusNode(debugLabel: 'RootPicker');
+  final _gates = <String?, Completer<void>>{};
+  final contentScopes = <String?, FocusScopeNode>{};
+
+  /// Completing it lets that profile's session claim its first focus.
+  Completer<void> gateFor(String? profileId) => _gates.putIfAbsent(profileId, Completer<void>.new);
+
+  static Future<_CoveredSession> pump(WidgetTester tester) async {
+    final session = _CoveredSession._(await _SessionGraph.create());
+    final graph = session.graph;
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      session.picker.dispose();
+      await graph.dispose();
+    });
+
+    await graph.profileRegistry.upsert(_owner);
+    await graph.profileRegistry.upsert(_kids);
+    await graph.storage.setActiveProfileId(_owner.id);
+    await graph.activeProfile.initialize();
+    session.gateFor(_owner.id).complete();
+
+    await graph.pump(
+      tester,
+      navigatorKey: session.rootNavigator,
+      httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+      profileShellBuilder: (_) =>
+          _InitialFocusProbe(gate: (id) => session.gateFor(id).future, contentScopes: session.contentScopes),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(session.contentScopes[_owner.id]!.hasPrimaryFocus, isTrue, reason: 'precondition: owner session focused');
+
+    // Resume with "require profile selection": MainScreen pushes the picker
+    // on the root navigator, above the nested profile-session navigator.
+    session.rootNavigator.currentState!.push(
+      MaterialPageRoute<void>(
+        builder: (_) => Focus(focusNode: session.picker, autofocus: true, child: const SizedBox.expand()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(session.picker.hasPrimaryFocus, isTrue, reason: 'precondition: picker took focus');
+    return session;
+  }
+}
+
+/// MainScreen's focus shape: a content scope that is never autofocused and
+/// claims the session's first focus once, after an async [gate] (MainScreen
+/// awaits `ensureActiveLoaded()`).
+class _InitialFocusProbe extends StatefulWidget {
+  const _InitialFocusProbe({required this.gate, required this.contentScopes});
+
+  final Future<void> Function(String? profileId) gate;
+  final Map<String?, FocusScopeNode> contentScopes;
+
+  @override
+  State<_InitialFocusProbe> createState() => _InitialFocusProbeState();
+}
+
+class _InitialFocusProbeState extends State<_InitialFocusProbe> {
+  final _content = FocusScopeNode(debugLabel: 'SessionContent');
+
+  @override
+  void initState() {
+    super.initState();
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    widget.contentScopes[profileId] = _content;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await widget.gate(profileId);
+      if (mounted) CoveredRouteFocusBoundary.requestInitialFocus(context, _content);
+    });
+  }
+
+  @override
+  void dispose() {
+    _content.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusScope(
+      node: _content,
+      child: const Focus(child: SizedBox(height: 10, width: 10)),
+    );
+  }
 }
 
 void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {

@@ -1236,7 +1236,7 @@ open class ExoPlayerPlugin(
       return
     }
     if (usingMpvFallback) {
-      // mpv normalizes via the 'audiotrack-normalize' property the Dart layer also sends.
+      // mpv normalizes via the 'af' filter chain the Dart layer also sends.
       result.success(true)
       return
     }

@@ -1395,8 +1395,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   @override
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
-  /// mpv loudnorm targeting streaming-style loudness; Android uses the platform
-  /// effect with matching parameters instead (see [setAudioNormalization]).
+  /// mpv loudnorm targeting streaming-style loudness; Android uses
+  /// [_androidNormalizationFilter] instead.
   ///
   /// Dynamic-mode loudnorm always outputs float64 at 192 kHz, which made the
   /// AO open at f64/192k and forced the OS mixer to convert/resample on the
@@ -1407,25 +1407,19 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
   static const String _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
+  /// Android's normalization: compression followed by a limiter, matching
+  /// ExoPlayer's dynamics processing while preserving multichannel balance.
+  static const String _androidNormalizationFilter =
+      'acompressor=threshold=-34dB:ratio=4:knee=6dB:attack=30:release=300:makeup=15dB:link=maximum,'
+      'alimiter=limit=-3dB:attack=1:release=60:level=false';
+
   static const List<int> _audioEqualizerFrequencies = [60, 250, 1000, 4000, 12000];
   List<double> _audioEqualizerBandGains = List<double>.filled(_audioEqualizerFrequencies.length, 0);
   bool _audioNormalizationEnabled = false;
 
-  /// Android normalizes in the platform mixer: mpv-build's
-  /// `audiotrack-normalize` attaches DynamicsProcessing (LoudnessEnhancer
-  /// below API 28) to the AudioTrack's session, the effect ExoPlayer uses.
-  /// loudnorm runs on mpv's core thread, which also hands video frames to the
-  /// output; on 32-bit TV boxes its f64/192 kHz pass made those frames late
-  /// (#2654) and could not keep up with multichannel audio at all, so the
-  /// filter used to fold everything to stereo first. The effect costs mpv
-  /// nothing and keeps every channel. The option reopens the audio output when
-  /// it changes, and only processes PCM, like the filter.
   @override
   Future<void> setAudioNormalization(bool enabled) async {
     _audioNormalizationEnabled = enabled;
-    if (Platform.isAndroid) {
-      await setProperty('audiotrack-normalize', enabled ? 'yes' : 'no');
-    }
     await _applyAudioFilters();
   }
 
@@ -1446,10 +1440,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
       if (gain.abs() < 0.05) continue;
       filters.add('equalizer=f=${_audioEqualizerFrequencies[index]}:t=q:w=1:g=${gain.toStringAsFixed(1)}');
     }
-    // Android handles loudness normalization in its audio session. The EQ
-    // remains an mpv filter so it also works when Android falls back from
-    // ExoPlayer to mpv.
-    if (_audioNormalizationEnabled && !Platform.isAndroid) filters.add(_loudnormFilter);
+    if (_audioNormalizationEnabled) {
+      filters.add(Platform.isAndroid ? _androidNormalizationFilter : _loudnormFilter);
+    }
     await setProperty('af', filters.join(','));
   }
 

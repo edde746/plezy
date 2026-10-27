@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "장치에 던져",
-    "searching": "기계를 찾는 것에 대한 검색...",
-    "connectedTo": "${device}에 연결된",
-    "device": "장치 캡처",
-    "readyToCast": "던져질 준비",
-    "subtitle": "자막",
-    "serverNotAvailable": "미디어 서버는 사용할 수 없습니다.",
-    "stopCasting": "카스팅을 멈추세요",
-    "castToDevice": "장치에 던져",
-    "noEpisodeAvailable": "촬영할 에피소드가 없습니다.",
-    "startFailed": "캐스트를 시작할 수 없습니다. 서버를 확인하고 다시 시도하세요."
-  },
-  "automation": {
-    "noActivePlayback": "통제할 수 있는 비디오 세션은 없습니다.",
-    "profileNotFound": "Plezy 프로필은 찾을 수 없었습니다."
-  },
-  "notifications": {
-    "newEpisodeTitle": "새로운 에피소드",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "앱 아이콘",
     "defaultIcon": "기본",
@@ -200,30 +179,6 @@
     "viewRelease": "릴리스 정보 보기",
     "latestVersion": "최신 버전을 사용 중입니다",
     "checkFailed": "업데이트 확인 실패"
-  },
-  "appAccess": {
-    "title": "7일 동안 무료로 모든 기능을 시도해 보세요.",
-    "description": "모든 PlezyNG 기능에 대한 완전한 액세스를 가진 7일간의 시험을 시작합니다. 시험 중에는 수수료가 없으며 구독이 없습니다. 시험 후에 매장 가격에 한 생명 구매가 PlezyNG를 생명으로 닫습니다.",
-    "trialEndedDescription": "매장 가격에 한 번 구매하여 PlezyNG에서 모든 기능을 잠그십시오.",
-    "startTrial": "내 7 일 무료 시험을 시작합니다.",
-    "trialActive": "7일간의 완전한 실험은 활성화됩니다.",
-    "trialEnded": "7일간의 재판이 끝났다.",
-    "trialStartFailed": "이 장치에서 테스트를 저장할 수 없었습니다. 다시 시도해 주십시오.",
-    "lifetimeTitle": "PlezyNG 생명을 위해 잠금을 꺼내",
-    "lifetimeBody": "감사합니다!당신은 모든 PlezyNG 기능에 평생 액세스 할 수 있습니다.",
-    "manageTitle": "PlezyNG 평생 액세스",
-    "manageDescription": "7 일 동안 모든 기능을 무료로 시도하고, 한 번의 지불으로 매장 가격으로 모든 것을 잠그십시오.",
-    "buy": "모든 기능을 ${price}에 대 한 끄기",
-    "loadingPrice": "짐 가게 가격...",
-    "retryPrice": "리트리 가격 검색",
-    "restore": "생명 구매 복원",
-    "pending": "귀하의 구매는 지불 또는 승인을 기다리고 있습니다.인생 접근은 상점이 완료되면 잠금됩니다.",
-    "storeUnavailable": "구매가 없습니다.이 장치에서 구매가 허용되고 상점에 가입하고 있는지 확인합니다.",
-    "productNotFound": "PlezyNG 생명 잠금은 아직 이 가게에서 사용할 수 없습니다.",
-    "productQueryFailed": "가게 가격을 충전 할 수 없습니다. 연결을 확인하고 다시 시도하십시오.",
-    "purchaseFailed": "구매가 끝나지 않았는데 다시 한번 시도해 보세요.",
-    "restoreFailed": "당신의 구매를 복구하기 위해 상점에 도달 할 수 없습니다.다시 시도하십시오.",
-    "nothingToRestore": "No. PlezyNG 생명 구매는 이 가게 계정에서 찾을 수 있습니다."
   },
   "settings": {
     "title": "설정",
@@ -1077,10 +1032,6 @@
     "track": "오디오 트랙 ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 프레임",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 프레임"
-    },
     "audioLabel": "오디오",
     "subtitlesLabel": "자막",
     "addTime": "+${amount}${unit}",
@@ -1117,8 +1068,6 @@
     "unmuteButton": "음소거 해제",
     "settingsButton": "재생 설정",
     "tracksButton": "오디오 및 자막",
-    "trackSelectionTitle": "플레이백 전에 트랙을 선택합니다.",
-    "trackSelectionAuto": "자동 선택",
     "chaptersButton": "챕터",
     "versionQualityButton": "버전 및 화질",
     "versionColumnHeader": "버전",
@@ -1128,8 +1077,6 @@
     "transcodeUnavailableFallback": "트랜스코딩을 사용할 수 없음 — 원본 화질로 재생",
     "subtitleUnavailableFallback": "선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다",
     "pipButton": "픽처 인 픽처 모드",
-    "openMiniPlayer": "오픈 미니 플레이어",
-    "returnToFullPlayer": "완전한 플레이어로 돌아가기",
     "aspectRatioButton": "화면비율",
     "ambientLighting": "주변 조명",
     "fullscreenButton": "전체 화면",
@@ -1138,7 +1085,6 @@
     "rotationLockButton": "회전 잠금",
     "lockScreen": "화면 잠금",
     "screenLockButton": "화면 잠금",
-    "longPressToUnlock": "길게 눌러 잠금 해제",
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
     "endsAt": "${time}에 종료",
@@ -1164,8 +1110,6 @@
     "noQueueItems": "대기열에 항목이 없습니다",
     "noAudioDevicesAvailable": "사용 가능한 오디오 기기가 없습니다",
     "searchSubtitles": "자막 검색",
-    "loadSubtitleFile": "Subtitle 파일을 다운로드합니다.",
-    "subtitleLoadFailed": "Subtitle 파일을 다운로드하지 못했습니다.",
     "language": "언어",
     "noSubtitlesFound": "자막을 찾을 수 없습니다",
     "subtitleDownloaded": "자막이 다운로드되었습니다",
@@ -1174,14 +1118,26 @@
     "searchLanguages": "언어 검색...",
     "skipIntro": "인트로 건너뛰기",
     "skipCredits": "크레딧 건너뛰기",
-    "skipAds": "스키 광고",
     "nextEpisode": "다음 에피소드",
     "subtitleTrack": "트랙 ${n}",
     "subtitleFile": "자막 ${name}",
     "forcedTrack": "${label} (강제)",
     "osdSubtitlesOff": "자막: 꺼짐",
     "osdSubtitles": "자막: ${track}",
-    "osdAudio": "오디오: ${track}"
+    "osdAudio": "오디오: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 프레임",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 프레임"
+    },
+    "trackSelectionTitle": "플레이백 전에 트랙을 선택합니다.",
+    "trackSelectionAuto": "자동 선택",
+    "openMiniPlayer": "오픈 미니 플레이어",
+    "returnToFullPlayer": "완전한 플레이어로 돌아가기",
+    "loadSubtitleFile": "Subtitle 파일을 다운로드합니다.",
+    "subtitleLoadFailed": "Subtitle 파일을 다운로드하지 못했습니다.",
+    "skipAds": "스키 광고",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1792,9 +1748,6 @@
     "saveLogs": "파일에 로그를 저장",
     "logsSaved": "기록을 저장할 수 있습니다 ${path}",
     "saveLogsFailed": "로그 파일을 저장할 수 없었습니다."
-  },
-  "detail": {
-    "endsAt": "${time}에 종료"
   },
   "startup": {
     "failedTitle": "Plezy를 시작하지 못했습니다",
@@ -3068,6 +3021,54 @@
     "allowHttp": "HTTP 허용",
     "httpsRequired": "HTTPS 또는 명시적으로 암호화되지 않은 연결을 허용합니다."
   },
+  "cast": {
+    "chooseDevice": "장치에 던져",
+    "searching": "기계를 찾는 것에 대한 검색...",
+    "connectedTo": "${device}에 연결된",
+    "device": "장치 캡처",
+    "readyToCast": "던져질 준비",
+    "subtitle": "자막",
+    "serverNotAvailable": "미디어 서버는 사용할 수 없습니다.",
+    "stopCasting": "카스팅을 멈추세요",
+    "castToDevice": "장치에 던져",
+    "noEpisodeAvailable": "촬영할 에피소드가 없습니다.",
+    "startFailed": "캐스트를 시작할 수 없습니다. 서버를 확인하고 다시 시도하세요."
+  },
+  "automation": {
+    "noActivePlayback": "통제할 수 있는 비디오 세션은 없습니다.",
+    "profileNotFound": "Plezy 프로필은 찾을 수 없었습니다."
+  },
+  "notifications": {
+    "newEpisodeTitle": "새로운 에피소드",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "7일 동안 무료로 모든 기능을 시도해 보세요.",
+    "description": "모든 PlezyNG 기능에 대한 완전한 액세스를 가진 7일간의 시험을 시작합니다. 시험 중에는 수수료가 없으며 구독이 없습니다. 시험 후에 매장 가격에 한 생명 구매가 PlezyNG를 생명으로 닫습니다.",
+    "trialEndedDescription": "매장 가격에 한 번 구매하여 PlezyNG에서 모든 기능을 잠그십시오.",
+    "startTrial": "내 7 일 무료 시험을 시작합니다.",
+    "trialActive": "7일간의 완전한 실험은 활성화됩니다.",
+    "trialEnded": "7일간의 재판이 끝났다.",
+    "trialStartFailed": "이 장치에서 테스트를 저장할 수 없었습니다. 다시 시도해 주십시오.",
+    "lifetimeTitle": "PlezyNG 생명을 위해 잠금을 꺼내",
+    "lifetimeBody": "감사합니다!당신은 모든 PlezyNG 기능에 평생 액세스 할 수 있습니다.",
+    "manageTitle": "PlezyNG 평생 액세스",
+    "manageDescription": "7 일 동안 모든 기능을 무료로 시도하고, 한 번의 지불으로 매장 가격으로 모든 것을 잠그십시오.",
+    "buy": "모든 기능을 ${price}에 대 한 끄기",
+    "loadingPrice": "짐 가게 가격...",
+    "retryPrice": "리트리 가격 검색",
+    "restore": "생명 구매 복원",
+    "pending": "귀하의 구매는 지불 또는 승인을 기다리고 있습니다.인생 접근은 상점이 완료되면 잠금됩니다.",
+    "storeUnavailable": "구매가 없습니다.이 장치에서 구매가 허용되고 상점에 가입하고 있는지 확인합니다.",
+    "productNotFound": "PlezyNG 생명 잠금은 아직 이 가게에서 사용할 수 없습니다.",
+    "productQueryFailed": "가게 가격을 충전 할 수 없습니다. 연결을 확인하고 다시 시도하십시오.",
+    "purchaseFailed": "구매가 끝나지 않았는데 다시 한번 시도해 보세요.",
+    "restoreFailed": "당신의 구매를 복구하기 위해 상점에 도달 할 수 없습니다.다시 시도하십시오.",
+    "nothingToRestore": "No. PlezyNG 생명 구매는 이 가게 계정에서 찾을 수 있습니다."
+  },
+  "detail": {
+    "endsAt": "${time}에 종료"
+  },
   "watchLink": {
     "serverUnavailable": "이 링크를 위해 Plex 서버에 접근할 수 없었습니다.",
     "notFound": "이 쇼 또는 영화를 Plex 서버에서 찾을 수 없습니다.",
@@ -3691,5 +3692,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

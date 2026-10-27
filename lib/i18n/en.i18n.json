@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Cast to a device",
-    "searching": "Searching for Cast devices…",
-    "connectedTo": "Connected to ${device}",
-    "device": "Cast device",
-    "readyToCast": "Ready to cast",
-    "subtitle": "Subtitles",
-    "serverNotAvailable": "The media server is not available.",
-    "stopCasting": "Stop casting",
-    "castToDevice": "Cast to device",
-    "noEpisodeAvailable": "There is no episode available to cast.",
-    "startFailed": "Could not start casting. Check the server and try again."
-  },
-  "automation": {
-    "noActivePlayback": "There is no active video session to control.",
-    "profileNotFound": "That Plezy profile could not be found."
-  },
-  "notifications": {
-    "newEpisodeTitle": "New episode",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "App icon",
     "defaultIcon": "Default",
@@ -200,30 +179,6 @@
     "viewRelease": "View Release",
     "latestVersion": "You are on the latest version",
     "checkFailed": "Failed to check for updates"
-  },
-  "appAccess": {
-    "title": "Try every feature free for 7 days",
-    "description": "Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.",
-    "trialEndedDescription": "Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.",
-    "startTrial": "Start my 7-day free trial",
-    "trialActive": "Your 7-day full-feature trial is active.",
-    "trialEnded": "Your 7-day trial has ended",
-    "trialStartFailed": "Couldn't save the trial on this device. Please try again.",
-    "lifetimeTitle": "PlezyNG unlocked for life",
-    "lifetimeBody": "Thanks! You have lifetime access to every PlezyNG feature.",
-    "manageTitle": "PlezyNG lifetime access",
-    "manageDescription": "Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.",
-    "buy": "Unlock every feature for ${price}",
-    "loadingPrice": "Loading store price...",
-    "retryPrice": "Retry price lookup",
-    "restore": "Restore lifetime purchase",
-    "pending": "Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.",
-    "storeUnavailable": "Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.",
-    "productNotFound": "The PlezyNG lifetime unlock isn't available in this store yet.",
-    "productQueryFailed": "Couldn't load the store price. Check your connection and try again.",
-    "purchaseFailed": "The purchase didn't go through. Try again.",
-    "restoreFailed": "Couldn't reach the store to restore your purchase. Try again.",
-    "nothingToRestore": "No PlezyNG lifetime purchase was found for this store account."
   },
   "settings": {
     "title": "Settings",
@@ -1079,10 +1034,6 @@
     "track": "Audio Track ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames"
-    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Unmute",
     "settingsButton": "Playback Settings",
     "tracksButton": "Audio & Subtitles",
-    "trackSelectionTitle": "Choose tracks before playback",
-    "trackSelectionAuto": "Automatic selection",
     "chaptersButton": "Chapters",
     "versionQualityButton": "Version & Quality",
     "versionColumnHeader": "Version",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transcoding unavailable — playing original quality",
     "subtitleUnavailableFallback": "Selected subtitles could not be loaded — continuing without subtitles",
     "pipButton": "Picture-in-Picture mode",
-    "openMiniPlayer": "Open mini player",
-    "returnToFullPlayer": "Return to full player",
     "aspectRatioButton": "Aspect ratio",
     "ambientLighting": "Ambient lighting",
     "fullscreenButton": "Enter fullscreen",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Rotation lock",
     "lockScreen": "Lock screen",
     "screenLockButton": "Screen lock",
-    "longPressToUnlock": "Long press to unlock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
     "endsAt": "Ends at ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "No items in queue",
     "noAudioDevicesAvailable": "No audio devices available",
     "searchSubtitles": "Search Subtitles",
-    "loadSubtitleFile": "Load subtitle file…",
-    "subtitleLoadFailed": "Failed to load subtitle file",
     "language": "Language",
     "noSubtitlesFound": "No subtitles found",
     "subtitleDownloaded": "Subtitle downloaded",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Search languages...",
     "skipIntro": "Skip Intro",
     "skipCredits": "Skip Credits",
-    "skipAds": "Skip Ads",
     "nextEpisode": "Next Episode",
     "subtitleTrack": "Track ${n}",
     "subtitleFile": "Subtitle ${name}",
     "forcedTrack": "${label} (Forced)",
     "osdSubtitlesOff": "Subtitles: Off",
     "osdSubtitles": "Subtitles: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames"
+    },
+    "trackSelectionTitle": "Choose tracks before playback",
+    "trackSelectionAuto": "Automatic selection",
+    "openMiniPlayer": "Open mini player",
+    "returnToFullPlayer": "Return to full player",
+    "loadSubtitleFile": "Load subtitle file…",
+    "subtitleLoadFailed": "Failed to load subtitle file",
+    "skipAds": "Skip Ads",
+    "tapToUnlock": "Tap to unlock",
+    "tapAgainToUnlock": "Tap again to unlock"
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Save Logs to File",
     "logsSaved": "Logs saved to ${path}",
     "saveLogsFailed": "Could not save the log file."
-  },
-  "detail": {
-    "endsAt": "Ends at ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG could not start",
@@ -3072,6 +3025,54 @@
     "allowHttp": "Allow HTTP",
     "httpsRequired": "Use HTTPS or explicitly allow an unencrypted connection."
   },
+  "cast": {
+    "chooseDevice": "Cast to a device",
+    "searching": "Searching for Cast devices…",
+    "connectedTo": "Connected to ${device}",
+    "device": "Cast device",
+    "readyToCast": "Ready to cast",
+    "subtitle": "Subtitles",
+    "serverNotAvailable": "The media server is not available.",
+    "stopCasting": "Stop casting",
+    "castToDevice": "Cast to device",
+    "noEpisodeAvailable": "There is no episode available to cast.",
+    "startFailed": "Could not start casting. Check the server and try again."
+  },
+  "automation": {
+    "noActivePlayback": "There is no active video session to control.",
+    "profileNotFound": "That Plezy profile could not be found."
+  },
+  "notifications": {
+    "newEpisodeTitle": "New episode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Try every feature free for 7 days",
+    "description": "Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.",
+    "trialEndedDescription": "Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.",
+    "startTrial": "Start my 7-day free trial",
+    "trialActive": "Your 7-day full-feature trial is active.",
+    "trialEnded": "Your 7-day trial has ended",
+    "trialStartFailed": "Couldn't save the trial on this device. Please try again.",
+    "lifetimeTitle": "PlezyNG unlocked for life",
+    "lifetimeBody": "Thanks! You have lifetime access to every PlezyNG feature.",
+    "manageTitle": "PlezyNG lifetime access",
+    "manageDescription": "Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.",
+    "buy": "Unlock every feature for ${price}",
+    "loadingPrice": "Loading store price...",
+    "retryPrice": "Retry price lookup",
+    "restore": "Restore lifetime purchase",
+    "pending": "Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.",
+    "storeUnavailable": "Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.",
+    "productNotFound": "The PlezyNG lifetime unlock isn't available in this store yet.",
+    "productQueryFailed": "Couldn't load the store price. Check your connection and try again.",
+    "purchaseFailed": "The purchase didn't go through. Try again.",
+    "restoreFailed": "Couldn't reach the store to restore your purchase. Try again.",
+    "nothingToRestore": "No PlezyNG lifetime purchase was found for this store account."
+  },
+  "detail": {
+    "endsAt": "Ends at ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Couldn't reach a Plex server for this link.",
     "notFound": "Couldn't find this show or movie on your Plex servers.",
@@ -3682,19 +3683,38 @@
     "steamBetaTitle": "Steam beta · Pyrowave",
     "steamBetaDescription": "Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.",
     "steamLibrary": "Steam library",
-  "linkSteamAccount": "Link Steam account",
-  "refreshSteamAccount": "Refresh Steam account",
-  "unlinkSteamAccount": "Unlink Steam account",
-  "unlinkSteamAccountConfirm": "Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.",
-  "steamAccountLinked": "Steam account linked. Games imported.",
-  "steamLibraryPrivate": "Steam account linked. Its library is private or unavailable, so no games were imported.",
-  "steamAppId": "Steam App ID",
-  "steamLibraryStale": "Steam could not refresh the library. Showing the last available catalog.",
-  "steamLibraryTruncated": "Showing up to 2,000 games. The Steam catalog was truncated.",
+    "linkSteamAccount": "Link Steam account",
+    "refreshSteamAccount": "Refresh Steam account",
+    "unlinkSteamAccount": "Unlink Steam account",
+    "unlinkSteamAccountConfirm": "Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.",
+    "steamAccountLinked": "Steam account linked. Games imported.",
+    "steamLibraryPrivate": "Steam account linked. Its library is private or unavailable, so no games were imported.",
+    "steamAppId": "Steam App ID",
+    "steamLibraryStale": "Steam could not refresh the library. Showing the last available catalog.",
+    "steamLibraryTruncated": "Showing up to 2,000 games. The Steam catalog was truncated.",
     "connecting": "Connecting…",
     "disconnect": "Disconnect",
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "This Plezy link isn't valid.",
+    "profileNotFound": "No profile matches \"${profile}\".",
+    "serverUnavailable": "Couldn't reach the server for this link.",
+    "notFound": "Couldn't find this title in your libraries.",
+    "unsupportedItem": "This link can't be played.",
+    "noLiveTv": "No Live TV server is available for this link.",
+    "channelNotFound": "Couldn't find channel \"${channel}\".",
+    "showLink": "Show link",
+    "showProfileLink": "Show profile link",
+    "dialogTitle": "Link",
+    "showHint": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+    "movieHint": "Opening this link plays the movie.",
+    "episodeHint": "Opening this link plays this episode.",
+    "profileHint": "Opening this link switches to this profile.",
+    "openAsProfile": "Open as ${name}",
+    "copy": "Copy",
+    "copied": "Link copied"
   }
 }

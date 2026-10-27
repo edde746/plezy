@@ -30,10 +30,41 @@ import 'package:flutter/widgets.dart';
 /// each from its parent's history, and the boundary's scope is left with
 /// nothing to restore: focus parked above every screen key handler, and the
 /// remote went dead behind the closed profile picker (#2699).
+///
+/// A subtree mounted under the cover has no such path. Choosing another
+/// profile in the picker remounts the whole session beneath it, and the new
+/// session's first focus request was dropped like any other, leaving nothing
+/// to restore and the same dead remote (#2817). A request that gives a
+/// subtree its *first* focus therefore goes through [requestInitialFocus],
+/// which holds it while covered and replays it on uncover; every other
+/// request stays a plain `requestFocus()` that the cover drops.
 class CoveredRouteFocusBoundary extends StatefulWidget {
   const CoveredRouteFocusBoundary({super.key, required this.child});
 
   final Widget child;
+
+  /// Requests focus for [node] as the first focus of the subtree below
+  /// [context]: a screen's entry focus after it mounts or first loads.
+  ///
+  /// Outside a covered boundary this is `node.requestFocus()`. Under one, the
+  /// request is held instead of dropped and replayed after the uncover
+  /// restore, in request order, so focus ends where it would have without the
+  /// cover — a scope requested after one of its descendants still lands on
+  /// that descendant. A self-heal that re-takes focus keeps calling
+  /// `requestFocus()` directly, so the cover still drops it.
+  static void requestInitialFocus(BuildContext context, FocusNode node) {
+    final boundary = context.findAncestorStateOfType<_CoveredRouteFocusBoundaryState>();
+    // `_covered` is the exclusion in force, which outlives the route's own
+    // currency until the next frame: a request between a pop and that frame
+    // would still be dropped.
+    if (boundary == null || !boundary._covered) {
+      node.requestFocus();
+      return;
+    }
+    boundary._heldRequests
+      ..remove(node)
+      ..add(node);
+  }
 
   @override
   State<CoveredRouteFocusBoundary> createState() => _CoveredRouteFocusBoundaryState();
@@ -46,6 +77,10 @@ class _CoveredRouteFocusBoundaryState extends State<CoveredRouteFocusBoundary> {
   /// The primary focus and its ancestors below [_scope], deepest first, as
   /// they stood when the cover began. Empty when focus was outside the subtree.
   List<FocusNode> _focusPathAtCover = const [];
+
+  /// [CoveredRouteFocusBoundary.requestInitialFocus] calls made while
+  /// covered, oldest first.
+  final _heldRequests = <FocusNode>[];
 
   @override
   void dispose() {
@@ -94,9 +129,16 @@ class _CoveredRouteFocusBoundaryState extends State<CoveredRouteFocusBoundary> {
       final path = _focusPathAtCover;
       _focusPathAtCover = const [];
       // The exclusion lifts in this build's didUpdateWidget, after the pop
-      // already parked focus on the route scope; restore once it has.
+      // already parked focus on the route scope; restore once it has, then
+      // replay what the subtree asked for while covered.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_scope.hasFocus) _restoreTarget(path).requestFocus();
+        if (!mounted) return;
+        if (!_scope.hasFocus) _restoreTarget(path).requestFocus();
+        final held = List.of(_heldRequests);
+        _heldRequests.clear();
+        for (final node in held) {
+          if (_isAttachedBelowScope(node)) node.requestFocus();
+        }
       });
     }
     _covered = covered;

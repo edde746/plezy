@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "點選一個裝置",
-    "searching": "尋找卡片裝置",
-    "connectedTo": "連線到 ${device}",
-    "device": "加密裝置",
-    "readyToCast": "準備放",
-    "subtitle": "字幕",
-    "serverNotAvailable": "媒體伺服器不適用。",
-    "stopCasting": "停止加密",
-    "castToDevice": "點選裝置",
-    "noEpisodeAvailable": "沒有任何節目可播放。",
-    "startFailed": "無法開始投射,檢查伺服器並嘗試一次。"
-  },
-  "automation": {
-    "noActivePlayback": "沒有活躍的影片會話可以控制。",
-    "profileNotFound": "這個 Plezy 個人資料無法找到。"
-  },
-  "notifications": {
-    "newEpisodeTitle": "新集",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "應用程式圖示",
     "defaultIcon": "預設",
@@ -200,30 +179,6 @@
     "viewRelease": "查看版本詳情",
     "latestVersion": "已安裝的版本為最新版本",
     "checkFailed": "無法檢查更新"
-  },
-  "appAccess": {
-    "title": "每個功能都免費嘗試7天",
-    "description": "開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。",
-    "trialEndedDescription": "依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。",
-    "startTrial": "開始我的7天免費試驗",
-    "trialActive": "您的7天全功能測試已活躍。",
-    "trialEnded": "你的七天審判結束了",
-    "trialStartFailed": "我無法在這個裝置上儲存測試,請再試一次。",
-    "lifetimeTitle": "PlezyNG 終身禁用",
-    "lifetimeBody": "感謝!您終身訪問所有 PlezyNG 功能。",
-    "manageTitle": "PlezyNG 終身訪問",
-    "manageDescription": "每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。",
-    "buy": "解鎖所有功能為 ${price}",
-    "loadingPrice": "貨物價格...",
-    "retryPrice": "回報價格 檢視",
-    "restore": "恢復終身購買",
-    "pending": "您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。",
-    "storeUnavailable": "目前無法購買。請確認您已登入商店，且此裝置允許購買。",
-    "productNotFound": "PlezyNG 終身解鎖 目前尚未在本商店提供。",
-    "productQueryFailed": "無法收取商店價格,請檢查您的連線並嘗試一次。",
-    "purchaseFailed": "購買不錯了,再試一次。",
-    "restoreFailed": "無法到達商店恢復您的購買,再試一次。",
-    "nothingToRestore": "已找到第 PlezyNG 終身購買號,用於此商店帳戶。"
   },
   "settings": {
     "title": "設定",
@@ -1077,10 +1032,6 @@
     "track": "音軌 ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 框架",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 框架"
-    },
     "audioLabel": "音訊",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount} ${unit}",
@@ -1117,8 +1068,6 @@
     "unmuteButton": "取消靜音",
     "settingsButton": "播放設定",
     "tracksButton": "音訊與字幕",
-    "trackSelectionTitle": "選擇遊戲前的遊戲",
-    "trackSelectionAuto": "自動選擇",
     "chaptersButton": "章節",
     "versionQualityButton": "版本與畫質",
     "versionColumnHeader": "版本",
@@ -1128,8 +1077,6 @@
     "transcodeUnavailableFallback": "無法使用轉碼 — 將以原始畫質播放",
     "subtitleUnavailableFallback": "無法載入所選字幕 — 將繼續無字幕播放",
     "pipButton": "子母畫面模式",
-    "openMiniPlayer": "開放小型玩家",
-    "returnToFullPlayer": "回到全玩家",
     "aspectRatioButton": "寬高比",
     "ambientLighting": "氛圍燈光",
     "fullscreenButton": "進入全螢幕",
@@ -1138,7 +1085,6 @@
     "rotationLockButton": "旋轉鎖定",
     "lockScreen": "鎖定螢幕",
     "screenLockButton": "螢幕鎖定",
-    "longPressToUnlock": "長按解鎖",
     "timelineSlider": "影片時間軸",
     "volumeSlider": "音量調整",
     "endsAt": "預計 ${time} 結束",
@@ -1164,8 +1110,6 @@
     "noQueueItems": "佇列中沒有項目",
     "noAudioDevicesAvailable": "沒有可用的音訊裝置",
     "searchSubtitles": "搜尋字幕",
-    "loadSubtitleFile": "查詢下載檔案...",
-    "subtitleLoadFailed": "未能下載字幕檔案",
     "language": "語言",
     "noSubtitlesFound": "找不到字幕",
     "subtitleDownloaded": "字幕下載成功",
@@ -1174,14 +1118,26 @@
     "searchLanguages": "搜尋語言…",
     "skipIntro": "略過片頭",
     "skipCredits": "略過片尾",
-    "skipAds": "滑雪廣告",
     "nextEpisode": "下一集",
     "subtitleTrack": "字幕軌 ${n}",
     "subtitleFile": "字幕 ${name}",
     "forcedTrack": "${label}（強制）",
     "osdSubtitlesOff": "字幕：關閉",
     "osdSubtitles": "字幕：${track}",
-    "osdAudio": "音訊：${track}"
+    "osdAudio": "音訊：${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 框架",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} 框架"
+    },
+    "trackSelectionTitle": "選擇遊戲前的遊戲",
+    "trackSelectionAuto": "自動選擇",
+    "openMiniPlayer": "開放小型玩家",
+    "returnToFullPlayer": "回到全玩家",
+    "loadSubtitleFile": "查詢下載檔案...",
+    "subtitleLoadFailed": "未能下載字幕檔案",
+    "skipAds": "滑雪廣告",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1792,9 +1748,6 @@
     "saveLogs": "儲存存檔",
     "logsSaved": "儲存到 ${path} 的存檔",
     "saveLogsFailed": "無法儲存存檔。"
-  },
-  "detail": {
-    "endsAt": "預計 ${time} 結束"
   },
   "startup": {
     "failedTitle": "PlezyNG 無法啟動",
@@ -3068,6 +3021,54 @@
     "allowHttp": "允許 HTTP",
     "httpsRequired": "使用 HTTPS 或明確允許未加密的連線。"
   },
+  "cast": {
+    "chooseDevice": "點選一個裝置",
+    "searching": "尋找卡片裝置",
+    "connectedTo": "連線到 ${device}",
+    "device": "加密裝置",
+    "readyToCast": "準備放",
+    "subtitle": "字幕",
+    "serverNotAvailable": "媒體伺服器不適用。",
+    "stopCasting": "停止加密",
+    "castToDevice": "點選裝置",
+    "noEpisodeAvailable": "沒有任何節目可播放。",
+    "startFailed": "無法開始投射,檢查伺服器並嘗試一次。"
+  },
+  "automation": {
+    "noActivePlayback": "沒有活躍的影片會話可以控制。",
+    "profileNotFound": "這個 Plezy 個人資料無法找到。"
+  },
+  "notifications": {
+    "newEpisodeTitle": "新集",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "每個功能都免費嘗試7天",
+    "description": "開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。",
+    "trialEndedDescription": "依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。",
+    "startTrial": "開始我的7天免費試驗",
+    "trialActive": "您的7天全功能測試已活躍。",
+    "trialEnded": "你的七天審判結束了",
+    "trialStartFailed": "我無法在這個裝置上儲存測試,請再試一次。",
+    "lifetimeTitle": "PlezyNG 終身禁用",
+    "lifetimeBody": "感謝!您終身訪問所有 PlezyNG 功能。",
+    "manageTitle": "PlezyNG 終身訪問",
+    "manageDescription": "每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。",
+    "buy": "解鎖所有功能為 ${price}",
+    "loadingPrice": "貨物價格...",
+    "retryPrice": "回報價格 檢視",
+    "restore": "恢復終身購買",
+    "pending": "您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。",
+    "storeUnavailable": "目前無法購買。請確認您已登入商店，且此裝置允許購買。",
+    "productNotFound": "PlezyNG 終身解鎖 目前尚未在本商店提供。",
+    "productQueryFailed": "無法收取商店價格,請檢查您的連線並嘗試一次。",
+    "purchaseFailed": "購買不錯了,再試一次。",
+    "restoreFailed": "無法到達商店恢復您的購買,再試一次。",
+    "nothingToRestore": "已找到第 PlezyNG 終身購買號,用於此商店帳戶。"
+  },
+  "detail": {
+    "endsAt": "預計 ${time} 結束"
+  },
   "watchLink": {
     "serverUnavailable": "無法訪問 Plex 伺服器此連結。",
     "notFound": "我無法在您的伺服器上找到此節目或電影 Plex。",
@@ -3691,5 +3692,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

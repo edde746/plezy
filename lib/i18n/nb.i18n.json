@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Stikk til en enhet",
-    "searching": "Søk etter Cast-enheter",
-    "connectedTo": "Tilkoblet til ${device}",
-    "device": "Cast utstyr",
-    "readyToCast": "Klar til å kastes",
-    "subtitle": "Undertekster",
-    "serverNotAvailable": "Media server er ikke tilgjengelig.",
-    "stopCasting": "Stoppe casting",
-    "castToDevice": "Cast til enheten",
-    "noEpisodeAvailable": "Det er ingen episode tilgjengelig for å kaste.",
-    "startFailed": "Kan ikke begynne å kaste. sjekk serveren og prøv igjen."
-  },
-  "automation": {
-    "noActivePlayback": "Det er ingen aktiv video-session å kontrollere.",
-    "profileNotFound": "Det Plezy profilen kunne ikke bli funnet."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Nytt episode",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Appikon",
     "defaultIcon": "Standard",
@@ -200,30 +179,6 @@
     "viewRelease": "Vis utgivelse",
     "latestVersion": "Du har den nyeste versjonen",
     "checkFailed": "Kunne ikke se etter oppdateringer"
-  },
-  "appAccess": {
-    "title": "Prøv hver funksjon gratis i 7 dager",
-    "description": "Start en sju dagers prøve med full tilgang til hver PlezyNG funksjon. Det er ingen gebyr under prøve og ingen abonnement. Etter prøve, en livslang kjøp på din butikks pris låser opp PlezyNG for livet.",
-    "trialEndedDescription": "Unlock alle funksjoner i PlezyNG for livet med én kjøp til din butikk pris.",
-    "startTrial": "Start min 7 dagers gratis prøve",
-    "trialActive": "Din 7-dagers full-feature-tester er aktiv.",
-    "trialEnded": "7 dagers rettssak er over",
-    "trialStartFailed": "Kan ikke spare prøven på denne enheten. vennligst prøv igjen.",
-    "lifetimeTitle": "PlezyNG avsluttet for livet",
-    "lifetimeBody": "Du har livslang tilgang til alle PlezyNG funksjoner.",
-    "manageTitle": "PlezyNG Livslang tilgang",
-    "manageDescription": "Prøv hver funksjon gratis i 7 dager, deretter låse opp alt for livet med en betaling til priset på butikken din.",
-    "buy": "Unlock alle funksjoner for ${price}",
-    "loadingPrice": "Lading butikks pris...",
-    "retryPrice": "Retry pris lookup",
-    "restore": "Åpne livslang kjøp",
-    "pending": "Kjøpet ditt venter på betaling eller godkjenning. Livslang tilgang låser opp så snart butikken fullfører det.",
-    "storeUnavailable": "Kontrollere at du er signert inn i butikken og kjøp er tillatt på denne enheten.",
-    "productNotFound": "PlezyNG livslang avlås er ikke tilgjengelig i denne butikken ennå.",
-    "productQueryFailed": "Kan ikke laste opp priset på butikken. sjekk koblingen din og prøv igjen.",
-    "purchaseFailed": "Kjøpet gikk ikke gjennom. prøv igjen.",
-    "restoreFailed": "Kan ikke nå butikken for å gjenopprette kjøpet. prøv igjen.",
-    "nothingToRestore": "No. PlezyNG livslang kjøp ble funnet for denne butikken konto."
   },
   "settings": {
     "title": "Innstillinger",
@@ -1079,10 +1034,6 @@
     "track": "Lydspor ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} rammer"
-    },
     "audioLabel": "Lyd",
     "subtitlesLabel": "Undertekster",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Opphev demping",
     "settingsButton": "Avspillingsinnstillinger",
     "tracksButton": "Lyd og undertekster",
-    "trackSelectionTitle": "Velg spor før playback",
-    "trackSelectionAuto": "Automatisk utvalg",
     "chaptersButton": "Kapitler",
     "versionQualityButton": "Versjon og kvalitet",
     "versionColumnHeader": "Versjon",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transkoding utilgjengelig — spiller av i original kvalitet",
     "subtitleUnavailableFallback": "De valgte undertekstene kunne ikke lastes inn — avspillingen fortsetter uten undertekster",
     "pipButton": "Bilde-i-bilde-modus",
-    "openMiniPlayer": "Åpne mini-spillere",
-    "returnToFullPlayer": "Tilbake til fullspiller",
     "aspectRatioButton": "Sideforhold",
     "ambientLighting": "Omgivelseslys",
     "fullscreenButton": "Gå til fullskjerm",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Rotasjonslås",
     "lockScreen": "Lås skjerm",
     "screenLockButton": "Skjermlås",
-    "longPressToUnlock": "Trykk og hold for å låse opp",
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volumnivå",
     "endsAt": "Slutter kl. ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Ingen elementer i kø",
     "noAudioDevicesAvailable": "Ingen lydenheter tilgjengelig",
     "searchSubtitles": "Søk etter undertekster",
-    "loadSubtitleFile": "Last ned undertittelfil...",
-    "subtitleLoadFailed": "Fikk ikke lastet opp subtitle-filen",
     "language": "Språk",
     "noSubtitlesFound": "Ingen undertekster funnet",
     "subtitleDownloaded": "Undertekst lastet ned",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Søk etter språk...",
     "skipIntro": "Hopp over intro",
     "skipCredits": "Hopp over rulletekst",
-    "skipAds": "Hopp over reklame",
     "nextEpisode": "Neste episode",
     "subtitleTrack": "Spor ${n}",
     "subtitleFile": "Undertekst ${name}",
     "forcedTrack": "${label} (tvunget)",
     "osdSubtitlesOff": "Undertekster: Av",
     "osdSubtitles": "Undertekster: ${track}",
-    "osdAudio": "Lyd: ${track}"
+    "osdAudio": "Lyd: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} rammer"
+    },
+    "trackSelectionTitle": "Velg spor før playback",
+    "trackSelectionAuto": "Automatisk utvalg",
+    "openMiniPlayer": "Åpne mini-spillere",
+    "returnToFullPlayer": "Tilbake til fullspiller",
+    "loadSubtitleFile": "Last ned undertittelfil...",
+    "subtitleLoadFailed": "Fikk ikke lastet opp subtitle-filen",
+    "skipAds": "Hopp over reklame",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Lagre logger til filer",
     "logsSaved": "Lister lagret til ${path}",
     "saveLogsFailed": "Kan ikke lagre loggfilet."
-  },
-  "detail": {
-    "endsAt": "Slutter kl. ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG kunne ikke starte",
@@ -3072,6 +3025,54 @@
     "allowHttp": "Tillat HTTP",
     "httpsRequired": "Bruk HTTPS eller uttrykkelig tillate en ukryptert tilkobling."
   },
+  "cast": {
+    "chooseDevice": "Stikk til en enhet",
+    "searching": "Søk etter Cast-enheter",
+    "connectedTo": "Tilkoblet til ${device}",
+    "device": "Cast utstyr",
+    "readyToCast": "Klar til å kastes",
+    "subtitle": "Undertekster",
+    "serverNotAvailable": "Media server er ikke tilgjengelig.",
+    "stopCasting": "Stoppe casting",
+    "castToDevice": "Cast til enheten",
+    "noEpisodeAvailable": "Det er ingen episode tilgjengelig for å kaste.",
+    "startFailed": "Kan ikke begynne å kaste. sjekk serveren og prøv igjen."
+  },
+  "automation": {
+    "noActivePlayback": "Det er ingen aktiv video-session å kontrollere.",
+    "profileNotFound": "Det Plezy profilen kunne ikke bli funnet."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Nytt episode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Prøv hver funksjon gratis i 7 dager",
+    "description": "Start en sju dagers prøve med full tilgang til hver PlezyNG funksjon. Det er ingen gebyr under prøve og ingen abonnement. Etter prøve, en livslang kjøp på din butikks pris låser opp PlezyNG for livet.",
+    "trialEndedDescription": "Unlock alle funksjoner i PlezyNG for livet med én kjøp til din butikk pris.",
+    "startTrial": "Start min 7 dagers gratis prøve",
+    "trialActive": "Din 7-dagers full-feature-tester er aktiv.",
+    "trialEnded": "7 dagers rettssak er over",
+    "trialStartFailed": "Kan ikke spare prøven på denne enheten. vennligst prøv igjen.",
+    "lifetimeTitle": "PlezyNG avsluttet for livet",
+    "lifetimeBody": "Du har livslang tilgang til alle PlezyNG funksjoner.",
+    "manageTitle": "PlezyNG Livslang tilgang",
+    "manageDescription": "Prøv hver funksjon gratis i 7 dager, deretter låse opp alt for livet med en betaling til priset på butikken din.",
+    "buy": "Unlock alle funksjoner for ${price}",
+    "loadingPrice": "Lading butikks pris...",
+    "retryPrice": "Retry pris lookup",
+    "restore": "Åpne livslang kjøp",
+    "pending": "Kjøpet ditt venter på betaling eller godkjenning. Livslang tilgang låser opp så snart butikken fullfører det.",
+    "storeUnavailable": "Kontrollere at du er signert inn i butikken og kjøp er tillatt på denne enheten.",
+    "productNotFound": "PlezyNG livslang avlås er ikke tilgjengelig i denne butikken ennå.",
+    "productQueryFailed": "Kan ikke laste opp priset på butikken. sjekk koblingen din og prøv igjen.",
+    "purchaseFailed": "Kjøpet gikk ikke gjennom. prøv igjen.",
+    "restoreFailed": "Kan ikke nå butikken for å gjenopprette kjøpet. prøv igjen.",
+    "nothingToRestore": "No. PlezyNG livslang kjøp ble funnet for denne butikken konto."
+  },
+  "detail": {
+    "endsAt": "Slutter kl. ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Kan ikke nå en server på Plex for denne koblingen.",
     "notFound": "Du kan ikke finne denne show eller film på serverne dine Plex.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

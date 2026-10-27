@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "A készülékre kattintva",
-    "searching": "A Cast eszközök keresése...",
-    "connectedTo": "Kapcsolódó oldalak ${device}",
-    "device": "Cast eszköz",
-    "readyToCast": "Kész a kiadásra",
-    "subtitle": "Feliratok",
-    "serverNotAvailable": "A média szerver nem elérhető.",
-    "stopCasting": "Csatlakozás megáll",
-    "castToDevice": "A készülékre vágás",
-    "noEpisodeAvailable": "Nincs epizód, amit el lehet dobni.",
-    "startFailed": "Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra."
-  },
-  "automation": {
-    "noActivePlayback": "Nincs aktív videó ülés ellenőrzésére.",
-    "profileNotFound": "Ez a Plezy profil nem található."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Új epizód",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Alkalmazásikon",
     "defaultIcon": "Alapértelmezett",
@@ -200,30 +179,6 @@
     "viewRelease": "Kiadási megjegyzések",
     "latestVersion": "A legújabb verziót használod",
     "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése"
-  },
-  "appAccess": {
-    "title": "Próbáld ki minden funkciót ingyen 7 napig",
-    "description": "Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.",
-    "trialEndedDescription": "A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.",
-    "startTrial": "Kezdje a 7 napos ingyenes próbát",
-    "trialActive": "A 7 napos teljes funkciót tesztelője aktív.",
-    "trialEnded": "A 7 napos bírósági eljárás befejeződött",
-    "trialStartFailed": "Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.",
-    "lifetimeTitle": "PlezyNG életre szóló zárolás",
-    "lifetimeBody": "Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.",
-    "manageTitle": "PlezyNG Élethosszú hozzáférés",
-    "manageDescription": "Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.",
-    "buy": "Minden funkció letiltása a ${price}",
-    "loadingPrice": "A szállítási árak...",
-    "retryPrice": "Visszaállítási ár keresés",
-    "restore": "Életmód vásárlás",
-    "pending": "A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.",
-    "storeUnavailable": "A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.",
-    "productNotFound": "A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.",
-    "productQueryFailed": "Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.",
-    "purchaseFailed": "A vásárlás nem ment át. próbáljon újra.",
-    "restoreFailed": "Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.",
-    "nothingToRestore": "A PlezyNG életévét megvásárlás találta ebben a boltban."
   },
   "settings": {
     "title": "Beállítások",
@@ -1079,10 +1034,6 @@
     "track": "${n}. hangsáv"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} keretrendszer",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} keretek"
-    },
     "audioLabel": "Hang",
     "subtitlesLabel": "Feliratok",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Hang visszakapcsolása",
     "settingsButton": "Lejátszási beállítások",
     "tracksButton": "Hang és feliratok",
-    "trackSelectionTitle": "Válassza ki a játékot a playback előtt",
-    "trackSelectionAuto": "Automatikus kiválasztás",
     "chaptersButton": "Fejezetek",
     "versionQualityButton": "Verzió és minőség",
     "versionColumnHeader": "Verzió",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "A transzkódolás nem érhető el — eredeti minőség lejátszása",
     "subtitleUnavailableFallback": "A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül",
     "pipButton": "Kép a képben mód",
-    "openMiniPlayer": "Nyitott mini játékos",
-    "returnToFullPlayer": "Visszatérés a teljes játékoshoz",
     "aspectRatioButton": "Méretarány",
     "ambientLighting": "Környezeti megvilágítás",
     "fullscreenButton": "Teljes képernyős mód bekapcsolása",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Elforgatás zárolása",
     "lockScreen": "Képernyő zárolása",
     "screenLockButton": "Képernyőzár",
-    "longPressToUnlock": "Nyomd hosszan a feloldáshoz",
     "timelineSlider": "Videó idősáv",
     "volumeSlider": "Hangerő",
     "endsAt": "Vége: ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Nincsenek elemek a sorban",
     "noAudioDevicesAvailable": "Nincsenek elérhető audioeszközök",
     "searchSubtitles": "Feliratok keresése",
-    "loadSubtitleFile": "A subtitle fájl felvétele...",
-    "subtitleLoadFailed": "Nem töltöttem fel a subtitle fájlt",
     "language": "Nyelv",
     "noSubtitlesFound": "Nem találhatók feliratok",
     "subtitleDownloaded": "Felirat letöltve",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Nyelvek keresése...",
     "skipIntro": "Főcím átugrása",
     "skipCredits": "Stáblista átugrása",
-    "skipAds": "Skip hirdetések",
     "nextEpisode": "Következő epizód",
     "subtitleTrack": "${n}. sáv",
     "subtitleFile": "${name} felirat",
     "forcedTrack": "${label} (kényszerített)",
     "osdSubtitlesOff": "Feliratok: ki",
     "osdSubtitles": "Feliratok: ${track}",
-    "osdAudio": "Hang: ${track}"
+    "osdAudio": "Hang: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} keretrendszer",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} keretek"
+    },
+    "trackSelectionTitle": "Válassza ki a játékot a playback előtt",
+    "trackSelectionAuto": "Automatikus kiválasztás",
+    "openMiniPlayer": "Nyitott mini játékos",
+    "returnToFullPlayer": "Visszatérés a teljes játékoshoz",
+    "loadSubtitleFile": "A subtitle fájl felvétele...",
+    "subtitleLoadFailed": "Nem töltöttem fel a subtitle fájlt",
+    "skipAds": "Skip hirdetések",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Logs to File tárolás",
     "logsSaved": "A regisztrációt a ${path}",
     "saveLogsFailed": "Nem tudta megmenteni a log fájlt."
-  },
-  "detail": {
-    "endsAt": "Vége: ${time}"
   },
   "startup": {
     "failedTitle": "A PlezyNG nem tudott elindulni",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP engedélyezése",
     "httpsRequired": "Használja a HTTPS vagy kifejezetten engedélyezi a titkosított kapcsolatot."
   },
+  "cast": {
+    "chooseDevice": "A készülékre kattintva",
+    "searching": "A Cast eszközök keresése...",
+    "connectedTo": "Kapcsolódó oldalak ${device}",
+    "device": "Cast eszköz",
+    "readyToCast": "Kész a kiadásra",
+    "subtitle": "Feliratok",
+    "serverNotAvailable": "A média szerver nem elérhető.",
+    "stopCasting": "Csatlakozás megáll",
+    "castToDevice": "A készülékre vágás",
+    "noEpisodeAvailable": "Nincs epizód, amit el lehet dobni.",
+    "startFailed": "Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra."
+  },
+  "automation": {
+    "noActivePlayback": "Nincs aktív videó ülés ellenőrzésére.",
+    "profileNotFound": "Ez a Plezy profil nem található."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Új epizód",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Próbáld ki minden funkciót ingyen 7 napig",
+    "description": "Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.",
+    "trialEndedDescription": "A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.",
+    "startTrial": "Kezdje a 7 napos ingyenes próbát",
+    "trialActive": "A 7 napos teljes funkciót tesztelője aktív.",
+    "trialEnded": "A 7 napos bírósági eljárás befejeződött",
+    "trialStartFailed": "Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.",
+    "lifetimeTitle": "PlezyNG életre szóló zárolás",
+    "lifetimeBody": "Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.",
+    "manageTitle": "PlezyNG Élethosszú hozzáférés",
+    "manageDescription": "Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.",
+    "buy": "Minden funkció letiltása a ${price}",
+    "loadingPrice": "A szállítási árak...",
+    "retryPrice": "Visszaállítási ár keresés",
+    "restore": "Életmód vásárlás",
+    "pending": "A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.",
+    "storeUnavailable": "A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.",
+    "productNotFound": "A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.",
+    "productQueryFailed": "Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.",
+    "purchaseFailed": "A vásárlás nem ment át. próbáljon újra.",
+    "restoreFailed": "Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.",
+    "nothingToRestore": "A PlezyNG életévét megvásárlás találta ebben a boltban."
+  },
+  "detail": {
+    "endsAt": "Vége: ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Nem tudtam elérni a Plex szervert erre a linkre.",
     "notFound": "Nem találtam ezt a show-t vagy filmet a Plex szervereken.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

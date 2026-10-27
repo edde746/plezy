@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Wskaż na urządzenie",
-    "searching": "W poszukiwaniu urządzeń do odbioru...",
-    "connectedTo": "Źródło: ${device}",
-    "device": "Urządzenie Cast",
-    "readyToCast": "gotowy do wyrzucenia",
-    "subtitle": "Napisy",
-    "serverNotAvailable": "Serwer medialny nie jest dostępny.",
-    "stopCasting": "Przestań casting",
-    "castToDevice": "Złóż na urządzenie",
-    "noEpisodeAvailable": "Nie ma żadnego odcinka do odtwarzania.",
-    "startFailed": "Nie można zacząć casting. sprawdź serwer i spróbuj ponownie."
-  },
-  "automation": {
-    "noActivePlayback": "Nie ma aktywnej sesji wideo do kontroli.",
-    "profileNotFound": "Ten profil Plezy nie można znaleźć."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Nowy epizod",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Ikona aplikacji",
     "defaultIcon": "Domyślna",
@@ -200,30 +179,6 @@
     "viewRelease": "Zobacz wydanie",
     "latestVersion": "Masz najnowszą wersję",
     "checkFailed": "Nie udało się sprawdzić aktualizacji"
-  },
-  "appAccess": {
-    "title": "Spróbuj każdej funkcji za darmo przez 7 dni",
-    "description": "Rozpocznij siedemdniową próbę z pełnym dostępem do każdej funkcji PlezyNG. nie ma opłaty w trakcie prób i nie ma subskrypcji. po próbie, jeden zakup na całe życie w cenie sklepu otwiera PlezyNG na całe życia.",
-    "trialEndedDescription": "Odblokuj na zawsze wszystkie funkcje PlezyNG jednorazowym zakupem w cenie podanej w sklepie. Bez subskrypcji.",
-    "startTrial": "Rozpocznij moje 7 dni wolnego wyprawy",
-    "trialActive": "Twoja 7-dniowa próba pełnej funkcji jest aktywna.",
-    "trialEnded": "7 dni sądu zakończyły się",
-    "trialStartFailed": "Nie mogłem zaoszczędzić próbki na tym urządzeniu. proszę spróbować ponownie.",
-    "lifetimeTitle": "PlezyNG odblokowane na całe życie",
-    "lifetimeBody": "Dzięki! masz dostęp do każdej funkcji PlezyNG przez całe życie.",
-    "manageTitle": "PlezyNG Dostęp do życia",
-    "manageDescription": "Spróbuj każdej funkcji za darmo przez 7 dni, a następnie odblokuj wszystko na całe życie z jednym płatnością w cenie sklepu.",
-    "buy": "Odblokuj wszystkie funkcje dla ${price}",
-    "loadingPrice": "Cena sklepu ładunkowego...",
-    "retryPrice": "Ceny Retry Lookup",
-    "restore": "Przywrócenie zakupów na całe życie",
-    "pending": "Twój zakup czeka na płatność lub zatwierdzenie. dostęp do życia otwiera się, gdy tylko sklep go ukończy.",
-    "storeUnavailable": "Sprawdź, czy jesteś podpisany do sklepu, a zakupy są dozwolone na tym urządzeniu.",
-    "productNotFound": "W tym sklepie nie ma jeszcze odblokowania PlezyNG na całe życie.",
-    "productQueryFailed": "Nie można pobierać ceny sklepu. sprawdź połączenie i spróbuj ponownie.",
-    "purchaseFailed": "Zakup nie przeszedł, spróbuj ponownie.",
-    "restoreFailed": "Nie mogłem dotrzeć do sklepu, aby odzyskać zakup. spróbuj ponownie.",
-    "nothingToRestore": "Nr PlezyNG zakup na całe życie znaleziono na tym koncie sklepu."
   },
   "settings": {
     "title": "Ustawienia",
@@ -1089,12 +1044,6 @@
     "track": "Ścieżka audio ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} klatka",
-      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ramy wideo",
-      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Ramy wideo",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ramy"
-    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Napisy",
     "addTime": "+${amount}${unit}",
@@ -1131,8 +1080,6 @@
     "unmuteButton": "Wyłącz wyciszenie",
     "settingsButton": "Ustawienia odtwarzania",
     "tracksButton": "Audio i napisy",
-    "trackSelectionTitle": "Wybierz ścieżki przed playbackem",
-    "trackSelectionAuto": "Automatyczne wybór",
     "chaptersButton": "Rozdziały",
     "versionQualityButton": "Wersja i jakość",
     "versionColumnHeader": "Wersja",
@@ -1142,8 +1089,6 @@
     "transcodeUnavailableFallback": "Transkodowanie niedostępne — odtwarzanie w oryginalnej jakości",
     "subtitleUnavailableFallback": "Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów",
     "pipButton": "Tryb obraz w obrazie",
-    "openMiniPlayer": "Otwarte mini gracze",
-    "returnToFullPlayer": "Powrót do pełnego gracza",
     "aspectRatioButton": "Proporcje",
     "ambientLighting": "Oświetlenie otoczenia",
     "fullscreenButton": "Wejdź w pełny ekran",
@@ -1152,7 +1097,6 @@
     "rotationLockButton": "Blokada obrotu",
     "lockScreen": "Zablokuj ekran",
     "screenLockButton": "Blokada ekranu",
-    "longPressToUnlock": "Przytrzymaj, aby odblokować",
     "timelineSlider": "Oś czasu wideo",
     "volumeSlider": "Poziom głośności",
     "endsAt": "Kończy się o ${time}",
@@ -1178,8 +1122,6 @@
     "noQueueItems": "Brak elementów w kolejce",
     "noAudioDevicesAvailable": "Brak dostępnych urządzeń audio",
     "searchSubtitles": "Szukaj napisów",
-    "loadSubtitleFile": "Pobierz subtitle plik...",
-    "subtitleLoadFailed": "Nie udało się pobrać subtitle",
     "language": "Język",
     "noSubtitlesFound": "Nie znaleziono napisów",
     "subtitleDownloaded": "Napisy pobrane",
@@ -1188,14 +1130,28 @@
     "searchLanguages": "Szukaj języków...",
     "skipIntro": "Pomiń intro",
     "skipCredits": "Pomiń napisy końcowe",
-    "skipAds": "Skok reklam",
     "nextEpisode": "Następny odcinek",
     "subtitleTrack": "Ścieżka ${n}",
     "subtitleFile": "Napisy ${name}",
     "forcedTrack": "${label} (wymuszone)",
     "osdSubtitlesOff": "Napisy: wył.",
     "osdSubtitles": "Napisy: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} klatka",
+      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ramy wideo",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Ramy wideo",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ramy"
+    },
+    "trackSelectionTitle": "Wybierz ścieżki przed playbackem",
+    "trackSelectionAuto": "Automatyczne wybór",
+    "openMiniPlayer": "Otwarte mini gracze",
+    "returnToFullPlayer": "Powrót do pełnego gracza",
+    "loadSubtitleFile": "Pobierz subtitle plik...",
+    "subtitleLoadFailed": "Nie udało się pobrać subtitle",
+    "skipAds": "Skok reklam",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1810,9 +1766,6 @@
     "saveLogs": "Zapisz log do pliku",
     "logsSaved": "Zapisy zapisane do ${path}",
     "saveLogsFailed": "Nie mogłem zapisać pliku logowego."
-  },
-  "detail": {
-    "endsAt": "Kończy się o ${time}"
   },
   "startup": {
     "failedTitle": "Nie udało się uruchomić PlezyNG",
@@ -3114,6 +3067,54 @@
     "allowHttp": "Zezwól na HTTP",
     "httpsRequired": "Użyj HTTPS lub wyraźnie zezwala na nie szyfrowaną łączność."
   },
+  "cast": {
+    "chooseDevice": "Wskaż na urządzenie",
+    "searching": "W poszukiwaniu urządzeń do odbioru...",
+    "connectedTo": "Źródło: ${device}",
+    "device": "Urządzenie Cast",
+    "readyToCast": "gotowy do wyrzucenia",
+    "subtitle": "Napisy",
+    "serverNotAvailable": "Serwer medialny nie jest dostępny.",
+    "stopCasting": "Przestań casting",
+    "castToDevice": "Złóż na urządzenie",
+    "noEpisodeAvailable": "Nie ma żadnego odcinka do odtwarzania.",
+    "startFailed": "Nie można zacząć casting. sprawdź serwer i spróbuj ponownie."
+  },
+  "automation": {
+    "noActivePlayback": "Nie ma aktywnej sesji wideo do kontroli.",
+    "profileNotFound": "Ten profil Plezy nie można znaleźć."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Nowy epizod",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Spróbuj każdej funkcji za darmo przez 7 dni",
+    "description": "Rozpocznij siedemdniową próbę z pełnym dostępem do każdej funkcji PlezyNG. nie ma opłaty w trakcie prób i nie ma subskrypcji. po próbie, jeden zakup na całe życie w cenie sklepu otwiera PlezyNG na całe życia.",
+    "trialEndedDescription": "Odblokuj na zawsze wszystkie funkcje PlezyNG jednorazowym zakupem w cenie podanej w sklepie. Bez subskrypcji.",
+    "startTrial": "Rozpocznij moje 7 dni wolnego wyprawy",
+    "trialActive": "Twoja 7-dniowa próba pełnej funkcji jest aktywna.",
+    "trialEnded": "7 dni sądu zakończyły się",
+    "trialStartFailed": "Nie mogłem zaoszczędzić próbki na tym urządzeniu. proszę spróbować ponownie.",
+    "lifetimeTitle": "PlezyNG odblokowane na całe życie",
+    "lifetimeBody": "Dzięki! masz dostęp do każdej funkcji PlezyNG przez całe życie.",
+    "manageTitle": "PlezyNG Dostęp do życia",
+    "manageDescription": "Spróbuj każdej funkcji za darmo przez 7 dni, a następnie odblokuj wszystko na całe życie z jednym płatnością w cenie sklepu.",
+    "buy": "Odblokuj wszystkie funkcje dla ${price}",
+    "loadingPrice": "Cena sklepu ładunkowego...",
+    "retryPrice": "Ceny Retry Lookup",
+    "restore": "Przywrócenie zakupów na całe życie",
+    "pending": "Twój zakup czeka na płatność lub zatwierdzenie. dostęp do życia otwiera się, gdy tylko sklep go ukończy.",
+    "storeUnavailable": "Sprawdź, czy jesteś podpisany do sklepu, a zakupy są dozwolone na tym urządzeniu.",
+    "productNotFound": "W tym sklepie nie ma jeszcze odblokowania PlezyNG na całe życie.",
+    "productQueryFailed": "Nie można pobierać ceny sklepu. sprawdź połączenie i spróbuj ponownie.",
+    "purchaseFailed": "Zakup nie przeszedł, spróbuj ponownie.",
+    "restoreFailed": "Nie mogłem dotrzeć do sklepu, aby odzyskać zakup. spróbuj ponownie.",
+    "nothingToRestore": "Nr PlezyNG zakup na całe życie znaleziono na tym koncie sklepu."
+  },
+  "detail": {
+    "endsAt": "Kończy się o ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Nie mogłem dotrzeć do serwera Plex dla tego linku.",
     "notFound": "Nie mogłem znaleźć tego pokazu lub filmu na serwerach Plex.",
@@ -3740,5 +3741,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

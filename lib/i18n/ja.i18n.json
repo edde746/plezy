@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "デバイスに押し付ける",
-    "searching": "キャストデバイスを探す...",
-    "connectedTo": "接続番号: ${device}",
-    "device": "キャストデバイス",
-    "readyToCast": "投げる準備",
-    "subtitle": "字幕",
-    "serverNotAvailable": "メディアサーバーは利用できません。",
-    "stopCasting": "キャストをやめる",
-    "castToDevice": "デバイスにキャスト",
-    "noEpisodeAvailable": "出演可能なエピソードはありません。",
-    "startFailed": "サーバーをチェックして再度試してみる"
-  },
-  "automation": {
-    "noActivePlayback": "コントロールする動画セッションはありません。",
-    "profileNotFound": "その Plezy プロフィールは見つかりませんでした。"
-  },
-  "notifications": {
-    "newEpisodeTitle": "新エピソード",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "アプリアイコン",
     "defaultIcon": "デフォルト",
@@ -200,30 +179,6 @@
     "viewRelease": "リリースを表示",
     "latestVersion": "最新バージョンです",
     "checkFailed": "アップデートの確認に失敗しました"
-  },
-  "appAccess": {
-    "title": "すべての機能を7日間無料で試してみてください。",
-    "description": "PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。",
-    "trialEndedDescription": "あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。",
-    "startTrial": "無料7日間の試験開始",
-    "trialActive": "7日間のフルフィードテストがアクティブです。",
-    "trialEnded": "7日間の試験が終わりました。",
-    "trialStartFailed": "このデバイスで試用を保存できませんでしたので、また試してみてください。",
-    "lifetimeTitle": "PlezyNG 終身無効",
-    "lifetimeBody": "感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。",
-    "manageTitle": "PlezyNG 生涯アクセス",
-    "manageDescription": "7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。",
-    "buy": "すべての機能を解除する ${price}",
-    "loadingPrice": "ストアの価格...",
-    "retryPrice": "返品価格検索",
-    "restore": "生涯購入の復元",
-    "pending": "購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。",
-    "storeUnavailable": "購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。",
-    "productNotFound": "PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。",
-    "productQueryFailed": "ストア価格を負担することはできません. 接続をチェックして再度試してみてください。",
-    "purchaseFailed": "買い物は終わりませんでした!また試してみてください。",
-    "restoreFailed": "買い物を回復するために店に到達できなかったので、また試してみてください。",
-    "nothingToRestore": "購入番号 PlezyNG は、このストアのアカウントに検索されました。"
   },
   "settings": {
     "title": "設定",
@@ -1077,10 +1032,6 @@
     "track": "音声トラック${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} フレーム",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} フレーム"
-    },
     "audioLabel": "音声",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount}${unit}",
@@ -1117,8 +1068,6 @@
     "unmuteButton": "ミュート解除",
     "settingsButton": "再生設定",
     "tracksButton": "音声と字幕",
-    "trackSelectionTitle": "プレイバック前にトラックを選択する",
-    "trackSelectionAuto": "自動選択",
     "chaptersButton": "チャプター",
     "versionQualityButton": "バージョンと画質",
     "versionColumnHeader": "バージョン",
@@ -1128,8 +1077,6 @@
     "transcodeUnavailableFallback": "トランスコードは利用できません — オリジナル画質で再生中",
     "subtitleUnavailableFallback": "選択した字幕を読み込めませんでした — 字幕なしで再生を続けます",
     "pipButton": "ピクチャーインピクチャーモード",
-    "openMiniPlayer": "オープンミニプレーヤー",
-    "returnToFullPlayer": "完全プレイヤーに戻る",
     "aspectRatioButton": "アスペクト比",
     "ambientLighting": "アンビエントライティング",
     "fullscreenButton": "フルスクリーンに入る",
@@ -1138,7 +1085,6 @@
     "rotationLockButton": "回転ロック",
     "lockScreen": "画面をロック",
     "screenLockButton": "画面ロック",
-    "longPressToUnlock": "長押しでロック解除",
     "timelineSlider": "動画タイムライン",
     "volumeSlider": "音量レベル",
     "endsAt": "${time}に終了",
@@ -1164,8 +1110,6 @@
     "noQueueItems": "キューにアイテムがありません",
     "noAudioDevicesAvailable": "オーディオデバイスがありません",
     "searchSubtitles": "字幕を検索",
-    "loadSubtitleFile": "サブタイトルファイルをダウンロード",
-    "subtitleLoadFailed": "サブタイトルファイルをダウンロードできなかった",
     "language": "言語",
     "noSubtitlesFound": "字幕が見つかりません",
     "subtitleDownloaded": "字幕をダウンロードしました",
@@ -1174,14 +1118,26 @@
     "searchLanguages": "言語を検索…",
     "skipIntro": "イントロをスキップ",
     "skipCredits": "クレジットをスキップ",
-    "skipAds": "スキー広告",
     "nextEpisode": "次のエピソード",
     "subtitleTrack": "トラック${n}",
     "subtitleFile": "字幕${name}",
     "forcedTrack": "${label}（強制）",
     "osdSubtitlesOff": "字幕: オフ",
     "osdSubtitles": "字幕: ${track}",
-    "osdAudio": "音声: ${track}"
+    "osdAudio": "音声: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} フレーム",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} フレーム"
+    },
+    "trackSelectionTitle": "プレイバック前にトラックを選択する",
+    "trackSelectionAuto": "自動選択",
+    "openMiniPlayer": "オープンミニプレーヤー",
+    "returnToFullPlayer": "完全プレイヤーに戻る",
+    "loadSubtitleFile": "サブタイトルファイルをダウンロード",
+    "subtitleLoadFailed": "サブタイトルファイルをダウンロードできなかった",
+    "skipAds": "スキー広告",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1792,9 +1748,6 @@
     "saveLogs": "ファイルへのログを保存",
     "logsSaved": "ログを保存する ${path}",
     "saveLogsFailed": "ログファイルを保存できませんでした。"
-  },
-  "detail": {
-    "endsAt": "${time}に終了"
   },
   "startup": {
     "failedTitle": "Plezyを起動できませんでした",
@@ -3068,6 +3021,54 @@
     "allowHttp": "HTTPを許可",
     "httpsRequired": "HTTPS を使用するか、暗号化されていない接続を明示的に許可するか。"
   },
+  "cast": {
+    "chooseDevice": "デバイスに押し付ける",
+    "searching": "キャストデバイスを探す...",
+    "connectedTo": "接続番号: ${device}",
+    "device": "キャストデバイス",
+    "readyToCast": "投げる準備",
+    "subtitle": "字幕",
+    "serverNotAvailable": "メディアサーバーは利用できません。",
+    "stopCasting": "キャストをやめる",
+    "castToDevice": "デバイスにキャスト",
+    "noEpisodeAvailable": "出演可能なエピソードはありません。",
+    "startFailed": "サーバーをチェックして再度試してみる"
+  },
+  "automation": {
+    "noActivePlayback": "コントロールする動画セッションはありません。",
+    "profileNotFound": "その Plezy プロフィールは見つかりませんでした。"
+  },
+  "notifications": {
+    "newEpisodeTitle": "新エピソード",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "すべての機能を7日間無料で試してみてください。",
+    "description": "PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。",
+    "trialEndedDescription": "あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。",
+    "startTrial": "無料7日間の試験開始",
+    "trialActive": "7日間のフルフィードテストがアクティブです。",
+    "trialEnded": "7日間の試験が終わりました。",
+    "trialStartFailed": "このデバイスで試用を保存できませんでしたので、また試してみてください。",
+    "lifetimeTitle": "PlezyNG 終身無効",
+    "lifetimeBody": "感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。",
+    "manageTitle": "PlezyNG 生涯アクセス",
+    "manageDescription": "7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。",
+    "buy": "すべての機能を解除する ${price}",
+    "loadingPrice": "ストアの価格...",
+    "retryPrice": "返品価格検索",
+    "restore": "生涯購入の復元",
+    "pending": "購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。",
+    "storeUnavailable": "購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。",
+    "productNotFound": "PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。",
+    "productQueryFailed": "ストア価格を負担することはできません. 接続をチェックして再度試してみてください。",
+    "purchaseFailed": "買い物は終わりませんでした!また試してみてください。",
+    "restoreFailed": "買い物を回復するために店に到達できなかったので、また試してみてください。",
+    "nothingToRestore": "購入番号 PlezyNG は、このストアのアカウントに検索されました。"
+  },
+  "detail": {
+    "endsAt": "${time}に終了"
+  },
   "watchLink": {
     "serverUnavailable": "このリンクのために Plex サーバーにアクセスできませんでした。",
     "notFound": "この番組または映画が Plex サーバーで見つかりませんでした。",
@@ -3691,5 +3692,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

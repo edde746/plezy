@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Bir cihazda qurtlar",
-    "searching": "Tadiqlarga xiyimni xiyimlarga...",
-    "connectedTo": "${device} qizga qizga",
-    "device": "Tadiqadi",
-    "readyToCast": "Hazardga bo‘qadi",
-    "subtitle": "Subtitrlar",
-    "serverNotAvailable": "Media server qiziziz.",
-    "stopCasting": "Castingdan qurtum",
-    "castToDevice": "U'zadiya'da qurtlar",
-    "noEpisodeAvailable": "U'zadi'ni qaytadi yok.",
-    "startFailed": "U'zizga qurtlar. serveri kontroldan qurtlar, qaytarga qurtlam."
-  },
-  "automation": {
-    "noActivePlayback": "Video aktivni sessiya ko‘zadi.",
-    "profileNotFound": "Bu Plezy profili qothathathathatdi."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Yeni epizod",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Ilova belgisi",
     "defaultIcon": "Standart",
@@ -200,30 +179,6 @@
     "viewRelease": "Tafsilotlarni koʻrish",
     "latestVersion": "Sizda eng soʻnggi versiya oʻrnatilgan",
     "checkFailed": "Yangilanishlarni tekshirish imkoni boʻlmadi"
-  },
-  "appAccess": {
-    "title": "7 günni bütün aktiviyatlardan özgürni qaytdan.",
-    "description": "PlezyNG’ning barcha funksiyalaridan yetti kun bepul foydalanib ko‘ring. Sinov davrida to‘lov olinmaydi va obuna talab qilinmaydi. Sinovdan so‘ng do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’dan cheksiz foydalanishingiz mumkin.",
-    "trialEndedDescription": "Do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’ning barcha funksiyalarini umrbod oching. Obuna talab qilinmaydi.",
-    "startTrial": "7 day free proving sizga qaytadi.",
-    "trialActive": "7 day full-feature proving siz aktivir.",
-    "trialEnded": "7 kunlik sinov muddati tugadi",
-    "trialStartFailed": "Bu cihazda testini salmaydi. lütfen qaytarga.",
-    "lifetimeTitle": "PlezyNG hayri boʻlu boʻlu",
-    "lifetimeBody": "Rahmat! PlezyNG’ning barcha funksiyalaridan umrbod foydalanishingiz mumkin.",
-    "manageTitle": "PlezyNG lifetime qasizga",
-    "manageDescription": "7 gün bu bütün funksiyalardan free-to-free, sonra sizga mağazadan bir payga o‘zayda o‘ziyada o‘zib.",
-    "buy": "Barcha funksiyalarni ${price} evaziga ochish",
-    "loadingPrice": "Buqqqqga market market...",
-    "retryPrice": "Reddit bilan bakup",
-    "restore": "Hayat bilan buyuj",
-    "pending": "Siz qaplan o‘ziz o‘zib o‘zig o‘ziga o‘zige o‘zigi o‘zaga o‘zaya o‘zay o‘ziy o‘ziye o‘ziyan o‘zayn o‘zinc o‘zyan o‘zayan o‘zac o‘zinin o‘ziyar o‘zqan o‘zari o‘zani o‘zaman o‘zadan o‘zagan o‘zanc o‘z.",
-    "storeUnavailable": "Siz bu mağazada abonlikliklik oluyiz. siz bu mağazadan abonliklik olayiz.",
-    "productNotFound": "PlezyNG lifetime unlock bu mağazada yet o‘zayda olmaygan.",
-    "productQueryFailed": "Do‘kondagi narxni yuklab bo‘lmadi. Ulanishingizni tekshirib, qayta urinib ko‘ring.",
-    "purchaseFailed": "Bu qotomiyadi ko‘zadi. qaytarga ko‘z.",
-    "restoreFailed": "Sizga buyni qaytarga qotʻyadi. qaytarga qaytarga.",
-    "nothingToRestore": "No PlezyNG lifetime buy bu mağazalar hesab için bulgan."
   },
   "settings": {
     "title": "Sozlamalar",
@@ -1079,10 +1034,6 @@
     "track": "Audio yoʻlak ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} qiziziziz",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} qiziziziz"
-    },
     "audioLabel": "Ovoz",
     "subtitlesLabel": "Subtitr",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Ovozni yoqish",
     "settingsButton": "Ijro sozlamalari",
     "tracksButton": "Ovoz va subtitrlar",
-    "trackSelectionTitle": "Playback'dan əvvəl birimimiz.",
-    "trackSelectionAuto": "Automatizasyon",
     "chaptersButton": "Boʻlimlar",
     "versionQualityButton": "Versiya va sifat",
     "versionColumnHeader": "Versiya",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Qayta kodlash mavjud emas — asl sifatda ijro etiladi",
     "subtitleUnavailableFallback": "Tanlangan subtitr yuklanmadi",
     "pipButton": "Rasm ichida rasm rejimi",
-    "openMiniPlayer": "Mini oyunlar",
-    "returnToFullPlayer": "Full gamerga qaytadi.",
     "aspectRatioButton": "Tomonlar nisbati",
     "ambientLighting": "Atrof-muhit yoritilishi",
     "fullscreenButton": "Toʻliq ekranga oʻtish",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Aylanish qulfi",
     "lockScreen": "Ekranni qulflash",
     "screenLockButton": "Ekran qulfi",
-    "longPressToUnlock": "Qulfdan chiqarish uchun bosib turing",
     "timelineSlider": "Video vaqt shkalasi",
     "volumeSlider": "Ovoz balandligi",
     "endsAt": "Tugash vaqti: ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Navbatda elementlar yoʻq",
     "noAudioDevicesAvailable": "Mavjud audio qurilmalar yoʻq",
     "searchSubtitles": "Subtitr qidirish",
-    "loadSubtitleFile": "Subtitle fildi qaytadi.",
-    "subtitleLoadFailed": "Subtitle file‘i qaytadi.",
     "language": "Til",
     "noSubtitlesFound": "Subtitr topilmadi",
     "subtitleDownloaded": "Subtitr yuklab olindi",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Tillardan qidirish...",
     "skipIntro": "Kirishni oʻtkazish",
     "skipCredits": "Titrlardan oʻtish",
-    "skipAds": "Ads koʻyadi",
     "nextEpisode": "Keyingi qism",
     "subtitleTrack": "Yoʻlak ${n}",
     "subtitleFile": "Subtitr ${name}",
     "forcedTrack": "${label} (Majburiy)",
     "osdSubtitlesOff": "Subtitr: Oʻchirilgan",
     "osdSubtitles": "Subtitr: ${track}",
-    "osdAudio": "Ovoz: ${track}"
+    "osdAudio": "Ovoz: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} qiziziziz",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} qiziziziz"
+    },
+    "trackSelectionTitle": "Playback'dan əvvəl birimimiz.",
+    "trackSelectionAuto": "Automatizasyon",
+    "openMiniPlayer": "Mini oyunlar",
+    "returnToFullPlayer": "Full gamerga qaytadi.",
+    "loadSubtitleFile": "Subtitle fildi qaytadi.",
+    "subtitleLoadFailed": "Subtitle file‘i qaytadi.",
+    "skipAds": "Ads koʻyadi",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Jurnallarni faylga saqlash",
     "logsSaved": "Hesizlar kaygan ${path}",
     "saveLogsFailed": "Bu log file'i salmaydi."
-  },
-  "detail": {
-    "endsAt": "Tugash vaqti: ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG ishga tusha olmadi",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP ulanishiga ruxsat berish",
     "httpsRequired": "HTTPS ya qizizga qizga qifififiyizga qihga qifida qifida."
   },
+  "cast": {
+    "chooseDevice": "Bir cihazda qurtlar",
+    "searching": "Tadiqlarga xiyimni xiyimlarga...",
+    "connectedTo": "${device} qizga qizga",
+    "device": "Tadiqadi",
+    "readyToCast": "Hazardga bo‘qadi",
+    "subtitle": "Subtitrlar",
+    "serverNotAvailable": "Media server qiziziz.",
+    "stopCasting": "Castingdan qurtum",
+    "castToDevice": "U'zadiya'da qurtlar",
+    "noEpisodeAvailable": "U'zadi'ni qaytadi yok.",
+    "startFailed": "U'zizga qurtlar. serveri kontroldan qurtlar, qaytarga qurtlam."
+  },
+  "automation": {
+    "noActivePlayback": "Video aktivni sessiya ko‘zadi.",
+    "profileNotFound": "Bu Plezy profili qothathathathatdi."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Yeni epizod",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "7 günni bütün aktiviyatlardan özgürni qaytdan.",
+    "description": "PlezyNG’ning barcha funksiyalaridan yetti kun bepul foydalanib ko‘ring. Sinov davrida to‘lov olinmaydi va obuna talab qilinmaydi. Sinovdan so‘ng do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’dan cheksiz foydalanishingiz mumkin.",
+    "trialEndedDescription": "Do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’ning barcha funksiyalarini umrbod oching. Obuna talab qilinmaydi.",
+    "startTrial": "7 day free proving sizga qaytadi.",
+    "trialActive": "7 day full-feature proving siz aktivir.",
+    "trialEnded": "7 kunlik sinov muddati tugadi",
+    "trialStartFailed": "Bu cihazda testini salmaydi. lütfen qaytarga.",
+    "lifetimeTitle": "PlezyNG hayri boʻlu boʻlu",
+    "lifetimeBody": "Rahmat! PlezyNG’ning barcha funksiyalaridan umrbod foydalanishingiz mumkin.",
+    "manageTitle": "PlezyNG lifetime qasizga",
+    "manageDescription": "7 gün bu bütün funksiyalardan free-to-free, sonra sizga mağazadan bir payga o‘zayda o‘ziyada o‘zib.",
+    "buy": "Barcha funksiyalarni ${price} evaziga ochish",
+    "loadingPrice": "Buqqqqga market market...",
+    "retryPrice": "Reddit bilan bakup",
+    "restore": "Hayat bilan buyuj",
+    "pending": "Siz qaplan o‘ziz o‘zib o‘zig o‘ziga o‘zige o‘zigi o‘zaga o‘zaya o‘zay o‘ziy o‘ziye o‘ziyan o‘zayn o‘zinc o‘zyan o‘zayan o‘zac o‘zinin o‘ziyar o‘zqan o‘zari o‘zani o‘zaman o‘zadan o‘zagan o‘zanc o‘z.",
+    "storeUnavailable": "Siz bu mağazada abonlikliklik oluyiz. siz bu mağazadan abonliklik olayiz.",
+    "productNotFound": "PlezyNG lifetime unlock bu mağazada yet o‘zayda olmaygan.",
+    "productQueryFailed": "Do‘kondagi narxni yuklab bo‘lmadi. Ulanishingizni tekshirib, qayta urinib ko‘ring.",
+    "purchaseFailed": "Bu qotomiyadi ko‘zadi. qaytarga ko‘z.",
+    "restoreFailed": "Sizga buyni qaytarga qotʻyadi. qaytarga qaytarga.",
+    "nothingToRestore": "No PlezyNG lifetime buy bu mağazalar hesab için bulgan."
+  },
+  "detail": {
+    "endsAt": "Tugash vaqti: ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Bu link için bir server Plex qothathathathatdi.",
     "notFound": "Bu serial yoki film Plex serverlaringizda topilmadi.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

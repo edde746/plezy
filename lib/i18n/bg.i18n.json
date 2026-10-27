@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Свържете се с устройство",
-    "searching": "Търсене на кастилни устройства...",
-    "connectedTo": "Включен в ${device}",
-    "device": "Кастиране на устройството",
-    "readyToCast": "Готови за кацане",
-    "subtitle": "Субтитри",
-    "serverNotAvailable": "Медийният сървър не е достъпен.",
-    "stopCasting": "Престанете да кастрирате",
-    "castToDevice": "Касти към устройството",
-    "noEpisodeAvailable": "Няма епизода, който да бъде пуснат.",
-    "startFailed": "Не може да започне кастинг. проверете сървъра и опитайте отново."
-  },
-  "automation": {
-    "noActivePlayback": "Няма активна видео сесия за контрол.",
-    "profileNotFound": "Този профил Plezy не може да бъде намерен."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Нов епизод",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Икона на приложението",
     "defaultIcon": "По подразбиране",
@@ -200,30 +179,6 @@
     "viewRelease": "Виж версията",
     "latestVersion": "Използвате най-новата версия",
     "checkFailed": "Неуспешна проверка за актуализации"
-  },
-  "appAccess": {
-    "title": "Опитайте безплатно за 7 дни",
-    "description": "Започнете седемдневна проба с пълен достъп до всяка функция PlezyNG. няма такса по време на пробата и няма абонамент. След пробата, една покупка за цял живот на цената на магазина ви отключва PlezyNG за цял ден.",
-    "trialEndedDescription": "Отключете всяка функция в PlezyNG за живот с една покупка по цена на вашия магазин.",
-    "startTrial": "Започнете моето 7-дневно безплатно изпитване",
-    "trialActive": "7-дневният си пълен тест е активен.",
-    "trialEnded": "7-дневният ви преглед приключи",
-    "trialStartFailed": "Не мога да спестя изпитанието на това устройство. моля, опитайте отново.",
-    "lifetimeTitle": "PlezyNG отключено за цял живот",
-    "lifetimeBody": "Благодарение на вас имате достъп до всяка функция от PlezyNG.",
-    "manageTitle": "PlezyNG Достъп до живота",
-    "manageDescription": "Опитайте всяка функция безплатно за 7 дни, след което отключете всичко за живота с едно плащане на цената на вашия магазин.",
-    "buy": "Отключване на всяка функция за ${price}",
-    "loadingPrice": "Цената на магазина ...",
-    "retryPrice": "Цената на търсене на връщане",
-    "restore": "Възстановяване на покупката за цял живот",
-    "pending": "Вашата покупка е в очакване на плащане или одобрение. Lifetime достъпът се отключва веднага щом магазинът го завърши.",
-    "storeUnavailable": "Проверете, че сте регистрирани в магазина и закупуването е позволено на това устройство.",
-    "productNotFound": "PlezyNG заживотен отключване все още не е наличен в този магазин.",
-    "productQueryFailed": "Не може да се наложи цената на магазина. проверете връзката си и опитайте отново.",
-    "purchaseFailed": "Купуването не мина, опитайте отново.",
-    "restoreFailed": "Не може да стигне до магазина, за да възстановите покупката си. опитайте отново.",
-    "nothingToRestore": "No PlezyNG за цял живот покупка е намерена за този магазин сметка."
   },
   "settings": {
     "title": "Настройки",
@@ -1079,10 +1034,6 @@
     "track": "Аудиопътечка ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} рамка",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} рамки"
-    },
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитри",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Включи звука",
     "settingsButton": "Настройки на възпроизвеждането",
     "tracksButton": "Аудио и субтитри",
-    "trackSelectionTitle": "Изберете тракери преди игра",
-    "trackSelectionAuto": "Автоматичен избор",
     "chaptersButton": "Глави",
     "versionQualityButton": "Версия и качество",
     "versionColumnHeader": "Версия",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Транскодирането не е налично — пуска се оригиналното качество",
     "subtitleUnavailableFallback": "Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри",
     "pipButton": "Режим картина в картината",
-    "openMiniPlayer": "Отворени мини играчи",
-    "returnToFullPlayer": "Завръщане на пълен играч",
     "aspectRatioButton": "Съотношение на страните",
     "ambientLighting": "Амбиентно осветление",
     "fullscreenButton": "Влез на цял екран",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Заключване на завъртането",
     "lockScreen": "Заключи екрана",
     "screenLockButton": "Заключване на екрана",
-    "longPressToUnlock": "Задръж продължително за отключване",
     "timelineSlider": "Видео времева линия",
     "volumeSlider": "Ниво на звука",
     "endsAt": "Свършва в ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Няма елементи в опашката",
     "noAudioDevicesAvailable": "Няма налични аудио устройства",
     "searchSubtitles": "Търсене на субтитри",
-    "loadSubtitleFile": "Изтеглете подзаглавието на файла.",
-    "subtitleLoadFailed": "Не успя да изтеглите файл подзаглавие",
     "language": "Език",
     "noSubtitlesFound": "Не са намерени субтитри",
     "subtitleDownloaded": "Субтитърът е изтеглен",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Търсене на езици...",
     "skipIntro": "Пропусни интрото",
     "skipCredits": "Пропусни надписите",
-    "skipAds": "Скип реклами",
     "nextEpisode": "Следващ епизод",
     "subtitleTrack": "Пътечка ${n}",
     "subtitleFile": "Субтитри ${name}",
     "forcedTrack": "${label} (Принудителни)",
     "osdSubtitlesOff": "Субтитри: изкл.",
     "osdSubtitles": "Субтитри: ${track}",
-    "osdAudio": "Аудио: ${track}"
+    "osdAudio": "Аудио: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} рамка",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} рамки"
+    },
+    "trackSelectionTitle": "Изберете тракери преди игра",
+    "trackSelectionAuto": "Автоматичен избор",
+    "openMiniPlayer": "Отворени мини играчи",
+    "returnToFullPlayer": "Завръщане на пълен играч",
+    "loadSubtitleFile": "Изтеглете подзаглавието на файла.",
+    "subtitleLoadFailed": "Не успя да изтеглите файл подзаглавие",
+    "skipAds": "Скип реклами",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Съхранявайте записи към файлове",
     "logsSaved": "Регистрация на данни за ${path}",
     "saveLogsFailed": "Не може да се съхранява файла за запис."
-  },
-  "detail": {
-    "endsAt": "Свършва в ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG не можа да стартира",
@@ -3072,6 +3025,54 @@
     "allowHttp": "Разреши HTTP",
     "httpsRequired": "Използвайте HTTPS или изрично разрешавате нешифровано свързване."
   },
+  "cast": {
+    "chooseDevice": "Свържете се с устройство",
+    "searching": "Търсене на кастилни устройства...",
+    "connectedTo": "Включен в ${device}",
+    "device": "Кастиране на устройството",
+    "readyToCast": "Готови за кацане",
+    "subtitle": "Субтитри",
+    "serverNotAvailable": "Медийният сървър не е достъпен.",
+    "stopCasting": "Престанете да кастрирате",
+    "castToDevice": "Касти към устройството",
+    "noEpisodeAvailable": "Няма епизода, който да бъде пуснат.",
+    "startFailed": "Не може да започне кастинг. проверете сървъра и опитайте отново."
+  },
+  "automation": {
+    "noActivePlayback": "Няма активна видео сесия за контрол.",
+    "profileNotFound": "Този профил Plezy не може да бъде намерен."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Нов епизод",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Опитайте безплатно за 7 дни",
+    "description": "Започнете седемдневна проба с пълен достъп до всяка функция PlezyNG. няма такса по време на пробата и няма абонамент. След пробата, една покупка за цял живот на цената на магазина ви отключва PlezyNG за цял ден.",
+    "trialEndedDescription": "Отключете всяка функция в PlezyNG за живот с една покупка по цена на вашия магазин.",
+    "startTrial": "Започнете моето 7-дневно безплатно изпитване",
+    "trialActive": "7-дневният си пълен тест е активен.",
+    "trialEnded": "7-дневният ви преглед приключи",
+    "trialStartFailed": "Не мога да спестя изпитанието на това устройство. моля, опитайте отново.",
+    "lifetimeTitle": "PlezyNG отключено за цял живот",
+    "lifetimeBody": "Благодарение на вас имате достъп до всяка функция от PlezyNG.",
+    "manageTitle": "PlezyNG Достъп до живота",
+    "manageDescription": "Опитайте всяка функция безплатно за 7 дни, след което отключете всичко за живота с едно плащане на цената на вашия магазин.",
+    "buy": "Отключване на всяка функция за ${price}",
+    "loadingPrice": "Цената на магазина ...",
+    "retryPrice": "Цената на търсене на връщане",
+    "restore": "Възстановяване на покупката за цял живот",
+    "pending": "Вашата покупка е в очакване на плащане или одобрение. Lifetime достъпът се отключва веднага щом магазинът го завърши.",
+    "storeUnavailable": "Проверете, че сте регистрирани в магазина и закупуването е позволено на това устройство.",
+    "productNotFound": "PlezyNG заживотен отключване все още не е наличен в този магазин.",
+    "productQueryFailed": "Не може да се наложи цената на магазина. проверете връзката си и опитайте отново.",
+    "purchaseFailed": "Купуването не мина, опитайте отново.",
+    "restoreFailed": "Не може да стигне до магазина, за да възстановите покупката си. опитайте отново.",
+    "nothingToRestore": "No PlezyNG за цял живот покупка е намерена за този магазин сметка."
+  },
+  "detail": {
+    "endsAt": "Свършва в ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Не може да се получи достъп до сървър Plex за този линк.",
     "notFound": "Не може да се намери това шоу или филм на вашите сървъри Plex.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

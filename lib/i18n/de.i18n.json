@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Kasten auf ein Gerät",
-    "searching": "Suche nach Kastengeräten...",
-    "connectedTo": "Anschluss an ${device}",
-    "device": "Cast Gerät",
-    "readyToCast": "Bereit zum Ausführen",
-    "subtitle": "Untertitel",
-    "serverNotAvailable": "Der Media-Server ist nicht verfügbar.",
-    "stopCasting": "Stoppen Sie Casting",
-    "castToDevice": "Kasten auf Gerät",
-    "noEpisodeAvailable": "Es gibt keine Episoden zur Verfügung, um zu zählen.",
-    "startFailed": "Kann nicht starten, die Kasten. prüfen Sie den Server und versuchen Sie es wieder."
-  },
-  "automation": {
-    "noActivePlayback": "Es gibt keine aktive Video-Sitzung zu kontrollieren.",
-    "profileNotFound": "Das Plezy Profil konnte nicht gefunden werden."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Neue Episode",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "App-Symbol",
     "defaultIcon": "Standard",
@@ -200,30 +179,6 @@
     "viewRelease": "Versionshinweise anzeigen",
     "latestVersion": "Aktuellste Version installiert",
     "checkFailed": "Fehler bei der Updateprüfung"
-  },
-  "appAccess": {
-    "title": "Versuchen Sie alle Funktionen für 7 Tage kostenlos",
-    "description": "Beginnen Sie eine sieben Tage lang mit vollem Zugang zu jeder PlezyNG Funktion. Es gibt keine Gebühr während der Prüfung und keine Abonnement. Nach der Prüffel, ein Lebensdauer Kauf zu Ihrem Geschäft Preis enthüllt PlezyNG für das Leben.",
-    "trialEndedDescription": "Entfernen Sie jede Funktion in PlezyNG für das Leben mit einem Kauf zum Preis Ihres Geschäcks.",
-    "startTrial": "Start mein 7-tägiges kostenloses Prüfung",
-    "trialActive": "Ihr 7-Tage-Full-Feature-Test ist aktiv.",
-    "trialEnded": "Ihr 7-Tage-Test ist abgeschlossen",
-    "trialStartFailed": "Ich konnte das Test auf diesem Gerät nicht speichern. versuchen Sie bitte erneut.",
-    "lifetimeTitle": "PlezyNG Unlocked für das Leben",
-    "lifetimeBody": "Dank! Sie haben den lebenslangen Zugriff auf jede PlezyNG Funktion.",
-    "manageTitle": "PlezyNG Lebensdauer Zugang",
-    "manageDescription": "Versuchen Sie jede Funktion für 7 Tage kostenlos, dann alles für das Leben mit einem einzigen Zahlung zu Ihrem Geschäft Preis entschließen.",
-    "buy": "Entfernen Sie alle Funktionen für ${price}",
-    "loadingPrice": "Die Ladung im Shoppreis...",
-    "retryPrice": "Rückkehr Preis Lookup",
-    "restore": "Lebensdauer Kauf wiederherstellen",
-    "pending": "Ihr Kauf wartet auf Zahlung oder Genehmigung. Lifetime-Zugang wird abgeschlossen, sobald der Shop es abgeschlossen hat.",
-    "storeUnavailable": "Überprüfen Sie, dass Sie im Laden eingeloggt sind und die Einkaufsmöglichkeiten auf diesem Gerät erlaubt sind.",
-    "productNotFound": "Die PlezyNG Lebensdauer-Unlock ist noch nicht in diesem Shop erhältlich.",
-    "productQueryFailed": "Kann den Shoppreis nicht laden. Überprüfen Sie Ihre Verbindung und versuchen Sie es wieder.",
-    "purchaseFailed": "Der Kauf ist nicht durchgeführt worden. versuchen Sie erneut.",
-    "restoreFailed": "Ich konnte nicht zum Shop kommen, um Ihren Kauf wiederherzustellen. versuchen Sie erneut.",
-    "nothingToRestore": "No. PlezyNG Lebensdauer Kauf wurde für diesen Store-Konto gefunden."
   },
   "settings": {
     "title": "Einstellungen",
@@ -1079,10 +1034,6 @@
     "track": "Audiospur ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame"
-    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Untertitel",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Stummschaltung aufheben",
     "settingsButton": "Wiedergabeeinstellungen",
     "tracksButton": "Audio und Untertitel",
-    "trackSelectionTitle": "Track vor Playback auswählen",
-    "trackSelectionAuto": "Automatische Auswahl",
     "chaptersButton": "Kapitel",
     "versionQualityButton": "Version & Qualität",
     "versionColumnHeader": "Version",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transkodierung nicht verfügbar – Wiedergabe in Originalqualität",
     "subtitleUnavailableFallback": "Die ausgewählten Untertitel konnten nicht geladen werden – die Wiedergabe wird ohne Untertitel fortgesetzt",
     "pipButton": "Bild-in-Bild-Modus",
-    "openMiniPlayer": "Open Mini-Spieler",
-    "returnToFullPlayer": "Zurück zum Vollspieler",
     "aspectRatioButton": "Seitenverhältnis",
     "ambientLighting": "Umgebungsbeleuchtung",
     "fullscreenButton": "Vollbild aktivieren",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Drehsperre",
     "lockScreen": "Bildschirm sperren",
     "screenLockButton": "Bildschirmsperre",
-    "longPressToUnlock": "Lange drücken zum Entsperren",
     "timelineSlider": "Videozeitleiste",
     "volumeSlider": "Lautstärkepegel",
     "endsAt": "Endet um ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Keine Elemente in der Warteschlange",
     "noAudioDevicesAvailable": "Keine Audiogeräte verfügbar",
     "searchSubtitles": "Untertitel suchen",
-    "loadSubtitleFile": "Download Subtitle Datei ...",
-    "subtitleLoadFailed": "Laden Sie nicht die Subtitle-Datei",
     "language": "Sprache",
     "noSubtitlesFound": "Keine Untertitel gefunden",
     "subtitleDownloaded": "Untertitel heruntergeladen",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Sprachen suchen...",
     "skipIntro": "Intro überspringen",
     "skipCredits": "Abspann überspringen",
-    "skipAds": "Werbung überspringen",
     "nextEpisode": "Nächste Episode",
     "subtitleTrack": "Spur ${n}",
     "subtitleFile": "Untertitel ${name}",
     "forcedTrack": "${label} (Erzwungen)",
     "osdSubtitlesOff": "Untertitel: Aus",
     "osdSubtitles": "Untertitel: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Frame"
+    },
+    "trackSelectionTitle": "Track vor Playback auswählen",
+    "trackSelectionAuto": "Automatische Auswahl",
+    "openMiniPlayer": "Open Mini-Spieler",
+    "returnToFullPlayer": "Zurück zum Vollspieler",
+    "loadSubtitleFile": "Download Subtitle Datei ...",
+    "subtitleLoadFailed": "Laden Sie nicht die Subtitle-Datei",
+    "skipAds": "Werbung überspringen",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Speichern Sie Logs auf Dateien",
     "logsSaved": "Logs gespeichert auf ${path}",
     "saveLogsFailed": "Ich konnte die Log-Datei nicht speichern."
-  },
-  "detail": {
-    "endsAt": "Endet um ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG konnte nicht gestartet werden",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP erlauben",
     "httpsRequired": "Verwenden Sie HTTPS oder erlauben Sie ausdrücklich eine unschlüsselte Verbindung."
   },
+  "cast": {
+    "chooseDevice": "Kasten auf ein Gerät",
+    "searching": "Suche nach Kastengeräten...",
+    "connectedTo": "Anschluss an ${device}",
+    "device": "Cast Gerät",
+    "readyToCast": "Bereit zum Ausführen",
+    "subtitle": "Untertitel",
+    "serverNotAvailable": "Der Media-Server ist nicht verfügbar.",
+    "stopCasting": "Stoppen Sie Casting",
+    "castToDevice": "Kasten auf Gerät",
+    "noEpisodeAvailable": "Es gibt keine Episoden zur Verfügung, um zu zählen.",
+    "startFailed": "Kann nicht starten, die Kasten. prüfen Sie den Server und versuchen Sie es wieder."
+  },
+  "automation": {
+    "noActivePlayback": "Es gibt keine aktive Video-Sitzung zu kontrollieren.",
+    "profileNotFound": "Das Plezy Profil konnte nicht gefunden werden."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Neue Episode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Versuchen Sie alle Funktionen für 7 Tage kostenlos",
+    "description": "Beginnen Sie eine sieben Tage lang mit vollem Zugang zu jeder PlezyNG Funktion. Es gibt keine Gebühr während der Prüfung und keine Abonnement. Nach der Prüffel, ein Lebensdauer Kauf zu Ihrem Geschäft Preis enthüllt PlezyNG für das Leben.",
+    "trialEndedDescription": "Entfernen Sie jede Funktion in PlezyNG für das Leben mit einem Kauf zum Preis Ihres Geschäcks.",
+    "startTrial": "Start mein 7-tägiges kostenloses Prüfung",
+    "trialActive": "Ihr 7-Tage-Full-Feature-Test ist aktiv.",
+    "trialEnded": "Ihr 7-Tage-Test ist abgeschlossen",
+    "trialStartFailed": "Ich konnte das Test auf diesem Gerät nicht speichern. versuchen Sie bitte erneut.",
+    "lifetimeTitle": "PlezyNG Unlocked für das Leben",
+    "lifetimeBody": "Dank! Sie haben den lebenslangen Zugriff auf jede PlezyNG Funktion.",
+    "manageTitle": "PlezyNG Lebensdauer Zugang",
+    "manageDescription": "Versuchen Sie jede Funktion für 7 Tage kostenlos, dann alles für das Leben mit einem einzigen Zahlung zu Ihrem Geschäft Preis entschließen.",
+    "buy": "Entfernen Sie alle Funktionen für ${price}",
+    "loadingPrice": "Die Ladung im Shoppreis...",
+    "retryPrice": "Rückkehr Preis Lookup",
+    "restore": "Lebensdauer Kauf wiederherstellen",
+    "pending": "Ihr Kauf wartet auf Zahlung oder Genehmigung. Lifetime-Zugang wird abgeschlossen, sobald der Shop es abgeschlossen hat.",
+    "storeUnavailable": "Überprüfen Sie, dass Sie im Laden eingeloggt sind und die Einkaufsmöglichkeiten auf diesem Gerät erlaubt sind.",
+    "productNotFound": "Die PlezyNG Lebensdauer-Unlock ist noch nicht in diesem Shop erhältlich.",
+    "productQueryFailed": "Kann den Shoppreis nicht laden. Überprüfen Sie Ihre Verbindung und versuchen Sie es wieder.",
+    "purchaseFailed": "Der Kauf ist nicht durchgeführt worden. versuchen Sie erneut.",
+    "restoreFailed": "Ich konnte nicht zum Shop kommen, um Ihren Kauf wiederherzustellen. versuchen Sie erneut.",
+    "nothingToRestore": "No. PlezyNG Lebensdauer Kauf wurde für diesen Store-Konto gefunden."
+  },
+  "detail": {
+    "endsAt": "Endet um ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Ich konnte nicht auf einen Server Plex für diesen Link erreichen.",
     "notFound": "Ich konnte diese Show oder Film nicht auf Ihren Server Plex finden.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

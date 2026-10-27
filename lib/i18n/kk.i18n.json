@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Ауыз ішінен",
-    "searching": "Қазіргі таңда қабырғалар үшін...",
-    "connectedTo": "Қаланың тұрақты тұрғындарының саны ${device}",
-    "device": "Ауызды",
-    "readyToCast": "Қатысуға арналған",
-    "subtitle": "Субтитрлер",
-    "serverNotAvailable": "Медыя сервері не қосқан.",
-    "stopCasting": "Оданды",
-    "castToDevice": "Ауыздылықтық",
-    "noEpisodeAvailable": "Бұл үшін не ескеп келді.",
-    "startFailed": "Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір"
-  },
-  "automation": {
-    "noActivePlayback": "Ауызды видео сессиясы бар.",
-    "profileNotFound": "Бұл Plezy профильде қарағанда ол не қарағанда."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Епізод",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Қолданба белгішесі",
     "defaultIcon": "Әдепкі",
@@ -200,30 +179,6 @@
     "viewRelease": "Релизді көру",
     "latestVersion": "Сізде ең соңғы нұсқа орнатылған",
     "checkFailed": "Жаңартуларды тексеру мүмкін болмады"
-  },
-  "appAccess": {
-    "title": "7 күннен кейін бір-бірінен ұзақтығы",
-    "description": "PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.",
-    "trialEndedDescription": "Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.",
-    "startTrial": "7 жылдан кейінгі ұзақ уақытқа дейін",
-    "trialActive": "7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.",
-    "trialEnded": "7 жылдан кейінгі қазір қарап отыр.",
-    "trialStartFailed": "Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.",
-    "lifetimeTitle": "PlezyNG-ге өмірлік қолжетімділік ашылды",
-    "lifetimeBody": "Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.",
-    "manageTitle": "PlezyNG жылдық қабығы",
-    "manageDescription": "Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.",
-    "buy": "Барлық функцияларды ${price} бағасына ашу",
-    "loadingPrice": "Өнімдер мен жарықтық бағасы...",
-    "retryPrice": "Өткен қағазды",
-    "restore": "Өткен келдім келдім",
-    "pending": "Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.",
-    "storeUnavailable": "Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.",
-    "productNotFound": "PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.",
-    "productQueryFailed": "Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.",
-    "purchaseFailed": "Қаншама жылы қазір, қайтып келді.",
-    "restoreFailed": "Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.",
-    "nothingToRestore": "Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды."
   },
   "settings": {
     "title": "Баптаулар",
@@ -1079,10 +1034,6 @@
     "track": "Аудиожол ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадр",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} қақтар"
-    },
     "audioLabel": "Дыбыс",
     "subtitlesLabel": "Субтитр",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Дыбысты қосу",
     "settingsButton": "Ойнату баптаулары",
     "tracksButton": "Дыбыс және субтитрлер",
-    "trackSelectionTitle": "Жарықтың да көптеген жылдар бойы жарықтың",
-    "trackSelectionAuto": "Автоматдық селекциясы",
     "chaptersButton": "Бөлімдер",
     "versionQualityButton": "Нұсқа және сапа",
     "versionColumnHeader": "Нұсқа",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Түрлендіру қолжетімсіз — түпнұсқа сапада ойнатылады",
     "subtitleUnavailableFallback": "Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады",
     "pipButton": "Суреттегі сурет режимі",
-    "openMiniPlayer": "Өткен Mini Player",
-    "returnToFullPlayer": "Ауыз іші шырышты қабығы",
     "aspectRatioButton": "Тараптар қатынасы",
     "ambientLighting": "Фондық жарықтандыру",
     "fullscreenButton": "Толық экранға өту",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Бұрылыс бұғаттауы",
     "lockScreen": "Экранды бұғаттау",
     "screenLockButton": "Экран бұғаттауы",
-    "longPressToUnlock": "Бұғаттаудан шығару үшін ұзақ басыңыз",
     "timelineSlider": "Видео уақыт шкаласы",
     "volumeSlider": "Дыбыс деңгейі",
     "endsAt": "Аяқталу уақыты: ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Кезекте элементтер жоқ",
     "noAudioDevicesAvailable": "Қолжетімді аудио құрылғылар жоқ",
     "searchSubtitles": "Субтитр іздеу",
-    "loadSubtitleFile": "Басқа да салыстырды,",
-    "subtitleLoadFailed": "Басқа да салыстырдан да салыстатын",
     "language": "Тіл",
     "noSubtitlesFound": "Субтитр табылмады",
     "subtitleDownloaded": "Субтитр жүктелді",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Тілдерден іздеу...",
     "skipIntro": "Кіріспені өткізу",
     "skipCredits": "Титрлерді өткізу",
-    "skipAds": "Ауызды",
     "nextEpisode": "Келесі бөлім",
     "subtitleTrack": "Жол ${n}",
     "subtitleFile": "Субтитр ${name}",
     "forcedTrack": "${label} (Мәжбүрлі)",
     "osdSubtitlesOff": "Субтитр: өшірулі",
     "osdSubtitles": "Субтитр: ${track}",
-    "osdAudio": "Дыбыс: ${track}"
+    "osdAudio": "Дыбыс: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадр",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} қақтар"
+    },
+    "trackSelectionTitle": "Жарықтың да көптеген жылдар бойы жарықтың",
+    "trackSelectionAuto": "Автоматдық селекциясы",
+    "openMiniPlayer": "Өткен Mini Player",
+    "returnToFullPlayer": "Ауыз іші шырышты қабығы",
+    "loadSubtitleFile": "Басқа да салыстырды,",
+    "subtitleLoadFailed": "Басқа да салыстырдан да салыстатын",
+    "skipAds": "Ауызды",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Ауызды да салықты",
     "logsSaved": "Журналдар ${path} жолына сақталды",
     "saveLogsFailed": "Бұл да да салық файлға болады."
-  },
-  "detail": {
-    "endsAt": "Аяқталу уақыты: ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG іске қосылмады",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP-ге рұқсат беру",
     "httpsRequired": "HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз."
   },
+  "cast": {
+    "chooseDevice": "Ауыз ішінен",
+    "searching": "Қазіргі таңда қабырғалар үшін...",
+    "connectedTo": "Қаланың тұрақты тұрғындарының саны ${device}",
+    "device": "Ауызды",
+    "readyToCast": "Қатысуға арналған",
+    "subtitle": "Субтитрлер",
+    "serverNotAvailable": "Медыя сервері не қосқан.",
+    "stopCasting": "Оданды",
+    "castToDevice": "Ауыздылықтық",
+    "noEpisodeAvailable": "Бұл үшін не ескеп келді.",
+    "startFailed": "Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір"
+  },
+  "automation": {
+    "noActivePlayback": "Ауызды видео сессиясы бар.",
+    "profileNotFound": "Бұл Plezy профильде қарағанда ол не қарағанда."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Епізод",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "7 күннен кейін бір-бірінен ұзақтығы",
+    "description": "PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.",
+    "trialEndedDescription": "Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.",
+    "startTrial": "7 жылдан кейінгі ұзақ уақытқа дейін",
+    "trialActive": "7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.",
+    "trialEnded": "7 жылдан кейінгі қазір қарап отыр.",
+    "trialStartFailed": "Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.",
+    "lifetimeTitle": "PlezyNG-ге өмірлік қолжетімділік ашылды",
+    "lifetimeBody": "Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.",
+    "manageTitle": "PlezyNG жылдық қабығы",
+    "manageDescription": "Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.",
+    "buy": "Барлық функцияларды ${price} бағасына ашу",
+    "loadingPrice": "Өнімдер мен жарықтық бағасы...",
+    "retryPrice": "Өткен қағазды",
+    "restore": "Өткен келдім келдім",
+    "pending": "Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.",
+    "storeUnavailable": "Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.",
+    "productNotFound": "PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.",
+    "productQueryFailed": "Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.",
+    "purchaseFailed": "Қаншама жылы қазір, қайтып келді.",
+    "restoreFailed": "Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.",
+    "nothingToRestore": "Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды."
+  },
+  "detail": {
+    "endsAt": "Аяқталу уақыты: ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Бұл қағидалар үшін Plex сервері не айтасыз.",
     "notFound": "Бұл сериал немесе фильм Plex серверлеріңізден табылмады.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

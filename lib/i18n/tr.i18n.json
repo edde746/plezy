@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Bir cihazı vurmak",
-    "searching": "Arama cihazları için...",
-    "connectedTo": "${device} ile bağlantılı",
-    "device": "Cast cihazı",
-    "readyToCast": "Hazırlık atmak",
-    "subtitle": "Altyazılar",
-    "serverNotAvailable": "Medya sunucusu mevcut değildir.",
-    "stopCasting": "Casting durdurma",
-    "castToDevice": "cihazı atmak",
-    "noEpisodeAvailable": "Çekilecek bir bölüm yok.",
-    "startFailed": "Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin."
-  },
-  "automation": {
-    "noActivePlayback": "Kontrol edilecek aktif video oturumu yoktur.",
-    "profileNotFound": "Bu Plezy profili bulunamadı."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Yeni bölüm",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Uygulama simgesi",
     "defaultIcon": "Varsayılan",
@@ -200,30 +179,6 @@
     "viewRelease": "Sürümü Görüntüle",
     "latestVersion": "En son sürümü kullanıyorsunuz",
     "checkFailed": "Güncellemeler kontrol edilemedi"
-  },
-  "appAccess": {
-    "title": "7 gün boyunca her özellik ücretsiz olarak deneyin",
-    "description": "7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG'yi kilitler.",
-    "trialEndedDescription": "Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG'deki her özellik kilitlenir.",
-    "startTrial": "7 günlük ücretsiz sınavı başlatın",
-    "trialActive": "7 günlük tam performans denemesi aktif.",
-    "trialEnded": "7 günlük yargılanma sona erdi",
-    "trialStartFailed": "Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.",
-    "lifetimeTitle": "PlezyNG ömür boyu kilitlenmiş",
-    "lifetimeBody": "Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.",
-    "manageTitle": "PlezyNG Ömür Boyu erişim",
-    "manageDescription": "Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.",
-    "buy": "${price} için her özellik kilitlenir",
-    "loadingPrice": "Satış fiyatı...",
-    "retryPrice": "Retry fiyatı bakış açısı",
-    "restore": "Ömür Boyu Satın Alımı",
-    "pending": "Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.",
-    "storeUnavailable": "Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.",
-    "productNotFound": "PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.",
-    "productQueryFailed": "Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.",
-    "purchaseFailed": "Satın almak için bir şey yapmadım. tekrar deneyin.",
-    "restoreFailed": "Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.",
-    "nothingToRestore": "Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu."
   },
   "settings": {
     "title": "Ayarlar",
@@ -1079,10 +1034,6 @@
     "track": "Ses Parçası ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Çerçeve",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} çerçeve"
-    },
     "audioLabel": "Ses",
     "subtitlesLabel": "Altyazı",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Sesi Aç",
     "settingsButton": "Oynatma Ayarları",
     "tracksButton": "Ses ve Altyazı",
-    "trackSelectionTitle": "Playback Öncesi Sürücü Seçimi",
-    "trackSelectionAuto": "Otomatik Seçim",
     "chaptersButton": "Kısımlar",
     "versionQualityButton": "Sürüm ve Kalite",
     "versionColumnHeader": "Sürüm",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Kod dönüştürme kullanılamıyor — orijinal kalitede oynatılıyor",
     "subtitleUnavailableFallback": "Seçilen altyazı yüklenemedi — altyazısız devam ediliyor",
     "pipButton": "Pencere İçinde Pencere modu",
-    "openMiniPlayer": "Açık Mini Oyuncu",
-    "returnToFullPlayer": "Tam oyuncuya geri dönmek",
     "aspectRatioButton": "En boy oranı",
     "ambientLighting": "Ortam aydınlatması",
     "fullscreenButton": "Tam ekrana geç",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Döndürme kilidi",
     "lockScreen": "Ekranı kilitle",
     "screenLockButton": "Ekran kilidi",
-    "longPressToUnlock": "Kilidi açmak için uzun basın",
     "timelineSlider": "Video zaman çubuğu",
     "volumeSlider": "Ses seviyesi",
     "endsAt": "Bitiş saati: ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Kuyrukta öge yok",
     "noAudioDevicesAvailable": "Kullanılabilir ses cihazı yok",
     "searchSubtitles": "Altyazı Ara",
-    "loadSubtitleFile": "Subtitle dosyası ile...",
-    "subtitleLoadFailed": "Subtitle dosyasını yüklemeyi başaramadım",
     "language": "Dil",
     "noSubtitlesFound": "Altyazı bulunamadı",
     "subtitleDownloaded": "Altyazı indirildi",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Dillerde ara...",
     "skipIntro": "İntroyu atla",
     "skipCredits": "Jeneriği atla",
-    "skipAds": "Reklamları atla",
     "nextEpisode": "Sonraki bölüm",
     "subtitleTrack": "Parça ${n}",
     "subtitleFile": "Altyazı ${name}",
     "forcedTrack": "${label} (Zorunlu)",
     "osdSubtitlesOff": "Altyazı: Kapalı",
     "osdSubtitles": "Altyazı: ${track}",
-    "osdAudio": "Ses: ${track}"
+    "osdAudio": "Ses: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} Çerçeve",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} çerçeve"
+    },
+    "trackSelectionTitle": "Playback Öncesi Sürücü Seçimi",
+    "trackSelectionAuto": "Otomatik Seçim",
+    "openMiniPlayer": "Açık Mini Oyuncu",
+    "returnToFullPlayer": "Tam oyuncuya geri dönmek",
+    "loadSubtitleFile": "Subtitle dosyası ile...",
+    "subtitleLoadFailed": "Subtitle dosyasını yüklemeyi başaramadım",
+    "skipAds": "Reklamları atla",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Dosyaya kaydedin",
     "logsSaved": "Kayıtlar ${path}'e kaydedildi",
     "saveLogsFailed": "Dosyayı kaydetmek mümkün değil."
-  },
-  "detail": {
-    "endsAt": "Bitiş saati: ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG başlatılamadı",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP'ye izin ver",
     "httpsRequired": "HTTPS veya açıkça şifrelenmemiş bir bağlantı sağlar."
   },
+  "cast": {
+    "chooseDevice": "Bir cihazı vurmak",
+    "searching": "Arama cihazları için...",
+    "connectedTo": "${device} ile bağlantılı",
+    "device": "Cast cihazı",
+    "readyToCast": "Hazırlık atmak",
+    "subtitle": "Altyazılar",
+    "serverNotAvailable": "Medya sunucusu mevcut değildir.",
+    "stopCasting": "Casting durdurma",
+    "castToDevice": "cihazı atmak",
+    "noEpisodeAvailable": "Çekilecek bir bölüm yok.",
+    "startFailed": "Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin."
+  },
+  "automation": {
+    "noActivePlayback": "Kontrol edilecek aktif video oturumu yoktur.",
+    "profileNotFound": "Bu Plezy profili bulunamadı."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Yeni bölüm",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "7 gün boyunca her özellik ücretsiz olarak deneyin",
+    "description": "7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG'yi kilitler.",
+    "trialEndedDescription": "Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG'deki her özellik kilitlenir.",
+    "startTrial": "7 günlük ücretsiz sınavı başlatın",
+    "trialActive": "7 günlük tam performans denemesi aktif.",
+    "trialEnded": "7 günlük yargılanma sona erdi",
+    "trialStartFailed": "Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.",
+    "lifetimeTitle": "PlezyNG ömür boyu kilitlenmiş",
+    "lifetimeBody": "Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.",
+    "manageTitle": "PlezyNG Ömür Boyu erişim",
+    "manageDescription": "Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.",
+    "buy": "${price} için her özellik kilitlenir",
+    "loadingPrice": "Satış fiyatı...",
+    "retryPrice": "Retry fiyatı bakış açısı",
+    "restore": "Ömür Boyu Satın Alımı",
+    "pending": "Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.",
+    "storeUnavailable": "Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.",
+    "productNotFound": "PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.",
+    "productQueryFailed": "Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.",
+    "purchaseFailed": "Satın almak için bir şey yapmadım. tekrar deneyin.",
+    "restoreFailed": "Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.",
+    "nothingToRestore": "Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu."
+  },
+  "detail": {
+    "endsAt": "Bitiş saati: ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Bu bağlantı için Plex sunucusuna ulaşamıyorum.",
     "notFound": "Bu gösteriyi veya filmi Plex sunucularınızda bulamazdım.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

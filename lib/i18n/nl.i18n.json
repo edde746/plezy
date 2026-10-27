@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Gestoord naar een apparaat",
-    "searching": "Op zoek naar de Cast-apparaten...",
-    "connectedTo": "Geleid naar ${device}",
-    "device": "Cast apparaat",
-    "readyToCast": "Bereid om te casten",
-    "subtitle": "Ondertitels",
-    "serverNotAvailable": "De media server is niet beschikbaar.",
-    "stopCasting": "Stop met casting",
-    "castToDevice": "Cast naar apparaat",
-    "noEpisodeAvailable": "Er is geen episode beschikbaar om te casten.",
-    "startFailed": "Kan niet beginnen met casting. check the server and try again."
-  },
-  "automation": {
-    "noActivePlayback": "Er is geen actieve video-sessie om te controleren.",
-    "profileNotFound": "Dat Plezy profiel kon niet worden gevonden."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Nieuwe episode",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "App-icoon",
     "defaultIcon": "Standaard",
@@ -200,30 +179,6 @@
     "viewRelease": "Bekijk release",
     "latestVersion": "Je hebt de nieuwste versie",
     "checkFailed": "Kon niet controleren op updates"
-  },
-  "appAccess": {
-    "title": "Probeer elke functie gratis voor 7 dagen",
-    "description": "Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.",
-    "trialEndedDescription": "Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.",
-    "startTrial": "Start mijn 7 dagen gratis proef",
-    "trialActive": "Uw 7-daagse full-feature proef is actief.",
-    "trialEnded": "Uw zeven dagen proces is voorbij",
-    "trialStartFailed": "Ik kon de test niet op dit apparaat redden. probeer dan weer.",
-    "lifetimeTitle": "PlezyNG gedurende het leven ontgrendeld",
-    "lifetimeBody": "Dank u! u heeft levenslang toegang tot elke PlezyNG functie.",
-    "manageTitle": "PlezyNG levenslange toegang",
-    "manageDescription": "Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.",
-    "buy": "Ontgrendel elke functie voor ${price}",
-    "loadingPrice": "De loading winkel prijs...",
-    "retryPrice": "Retry prijs lookup",
-    "restore": "Levenslang aankopen herstellen",
-    "pending": "Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.",
-    "storeUnavailable": "Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.",
-    "productNotFound": "De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.",
-    "productQueryFailed": "Kan de winkelprijs niet opladen. check your connection and try again.",
-    "purchaseFailed": "De aankoop is niet doorlopen. probeer het nogmaals.",
-    "restoreFailed": "Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.",
-    "nothingToRestore": "Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount."
   },
   "settings": {
     "title": "Instellingen",
@@ -1079,10 +1034,6 @@
     "track": "Audiospoor ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} kranen"
-    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Ondertitels",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "Dempen opheffen",
     "settingsButton": "Afspeelinstellingen",
     "tracksButton": "Audio en ondertitels",
-    "trackSelectionTitle": "Kies tracks voor playback",
-    "trackSelectionAuto": "Automatische selectie",
     "chaptersButton": "Hoofdstukken",
     "versionQualityButton": "Versie en kwaliteit",
     "versionColumnHeader": "Versie",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld",
     "subtitleUnavailableFallback": "De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels",
     "pipButton": "Beeld-in-beeldmodus",
-    "openMiniPlayer": "Open mini speler",
-    "returnToFullPlayer": "Terug naar volle speler",
     "aspectRatioButton": "Beeldverhouding",
     "ambientLighting": "Omgevingsverlichting",
     "fullscreenButton": "Volledig scherm activeren",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "Rotatievergrendeling",
     "lockScreen": "Scherm vergrendelen",
     "screenLockButton": "Schermvergrendeling",
-    "longPressToUnlock": "Lang indrukken om te ontgrendelen",
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
     "endsAt": "Eindigt om ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "Geen items in de wachtrij",
     "noAudioDevicesAvailable": "Geen audioapparaten beschikbaar",
     "searchSubtitles": "Ondertitels zoeken",
-    "loadSubtitleFile": "Download subtitle bestand.",
-    "subtitleLoadFailed": "Niet in de subtitle bestand",
     "language": "Taal",
     "noSubtitlesFound": "Geen ondertitels gevonden",
     "subtitleDownloaded": "Ondertitel gedownload",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "Talen zoeken...",
     "skipIntro": "Intro overslaan",
     "skipCredits": "Aftiteling overslaan",
-    "skipAds": "Reclame overslaan",
     "nextEpisode": "Volgende aflevering",
     "subtitleTrack": "Spoor ${n}",
     "subtitleFile": "Ondertitel ${name}",
     "forcedTrack": "${label} (Geforceerd)",
     "osdSubtitlesOff": "Ondertitels: uit",
     "osdSubtitles": "Ondertitels: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} kranen"
+    },
+    "trackSelectionTitle": "Kies tracks voor playback",
+    "trackSelectionAuto": "Automatische selectie",
+    "openMiniPlayer": "Open mini speler",
+    "returnToFullPlayer": "Terug naar volle speler",
+    "loadSubtitleFile": "Download subtitle bestand.",
+    "subtitleLoadFailed": "Niet in de subtitle bestand",
+    "skipAds": "Reclame overslaan",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": ""
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "Speel logs naar bestanden",
     "logsSaved": "Logs opgeslagen op ${path}",
     "saveLogsFailed": "Ik kon de logbestand niet opslaan."
-  },
-  "detail": {
-    "endsAt": "Eindigt om ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG kon niet starten",
@@ -3072,6 +3025,54 @@
     "allowHttp": "HTTP toestaan",
     "httpsRequired": "Gebruik HTTPS of toelaat uitdrukkelijk een niet-encrypt verbinding."
   },
+  "cast": {
+    "chooseDevice": "Gestoord naar een apparaat",
+    "searching": "Op zoek naar de Cast-apparaten...",
+    "connectedTo": "Geleid naar ${device}",
+    "device": "Cast apparaat",
+    "readyToCast": "Bereid om te casten",
+    "subtitle": "Ondertitels",
+    "serverNotAvailable": "De media server is niet beschikbaar.",
+    "stopCasting": "Stop met casting",
+    "castToDevice": "Cast naar apparaat",
+    "noEpisodeAvailable": "Er is geen episode beschikbaar om te casten.",
+    "startFailed": "Kan niet beginnen met casting. check the server and try again."
+  },
+  "automation": {
+    "noActivePlayback": "Er is geen actieve video-sessie om te controleren.",
+    "profileNotFound": "Dat Plezy profiel kon niet worden gevonden."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Nieuwe episode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Probeer elke functie gratis voor 7 dagen",
+    "description": "Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.",
+    "trialEndedDescription": "Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.",
+    "startTrial": "Start mijn 7 dagen gratis proef",
+    "trialActive": "Uw 7-daagse full-feature proef is actief.",
+    "trialEnded": "Uw zeven dagen proces is voorbij",
+    "trialStartFailed": "Ik kon de test niet op dit apparaat redden. probeer dan weer.",
+    "lifetimeTitle": "PlezyNG gedurende het leven ontgrendeld",
+    "lifetimeBody": "Dank u! u heeft levenslang toegang tot elke PlezyNG functie.",
+    "manageTitle": "PlezyNG levenslange toegang",
+    "manageDescription": "Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.",
+    "buy": "Ontgrendel elke functie voor ${price}",
+    "loadingPrice": "De loading winkel prijs...",
+    "retryPrice": "Retry prijs lookup",
+    "restore": "Levenslang aankopen herstellen",
+    "pending": "Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.",
+    "storeUnavailable": "Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.",
+    "productNotFound": "De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.",
+    "productQueryFailed": "Kan de winkelprijs niet opladen. check your connection and try again.",
+    "purchaseFailed": "De aankoop is niet doorlopen. probeer het nogmaals.",
+    "restoreFailed": "Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.",
+    "nothingToRestore": "Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount."
+  },
+  "detail": {
+    "endsAt": "Eindigt om ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Ik kon geen Plex server bereiken voor deze link.",
     "notFound": "Ik kon deze show of film niet vinden op je servers Plex.",
@@ -3696,5 +3697,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }
