@@ -377,6 +377,29 @@ jobs:
           EOF
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
+      - name: Configure Gradle to use the private JIT proxy
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os
+          from urllib.parse import urlsplit
+
+          proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+          if not proxy:
+              raise SystemExit("The private JIT HTTPS proxy is required for Gradle downloads.")
+          parsed = urlsplit(proxy if "://" in proxy else f"http://{proxy}")
+          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
+              raise SystemExit("The private JIT HTTPS proxy URL is invalid for Gradle.")
+          options = [
+              f"-Dhttp.proxyHost={parsed.hostname}",
+              f"-Dhttp.proxyPort={parsed.port}",
+              f"-Dhttps.proxyHost={parsed.hostname}",
+              f"-Dhttps.proxyPort={parsed.port}",
+          ]
+          existing = os.environ.get("GRADLE_OPTS", "").strip()
+          print("GRADLE_OPTS=" + " ".join(([existing] if existing else []) + options))
+          PY
+
       - name: Build APKs
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
