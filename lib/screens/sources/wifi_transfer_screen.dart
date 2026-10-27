@@ -239,7 +239,7 @@ class _WifiTransferScreenState extends State<WifiTransferScreen> with WidgetsBin
     final segments = request.uri.pathSegments;
     if (request.method == 'GET' && segments.length == 1) {
       response.headers.contentType = ContentType.html;
-      response.write(_renderUploadPage());
+      response.write(await _renderUploadPage());
       await response.close();
       return;
     }
@@ -410,10 +410,10 @@ class _WifiTransferScreenState extends State<WifiTransferScreen> with WidgetsBin
                     for (final address in _addresses)
                       Card(
                         child: ListTile(
-                          title: SelectableText('http://$address:${_server!.port}/$_token'),
+                          title: SelectableText(_transferAddress(address)),
                           trailing: IconButton(
                             tooltip: t.universalMedia.copyAddress,
-                            onPressed: () => _copy('http://$address:${_server!.port}/$_token'),
+                            onPressed: () => _copy(_transferAddress(address)),
                             icon: const AppIcon(Symbols.content_copy_rounded),
                           ),
                         ),
@@ -445,7 +445,10 @@ class _WifiTransferScreenState extends State<WifiTransferScreen> with WidgetsBin
     ],
   );
 
-  String _renderUploadPage() {
+  String _transferAddress(String address) =>
+      Uri(scheme: 'http', host: address, port: _server!.port, pathSegments: [_token!]).toString();
+
+  Future<String> _renderUploadPage() async {
     String escapeHtml(String value) => value
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -459,7 +462,8 @@ class _WifiTransferScreenState extends State<WifiTransferScreen> with WidgetsBin
       'uploadFailed': t.universalMedia.uploadFailed,
       'uploadComplete': t.universalMedia.uploadComplete,
     });
-    return _uploadPageTemplate
+    final template = await rootBundle.loadString('assets/wifi_transfer/upload_page.html');
+    return template
         .replaceAll('@@LANG@@', _languageTag)
         .replaceAll('@@DIR@@', _textDirection)
         .replaceAll('@@TITLE@@', escapeHtml(t.universalMedia.wifiBrowserTitle))
@@ -468,47 +472,4 @@ class _WifiTransferScreenState extends State<WifiTransferScreen> with WidgetsBin
         .replaceAll('@@ACTION@@', escapeHtml(t.universalMedia.uploadSelected))
         .replaceAll('@@MESSAGES@@', messages);
   }
-
-  static const _uploadPageTemplate = r'''<!doctype html>
-<html lang="@@LANG@@" dir="@@DIR@@">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>@@TITLE@@</title>
-<style>
-  :root{color-scheme:dark light;font:16px system-ui,sans-serif}
-  body{max-width:42rem;margin:0 auto;padding:2rem;line-height:1.5}
-  main{border:1px solid #7777;border-radius:1rem;padding:1.5rem}
-  h1{font-size:1.5rem}label,button{display:block;margin-top:1rem}
-  input,button{font:inherit}button{padding:.7rem 1rem}
-  #status{min-height:3rem}
-</style>
-<main>
-  <h1>@@TITLE@@</h1>
-  <p>@@INTRO@@</p>
-  <label for="files">@@FILES@@</label>
-  <input id="files" type="file" accept="audio/*,video/*,.m4b,.epub,.pdf,.cbz" multiple>
-  <button id="send" type="button">@@ACTION@@</button>
-  <p id="status" role="status" aria-live="polite"></p>
-</main>
-<script>
-const messages=@@MESSAGES@@,picker=document.querySelector('#files'),button=document.querySelector('#send'),status=document.querySelector('#status');
-button.addEventListener('click',async()=>{
-  if(!picker.files.length){status.textContent=messages.selectFirst;return;}
-  button.disabled=true;
-  try{
-    for(const file of picker.files){
-      status.textContent=messages.uploading+' '+file.name+'…';
-      const response=await fetch(location.pathname.replace(/\/$/,'')+'/upload?name='+encodeURIComponent(file.name),{
-        method:'PUT',headers:{'Content-Type':'application/octet-stream'},body:file
-      });
-      if(!response.ok)throw new Error(messages.uploadFailed+' '+file.name+' ('+response.status+').');
-    }
-    status.textContent=messages.uploadComplete;
-    picker.value='';
-  }catch(error){status.textContent=error.message||messages.uploadFailed;}
-  finally{button.disabled=false;}
-});
-</script>
-</html>''';
 }

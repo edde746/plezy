@@ -16,7 +16,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 
 #### Universal media tools
 
-- Add one Open media workspace for direct streams, playlists, local files and desktop discs, plus desktop conversion, live-stream recording, Wi-Fi transfer, and MPV picture tools. Keep favorites and nested launchers in the existing focus-aware Files and books rows.
+- Add one Open media workspace for direct streams, playlists, local files and desktop discs, plus desktop conversion, live-stream recording, Wi-Fi transfer, and MPV picture tools. Preserve live `#EXTINF` entries with playlist metadata, and keep favorites and nested launchers in the existing focus-aware Files and books rows.
 
 #### Playback and downloads
 

@@ -12,8 +12,10 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/lending/lending_service.dart';
 import 'package:plezy/screens/lending/public_libraries_screen.dart';
 import 'package:plezy/screens/sources/add_source_screen.dart';
+import 'package:plezy/screens/sources/open_media_screen.dart';
 import 'package:plezy/screens/sources/source_navigation.dart';
 import 'package:plezy/screens/sources/sources_screen.dart';
+import 'package:plezy/screens/sources/source_widgets.dart';
 import 'package:plezy/screens/sources/publication_reader_screen.dart';
 import 'package:plezy/sources/source_controller.dart';
 import 'package:plezy/providers/trackers_provider.dart';
@@ -136,6 +138,22 @@ void main() {
       });
     }
   }
+  testWidgets('Open media uses one Files and books entry and focus-aware source rows for nested tools', (tester) async {
+    await pump(tester, const SourcesScreen(), MonoPalette.dark, const Size(390, 844));
+    final openMediaEntry = find.descendant(of: find.byType(SourcesScreen), matching: find.text(t.universalMedia.title));
+    expect(openMediaEntry, findsOneWidget);
+
+    await tester.tap(openMediaEntry);
+    await tester.pumpAndSettle();
+
+    final openMedia = find.byType(OpenMediaScreen);
+    expect(openMedia, findsOneWidget);
+    expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.intro)), findsOneWidget);
+    expect(find.descendant(of: openMedia, matching: find.byType(SourceTile)), findsNWidgets(2));
+    expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.wifiTransfer)), findsOneWidget);
+    expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.converterTitle)), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('OverDrive is visibly coming soon without a patron credential form', (tester) async {
     await sources.repository.savePreference('alice', 'lending:libraries', {
       'libraries': [

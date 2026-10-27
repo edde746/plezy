@@ -10,8 +10,28 @@ import '../services/music/music_playback_service_test.dart' show FakePlayer, Fak
 import 'fixtures/memory_sources.dart';
 
 class _Controls extends FakeMediaControlsManager {
+  bool? canSeek;
+  bool? canSkip;
+
   @override
   Future<void> setBackgroundMode(bool enabled) async {}
+
+  @override
+  Future<void> setControlsEnabled({
+    bool canPlayPause = false,
+    bool canGoNext = false,
+    bool canGoPrevious = false,
+    bool canSeek = false,
+    bool canStop = false,
+    bool canSkip = false,
+    bool canSetSpeed = false,
+    bool preferSkipOverTrackButtons = false,
+    Duration? skipInterval,
+  }) async {
+    this.canSeek = canSeek;
+    this.canSkip = canSkip;
+  }
+
   @override
   Future<void> updateFileMetadata({
     required String title,
@@ -79,6 +99,44 @@ void main() {
     item.audio,
     localOverrides: {'one': Uri.file('${directory.path}/one'), 'two': Uri.file('${directory.path}/two')},
   );
+  test('transient live media disables seeking and never persists progress', () async {
+    const liveFile = PublicationFile(
+      id: 'live',
+      name: 'public-stream.m3u8',
+      mimeType: 'application/vnd.apple.mpegurl',
+      streamOnly: true,
+    );
+    const liveEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'session',
+      title: 'Live radio',
+      kind: SourceItemKind.video,
+      files: [liveFile],
+    );
+
+    await playback.start(
+      liveEntry,
+      const [liveFile],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'live': Uri.parse('https://radio.example/live.m3u8')},
+      persistProgress: false,
+      liveInput: true,
+    );
+
+    expect(playback.isTransientInput, isTrue);
+    expect(playback.isLiveInput, isTrue);
+    expect(playback.progress, isNotNull);
+    expect(controls.canSeek, isFalse);
+    expect(controls.canSkip, isFalse);
+
+    await playback.seek(30000);
+    await playback.skip(30);
+    expect(native.seeks, isEmpty);
+
+    native.setPosition(const Duration(seconds: 20));
+    await playback.pause();
+    expect(await sources.repository.allProgress('alice'), isEmpty);
+  });
   test('duplicate completion advances one part and persists source-relative resume', () async {
     await start();
     expect(controls.metadataTitles, contains('A book'));
