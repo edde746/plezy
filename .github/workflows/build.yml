@@ -1691,7 +1691,18 @@ jobs:
 
       - name: Install fpm
         shell: bash
-        run: sudo gem install fpm --version 1.17.0 --no-document
+        run: |
+          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
+          if [[ -z "$proxy" ]]; then
+            echo "The private JIT HTTPS proxy is required to install fpm." >&2
+            exit 1
+          fi
+          sudo env \
+            HTTP_PROXY="${HTTP_PROXY:-$proxy}" \
+            HTTPS_PROXY="$proxy" \
+            http_proxy="${http_proxy:-${HTTP_PROXY:-$proxy}}" \
+            https_proxy="${https_proxy:-$proxy}" \
+            gem install fpm --version 1.17.0 --no-document
 
       - name: Install dependencies
         shell: bash

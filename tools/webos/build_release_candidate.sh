@@ -32,11 +32,25 @@ if [[ -z "$JSON_PYTHON" || ! -x "$JSON_PYTHON" ]]; then
   exit 1
 fi
 
-if [[ -L /etc/os-release || ! -f /etc/os-release || ! -r /etc/os-release ]]; then
-  echo "The private JIT image must provide a readable, regular /etc/os-release." >&2
+OS_RELEASE_PATH=/etc/os-release
+if [[ -L "$OS_RELEASE_PATH" ]]; then
+  OS_RELEASE_PATH="$("$JSON_PYTHON" - "$OS_RELEASE_PATH" <<'PY'
+import os
+import sys
+
+print(os.path.realpath(sys.argv[1]))
+PY
+)"
+  if [[ "$OS_RELEASE_PATH" != /usr/lib/os-release ]]; then
+    echo "The /etc/os-release symlink must resolve to /usr/lib/os-release." >&2
+    exit 1
+  fi
+fi
+if [[ ! -f "$OS_RELEASE_PATH" || ! -r "$OS_RELEASE_PATH" ]]; then
+  echo "The private JIT image must provide a readable /etc/os-release file." >&2
   exit 1
 fi
-HOST_OS_FACTS="$("$JSON_PYTHON" - /etc/os-release <<'PY'
+HOST_OS_FACTS="$("$JSON_PYTHON" - "$OS_RELEASE_PATH" <<'PY'
 import shlex
 import sys
 
