@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 
 import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
+import '../../../models/motion_clarity.dart';
+import '../../../services/scoped_player_prefs.dart';
 import '../../../media/media_source_info.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
@@ -152,12 +154,16 @@ class TrackChapterControls extends StatelessWidget {
               final isShaderActive =
                   shaderService != null && shaderService.isSupported && shaderService.currentPreset.isEnabled;
               final isZoomActive = (state.videoZoomScale - 1.0).abs() > 0.0001;
+              final isMotionActive =
+                  ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata) !=
+                  MotionClarityPreset.original;
               final isActive =
                   sleepTimer.isActive ||
                   state.audioSyncOffset != 0 ||
                   state.subtitleSyncOffset != 0 ||
                   isShaderActive ||
-                  isZoomActive;
+                  isZoomActive ||
+                  isMotionActive;
               return _buildTrackButton(
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
@@ -179,6 +185,36 @@ class TrackChapterControls extends StatelessWidget {
             },
           ),
         );
+        buttonIndex++;
+
+        {
+          final currentIndex = buttonIndex;
+          final motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata);
+          final isMotionActive = motionPreset != MotionClarityPreset.original;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.blur_on_rounded,
+              isActive: isMotionActive,
+              checked: isMotionActive,
+              tooltip: t.videoSettings.motionClarity,
+              semanticLabel: t.videoSettings.motionClarity,
+              buttons: buttons,
+              onPressed: () {
+                state.onCancelAutoHide?.call();
+                OverlaySheetController.of(context)
+                    .show(
+                      builder: (_) => VideoSettingsSheet(
+                        player: player,
+                        trackControlsState: state,
+                        openMotionClarity: true,
+                      ),
+                    )
+                    .whenComplete(() => state.onStartAutoHide?.call());
+              },
+            ),
+          );
+        }
         buttonIndex++;
 
         {
