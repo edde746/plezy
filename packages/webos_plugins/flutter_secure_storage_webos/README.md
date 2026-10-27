@@ -53,3 +53,15 @@ See the [API Reference](API_REFERENCE.md) for webOS-specific behavior details.
 
 - Platform-specific options (`IOSOptions`, `AndroidOptions`, `WebOptions`) are ignored on webOS.
 - Data is stored in a local SQLite database with AES-256-CBC encryption, not in a system keychain/keystore.
+
+## PlezyNG storage recovery
+
+This vendored adapter uses the webOS key service for AES keys. Reads preserve
+the stored row on key-service and database errors. Writes stage independent
+keys and atomically compare/replace the SQLite row before retiring old keys.
+Legacy envelopes remain readable; new writes use versioned envelopes and require
+this Dart implementation and its matching native `compareAndStore` method.
+Older plugin versions cannot read those new envelopes after a downgrade.
+
+See the repository's `docs/security/2026-10-26-remediation.md` for the format,
+failure behavior and host regression checks.

@@ -49,8 +49,7 @@ bool SecureStorage::ResolveDbPath(std::string* out_path) const {
 }
 
 bool SecureStorage::EnsureOpen() {
-  if (initialized_) return db_ != nullptr;
-  initialized_ = true;
+  if (db_) return true;
 
   std::string path;
   if (!ResolveDbPath(&path)) return false;
@@ -64,6 +63,7 @@ bool SecureStorage::EnsureOpen() {
     }
     return false;
   }
+  sqlite3_busy_timeout(db_, 1000);
 
   const char* sql =
       "CREATE TABLE IF NOT EXISTS SecureStorage("
@@ -79,27 +79,55 @@ bool SecureStorage::EnsureOpen() {
   return true;
 }
 
-SecureStorage::Row SecureStorage::Load() {
-  Row row;
-  if (!EnsureOpen()) return row;
+bool SecureStorage::Load(Row* row) {
+  *row = Row{};
+  if (!EnsureOpen()) return false;
 
   sqlite3_stmt* stmt = nullptr;
   const char* sql =
       "SELECT Keys, Datas FROM SecureStorage WHERE Key = ? LIMIT 1";
   if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
     LogError(TAG) << "Load prepare error: " << sqlite3_errmsg(db_);
-    return row;
+    return false;
   }
   sqlite3_bind_text(stmt, 1, kRowKey, -1, SQLITE_STATIC);
 
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
+  const int rc = sqlite3_step(stmt);
+  if (rc == SQLITE_ROW) {
     const unsigned char* keys = sqlite3_column_text(stmt, 0);
     const unsigned char* datas = sqlite3_column_text(stmt, 1);
-    if (keys) row.keys = std::string(reinterpret_cast<const char*>(keys));
-    if (datas) row.datas = std::string(reinterpret_cast<const char*>(datas));
+    if (keys) row->keys = std::string(reinterpret_cast<const char*>(keys));
+    if (datas) row->datas = std::string(reinterpret_cast<const char*>(datas));
+    if (!keys || !datas) {
+      sqlite3_finalize(stmt);
+      return false;
+    }
   }
   sqlite3_finalize(stmt);
-  return row;
+  return rc == SQLITE_ROW || rc == SQLITE_DONE;
+}
+
+std::optional<bool> SecureStorage::CompareAndStore(
+    const Row& expected, const std::string& keys, const std::string& datas) {
+  if (!EnsureOpen()) return std::nullopt;
+  if (sqlite3_exec(db_, "BEGIN IMMEDIATE", nullptr, nullptr, nullptr) != SQLITE_OK) {
+    return std::nullopt;
+  }
+  Row current;
+  if (!Load(&current)) {
+    sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr);
+    return std::nullopt;
+  }
+  if (current.keys != expected.keys || current.datas != expected.datas) {
+    sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr);
+    return false;
+  }
+  if (!Store(keys, datas) ||
+      sqlite3_exec(db_, "COMMIT", nullptr, nullptr, nullptr) != SQLITE_OK) {
+    sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr);
+    return std::nullopt;
+  }
+  return true;
 }
 
 bool SecureStorage::Store(const std::string& keys, const std::string& datas) {

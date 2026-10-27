@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../utils/app_logger.dart';
+import '../utils/safe_http_redirects.dart';
 import 'credential_vault.dart';
 import 'settings_export_service.dart';
 import 'settings_service.dart';
@@ -130,7 +131,7 @@ class CloudSettingsBackupService {
 
   Future<http.Response> _getBounded(Uri uri, Map<String, String> headers) async {
     final request = http.Request('GET', uri)..headers.addAll(headers);
-    final response = await _http.send(request);
+    final response = await sendWithSafeRedirects(_http, request, allowCrossOrigin: false);
     final body = BytesBuilder(copy: false);
     var length = 0;
     await for (final chunk in response.stream.timeout(_timeout)) {

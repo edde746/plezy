@@ -141,6 +141,9 @@ const _testIdentity = DeviceIdentity(platform: 'Test');
 /// URL-builder smoke tests. Without a live Jellyfin server, pin query keys and
 /// authentication parameters directly.
 void main() {
+  // URL-builder tests never contact a real server. Any missing transport mock
+  // must stay inside Flutter's HTTP-400 test override, including failover probes.
+  TestWidgetsFlutterBinding.ensureInitialized();
   // Pin device identity so JellyfinClient.create's MediaBrowser header names
   // the test platform instead of resolving the host machine's name.
   setUpAll(() => DeviceIdentityService.debugOverride(_testIdentity));
@@ -2290,6 +2293,10 @@ void main() {
       var itemAttempts = 0;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          expect(request.headers['X-Emby-Token'], isNull);
+          return jsonResponse({'Id': 'srv-1', 'ServerName': 'Test server'});
+        }),
         httpClient: MockClient((request) async {
           if (request.url.path == '/Users/user-1/Items/item-1') {
             itemAttempts++;

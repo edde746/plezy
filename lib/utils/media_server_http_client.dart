@@ -10,6 +10,7 @@ import 'future_extensions.dart';
 import 'isolate_helper.dart';
 import 'managed_http_client.dart';
 import 'media_server_timeouts.dart';
+import 'safe_http_redirects.dart';
 import 'url_utils.dart';
 import '../exceptions/media_server_exceptions.dart';
 
@@ -104,7 +105,7 @@ class MediaServerHttpClient {
     this.connectTimeout = MediaServerTimeouts.connect,
     this.responseTimeout = MediaServerTimeouts.response,
     this.receiveTimeout = MediaServerTimeouts.receive,
-  }) : _client = client ?? platform.createPlatformClient(connectTimeout: connectTimeout),
+  }) : _client = SafeRedirectClient(client ?? platform.createPlatformClient(connectTimeout: connectTimeout)),
        defaultHeaders = Map.of(defaultHeaders);
 
   /// The underlying [http.Client] for direct streaming / multipart requests.

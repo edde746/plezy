@@ -23,17 +23,22 @@ class SecureStorage {
   // Returns the row keyed `flutter_secure_storage`. Both fields are nullopt
   // when the row is missing (first run on a clean device). Opens the DB and
   // creates the table on first call.
-  Row Load();
+  // false means an I/O error, distinct from an absent row.
+  bool Load(Row* row);
 
   // Upserts the row keyed `flutter_secure_storage` with the given two columns.
   bool Store(const std::string& keys, const std::string& datas);
+
+  // Atomic across connections/processes. false = conflict, nullopt = I/O error.
+  std::optional<bool> CompareAndStore(const Row& expected,
+                                    const std::string& keys,
+                                    const std::string& datas);
 
  private:
   bool EnsureOpen();
   bool ResolveDbPath(std::string* out_path) const;
 
   sqlite3* db_ = nullptr;
-  bool initialized_ = false;
 };
 
 #endif  // FLUTTER_PLUGIN_SECURE_STORAGE_H_

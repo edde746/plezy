@@ -107,12 +107,14 @@ JellyfinClient testJellyfinClient({
   JellyfinConnection? connection,
   http.Client? httpClient,
   Future<http.Response> Function(http.Request request)? handler,
+  http.Client Function()? endpointProbeHttpClientFactory,
   void Function()? onAllEndpointsExhausted,
 }) {
   assert(httpClient == null || handler == null, 'Provide either httpClient or handler, not both');
   return JellyfinClient.forTesting(
     connection: connection ?? testJellyfinConnection(),
     httpClient: httpClient ?? MockClient(handler ?? _defaultResponse),
+    endpointProbeHttpClientFactory: endpointProbeHttpClientFactory ?? _unreachableProbeClient,
     onAllEndpointsExhausted: onAllEndpointsExhausted,
   );
 }
@@ -123,12 +125,14 @@ JellyfinClient testEmbyClient({
   JellyfinConnection? connection,
   http.Client? httpClient,
   Future<http.Response> Function(http.Request request)? handler,
+  http.Client Function()? endpointProbeHttpClientFactory,
   void Function()? onAllEndpointsExhausted,
 }) {
   return testJellyfinClient(
     connection: connection ?? testEmbyConnection(),
     httpClient: httpClient,
     handler: handler,
+    endpointProbeHttpClientFactory: endpointProbeHttpClientFactory,
     onAllEndpointsExhausted: onAllEndpointsExhausted,
   );
 }
@@ -159,7 +163,7 @@ PlexClient testPlexClient({
     serverName: serverName,
     httpClient: httpClient ?? MockClient(handler ?? _defaultResponse),
     prioritizedEndpoints: prioritizedEndpoints,
-    endpointProbeHttpClientFactory: endpointProbeHttpClientFactory,
+    endpointProbeHttpClientFactory: endpointProbeHttpClientFactory ?? _unreachableProbeClient,
     onAllEndpointsExhausted: onAllEndpointsExhausted,
     epgProviders: epgProviders,
     homeHubKey: homeHubKey,
@@ -171,3 +175,8 @@ PlexClient testPlexClient({
 Future<http.Response> _defaultResponse(http.Request request) async {
   return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
 }
+
+// Public failover probes use a separate client from authenticated requests.
+// Fixture servers are unreachable unless a test explicitly supplies its probe;
+// a missing mock must never fall through to a real external HTTP transport.
+http.Client _unreachableProbeClient() => MockClient((_) async => http.Response('{}', 404));

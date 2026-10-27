@@ -6,105 +6,98 @@ import '_secure_storage_client.dart';
 
 const String dbRowKey = 'flutter_secure_storage';
 
+class StorageWriteException extends PlatformException {
+  StorageWriteException(Object cause, {required this.mayHaveCommitted})
+      : super(
+            code: cause is PlatformException ? cause.code : 'secure_storage_unavailable',
+            message: 'The credential store could not be updated. Retry the operation.');
+  final bool mayHaveCommitted;
+}
+
 class SecureStorageChannel {
   SecureStorageChannel(this._client);
-
   static const MethodChannel _channel = MethodChannel('webos/secure_storage');
-
   final SecureStorageClient _client;
-  final Map<String, String> _kvs = <String, String>{};
-  bool _opened = false;
+  Map<String, String> _kvs = {};
+  String? _keys;
+  String? _datas;
 
+  /// Always refresh: another instance/isolate may have committed since our last
+  /// operation. Reading never seeds, prunes, rotates keys, or writes storage.
   Future<void> open() async {
-    if (_opened) return;
     final row = await _channel.invokeMapMethod<String, Object?>('load');
-    final encryptedKeys = row?['keys'] as String?;
-    if (encryptedKeys == null) {
-      // First run on this device: seed the row with empty arrays.
-      await _client.generateKey(dbRowKey);
-      final seedKeys = await _client.encrypt(dbRowKey, '[]');
-      await _channel.invokeMethod<void>('store', <String, String>{
-        'keys': seedKeys,
-        'datas': '[]',
-      });
-      _opened = true;
+    if (row == null) throw _corrupt();
+    final keys = row['keys'];
+    final datas = row['datas'];
+    if (keys == null && datas == null) {
+      _keys = _datas = null;
+      _kvs = {};
       return;
     }
-    final datasJson = (row?['datas'] as String?) ?? '[]';
-    final keysJson = await _client.decrypt(dbRowKey, encryptedKeys);
-    _hydrate(keysJson, datasJson);
-
-    // Drop entries whose envelope no longer decrypts (e.g. after a reflash).
-    final filtered = <String, String>{};
-    for (final entry in _kvs.entries) {
-      if (await _client.isValid(entry.key, entry.value)) {
-        filtered[entry.key] = entry.value;
-      }
+    if (keys is! String || datas is! String) throw _corrupt();
+    final names = _decodeArray(await _client.readSecret(dbRowKey, keys));
+    final values = _decodeArray(datas);
+    if (names.length != values.length || names.toSet().length != names.length || names.any((s) => s.isEmpty)) {
+      throw _corrupt();
     }
-    if (filtered.length != _kvs.length) {
-      _kvs
-        ..clear()
-        ..addAll(filtered);
-      await _flush();
-    }
-    _opened = true;
+    _kvs = Map.fromIterables(names, values);
+    _keys = keys;
+    _datas = datas;
   }
 
   bool containsKey(String key) => _kvs.containsKey(key);
-
   String? rawValue(String key) => _kvs[key];
+  Map<String, String> entries() => Map.unmodifiable(_kvs);
+  Future<void> setRaw(String key, String value) => _flush({..._kvs, key: value});
+  Future<void> removeRaw(String key) => _flush({..._kvs}..remove(key));
+  Future<void> clear() => _flush({});
 
-  Map<String, String> entries() => Map<String, String>.unmodifiable(_kvs);
-
-  Future<void> setRaw(String key, String value) async {
-    _kvs[key] = value;
-    await _flush();
-  }
-
-  Future<void> removeRaw(String key) async {
-    if (_kvs.remove(key) == null) return;
-    await _flush();
-  }
-
-  Future<void> clear() async {
-    if (_kvs.isEmpty) return;
-    _kvs.clear();
-    await _flush();
-  }
-
-  void _hydrate(String keysJson, String datasJson) {
-    final keys = _decodeStringArray(keysJson);
-    final datas = _decodeStringArray(datasJson);
-    if (keys == null || datas == null) return;
-    final n = keys.length < datas.length ? keys.length : datas.length;
-    _kvs.clear();
-    for (var i = 0; i < n; i++) {
-      _kvs[keys[i]] = datas[i];
+  Future<void> _flush(Map<String, String> next) async {
+    final String staged;
+    try {
+      staged = await _client.createSecret(jsonEncode(next.keys.toList(growable: false)));
+    } catch (error) {
+      throw StorageWriteException(error, mayHaveCommitted: false);
     }
+    final datas = jsonEncode(next.values.toList(growable: false));
+    // Native SQLite compare-and-store is one transaction, including first-use
+    // insertion. A different isolate cannot silently overwrite a newer row.
+    // If the acknowledgement is lost, retain staging keys: the commit may have
+    // succeeded. A subsequent operation reloads the durable state.
+    final bool? committed;
+    try {
+      committed = await _channel.invokeMethod<bool>('compareAndStore', {
+        'expectedKeys': _keys,
+        'expectedDatas': _datas,
+        'keys': staged,
+        'datas': datas,
+      });
+    } catch (error) {
+      throw StorageWriteException(error, mayHaveCommitted: true);
+    }
+    if (committed != true) {
+      if (committed == false) await _client.removeKeyBestEffort(_client.secretKey(dbRowKey, staged));
+      throw StorageWriteException(
+          PlatformException(
+              code: committed == false ? 'secure_storage_conflict' : 'secure_storage_unavailable',
+              message: 'The credential store changed. Retry the operation.'),
+          mayHaveCommitted: committed != false);
+    }
+    final oldKeys = _keys;
+    _keys = staged;
+    _datas = datas;
+    _kvs = next;
+    if (oldKeys != null) await _client.removeSecretBestEffort(dbRowKey, oldKeys);
   }
 
-  Future<void> _flush() async {
-    final keysJson = jsonEncode(_kvs.keys.toList(growable: false));
-    final datasJson = jsonEncode(_kvs.values.toList(growable: false));
-
-    await _client.removeKey(dbRowKey);
-    await _client.generateKey(dbRowKey);
-    final encryptedKeys = await _client.encrypt(dbRowKey, keysJson);
-
-    await _channel.invokeMethod<void>('store', <String, String>{
-      'keys': encryptedKeys,
-      'datas': datasJson,
-    });
+  List<String> _decodeArray(String text) {
+    try {
+      final value = jsonDecode(text);
+      if (value is List && value.every((item) => item is String)) return value.cast<String>();
+    } on FormatException {/* Preserve malformed persisted data for recovery. */}
+    throw _corrupt();
   }
-}
 
-List<String>? _decodeStringArray(String json) {
-  if (json.isEmpty) return null;
-  try {
-    final decoded = jsonDecode(json);
-    if (decoded is! List) return null;
-    return decoded.whereType<String>().toList(growable: false);
-  } catch (_) {
-    return null;
-  }
+  PlatformException _corrupt() =>
+      PlatformException(code: 'secure_storage_corrupt', message: 'The saved credential store could not be decoded.');
 }

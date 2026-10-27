@@ -32,7 +32,8 @@ class SecureStoragePlugin : public flutter::Plugin {
 
   void OnLoad(flutter::MethodResult<flutter::EncodableValue>* result);
   void OnStore(const flutter::EncodableMap* args,
-               flutter::MethodResult<flutter::EncodableValue>* result);
+               flutter::MethodResult<flutter::EncodableValue>* result,
+               bool compare);
 
   SecureStorage storage_;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> channel_;
@@ -62,10 +63,10 @@ void SecureStoragePlugin::HandleMethodCall(
   const auto& method_name = method_call.method_name();
   if (method_name == "load") {
     OnLoad(result.get());
-  } else if (method_name == "store") {
+  } else if (method_name == "store" || method_name == "compareAndStore") {
     const auto* args =
         std::get_if<flutter::EncodableMap>(method_call.arguments());
-    OnStore(args, result.get());
+    OnStore(args, result.get(), method_name == "compareAndStore");
   } else {
     result->NotImplemented();
   }
@@ -73,7 +74,11 @@ void SecureStoragePlugin::HandleMethodCall(
 
 void SecureStoragePlugin::OnLoad(
     flutter::MethodResult<flutter::EncodableValue>* result) {
-  auto row = storage_.Load();
+  SecureStorage::Row row;
+  if (!storage_.Load(&row)) {
+    result->Error("io", "sqlite load failed");
+    return;
+  }
   flutter::EncodableMap out;
   out[flutter::EncodableValue("keys")] =
       row.keys ? flutter::EncodableValue(*row.keys)
@@ -86,7 +91,8 @@ void SecureStoragePlugin::OnLoad(
 
 void SecureStoragePlugin::OnStore(
     const flutter::EncodableMap* args,
-    flutter::MethodResult<flutter::EncodableValue>* result) {
+    flutter::MethodResult<flutter::EncodableValue>* result,
+    bool compare) {
   if (!args) {
     result->Error("invalid_args", "store requires {keys, datas}");
     return;
@@ -110,6 +116,32 @@ void SecureStoragePlugin::OnStore(
   if (!has_keys || !has_datas) {
     result->Error("invalid_args",
                   "store requires {keys: String, datas: String}");
+    return;
+  }
+  if (compare) {
+    SecureStorage::Row expected;
+    const auto read_expected = [&](const char* name, std::optional<std::string>* out) {
+      const auto it = args->find(flutter::EncodableValue(name));
+      if (it == args->end()) return false;
+      if (std::holds_alternative<std::monostate>(it->second)) return true;
+      if (const auto* value = std::get_if<std::string>(&it->second)) {
+        *out = *value;
+        return true;
+      }
+      return false;
+    };
+    if (!read_expected("expectedKeys", &expected.keys) ||
+        !read_expected("expectedDatas", &expected.datas) ||
+        expected.keys.has_value() != expected.datas.has_value()) {
+      result->Error("invalid_args", "compareAndStore requires the expected row");
+      return;
+    }
+    const auto stored = storage_.CompareAndStore(expected, keys, datas);
+    if (!stored.has_value()) {
+      result->Error("io", "sqlite compare-and-store failed");
+      return;
+    }
+    result->Success(flutter::EncodableValue(*stored));
     return;
   }
   if (!storage_.Store(keys, datas)) {
