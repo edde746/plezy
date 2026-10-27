@@ -1598,47 +1598,57 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   ],
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(t.videoSettings.motionClarityEngine, style: Theme.of(context).textTheme.titleSmall),
-        ),
-        for (final engine in MotionClarityEngine.values)
-          FocusableListTile(
-            title: Text(_motionEngineTitle(engine), style: TextStyle(color: _motionEngine == engine ? primary : null)),
-            subtitle: Text(
-              engine == MotionClarityEngine.motionCompensated
-                  ? t.videoSettings.motionClarityMotionCompensatedDescription
-                  : t.videoSettings.motionClarityTemporalBlendDescription,
+        if (_motionPreset == MotionClarityPreset.oled)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              t.videoSettings.motionClarityOledEngineDescription,
               style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
             ),
-            trailing: _motionEngine == engine ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
-            onTap: () => _selectMotionClarityEngine(engine),
-          ),
-        if (_motionEngine == MotionClarityEngine.motionCompensated) ...[
+          )
+        else ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(t.videoSettings.motionClarityMciQuality, style: Theme.of(context).textTheme.titleSmall),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(t.videoSettings.motionClarityEngine, style: Theme.of(context).textTheme.titleSmall),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(t.videoSettings.motionClarityMciQualityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
-          ),
-          for (final quality in MotionClarityMciQuality.values)
+          for (final engine in MotionClarityEngine.values)
             FocusableListTile(
-              title: Text(_motionMciQualityTitle(quality), style: TextStyle(color: _motionMciQuality == quality ? primary : null)),
-              trailing: _motionMciQuality == quality ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
-              onTap: () => _selectMotionClarityMciQuality(quality),
+              title: Text(_motionEngineTitle(engine), style: TextStyle(color: _motionEngine == engine ? primary : null)),
+              subtitle: Text(
+                engine == MotionClarityEngine.motionCompensated
+                    ? t.videoSettings.motionClarityMotionCompensatedDescription
+                    : t.videoSettings.motionClarityTemporalBlendDescription,
+                style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+              ),
+              trailing: _motionEngine == engine ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+              onTap: () => _selectMotionClarityEngine(engine),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(t.videoSettings.motionClarityOutputRate, style: Theme.of(context).textTheme.titleSmall),
-          ),
-          for (final rate in MotionClarityOutputRate.values)
-            FocusableListTile(
-              title: Text(_motionOutputRateTitle(rate), style: TextStyle(color: _motionOutputRate == rate ? primary : null)),
-              trailing: _motionOutputRate == rate ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
-              onTap: () => _selectMotionClarityOutputRate(rate),
+          if (_motionEngine == MotionClarityEngine.motionCompensated) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(t.videoSettings.motionClarityMciQuality, style: Theme.of(context).textTheme.titleSmall),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(t.videoSettings.motionClarityMciQualityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+            ),
+            for (final quality in MotionClarityMciQuality.values)
+              FocusableListTile(
+                title: Text(_motionMciQualityTitle(quality), style: TextStyle(color: _motionMciQuality == quality ? primary : null)),
+                trailing: _motionMciQuality == quality ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () => _selectMotionClarityMciQuality(quality),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(t.videoSettings.motionClarityOutputRate, style: Theme.of(context).textTheme.titleSmall),
+            ),
+            for (final rate in MotionClarityOutputRate.values)
+              FocusableListTile(
+                title: Text(_motionOutputRateTitle(rate), style: TextStyle(color: _motionOutputRate == rate ? primary : null)),
+                trailing: _motionOutputRate == rate ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () => _selectMotionClarityOutputRate(rate),
+              ),
+          ],
         ],
         if (status?.isConfigured == true)
           FocusableListTile(

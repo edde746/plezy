@@ -6328,6 +6328,9 @@ class Translations$videoSettings$en {
 	/// en: 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.'
 	String get motionClarityOledDescription => 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.';
 
+	/// en: 'OLED uses motion compensation at the current renderer-reported display rate. Choose Custom to change the engine or target rate; this report is not panel scanout measurement.'
+	String get motionClarityOledEngineDescription => 'OLED uses motion compensation at the current renderer-reported display rate. Choose Custom to change the engine or target rate; this report is not panel scanout measurement.';
+
 	/// en: 'Custom'
 	String get motionClarityCustom => 'Custom';
 
