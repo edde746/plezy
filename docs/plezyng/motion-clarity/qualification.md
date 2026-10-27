@@ -54,6 +54,8 @@ count; metrics; confidence interval where meaningful; failures and raw evidence.
 | TIM-10 | Pause/seek/EOF/discontinuity/start-paused | No future/stale frames; source clock, paused intent and EOF behavior preserved |
 | TIM-11 | Display hotplug/window move/rotation/HDR renegotiation | Reprobe; restore only owned display changes; no endless switching |
 | TIM-12 | 48 generated fps on 120 versus 96/144 Hz | Detect incompatible repeat cadence; do not describe 48->120 repetition as uniform |
+| OLED-01 | OLED preset on renderer-reported 60/120/144 Hz outputs | Select current reported cadence when MCI can configure it; surface fallback and distinguish reported Hz from panel scanout |
+| OLED-02 | 24/30 fps on 60/120/144 Hz OLED panels, with panel motion processing off | Measure distinct presented frames, motion blur, judder, interpolation artifacts and film-look preference per panel; no cross-model claim from one set |
 | SYN-01 | Translating object with known position at u=0/.2/.5/.8/1 | Endpoints and arbitrary intermediate positions agree with expected method |
 | SYN-02 | Foreground/background occlusion | No persistent duplicated edges or revealed-content hallucination accepted silently |
 | SYN-03 | Cuts/flashes/dissolves | No cross-shot synthesis; flash timing survives; no invented dissolve |
@@ -108,7 +110,13 @@ cuts, flashes, dissolves, occlusion, pans, animation holds, subtitles, HDR metad
 seek, pause/resume, audio passthrough and live retunes. Record CPU, GPU,
 hardware-decoder readback, peak memory, p50/p95/p99 processing time, dropped and
 repeated frames, A/V skew, filter activation/fallback reason and actual display
-mode. The current adapter has no automatic overload governor, so missed deadlines
+mode. For the OLED profile, include at least one 60 Hz OLED and one 120 Hz OLED with their
+native motion features disabled. A device-reported refresh request alone is not
+evidence of panel presentation. The OLED result must be reported independently
+for each display model, firmware, input cadence and picture mode; no general OLED
+or TV superiority claim follows from this profile.
+
+The current adapter has no automatic overload governor, so missed deadlines
 must be reported as a failure, never hidden by the requested target FPS. A successful
 filter insertion is not a qualification result.
 
