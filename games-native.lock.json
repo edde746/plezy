@@ -41,8 +41,8 @@
     },
     "mbedtls": {
       "repository": "https://github.com/Mbed-TLS/mbedtls.git",
-      "revision": "e185d7fd85499c8ce5ca2a54f5cf8fe7dbe3f8df",
-      "version": "3.6.5",
+      "revision": "068ff080b369adfac81509f9b57b2afabaf82dc5",
+      "version": "3.6.7",
       "license": "Apache-2.0"
     },
     "protobuf-c": {
