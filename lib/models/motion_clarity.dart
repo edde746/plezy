@@ -49,12 +49,11 @@ enum MotionTemporalKernel {
 }
 
 /// Processing backend. Motion-compensated mode uses FFmpeg's libavfilter
-/// minterpolate block-motion synthesis and is experimental; it is CPU-heavy and
-/// may fall back to temporal blending when the active mpv build or rate is
-/// unavailable.
+/// minterpolate block-motion synthesis. Processing cost varies with source size
+/// and target rate; unavailable filters fall back to temporal blending.
 enum MotionClarityEngine { temporalBlend, motionCompensated }
 
-/// Motion-search cost for FFmpeg's experimental motion-compensated engine.
+/// Motion-search cost for FFmpeg's motion-compensated engine.
 /// Higher tiers perform more expensive block searches; none changes the
 /// amount of interpolation or guarantees a particular visual result.
 enum MotionClarityMciQuality {

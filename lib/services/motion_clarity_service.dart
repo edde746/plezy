@@ -467,7 +467,7 @@ class MotionClarityService {
     _currentOutputRate = outputRate;
     _currentMciQuality = mciQuality;
     _currentTargetFps = targetFps;
-    _statusReason = 'Experimental FFmpeg motion compensation is active; monitor playback load and artifacts.';
+    _statusReason = 'Motion-compensated frame generation is active; monitor playback timing and moving-edge quality.';
     _currentKernel = kernel;
     _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
     _comparisonBypass = false;
@@ -486,7 +486,7 @@ class MotionClarityService {
       audioPassthroughActive: passthroughActive,
       outputDriver: driver,
       displayFps: displayFps,
-      reason: 'Experimental FFmpeg motion compensation is active; monitor playback load and artifacts.',
+      reason: 'Motion-compensated frame generation is active; monitor playback timing and moving-edge quality.',
     );
   }
 
