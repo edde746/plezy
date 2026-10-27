@@ -205,10 +205,10 @@ class TrackChapterControls extends StatelessWidget {
           : lastPreset.interpolationEnabled
               ? lastPreset
               : MotionClarityPreset.balanced;
-      final kernel = targetPreset == MotionClarityPreset.custom ? manualKernel : targetPreset.defaultKernel;
-      final threshold = targetPreset == MotionClarityPreset.custom
-          ? manualThreshold
-          : targetPreset.defaultThresholdPercent;
+      final keepManualControls =
+          targetPreset == MotionClarityPreset.custom || targetPreset == MotionClarityPreset.original;
+      final kernel = keepManualControls ? manualKernel : targetPreset.defaultKernel;
+      final threshold = keepManualControls ? manualThreshold : targetPreset.defaultThresholdPercent;
 
       final result = await service.configure(
         preset: targetPreset,
