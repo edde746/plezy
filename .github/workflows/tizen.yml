@@ -9,6 +9,10 @@ on:
         description: Build a signed experimental TPK after validation
         type: boolean
         default: false
+      tester_build:
+        description: Build without a TV certificate; recipient must re-sign
+        type: boolean
+        default: true
       architecture:
         description: ARM TV or x64 emulator (emulator is never a catalogue asset)
         type: choice
@@ -47,6 +51,8 @@ jobs:
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package"]}}', github.run_id)) }}
     timeout-minutes: 60
     env:
+      TESTER_BUILD: ${{ inputs.tester_build }}
+      TAR_OPTIONS: --no-same-owner
       PLEZY_FLUTTER_TIZEN_ROOT: ${{ vars.PLEZYNG_FLUTTER_TIZEN_ROOT }}
       TIZEN_CMAKE_TOOLCHAIN_ARM: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_ARM }}
       TIZEN_CMAKE_TOOLCHAIN_X64: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_X64 }}
@@ -56,21 +62,66 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Verify provisioned SDK and build native dependencies
+      - name: Check out the pinned Flutter-Tizen tool
+        if: env.PLEZY_FLUTTER_TIZEN_ROOT == ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: flutter-tizen/flutter-tizen
+          ref: 22bcec9058fbe1e0943e6c6fda21792f24868e91
+          path: .tizen-toolchain/flutter-tizen
+          persist-credentials: false
+      - name: Check out its pinned Flutter framework
+        if: env.PLEZY_FLUTTER_TIZEN_ROOT == ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: flutter/flutter
+          ref: 6a19cca56475dbfba1478ee68d7bd0c2ef891da1
+          path: .tizen-toolchain/flutter-tizen/flutter
+          persist-credentials: false
+      - name: Resolve toolchain and provision the isolated ARM SDK when needed
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$SIGNING_PROFILE" || { echo 'A Samsung signing profile is required.'; exit 1; }
-          test -x "$PLEZY_FLUTTER_TIZEN_ROOT/bin/flutter-tizen" || { echo 'Provision the pinned 2026 Samsung SDK on this private JIT image.'; exit 1; }
+          if [[ -z "$PLEZY_FLUTTER_TIZEN_ROOT" ]]; then
+            echo "PLEZY_FLUTTER_TIZEN_ROOT=$PWD/.tizen-toolchain/flutter-tizen" >> "$GITHUB_ENV"
+          fi
+          if [[ "$PACKAGE_ARCH" == arm && -z "$TIZEN_CMAKE_TOOLCHAIN_ARM" ]]; then
+            python3 scripts/tizen/bootstrap_linux.py --accept-license --directory "$RUNNER_TEMP/plezyng-tizen-sdk"
+            python3 - "$RUNNER_TEMP/plezyng-tizen-sdk/build-environment.json" <<'PY'
+          import json, os, sys
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              for key, value in json.load(open(sys.argv[1])).items():
+                  output.write(f'{key}={value}\n')
+          PY
+          fi
+      - name: Create a development profile for a tester handoff
+        if: inputs.tester_build && inputs.security_profile == ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TIZEN_SDK:-}" || { echo 'Set TIZEN_SDK for a provisioned SDK.'; exit 1; }
+          python3 scripts/tizen/package.py tester-profile --sdk-root "$TIZEN_SDK" --name PlezyNG-Tester
+          echo 'SIGNING_PROFILE=PlezyNG-Tester' >> "$GITHUB_ENV"
+      - name: Build native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SIGNING_PROFILE" || { echo 'Select a profile or enable the development tester build.'; exit 1; }
+          test -x "$PLEZY_FLUTTER_TIZEN_ROOT/bin/flutter-tizen"
           if [[ "$PACKAGE_ARCH" == arm ]]; then toolchain="$TIZEN_CMAKE_TOOLCHAIN_ARM"; else toolchain="$TIZEN_CMAKE_TOOLCHAIN_X64"; fi
           test -f "$toolchain" || { echo 'A Samsung compiler/sysroot CMake toolchain is required.'; exit 1; }
           python3 scripts/tizen/package.py native --arch "$PACKAGE_ARCH" --toolchain "$toolchain" --output build/tizen-native
       - name: Build and inspect signed TV package
-        run: >-
-          python3 scripts/tizen/package.py build
-          --sdk "$PLEZY_FLUTTER_TIZEN_ROOT" --arch "$PACKAGE_ARCH"
-          --native build/tizen-native --security-profile "$SIGNING_PROFILE"
-          --output build/tizen-release
+        shell: bash
+        run: |
+          set -euo pipefail
+          options=()
+          if [[ "$TESTER_BUILD" == true ]]; then options+=(--tester); fi
+          python3 scripts/tizen/package.py build \
+            --sdk "$PLEZY_FLUTTER_TIZEN_ROOT" --arch "$PACKAGE_ARCH" \
+            --native build/tizen-native --security-profile "$SIGNING_PROFILE" \
+            --output build/tizen-release "${options[@]}"
+          cp scripts/tizen/package.py scripts/tizen/toolchain.json docs/maintainers/tizen-tester.md build/tizen-release/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: plezyng-tizen-${{ inputs.architecture }}-experimental

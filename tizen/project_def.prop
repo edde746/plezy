@@ -1,0 +1,15 @@
+# Native launcher based on flutter-tizen's pinned ui-app/cpp template.
+APPNAME = plezyng
+type = app
+profile = common-6.0
+USER_SRCS += src/runner.cc
+USER_DEFS =
+USER_UNDEFS =
+USER_CPP_DEFS = TIZEN_DEPRECATION DEPRECATION_WARNING
+USER_CPP_UNDEFS =
+USER_INC_DIRS = flutter src
+USER_INC_FILES =
+USER_CPP_INC_FILES =
+USER_LIB_DIRS = lib
+USER_LIBS =
+USER_LFLAGS = -Wl,-E

@@ -9,7 +9,7 @@
 
 ### Added
 
-- Add an experimental Samsung Tizen TV player, conservative server playback profiles, signed-TPK build and inspection tooling, and a disabled Apps2Samsung catalogue recipe. Device builds and hardware qualification remain pending.
+- Add an experimental Samsung Tizen TV player, conservative server playback profiles, signed-TPK build and inspection tooling, and a disabled Apps2Samsung catalogue recipe. ARM release builds now compile with a native C++ runner, pinned SDK bootstrap and headless development signing; the tester handoff includes digest-checked re-signing without recompilation. Hardware qualification and the 2026/Tizen 10 toolchain remain pending.
 
 - Route every GitHub Actions workflow through compatible private JIT capacity, with no GitHub-hosted fallback.
 
