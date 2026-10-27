@@ -397,6 +397,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late MotionClarityOutputRate _motionOutputRate;
   late MotionClarityMciQuality _motionMciQuality;
   MotionClarityApplyResult? _motionStatus;
+  double? _motionSourceFps;
   bool _motionComparisonBypass = false;
 
   TrackControlsState get _state => widget.trackControlsState;
@@ -1368,9 +1369,20 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Future<void> _refreshMotionClarityStatus() async {
     final status = await _motionService.inspect();
+    double? sourceFps;
+    try {
+      final reportedRate = await widget.player.getProperty('container-fps');
+      final parsedRate = double.tryParse(reportedRate?.toString() ?? '');
+      if (parsedRate != null && parsedRate.isFinite && parsedRate > 0) {
+        sourceFps = parsedRate;
+      }
+    } catch (_) {
+      // Container frame-rate metadata is optional and unavailable on some streams.
+    }
     if (mounted) {
       setState(() {
         _motionStatus = status;
+        _motionSourceFps = sourceFps;
         _motionComparisonBypass = status.isComparisonBypass;
       });
     }
@@ -1553,6 +1565,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                         : t.videoSettings.motionClarityOriginalDescription;
     final outputDetail = [
       if (status != null && status.outputDriver != null && status.outputDriver!.isNotEmpty) status.outputDriver!,
+      if (_motionSourceFps != null)
+        '${t.videoSettings.motionClaritySourceRate}: ${_motionSourceFps!.toStringAsFixed(3)} fps',
       if (status != null && status.displayFps != null)
         '${t.videoSettings.motionClarityReportedDisplayRate}: ${status.displayFps!.toStringAsFixed(2)} Hz',
       if (status?.targetFps != null)
