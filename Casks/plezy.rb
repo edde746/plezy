@@ -16,12 +16,6 @@ cask "plezy" do
 
   app "Plezy.app"
 
-  postflight_steps do
-    run "/usr/bin/xattr",
-        args: ["-cr", "{{appdir}}/Plezy.app"],
-        sudo: false
-  end
-
   uninstall quit: "org.snapetech.plezyng"
 
   zap trash: [

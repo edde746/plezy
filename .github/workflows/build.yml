@@ -49,6 +49,11 @@ on:
         required: true
         type: boolean
         default: true
+      prepare_homebrew_cask:
+        description: Generate a macOS Homebrew Cask candidate; requires a signed and notarized release
+        required: true
+        type: boolean
+        default: false
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
   FLUTTER_VERSION: "3.47.1"
@@ -78,6 +83,7 @@ jobs:
       include_webos_build: ${{ steps.request.outputs.include_webos_build }}
       include_webos_release: ${{ steps.request.outputs.include_webos_release }}
       include_tizen_build: ${{ steps.request.outputs.include_tizen_build }}
+      prepare_homebrew_cask: ${{ steps.request.outputs.prepare_homebrew_cask }}
     permissions:
       contents: read
       actions: read
@@ -100,6 +106,7 @@ jobs:
           INCLUDE_WEBOS_BUILD_INPUT: ${{ inputs.include_webos_build }}
           INCLUDE_WEBOS_RELEASE_INPUT: ${{ inputs.include_webos_release }}
           INCLUDE_TIZEN_BUILD_INPUT: ${{ inputs.include_tizen_build }}
+          PREPARE_HOMEBREW_CASK_INPUT: ${{ inputs.prepare_homebrew_cask }}
         run: |
           set -euo pipefail
           ACTION="$ACTION_INPUT"
@@ -108,6 +115,7 @@ jobs:
           INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"
           INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
           INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"
+          PREPARE_HOMEBREW_CASK="$PREPARE_HOMEBREW_CASK_INPUT"
           if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
             echo "Unsupported action: $ACTION" >&2
             exit 1
@@ -139,6 +147,14 @@ jobs:
             fi
             VERSION="$RELEASE_TAG"
           fi
+          if [[ "$PREPARE_HOMEBREW_CASK" != "true" && "$PREPARE_HOMEBREW_CASK" != "false" ]]; then
+            echo "prepare_homebrew_cask must be true or false." >&2
+            exit 1
+          fi
+          if [[ "$PREPARE_HOMEBREW_CASK" == "true" && ( "$ACTION" != "release" || "$MODE" != "release" ) ]]; then
+            echo "Homebrew Cask preparation requires the full release action." >&2
+            exit 1
+          fi
           if [[ "$MODE" == "webos-validation" ]]; then
             RELEASE_TAG=""
             VERSION=""
@@ -166,6 +182,7 @@ jobs:
             echo "include_webos_build=$INCLUDE_WEBOS_BUILD"
             echo "include_webos_release=$INCLUDE_WEBOS_RELEASE"
             echo "include_tizen_build=$INCLUDE_TIZEN_BUILD"
+            echo "prepare_homebrew_cask=$PREPARE_HOMEBREW_CASK"
           } >> "$GITHUB_OUTPUT"
 
       - name: Require the main branch for builds
@@ -1097,6 +1114,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          REQUIRE_HOMEBREW_CASK: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask }}
         run: |
           set -euo pipefail
           signing_values=("$MACOS_CERTIFICATE_BASE64" "$MACOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PASSWORD")
@@ -1131,6 +1149,13 @@ jobs:
             exit 1
           else
             echo "notarize=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ "$REQUIRE_HOMEBREW_CASK" == "true" ]]; then
+            if (( signing_set != 3 || notary_set != 2 )) || [[ -z "$APPLE_TEAM_ID" ]]; then
+              echo "Homebrew Cask preparation requires complete Developer ID signing and Apple notarization credentials." >&2
+              exit 1
+            fi
           fi
 
       - name: Import Code Signing Certificate
@@ -1223,6 +1248,10 @@ jobs:
           # Verify stapling
           echo "Verifying notarization..."
           xcrun stapler validate "$APP_PATH"
+
+      - name: Verify Gatekeeper acceptance for Homebrew Cask
+        if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/Plezy.app
 
       - name: Create DMG
         run: |
@@ -1967,7 +1996,9 @@ jobs:
             scripts/generate_release_notes.py
             scripts/create_release_checksums.py
             scripts/generate_winget_manifests.py
+            scripts/generate_homebrew_cask.py
             scripts/pubspec_version.py
+            Casks/snapetech-plezyng.rb.template
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -2077,12 +2108,29 @@ jobs:
       - name: Generate release SHA-256 checksums
         run: python3 scripts/create_release_checksums.py artifacts
 
+      - name: Generate Homebrew Cask candidate
+        if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        env:
+          RELEASE_VERSION: ${{ needs.validate-trusted-ref.outputs.version }}
+        run: |
+          mkdir -p artifacts/homebrew
+          python3 scripts/generate_homebrew_cask.py \
+            --version "$RELEASE_VERSION" \
+            --checksums artifacts/SHA256SUMS.txt \
+            --output artifacts/homebrew/snapetech-plezyng.rb
+
       - name: Attest release manifests and checksums
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             artifacts/SHA256SUMS.txt
             artifacts/plezyng-winget-manifests-${{ needs.validate-trusted-ref.outputs.version }}.zip
+
+      - name: Attest Homebrew Cask candidate
+        if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: artifacts/homebrew/snapetech-plezyng.rb
 
       - name: Generate appcast.xml
         env:
@@ -2161,6 +2209,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.validate-trusted-ref.outputs.version }}
           INCLUDE_WEBOS_RELEASE: ${{ needs.validate-trusted-ref.outputs.include_webos_release }}
+          PREPARE_HOMEBREW_CASK: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask }}
         run: |
           {
             echo 'files<<EOF'
@@ -2201,6 +2250,9 @@ jobs:
             echo 'artifacts/linux-arm64/*'
             echo appcast.xml
             echo artifacts/SHA256SUMS.txt
+            if [[ "$PREPARE_HOMEBREW_CASK" == "true" ]]; then
+              echo artifacts/homebrew/snapetech-plezyng.rb
+            fi
             echo EOF
           } >> "$GITHUB_OUTPUT"
 
