@@ -38,4 +38,13 @@ AppStream summary, 30 characters:
 - GitHub Release notes are generated from `CHANGELOG.md`, and Discord announcements use those notes. Keep both specific to each release instead of repeating the permanent store description.
 - The README and internal project-history text are separate from this release copy.
 
+## TV store handoff
+
+The Samsung and LG build workflows can prepare a manual upload bundle with the
+shared description, privacy policy, package identity, hash, and build evidence.
+They do not create seller accounts or submit app listings. Capture screenshots
+from the actual supported TV model and add them in the vendor portal; no
+placeholder TV imagery is included. Confirm locale, age-rating, region,
+review-account, and certification fields in the seller portal before submission.
+
 Google Play's short-description limit is 80 characters. Apple allows a 30-character subtitle and a 4,000-character description. See [Google Play listing guidance](https://support.google.com/googleplay/android-developer/answer/9866151) and [App Store Connect platform metadata](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information).

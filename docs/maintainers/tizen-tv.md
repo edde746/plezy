@@ -140,6 +140,20 @@ YAML or inventory source does not deploy the broker or create capacity.
 Missing SDK, signing material or JIT capacity is a blocker, not a reason to
 use hosted runners. Do not restart an active broker to roll out this change.
 
+For an ARM package run, the workflow also emits a
+`plezyng-samsung-tv-store-submission` artifact. Its ZIP contains the signed TPK,
+package inspection report, lockfile, native source archive, listing copy, privacy
+policy, license, package hash, and source commit. The artifact is retained for
+14 days and can be rebuilt when a Seller Office-approved signing profile is
+available. The x64 emulator package is never put in this seller bundle.
+
+The bundle is a manual Seller Office handoff, not an automated store submission.
+After Samsung approves the seller account, use the correct Seller Office signing
+profile, complete the listing and review fields, and capture genuine screenshots
+from a supported TV. Partner Seller approval is needed for distribution outside
+the United States, including Canada. No account credentials or private signing
+keys belong in the bundle or repository.
+
 | Milestone | Exit evidence | Status |
 | --- | --- | --- |
 | Research and app/platform port | Primary-source map, reviewed code, Dart and packaging tests | Implemented; host validation only. |

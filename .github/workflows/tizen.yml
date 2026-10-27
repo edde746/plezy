@@ -1,12 +1,12 @@
 # ng-runner-policy: private-jit-only-v1
 name: Samsung Tizen TV
 
-# No push/PR/tag triggers and no publication side effects.
+# No automatic triggers or vendor-store submission side effects.
 on:
   workflow_dispatch:
     inputs:
       build_package:
-        description: Build a signed experimental TPK after validation
+        description: Build a signed TV TPK and Seller Office handoff after validation
         type: boolean
         default: false
       architecture:
@@ -71,6 +71,31 @@ jobs:
           --sdk "$PLEZY_FLUTTER_TIZEN_ROOT" --arch "$PACKAGE_ARCH"
           --native build/tizen-native --security-profile "$SIGNING_PROFILE"
           --output build/tizen-release
+      - name: Prepare Samsung TV Seller Office handoff bundle
+        if: inputs.architecture == 'arm'
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          VERSION=${VERSION%%+*}
+          python3 scripts/tv_store_submission.py --store samsung \
+            --package build/tizen-release/PlezyNG-tizen-arm.tpk \
+            --version $VERSION --source-commit $SOURCE_COMMIT \
+            --evidence build/tizen-release/PlezyNG-tizen-arm.tpk.sha256 \
+            --evidence build/tizen-release/PlezyNG-tizen-arm.tpk.json \
+            --evidence build/tizen-release/pubspec-tizen.lock \
+            --evidence build/tizen-release/PlezyNG-tizen-arm-native-sources.tar.gz \
+            --output build/tizen-release/PlezyNG-samsung-tv-submission.zip
+      - name: Upload Samsung TV Seller Office handoff bundle
+        if: inputs.architecture == 'arm'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: plezyng-samsung-tv-store-submission
+          path: build/tizen-release/PlezyNG-samsung-tv-submission.zip
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: plezyng-tizen-${{ inputs.architecture }}-experimental

@@ -344,6 +344,27 @@ jobs:
             --version "$RELEASE_TAG" \
             --artifact "${ipks[0]}"
 
+      - name: Prepare LG Seller Lounge handoff bundle
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t ipks < <(find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.ipk' -print)
+          if [[ "${#ipks[@]}" -ne 1 ]]; then
+            echo "Expected exactly one WebOS IPK for the Seller Lounge bundle." >&2
+            exit 1
+          fi
+          python3 scripts/tv_store_submission.py --store lg \
+            --package "${ipks[0]}" --version "$RELEASE_TAG" \
+            --source-commit "$SOURCE_COMMIT" --release-gates-passed \
+            --evidence "$OUTPUT_DIR/webos-engine-provenance.json" \
+            --evidence "$OUTPUT_DIR/webos-compatibility.json" \
+            --evidence "$OUTPUT_DIR/SHA256SUMS.txt" \
+            --output "$OUTPUT_DIR/PlezyNG-lg-webos-submission.zip"
       - name: Attest the WebOS package and provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
@@ -1883,6 +1904,7 @@ jobs:
               echo artifacts/webos/webos-engine-provenance.json
               echo artifacts/webos/webos-compatibility.json
               echo artifacts/webos/SHA256SUMS.txt
+              echo artifacts/webos/PlezyNG-lg-webos-submission.zip
             fi
             echo artifacts/ios-ipa/plezy-ios-unsigned.ipa
             if [ -f artifacts/ios-ipa/plezyng-ios-appstore.ipa ]; then

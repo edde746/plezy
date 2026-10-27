@@ -145,7 +145,13 @@ This leaves the license scope of those two LG-provided runtime libraries unclear
 
 PlezyNG is a public repository. GitHub says signed-in users with repository read access can download workflow artifacts; treat artifacts from this repository as publicly accessible ([GitHub artifact access](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts)). The `webos-validation` workflow therefore uploads only the engine provenance, compatibility record, and checksum manifest. It does not upload the IPK or vendor runtime libraries. The IPK remains inside the ephemeral private-JIT runner workspace, and its diagnostic logs are retained separately.
 
-Normal draft releases omit the experimental WebOS package. Including one requires the explicit `include_webos_release` input and a fail-closed approval record in `tools/webos/compatibility.json`. The release gate requires every documented eligibility gate, the exact C6-qualified source commit and app version, and a rebuilt IPK whose SHA-256 matches the physically qualified artifact. This prevents a passing validation of one package from authorizing a different source, version, or binary. All gates currently remain blocked; do not change them until the evidence is recorded.
+Normal draft releases omit the experimental WebOS package. Including one requires the explicit `include_webos_release` input and a fail-closed approval record in `tools/webos/compatibility.json`. The release gate requires every documented eligibility gate, the exact C6-qualified source commit and app version, and a rebuilt IPK whose SHA-256 matches the physically qualified artifact. This prevents a passing validation of one package from authorizing a different source, version, or binary. All gates currently remain blocked; do not change them until the evidence is recorded. When they pass,
+an opted-in release also attaches
+`PlezyNG-lg-webos-submission.zip`. It includes the exact gated IPK, build
+provenance, compatibility record, checksum, shared listing copy, privacy policy,
+and license. It prepares the Seller Lounge handoff only; account approval,
+listing fields, real-TV screenshots, and vendor submission remain manual.
+
 
 ## Remaining device validation
 
