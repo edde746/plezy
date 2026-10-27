@@ -686,7 +686,7 @@ dependencies {
 
   // Cronet for HTTP/2 multiplexing + better connection management
   implementation("androidx.media3:media3-datasource-cronet:$media3Version")
-  implementation("org.chromium.net:cronet-embedded:143.7445.0")
+  implementation("org.chromium.net:cronet-embedded:500.1.0")
 
   // Keeping libass in-project lets its static core share the app's native
   // packaging rules.
