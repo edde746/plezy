@@ -3,6 +3,7 @@ import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../media/playback_rate.dart';
 import '../models/player_setting_scope.dart';
+import '../models/motion_clarity.dart';
 import '../utils/global_key_utils.dart';
 import 'settings_service.dart';
 
@@ -21,8 +22,9 @@ final class ScopedPlayerPref<T> {
   /// (falls back to the global pref). Values round-trip through JSON, so ints
   /// and doubles need tolerant numeric handling.
   final T? Function(Object? raw) _decode;
+  final Object Function(T value)? _encode;
 
-  const ScopedPlayerPref._(this.id, this.scope, this.global, this._decode);
+  const ScopedPlayerPref._(this.id, this.scope, this.global, this._decode, [this._encode]);
 }
 
 /// Scope-aware persistence for values changed in the player's settings sheet.
@@ -61,6 +63,14 @@ abstract final class ScopedPlayerPrefs {
     SettingsService.boxFitScope,
     SettingsService.defaultBoxFitMode,
     _decodeBoxFit,
+  );
+
+  static final motionClarityPreset = ScopedPlayerPref<MotionClarityPreset>._(
+    'motion_clarity_preset',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityPreset,
+    _decodeMotionClarityPreset,
+    (preset) => preset.name,
   );
 
   static final audioSyncOffset = ScopedPlayerPref<int>._(
@@ -109,7 +119,7 @@ abstract final class ScopedPlayerPrefs {
       return;
     }
     final entries = Map<String, dynamic>.from(_entriesFor(svc, pref.id));
-    entries[key] = <String, dynamic>{'v': value, 't': DateTime.now().millisecondsSinceEpoch};
+    entries[key] = <String, dynamic>{'v': pref._encode?.call(value) ?? value, 't': DateTime.now().millisecondsSinceEpoch};
     final store = Map<String, dynamic>.from(svc.read(SettingsService.scopedPlayerPrefValues));
     store[pref.id] = _prune(entries);
     await svc.write(SettingsService.scopedPlayerPrefValues, store);
@@ -147,7 +157,7 @@ abstract final class ScopedPlayerPrefs {
     if (scope == PlayerSettingScope.global) return svc.write(pref.global, value, checkCurrent: checkCurrent);
     final key = _requireScopeKey(scope, item, library);
     final entries = Map<String, dynamic>.from(_entriesFor(svc, pref.id));
-    entries[key] = <String, dynamic>{'v': value, 't': DateTime.now().millisecondsSinceEpoch};
+    entries[key] = <String, dynamic>{'v': pref._encode?.call(value) ?? value, 't': DateTime.now().millisecondsSinceEpoch};
     final store = Map<String, dynamic>.from(svc.read(SettingsService.scopedPlayerPrefValues));
     store[pref.id] = _prune(entries);
     await svc.write(SettingsService.scopedPlayerPrefValues, store, checkCurrent: checkCurrent);
@@ -229,4 +239,7 @@ abstract final class ScopedPlayerPrefs {
   static int? _decodeBoxFit(Object? raw) => raw is int ? raw.clamp(0, 2) : null;
 
   static String? _decodeString(Object? raw) => raw is String ? raw : null;
+
+  static MotionClarityPreset? _decodeMotionClarityPreset(Object? raw) =>
+      raw is String ? MotionClarityPreset.values.asNameMap()[raw] : null;
 }

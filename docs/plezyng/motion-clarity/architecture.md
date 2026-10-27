@@ -1,9 +1,11 @@
 # Architecture and algorithms
 
-This document specifies proposed behavior. Nothing here is evidence that the
-engine exists. Confidence is high in the timing architecture, moderate in the
-chosen synthesis/restoration approach, and unknown for per-device throughput and
-TV superiority until [qualification](qualification.md).
+This document specifies the target architecture. The current PR implements only
+mpv temporal convolution and its settings lifecycle; nothing here is evidence of a
+motion-compensation, restoration or native-platform engine. Confidence is high in
+the timing architecture, moderate in the chosen synthesis/restoration approach, and
+unknown for per-device throughput and TV superiority until
+[qualification](qualification.md).
 
 ## 1. Pipeline and ownership
 

@@ -1,15 +1,36 @@
 # Implementation work packages
 
-All packages below are **not started by this planning PR**. Check a package complete
-only with an implementation commit and the required evidence. A blocked hardware
-qualification is not the same as unimplemented code. Do not stop after settings,
-interfaces, a CPU demo, or a successful property write and call the feature done.
+The runtime subset below is implemented in this PR; the 25 full work packages are
+not complete. Check a package complete only with its implementation and required
+evidence. A blocked hardware qualification is not the same as unimplemented code.
+A settings surface or successful property write does not complete the full feature.
+
+## Current delivery in this PR
+
+- Adds typed Original, Cinema, Balanced, Smooth, Animation, Sports and Custom
+  profiles. The default stays Original.
+- Adds portable preset, kernel and threshold preferences plus global/library/title
+  scope for the preset.
+- Adds Playback Settings and in-player controls, including custom temporal kernel
+  and threshold selection.
+- Applies mpv display synchronization, temporal convolution, a bounded hardware
+  decoder surface reserve and renderer-status reporting. It restores the player's
+  pre-feature options when Original is selected.
+- Restricts the implementation to mpv renderer paths and reports unsupported native
+  outputs. It does not report requested refresh as measured presentation.
+
+This delivers useful cadence-blending controls; it does not implement any of the
+full native frame-processing packages. Motion-compensated interpolation, scene and
+occlusion analysis, camera-blur restoration, capability-qualified scaling, native
+Android/Apple/TV adapters, measured performance telemetry, model packaging and TV
+comparison remain incomplete. This PR has no device qualification evidence.
 
 ## 1. Verified repository integration map
 
-Snapshot: `af547078ff70df271b04fd35474b8caf7619fa6d`. These paths exist at that
-snapshot; later main changes must be reviewed before editing. Links use the
-snapshot where a source contract is particularly important.
+Design inventory snapshot: `af547078ff70df271b04fd35474b8caf7619fa6d`. The source map
+below records the original integration survey. The implementation touched only
+paths confirmed on this PR branch; later main changes still need reconciliation
+before follow-on native-engine work.
 
 | Existing owner/path | Observed behavior and required integration |
 | --- | --- |

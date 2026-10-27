@@ -6280,6 +6280,91 @@ class Translations$videoSettings$en {
 
 	/// en: 'Decodes audio to PCM; passthrough is off while this is on'
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
+	/// en: 'Motion & clarity'
+	String get motionClarity => 'Motion & clarity';
+
+	/// en: 'Smooth refresh mismatches with mpv temporal blending. This is not optical-flow motion generation; stronger filters can soften moving edges. Spatial upscaling remains in Shader presets.'
+	String get motionClarityDescription => 'Smooth refresh mismatches with mpv temporal blending. This is not optical-flow motion generation; stronger filters can soften moving edges. Spatial upscaling remains in Shader presets.';
+
+	/// en: 'Original'
+	String get motionClarityOriginal => 'Original';
+
+	/// en: 'Preserve the source cadence and the player\'s existing configuration.'
+	String get motionClarityOriginalDescription => 'Preserve the source cadence and the player\'s existing configuration.';
+
+	/// en: 'Cinema'
+	String get motionClarityCinema => 'Cinema';
+
+	/// en: 'Light cadence blending that keeps film motion close to its original look.'
+	String get motionClarityCinemaDescription => 'Light cadence blending that keeps film motion close to its original look.';
+
+	/// en: 'Balanced'
+	String get motionClarityBalanced => 'Balanced';
+
+	/// en: 'Moderate temporal blending for a smoother picture with restrained softness.'
+	String get motionClarityBalancedDescription => 'Moderate temporal blending for a smoother picture with restrained softness.';
+
+	/// en: 'Smooth'
+	String get motionClaritySmooth => 'Smooth';
+
+	/// en: 'Stronger blending for smoother motion; moving edges may look softer or doubled.'
+	String get motionClaritySmoothDescription => 'Stronger blending for smoother motion; moving edges may look softer or doubled.';
+
+	/// en: 'Animation'
+	String get motionClarityAnimation => 'Animation';
+
+	/// en: 'A sharper temporal filter for animation and clean graphic edges.'
+	String get motionClarityAnimationDescription => 'A sharper temporal filter for animation and clean graphic edges.';
+
+	/// en: 'Sports'
+	String get motionClaritySports => 'Sports';
+
+	/// en: 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.'
+	String get motionClaritySportsDescription => 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.';
+
+	/// en: 'Custom'
+	String get motionClarityCustom => 'Custom';
+
+	/// en: 'Choose the temporal filter and when interpolation engages.'
+	String get motionClarityCustomDescription => 'Choose the temporal filter and when interpolation engages.';
+
+	/// en: 'Temporal filter'
+	String get motionClarityKernel => 'Temporal filter';
+
+	/// en: 'Oversample — sharpest, least blending'
+	String get motionClarityKernelOversample => 'Oversample — sharpest, least blending';
+
+	/// en: 'Linear — light blending'
+	String get motionClarityKernelLinear => 'Linear — light blending';
+
+	/// en: 'Catmull–Rom — sharper, may ring'
+	String get motionClarityKernelCatmullRom => 'Catmull–Rom — sharper, may ring';
+
+	/// en: 'Mitchell — balanced softness'
+	String get motionClarityKernelMitchell => 'Mitchell — balanced softness';
+
+	/// en: 'Gaussian — smooth, softer edges'
+	String get motionClarityKernelGaussian => 'Gaussian — smooth, softer edges';
+
+	/// en: 'Bicubic — smoothest, softest'
+	String get motionClarityKernelBicubic => 'Bicubic — smoothest, softest';
+
+	/// en: 'Interpolation threshold'
+	String get motionClarityThreshold => 'Interpolation threshold';
+
+	/// en: 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.'
+	String get motionClarityThresholdDescription => 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.';
+
+	/// en: 'The current video output does not expose mpv\'s GPU interpolation stage.'
+	String get motionClarityOutputUnsupported => 'The current video output does not expose mpv\'s GPU interpolation stage.';
+
+	/// en: 'This decoder was opened without interpolation buffers. Restart playback to use the full temporal filter.'
+	String get motionClarityRestartRequired => 'This decoder was opened without interpolation buffers. Restart playback to use the full temporal filter.';
+
+	/// en: 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.'
+	String get motionClarityConfigured => 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.';
+	/// en: 'Couldn't save motion clarity settings.'
+	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
 }
 
 // Path: performanceOverlay

@@ -1,10 +1,11 @@
-# Motion & clarity: implementation handoff
+# Motion & clarity: runtime and implementation roadmap
 
-Status: **design complete for implementation; no motion engine implemented or qualified by this PR**.
+Status: **mpv temporal-interpolation controls are implemented; motion-compensated generation, blur restoration, native TV processing and hardware qualification remain unimplemented**.
 
-Prepared 2026-10-27 against PlezyNG `main` at
-`af547078ff70df271b04fd35474b8caf7619fa6d`. Repository observations below refer
-to that immutable snapshot. Reconcile later changes before implementation.
+The original repository inventory was prepared against PlezyNG `main` at
+`af547078ff70df271b04fd35474b8caf7619fa6d`. The implementation changes were
+rechecked against this PR branch before editing; the inventory tables below still
+describe the original design baseline where stated.
 
 ## Outcome
 
@@ -16,25 +17,51 @@ with TV interpolation off. The player must actually deliver the processed frames
 at the negotiated output rate, retain audio/subtitle synchronization and picture
 format, and preserve ordinary playback whenever processing is unavailable.
 
-The owner requested a detailed plan and a PR branch for another agent to
-implement. This PR changes planning documents only. It does not enable settings,
-install models, replace playback engines, or claim performance results.
+This PR now adds an optional mpv temporal-blending feature. It exposes Original,
+Cinema, Balanced, Smooth, Animation, Sports and Custom profiles in Playback Settings
+and the in-player settings sheet. Custom mode exposes the temporal kernel and an
+interpolation threshold. The profile is portable and can be saved globally, per
+library or per title. Original remains the default.
 
-## What can be achieved
+When the active mpv output exposes its GPU render stage, the feature requests
+`video-sync=display-resample`, mpv `interpolation`, a `tscale` kernel, an interpolation
+threshold and bounded decoder reference surfaces. A successful property write is
+reported as configured; it is not a measured presentation-rate or visual-quality
+claim. Spatial upscaling remains independent in the existing Shader presets.
 
-| Problem | App action | Boundary | Confidence |
+## Product target and runtime boundary
+
+### Current implementation boundary
+
+The runtime uses mpv's temporal convolution to blend adjacent decoded frames at
+display-synchronous presentation times. This can reduce cadence judder and frame
+pacing mismatch. It is not motion-compensated optical flow: it cannot reliably move
+objects to their intermediate positions, and stronger temporal kernels can create
+softness, ghosting or a more video-like look. The renderer and display determine
+whether the requested refresh cadence is actually presented.
+
+This PR does not remove OLED sample-and-hold persistence blur or camera/exposure
+blur already recorded in a source. It does not add RIFE/NAFNet models, new native
+decoded-frame adapters, Dolby Vision processing, or webOS/Tizen frame access. No
+TV superiority, image-quality, frame-rate, HDR, battery or performance result has
+been qualified. The broader architecture and gates below remain the plan for that
+work.
+
+The table below describes the broader product target, not the feature coverage
+of this PR.
+
+| Problem | Planned app action | Boundary | Confidence |
 | --- | --- | --- | --- |
-| Uneven cadence/judder | Recover telecine where justified; schedule rational timestamps; choose a compatible display mode; synthesize at actual output times when enabled | The OS/output path can refuse a requested mode; a 60 Hz app path cannot deliver 120 distinct images/s | High in method; device-specific support unknown |
-| Low-rate stutter | Estimate motion and render intermediate positions; provide restrained and full smoothing | Completely removing 24 fps stepping changes its temporal appearance, even with perfect estimates | High in feasibility; low-SOE tuning moderate |
-| Display persistence blur | Increase the rate of distinct, correctly timed images | App software does not control the panel's emission duty cycle or physical response; native BFI/strobing can retain an advantage | High |
-| Camera/exposure blur already in the file | Optional conservative reconstruction, separate from interpolation and sharpening | Missing detail is not uniquely recoverable; deblur can invent detail or flicker | Moderate for selected SDR material; unknown for general HDR/film |
-| Soft scaling | Preserve original resolution for reconstruction; apply one qualified scaler to the final picture | Upscaling does not recover ground truth and is not deblurring | High in integration approach |
-| Better than TV processing | Paired, blinded tests on the same TV, source, output format and comparable motion appearance | No universal superiority claim; qualify model/firmware/preset/content combinations | Unknown until measured |
+| Uneven cadence/judder | Recover telecine where justified; schedule rational timestamps; choose a compatible display mode; synthesize at actual output times when enabled | OS/output may refuse a mode; 60 Hz cannot present 120 distinct images/s | High in method; device-specific support unknown |
+| Low-rate stutter | Estimate motion and render intermediate positions; offer restrained and full smoothing | Removing 24 fps stepping changes its temporal appearance | High in feasibility; low-SOE tuning moderate |
+| Display persistence blur | Increase the rate of distinct, correctly timed images | App software cannot change panel emission duty or physical response | High |
+| Camera/exposure blur | Optional conservative reconstruction, separate from interpolation and sharpening | Missing detail is not uniquely recoverable; restoration can invent detail or flicker | Moderate for selected SDR material; unknown for general HDR/film |
+| Soft scaling | Preserve source detail for reconstruction; apply one qualified scaler to final picture | Upscaling is not deblurring | High in integration approach |
+| Better than TV processing | Paired, blinded tests on same TV, source, output format and motion appearance | No universal superiority claim; qualify model/firmware/preset/content combinations | Unknown until measured |
 
-**All three problems can be addressed in the app. Complete elimination of every
-kind of blur, zero stutter, unchanged 24 fps appearance, and superiority to every
-TV are not jointly achievable guarantees.** The release criterion is a better
-measured tradeoff, not a promise that contradicts those constraints.
+**The app can improve some motion and clarity problems, but it cannot guarantee
+zero blur, zero stutter, unchanged film cadence and superiority to every TV at
+once. This PR implements cadence blending only.**
 
 ## Read in this order
 

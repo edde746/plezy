@@ -1,17 +1,20 @@
 # Presets, controls and user experience
 
-All numeric defaults here are **proposed tuning seeds**, not measured best values.
-Version them and revise only using [qualification](qualification.md). The seed
-fixture is [presets.v1.json](presets.v1.json). Confidence: moderate in the UX and
-policy; unknown in the initial perceptual settings until tested.
+The full-feature values below are **proposed tuning seeds**, not measured best
+values. The runtime currently exposes mpv's temporal-convolution subset, documented
+in [the implementation status](README.md#current-implementation-boundary); it does
+not use the continuous strength values in this design table. Version tuning only
+using [qualification](qualification.md). The seed fixture is
+[presets.v1.json](presets.v1.json). Confidence is unknown until tested.
 
 ## 1. Entry points and default behavior
 
-Add **Motion & clarity** inside the existing in-player Video Settings sheet and
-Settings -> Playback. Reuse `BottomSheetPageScaffold`, the existing settings tiles,
-Mono theme tokens, focus wrappers, dialogs and slider behavior. Do not add an
-always-visible playback button, new main navigation entry, competing video overlay,
-or a separate visual design system.
+The first **Motion & clarity** entry points now live in the existing in-player Video
+Settings sheet and Settings -> Playback. The runtime reuses the existing settings
+tiles, focus wrappers, dialogs and sliders. The full design below remains the target
+for richer capability and performance status; this PR adds no always-visible
+playback button, new main navigation entry, competing video overlay or separate
+visual design system.
 
 The collapsed row shows the selected preset and a short effective state, e.g.
 `Cinema · Active`, `Cinema · Limited`, `Original`. Details include a truthful
@@ -32,6 +35,24 @@ and available alternatives. Do not present a slider that accepts input but does
 nothing. Examples: `This playback mode does not support processing.` and
 `This output supports up to 60 fps.` A preset can be stored as a preference, but
 its effective state must clearly remain Original/Limited if it cannot run.
+
+## Runtime mapping in this PR
+
+| Runtime profile | mpv temporal kernel | Runtime behavior |
+| --- | --- | --- |
+| Original | Restores the options captured before the feature ran | No app-requested interpolation |
+| Cinema | `oversample` | Least temporal blending; intended as the restrained starting profile |
+| Balanced | `linear` | Light temporal blending |
+| Smooth | `gaussian` | Stronger blending with greater softness risk |
+| Animation | `mitchell` | Sharper compromise for drawn edges |
+| Sports | `gaussian` | Stronger blending; matching high-frame-rate source cadence is left to mpv |
+| Custom | User-selected kernel | Threshold is adjustable from 0% to 10%; the default is 1% |
+
+These are kernel choices over mpv's temporal axis, not optical-flow strength values,
+not a percentage of synthetic frames and not the complete target presets above.
+The setting follows mpv's detected display clock; it does not choose or switch a
+30/60/120/144 Hz display mode. Higher-rate modes, frame presentation and visual
+quality need separate platform and device qualification.
 
 ## 2. Preset definitions
 

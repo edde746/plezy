@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../models/shader_preset.dart';
+import '../../../models/motion_clarity.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_file_info.dart';
 import '../../../media/media_item.dart';
@@ -25,6 +26,7 @@ import '../../../mpv/player/player_native.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/scoped_player_prefs.dart';
+import '../../../services/motion_clarity_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
@@ -64,6 +66,7 @@ enum _SettingsView {
   hdrToneMapping,
   audioChannelLimit,
   audioEqualizer,
+  motionClarity,
 }
 
 class _SettingsMenuItem extends StatelessWidget {
@@ -383,6 +386,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late HdrToneMapping _hdrToneMapping;
   late AudioChannelLimit _audioChannelLimit;
   late List<double> _audioEqualizerGains;
+  late MotionClarityPreset _motionPreset;
+  late MotionTemporalKernel _motionKernel;
+  late int _motionThresholdPercent;
+  MotionClarityApplyResult? _motionStatus;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -416,6 +423,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioEqualizerGains = SettingsService.audioEqualizerBandPrefs
         .map((pref) => SettingsService.instance.read(pref))
         .toList(growable: false);
+    _motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _state.metadata);
+    _motionKernel = SettingsService.instance.read(SettingsService.motionClarityKernel);
+    _motionThresholdPercent = SettingsService.instance.read(SettingsService.motionClarityThreshold);
+    unawaited(_refreshMotionClarityStatus());
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -686,6 +697,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.audioChannelLimit;
       case _SettingsView.audioEqualizer:
         return t.videoSettings.audioEqualizer;
+      case _SettingsView.motionClarity:
+        return t.videoSettings.motionClarity;
     }
   }
 
@@ -713,6 +726,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.speaker_group_rounded;
       case _SettingsView.audioEqualizer:
         return Symbols.graphic_eq_rounded;
+      case _SettingsView.motionClarity:
+        return Symbols.blur_on_rounded;
     }
   }
 
@@ -989,6 +1004,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             onTap: () => _navigateTo(_SettingsView.shader),
           ),
 
+        // Motion & clarity uses mpv's display-synchronous temporal filter.
+        if (widget.player.playerType == 'mpv')
+          _SettingsMenuItem(
+            icon: Symbols.blur_on_rounded,
+            title: t.videoSettings.motionClarity,
+            valueText: _motionPresetTitle(_motionPreset),
+            isHighlighted: _motionPreset != MotionClarityPreset.original,
+            onTap: () => _navigateTo(_SettingsView.motionClarity),
+          ),
+
         // Ambient Lighting (MPV only)
         if (_state.onToggleAmbientLighting != null)
           FocusableListTile(
@@ -1147,6 +1172,238 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             trailing: selected == limit ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
             onTap: () => _setAudioChannelLimit(limit),
           ),
+      ],
+    );
+  }
+
+  MotionClarityService get _motionService => MotionClarityService.forPlayer(widget.player);
+
+  String _motionPresetTitle(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginal,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinema,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalanced,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmooth,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimation,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySports,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustom,
+  };
+
+  String _motionPresetDescription(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginalDescription,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinemaDescription,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalancedDescription,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmoothDescription,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimationDescription,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySportsDescription,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustomDescription,
+  };
+
+  String _motionKernelTitle(MotionTemporalKernel kernel) => switch (kernel) {
+    MotionTemporalKernel.oversample => t.videoSettings.motionClarityKernelOversample,
+    MotionTemporalKernel.linear => t.videoSettings.motionClarityKernelLinear,
+    MotionTemporalKernel.catmullRom => t.videoSettings.motionClarityKernelCatmullRom,
+    MotionTemporalKernel.mitchell => t.videoSettings.motionClarityKernelMitchell,
+    MotionTemporalKernel.gaussian => t.videoSettings.motionClarityKernelGaussian,
+    MotionTemporalKernel.bicubic => t.videoSettings.motionClarityKernelBicubic,
+  };
+
+  Future<void> _refreshMotionClarityStatus() async {
+    final status = await _motionService.inspect();
+    if (mounted) setState(() => _motionStatus = status);
+  }
+
+  Future<void> _selectMotionClarityPreset(MotionClarityPreset preset) async {
+    final token = _prefWrites.begin('motion_clarity_preset');
+    try {
+      await _prefWrites.commitIfLatest('motion_clarity_preset', token, () async {
+        final manualKernel = SettingsService.instance.read(SettingsService.motionClarityKernel);
+        final manualThreshold = SettingsService.instance.read(SettingsService.motionClarityThreshold);
+        final kernel = preset == MotionClarityPreset.custom ? manualKernel : preset.defaultKernel;
+        final threshold = preset == MotionClarityPreset.custom ? manualThreshold : preset.defaultThresholdPercent;
+        final oldPreset = _motionPreset;
+        final oldKernel = _motionKernel;
+        final oldThreshold = _motionThresholdPercent;
+        final result = await _motionService.configure(
+          preset: preset,
+          kernel: kernel,
+          thresholdPercent: threshold,
+          beforeSourceOpen: false,
+        );
+        try {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, _state.metadata, preset);
+        } catch (_) {
+          await _motionService.configure(
+            preset: oldPreset,
+            kernel: oldKernel,
+            thresholdPercent: oldThreshold,
+            beforeSourceOpen: false,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionPreset = preset;
+          _motionKernel = manualKernel;
+          _motionThresholdPercent = manualThreshold;
+          _motionStatus = result;
+        });
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity preset', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _selectMotionTemporalKernel(MotionTemporalKernel kernel) async {
+    final token = _prefWrites.begin(SettingsService.motionClarityKernel.key);
+    final oldKernel = _motionKernel;
+    final oldPreset = _motionPreset;
+    final oldThreshold = _motionThresholdPercent;
+    try {
+      await _prefWrites.commitIfLatest(SettingsService.motionClarityKernel.key, token, () async {
+        final result = await _motionService.configure(
+          preset: MotionClarityPreset.custom,
+          kernel: kernel,
+          thresholdPercent: _motionThresholdPercent,
+          beforeSourceOpen: false,
+        );
+        try {
+          await SettingsService.instance.write(SettingsService.motionClarityKernel, kernel);
+          await ScopedPlayerPrefs.write(
+            ScopedPlayerPrefs.motionClarityPreset,
+            _state.metadata,
+            MotionClarityPreset.custom,
+          );
+        } catch (_) {
+          try {
+            await SettingsService.instance.write(SettingsService.motionClarityKernel, oldKernel);
+          } catch (_) {}
+          await _motionService.configure(
+            preset: oldPreset,
+            kernel: oldKernel,
+            thresholdPercent: oldThreshold,
+            beforeSourceOpen: false,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionPreset = MotionClarityPreset.custom;
+          _motionKernel = kernel;
+          _motionStatus = result;
+        });
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity kernel', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _setMotionThreshold(int value) async {
+    final threshold = value.clamp(0, 10).toInt();
+    final oldThreshold = _motionThresholdPercent;
+    final oldPreset = _motionPreset;
+    final oldKernel = _motionKernel;
+    final result = await _motionService.configure(
+      preset: MotionClarityPreset.custom,
+      kernel: _motionKernel,
+      thresholdPercent: threshold,
+      beforeSourceOpen: false,
+    );
+    try {
+      await SettingsService.instance.write(SettingsService.motionClarityThreshold, threshold);
+      await ScopedPlayerPrefs.write(
+        ScopedPlayerPrefs.motionClarityPreset,
+        _state.metadata,
+        MotionClarityPreset.custom,
+      );
+      if (mounted) {
+        setState(() {
+          _motionPreset = MotionClarityPreset.custom;
+          _motionThresholdPercent = threshold;
+          _motionStatus = result;
+        });
+      }
+    } catch (error, stackTrace) {
+      try {
+        await SettingsService.instance.write(SettingsService.motionClarityThreshold, oldThreshold);
+      } catch (_) {}
+      await _motionService.configure(
+        preset: oldPreset,
+        kernel: oldKernel,
+        thresholdPercent: oldThreshold,
+        beforeSourceOpen: false,
+      );
+      appLogger.w('Failed to save motion clarity threshold', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Widget _buildMotionClarityView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    final status = _motionStatus;
+    final statusText = status == null
+        ? t.common.loading
+        : !status.isSupported
+            ? t.videoSettings.motionClarityOutputUnsupported
+            : status.requiresSourceReload
+                ? t.videoSettings.motionClarityRestartRequired
+                : status.isConfigured
+                    ? t.videoSettings.motionClarityConfigured
+                    : t.videoSettings.motionClarityOriginalDescription;
+    final outputDetail = [
+      if (status != null && status.outputDriver != null && status.outputDriver!.isNotEmpty) status.outputDriver!,
+      if (status != null && status.displayFps != null) '${status.displayFps!.toStringAsFixed(2)} Hz',
+    ].join(' · ');
+
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Text(t.videoSettings.motionClarityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+        ),
+        ListTile(
+          leading: AppIcon(
+            status?.isSupported == false ? Symbols.info_rounded : Symbols.blur_on_rounded,
+            fill: 1,
+            color: status?.isSupported == false ? tokens(context).textMuted : primary,
+          ),
+          title: Text(statusText),
+          subtitle: outputDetail.isEmpty ? null : Text(outputDetail),
+        ),
+        for (final preset in MotionClarityPreset.values)
+          FocusableListTile(
+            title: Text(_motionPresetTitle(preset), style: TextStyle(color: _motionPreset == preset ? primary : null)),
+            subtitle: Text(_motionPresetDescription(preset), style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+            trailing: _motionPreset == preset ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _selectMotionClarityPreset(preset),
+          ),
+        if (_motionPreset == MotionClarityPreset.custom) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(t.videoSettings.motionClarityKernel, style: Theme.of(context).textTheme.titleSmall),
+          ),
+          for (final kernel in MotionTemporalKernel.values)
+            FocusableListTile(
+              title: Text(_motionKernelTitle(kernel), style: TextStyle(color: _motionKernel == kernel ? primary : null)),
+              trailing: _motionKernel == kernel ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+              onTap: () => _selectMotionTemporalKernel(kernel),
+            ),
+          ListTile(
+            title: Text(t.videoSettings.motionClarityThreshold),
+            subtitle: FocusableSlider(
+              value: _motionThresholdPercent.toDouble(),
+              min: 0,
+              max: 10,
+              divisions: 10,
+              semanticLabel: t.videoSettings.motionClarityThreshold,
+              semanticFormatterCallback: (value) => '${value.round()}%',
+              onChanged: (value) => setState(() => _motionThresholdPercent = value.round()),
+              onChangeEnd: (value) => _setMotionThreshold(value.round()),
+            ),
+            trailing: Text('$_motionThresholdPercent%'),
+          ),
+        ],
       ],
     );
   }
@@ -1612,10 +1869,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
     final isShaderActive = _state.shaderService != null && _state.shaderService!.currentPreset.isEnabled;
+    final isMotionActive = _motionPreset != MotionClarityPreset.original;
     final isZoomActive = (_zoomScale - 1.0).abs() > 0.0001;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isZoomActive);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isMotionActive || isZoomActive);
 
     return BaseVideoControlSheet(
       title: _getTitle(),
@@ -1650,6 +1908,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildAudioChannelLimitView();
           case _SettingsView.audioEqualizer:
             return _buildAudioEqualizerView();
+          case _SettingsView.motionClarity:
+            return _buildMotionClarityView();
         }
       }(),
     );

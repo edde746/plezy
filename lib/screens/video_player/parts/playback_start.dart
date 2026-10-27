@@ -343,6 +343,21 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           await _initVideoFilterAndPip();
           if (!attempt.isCurrent) return false;
 
+          if (currentPlayer.playerType == 'mpv') {
+            final motionService = MotionClarityService.forPlayer(currentPlayer);
+            motionService.markSourceOpened();
+            final motionResult = await motionService.configure(
+              preset: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _currentMetadata),
+              kernel: SettingsService.instance.read(SettingsService.motionClarityKernel),
+              thresholdPercent: SettingsService.instance.read(SettingsService.motionClarityThreshold),
+              beforeSourceOpen: false,
+            );
+            if (!motionResult.isSupported && motionResult.reason != null) {
+              appLogger.d('PlaybackStart: motion clarity unavailable for this output: ${motionResult.reason}');
+            }
+            if (!attempt.isCurrent) return false;
+          }
+
           if (player == currentPlayer) {
             // Auto-PiP: set up callback for API 26-30 path and initial state
             if (_autoPipEnabled) {
