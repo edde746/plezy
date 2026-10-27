@@ -31,10 +31,13 @@ A settings surface or successful property write does not complete the full featu
 This delivers cadence blending and a usable experimental block-motion synthesis path.
 It is not a qualified real-time renderer: filter support, CPU headroom, frame deadlines,
 color paths and actual panel cadence remain unmeasured. The app does not yet have a
-resource governor or adaptive quality fallback for overload. It also lacks neural RIFE,
-custom confidence/occlusion analysis, camera-blur restoration, capability-qualified
-scaling, native Android/Apple/TV frame adapters, verified model packaging and TV
-comparison. This PR has no device qualification evidence.
+resource governor or adaptive quality fallback for overload. It also lacks a full multi-signal resource governor or hardware benchmark.
+A limited runtime guard watches mpv's dropped-frame counter and falls back to
+temporal blending after sustained drops; it does not measure processor headroom,
+thermals, power or scanout. Neural RIFE, custom confidence/occlusion analysis,
+camera-blur restoration, capability-qualified scaling, native Android/Apple/TV
+frame adapters, verified model packaging and TV comparison remain unimplemented.
+This PR has no device qualification evidence.
 
 ## 1. Verified repository integration map
 
