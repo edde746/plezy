@@ -1,4 +1,3 @@
-import '../utils/app_logger.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -16,6 +15,7 @@ import '../services/playback_coordinator.dart';
 import '../services/music/music_hardware_transport.dart';
 import '../services/driver_distraction.dart';
 import '../services/car_ux_restrictions_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/notification_permission.dart';
 import '../screens/video_player/wakelock_controller.dart';
@@ -66,6 +66,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  bool _persistProgress = true;
+  bool _liveInput = false;
+  List<File> _temporaryMediaFiles = const [];
+  File? _streamRecordingTarget;
+  File? _streamRecordingPartial;
+  File? _streamRecordingBackup;
+  bool _pictureAdjustmentTouched = false;
   bool _disposed = false;
   bool _workspaceAudioEnabled = true;
   bool _resumeAfterInterruption = false;
@@ -117,7 +124,103 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       : null;
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
+  bool get isTransientInput => !_persistProgress;
+  bool get isLiveInput => _liveInput;
+  bool get isRecordingStream => _streamRecordingPartial != null;
   bool get playing => player?.state.isActive ?? false;
+
+  void markPictureAdjustmentChanged() {
+    _pictureAdjustmentTouched = true;
+  }
+
+  Future<void> startStreamRecording(File destination, {required bool replaceExisting}) async {
+    if (!_valid || !_liveInput || player?.playerType != 'mpv') {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    if (isRecordingStream) throw const SourceException(SourceFailure.conflict);
+    final native = player!;
+    final generation = _generation;
+
+    final target = File(destination.absolute.path);
+    final extension = p.extension(target.path).toLowerCase();
+    final supportedExtensions = video ? const {'.mkv', '.ts'} : const {'.mka', '.mkv'};
+    if (!supportedExtensions.contains(extension)) throw const SourceException(SourceFailure.unsupported);
+
+    final parent = target.parent;
+    if (!await parent.exists()) throw const SourceException(SourceFailure.storageUnavailable);
+    File? backup;
+    if (await target.exists()) {
+      if (!replaceExisting) throw const SourceException(SourceFailure.conflict);
+      backup = File('${target.path}.plezy-backup-${const Uuid().v4()}');
+      await target.rename(backup.path);
+    }
+
+    if (!_valid || player != native || _generation != generation) {
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        await backup.rename(target.path);
+      }
+      throw const SourceException(SourceFailure.cancelled);
+    }
+
+    final partial = File(
+      p.join(parent.path, '.${p.basenameWithoutExtension(target.path)}.plezy-recording-${const Uuid().v4()}$extension'),
+    );
+    try {
+      await native.setProperty('file-local-options/stream-record', partial.path);
+      _streamRecordingTarget = target;
+      _streamRecordingPartial = partial;
+      _streamRecordingBackup = backup;
+      _notify();
+    } catch (_) {
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        await backup.rename(target.path);
+      }
+      rethrow;
+    }
+  }
+
+  Future<File?> stopStreamRecording() async {
+    final target = _streamRecordingTarget;
+    final partial = _streamRecordingPartial;
+    final backup = _streamRecordingBackup;
+    if (target == null || partial == null) return null;
+
+    _streamRecordingTarget = null;
+    _streamRecordingPartial = null;
+    _streamRecordingBackup = null;
+    try {
+      final native = player;
+      if (native != null && !native.disposed) {
+        await native.setProperty('file-local-options/stream-record', '');
+      }
+      if (!await partial.exists() || await partial.length() == 0) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (await target.exists()) throw const SourceException(SourceFailure.conflict);
+      await partial.rename(target.path);
+      if (backup != null && await backup.exists()) await backup.delete();
+      return target;
+    } catch (_) {
+      // Playback teardown still proceeds if finalizing the stream failed.
+      if (await partial.exists()) {
+        try {
+          await partial.delete();
+        } catch (_) {
+          // A stale recording partial is safer than disrupting playback teardown.
+        }
+      }
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        try {
+          await backup.rename(target.path);
+        } catch (_) {
+          // Keep the backup in place if the destination cannot be restored.
+        }
+      }
+      rethrow;
+    } finally {
+      _notify();
+    }
+  }
 
   Future<void> setWorkspaceAudioEnabled(bool enabled) async {
     if (_disposed || _workspaceAudioEnabled == enabled) return;
@@ -175,6 +278,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     List<PublicationFile> selected, {
     PublicationMode? playbackMode,
     Map<String, Uri> localOverrides = const {},
+    bool persistProgress = true,
+    bool liveInput = false,
+    List<File> temporaryMediaFiles = const [],
   }) => _serialize(() async {
     await _stop();
     try {
@@ -209,6 +315,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       entry = item;
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(localOverrides);
+      _persistProgress = persistProgress;
+      _liveInput = liveInput;
+      _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
       _useEntryChapters =
           selected.length == item.audio.length &&
@@ -225,14 +334,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
       final edition = sourceDigest(jsonEncode(files.map((f) => f.fingerprint).toList()));
       final initial = PublicationProgress(entryKey: item.key, edition: edition, mode: mode, session: const Uuid().v4());
-      progress = await sources.openProgress(item, initial);
-      if (sources.cloudConflict(initial.key) ||
-          await sources.repository.remoteConflict(_profile!, initial.key) != null) {
-        throw const SourceException(SourceFailure.conflict);
+      if (persistProgress) {
+        progress = await sources.openProgress(item, initial);
+        if (sources.cloudConflict(initial.key) ||
+            await sources.repository.remoteConflict(_profile!, initial.key) != null) {
+          throw const SourceException(SourceFailure.conflict);
+        }
+        sources.holdProgress(initial.key);
+      } else {
+        progress = initial;
       }
-      sources.holdProgress(initial.key);
       _undoSeek = null;
-      if (progress!.finished) {
+      if (persistProgress && progress!.finished) {
         progress = await sources.repository.saveProgress(
           _profile!,
           progress!.copyWith(positionMs: 0, filePositionMs: 0, fileIndex: 0, fraction: 0, finished: false),
@@ -299,11 +412,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       )..register();
       await _controls!.setControlsEnabled(
         canPlayPause: true,
-        canSeek: true,
+        canSeek: !_liveInput,
         canGoNext: true,
         canGoPrevious: true,
         canStop: true,
-        canSkip: true,
+        canSkip: !_liveInput,
         canSetSpeed: true,
         preferSkipOverTrackButtons: true,
         skipInterval: Duration(seconds: backwardSeconds),
@@ -439,6 +552,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _openFile(int index, int localPosition, {bool play = true}) async {
     if (!_valid || player == null) return;
+    if (_streamRecordingPartial != null && index != _fileIndex) {
+      try {
+        await stopStreamRecording();
+      } on SourceException catch (error) {
+        if (error.reason != SourceFailure.invalidData) rethrow;
+      }
+    }
     opening = true;
     _fileEpoch++;
     _notify();
@@ -447,7 +567,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final cached = await sources.downloads.local(_profile!, item.sourceId, file);
     final Uri uri;
     if (_localOverrides[file.id] != null) {
-      uri = _localOverrides[file.id]!;
+      final override = _localOverrides[file.id]!;
+      uri = const {'http', 'https'}.contains(override.scheme) ? await _gateway!.registerUri(override) : override;
     } else if (cached != null) {
       uri = cached.uri;
     } else {
@@ -459,6 +580,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (!_valid || player != native) return;
+    if (const {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp', 'dvd', 'bd', 'cdda'}.contains(uri.scheme) &&
+        native.playerType != 'mpv') {
+      throw const SourceException(SourceFailure.unsupported);
+    }
     if (!PlatformDetector.isAutomotive()) unawaited(NotificationPermission.ensure());
     await native.requestAudioFocus();
     await native.open(
@@ -518,6 +643,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _persist({bool? finished}) {
+    if (!_persistProgress) return Future.value();
     final item = entry, profile = _profile, current = progress, native = player;
     if (item == null || profile == null || current == null || native == null) return Future.value();
     final index = _fileIndex, position = positionMs, filePosition = native.currentPosition.inMilliseconds;
@@ -548,7 +674,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> play() => _serialize(() async {
     if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;
-    if (!playing && progress != null && entry != null) {
+    if (_persistProgress && !playing && progress != null && entry != null) {
       final old = progress!;
       sources.releaseProgress(old.key);
       try {
@@ -592,7 +718,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     await player?.pause();
     _pausedAt = DateTime.now();
     await _persist();
-    sources.scheduleSync();
+    if (_persistProgress) sources.scheduleSync();
     _notify();
   });
   Future<void> toggle() => playing ? pause() : play();
@@ -632,7 +758,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   });
   Future<void> _seek(int milliseconds) async {
-    if (!_valid || player == null) return;
+    if (!_valid || player == null || _liveInput) return;
     final maximum = hasCompleteTimeline
         ? durationMs
         : (_durations[_fileIndex] ?? player!.state.duration.inMilliseconds) + _offset;
@@ -667,7 +793,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> skip(int seconds) => seek(positionMs + seconds * 1000);
+  Future<void> skip(int seconds) => _liveInput ? Future.value() : seek(positionMs + seconds * 1000);
   Future<void> nextChapter() async {
     if (!hasCompleteTimeline && chapters.length == files.length) {
       if (_fileIndex + 1 < files.length) await seekChapter(_fileIndex + 1);
@@ -705,7 +831,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   });
   Future<void> savePreferences({bool asDefault = false}) async {
-    if (_profile == null || progress == null) return;
+    if (!_persistProgress || _profile == null || progress == null) return;
     final settings = <String, dynamic>{
       'chapterTimeline': chapterTimeline,
       'smartRewind': smartRewind,
@@ -716,11 +842,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (asDefault) await sources.repository.savePreference(_profile!, 'playback-defaults', settings);
     await _controls?.setControlsEnabled(
       canPlayPause: true,
-      canSeek: true,
+      canSeek: !_liveInput,
       canGoNext: true,
       canGoPrevious: true,
       canStop: true,
-      canSkip: true,
+      canSkip: !_liveInput,
       canSetSpeed: true,
       preferSkipOverTrackButtons: true,
       skipInterval: Duration(seconds: backwardSeconds),
@@ -770,7 +896,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> bookmark({String note = ''}) async {
-    if (entry == null || progress == null || _profile == null) return;
+    if (!_persistProgress || entry == null || progress == null || _profile == null) return;
     await sources.repository.saveAnnotation(
       _profile!,
       BookAnnotation(
@@ -796,12 +922,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       onPlay: () => unawaited(play()),
       onPause: () => unawaited(pause()),
       onTogglePlayPause: () => unawaited(toggle()),
-      onSeek: (p) => unawaited(seek(p.inMilliseconds)),
+      onSeek: (p) {
+        if (!_liveInput) unawaited(seek(p.inMilliseconds));
+      },
       onNext: () => unawaited(nextChapter()),
       onPrevious: () => unawaited(previousChapter()),
       onStop: () => unawaited(stop()),
-      onSkipForward: (d) => unawaited(skip(d?.inSeconds ?? forwardSeconds)),
-      onSkipBackward: (d) => unawaited(skip(-(d?.inSeconds ?? backwardSeconds))),
+      onSkipForward: (d) {
+        if (!_liveInput) unawaited(skip(d?.inSeconds ?? forwardSeconds));
+      },
+      onSkipBackward: (d) {
+        if (!_liveInput) unawaited(skip(-(d?.inSeconds ?? backwardSeconds)));
+      },
       onSetSpeed: (s) => unawaited(setSpeed(s)),
     );
     if (router.route(event)) return;
@@ -845,11 +977,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     clearSleep();
     await _persist();
     await _writes;
-    if (progress != null) sources.releaseProgress(progress!.key);
+    await release(() async {
+      await stopStreamRecording();
+    });
+    if (_persistProgress && progress != null) sources.releaseProgress(progress!.key);
     _pausedAt = null;
     _sleepBoundaryFile = null;
     _undoSeek = null;
-    sources.scheduleSync();
+    if (_persistProgress) sources.scheduleSync();
     _generation++;
     for (final sub in _subscriptions) {
       await release(sub.cancel);
@@ -862,6 +997,17 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final videoLease = _videoPlayerLease;
     _videoPlayerLease = null;
     videoPlayerSlot = null;
+    if (_pictureAdjustmentTouched && native?.playerType == 'mpv') {
+      for (final property in const ['brightness', 'contrast', 'gamma', 'hue', 'saturation']) {
+        await release(() async => native!.setProperty(property, '0'));
+      }
+      try {
+        await native!.command(['vf', 'del', '@plezy360']);
+      } on Object {
+        // The filter may already have left the playback chain.
+      }
+    }
+    _pictureAdjustmentTouched = false;
     await release(() async => native?.stop());
     await release(() async => native?.dispose());
     videoLease?.release();
@@ -871,6 +1017,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       });
     }
     _temporarySubtitles.clear();
+    for (final file in _temporaryMediaFiles) {
+      await release(() async {
+        if (await file.exists()) await file.delete();
+      });
+    }
+    _temporaryMediaFiles = const [];
     await release(() async => _controls?.clear());
     await release(() => _controls?.dispose());
     _controls = null;
@@ -879,6 +1031,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     entry = null;
     files = const [];
     _localOverrides = const {};
+    _persistProgress = true;
+    _liveInput = false;
     progress = null;
     opening = false;
     _notify();

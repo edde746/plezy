@@ -101,6 +101,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$ko watchLink = _Translations$watchLink$ko._(_root);
 	@override late final _Translations$homeLayout$ko homeLayout = _Translations$homeLayout$ko._(_root);
 	@override late final _Translations$platform$ko platform = _Translations$platform$ko._(_root);
+	@override late final _Translations$universalMedia$ko universalMedia = _Translations$universalMedia$ko._(_root);
 	@override late final _Translations$fileSources$ko fileSources = _Translations$fileSources$ko._(_root);
 	@override late final _Translations$lending$ko lending = _Translations$lending$ko._(_root);
 	@override late final _Translations$audiobook$ko audiobook = _Translations$audiobook$ko._(_root);
@@ -3042,6 +3043,137 @@ class _Translations$platform$ko extends Translations$platform$en {
 	@override String get photoLibraryPermission => '사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.';
 	@override String get cameraPermission => 'QR 코드를 스캔하여 Companion Remote를 연결합니다.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$ko extends Translations$universalMedia$en {
+	_Translations$universalMedia$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '오픈 미디어';
+	@override String get shortcutHelp => '이 세션에 대한 링크, 플레이리스트 또는 파일을 재생합니다.';
+	@override String get intro => 'Playback은 PlezyNG의 표준 플레이어를 사용하고 도서관에 역사를 추가하지 않습니다.';
+	@override String get openWhat => '무엇을 열고 싶으신가요?';
+	@override String get stream => '흐름 주소';
+	@override String get playlist => '플레이리스트';
+	@override String get files => '장치 파일';
+	@override String get favorites => '저장된 스트림 좋아하는';
+	@override String get address => '미디어 주소';
+	@override String get addressHelp => '인증 또는 서명 매개 변수를 가진 URL은 이 세션에만 사용되며 좋아하는 것으로 저장될 수 없습니다.';
+	@override String get displayName => '디스플레이 이름 (선택)';
+	@override String get displayNameHelp => '플레이어 및 시스템 미디어 컨트롤에 대한 짧은 이름을 선택합니다.';
+	@override String get allowHttp => '암호화되지 않은 HTTP 연결을 허용';
+	@override String get allowHttpHelp => 'HTTP는 연결을 암호화하지 않습니다. 신뢰할 수 있는 네트워크에서만 허용합니다. 가능한 경우 HTTPS를 사용하십시오.';
+	@override String get advancedProtocols => 'MPV만: RTSP, RTMP/RTMPS, UDP 또는 RTP 주소를 입력합니다.이 주소는 좋아하는 주소로 저장할 수 없습니다.';
+	@override String get liveStream => '살아있는 것처럼 행동하라';
+	@override String get liveStreamHelp => '이것을 라이브 비디오 또는 라디오에 사용하십시오.이 응용 프로그램은 시간표, 스키 버튼 및 go-to-time 옵션을 숨깁니다.';
+	@override String get privateSession => '이 플레이백만이 주소를 사용합니다.이 프로필에 보관하기 위해 자격을 갖춘 스트림 좋아하는 것을 저장합니다.';
+	@override String get saveFavorite => '좋아하는 저장';
+	@override String get playNow => '지금 플레이';
+	@override String get favoriteSaved => 'Stream Favorite 이 프로필에 저장';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
+		one: '스키피드 ${count} 지원되지 않거나 불안정한 플레이리스트 입력.',
+		other: '${count} 지원되지 않거나 불안정한 플레이리스트 입력을 벗어났습니다.',
+	);
+	@override String get playlistAddress => '플레이리스트 주소';
+	@override String get playlistAddressHelp => '웹 주소에서 M3U, M3u8 또는 PLS 플레이리스트를 열 수 있습니다.Direct stream 링크는 플레이 리스트를 저장하지 않습니다.';
+	@override String get choosePlaylist => '플레이리스트 파일 선택';
+	@override String get openPlaylist => '오픈 플레이리스트';
+	@override String get playlistFormatsHelp => '플레이리스트는 최대 1,000 개의 항목과 2 MB를 포함할 수 있습니다.HLS는 스트림으로 열려 있으므로 플레이어가 품질을 선택할 수 있도록합니다.';
+	@override String get noFavorites => '아직 좋아하는 스트림을 저장하지 않았습니다.Favorites 이 프로필에 남아 있습니다.';
+	@override String get removeFavorite => '좋아하는 스트림을 제거';
+	@override String get filesHelp => '오디오, 비디오 또는 ISO 파일을 일시적인 쿼드를 선택합니다.파일 및 URL은 도서관 역사에 추가되지 않습니다.';
+	@override String get chooseFiles => '파일 선택';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
+		one: '1 선택된 파일',
+		other: '${count} 선택된 파일',
+	);
+	@override String get wifiTransfer => 'Wi-Fi를 통해 파일을 보내기';
+	@override String get wifiTransferHelp => '동일한 신뢰할 수 있는 네트워크에서 브라우저에서 지원된 파일을 전송합니다.';
+	@override String get wifiTransferIntro => '다른 장치에서 브라우저에서 이 주소를 열어 파일을 선택하여 이 장치의 파일 및 책 라이브러리에 추가합니다.';
+	@override String get wifiTransferPrivacy => '이 장치는 현지 네트워크를 통해 파일을 수신합니다.이 주소를 아는 사람은 전송을 중단하거나 15 분 후에 주소가 만료 될 때까지 파일을 보낼 수 있습니다.';
+	@override String get wifiTransferStarting => '개인적, 시간 제한된 전송을 준비하는 ...';
+	@override String get wifiTransferUnavailable => '전송을 시작할 수 없습니다. 로컬 네트워크 액세스를 확인하고 다시 시도합니다.';
+	@override String get openThisAddress => '이 주소 중 하나를 전송 장치에서 열어보세요.';
+	@override String get copyAddress => '전송 주소 복사';
+	@override String get addressCopied => '전송 주소 복사';
+	@override String transferExpires({required Object time}) => '이 주소는 ${time}에서 만료됩니다.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
+		one: '${count} 파일 수신',
+		other: '${count} 파일 수신',
+	);
+	@override String uploadedData({required Object size}) => '수신 ${size}';
+	@override String get stopTransfer => '전송 중지 및 주소 취소';
+	@override String get startTransfer => '전송 시작';
+	@override String get wifiImportedFiles => 'Wi-Fi 전송';
+	@override String get wifiBrowserTitle => '파일을 PlezyNG로 보내기';
+	@override String get wifiBrowserIntro => '이 장치의 파일 및 책 라이브러리에 저장됩니다. 최대: 100 파일, 파일 당 4 GiB, 총 10 GiB.';
+	@override String get uploadFilesLabel => '보내기 위한 파일';
+	@override String get uploadSelected => '선택한 파일을 업로드';
+	@override String get uploadSelectFirst => '먼저 하나 이상의 파일을 선택합니다.';
+	@override String get uploading => '보내기';
+	@override String get uploadComplete => '파일이 PlezyNG에 추가되었습니다.';
+	@override String get uploadFailed => '이 페이지를 열고 다시 시도하십시오.';
+	@override String get liveCue => '라이브';
+	@override String get liveSession => '라이브 스트림';
+	@override String get liveCueHelp => '라이브 비디오 또는 라디오를 위해, 앱은 시간표를 숨기고 스키 버튼.그것은 주소를 저장하거나 기록을 보지 않습니다.';
+	@override String get sessionOnly => '이 플레이백은 세션에만';
+	@override String get sessionOnlyHelp => 'Playback은 진보 또는 역사를 절대 저장하지 않습니다.이 프로필에 보관하기 위해 좋아하는 스트림을 저장하십시오.';
+	@override String get pictureAdjustments => '사진 조정';
+	@override String get pictureHelp => '이러한 이미지 변경은이 재생에만 영향을 미칩니다.그들은 재생이 끝날 때 다시 설정됩니다.';
+	@override String get resetPicture => '사진 재설정';
+	@override String get brightness => '밝기';
+	@override String get contrast => '대조점';
+	@override String get gamma => '가마';
+	@override String get hue => '하우스';
+	@override String get saturation => '토성화';
+	@override String get view360 => '360° 비디오를 위한 평평한 전망';
+	@override String get view360Help => 'MPV는 FFmpeg의 v360 필터가 필요합니다.';
+	@override String get view360Unavailable => '이 MPV 구축은 360° 필터를 적용 할 수 없습니다.';
+	@override String get view360Yaw => '수평 전망';
+	@override String get view360Pitch => 'Vertical 전망';
+	@override String get view360FieldOfView => '시야의 영역';
+	@override String get recordStream => '레코드 라이브 스트림';
+	@override String get stopRecording => '녹음을 멈추고 저장';
+	@override String get recordingStarted => '녹음은 활성화됩니다.Leaving playback stops and saves the recording.';
+	@override String get recordingSaved => '녹음이 완료되고 저장되었습니다.';
+	@override String get recordingActive => '이 장치를 기록하십시오.Playback을 남기면 멈추고 저장됩니다.';
+	@override String get recordingFormatHelp => '비디오를 위해 MKV 또는 MPEG-TS를 선택합니다.오디오를 위한 경우 MKA 또는 MKV를 선택하십시오.';
+	@override String get replaceRecordingTitle => '이 레코드를 대체할 수 있나요?';
+	@override String get replaceRecordingHelp => 'PlezyNG는 녹음하는 동안 기존 파일을 복구합니다. 새 녹음을 저장할 수 없다면 Plezy NG는 백업을 복원합니다.';
+	@override String get replaceRecording => '파일 교체';
+	@override String get discHelp => '이 컴퓨터의 광학 드라이브에서 디스크를 열 수 있습니다 장치 파일에서 ISO 이미지를 열 수 있음.';
+	@override String get discs => '광학 디스크';
+	@override String get dvd => 'DVD';
+	@override String get bluray => '블루레이';
+	@override String get audioCd => '오디오 CD';
+	@override String get discAvailability => '디스크 재생에는 호환되는 MPV 구축, 지원된 드라이브 및 운영 체제 허가가 필요합니다.그것은 상업적인 디스크 보호를 초과할 수 없습니다.';
+	@override String get converterTitle => '현지 미디어 파일을 변환';
+	@override String get converterHelp => 'FFmpeg를 사용하여 MP4, M4A 또는 MP3 복사본을 만들 수 있습니다.';
+	@override String get converterIntro => '지역 오디오 또는 비디오 파일을 여러 장치에서 작동하는 형식으로 변환합니다.';
+	@override String get converterPrivacy => 'FFmpeg는이 컴퓨터에 설치되어야합니다.Conversion은 로컬 파일만 읽습니다.그것은 스트림을 다운로드하거나 DRM을 제거하지 않습니다.';
+	@override String get converterChooseInput => '지역 미디어 파일 선택';
+	@override String get converterFormat => '출력 형식';
+	@override String get converterMp4 => 'MP4 · H.264 및 AAC';
+	@override String get converterM4a => 'M4A · AAC 오디오';
+	@override String get converterMp3 => 'MP3 오디오';
+	@override String get converterSaveAs => '변환된 미디어를 저장하는 방법';
+	@override String get converterExtensionMismatch => '선택한 출력 확장을 가진 파일 이름을 선택합니다.';
+	@override String get converterUnsupportedInput => '오디오 또는 비디오 파일을 선택합니다.';
+	@override String get converterLocalOnly => '선택한 파일은 현지 장치 경로로 사용할 수 없습니다.';
+	@override String get converterReplaceTitle => '이 파일을 교체할 수 있나요?';
+	@override String get converterReplaceHelp => 'PlezyNG은 변환 된 복사본이 저장 될 때까지 기존 파일을 복구합니다.';
+	@override String get converterStarting => 'FFmpeg를 시작합니다.';
+	@override String get converterProgress => '이 컴퓨터로 변환하는 ...';
+	@override String get converterComplete => '변환이 완료되었습니다.새 파일은 준비되어 있습니다.';
+	@override String get converterFfmpegMissing => 'H.264, AAC 및 MP3 지원을 사용하여 FFmpeg를 설치하고 다시 시도하십시오.';
+	@override String get converterFailed => '변환이 실패했습니다.원본 파일이 읽을 수 있는지 확인하고 목적지가 충분한 공간을 갖추고 있음을 확인합니다.';
+	@override String get converterCancelled => '변환이 취소되었습니다 불완전한 출력은 제거되었습니다.';
+	@override String get converterDesktopOnly => '현지 변환은 FFmpeg 설치를 가진 데스크톱 컴퓨터에서 사용할 수 있습니다.';
+	@override String get converterStart => '파일 변환';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$ko extends Translations$fileSources$en {
@@ -7613,6 +7745,118 @@ extension on TranslationsKo {
 			'platform.locationPermission' => 'PlezyNG는 로컬 네트워크를 찾고 미디어 서버에 연결하는 데 iOS가 요구하는 경우 위치 접근 권한을 사용합니다.',
 			'platform.photoLibraryPermission' => '사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.',
 			'platform.cameraPermission' => 'QR 코드를 스캔하여 Companion Remote를 연결합니다.',
+			'universalMedia.title' => '오픈 미디어',
+			'universalMedia.shortcutHelp' => '이 세션에 대한 링크, 플레이리스트 또는 파일을 재생합니다.',
+			'universalMedia.intro' => 'Playback은 PlezyNG의 표준 플레이어를 사용하고 도서관에 역사를 추가하지 않습니다.',
+			'universalMedia.openWhat' => '무엇을 열고 싶으신가요?',
+			'universalMedia.stream' => '흐름 주소',
+			'universalMedia.playlist' => '플레이리스트',
+			'universalMedia.files' => '장치 파일',
+			'universalMedia.favorites' => '저장된 스트림 좋아하는',
+			'universalMedia.address' => '미디어 주소',
+			'universalMedia.addressHelp' => '인증 또는 서명 매개 변수를 가진 URL은 이 세션에만 사용되며 좋아하는 것으로 저장될 수 없습니다.',
+			'universalMedia.displayName' => '디스플레이 이름 (선택)',
+			'universalMedia.displayNameHelp' => '플레이어 및 시스템 미디어 컨트롤에 대한 짧은 이름을 선택합니다.',
+			'universalMedia.allowHttp' => '암호화되지 않은 HTTP 연결을 허용',
+			'universalMedia.allowHttpHelp' => 'HTTP는 연결을 암호화하지 않습니다. 신뢰할 수 있는 네트워크에서만 허용합니다. 가능한 경우 HTTPS를 사용하십시오.',
+			'universalMedia.advancedProtocols' => 'MPV만: RTSP, RTMP/RTMPS, UDP 또는 RTP 주소를 입력합니다.이 주소는 좋아하는 주소로 저장할 수 없습니다.',
+			'universalMedia.liveStream' => '살아있는 것처럼 행동하라',
+			'universalMedia.liveStreamHelp' => '이것을 라이브 비디오 또는 라디오에 사용하십시오.이 응용 프로그램은 시간표, 스키 버튼 및 go-to-time 옵션을 숨깁니다.',
+			'universalMedia.privateSession' => '이 플레이백만이 주소를 사용합니다.이 프로필에 보관하기 위해 자격을 갖춘 스트림 좋아하는 것을 저장합니다.',
+			'universalMedia.saveFavorite' => '좋아하는 저장',
+			'universalMedia.playNow' => '지금 플레이',
+			'universalMedia.favoriteSaved' => 'Stream Favorite 이 프로필에 저장',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '스키피드 ${count} 지원되지 않거나 불안정한 플레이리스트 입력.', other: '${count} 지원되지 않거나 불안정한 플레이리스트 입력을 벗어났습니다.', ),
+			'universalMedia.playlistAddress' => '플레이리스트 주소',
+			'universalMedia.playlistAddressHelp' => '웹 주소에서 M3U, M3u8 또는 PLS 플레이리스트를 열 수 있습니다.Direct stream 링크는 플레이 리스트를 저장하지 않습니다.',
+			'universalMedia.choosePlaylist' => '플레이리스트 파일 선택',
+			'universalMedia.openPlaylist' => '오픈 플레이리스트',
+			'universalMedia.playlistFormatsHelp' => '플레이리스트는 최대 1,000 개의 항목과 2 MB를 포함할 수 있습니다.HLS는 스트림으로 열려 있으므로 플레이어가 품질을 선택할 수 있도록합니다.',
+			'universalMedia.noFavorites' => '아직 좋아하는 스트림을 저장하지 않았습니다.Favorites 이 프로필에 남아 있습니다.',
+			'universalMedia.removeFavorite' => '좋아하는 스트림을 제거',
+			'universalMedia.filesHelp' => '오디오, 비디오 또는 ISO 파일을 일시적인 쿼드를 선택합니다.파일 및 URL은 도서관 역사에 추가되지 않습니다.',
+			'universalMedia.chooseFiles' => '파일 선택',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '1 선택된 파일', other: '${count} 선택된 파일', ),
+			'universalMedia.wifiTransfer' => 'Wi-Fi를 통해 파일을 보내기',
+			'universalMedia.wifiTransferHelp' => '동일한 신뢰할 수 있는 네트워크에서 브라우저에서 지원된 파일을 전송합니다.',
+			'universalMedia.wifiTransferIntro' => '다른 장치에서 브라우저에서 이 주소를 열어 파일을 선택하여 이 장치의 파일 및 책 라이브러리에 추가합니다.',
+			'universalMedia.wifiTransferPrivacy' => '이 장치는 현지 네트워크를 통해 파일을 수신합니다.이 주소를 아는 사람은 전송을 중단하거나 15 분 후에 주소가 만료 될 때까지 파일을 보낼 수 있습니다.',
+			'universalMedia.wifiTransferStarting' => '개인적, 시간 제한된 전송을 준비하는 ...',
+			'universalMedia.wifiTransferUnavailable' => '전송을 시작할 수 없습니다. 로컬 네트워크 액세스를 확인하고 다시 시도합니다.',
+			'universalMedia.openThisAddress' => '이 주소 중 하나를 전송 장치에서 열어보세요.',
+			'universalMedia.copyAddress' => '전송 주소 복사',
+			'universalMedia.addressCopied' => '전송 주소 복사',
+			'universalMedia.transferExpires' => ({required Object time}) => '이 주소는 ${time}에서 만료됩니다.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '${count} 파일 수신', other: '${count} 파일 수신', ),
+			'universalMedia.uploadedData' => ({required Object size}) => '수신 ${size}',
+			'universalMedia.stopTransfer' => '전송 중지 및 주소 취소',
+			'universalMedia.startTransfer' => '전송 시작',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi 전송',
+			'universalMedia.wifiBrowserTitle' => '파일을 PlezyNG로 보내기',
+			'universalMedia.wifiBrowserIntro' => '이 장치의 파일 및 책 라이브러리에 저장됩니다. 최대: 100 파일, 파일 당 4 GiB, 총 10 GiB.',
+			'universalMedia.uploadFilesLabel' => '보내기 위한 파일',
+			'universalMedia.uploadSelected' => '선택한 파일을 업로드',
+			'universalMedia.uploadSelectFirst' => '먼저 하나 이상의 파일을 선택합니다.',
+			'universalMedia.uploading' => '보내기',
+			'universalMedia.uploadComplete' => '파일이 PlezyNG에 추가되었습니다.',
+			'universalMedia.uploadFailed' => '이 페이지를 열고 다시 시도하십시오.',
+			'universalMedia.liveCue' => '라이브',
+			'universalMedia.liveSession' => '라이브 스트림',
+			'universalMedia.liveCueHelp' => '라이브 비디오 또는 라디오를 위해, 앱은 시간표를 숨기고 스키 버튼.그것은 주소를 저장하거나 기록을 보지 않습니다.',
+			'universalMedia.sessionOnly' => '이 플레이백은 세션에만',
+			'universalMedia.sessionOnlyHelp' => 'Playback은 진보 또는 역사를 절대 저장하지 않습니다.이 프로필에 보관하기 위해 좋아하는 스트림을 저장하십시오.',
+			'universalMedia.pictureAdjustments' => '사진 조정',
+			'universalMedia.pictureHelp' => '이러한 이미지 변경은이 재생에만 영향을 미칩니다.그들은 재생이 끝날 때 다시 설정됩니다.',
+			'universalMedia.resetPicture' => '사진 재설정',
+			'universalMedia.brightness' => '밝기',
+			'universalMedia.contrast' => '대조점',
+			'universalMedia.gamma' => '가마',
+			'universalMedia.hue' => '하우스',
+			'universalMedia.saturation' => '토성화',
+			'universalMedia.view360' => '360° 비디오를 위한 평평한 전망',
+			'universalMedia.view360Help' => 'MPV는 FFmpeg의 v360 필터가 필요합니다.',
+			'universalMedia.view360Unavailable' => '이 MPV 구축은 360° 필터를 적용 할 수 없습니다.',
+			'universalMedia.view360Yaw' => '수평 전망',
+			'universalMedia.view360Pitch' => 'Vertical 전망',
+			'universalMedia.view360FieldOfView' => '시야의 영역',
+			'universalMedia.recordStream' => '레코드 라이브 스트림',
+			'universalMedia.stopRecording' => '녹음을 멈추고 저장',
+			'universalMedia.recordingStarted' => '녹음은 활성화됩니다.Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => '녹음이 완료되고 저장되었습니다.',
+			'universalMedia.recordingActive' => '이 장치를 기록하십시오.Playback을 남기면 멈추고 저장됩니다.',
+			'universalMedia.recordingFormatHelp' => '비디오를 위해 MKV 또는 MPEG-TS를 선택합니다.오디오를 위한 경우 MKA 또는 MKV를 선택하십시오.',
+			'universalMedia.replaceRecordingTitle' => '이 레코드를 대체할 수 있나요?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG는 녹음하는 동안 기존 파일을 복구합니다. 새 녹음을 저장할 수 없다면 Plezy NG는 백업을 복원합니다.',
+			'universalMedia.replaceRecording' => '파일 교체',
+			'universalMedia.discHelp' => '이 컴퓨터의 광학 드라이브에서 디스크를 열 수 있습니다 장치 파일에서 ISO 이미지를 열 수 있음.',
+			'universalMedia.discs' => '광학 디스크',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => '블루레이',
+			'universalMedia.audioCd' => '오디오 CD',
+			'universalMedia.discAvailability' => '디스크 재생에는 호환되는 MPV 구축, 지원된 드라이브 및 운영 체제 허가가 필요합니다.그것은 상업적인 디스크 보호를 초과할 수 없습니다.',
+			'universalMedia.converterTitle' => '현지 미디어 파일을 변환',
+			'universalMedia.converterHelp' => 'FFmpeg를 사용하여 MP4, M4A 또는 MP3 복사본을 만들 수 있습니다.',
+			'universalMedia.converterIntro' => '지역 오디오 또는 비디오 파일을 여러 장치에서 작동하는 형식으로 변환합니다.',
+			'universalMedia.converterPrivacy' => 'FFmpeg는이 컴퓨터에 설치되어야합니다.Conversion은 로컬 파일만 읽습니다.그것은 스트림을 다운로드하거나 DRM을 제거하지 않습니다.',
+			'universalMedia.converterChooseInput' => '지역 미디어 파일 선택',
+			'universalMedia.converterFormat' => '출력 형식',
+			'universalMedia.converterMp4' => 'MP4 · H.264 및 AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC 오디오',
+			'universalMedia.converterMp3' => 'MP3 오디오',
+			'universalMedia.converterSaveAs' => '변환된 미디어를 저장하는 방법',
+			'universalMedia.converterExtensionMismatch' => '선택한 출력 확장을 가진 파일 이름을 선택합니다.',
+			'universalMedia.converterUnsupportedInput' => '오디오 또는 비디오 파일을 선택합니다.',
+			'universalMedia.converterLocalOnly' => '선택한 파일은 현지 장치 경로로 사용할 수 없습니다.',
+			'universalMedia.converterReplaceTitle' => '이 파일을 교체할 수 있나요?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG은 변환 된 복사본이 저장 될 때까지 기존 파일을 복구합니다.',
+			'universalMedia.converterStarting' => 'FFmpeg를 시작합니다.',
+			'universalMedia.converterProgress' => '이 컴퓨터로 변환하는 ...',
+			'universalMedia.converterComplete' => '변환이 완료되었습니다.새 파일은 준비되어 있습니다.',
+			'universalMedia.converterFfmpegMissing' => 'H.264, AAC 및 MP3 지원을 사용하여 FFmpeg를 설치하고 다시 시도하십시오.',
+			'universalMedia.converterFailed' => '변환이 실패했습니다.원본 파일이 읽을 수 있는지 확인하고 목적지가 충분한 공간을 갖추고 있음을 확인합니다.',
+			'universalMedia.converterCancelled' => '변환이 취소되었습니다 불완전한 출력은 제거되었습니다.',
+			'universalMedia.converterDesktopOnly' => '현지 변환은 FFmpeg 설치를 가진 데스크톱 컴퓨터에서 사용할 수 있습니다.',
+			'universalMedia.converterStart' => '파일 변환',
 			'fileSources.title' => '파일 및 책',
 			'fileSources.subtitle' => '읽고, 듣고, 자신의 파일에서 관찰합니다.',
 			'fileSources.add' => '출처 추가',

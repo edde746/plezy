@@ -102,6 +102,7 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$watchLink$zh_Hant watchLink = _Translations$watchLink$zh_Hant._(_root);
 	@override late final _Translations$homeLayout$zh_Hant homeLayout = _Translations$homeLayout$zh_Hant._(_root);
 	@override late final _Translations$platform$zh_Hant platform = _Translations$platform$zh_Hant._(_root);
+	@override late final _Translations$universalMedia$zh_Hant universalMedia = _Translations$universalMedia$zh_Hant._(_root);
 	@override late final _Translations$fileSources$zh_Hant fileSources = _Translations$fileSources$zh_Hant._(_root);
 	@override late final _Translations$lending$zh_Hant lending = _Translations$lending$zh_Hant._(_root);
 	@override late final _Translations$audiobook$zh_Hant audiobook = _Translations$audiobook$zh_Hant._(_root);
@@ -3043,6 +3044,137 @@ class _Translations$platform$zh_Hant extends Translations$platform$zh {
 	@override String get photoLibraryPermission => '從照片圖庫中選取圖片，用作媒體封面等影像。';
 	@override String get cameraPermission => '掃描 QR 碼以配對 Companion Remote。';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$zh_Hant extends Translations$universalMedia$zh {
+	_Translations$universalMedia$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '開放媒體';
+	@override String get shortcutHelp => '播放此會議的連結、播放列表或檔案。';
+	@override String get intro => '開啟連結、播放列表或檔案 Playback 使用 PlezyNG 的標準播放器,並且不會將歷史新增到您的圖書館。';
+	@override String get openWhat => '你想開啟什麼?';
+	@override String get stream => '流地址';
+	@override String get playlist => '播放列表';
+	@override String get files => '裝置檔案';
+	@override String get favorites => '儲存流喜愛';
+	@override String get address => '媒體地址';
+	@override String get addressHelp => 'HTTPS 是優先的. 有認可或簽名引數的 URL 僅用於此會議,並且不能儲存為喜愛。';
+	@override String get displayName => '顯示名稱(可選)';
+	@override String get displayNameHelp => '選擇玩家和系統媒體控制器的簡稱。';
+	@override String get allowHttp => '允許未加密的 HTTP 連線';
+	@override String get allowHttpHelp => 'HTTP 不加密連線. 只允許它在可靠的網路上. 當可能時使用 HTTPS。';
+	@override String get advancedProtocols => 'MPV 僅:輸入 RTSP、RTMP/RTMPS、UDP 或 RTP 地址,這些地址不能儲存為最受歡迎的。';
+	@override String get liveStream => '作為活著的待遇';
+	@override String get liveStreamHelp => '使用此用於直播影片或廣播電臺. 該應用程式隱藏了時間欄,滑動按鈕和 go-to-time 選項。';
+	@override String get privateSession => '只有此播放使用地址. 儲存一個合格流最喜歡的,以保持它在這個個人資料。';
+	@override String get saveFavorite => '儲存最喜歡';
+	@override String get playNow => '現在玩';
+	@override String get favoriteSaved => '流喜愛儲存到此個人資料';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		one: '${count} 不受支援或不安全的播放列表輸入。',
+		other: '${count} 不受支援或不安全的播放列表輸入。',
+	);
+	@override String get playlistAddress => 'Playlist 地址';
+	@override String get playlistAddressHelp => '從網頁地址開啟 M3U、M3U8 或 PLS 播放列表. Direct Stream 連結不會儲存播放名單。';
+	@override String get choosePlaylist => '選擇 Playlist 檔案';
+	@override String get openPlaylist => '開放播放列表';
+	@override String get playlistFormatsHelp => '一張播放列表可以包含最多1000個專案和2MB的HLS顯示為流,所以玩家可以選擇質量。';
+	@override String get noFavorites => '尚未儲存流喜愛. 喜愛留在此個人資料中。';
+	@override String get removeFavorite => '刪除流喜愛';
+	@override String get filesHelp => '選擇音訊、影片或ISO檔案,以便進行臨時記錄. 檔案和URL不新增到圖書館歷史。';
+	@override String get chooseFiles => '選擇檔案';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		one: '1 選擇的檔案',
+		other: '${count} 已選擇的檔案',
+	);
+	@override String get wifiTransfer => '透過 Wi-Fi 傳送檔案';
+	@override String get wifiTransferHelp => '從同一信任網路的瀏覽器傳輸支援的檔案。';
+	@override String get wifiTransferIntro => '在另一個裝置上的瀏覽器中開啟此地址. 選擇檔案以將其新增到該裝置的檔案和書籍圖書館。';
+	@override String get wifiTransferPrivacy => '本裝置透過您的本地網路接收檔案. 任何知道此地址的人都可以傳送檔案,直到您停止傳輸或地址在15分鐘後終止。';
+	@override String get wifiTransferStarting => '準備一個私人,時間有限的轉會...';
+	@override String get wifiTransferUnavailable => '無法啟動轉換,檢查本地網路接入並嘗試一次。';
+	@override String get openThisAddress => '在傳送裝置上開啟其中一個地址';
+	@override String get copyAddress => '傳輸地址複製';
+	@override String get addressCopied => '傳輸地址複製';
+	@override String transferExpires({required Object time}) => '此地址在 ${time} 中終止。';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		one: '${count} 獲取檔案',
+		other: '${count} 收到的檔案',
+	);
+	@override String uploadedData({required Object size}) => '接收 ${size}';
+	@override String get stopTransfer => '停止轉讓和取消地址';
+	@override String get startTransfer => '轉移開始';
+	@override String get wifiImportedFiles => 'Wi-Fi 傳輸';
+	@override String get wifiBrowserTitle => '向 PlezyNG 傳送檔案';
+	@override String get wifiBrowserIntro => '選擇音訊、影片、電子書或漫畫檔案傳送. 這些檔案儲存在該裝置的檔案和書籍庫中. 最多: 100 個檔案,每個檔案 4 GiB,總共 10 GiB。';
+	@override String get uploadFilesLabel => '檔案傳送';
+	@override String get uploadSelected => '下載所選擇的檔案';
+	@override String get uploadSelectFirst => '首先選擇一個或多個檔案。';
+	@override String get uploading => '傳送';
+	@override String get uploadComplete => '檔案新增到 PlezyNG。';
+	@override String get uploadFailed => '檔案無法新增,請保持此頁面開放並再次嘗試。';
+	@override String get liveCue => '生活';
+	@override String get liveSession => '直播流';
+	@override String get liveCueHelp => '對於直播影片或無線電,應用程式隱藏了時間欄和跳躍按鈕,它不會儲存地址或觀看歷史。';
+	@override String get sessionOnly => '此播放僅是會話';
+	@override String get sessionOnlyHelp => 'Playback 永遠不會儲存進展或歷史. 如果有資格,請將流作為最受歡迎的儲存在此個人資料中。';
+	@override String get pictureAdjustments => '影象調整';
+	@override String get pictureHelp => '這些影象變更隻影響此播放,它們在播放結束時重新設定。';
+	@override String get resetPicture => '重新設定影象';
+	@override String get brightness => '光明';
+	@override String get contrast => '矛盾';
+	@override String get gamma => '加姆';
+	@override String get hue => '鬍子';
+	@override String get saturation => '土星';
+	@override String get view360 => '平板檢視360度影片';
+	@override String get view360Help => 'MPV 需要 FFmpeg 的 v360 過濾器來檢視此檢視。';
+	@override String get view360Unavailable => '這個MPV構建不能應用360度過濾器。';
+	@override String get view360Yaw => '地平線視野';
+	@override String get view360Pitch => '垂直視野';
+	@override String get view360FieldOfView => '視野領域';
+	@override String get recordStream => '記錄直播';
+	@override String get stopRecording => '停止和儲存錄制';
+	@override String get recordingStarted => '記錄是活躍的,讓播放停止並儲存錄制。';
+	@override String get recordingSaved => '錄製完成並儲存。';
+	@override String get recordingActive => '放棄播放停止並儲存它。';
+	@override String get recordingFormatHelp => '對於影片,選擇 MKV 或 MPEG-TS. 為音訊,選擇 MKA 或 MKV。';
+	@override String get replaceRecordingTitle => '取代這張錄音?';
+	@override String get replaceRecordingHelp => 'PlezyNG 在錄製時備份現有檔案;如果無法儲存新錄製,PlezyNG 將備份恢復。';
+	@override String get replaceRecording => '替換檔案';
+	@override String get discHelp => '在此計算機的光學驅動器中開啟磁碟,您也可以從裝置檔案中開啟ISO影象。';
+	@override String get discs => '光學磁碟';
+	@override String get dvd => 'DVD';
+	@override String get bluray => '藍光';
+	@override String get audioCd => '音訊CD';
+	@override String get discAvailability => '磁碟播放需要相容的MPV構建、支援的驅動器和作業系統許可,不能超越商業磁碟保護。';
+	@override String get converterTitle => '轉換本地媒體檔案';
+	@override String get converterHelp => '使用 FFmpeg 建立 MP4, M4A 或 MP3 副本。';
+	@override String get converterIntro => '將本地音訊或影片檔案轉換為多個裝置上執行的格式。';
+	@override String get converterPrivacy => 'FFmpeg 必須安裝在此計算機上. 轉換隻讀取本地檔案. 不下載流或刪除 DRM。';
+	@override String get converterChooseInput => '選擇本地媒體檔案';
+	@override String get converterFormat => '輸出格式';
+	@override String get converterMp4 => 'MP4 · H.264 和 AAC';
+	@override String get converterM4a => 'M4A · AAC 音訊';
+	@override String get converterMp3 => 'MP3 · 音訊';
+	@override String get converterSaveAs => '儲存轉換的媒體作為';
+	@override String get converterExtensionMismatch => '選擇與所選輸出擴充套件的檔名。';
+	@override String get converterUnsupportedInput => '選擇音訊或影片檔案。';
+	@override String get converterLocalOnly => '所選擇的檔案不作為本地裝置路徑可用。';
+	@override String get converterReplaceTitle => '取代此檔案?';
+	@override String get converterReplaceHelp => 'PlezyNG 恢復現有檔案,直到轉換的副本被儲存。';
+	@override String get converterStarting => '開始 FFmpeg...';
+	@override String get converterProgress => '轉換到這個計算機......';
+	@override String get converterComplete => '轉換完成,新檔案已準備好。';
+	@override String get converterFfmpegMissing => 'FFmpeg 無法找到所需的編碼器. 使用 H.264, AAC 和 MP3 支援安裝 FFmpEG,然後再次嘗試。';
+	@override String get converterFailed => '轉換失敗:檢查原始檔可以閱讀,目的地有足夠的免費空間。';
+	@override String get converterCancelled => '轉換取消了,不完整的輸出被刪除。';
+	@override String get converterDesktopOnly => '本地轉換可在桌面計算機上使用 FFmpeg 安裝。';
+	@override String get converterStart => '轉換檔案';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$zh_Hant extends Translations$fileSources$zh {
@@ -7614,6 +7746,118 @@ extension on TranslationsZhHant {
 			'platform.locationPermission' => '當 iOS 要求提供位置權限才能偵測區域網路並連線至媒體伺服器時，PlezyNG 會使用此權限。',
 			'platform.photoLibraryPermission' => '從照片圖庫中選取圖片，用作媒體封面等影像。',
 			'platform.cameraPermission' => '掃描 QR 碼以配對 Companion Remote。',
+			'universalMedia.title' => '開放媒體',
+			'universalMedia.shortcutHelp' => '播放此會議的連結、播放列表或檔案。',
+			'universalMedia.intro' => '開啟連結、播放列表或檔案 Playback 使用 PlezyNG 的標準播放器,並且不會將歷史新增到您的圖書館。',
+			'universalMedia.openWhat' => '你想開啟什麼?',
+			'universalMedia.stream' => '流地址',
+			'universalMedia.playlist' => '播放列表',
+			'universalMedia.files' => '裝置檔案',
+			'universalMedia.favorites' => '儲存流喜愛',
+			'universalMedia.address' => '媒體地址',
+			'universalMedia.addressHelp' => 'HTTPS 是優先的. 有認可或簽名引數的 URL 僅用於此會議,並且不能儲存為喜愛。',
+			'universalMedia.displayName' => '顯示名稱(可選)',
+			'universalMedia.displayNameHelp' => '選擇玩家和系統媒體控制器的簡稱。',
+			'universalMedia.allowHttp' => '允許未加密的 HTTP 連線',
+			'universalMedia.allowHttpHelp' => 'HTTP 不加密連線. 只允許它在可靠的網路上. 當可能時使用 HTTPS。',
+			'universalMedia.advancedProtocols' => 'MPV 僅:輸入 RTSP、RTMP/RTMPS、UDP 或 RTP 地址,這些地址不能儲存為最受歡迎的。',
+			'universalMedia.liveStream' => '作為活著的待遇',
+			'universalMedia.liveStreamHelp' => '使用此用於直播影片或廣播電臺. 該應用程式隱藏了時間欄,滑動按鈕和 go-to-time 選項。',
+			'universalMedia.privateSession' => '只有此播放使用地址. 儲存一個合格流最喜歡的,以保持它在這個個人資料。',
+			'universalMedia.saveFavorite' => '儲存最喜歡',
+			'universalMedia.playNow' => '現在玩',
+			'universalMedia.favoriteSaved' => '流喜愛儲存到此個人資料',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 不受支援或不安全的播放列表輸入。', other: '${count} 不受支援或不安全的播放列表輸入。', ),
+			'universalMedia.playlistAddress' => 'Playlist 地址',
+			'universalMedia.playlistAddressHelp' => '從網頁地址開啟 M3U、M3U8 或 PLS 播放列表. Direct Stream 連結不會儲存播放名單。',
+			'universalMedia.choosePlaylist' => '選擇 Playlist 檔案',
+			'universalMedia.openPlaylist' => '開放播放列表',
+			'universalMedia.playlistFormatsHelp' => '一張播放列表可以包含最多1000個專案和2MB的HLS顯示為流,所以玩家可以選擇質量。',
+			'universalMedia.noFavorites' => '尚未儲存流喜愛. 喜愛留在此個人資料中。',
+			'universalMedia.removeFavorite' => '刪除流喜愛',
+			'universalMedia.filesHelp' => '選擇音訊、影片或ISO檔案,以便進行臨時記錄. 檔案和URL不新增到圖書館歷史。',
+			'universalMedia.chooseFiles' => '選擇檔案',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '1 選擇的檔案', other: '${count} 已選擇的檔案', ),
+			'universalMedia.wifiTransfer' => '透過 Wi-Fi 傳送檔案',
+			'universalMedia.wifiTransferHelp' => '從同一信任網路的瀏覽器傳輸支援的檔案。',
+			'universalMedia.wifiTransferIntro' => '在另一個裝置上的瀏覽器中開啟此地址. 選擇檔案以將其新增到該裝置的檔案和書籍圖書館。',
+			'universalMedia.wifiTransferPrivacy' => '本裝置透過您的本地網路接收檔案. 任何知道此地址的人都可以傳送檔案,直到您停止傳輸或地址在15分鐘後終止。',
+			'universalMedia.wifiTransferStarting' => '準備一個私人,時間有限的轉會...',
+			'universalMedia.wifiTransferUnavailable' => '無法啟動轉換,檢查本地網路接入並嘗試一次。',
+			'universalMedia.openThisAddress' => '在傳送裝置上開啟其中一個地址',
+			'universalMedia.copyAddress' => '傳輸地址複製',
+			'universalMedia.addressCopied' => '傳輸地址複製',
+			'universalMedia.transferExpires' => ({required Object time}) => '此地址在 ${time} 中終止。',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 獲取檔案', other: '${count} 收到的檔案', ),
+			'universalMedia.uploadedData' => ({required Object size}) => '接收 ${size}',
+			'universalMedia.stopTransfer' => '停止轉讓和取消地址',
+			'universalMedia.startTransfer' => '轉移開始',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi 傳輸',
+			'universalMedia.wifiBrowserTitle' => '向 PlezyNG 傳送檔案',
+			'universalMedia.wifiBrowserIntro' => '選擇音訊、影片、電子書或漫畫檔案傳送. 這些檔案儲存在該裝置的檔案和書籍庫中. 最多: 100 個檔案,每個檔案 4 GiB,總共 10 GiB。',
+			'universalMedia.uploadFilesLabel' => '檔案傳送',
+			'universalMedia.uploadSelected' => '下載所選擇的檔案',
+			'universalMedia.uploadSelectFirst' => '首先選擇一個或多個檔案。',
+			'universalMedia.uploading' => '傳送',
+			'universalMedia.uploadComplete' => '檔案新增到 PlezyNG。',
+			'universalMedia.uploadFailed' => '檔案無法新增,請保持此頁面開放並再次嘗試。',
+			'universalMedia.liveCue' => '生活',
+			'universalMedia.liveSession' => '直播流',
+			'universalMedia.liveCueHelp' => '對於直播影片或無線電,應用程式隱藏了時間欄和跳躍按鈕,它不會儲存地址或觀看歷史。',
+			'universalMedia.sessionOnly' => '此播放僅是會話',
+			'universalMedia.sessionOnlyHelp' => 'Playback 永遠不會儲存進展或歷史. 如果有資格,請將流作為最受歡迎的儲存在此個人資料中。',
+			'universalMedia.pictureAdjustments' => '影象調整',
+			'universalMedia.pictureHelp' => '這些影象變更隻影響此播放,它們在播放結束時重新設定。',
+			'universalMedia.resetPicture' => '重新設定影象',
+			'universalMedia.brightness' => '光明',
+			'universalMedia.contrast' => '矛盾',
+			'universalMedia.gamma' => '加姆',
+			'universalMedia.hue' => '鬍子',
+			'universalMedia.saturation' => '土星',
+			'universalMedia.view360' => '平板檢視360度影片',
+			'universalMedia.view360Help' => 'MPV 需要 FFmpeg 的 v360 過濾器來檢視此檢視。',
+			'universalMedia.view360Unavailable' => '這個MPV構建不能應用360度過濾器。',
+			'universalMedia.view360Yaw' => '地平線視野',
+			'universalMedia.view360Pitch' => '垂直視野',
+			'universalMedia.view360FieldOfView' => '視野領域',
+			'universalMedia.recordStream' => '記錄直播',
+			'universalMedia.stopRecording' => '停止和儲存錄制',
+			'universalMedia.recordingStarted' => '記錄是活躍的,讓播放停止並儲存錄制。',
+			'universalMedia.recordingSaved' => '錄製完成並儲存。',
+			'universalMedia.recordingActive' => '放棄播放停止並儲存它。',
+			'universalMedia.recordingFormatHelp' => '對於影片,選擇 MKV 或 MPEG-TS. 為音訊,選擇 MKA 或 MKV。',
+			'universalMedia.replaceRecordingTitle' => '取代這張錄音?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG 在錄製時備份現有檔案;如果無法儲存新錄製,PlezyNG 將備份恢復。',
+			'universalMedia.replaceRecording' => '替換檔案',
+			'universalMedia.discHelp' => '在此計算機的光學驅動器中開啟磁碟,您也可以從裝置檔案中開啟ISO影象。',
+			'universalMedia.discs' => '光學磁碟',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => '藍光',
+			'universalMedia.audioCd' => '音訊CD',
+			'universalMedia.discAvailability' => '磁碟播放需要相容的MPV構建、支援的驅動器和作業系統許可,不能超越商業磁碟保護。',
+			'universalMedia.converterTitle' => '轉換本地媒體檔案',
+			'universalMedia.converterHelp' => '使用 FFmpeg 建立 MP4, M4A 或 MP3 副本。',
+			'universalMedia.converterIntro' => '將本地音訊或影片檔案轉換為多個裝置上執行的格式。',
+			'universalMedia.converterPrivacy' => 'FFmpeg 必須安裝在此計算機上. 轉換隻讀取本地檔案. 不下載流或刪除 DRM。',
+			'universalMedia.converterChooseInput' => '選擇本地媒體檔案',
+			'universalMedia.converterFormat' => '輸出格式',
+			'universalMedia.converterMp4' => 'MP4 · H.264 和 AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC 音訊',
+			'universalMedia.converterMp3' => 'MP3 · 音訊',
+			'universalMedia.converterSaveAs' => '儲存轉換的媒體作為',
+			'universalMedia.converterExtensionMismatch' => '選擇與所選輸出擴充套件的檔名。',
+			'universalMedia.converterUnsupportedInput' => '選擇音訊或影片檔案。',
+			'universalMedia.converterLocalOnly' => '所選擇的檔案不作為本地裝置路徑可用。',
+			'universalMedia.converterReplaceTitle' => '取代此檔案?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG 恢復現有檔案,直到轉換的副本被儲存。',
+			'universalMedia.converterStarting' => '開始 FFmpeg...',
+			'universalMedia.converterProgress' => '轉換到這個計算機......',
+			'universalMedia.converterComplete' => '轉換完成,新檔案已準備好。',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg 無法找到所需的編碼器. 使用 H.264, AAC 和 MP3 支援安裝 FFmpEG,然後再次嘗試。',
+			'universalMedia.converterFailed' => '轉換失敗:檢查原始檔可以閱讀,目的地有足夠的免費空間。',
+			'universalMedia.converterCancelled' => '轉換取消了,不完整的輸出被刪除。',
+			'universalMedia.converterDesktopOnly' => '本地轉換可在桌面計算機上使用 FFmpeg 安裝。',
+			'universalMedia.converterStart' => '轉換檔案',
 			'fileSources.title' => '檔案和書籍',
 			'fileSources.subtitle' => '閱讀、聽、從自己的檔案中觀看。',
 			'fileSources.add' => '新增源',

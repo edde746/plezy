@@ -710,11 +710,64 @@ SourceItemKind classifySourceFile(String name, [String mime = '']) {
   }
   if (ext == '.m4b') return SourceItemKind.audiobook;
   if (mime.startsWith('audio/') ||
-      const {'.mp3', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.wav', '.aiff', '.alac'}.contains(ext)) {
+      const {
+        '.mp3',
+        '.m4a',
+        '.aac',
+        '.flac',
+        '.ogg',
+        '.opus',
+        '.wav',
+        '.aif',
+        '.aiff',
+        '.alac',
+        '.wma',
+        '.amr',
+        '.ac3',
+        '.ape',
+        '.dff',
+        '.dsf',
+        '.mka',
+        '.caf',
+        '.wv',
+        '.mid',
+        '.midi',
+        '.au',
+        '.snd',
+      }.contains(ext)) {
     return SourceItemKind.music;
   }
   if (mime.startsWith('video/') ||
-      const {'.mp4', '.mkv', '.mov', '.avi', '.webm', '.m4v', '.ts', '.mpeg', '.mpg'}.contains(ext)) {
+      const {
+        '.mp4',
+        '.mkv',
+        '.mov',
+        '.avi',
+        '.webm',
+        '.m4v',
+        '.ts',
+        '.mpeg',
+        '.mpg',
+        '.mpe',
+        '.m1v',
+        '.m2v',
+        '.m2ts',
+        '.mts',
+        '.3gp',
+        '.3g2',
+        '.ogv',
+        '.vob',
+        '.wmv',
+        '.flv',
+        '.f4v',
+        '.asf',
+        '.dv',
+        '.y4m',
+        '.mxf',
+        '.rm',
+        '.rmvb',
+        '.vro',
+      }.contains(ext)) {
     return SourceItemKind.video;
   }
   return SourceItemKind.unknown;

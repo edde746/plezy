@@ -104,7 +104,32 @@
         "zh-Hant"
       ],
       "corrections": "language_qa_2_25_0_corrections.json"
-    }
+    },
+    "featureBatches": [
+      {
+        "scope": "VLC-style universal media inputs and tools",
+        "messagesPerBaseLocale": 112,
+        "baseLocales": 32,
+        "modelRevision": "7c1b2620a4e58dacecbd8bf89cfd6da7eb9eb7b0",
+        "decoding": {
+          "beamSize": 4,
+          "repetitionPenalty": 1.15,
+          "noRepeatNgramSize": 3,
+          "maxDecodingLength": 160
+        },
+        "traditionalChinese": "M2M100 zh draft converted with OpenCC s2twp",
+        "englishFallbacks": {
+          "fr": [
+            "universalMedia.skippedEntries"
+          ],
+          "kk": [
+            "universalMedia.skippedEntries"
+          ]
+        },
+        "nativeSpeakerReviewed": false,
+        "qaReport": "LANGUAGE_QA_UNIVERSAL_MEDIA.md"
+      }
+    ]
   },
   "reviewStatus": "Structural validation and targeted AI review only; no native-speaker approval is implied.",
   "scriptConversion": {

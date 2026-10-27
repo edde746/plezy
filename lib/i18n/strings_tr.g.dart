@@ -101,6 +101,7 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$tr watchLink = _Translations$watchLink$tr._(_root);
 	@override late final _Translations$homeLayout$tr homeLayout = _Translations$homeLayout$tr._(_root);
 	@override late final _Translations$platform$tr platform = _Translations$platform$tr._(_root);
+	@override late final _Translations$universalMedia$tr universalMedia = _Translations$universalMedia$tr._(_root);
 	@override late final _Translations$fileSources$tr fileSources = _Translations$fileSources$tr._(_root);
 	@override late final _Translations$lending$tr lending = _Translations$lending$tr._(_root);
 	@override late final _Translations$audiobook$tr audiobook = _Translations$audiobook$tr._(_root);
@@ -3046,6 +3047,137 @@ class _Translations$platform$tr extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.';
 	@override String get cameraPermission => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$tr extends Translations$universalMedia$en {
+	_Translations$universalMedia$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Açık Medya';
+	@override String get shortcutHelp => 'Bu oturum için bir bağlantı, playlist veya dosya oynatın.';
+	@override String get intro => 'Bir bağlantı, oynatma listesi veya dosyayı açın. Playback PlezyNG\'nin standart oyuncusu kullanır ve kütüphanenize tarih eklemez.';
+	@override String get openWhat => 'Neyi açmak ister misiniz?';
+	@override String get stream => 'Stream Adresi';
+	@override String get playlist => 'Oyun Listesi';
+	@override String get files => 'cihaz dosyaları';
+	@override String get favorites => 'Saved Stream Favori';
+	@override String get address => 'Medya Adresi';
+	@override String get addressHelp => 'HTTPS tercih edilir. tanınmış kimlik veya imza parametreleri olan URL\'ler yalnızca bu oturum için kullanılır ve favori olarak kaydedilemez.';
+	@override String get displayName => 'Gösterim Adı (Seçmeli)';
+	@override String get displayNameHelp => 'Oyuncu ve sistem medya kontrolü için kısa bir isim seçin.';
+	@override String get allowHttp => 'Şifrelenmemiş bir HTTP bağlantısı sağlar';
+	@override String get allowHttpHelp => 'HTTP bağlantıyı şifrelemez. yalnızca güvenilir bir ağda izin verin. mümkün olduğunca HTTPS kullanın.';
+	@override String get advancedProtocols => 'Sadece MPV: bir RTSP, RTMP/RTMPS, UDP veya RTP adresi girin.';
+	@override String get liveStream => 'Yaşam gibi davranın';
+	@override String get liveStreamHelp => 'Bunu canlı video veya radyo için kullanın. uygulama zaman çubuğunu, kaydırma düğmeleri ve go-to-time seçeneğini gizler. bir kayıt için kapatın.';
+	@override String get privateSession => 'Sadece bu oynatma adresi kullanır. bu profilde tutmak için uygun bir akış favori kaydedin.';
+	@override String get saveFavorite => 'Favori kurtarma';
+	@override String get playNow => 'Şimdi oynayın';
+	@override String get favoriteSaved => 'Stream Favori bu profil için kaydedildi';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişini kaydırdı.',
+		other: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişleri kayboldu.',
+	);
+	@override String get playlistAddress => 'Playlist adresi';
+	@override String get playlistAddressHelp => 'Bir web adresinden bir M3U, M3u8 veya PLS oynatma listesi açın.';
+	@override String get choosePlaylist => 'Playlist dosyasını seçin';
+	@override String get openPlaylist => 'Açık Playlist';
+	@override String get playlistFormatsHelp => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.';
+	@override String get noFavorites => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.';
+	@override String get removeFavorite => 'En sevdiğiniz akışları kaldırın';
+	@override String get filesHelp => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.';
+	@override String get chooseFiles => 'Dosyaları seçin';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '1 seçilmiş dosya',
+		other: '${count} seçilmiş dosyalar',
+	);
+	@override String get wifiTransfer => 'Wi-Fi üzerinden dosyaları gönderin';
+	@override String get wifiTransferHelp => 'Desteklenen dosyaları aynı güvenilir ağda bir tarayıcıdan aktarın.';
+	@override String get wifiTransferIntro => 'Bu adresi başka bir cihazda bir tarayıcıda açın. dosyaları bu cihazın Dosya ve kitap kütüphanesine eklemek için seçin.';
+	@override String get wifiTransferPrivacy => 'Bu cihaz yerel ağınız üzerinden dosyaları alır. bu adresi bilen herkes transferin durdurulana kadar dosyayı gönderebilir veya adres 15 dakika sonra sona erer. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.';
+	@override String get wifiTransferStarting => 'Özel, zaman sınırlı bir transfer için hazırlanmak ...';
+	@override String get wifiTransferUnavailable => 'Transfer başlatılamaz. yerel ağ erişimi kontrol edin ve tekrar deneyin.';
+	@override String get openThisAddress => 'Gönderen cihazda bu adreslerden birini açın';
+	@override String get copyAddress => 'Transfer adresi kopyalamak';
+	@override String get addressCopied => 'Transfer adresi kopyalanmış';
+	@override String transferExpires({required Object time}) => 'Bu adres ${time}\'de sona erer.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '${count} dosyası alındı',
+		other: '${count} dosyaları aldı',
+	);
+	@override String uploadedData({required Object size}) => '${size} tarafından alınan';
+	@override String get stopTransfer => 'Gönderimi durdurmak ve adresi iptal etmek';
+	@override String get startTransfer => 'transfer başlangıç';
+	@override String get wifiImportedFiles => 'Wi-Fi transferleri';
+	@override String get wifiBrowserTitle => 'Dosyaları PlezyNG\'ye gönderin';
+	@override String get wifiBrowserIntro => 'Göndermek için ses, video, e-kitap veya komik dosyaları seçin. Dosyalar bu cihazın Dosya ve kitap kütüphanesinde kaydedilir. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.';
+	@override String get uploadFilesLabel => 'Göndermek için dosyalar';
+	@override String get uploadSelected => 'Seçilen dosyaları yükleme';
+	@override String get uploadSelectFirst => 'Önce bir veya daha fazla dosyayı seçin.';
+	@override String get uploading => 'Gönderme';
+	@override String get uploadComplete => 'Dosya PlezyNG\'ye eklendi.';
+	@override String get uploadFailed => 'Dosya eklenemez. bu sayfayı açık tutun ve tekrar deneyin.';
+	@override String get liveCue => 'canlı';
+	@override String get liveSession => 'canlı akış';
+	@override String get liveCueHelp => 'Canlı video veya radyo için, uygulama zaman çubuğunu gizler ve atlama düğmeleri. adresi kaydetmez veya tarihini izlemez.';
+	@override String get sessionOnly => 'Bu playback yalnızca oturum';
+	@override String get sessionOnlyHelp => 'Playback hiçbir zaman ilerleme veya geçmişi kaydetmez. akışınızı bu profilde tutmak için favori olarak kaydedin eğer uygunsa.';
+	@override String get pictureAdjustments => 'resim ayarları';
+	@override String get pictureHelp => 'Bu görüntü değişiklikleri sadece bu playback\'i etkiler. playback bittiğinde yeniden ayarlanırlar.';
+	@override String get resetPicture => 'Reset resim';
+	@override String get brightness => 'parlaklık';
+	@override String get contrast => 'kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Satürbasyon';
+	@override String get view360 => '360 derecelik video için düz görünüm';
+	@override String get view360Help => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.';
+	@override String get view360Unavailable => 'Bu mpv yapı 360 derecelik filtreyi uygulayamazdı.';
+	@override String get view360Yaw => 'Horizontal Görüş';
+	@override String get view360Pitch => 'Vertikal Görüş';
+	@override String get view360FieldOfView => 'Görüş alanı';
+	@override String get recordStream => 'Live Stream kayıtları';
+	@override String get stopRecording => 'Kayıtları durdurun ve kaydetin';
+	@override String get recordingStarted => 'Kayıt aktiftir. playback bırakmak durur ve kayıtları kaydeder.';
+	@override String get recordingSaved => 'Kayıt tamamlandı ve kurtarıldı.';
+	@override String get recordingActive => 'Bu cihazı kaydetmek. playback bırakmak durur ve kurtarır.';
+	@override String get recordingFormatHelp => 'Video için MKV veya MPEG-TS\'yi seçin. ses için MKA veya MKV\'yi tercih edin.';
+	@override String get replaceRecordingTitle => 'Bu kayıtları değiştirebilir misiniz?';
+	@override String get replaceRecordingHelp => 'PlezyNG kayıt sırasında mevcut dosyayı yedekleme yapar. yeni kayıtları kaydetemezse, plezyNG yedek kopyasını geri getirir.';
+	@override String get replaceRecording => 'Dosya değiştirme';
+	@override String get discHelp => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.';
+	@override String get discs => 'optik disk';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray için';
+	@override String get audioCd => 'Sesli CD';
+	@override String get discAvailability => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.';
+	@override String get converterTitle => 'Yerel bir medya dosyasını dönüştürmek';
+	@override String get converterHelp => 'Bir MP4, M4A veya MP3 kopyasını yapmak için FFmpeg kullanın.';
+	@override String get converterIntro => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.';
+	@override String get converterPrivacy => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.';
+	@override String get converterChooseInput => 'Yerel bir medya dosyasını seçin';
+	@override String get converterFormat => 'çıkış formatı';
+	@override String get converterMp4 => 'MP4 H.264 ve AAC';
+	@override String get converterM4a => 'M4A · AAC ses';
+	@override String get converterMp3 => 'MP3 · Sesli';
+	@override String get converterSaveAs => 'Dönüştürülmüş medyayı kaydetmek';
+	@override String get converterExtensionMismatch => 'Seçilen çıkış uzantısı ile bir fil adı seçin.';
+	@override String get converterUnsupportedInput => 'Bir ses veya video dosyasını seçin.';
+	@override String get converterLocalOnly => 'Seçilen dosya yerel bir cihaz yolu olarak kullanılamaz.';
+	@override String get converterReplaceTitle => 'Bu dosyayı değiştirebilir misiniz?';
+	@override String get converterReplaceHelp => 'PlezyNG, dönüştürülmüş kopyasının kaydedilene kadar mevcut dosyayı geri yükler.';
+	@override String get converterStarting => 'Başlangıç FFmpeg...';
+	@override String get converterProgress => 'Bu bilgisayara dönüştürmek...';
+	@override String get converterComplete => 'Dönüşüm tamamlandı. yeni dosya hazır.';
+	@override String get converterFfmpegMissing => 'H.264, AAC ve MP3 desteği ile FFmpeg\'i kurun, sonra tekrar deneyin.';
+	@override String get converterFailed => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.';
+	@override String get converterCancelled => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.';
+	@override String get converterDesktopOnly => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.';
+	@override String get converterStart => 'Dosya Dönüştürme';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$tr extends Translations$fileSources$en {
@@ -7618,6 +7750,118 @@ extension on TranslationsTr {
 			'platform.locationPermission' => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.',
 			'platform.photoLibraryPermission' => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.',
 			'platform.cameraPermission' => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.',
+			'universalMedia.title' => 'Açık Medya',
+			'universalMedia.shortcutHelp' => 'Bu oturum için bir bağlantı, playlist veya dosya oynatın.',
+			'universalMedia.intro' => 'Bir bağlantı, oynatma listesi veya dosyayı açın. Playback PlezyNG\'nin standart oyuncusu kullanır ve kütüphanenize tarih eklemez.',
+			'universalMedia.openWhat' => 'Neyi açmak ister misiniz?',
+			'universalMedia.stream' => 'Stream Adresi',
+			'universalMedia.playlist' => 'Oyun Listesi',
+			'universalMedia.files' => 'cihaz dosyaları',
+			'universalMedia.favorites' => 'Saved Stream Favori',
+			'universalMedia.address' => 'Medya Adresi',
+			'universalMedia.addressHelp' => 'HTTPS tercih edilir. tanınmış kimlik veya imza parametreleri olan URL\'ler yalnızca bu oturum için kullanılır ve favori olarak kaydedilemez.',
+			'universalMedia.displayName' => 'Gösterim Adı (Seçmeli)',
+			'universalMedia.displayNameHelp' => 'Oyuncu ve sistem medya kontrolü için kısa bir isim seçin.',
+			'universalMedia.allowHttp' => 'Şifrelenmemiş bir HTTP bağlantısı sağlar',
+			'universalMedia.allowHttpHelp' => 'HTTP bağlantıyı şifrelemez. yalnızca güvenilir bir ağda izin verin. mümkün olduğunca HTTPS kullanın.',
+			'universalMedia.advancedProtocols' => 'Sadece MPV: bir RTSP, RTMP/RTMPS, UDP veya RTP adresi girin.',
+			'universalMedia.liveStream' => 'Yaşam gibi davranın',
+			'universalMedia.liveStreamHelp' => 'Bunu canlı video veya radyo için kullanın. uygulama zaman çubuğunu, kaydırma düğmeleri ve go-to-time seçeneğini gizler. bir kayıt için kapatın.',
+			'universalMedia.privateSession' => 'Sadece bu oynatma adresi kullanır. bu profilde tutmak için uygun bir akış favori kaydedin.',
+			'universalMedia.saveFavorite' => 'Favori kurtarma',
+			'universalMedia.playNow' => 'Şimdi oynayın',
+			'universalMedia.favoriteSaved' => 'Stream Favori bu profil için kaydedildi',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişini kaydırdı.', other: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişleri kayboldu.', ),
+			'universalMedia.playlistAddress' => 'Playlist adresi',
+			'universalMedia.playlistAddressHelp' => 'Bir web adresinden bir M3U, M3u8 veya PLS oynatma listesi açın.',
+			'universalMedia.choosePlaylist' => 'Playlist dosyasını seçin',
+			'universalMedia.openPlaylist' => 'Açık Playlist',
+			'universalMedia.playlistFormatsHelp' => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.',
+			'universalMedia.noFavorites' => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.',
+			'universalMedia.removeFavorite' => 'En sevdiğiniz akışları kaldırın',
+			'universalMedia.filesHelp' => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.',
+			'universalMedia.chooseFiles' => 'Dosyaları seçin',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '1 seçilmiş dosya', other: '${count} seçilmiş dosyalar', ),
+			'universalMedia.wifiTransfer' => 'Wi-Fi üzerinden dosyaları gönderin',
+			'universalMedia.wifiTransferHelp' => 'Desteklenen dosyaları aynı güvenilir ağda bir tarayıcıdan aktarın.',
+			'universalMedia.wifiTransferIntro' => 'Bu adresi başka bir cihazda bir tarayıcıda açın. dosyaları bu cihazın Dosya ve kitap kütüphanesine eklemek için seçin.',
+			'universalMedia.wifiTransferPrivacy' => 'Bu cihaz yerel ağınız üzerinden dosyaları alır. bu adresi bilen herkes transferin durdurulana kadar dosyayı gönderebilir veya adres 15 dakika sonra sona erer. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.',
+			'universalMedia.wifiTransferStarting' => 'Özel, zaman sınırlı bir transfer için hazırlanmak ...',
+			'universalMedia.wifiTransferUnavailable' => 'Transfer başlatılamaz. yerel ağ erişimi kontrol edin ve tekrar deneyin.',
+			'universalMedia.openThisAddress' => 'Gönderen cihazda bu adreslerden birini açın',
+			'universalMedia.copyAddress' => 'Transfer adresi kopyalamak',
+			'universalMedia.addressCopied' => 'Transfer adresi kopyalanmış',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Bu adres ${time}\'de sona erer.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${count} dosyası alındı', other: '${count} dosyaları aldı', ),
+			'universalMedia.uploadedData' => ({required Object size}) => '${size} tarafından alınan',
+			'universalMedia.stopTransfer' => 'Gönderimi durdurmak ve adresi iptal etmek',
+			'universalMedia.startTransfer' => 'transfer başlangıç',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi transferleri',
+			'universalMedia.wifiBrowserTitle' => 'Dosyaları PlezyNG\'ye gönderin',
+			'universalMedia.wifiBrowserIntro' => 'Göndermek için ses, video, e-kitap veya komik dosyaları seçin. Dosyalar bu cihazın Dosya ve kitap kütüphanesinde kaydedilir. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.',
+			'universalMedia.uploadFilesLabel' => 'Göndermek için dosyalar',
+			'universalMedia.uploadSelected' => 'Seçilen dosyaları yükleme',
+			'universalMedia.uploadSelectFirst' => 'Önce bir veya daha fazla dosyayı seçin.',
+			'universalMedia.uploading' => 'Gönderme',
+			'universalMedia.uploadComplete' => 'Dosya PlezyNG\'ye eklendi.',
+			'universalMedia.uploadFailed' => 'Dosya eklenemez. bu sayfayı açık tutun ve tekrar deneyin.',
+			'universalMedia.liveCue' => 'canlı',
+			'universalMedia.liveSession' => 'canlı akış',
+			'universalMedia.liveCueHelp' => 'Canlı video veya radyo için, uygulama zaman çubuğunu gizler ve atlama düğmeleri. adresi kaydetmez veya tarihini izlemez.',
+			'universalMedia.sessionOnly' => 'Bu playback yalnızca oturum',
+			'universalMedia.sessionOnlyHelp' => 'Playback hiçbir zaman ilerleme veya geçmişi kaydetmez. akışınızı bu profilde tutmak için favori olarak kaydedin eğer uygunsa.',
+			'universalMedia.pictureAdjustments' => 'resim ayarları',
+			'universalMedia.pictureHelp' => 'Bu görüntü değişiklikleri sadece bu playback\'i etkiler. playback bittiğinde yeniden ayarlanırlar.',
+			'universalMedia.resetPicture' => 'Reset resim',
+			'universalMedia.brightness' => 'parlaklık',
+			'universalMedia.contrast' => 'kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Satürbasyon',
+			'universalMedia.view360' => '360 derecelik video için düz görünüm',
+			'universalMedia.view360Help' => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.',
+			'universalMedia.view360Unavailable' => 'Bu mpv yapı 360 derecelik filtreyi uygulayamazdı.',
+			'universalMedia.view360Yaw' => 'Horizontal Görüş',
+			'universalMedia.view360Pitch' => 'Vertikal Görüş',
+			'universalMedia.view360FieldOfView' => 'Görüş alanı',
+			'universalMedia.recordStream' => 'Live Stream kayıtları',
+			'universalMedia.stopRecording' => 'Kayıtları durdurun ve kaydetin',
+			'universalMedia.recordingStarted' => 'Kayıt aktiftir. playback bırakmak durur ve kayıtları kaydeder.',
+			'universalMedia.recordingSaved' => 'Kayıt tamamlandı ve kurtarıldı.',
+			'universalMedia.recordingActive' => 'Bu cihazı kaydetmek. playback bırakmak durur ve kurtarır.',
+			'universalMedia.recordingFormatHelp' => 'Video için MKV veya MPEG-TS\'yi seçin. ses için MKA veya MKV\'yi tercih edin.',
+			'universalMedia.replaceRecordingTitle' => 'Bu kayıtları değiştirebilir misiniz?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG kayıt sırasında mevcut dosyayı yedekleme yapar. yeni kayıtları kaydetemezse, plezyNG yedek kopyasını geri getirir.',
+			'universalMedia.replaceRecording' => 'Dosya değiştirme',
+			'universalMedia.discHelp' => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.',
+			'universalMedia.discs' => 'optik disk',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray için',
+			'universalMedia.audioCd' => 'Sesli CD',
+			'universalMedia.discAvailability' => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.',
+			'universalMedia.converterTitle' => 'Yerel bir medya dosyasını dönüştürmek',
+			'universalMedia.converterHelp' => 'Bir MP4, M4A veya MP3 kopyasını yapmak için FFmpeg kullanın.',
+			'universalMedia.converterIntro' => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.',
+			'universalMedia.converterPrivacy' => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.',
+			'universalMedia.converterChooseInput' => 'Yerel bir medya dosyasını seçin',
+			'universalMedia.converterFormat' => 'çıkış formatı',
+			'universalMedia.converterMp4' => 'MP4 H.264 ve AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC ses',
+			'universalMedia.converterMp3' => 'MP3 · Sesli',
+			'universalMedia.converterSaveAs' => 'Dönüştürülmüş medyayı kaydetmek',
+			'universalMedia.converterExtensionMismatch' => 'Seçilen çıkış uzantısı ile bir fil adı seçin.',
+			'universalMedia.converterUnsupportedInput' => 'Bir ses veya video dosyasını seçin.',
+			'universalMedia.converterLocalOnly' => 'Seçilen dosya yerel bir cihaz yolu olarak kullanılamaz.',
+			'universalMedia.converterReplaceTitle' => 'Bu dosyayı değiştirebilir misiniz?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG, dönüştürülmüş kopyasının kaydedilene kadar mevcut dosyayı geri yükler.',
+			'universalMedia.converterStarting' => 'Başlangıç FFmpeg...',
+			'universalMedia.converterProgress' => 'Bu bilgisayara dönüştürmek...',
+			'universalMedia.converterComplete' => 'Dönüşüm tamamlandı. yeni dosya hazır.',
+			'universalMedia.converterFfmpegMissing' => 'H.264, AAC ve MP3 desteği ile FFmpeg\'i kurun, sonra tekrar deneyin.',
+			'universalMedia.converterFailed' => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.',
+			'universalMedia.converterCancelled' => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.',
+			'universalMedia.converterDesktopOnly' => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.',
+			'universalMedia.converterStart' => 'Dosya Dönüştürme',
 			'fileSources.title' => 'Dosyalar ve kitaplar',
 			'fileSources.subtitle' => 'Okumak, dinlemek ve kendi dosyalarınızdan izlemek.',
 			'fileSources.add' => 'Kaynak ekleme',

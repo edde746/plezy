@@ -101,6 +101,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$vi watchLink = _Translations$watchLink$vi._(_root);
 	@override late final _Translations$homeLayout$vi homeLayout = _Translations$homeLayout$vi._(_root);
 	@override late final _Translations$platform$vi platform = _Translations$platform$vi._(_root);
+	@override late final _Translations$universalMedia$vi universalMedia = _Translations$universalMedia$vi._(_root);
 	@override late final _Translations$fileSources$vi fileSources = _Translations$fileSources$vi._(_root);
 	@override late final _Translations$lending$vi lending = _Translations$lending$vi._(_root);
 	@override late final _Translations$audiobook$vi audiobook = _Translations$audiobook$vi._(_root);
@@ -3027,6 +3028,134 @@ class _Translations$platform$vi extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'Chọn hình ảnh từ thư viện ảnh của bạn để sử dụng như một công việc nghệ thuật phương tiện truyền thông.';
 	@override String get cameraPermission => 'Scan mã QR để kết hợp một Companion Remote.';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$vi extends Translations$universalMedia$en {
+	_Translations$universalMedia$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'phương tiện truyền thông mở';
+	@override String get shortcutHelp => 'Chơi một liên kết, danh sách chơi hoặc tệp cho phiên này.';
+	@override String get intro => 'Mở một liên kết, danh sách phát hoặc tệp. Playback sử dụng người chơi tiêu chuẩn của PlezyNG và không thêm lịch sử vào thư viện của bạn.';
+	@override String get openWhat => 'Bạn muốn mở cái gì?';
+	@override String get stream => 'Địa chỉ Stream';
+	@override String get playlist => 'Danh sách Playlist';
+	@override String get files => 'Thiết bị file';
+	@override String get favorites => 'Save Stream yêu thích';
+	@override String get address => 'Địa chỉ Media';
+	@override String get addressHelp => 'URL với các thông số xác nhận hoặc ký tự được công nhận chỉ được sử dụng cho phiên này và không thể được lưu như là yêu thích.';
+	@override String get displayName => 'Tên hiển thị (tùy chọn)';
+	@override String get displayNameHelp => 'Chọn tên ngắn cho người chơi và hệ thống điều khiển phương tiện truyền thông.';
+	@override String get allowHttp => 'Cho phép kết nối HTTP không được mã hóa';
+	@override String get allowHttpHelp => 'HTTP không mã hóa kết nối. Chỉ cho phép nó trên một mạng tin cậy. Sử dụng HTTPS khi có thể.';
+	@override String get advancedProtocols => 'Chỉ MPV: nhập một địa chỉ RTSP, RTMP/RTMPS, UDP hoặc RTP. Các địa chỉ này không thể được lưu như là yêu thích.';
+	@override String get liveStream => 'Chăm sóc như sống';
+	@override String get liveStreamHelp => 'Sử dụng điều này cho video hay radio trực tiếp. Ứng dụng che giấu thanh thời gian, nhấp chuột và tùy chọn go-to-time.';
+	@override String get privateSession => 'Chỉ bài phát này sử dụng địa chỉ.Save an eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Giữ yêu thích';
+	@override String get playNow => 'Chơi bây giờ';
+	@override String get favoriteSaved => 'Stream Favorite được tiết kiệm đến hồ sơ này';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.',
+	);
+	@override String get playlistAddress => 'Địa chỉ Playlist';
+	@override String get playlistAddressHelp => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.';
+	@override String get choosePlaylist => 'Chọn playlist file';
+	@override String get openPlaylist => 'playlist mở';
+	@override String get playlistFormatsHelp => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.';
+	@override String get noFavorites => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.';
+	@override String get removeFavorite => 'Xóa stream yêu thích';
+	@override String get filesHelp => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.';
+	@override String get chooseFiles => 'Chọn file';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${count} tập tin được chọn',
+	);
+	@override String get wifiTransfer => 'Gửi file qua Wi-Fi';
+	@override String get wifiTransferHelp => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.';
+	@override String get wifiTransferIntro => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.';
+	@override String get wifiTransferPrivacy => 'Thiết bị này nhận được tệp qua mạng địa phương của bạn. bất cứ ai biết địa chỉ này có thể gửi tệp cho đến khi bạn ngừng chuyển giao hoặc địa chỉ hết hạn sau 15 phút. tối đa: 100 tệp, 4 GiB mỗi tệp; tổng cộng 10 GiB.';
+	@override String get wifiTransferStarting => 'Chuẩn bị một chuyển giao riêng, thời gian giới hạn...';
+	@override String get wifiTransferUnavailable => 'Không thể bắt đầu chuyển giao. kiểm tra truy cập mạng địa phương và thử lại.';
+	@override String get openThisAddress => 'Mở một trong những địa chỉ này trên thiết bị gửi';
+	@override String get copyAddress => 'Bản sao địa chỉ chuyển đổi';
+	@override String get addressCopied => 'Địa chỉ chuyển đổi sao chép';
+	@override String transferExpires({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${count} file nhận được',
+	);
+	@override String uploadedData({required Object size}) => 'Nhận ${size}';
+	@override String get stopTransfer => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ';
+	@override String get startTransfer => 'Bắt đầu chuyển giao';
+	@override String get wifiImportedFiles => 'Chuyển Wi-Fi';
+	@override String get wifiBrowserTitle => 'Gửi file đến PlezyNG';
+	@override String get wifiBrowserIntro => 'Chọn các tập tin âm thanh, video, ebook hoặc truyện tranh để gửi. Các tập tin được lưu trữ trong thư viện tệp và sách của thiết bị này. Tối đa: 100 tập tin, 4 GiB mỗi file, tổng cộng 10 GiB.';
+	@override String get uploadFilesLabel => 'file để gửi';
+	@override String get uploadSelected => 'Tải các tập tin được chọn';
+	@override String get uploadSelectFirst => 'Chọn một hoặc nhiều tập tin đầu tiên.';
+	@override String get uploading => 'gửi';
+	@override String get uploadComplete => 'File được thêm vào PlezyNG.';
+	@override String get uploadFailed => 'Tệp không thể được thêm vào. giữ cho trang này mở và thử lại.';
+	@override String get liveCue => 'Sống';
+	@override String get liveSession => 'Stream trực tiếp';
+	@override String get liveCueHelp => 'Đối với video hay radio trực tiếp, ứng dụng ẩn thanh thời gian và nhảy nút. nó không lưu địa chỉ hoặc xem lịch sử.';
+	@override String get sessionOnly => 'Playback này là session-only';
+	@override String get sessionOnlyHelp => 'Playback không bao giờ tiết kiệm tiến bộ hoặc lịch sử.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'hình ảnh điều chỉnh';
+	@override String get pictureHelp => 'Những thay đổi hình ảnh này chỉ ảnh hưởng đến playback này. họ đặt lại khi playback kết thúc.';
+	@override String get resetPicture => 'Reset hình ảnh';
+	@override String get brightness => 'Ánh sáng';
+	@override String get contrast => 'Ngược điểm';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturation';
+	@override String get view360 => 'Màn hình 360° video';
+	@override String get view360Help => 'Sử dụng điều này cho video 360° đồng chiều. MPV cần bộ lọc v360 của FFmpeg để xem.';
+	@override String get view360Unavailable => 'Thiết lập MPV này không thể áp dụng bộ lọc 360°.';
+	@override String get view360Yaw => 'tầm nhìn chân trời';
+	@override String get view360Pitch => 'Màn hình Vertical View';
+	@override String get view360FieldOfView => 'Vùng tầm nhìn';
+	@override String get recordStream => 'Đánh giá Live Stream';
+	@override String get stopRecording => 'Ngừng và tiết kiệm ghi âm';
+	@override String get recordingStarted => 'Ghi âm là hoạt động.Leaving playback stops and saves the recording.';
+	@override String get recordingSaved => 'Ghi âm được hoàn thành và tiết kiệm.';
+	@override String get recordingActive => 'Để lại playback dừng lại và tiết kiệm nó.';
+	@override String get recordingFormatHelp => 'Đối với video, chọn MKV hoặc MPEG-TS. Đối với âm thanh, chọn MKA hoặc MKV.';
+	@override String get replaceRecordingTitle => 'Thay thế bản ghi này?';
+	@override String get replaceRecordingHelp => 'PlezyNG sao lưu tệp hiện có trong khi ghi lại. nếu nó không thể tiết kiệm bản ghi mới, Plezyng khôi phục sao lưu.';
+	@override String get replaceRecording => 'Thay thế file';
+	@override String get discHelp => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.';
+	@override String get discs => 'Đĩa Optical';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Đánh giá Blu-ray';
+	@override String get audioCd => 'CD âm thanh';
+	@override String get discAvailability => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.';
+	@override String get converterTitle => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương';
+	@override String get converterHelp => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.';
+	@override String get converterIntro => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.';
+	@override String get converterPrivacy => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.';
+	@override String get converterChooseInput => 'Chọn một tập tin phương tiện truyền thông địa phương';
+	@override String get converterFormat => 'định dạng output';
+	@override String get converterMp4 => 'MP4 · H.264 và AAC';
+	@override String get converterM4a => 'M4A · AAC âm thanh';
+	@override String get converterMp3 => 'MP3 - Âm thanh';
+	@override String get converterSaveAs => 'Lưu các phương tiện truyền thông được chuyển đổi như';
+	@override String get converterExtensionMismatch => 'Chọn tên file với phần mở rộng output được chọn.';
+	@override String get converterUnsupportedInput => 'Chọn một file audio hoặc video.';
+	@override String get converterLocalOnly => 'Tệp được chọn không có sẵn như một con đường thiết bị địa phương.';
+	@override String get converterReplaceTitle => 'Thay thế file này?';
+	@override String get converterReplaceHelp => 'PlezyNG khôi phục lại tệp hiện có cho đến khi bản sao được chuyển đổi được lưu.';
+	@override String get converterStarting => 'Bắt đầu FFmpeg...';
+	@override String get converterProgress => 'Chuyển đổi vào máy tính này...';
+	@override String get converterComplete => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.';
+	@override String get converterFfmpegMissing => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.';
+	@override String get converterFailed => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.';
+	@override String get converterCancelled => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.';
+	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
+	@override String get converterStart => 'chuyển đổi file';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$vi extends Translations$fileSources$en {
@@ -7596,6 +7725,118 @@ extension on TranslationsVi {
 			'platform.locationPermission' => 'PlezyNG sử dụng quyền truy cập vị trí khi iOS yêu cầu nó để phát hiện mạng lưới địa phương của bạn và kết nối với máy chủ truyền thông của bạn.',
 			'platform.photoLibraryPermission' => 'Chọn hình ảnh từ thư viện ảnh của bạn để sử dụng như một công việc nghệ thuật phương tiện truyền thông.',
 			'platform.cameraPermission' => 'Scan mã QR để kết hợp một Companion Remote.',
+			'universalMedia.title' => 'phương tiện truyền thông mở',
+			'universalMedia.shortcutHelp' => 'Chơi một liên kết, danh sách chơi hoặc tệp cho phiên này.',
+			'universalMedia.intro' => 'Mở một liên kết, danh sách phát hoặc tệp. Playback sử dụng người chơi tiêu chuẩn của PlezyNG và không thêm lịch sử vào thư viện của bạn.',
+			'universalMedia.openWhat' => 'Bạn muốn mở cái gì?',
+			'universalMedia.stream' => 'Địa chỉ Stream',
+			'universalMedia.playlist' => 'Danh sách Playlist',
+			'universalMedia.files' => 'Thiết bị file',
+			'universalMedia.favorites' => 'Save Stream yêu thích',
+			'universalMedia.address' => 'Địa chỉ Media',
+			'universalMedia.addressHelp' => 'URL với các thông số xác nhận hoặc ký tự được công nhận chỉ được sử dụng cho phiên này và không thể được lưu như là yêu thích.',
+			'universalMedia.displayName' => 'Tên hiển thị (tùy chọn)',
+			'universalMedia.displayNameHelp' => 'Chọn tên ngắn cho người chơi và hệ thống điều khiển phương tiện truyền thông.',
+			'universalMedia.allowHttp' => 'Cho phép kết nối HTTP không được mã hóa',
+			'universalMedia.allowHttpHelp' => 'HTTP không mã hóa kết nối. Chỉ cho phép nó trên một mạng tin cậy. Sử dụng HTTPS khi có thể.',
+			'universalMedia.advancedProtocols' => 'Chỉ MPV: nhập một địa chỉ RTSP, RTMP/RTMPS, UDP hoặc RTP. Các địa chỉ này không thể được lưu như là yêu thích.',
+			'universalMedia.liveStream' => 'Chăm sóc như sống',
+			'universalMedia.liveStreamHelp' => 'Sử dụng điều này cho video hay radio trực tiếp. Ứng dụng che giấu thanh thời gian, nhấp chuột và tùy chọn go-to-time.',
+			'universalMedia.privateSession' => 'Chỉ bài phát này sử dụng địa chỉ.Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Giữ yêu thích',
+			'universalMedia.playNow' => 'Chơi bây giờ',
+			'universalMedia.favoriteSaved' => 'Stream Favorite được tiết kiệm đến hồ sơ này',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ),
+			'universalMedia.playlistAddress' => 'Địa chỉ Playlist',
+			'universalMedia.playlistAddressHelp' => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.',
+			'universalMedia.choosePlaylist' => 'Chọn playlist file',
+			'universalMedia.openPlaylist' => 'playlist mở',
+			'universalMedia.playlistFormatsHelp' => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.',
+			'universalMedia.noFavorites' => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.',
+			'universalMedia.removeFavorite' => 'Xóa stream yêu thích',
+			'universalMedia.filesHelp' => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.',
+			'universalMedia.chooseFiles' => 'Chọn file',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ),
+			'universalMedia.wifiTransfer' => 'Gửi file qua Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.',
+			'universalMedia.wifiTransferIntro' => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.',
+			'universalMedia.wifiTransferPrivacy' => 'Thiết bị này nhận được tệp qua mạng địa phương của bạn. bất cứ ai biết địa chỉ này có thể gửi tệp cho đến khi bạn ngừng chuyển giao hoặc địa chỉ hết hạn sau 15 phút. tối đa: 100 tệp, 4 GiB mỗi tệp; tổng cộng 10 GiB.',
+			'universalMedia.wifiTransferStarting' => 'Chuẩn bị một chuyển giao riêng, thời gian giới hạn...',
+			'universalMedia.wifiTransferUnavailable' => 'Không thể bắt đầu chuyển giao. kiểm tra truy cập mạng địa phương và thử lại.',
+			'universalMedia.openThisAddress' => 'Mở một trong những địa chỉ này trên thiết bị gửi',
+			'universalMedia.copyAddress' => 'Bản sao địa chỉ chuyển đổi',
+			'universalMedia.addressCopied' => 'Địa chỉ chuyển đổi sao chép',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'Nhận ${size}',
+			'universalMedia.stopTransfer' => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ',
+			'universalMedia.startTransfer' => 'Bắt đầu chuyển giao',
+			'universalMedia.wifiImportedFiles' => 'Chuyển Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Gửi file đến PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Chọn các tập tin âm thanh, video, ebook hoặc truyện tranh để gửi. Các tập tin được lưu trữ trong thư viện tệp và sách của thiết bị này. Tối đa: 100 tập tin, 4 GiB mỗi file, tổng cộng 10 GiB.',
+			'universalMedia.uploadFilesLabel' => 'file để gửi',
+			'universalMedia.uploadSelected' => 'Tải các tập tin được chọn',
+			'universalMedia.uploadSelectFirst' => 'Chọn một hoặc nhiều tập tin đầu tiên.',
+			'universalMedia.uploading' => 'gửi',
+			'universalMedia.uploadComplete' => 'File được thêm vào PlezyNG.',
+			'universalMedia.uploadFailed' => 'Tệp không thể được thêm vào. giữ cho trang này mở và thử lại.',
+			'universalMedia.liveCue' => 'Sống',
+			'universalMedia.liveSession' => 'Stream trực tiếp',
+			'universalMedia.liveCueHelp' => 'Đối với video hay radio trực tiếp, ứng dụng ẩn thanh thời gian và nhảy nút. nó không lưu địa chỉ hoặc xem lịch sử.',
+			'universalMedia.sessionOnly' => 'Playback này là session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback không bao giờ tiết kiệm tiến bộ hoặc lịch sử.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'hình ảnh điều chỉnh',
+			'universalMedia.pictureHelp' => 'Những thay đổi hình ảnh này chỉ ảnh hưởng đến playback này. họ đặt lại khi playback kết thúc.',
+			'universalMedia.resetPicture' => 'Reset hình ảnh',
+			'universalMedia.brightness' => 'Ánh sáng',
+			'universalMedia.contrast' => 'Ngược điểm',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Màn hình 360° video',
+			'universalMedia.view360Help' => 'Sử dụng điều này cho video 360° đồng chiều. MPV cần bộ lọc v360 của FFmpeg để xem.',
+			'universalMedia.view360Unavailable' => 'Thiết lập MPV này không thể áp dụng bộ lọc 360°.',
+			'universalMedia.view360Yaw' => 'tầm nhìn chân trời',
+			'universalMedia.view360Pitch' => 'Màn hình Vertical View',
+			'universalMedia.view360FieldOfView' => 'Vùng tầm nhìn',
+			'universalMedia.recordStream' => 'Đánh giá Live Stream',
+			'universalMedia.stopRecording' => 'Ngừng và tiết kiệm ghi âm',
+			'universalMedia.recordingStarted' => 'Ghi âm là hoạt động.Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => 'Ghi âm được hoàn thành và tiết kiệm.',
+			'universalMedia.recordingActive' => 'Để lại playback dừng lại và tiết kiệm nó.',
+			'universalMedia.recordingFormatHelp' => 'Đối với video, chọn MKV hoặc MPEG-TS. Đối với âm thanh, chọn MKA hoặc MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Thay thế bản ghi này?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG sao lưu tệp hiện có trong khi ghi lại. nếu nó không thể tiết kiệm bản ghi mới, Plezyng khôi phục sao lưu.',
+			'universalMedia.replaceRecording' => 'Thay thế file',
+			'universalMedia.discHelp' => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.',
+			'universalMedia.discs' => 'Đĩa Optical',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Đánh giá Blu-ray',
+			'universalMedia.audioCd' => 'CD âm thanh',
+			'universalMedia.discAvailability' => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.',
+			'universalMedia.converterTitle' => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương',
+			'universalMedia.converterHelp' => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.',
+			'universalMedia.converterIntro' => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.',
+			'universalMedia.converterPrivacy' => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.',
+			'universalMedia.converterChooseInput' => 'Chọn một tập tin phương tiện truyền thông địa phương',
+			'universalMedia.converterFormat' => 'định dạng output',
+			'universalMedia.converterMp4' => 'MP4 · H.264 và AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC âm thanh',
+			'universalMedia.converterMp3' => 'MP3 - Âm thanh',
+			'universalMedia.converterSaveAs' => 'Lưu các phương tiện truyền thông được chuyển đổi như',
+			'universalMedia.converterExtensionMismatch' => 'Chọn tên file với phần mở rộng output được chọn.',
+			'universalMedia.converterUnsupportedInput' => 'Chọn một file audio hoặc video.',
+			'universalMedia.converterLocalOnly' => 'Tệp được chọn không có sẵn như một con đường thiết bị địa phương.',
+			'universalMedia.converterReplaceTitle' => 'Thay thế file này?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG khôi phục lại tệp hiện có cho đến khi bản sao được chuyển đổi được lưu.',
+			'universalMedia.converterStarting' => 'Bắt đầu FFmpeg...',
+			'universalMedia.converterProgress' => 'Chuyển đổi vào máy tính này...',
+			'universalMedia.converterComplete' => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.',
+			'universalMedia.converterFfmpegMissing' => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.',
+			'universalMedia.converterFailed' => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.',
+			'universalMedia.converterCancelled' => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.',
+			'universalMedia.converterDesktopOnly' => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.',
+			'universalMedia.converterStart' => 'chuyển đổi file',
 			'fileSources.title' => 'File và sách',
 			'fileSources.subtitle' => 'Đọc, lắng nghe, và xem từ các tệp của riêng bạn.',
 			'fileSources.add' => 'thêm nguồn',

@@ -101,6 +101,7 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$watchLink$th watchLink = _Translations$watchLink$th._(_root);
 	@override late final _Translations$homeLayout$th homeLayout = _Translations$homeLayout$th._(_root);
 	@override late final _Translations$platform$th platform = _Translations$platform$th._(_root);
+	@override late final _Translations$universalMedia$th universalMedia = _Translations$universalMedia$th._(_root);
 	@override late final _Translations$fileSources$th fileSources = _Translations$fileSources$th._(_root);
 	@override late final _Translations$lending$th lending = _Translations$lending$th._(_root);
 	@override late final _Translations$audiobook$th audiobook = _Translations$audiobook$th._(_root);
@@ -3027,6 +3028,134 @@ class _Translations$platform$th extends Translations$platform$en {
 	@override String get photoLibraryPermission => 'เลือกภาพจากห้องสมุดภาพของคุณเพื่อใช้เป็นงานศิลปะสื่อ';
 	@override String get cameraPermission => 'การสแกนรหัส QR เพื่อคู่กับ Companion Remote';
 }
+
+// Path: universalMedia
+class _Translations$universalMedia$th extends Translations$universalMedia$en {
+	_Translations$universalMedia$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'สื่อเปิด';
+	@override String get shortcutHelp => 'เล่นลิงค์รายการเล่นหรือไฟล์สําหรับเซสชั่นนี้';
+	@override String get intro => 'เปิดลิงค์รายการเล่นหรือไฟล์ Playback ใช้ผู้เล่นมาตรฐานของ PlezyNG และไม่เพิ่มประวัติไปยังห้องสมุดของคุณ';
+	@override String get openWhat => 'สิ่งที่คุณต้องการเปิด';
+	@override String get stream => 'หมายเลข Stream';
+	@override String get playlist => 'เล่น';
+	@override String get files => 'ไฟล์อุปกรณ์';
+	@override String get favorites => 'เก็บ Stream มือสมัครเล่น';
+	@override String get address => 'อ้างอิงสื่อ';
+	@override String get addressHelp => 'HTTPS เป็นความต้องการ URL ที่มีพารามิเตอร์การรับรองหรือสัญญาที่ได้รับการยอมรับจะใช้เฉพาะสําหรับเซสชั่นนี้และไม่สามารถบันทึกเป็นโปรด';
+	@override String get displayName => 'ชื่อแสดงผล (ตัวเลือก)';
+	@override String get displayNameHelp => 'เลือกชื่อสั้นสําหรับผู้เล่นและระบบการควบคุมสื่อ';
+	@override String get allowHttp => 'อนุญาตให้มีการเชื่อมต่อ HTTP ไม่เข้ารหัส';
+	@override String get allowHttpHelp => 'HTTP ไม่เข้ารหัสการเชื่อมต่อ ให้มันเฉพาะบนเครือข่ายที่เชื่อถือได้ ใช้ HTTPS เมื่อเป็นไปได้';
+	@override String get advancedProtocols => 'MPV เท่านั้น: ป้อนที่อยู่อีเมล RTSP, RTMP/RTMPS, UDP หรือ RTP ที่อยู่เหล่านี้ไม่สามารถบันทึกเป็นโปรด';
+	@override String get liveStream => 'การรักษาเป็นชีวิต';
+	@override String get liveStreamHelp => 'ใช้นี้สําหรับวิดีโอสดหรือวิทยุ แอพลิเคชันซ่อนแถบเวลาปุ่มสไลด์และตัวเลือก go-to-time ปิดมันสําหรับการบันทึก';
+	@override String get privateSession => 'เพียง playback นี้จะใช้ที่อยู่อาศัย เก็บโปรด stream ที่เหมาะสมเพื่อเก็บไว้ในโปรไฟล์นี้';
+	@override String get saveFavorite => 'เก็บ Favorite';
+	@override String get playNow => 'เล่นตอนนี้';
+	@override String get favoriteSaved => 'Stream Favorite ที่บันทึกไว้ในโปรไฟล์นี้';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
+		other: '${count} เข้าสู่ระบบรายการเล่นที่ไม่ได้สนับสนุนหรือไม่ปลอดภัย',
+	);
+	@override String get playlistAddress => 'ที่อยู่ Playlist';
+	@override String get playlistAddressHelp => 'เปิดรายการเล่น M3U, M3u8 หรือ PLS จากที่อยู่อาศัยเว็บ เชื่อมโยง Stream Direct ไม่บันทึกรายการเล่น';
+	@override String get choosePlaylist => 'เลือกไฟล์ Playlist';
+	@override String get openPlaylist => 'รายการเล่นเปิด';
+	@override String get playlistFormatsHelp => 'รายการการเล่นสามารถมีรายการสูงสุด 1,000 และ 2 MB HLS จะเปิดเป็น Streams เพื่อให้ผู้เล่นสามารถเลือกคุณภาพ';
+	@override String get noFavorites => 'ไม่ได้บันทึก Stream Favorites ยังคงอยู่ในโปรไฟล์นี้';
+	@override String get removeFavorite => 'ลบ Stream Favorite';
+	@override String get filesHelp => 'เลือกไฟล์เสียงวิดีโอหรือไฟล์ ISO สําหรับแบบชั่วคราว ไฟล์และ URLs ไม่มีการเพิ่มไปยังประวัติของห้องสมุด';
+	@override String get chooseFiles => 'เลือกไฟล์';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
+		other: '${count} ไฟล์ที่เลือก',
+	);
+	@override String get wifiTransfer => 'ส่งไฟล์ผ่าน Wi-Fi';
+	@override String get wifiTransferHelp => 'การถ่ายโอนไฟล์ที่สนับสนุนจากเบราว์เซอร์บนเครือข่ายที่เชื่อถือได้เดียวกัน';
+	@override String get wifiTransferIntro => 'เปิดที่อยู่นี้ในเบราว์เซอร์บนอุปกรณ์อื่น เลือกไฟล์เพื่อเพิ่มไปยังห้องสมุดไฟล์และหนังสือของอุปกรณ์นี้';
+	@override String get wifiTransferPrivacy => 'อุปกรณ์นี้จะรับไฟล์ผ่านเครือข่ายท้องถิ่นของคุณ ทุกคนที่รู้ที่อยู่นี้สามารถส่งไฟล์จนกว่าคุณหยุดการถ่ายโอนหรือที่อยู่อาศัยหมดอายุหลังจาก 15 นาที สูงสุด: 100 ไฟล์, 4 GiB ต่อไฟล์, 10 GiB ทั้งหมด';
+	@override String get wifiTransferStarting => 'การเตรียมการถ่ายโอนส่วนตัวและระยะเวลา จํากัด ...';
+	@override String get wifiTransferUnavailable => 'ไม่สามารถเริ่มต้นการถ่ายโอนได้ ตรวจสอบการเข้าถึงเครือข่ายท้องถิ่นและลองอีกครั้ง';
+	@override String get openThisAddress => 'เปิดหนึ่งในที่อยู่เหล่านี้บนอุปกรณ์ส่ง';
+	@override String get copyAddress => 'โพสต์การถ่ายโอน';
+	@override String get addressCopied => 'ที่อยู่อาศัยการถ่ายโอนคัดลอก';
+	@override String transferExpires({required Object time}) => 'ที่อยู่นี้หมดอายุใน ${time}';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
+		other: '${count} ไฟล์ที่ได้รับ',
+	);
+	@override String uploadedData({required Object size}) => 'รับ ${size}';
+	@override String get stopTransfer => 'หยุดการถ่ายโอนและยกเลิกที่อยู่อาศัย';
+	@override String get startTransfer => 'เริ่มต้นการโอน';
+	@override String get wifiImportedFiles => 'การถ่ายโอน Wi-Fi';
+	@override String get wifiBrowserTitle => 'ส่งไฟล์ไปยัง PlezyNG';
+	@override String get wifiBrowserIntro => 'เลือกไฟล์เสียง, วิดีโอ, ebook หรือการ์ตูนเพื่อส่ง ไฟล์จะถูกบันทึกไว้ในห้องสมุดไฟล์และหนังสือของอุปกรณ์นี้ สูงสุด: 100 ไฟล์, 4 GiB ต่อไฟล์, 10 GiB ทั้งหมด';
+	@override String get uploadFilesLabel => 'ไฟล์เพื่อส่ง';
+	@override String get uploadSelected => 'ดาวน์โหลดไฟล์ที่เลือก';
+	@override String get uploadSelectFirst => 'เลือกไฟล์หนึ่งหรือหลายอย่างแรก';
+	@override String get uploading => 'การส่ง';
+	@override String get uploadComplete => 'ไฟล์ที่เพิ่มไปยัง PlezyNG';
+	@override String get uploadFailed => 'ไฟล์ไม่สามารถเพิ่มได้ ปล่อยให้หน้านี้เปิดและลองอีกครั้ง';
+	@override String get liveCue => 'ชีวิต';
+	@override String get liveSession => 'สตรีมสด';
+	@override String get liveCueHelp => 'สําหรับวิดีโอสดหรือวิทยุแอปจะซ่อนแถบเวลาและปุ่มสกปรก ไม่ได้บันทึกที่อยู่หรือประวัติการดู';
+	@override String get sessionOnly => 'นี้ playback เป็น session-only';
+	@override String get sessionOnlyHelp => 'Playback ไม่เคยบันทึกการพัฒนาหรือประวัติ การบันทึบกระแสเป็นคนที่คุณชื่นชอบเพื่อเก็บไว้ในโปรไฟล์นี้หากได้รับอนุญาต';
+	@override String get pictureAdjustments => 'การปรับภาพ';
+	@override String get pictureHelp => 'การเปลี่ยนแปลงภาพเหล่านี้มีผลต่อการเล่นเกมนี้เท่านั้น พวกเขาตั้งค่าใหม่เมื่อการเล่นจะสิ้นสุด';
+	@override String get resetPicture => 'รูปภาพรีเซ็ต';
+	@override String get brightness => 'ความสว่าง';
+	@override String get contrast => 'ความต้านทาน';
+	@override String get gamma => 'กรม';
+	@override String get hue => 'กุหลาบ';
+	@override String get saturation => 'ตุ๊กตา';
+	@override String get view360 => 'แสดงแบนสําหรับวิดีโอ 360 องศา';
+	@override String get view360Help => 'ใช้นี้สําหรับวิดีโอ 360 องศาแบบสี่เหลี่ยม MPV ต้องกรอง v360 ของ FFmpeg สําหรับภาพนี้';
+	@override String get view360Unavailable => 'การสร้าง mpv นี้ไม่สามารถใช้กรอง 360 องศา';
+	@override String get view360Yaw => 'ครั้งที่เข้าดูแนวนอน';
+	@override String get view360Pitch => 'ความเห็นแนวตั้ง';
+	@override String get view360FieldOfView => 'พื้นที่มองเห็น';
+	@override String get recordStream => 'บันทึก Live Stream';
+	@override String get stopRecording => 'หยุดและบันทึก';
+	@override String get recordingStarted => 'การบันทึกจะเปิดใช้งาน ลายการเล่นหยุดและประหยัดการบันทึบ';
+	@override String get recordingSaved => 'การบันทึกเสร็จสิ้นและบันทิง';
+	@override String get recordingActive => 'การบันทึกของอุปกรณ์นี้ ให้การเล่นย้อนกลับหยุดและประหยัดมัน';
+	@override String get recordingFormatHelp => 'สําหรับวิดีโอเลือก MKV หรือ MPEG-TS สําหรับเสียงเลือก MKA หรือ MKV';
+	@override String get replaceRecordingTitle => 'เปลี่ยนการบันทึกนี้หรือไม่';
+	@override String get replaceRecordingHelp => 'PlezyNG Backup up the existing file while recording. หากมันไม่สามารถบันทึกการบันทึบใหม่ Plezyng จะคืนค่า backup';
+	@override String get replaceRecording => 'แลกเปลี่ยนไฟล์';
+	@override String get discHelp => 'เปิดดิสก์ในไดรฟ์แสงของคอมพิวเตอร์นี้ คุณยังสามารถเปิดภาพ ISO จากไฟล์ Device';
+	@override String get discs => 'ดิสก์ออฟติคอล';
+	@override String get dvd => 'วีดีโอ';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'เสียง CD';
+	@override String get discAvailability => 'การเล่นไดรฟ์จําเป็นต้องมีการสร้าง MPV ที่เข้ากันได้ไดรเวอร์ที่ได้รับการสนับสนุนและใบอนุญาตระบบปฏิบัติการ มันไม่สามารถเอาชนะการปกป้องไดรป์เชิงพาณิชย์';
+	@override String get converterTitle => 'แปลงไฟล์สื่อท้องถิ่น';
+	@override String get converterHelp => 'ใช้ FFmpeg เพื่อสร้างไฟล์ MP4, M4A หรือ MP3';
+	@override String get converterIntro => 'แปลงไฟล์เสียงหรือวิดีโอในท้องถิ่นเป็นรูปแบบที่ทํางานบนอุปกรณ์อื่น ๆ';
+	@override String get converterPrivacy => 'FFmpeg ต้องติดตั้งบนคอมพิวเตอร์นี้ การแปลงอ่านไฟล์ในท้องถิ่นเท่านั้น มันไม่ดาวน์โหลด Streams หรือลบ DRM';
+	@override String get converterChooseInput => 'เลือกไฟล์สื่อท้องถิ่น';
+	@override String get converterFormat => 'รูปแบบการออก';
+	@override String get converterMp4 => 'MP4 · H.264 และ AAC';
+	@override String get converterM4a => 'M4A · AAC เสียง';
+	@override String get converterMp3 => 'MP3 · เสียง';
+	@override String get converterSaveAs => 'การบันทึกสื่อที่แปลงเป็น';
+	@override String get converterExtensionMismatch => 'เลือกชื่อไฟล์ที่มีการขยายออกที่เลือก';
+	@override String get converterUnsupportedInput => 'เลือกไฟล์เสียงหรือวิดีโอ';
+	@override String get converterLocalOnly => 'ไฟล์ที่เลือกไม่สามารถใช้ได้ในรูปแบบของอุปกรณ์ท้องถิ่น';
+	@override String get converterReplaceTitle => 'เปลี่ยนไฟล์นี้หรือไม่';
+	@override String get converterReplaceHelp => 'PlezyNG คํารองไฟล์ที่มีอยู่จนกว่าสําเนาที่แปลงจะถูกบันทึก';
+	@override String get converterStarting => 'เริ่มต้น FFmpeg';
+	@override String get converterProgress => 'การแปลงไปยังคอมพิวเตอร์นี้ ...';
+	@override String get converterComplete => 'การแปลงเสร็จสมบูรณ์ ไฟล์ใหม่พร้อม';
+	@override String get converterFfmpegMissing => 'FFmpeg ไม่สามารถหาตัวเข้ารหัสที่ต้องการ ติดตั้ง FFmpEG ด้วยการสนับสนุน H.264, AAC และ MP3 จากนั้นลองอีกครั้ง';
+	@override String get converterFailed => 'การแปลงล้มเหลว ตรวจสอบให้แน่ใจว่าไฟล์แหล่งที่มาสามารถอ่านได้และปลายทางมีพื้นที่ฟรีเพียงพอ';
+	@override String get converterCancelled => 'การแปลงถูกยกเลิก ผลลัพธ์ที่ไม่สมบูรณ์ได้รับการกําจัด';
+	@override String get converterDesktopOnly => 'การแปลงในท้องถิ่นสามารถใช้ได้บนคอมพิวเตอร์เดสก์ท็อปที่มี FFmpeg ติดตั้ง';
+	@override String get converterStart => 'การแปลงไฟล์';
+}
+
 
 // Path: fileSources
 class _Translations$fileSources$th extends Translations$fileSources$en {
@@ -7596,6 +7725,118 @@ extension on TranslationsTh {
 			'platform.locationPermission' => 'PlezyNG ใช้การเข้าถึงตําแหน่งเมื่อ iOS ต้องการการตรวจจับเครือข่ายท้องถิ่นของคุณและเชื่อมต่อกับเซิร์ฟเวอร์สื่อของคุณ',
 			'platform.photoLibraryPermission' => 'เลือกภาพจากห้องสมุดภาพของคุณเพื่อใช้เป็นงานศิลปะสื่อ',
 			'platform.cameraPermission' => 'การสแกนรหัส QR เพื่อคู่กับ Companion Remote',
+			'universalMedia.title' => 'สื่อเปิด',
+			'universalMedia.shortcutHelp' => 'เล่นลิงค์รายการเล่นหรือไฟล์สําหรับเซสชั่นนี้',
+			'universalMedia.intro' => 'เปิดลิงค์รายการเล่นหรือไฟล์ Playback ใช้ผู้เล่นมาตรฐานของ PlezyNG และไม่เพิ่มประวัติไปยังห้องสมุดของคุณ',
+			'universalMedia.openWhat' => 'สิ่งที่คุณต้องการเปิด',
+			'universalMedia.stream' => 'หมายเลข Stream',
+			'universalMedia.playlist' => 'เล่น',
+			'universalMedia.files' => 'ไฟล์อุปกรณ์',
+			'universalMedia.favorites' => 'เก็บ Stream มือสมัครเล่น',
+			'universalMedia.address' => 'อ้างอิงสื่อ',
+			'universalMedia.addressHelp' => 'HTTPS เป็นความต้องการ URL ที่มีพารามิเตอร์การรับรองหรือสัญญาที่ได้รับการยอมรับจะใช้เฉพาะสําหรับเซสชั่นนี้และไม่สามารถบันทึกเป็นโปรด',
+			'universalMedia.displayName' => 'ชื่อแสดงผล (ตัวเลือก)',
+			'universalMedia.displayNameHelp' => 'เลือกชื่อสั้นสําหรับผู้เล่นและระบบการควบคุมสื่อ',
+			'universalMedia.allowHttp' => 'อนุญาตให้มีการเชื่อมต่อ HTTP ไม่เข้ารหัส',
+			'universalMedia.allowHttpHelp' => 'HTTP ไม่เข้ารหัสการเชื่อมต่อ ให้มันเฉพาะบนเครือข่ายที่เชื่อถือได้ ใช้ HTTPS เมื่อเป็นไปได้',
+			'universalMedia.advancedProtocols' => 'MPV เท่านั้น: ป้อนที่อยู่อีเมล RTSP, RTMP/RTMPS, UDP หรือ RTP ที่อยู่เหล่านี้ไม่สามารถบันทึกเป็นโปรด',
+			'universalMedia.liveStream' => 'การรักษาเป็นชีวิต',
+			'universalMedia.liveStreamHelp' => 'ใช้นี้สําหรับวิดีโอสดหรือวิทยุ แอพลิเคชันซ่อนแถบเวลาปุ่มสไลด์และตัวเลือก go-to-time ปิดมันสําหรับการบันทึก',
+			'universalMedia.privateSession' => 'เพียง playback นี้จะใช้ที่อยู่อาศัย เก็บโปรด stream ที่เหมาะสมเพื่อเก็บไว้ในโปรไฟล์นี้',
+			'universalMedia.saveFavorite' => 'เก็บ Favorite',
+			'universalMedia.playNow' => 'เล่นตอนนี้',
+			'universalMedia.favoriteSaved' => 'Stream Favorite ที่บันทึกไว้ในโปรไฟล์นี้',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} เข้าสู่ระบบรายการเล่นที่ไม่ได้สนับสนุนหรือไม่ปลอดภัย', ),
+			'universalMedia.playlistAddress' => 'ที่อยู่ Playlist',
+			'universalMedia.playlistAddressHelp' => 'เปิดรายการเล่น M3U, M3u8 หรือ PLS จากที่อยู่อาศัยเว็บ เชื่อมโยง Stream Direct ไม่บันทึกรายการเล่น',
+			'universalMedia.choosePlaylist' => 'เลือกไฟล์ Playlist',
+			'universalMedia.openPlaylist' => 'รายการเล่นเปิด',
+			'universalMedia.playlistFormatsHelp' => 'รายการการเล่นสามารถมีรายการสูงสุด 1,000 และ 2 MB HLS จะเปิดเป็น Streams เพื่อให้ผู้เล่นสามารถเลือกคุณภาพ',
+			'universalMedia.noFavorites' => 'ไม่ได้บันทึก Stream Favorites ยังคงอยู่ในโปรไฟล์นี้',
+			'universalMedia.removeFavorite' => 'ลบ Stream Favorite',
+			'universalMedia.filesHelp' => 'เลือกไฟล์เสียงวิดีโอหรือไฟล์ ISO สําหรับแบบชั่วคราว ไฟล์และ URLs ไม่มีการเพิ่มไปยังประวัติของห้องสมุด',
+			'universalMedia.chooseFiles' => 'เลือกไฟล์',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่เลือก', ),
+			'universalMedia.wifiTransfer' => 'ส่งไฟล์ผ่าน Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'การถ่ายโอนไฟล์ที่สนับสนุนจากเบราว์เซอร์บนเครือข่ายที่เชื่อถือได้เดียวกัน',
+			'universalMedia.wifiTransferIntro' => 'เปิดที่อยู่นี้ในเบราว์เซอร์บนอุปกรณ์อื่น เลือกไฟล์เพื่อเพิ่มไปยังห้องสมุดไฟล์และหนังสือของอุปกรณ์นี้',
+			'universalMedia.wifiTransferPrivacy' => 'อุปกรณ์นี้จะรับไฟล์ผ่านเครือข่ายท้องถิ่นของคุณ ทุกคนที่รู้ที่อยู่นี้สามารถส่งไฟล์จนกว่าคุณหยุดการถ่ายโอนหรือที่อยู่อาศัยหมดอายุหลังจาก 15 นาที สูงสุด: 100 ไฟล์, 4 GiB ต่อไฟล์, 10 GiB ทั้งหมด',
+			'universalMedia.wifiTransferStarting' => 'การเตรียมการถ่ายโอนส่วนตัวและระยะเวลา จํากัด ...',
+			'universalMedia.wifiTransferUnavailable' => 'ไม่สามารถเริ่มต้นการถ่ายโอนได้ ตรวจสอบการเข้าถึงเครือข่ายท้องถิ่นและลองอีกครั้ง',
+			'universalMedia.openThisAddress' => 'เปิดหนึ่งในที่อยู่เหล่านี้บนอุปกรณ์ส่ง',
+			'universalMedia.copyAddress' => 'โพสต์การถ่ายโอน',
+			'universalMedia.addressCopied' => 'ที่อยู่อาศัยการถ่ายโอนคัดลอก',
+			'universalMedia.transferExpires' => ({required Object time}) => 'ที่อยู่นี้หมดอายุใน ${time}',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่ได้รับ', ),
+			'universalMedia.uploadedData' => ({required Object size}) => 'รับ ${size}',
+			'universalMedia.stopTransfer' => 'หยุดการถ่ายโอนและยกเลิกที่อยู่อาศัย',
+			'universalMedia.startTransfer' => 'เริ่มต้นการโอน',
+			'universalMedia.wifiImportedFiles' => 'การถ่ายโอน Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'ส่งไฟล์ไปยัง PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'เลือกไฟล์เสียง, วิดีโอ, ebook หรือการ์ตูนเพื่อส่ง ไฟล์จะถูกบันทึกไว้ในห้องสมุดไฟล์และหนังสือของอุปกรณ์นี้ สูงสุด: 100 ไฟล์, 4 GiB ต่อไฟล์, 10 GiB ทั้งหมด',
+			'universalMedia.uploadFilesLabel' => 'ไฟล์เพื่อส่ง',
+			'universalMedia.uploadSelected' => 'ดาวน์โหลดไฟล์ที่เลือก',
+			'universalMedia.uploadSelectFirst' => 'เลือกไฟล์หนึ่งหรือหลายอย่างแรก',
+			'universalMedia.uploading' => 'การส่ง',
+			'universalMedia.uploadComplete' => 'ไฟล์ที่เพิ่มไปยัง PlezyNG',
+			'universalMedia.uploadFailed' => 'ไฟล์ไม่สามารถเพิ่มได้ ปล่อยให้หน้านี้เปิดและลองอีกครั้ง',
+			'universalMedia.liveCue' => 'ชีวิต',
+			'universalMedia.liveSession' => 'สตรีมสด',
+			'universalMedia.liveCueHelp' => 'สําหรับวิดีโอสดหรือวิทยุแอปจะซ่อนแถบเวลาและปุ่มสกปรก ไม่ได้บันทึกที่อยู่หรือประวัติการดู',
+			'universalMedia.sessionOnly' => 'นี้ playback เป็น session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback ไม่เคยบันทึกการพัฒนาหรือประวัติ การบันทึบกระแสเป็นคนที่คุณชื่นชอบเพื่อเก็บไว้ในโปรไฟล์นี้หากได้รับอนุญาต',
+			'universalMedia.pictureAdjustments' => 'การปรับภาพ',
+			'universalMedia.pictureHelp' => 'การเปลี่ยนแปลงภาพเหล่านี้มีผลต่อการเล่นเกมนี้เท่านั้น พวกเขาตั้งค่าใหม่เมื่อการเล่นจะสิ้นสุด',
+			'universalMedia.resetPicture' => 'รูปภาพรีเซ็ต',
+			'universalMedia.brightness' => 'ความสว่าง',
+			'universalMedia.contrast' => 'ความต้านทาน',
+			'universalMedia.gamma' => 'กรม',
+			'universalMedia.hue' => 'กุหลาบ',
+			'universalMedia.saturation' => 'ตุ๊กตา',
+			'universalMedia.view360' => 'แสดงแบนสําหรับวิดีโอ 360 องศา',
+			'universalMedia.view360Help' => 'ใช้นี้สําหรับวิดีโอ 360 องศาแบบสี่เหลี่ยม MPV ต้องกรอง v360 ของ FFmpeg สําหรับภาพนี้',
+			'universalMedia.view360Unavailable' => 'การสร้าง mpv นี้ไม่สามารถใช้กรอง 360 องศา',
+			'universalMedia.view360Yaw' => 'ครั้งที่เข้าดูแนวนอน',
+			'universalMedia.view360Pitch' => 'ความเห็นแนวตั้ง',
+			'universalMedia.view360FieldOfView' => 'พื้นที่มองเห็น',
+			'universalMedia.recordStream' => 'บันทึก Live Stream',
+			'universalMedia.stopRecording' => 'หยุดและบันทึก',
+			'universalMedia.recordingStarted' => 'การบันทึกจะเปิดใช้งาน ลายการเล่นหยุดและประหยัดการบันทึบ',
+			'universalMedia.recordingSaved' => 'การบันทึกเสร็จสิ้นและบันทิง',
+			'universalMedia.recordingActive' => 'การบันทึกของอุปกรณ์นี้ ให้การเล่นย้อนกลับหยุดและประหยัดมัน',
+			'universalMedia.recordingFormatHelp' => 'สําหรับวิดีโอเลือก MKV หรือ MPEG-TS สําหรับเสียงเลือก MKA หรือ MKV',
+			'universalMedia.replaceRecordingTitle' => 'เปลี่ยนการบันทึกนี้หรือไม่',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG Backup up the existing file while recording. หากมันไม่สามารถบันทึกการบันทึบใหม่ Plezyng จะคืนค่า backup',
+			'universalMedia.replaceRecording' => 'แลกเปลี่ยนไฟล์',
+			'universalMedia.discHelp' => 'เปิดดิสก์ในไดรฟ์แสงของคอมพิวเตอร์นี้ คุณยังสามารถเปิดภาพ ISO จากไฟล์ Device',
+			'universalMedia.discs' => 'ดิสก์ออฟติคอล',
+			'universalMedia.dvd' => 'วีดีโอ',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'เสียง CD',
+			'universalMedia.discAvailability' => 'การเล่นไดรฟ์จําเป็นต้องมีการสร้าง MPV ที่เข้ากันได้ไดรเวอร์ที่ได้รับการสนับสนุนและใบอนุญาตระบบปฏิบัติการ มันไม่สามารถเอาชนะการปกป้องไดรป์เชิงพาณิชย์',
+			'universalMedia.converterTitle' => 'แปลงไฟล์สื่อท้องถิ่น',
+			'universalMedia.converterHelp' => 'ใช้ FFmpeg เพื่อสร้างไฟล์ MP4, M4A หรือ MP3',
+			'universalMedia.converterIntro' => 'แปลงไฟล์เสียงหรือวิดีโอในท้องถิ่นเป็นรูปแบบที่ทํางานบนอุปกรณ์อื่น ๆ',
+			'universalMedia.converterPrivacy' => 'FFmpeg ต้องติดตั้งบนคอมพิวเตอร์นี้ การแปลงอ่านไฟล์ในท้องถิ่นเท่านั้น มันไม่ดาวน์โหลด Streams หรือลบ DRM',
+			'universalMedia.converterChooseInput' => 'เลือกไฟล์สื่อท้องถิ่น',
+			'universalMedia.converterFormat' => 'รูปแบบการออก',
+			'universalMedia.converterMp4' => 'MP4 · H.264 และ AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC เสียง',
+			'universalMedia.converterMp3' => 'MP3 · เสียง',
+			'universalMedia.converterSaveAs' => 'การบันทึกสื่อที่แปลงเป็น',
+			'universalMedia.converterExtensionMismatch' => 'เลือกชื่อไฟล์ที่มีการขยายออกที่เลือก',
+			'universalMedia.converterUnsupportedInput' => 'เลือกไฟล์เสียงหรือวิดีโอ',
+			'universalMedia.converterLocalOnly' => 'ไฟล์ที่เลือกไม่สามารถใช้ได้ในรูปแบบของอุปกรณ์ท้องถิ่น',
+			'universalMedia.converterReplaceTitle' => 'เปลี่ยนไฟล์นี้หรือไม่',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG คํารองไฟล์ที่มีอยู่จนกว่าสําเนาที่แปลงจะถูกบันทึก',
+			'universalMedia.converterStarting' => 'เริ่มต้น FFmpeg',
+			'universalMedia.converterProgress' => 'การแปลงไปยังคอมพิวเตอร์นี้ ...',
+			'universalMedia.converterComplete' => 'การแปลงเสร็จสมบูรณ์ ไฟล์ใหม่พร้อม',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg ไม่สามารถหาตัวเข้ารหัสที่ต้องการ ติดตั้ง FFmpEG ด้วยการสนับสนุน H.264, AAC และ MP3 จากนั้นลองอีกครั้ง',
+			'universalMedia.converterFailed' => 'การแปลงล้มเหลว ตรวจสอบให้แน่ใจว่าไฟล์แหล่งที่มาสามารถอ่านได้และปลายทางมีพื้นที่ฟรีเพียงพอ',
+			'universalMedia.converterCancelled' => 'การแปลงถูกยกเลิก ผลลัพธ์ที่ไม่สมบูรณ์ได้รับการกําจัด',
+			'universalMedia.converterDesktopOnly' => 'การแปลงในท้องถิ่นสามารถใช้ได้บนคอมพิวเตอร์เดสก์ท็อปที่มี FFmpeg ติดตั้ง',
+			'universalMedia.converterStart' => 'การแปลงไฟล์',
 			'fileSources.title' => 'ไฟล์และหนังสือ',
 			'fileSources.subtitle' => 'อ่านฟังและตรวจสอบจากไฟล์ของคุณเอง',
 			'fileSources.add' => 'เพิ่มแหล่ง',

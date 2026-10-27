@@ -56,6 +56,8 @@ It separates semantic sample review from automated scans, records before/after
 corrections, and documents the review limits. Its coverage applies to the
 catalog snapshot named in the report; it is not approval of every message.
 
+The [universal media QA addendum](LANGUAGE_QA_UNIVERSAL_MEDIA.md) records the 112 new feature messages, M2M100 draft provenance, two explicit plural fallbacks, and the lack of native-speaker review.
+
 The [integration QA addendum](LANGUAGE_QA_INTEGRATION.md) records the discovery
 and source-setup additions, SMB guidance, and further Italian corrections. Its exact reviewed messages
 and catalog hashes are separate from the original review, so later feature

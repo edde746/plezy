@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_button.dart';
@@ -22,6 +25,7 @@ import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -33,6 +37,7 @@ import 'add_source_screen.dart';
 import 'source_notes_screen.dart';
 import 'standalone_subtitle_search_sheet.dart';
 import 'source_widgets.dart';
+import '../../widgets/video_controls/sheets/picture_adjustments_sheet.dart';
 
 class SourcePlayerScreen extends StatefulWidget {
   const SourcePlayerScreen({super.key});
@@ -50,6 +55,45 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   bool _full = false;
   double? _dragPosition;
   final _fullscreen = FullscreenStateManager();
+
+  Future<void> _toggleStreamRecording(SourcePlayback playback) async {
+    if (playback.isRecordingStream) {
+      final file = await playback.stopStreamRecording();
+      if (mounted && file != null) showSnackBar(context, t.universalMedia.recordingSaved);
+      return;
+    }
+
+    final extension = playback.video ? 'mkv' : 'mka';
+    var path = await FilePicker.saveFile(
+      dialogTitle: t.universalMedia.recordStream,
+      fileName: 'stream-recording.$extension',
+      type: FileType.custom,
+      allowedExtensions: playback.video ? const ['mkv', 'ts'] : const ['mka', 'mkv'],
+    );
+    if (path == null || !mounted) return;
+    if (p.extension(path).isEmpty) path += '.$extension';
+    if (!playback.video && !const {'.mka', '.mkv'}.contains(p.extension(path).toLowerCase()) ||
+        playback.video && !const {'.mkv', '.ts'}.contains(p.extension(path).toLowerCase())) {
+      showErrorSnackBar(context, t.universalMedia.recordingFormatHelp);
+      return;
+    }
+
+    final target = File(path);
+    final targetExists = await target.exists();
+    if (!mounted) return;
+    final replace = targetExists
+        ? await showConfirmDialog(
+            context,
+            title: t.universalMedia.replaceRecordingTitle,
+            message: t.universalMedia.replaceRecordingHelp,
+            confirmText: t.universalMedia.replaceRecording,
+            isDestructive: true,
+          )
+        : false;
+    if (!mounted || targetExists && !replace) return;
+    await sourceAction(context, () => playback.startStreamRecording(target, replaceExisting: replace));
+    if (mounted && playback.isRecordingStream) showSnackBar(context, t.universalMedia.recordingStarted);
+  }
 
   @override
   void initState() {
@@ -311,53 +355,71 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   Widget controls(SourcePlayback s) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
+      if (s.isTransientInput)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Card(
+            child: ListTile(
+              leading: AppIcon(s.isLiveInput ? Symbols.live_tv_rounded : Symbols.schedule_rounded),
+              title: Text(s.isLiveInput ? t.universalMedia.liveSession : t.universalMedia.sessionOnly),
+              subtitle: Text(s.isLiveInput ? t.universalMedia.liveCueHelp : t.universalMedia.sessionOnlyHelp),
+            ),
+          ),
+        ),
       if (s.opening) const LinearProgressIndicator(),
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: FocusableSlider(
-          value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
-            s.timelineStartMs.toDouble(),
-            s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
-          ),
-          min: s.timelineStartMs.toDouble(),
-          max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
-          semanticLabel: t.fileSources.timePosition,
-          semanticFormatterCallback: (v) => formatDurationTextual(v.round(), abbreviated: false),
-          onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
-          onChangeEnd: s.timelineEndMs > s.timelineStartMs
-              ? (v) {
-                  setState(() => _dragPosition = null);
-                  unawaited(sourceAction(context, () => s.seek(v.round())));
-                }
-              : null,
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: SizedBox(
-          width: double.infinity,
-          child: Wrap(
-            textDirection: TextDirection.ltr,
-            alignment: WrapAlignment.spaceBetween,
-            spacing: 24,
-            runSpacing: 8,
-            children: [
-              Text(sourceTime(s.positionMs - s.timelineStartMs)),
-              if (s.chapterRemainingMs != null)
-                Text(t.audiobook.chapterRemaining(time: sourceTime(s.chapterRemainingMs!))),
-              if (s.bookRemainingMs != null)
-                Text(
-                  s.entry?.kind == SourceItemKind.audiobook
-                      ? t.audiobook.bookRemaining(time: sourceTime(s.bookRemainingMs!))
-                      : t.fileSources.remaining(time: sourceTime(s.bookRemainingMs!)),
-                )
-              else
-                Text(t.audiobook.unknownRemaining),
-            ],
+      if (s.isLiveInput)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Semantics(liveRegion: true, child: Text(t.universalMedia.liveCue)),
+        )
+      else ...[
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: FocusableSlider(
+            value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
+              s.timelineStartMs.toDouble(),
+              s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+            ),
+            min: s.timelineStartMs.toDouble(),
+            max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+            semanticLabel: t.fileSources.timePosition,
+            semanticFormatterCallback: (v) => formatDurationTextual(v.round(), abbreviated: false),
+            onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
+            onChangeEnd: s.timelineEndMs > s.timelineStartMs
+                ? (v) {
+                    setState(() => _dragPosition = null);
+                    unawaited(sourceAction(context, () => s.seek(v.round())));
+                  }
+                : null,
           ),
         ),
-      ),
-      if (!s.video && s.chapters.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              textDirection: TextDirection.ltr,
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 24,
+              runSpacing: 8,
+              children: [
+                Text(sourceTime(s.positionMs - s.timelineStartMs)),
+                if (s.chapterRemainingMs != null)
+                  Text(t.audiobook.chapterRemaining(time: sourceTime(s.chapterRemainingMs!))),
+                if (s.bookRemainingMs != null)
+                  Text(
+                    s.entry?.kind == SourceItemKind.audiobook
+                        ? t.audiobook.bookRemaining(time: sourceTime(s.bookRemainingMs!))
+                        : t.fileSources.remaining(time: sourceTime(s.bookRemainingMs!)),
+                  )
+                else
+                  Text(t.audiobook.unknownRemaining),
+              ],
+            ),
+          ),
+        ),
+      ],
+      if (!s.video && !s.isLiveInput && s.chapters.isNotEmpty)
         TextButton(
           onPressed: () => sourceAction(context, () async {
             s.chapterTimeline = !s.chapterTimeline;
@@ -367,6 +429,11 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         ),
       if (s.sleepDeadline != null)
         Text(t.audiobook.sleepRemaining(time: sourceTime(s.sleepDeadline!.difference(DateTime.now()).inMilliseconds))),
+      if (s.isRecordingStream)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Semantics(liveRegion: true, child: Text(t.universalMedia.recordingActive)),
+        ),
       const SizedBox(height: 12),
       Wrap(
         alignment: WrapAlignment.center,
@@ -378,22 +445,24 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             onPressed: () => sourceAction(context, s.previousChapter),
             icon: const AppIcon(Symbols.skip_previous_rounded),
           ),
-          IconButton(
-            tooltip: t.fileSources.skipBack,
-            onPressed: () => sourceAction(context, () => s.skip(-s.backwardSeconds)),
-            icon: const AppIcon(Symbols.replay_rounded),
-          ),
+          if (!s.isLiveInput)
+            IconButton(
+              tooltip: t.fileSources.skipBack,
+              onPressed: () => sourceAction(context, () => s.skip(-s.backwardSeconds)),
+              icon: const AppIcon(Symbols.replay_rounded),
+            ),
           IconButton.filled(
             iconSize: 38,
             tooltip: s.playing ? t.fileSources.pause : t.fileSources.play,
             onPressed: () => sourceAction(context, s.toggle),
             icon: AppIcon(s.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded, fill: 1),
           ),
-          IconButton(
-            tooltip: t.fileSources.skipForward,
-            onPressed: () => sourceAction(context, () => s.skip(s.forwardSeconds)),
-            icon: const AppIcon(Symbols.forward_media_rounded),
-          ),
+          if (!s.isLiveInput)
+            IconButton(
+              tooltip: t.fileSources.skipForward,
+              onPressed: () => sourceAction(context, () => s.skip(s.forwardSeconds)),
+              icon: const AppIcon(Symbols.forward_media_rounded),
+            ),
           IconButton(
             tooltip: t.videoControls.nextChapterButton,
             onPressed: () => sourceAction(context, s.nextChapter),
@@ -407,36 +476,37 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          AppMenuButton<double>(
-            tooltip: t.fileSources.speed,
-            adaptiveSheet: true,
-            entriesBuilder: (_) => [
-              AppMenuItem(value: -1, label: t.audiobook.customSpeed),
-              for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0])
-                AppMenuItem(value: rate, label: formatPlaybackRate(rate), selected: rate == s.speed),
-            ],
-            onSelected: (rate) => sourceAction(context, () async {
-              if (rate != -1) {
-                await s.setSpeed(rate);
-                return;
-              }
-              final value = await _entryDialog(
-                title: t.audiobook.customSpeed,
-                help: t.audiobook.speedHelp,
-                initial: '${s.speed}',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                valid: (v) {
-                  final speed = _parseSpeed(v);
-                  return speed != null && speed.isFinite && speed >= .25 && speed <= 4;
-                },
-              );
-              if (value != null) await s.setSpeed(_parseSpeed(value)!);
-            }),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(formatPlaybackRate(s.speed), style: Theme.of(context).textTheme.labelLarge),
+          if (!s.isLiveInput)
+            AppMenuButton<double>(
+              tooltip: t.fileSources.speed,
+              adaptiveSheet: true,
+              entriesBuilder: (_) => [
+                AppMenuItem(value: -1, label: t.audiobook.customSpeed),
+                for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0])
+                  AppMenuItem(value: rate, label: formatPlaybackRate(rate), selected: rate == s.speed),
+              ],
+              onSelected: (rate) => sourceAction(context, () async {
+                if (rate != -1) {
+                  await s.setSpeed(rate);
+                  return;
+                }
+                final value = await _entryDialog(
+                  title: t.audiobook.customSpeed,
+                  help: t.audiobook.speedHelp,
+                  initial: '${s.speed}',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  valid: (v) {
+                    final speed = _parseSpeed(v);
+                    return speed != null && speed.isFinite && speed >= .25 && speed <= 4;
+                  },
+                );
+                if (value != null) await s.setSpeed(_parseSpeed(value)!);
+              }),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(formatPlaybackRate(s.speed), style: Theme.of(context).textTheme.labelLarge),
+              ),
             ),
-          ),
           AppMenuButton<int>(
             icon: AppIcon(s.sleepEnabled ? Symbols.bedtime_rounded : Symbols.bedtime_off_rounded),
             tooltip: t.fileSources.sleep,
@@ -478,54 +548,58 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               }
             },
           ),
-          IconButton(
-            tooltip: t.audiobook.undoSeek,
-            onPressed: s.canUndoSeek ? () => sourceAction(context, s.undoSeek) : null,
-            icon: const AppIcon(Symbols.undo_rounded),
-          ),
-          IconButton(
-            tooltip: t.audiobook.goToTime,
-            icon: const AppIcon(Symbols.schedule_rounded),
-            onPressed: () => sourceAction(context, () async {
-              final value = await _entryDialog(
-                title: t.audiobook.goToTime,
-                help: t.audiobook.timeHelp,
-                initial: sourceTime(s.positionMs - (s.hasCompleteTimeline ? 0 : s.timelineStartMs)),
-                valid: (v) => parseListeningTime(v) != null,
-              );
-              if (value != null) {
-                await s.seek(parseListeningTime(value)! + (s.hasCompleteTimeline ? 0 : s.timelineStartMs));
-              }
-            }),
-          ),
-          IconButton(
-            tooltip: t.fileSources.bookmark,
-            onPressed: () => sourceAction(context, () async {
-              final note = await editSourceNote(context);
-              if (note != null) await s.bookmark(note: note);
-            }),
-            icon: const AppIcon(Symbols.bookmark_add_rounded),
-          ),
-          IconButton(
-            tooltip: t.fileSources.bookmarks,
-            onPressed: () => sourceAction(context, () async {
-              final note = await Navigator.push<BookAnnotation>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SourceNotesScreen(entry: s.entry!, edition: s.progress?.edition, mode: s.mode),
-                ),
-              );
-              if (note != null) await s.seekBookmark(note);
-            }),
-            icon: const AppIcon(Symbols.bookmarks_rounded),
-          ),
+          if (!s.isLiveInput)
+            IconButton(
+              tooltip: t.audiobook.undoSeek,
+              onPressed: s.canUndoSeek ? () => sourceAction(context, s.undoSeek) : null,
+              icon: const AppIcon(Symbols.undo_rounded),
+            ),
+          if (!s.isLiveInput)
+            IconButton(
+              tooltip: t.audiobook.goToTime,
+              icon: const AppIcon(Symbols.schedule_rounded),
+              onPressed: () => sourceAction(context, () async {
+                final value = await _entryDialog(
+                  title: t.audiobook.goToTime,
+                  help: t.audiobook.timeHelp,
+                  initial: sourceTime(s.positionMs - (s.hasCompleteTimeline ? 0 : s.timelineStartMs)),
+                  valid: (v) => parseListeningTime(v) != null,
+                );
+                if (value != null) {
+                  await s.seek(parseListeningTime(value)! + (s.hasCompleteTimeline ? 0 : s.timelineStartMs));
+                }
+              }),
+            ),
+          if (!s.isTransientInput)
+            IconButton(
+              tooltip: t.fileSources.bookmark,
+              onPressed: () => sourceAction(context, () async {
+                final note = await editSourceNote(context);
+                if (note != null) await s.bookmark(note: note);
+              }),
+              icon: const AppIcon(Symbols.bookmark_add_rounded),
+            ),
+          if (!s.isTransientInput)
+            IconButton(
+              tooltip: t.fileSources.bookmarks,
+              onPressed: () => sourceAction(context, () async {
+                final note = await Navigator.push<BookAnnotation>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SourceNotesScreen(entry: s.entry!, edition: s.progress?.edition, mode: s.mode),
+                  ),
+                );
+                if (note != null) await s.seekBookmark(note);
+              }),
+              icon: const AppIcon(Symbols.bookmarks_rounded),
+            ),
           IconButton(
             tooltip: t.fileSources.playbackOptions,
             onPressed: () =>
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceListeningSettings())),
             icon: const AppIcon(Symbols.tune_rounded),
           ),
-          if (s.video)
+          if (s.video && !s.isTransientInput)
             IconButton(
               tooltip: t.videoControls.searchSubtitles,
               onPressed: () => sourceAction(context, () => _searchStandaloneSubtitles(s)),
@@ -548,6 +622,19 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 );
               },
               icon: const AppIcon(Symbols.fullscreen_rounded),
+            ),
+          if (s.video && s.player?.playerType == 'mpv')
+            IconButton(
+              tooltip: t.universalMedia.pictureAdjustments,
+              onPressed: () =>
+                  showPictureAdjustmentsSheet(context, s.player!, onChanged: s.markPictureAdjustmentChanged),
+              icon: const AppIcon(Symbols.tune_rounded),
+            ),
+          if (PlatformDetector.isDesktopOS() && s.isTransientInput && s.isLiveInput && s.player?.playerType == 'mpv')
+            IconButton(
+              tooltip: s.isRecordingStream ? t.universalMedia.stopRecording : t.universalMedia.recordStream,
+              onPressed: () => sourceAction(context, () => _toggleStreamRecording(s)),
+              icon: AppIcon(s.isRecordingStream ? Symbols.stop_circle_rounded : Symbols.radio_button_checked_rounded),
             ),
           if (s.video && _full)
             FocusableButton(
