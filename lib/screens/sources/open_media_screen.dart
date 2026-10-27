@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_text_field.dart';
-import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../sources/source_controller.dart';
@@ -641,16 +640,14 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
     }
     return Column(
       children: [
-        for (final favorite in _favorites)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: AppIcon(favorite.audio ? Symbols.radio_rounded : Symbols.movie_rounded),
-            title: Text(isolateDisplayText(favorite.name), maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text(
-              '${favorite.uri.host} · ${favorite.audio ? t.fileSources.audio : t.fileSources.video}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        for (final (index, favorite) in _favorites.indexed)
+          SourceTile(
+            key: ValueKey(favorite.uri.toString()),
+            title: favorite.name,
+            subtitle: '${favorite.uri.host} · ${favorite.audio ? t.fileSources.audio : t.fileSources.video}',
+            icon: favorite.audio ? Symbols.radio_rounded : Symbols.movie_rounded,
+            index: index,
+            count: _favorites.length,
             trailing: IconButton(
               tooltip: t.universalMedia.removeFavorite,
               onPressed: _busy ? null : () => _run(() => _removeFavorite(favorite)),
@@ -761,34 +758,26 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
                   if (_busy) ...[const SizedBox(height: 12), const LinearProgressIndicator()],
                   const SizedBox(height: 28),
                   if (WifiTransferScreen.isSupported(context))
-                    Card(
-                      child: ListTile(
-                        leading: const AppIcon(Symbols.wifi_tethering_rounded),
-                        title: Text(t.universalMedia.wifiTransfer),
-                        subtitle: Text(t.universalMedia.wifiTransferHelp),
-                        trailing: const AppIcon(Symbols.chevron_right_rounded),
-                        onTap: _busy
-                            ? null
-                            : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const WifiTransferScreen()),
-                              ),
-                      ),
+                    SourceTile(
+                      title: t.universalMedia.wifiTransfer,
+                      subtitle: t.universalMedia.wifiTransferHelp,
+                      icon: Symbols.wifi_tethering_rounded,
+                      onTap: _busy
+                          ? null
+                          : () =>
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const WifiTransferScreen())),
                     ),
                   if (PlatformDetector.isDesktopOS()) ...[
-                    Card(
-                      child: ListTile(
-                        leading: const AppIcon(Symbols.swap_horiz_rounded),
-                        title: Text(t.universalMedia.converterTitle),
-                        subtitle: Text(t.universalMedia.converterHelp),
-                        trailing: const AppIcon(Symbols.chevron_right_rounded),
-                        onTap: _busy
-                            ? null
-                            : () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const LocalMediaConverterScreen()),
-                              ),
-                      ),
+                    SourceTile(
+                      title: t.universalMedia.converterTitle,
+                      subtitle: t.universalMedia.converterHelp,
+                      icon: Symbols.swap_horiz_rounded,
+                      onTap: _busy
+                          ? null
+                          : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const LocalMediaConverterScreen()),
+                            ),
                     ),
                     if (_desktopMpvAvailable)
                       Padding(

@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add a universal Open media workspace for direct streams, playlists and local files, plus desktop conversion, live-stream recording, Wi-Fi transfer and MPV picture tools.
+- Add a universal Open media workspace for direct streams, playlists and local files, plus desktop conversion, live-stream recording, Wi-Fi transfer and MPV picture tools. Keep favorites and nested tools in the existing focus-aware Files and books rows.
 - Prepare the 3.0.0 full-platform build on private JIT runners, including webOS and Tizen.
 
 ## [3.0.0] - 2026-10-27
