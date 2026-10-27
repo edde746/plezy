@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "status": "design-seeds-unqualified-not-runtime",
+  "defaultPreset": "original",
+  "suggestedOptInPreset": "cinema",
+  "sharedDefaults": {
+    "quality": "auto",
+    "interpolationEngine": "auto",
+    "adaptiveStrength": "off",
+    "analysisScale": "auto",
+    "synthesisResolution": "auto",
+    "formatPriority": "preserve_source_format",
+    "scalerPolicy": "existing",
+    "powerPolicy": "auto",
+    "fallbackPolicy": "adaptive",
+    "preserveGrain": true,
+    "preserveAnimationHolds": true,
+    "burnedInTextProtection": "auto",
+    "deblurEnabled": false,
+    "deblurStrength": 0,
+    "framePacingPolicy": "preserve_audio",
+    "allowModeSwitch": "follow_existing",
+    "gpuBudgetPercent": 80,
+    "diagnostics": "off"
+  },
+  "presets": [
+    {
+      "id": "original",
+      "look": "source",
+      "smoothness": 0,
+      "smoothnessCap": 0,
+      "targetRate": "source",
+      "artifactProtection": "conservative",
+      "maxAddedLookaheadMs": 0,
+      "bypassHighRateSources": true
+    },
+    {
+      "id": "cinema",
+      "look": "restrained",
+      "smoothness": 20,
+      "smoothnessCap": 35,
+      "targetRate": "compatible_auto",
+      "artifactProtection": "conservative",
+      "maxAddedLookaheadMs": 150,
+      "bypassHighRateSources": true,
+      "temporalMethod": "source_anchored_v1_candidate"
+    },
+    {
+      "id": "balanced",
+      "look": "restrained",
+      "smoothness": 55,
+      "smoothnessCap": 65,
+      "targetRate": "compatible_auto",
+      "artifactProtection": "standard",
+      "maxAddedLookaheadMs": 150,
+      "bypassHighRateSources": false,
+      "temporalMethod": "source_anchored_v1_candidate"
+    },
+    {
+      "id": "smooth",
+      "look": "continuous",
+      "smoothness": 100,
+      "smoothnessCap": 100,
+      "targetRate": "sustainable_max",
+      "artifactProtection": "standard",
+      "maxAddedLookaheadMs": 150,
+      "bypassHighRateSources": false
+    },
+    {
+      "id": "animation",
+      "look": "source",
+      "smoothness": 0,
+      "smoothnessCap": 0,
+      "targetRate": "source",
+      "artifactProtection": "conservative",
+      "maxAddedLookaheadMs": 0,
+      "bypassHighRateSources": true
+    },
+    {
+      "id": "sports",
+      "look": "continuous",
+      "smoothness": 100,
+      "smoothnessCap": 100,
+      "targetRate": "sustainable_max",
+      "artifactProtection": "standard",
+      "maxAddedLookaheadMs": 80,
+      "bypassHighRateSources": false
+    }
+  ]
+}
