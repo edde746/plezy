@@ -296,13 +296,13 @@ class MotionClarityService {
 
   /// Temporarily disables only mpv's temporal filter for a quick A/B check.
   /// Display synchronization, spatial shaders, and audio settings stay active.
-  /// Comparison is available only when interpolation is configured and its
-  /// decoder reference pool was prepared before the current source opened.
+  /// Comparison is available while interpolation is active. A pending decoder
+  /// frame-pool reservation is reported separately and does not block mpv's
+  /// runtime filter/property toggle; a renderer refusal is returned as a failure.
   Future<MotionClarityApplyResult> setComparisonBypass(bool bypass) async {
     final current = await inspect();
     if (!current.isSupported ||
         !_currentPreset.interpolationEnabled ||
-        _requiresSourceReload ||
         bypass == _comparisonBypass) {
       return current;
     }
