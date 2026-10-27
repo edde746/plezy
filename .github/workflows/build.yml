@@ -20,12 +20,13 @@ on:
         options:
           - private
       mode:
-        description: Select all release platforms or a webOS-only validation candidate
+        description: Select all release platforms or a platform-specific validation build
         required: true
         type: choice
         options:
           - release
           - webos-validation
+          - macos-validation
         default: release
       build_version:
         description: Semantic version for artifact names; leave blank to use pubspec.yaml (release action uses the selected v* tag)
@@ -50,7 +51,7 @@ on:
         type: boolean
         default: true
       prepare_homebrew_cask:
-        description: Generate a macOS Homebrew Cask candidate; requires a signed and notarized release
+        description: Require signed and notarized macOS validation; on release runs, also generate a Homebrew Cask candidate
         required: true
         type: boolean
         default: false
@@ -124,12 +125,16 @@ jobs:
             echo "This workflow currently supports only the private runner pool." >&2
             exit 1
           fi
-          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
+          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" && "$MODE" != "macos-validation" ]]; then
             echo "Unsupported platform mode: $MODE" >&2
             exit 1
           fi
           if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
             echo "webOS-only validation requires the build action." >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "macos-validation" && "$ACTION" != "build" ]]; then
+            echo "macOS-only validation requires the build action." >&2
             exit 1
           fi
           if [[ "$ACTION" == "release" ]]; then
@@ -141,7 +146,7 @@ jobs:
             VERSION="${RELEASE_TAG#v}"
           else
             RELEASE_TAG="$BUILD_VERSION_INPUT"
-            if [[ -z "$RELEASE_TAG" && "$MODE" == "release" ]]; then
+            if [[ -z "$RELEASE_TAG" && ( "$MODE" == "release" || "$MODE" == "macos-validation" ) ]]; then
               RELEASE_TAG=$(python3 scripts/pubspec_version.py pubspec.yaml)
               RELEASE_TAG=${RELEASE_TAG%%+*}
             fi
@@ -151,14 +156,22 @@ jobs:
             echo "prepare_homebrew_cask must be true or false." >&2
             exit 1
           fi
-          if [[ "$PREPARE_HOMEBREW_CASK" == "true" && ( "$ACTION" != "release" || "$MODE" != "release" ) ]]; then
-            echo "Homebrew Cask preparation requires the full release action." >&2
+          if [[ "$PREPARE_HOMEBREW_CASK" == "true" && "$MODE" != "release" && "$MODE" != "macos-validation" ]]; then
+            echo "Signed Homebrew validation requires release or macos-validation mode." >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "macos-validation" && "$PREPARE_HOMEBREW_CASK" != "true" ]]; then
+            echo "macos-validation mode requires prepare_homebrew_cask=true." >&2
             exit 1
           fi
           if [[ "$MODE" == "webos-validation" ]]; then
             RELEASE_TAG=""
             VERSION=""
             INCLUDE_WEBOS_BUILD=true
+            INCLUDE_WEBOS_RELEASE=false
+            INCLUDE_TIZEN_BUILD=false
+          elif [[ "$MODE" == "macos-validation" ]]; then
+            INCLUDE_WEBOS_BUILD=false
             INCLUDE_WEBOS_RELEASE=false
             INCLUDE_TIZEN_BUILD=false
           elif [[ "$INCLUDE_WEBOS_RELEASE" != "true" && "$INCLUDE_WEBOS_RELEASE" != "false" ]]; then
@@ -225,12 +238,16 @@ jobs:
             echo "This workflow currently supports only the private runner pool." >&2
             exit 1
           fi
-          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
+          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" && "$MODE" != "macos-validation" ]]; then
             echo "Unsupported platform mode: $MODE" >&2
             exit 1
           fi
           if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
             echo "webOS-only validation requires the build action." >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "macos-validation" && "$ACTION" != "build" ]]; then
+            echo "macOS-only validation requires the build action." >&2
             exit 1
           fi
           if [[ "${{ steps.request.outputs.include_webos_release }}" == "true" && "${{ steps.request.outputs.include_webos_build }}" != "true" ]]; then
@@ -302,6 +319,12 @@ jobs:
         if: ${{ steps.request.outputs.mode == 'webos-validation' }}
         run: |
           echo "This manual run builds only the WebOS ARM package on the private Linux JIT route."
+          echo "No draft release is created."
+
+      - name: Validate macOS-only mode input
+        if: ${{ steps.request.outputs.mode == 'macos-validation' }}
+        run: |
+          echo "This manual run builds only the macOS app and checks signing, notarization, and Gatekeeper."
           echo "No draft release is created."
 
   build-android:
@@ -1019,7 +1042,7 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'release' || needs.validate-trusted-ref.outputs.mode == 'macos-validation') }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:

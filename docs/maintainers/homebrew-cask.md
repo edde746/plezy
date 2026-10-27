@@ -1,6 +1,6 @@
 # Homebrew Cask release preparation
 
-The macOS product bundle is `PlezyNG.app`, and the release disk image is `plezyng-macos.dmg`; the app keeps its existing `org.snapetech.plezyng` bundle identifier. The release workflow can produce a version-pinned Cask candidate for each stable macOS release. The candidate is generated only when `prepare_homebrew_cask` is enabled for a full release run.
+The macOS product bundle is `PlezyNG.app`, and the release disk image is `plezyng-macos.dmg`; the app keeps its existing `org.snapetech.plezyng` bundle identifier. The release workflow can produce a version-pinned Cask candidate for each stable macOS release. The candidate is generated only when `prepare_homebrew_cask` is enabled for a full release run. To validate the macOS bundle and Gatekeeper without creating a release, dispatch with action `build`, mode `macos-validation`, and `prepare_homebrew_cask` enabled; only the macOS build job runs.
 
 ## Release requirements
 
