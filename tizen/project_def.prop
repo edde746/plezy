@@ -10,6 +10,8 @@ USER_CPP_UNDEFS =
 USER_INC_DIRS = flutter src
 USER_INC_FILES =
 USER_CPP_INC_FILES =
-USER_LIB_DIRS = lib
-USER_LIBS =
+# Resolve registration symbols from the combined shared library before any
+# intermediate plugin archives that a cold SDK build may leave in its output.
+USER_LIB_DIRS = lib $(FLUTTER_BUILD_DIR)/tizen_plugins/lib
+USER_LIBS = flutter_plugins
 USER_LFLAGS = -Wl,-E

@@ -116,8 +116,11 @@ For an already provisioned TV-authorized profile, select its name and omit
 native output directory for each build; optional `--source-root` accepts clean
 checkouts of the two exact native-source revisions. `build --work-dir` preserves
 an initially empty staging directory for diagnostics. Default staging is temporary.
-Staging copies tracked files, retains existing dependency overrides and never
-modifies the shared pub cache. It sets the numeric package version separately
+Staging copies tracked files and retains existing dependency overrides without
+rewriting dependency sources in the shared pub cache. Flutter-Tizen may create
+native build outputs alongside its cached plugin sources. The launcher explicitly
+links the combined `libflutter_plugins.so` before any leftover intermediate
+archives so cold-build link order cannot select individual static plugins. It sets the numeric package version separately
 from API version, and always defines `PLEZY_TIZEN=true`. `x64` is an emulator
 candidate with API 8.0 and requires its own provisioned compiler/rootstrap.
 
