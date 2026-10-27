@@ -2,9 +2,28 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <algorithm>
+#include <cctype>
+#include <string>
+#include <vector>
+
 #include "flutter_window.h"
 #include "mpv/display_mode_manager.h"
 #include "utils.h"
+
+namespace {
+
+bool IsOpenMediaLink(const std::string& value) {
+  const auto starts_with = [&value](const std::string& prefix) {
+    return value.size() >= prefix.size() &&
+           std::equal(prefix.begin(), prefix.end(), value.begin(), [](char expected, char actual) {
+             return expected == static_cast<char>(std::tolower(static_cast<unsigned char>(actual)));
+           });
+  };
+  return starts_with("plezy://open-media?") || starts_with("plezxyng://open-media?");
+}
+
+}  // namespace
 
 int APIENTRY
 wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command_line, _In_ int show_command) {
@@ -16,6 +35,9 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   // created. (On a stock engine the flag is a no-op and compositing breaks.)
   ::SetEnvironmentVariableW(L"FLUTTER_WINDOWS_DCOMP", L"1");
 
+  std::vector<std::string> command_line_arguments = GetCommandLineArguments();
+  const auto link = std::find_if(command_line_arguments.begin(), command_line_arguments.end(), IsOpenMediaLink);
+
   HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"PlezyNG");
@@ -23,6 +45,22 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
       existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Plezy");
     }
     if (existing && IsWindowVisible(existing)) {
+      if (link != command_line_arguments.end()) {
+        const int character_count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, link->c_str(), -1, nullptr, 0);
+        if (character_count > 1 && character_count <= 8192) {
+          std::wstring wide_link(static_cast<size_t>(character_count), L'\0');
+          if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, link->c_str(), -1, wide_link.data(), character_count) > 0) {
+            COPYDATASTRUCT data{};
+            data.dwData = 0x504C5A59;
+            data.cbData = static_cast<DWORD>(wide_link.size() * sizeof(wchar_t));
+            data.lpData = wide_link.data();
+            DWORD_PTR delivered = 0;
+            SendMessageTimeoutW(
+                existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&data),
+                SMTO_ABORTIFHUNG | SMTO_BLOCK, 5000, &delivered);
+          }
+        }
+      }
       ShowWindow(existing, SW_RESTORE);
       SetForegroundWindow(existing);
       CloseHandle(mutex);
@@ -62,8 +100,6 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   // the player OSD was on screen (#2127). Every release up to 2.17.0 rendered
   // with Skia; keep it until Impeller composites the alpha correctly.
   project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
-
-  std::vector<std::string> command_line_arguments = GetCommandLineArguments();
 
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 

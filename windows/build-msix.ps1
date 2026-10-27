@@ -105,6 +105,13 @@ function New-AppxManifest {
                          Square310x310Logo="assets\Square310x310Logo.png" />
         <uap:SplashScreen Image="assets\SplashScreen.png" />
       </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="plezy">
+            <uap:DisplayName>PlezyNG media links</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
 </Package>

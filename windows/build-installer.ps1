@@ -84,6 +84,11 @@ Name: "{group}\{#Name}"; Filename: "{app}\{#ExeName}"
 Name: "{group}\{cm:UninstallProgram,{#Name}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\plezy"; ValueType: string; ValueName: ""; ValueData: "URL:PlezyNG media link"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\plezy"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\plezy\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeName}"" ""%1"""
+
 [Run]
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall
 

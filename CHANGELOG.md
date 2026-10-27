@@ -5,6 +5,7 @@
 ### Release automation
 
 - Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
+- Add integrated VLC-inspired media capture, private-LAN HLS sharing, consent-based search extensions and the `plezyctl` helper, with accessible cues, deep links, platform registrations and setup documentation.
 
 ## [3.0.0] - 2026-10-27
 

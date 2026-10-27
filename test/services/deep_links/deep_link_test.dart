@@ -78,6 +78,22 @@ void main() {
       expect(DeepLink.tryParse('PLEZY://OPEN'), isA<OpenLink>());
     });
 
+    test('opens a safe HTTPS address in the existing Open media flow', () {
+      const address = 'https://media.example/live.m3u8?quality=high';
+      final link =
+          DeepLink.tryParse(
+                Uri(
+                  scheme: 'plezy',
+                  host: 'open-media',
+                  queryParameters: {'url': address, 'profile': 'Kids'},
+                ).toString(),
+              )!
+              as OpenMediaLink;
+      expect(link.address, address);
+      expect(link.profile, 'Kids');
+      expect(DeepLink.tryParse(link.toUri().toString()), isA<OpenMediaLink>());
+    });
+
     test('keeps an external player return link whole', () {
       const url = 'plezy://external-player/success/s1?position=12.5&duration=1420.016';
       final link = DeepLink.tryParse(url) as ExternalPlayerReturnLink;
@@ -103,6 +119,11 @@ void main() {
         'plezy://live?channel=',
         'plezy://live?channel=4&start=sideways',
         'plezy://play?server=a&id=%E0%A4%A',
+        'plezy://open-media?url=http%3A%2F%2Fmedia.example%2Fmovie.mp4',
+        'plezy://open-media?url=https%3A%2F%2Fuser%3Apass%40media.example%2Fmovie.mp4',
+        'plezy://open-media?url=https%3A%2F%2Fmedia.example%2Fmovie.mp4%3Fsignature%3Dsecret',
+        'plezy://open-media?url=https%3A%2F%2Fmedia.example%2Fmovie.mp4%23chapter',
+        'plezy://open-media?url=${Uri.encodeQueryComponent('https://media.example/${'a' * 4097}')}',
       ]) {
         expect(DeepLink.tryParse(url), isNull, reason: url);
       }

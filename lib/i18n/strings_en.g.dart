@@ -7989,6 +7989,225 @@ class Translations$universalMedia$en {
 
 	/// en: 'Convert file'
 	String get converterStart => 'Convert file';
+
+	/// en: 'Media tools'
+	String get mediaToolsTitle => 'Media tools';
+
+	/// en: 'Capture or share media, add search extensions, or use the command line.'
+	String get mediaToolsShortcut => 'Capture or share media, add search extensions, or use the command line.';
+
+	/// en: 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.'
+	String get mediaToolsIntro => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.';
+
+	/// en: 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.'
+	String get mediaToolsAccessibility => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.';
+
+	/// en: 'Media tool'
+	String get mediaTool => 'Media tool';
+
+	/// en: 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.'
+	String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
+
+	/// en: 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.'
+	String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
+
+	/// en: 'Screen or camera'
+	String get captureSource => 'Screen or camera';
+
+	/// en: 'Screen'
+	String get captureScreen => 'Screen';
+
+	/// en: 'Audio input (optional)'
+	String get captureAudioSource => 'Audio input (optional)';
+
+	/// en: 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.'
+	String get captureAudioHelp => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.';
+
+	/// en: 'No audio'
+	String get captureAudioNone => 'No audio';
+
+	/// en: 'Default audio input'
+	String get captureDefaultAudio => 'Default audio input';
+
+	/// en: 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.'
+	String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+
+	/// en: 'Recording frame rate'
+	String get captureFrameRate => 'Recording frame rate';
+
+	/// en: 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.'
+	String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
+
+	/// en: 'Save screen recording as'
+	String get captureSaveAs => 'Save screen recording as';
+
+	/// en: 'Choose a filename ending in .mp4.'
+	String get captureExtensionMismatch => 'Choose a filename ending in .mp4.';
+
+	/// en: 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.'
+	String get captureFfmpegMissing => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.';
+
+	/// en: 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.'
+	String get captureFailed => 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.';
+
+	/// en: 'Screen recording saved.'
+	String get captureSaved => 'Screen recording saved.';
+
+	/// en: 'Recording time'
+	String get captureElapsedLabel => 'Recording time';
+
+	/// en: 'Start recording'
+	String get captureStart => 'Start recording';
+
+	/// en: 'Stop and save'
+	String get captureStop => 'Stop and save';
+
+	/// en: 'Capture'
+	String get captureMode => 'Capture';
+
+	/// en: 'Share'
+	String get shareMode => 'Share';
+
+	/// en: 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.'
+	String get shareIntro => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.';
+
+	/// en: 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.'
+	String get sharePrivacy => 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.';
+
+	/// en: 'Choose media file'
+	String get shareChooseFile => 'Choose media file';
+
+	/// en: 'Select a local audio or video file. The file stays on this computer.'
+	String get shareChooseHelp => 'Select a local audio or video file. The file stays on this computer.';
+
+	/// en: 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.'
+	String get shareFfmpegMissing => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.';
+
+	/// en: 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.'
+	String get shareFailed => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.';
+
+	/// en: 'The stream is ready on your private network.'
+	String get shareActive => 'The stream is ready on your private network.';
+
+	/// en: 'The media reached the end and is no longer being shared.'
+	String get shareEnded => 'The media reached the end and is no longer being shared.';
+
+	/// en: 'Sharing stopped. The temporary link is no longer valid.'
+	String get shareStopped => 'Sharing stopped. The temporary link is no longer valid.';
+
+	/// en: 'Stream address copied.'
+	String get shareUrlCopied => 'Stream address copied.';
+
+	/// en: 'Open this address in a player on the other device'
+	String get shareOpenUrl => 'Open this address in a player on the other device';
+
+	/// en: 'QR code for the temporary stream address'
+	String get shareQrLabel => 'QR code for the temporary stream address';
+
+	/// en: 'Scan with a compatible player connected to the same private network.'
+	String get shareQrHelp => 'Scan with a compatible player connected to the same private network.';
+
+	/// en: 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.'
+	String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
+
+	/// en: 'Copy stream address'
+	String get shareCopyUrl => 'Copy stream address';
+
+	/// en: 'Link expires at'
+	String get shareExpiresLabel => 'Link expires at';
+
+	/// en: 'Preparing the stream…'
+	String get shareStarting => 'Preparing the stream…';
+
+	/// en: 'Start sharing'
+	String get shareStart => 'Start sharing';
+
+	/// en: 'Stop sharing'
+	String get shareStop => 'Stop sharing';
+
+	/// en: 'Extensions and CLI'
+	String get extensionsMode => 'Extensions and CLI';
+
+	/// en: 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.'
+	String get extensionsIntro => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.';
+
+	/// en: 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.'
+	String get extensionsPrivacy => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.';
+
+	/// en: 'Add extension manifest'
+	String get extensionImport => 'Add extension manifest';
+
+	/// en: 'No search services yet. Choose a trusted manifest JSON file to add one.'
+	String get extensionEmpty => 'No search services yet. Choose a trusted manifest JSON file to add one.';
+
+	/// en: 'Search service'
+	String get extensionChoose => 'Search service';
+
+	/// en: 'Each search sends your words to this HTTPS service. Results open only after you select one.'
+	String get extensionSearchConsent => 'Each search sends your words to this HTTPS service. Results open only after you select one.';
+
+	/// en: 'Search media'
+	String get extensionSearchLabel => 'Search media';
+
+	/// en: 'Search'
+	String get extensionSearch => 'Search';
+
+	/// en: 'Searching…'
+	String get extensionSearching => 'Searching…';
+
+	/// en: 'No safe media results were returned. Try another search.'
+	String get extensionNoResults => 'No safe media results were returned. Try another search.';
+
+	/// en: 'Add this search service?'
+	String get extensionInstallTitle => 'Add this search service?';
+
+	/// en: 'Update this search service?'
+	String get extensionReplaceTitle => 'Update this search service?';
+
+	/// en: 'Service'
+	String get extensionService => 'Service';
+
+	/// en: 'HTTPS endpoint'
+	String get extensionEndpoint => 'HTTPS endpoint';
+
+	/// en: 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.'
+	String get extensionConsent => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.';
+
+	/// en: 'Add service'
+	String get extensionInstall => 'Add service';
+
+	/// en: 'Update service'
+	String get extensionReplace => 'Update service';
+
+	/// en: 'Remove this search service?'
+	String get extensionRemoveTitle => 'Remove this search service?';
+
+	/// en: 'This removes the service from this profile. PlezyNG does not contact its endpoint.'
+	String get extensionRemoveHelp => 'This removes the service from this profile. PlezyNG does not contact its endpoint.';
+
+	/// en: 'Remove service'
+	String get extensionRemove => 'Remove service';
+
+	/// en: 'This file is not a supported extension manifest. See the Open media guide for the format.'
+	String get extensionInvalidManifest => 'This file is not a supported extension manifest. See the Open media guide for the format.';
+
+	/// en: 'The extension could not be saved to the active profile.'
+	String get extensionSaveFailed => 'The extension could not be saved to the active profile.';
+
+	/// en: 'The search service did not return a valid response. Check the endpoint and try again.'
+	String get extensionSearchFailed => 'The search service did not return a valid response. Check the endpoint and try again.';
+
+	/// en: 'Command line'
+	String get cliTitle => 'Command line';
+
+	/// en: 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.'
+	String get cliHelp => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.';
+
+	/// en: 'Copy command example'
+	String get cliCopyExample => 'Copy command example';
+
+	/// en: 'Command example copied.'
+	String get cliCopied => 'Command example copied.';
 }
 
 // Path: fileSources
@@ -14958,6 +15177,81 @@ extension on Translations {
 			'universalMedia.converterCancelled' => 'Conversion cancelled. The incomplete output was removed.',
 			'universalMedia.converterDesktopOnly' => 'Local conversion is available on desktop computers with FFmpeg installed.',
 			'universalMedia.converterStart' => 'Convert file',
+			'universalMedia.mediaToolsTitle' => 'Media tools',
+			'universalMedia.mediaToolsShortcut' => 'Capture or share media, add search extensions, or use the command line.',
+			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
+			'universalMedia.mediaToolsAccessibility' => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.',
+			'universalMedia.mediaTool' => 'Media tool',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
+			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
+			'universalMedia.captureSource' => 'Screen or camera',
+			'universalMedia.captureScreen' => 'Screen',
+			'universalMedia.captureAudioSource' => 'Audio input (optional)',
+			'universalMedia.captureAudioHelp' => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.',
+			'universalMedia.captureAudioNone' => 'No audio',
+			'universalMedia.captureDefaultAudio' => 'Default audio input',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			'universalMedia.captureFrameRate' => 'Recording frame rate',
+			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
+			'universalMedia.captureSaveAs' => 'Save screen recording as',
+			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.',
+			'universalMedia.captureFailed' => 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.',
+			'universalMedia.captureSaved' => 'Screen recording saved.',
+			'universalMedia.captureElapsedLabel' => 'Recording time',
+			'universalMedia.captureStart' => 'Start recording',
+			'universalMedia.captureStop' => 'Stop and save',
+			'universalMedia.captureMode' => 'Capture',
+			'universalMedia.shareMode' => 'Share',
+			'universalMedia.shareIntro' => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.',
+			'universalMedia.sharePrivacy' => 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.',
+			'universalMedia.shareChooseFile' => 'Choose media file',
+			'universalMedia.shareChooseHelp' => 'Select a local audio or video file. The file stays on this computer.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.',
+			'universalMedia.shareFailed' => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.',
+			'universalMedia.shareActive' => 'The stream is ready on your private network.',
+			'universalMedia.shareEnded' => 'The media reached the end and is no longer being shared.',
+			'universalMedia.shareStopped' => 'Sharing stopped. The temporary link is no longer valid.',
+			'universalMedia.shareUrlCopied' => 'Stream address copied.',
+			'universalMedia.shareOpenUrl' => 'Open this address in a player on the other device',
+			'universalMedia.shareQrLabel' => 'QR code for the temporary stream address',
+			'universalMedia.shareQrHelp' => 'Scan with a compatible player connected to the same private network.',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
+			'universalMedia.shareCopyUrl' => 'Copy stream address',
+			'universalMedia.shareExpiresLabel' => 'Link expires at',
+			'universalMedia.shareStarting' => 'Preparing the stream…',
+			'universalMedia.shareStart' => 'Start sharing',
+			'universalMedia.shareStop' => 'Stop sharing',
+			'universalMedia.extensionsMode' => 'Extensions and CLI',
+			'universalMedia.extensionsIntro' => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.',
+			'universalMedia.extensionsPrivacy' => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.',
+			'universalMedia.extensionImport' => 'Add extension manifest',
+			'universalMedia.extensionEmpty' => 'No search services yet. Choose a trusted manifest JSON file to add one.',
+			'universalMedia.extensionChoose' => 'Search service',
+			'universalMedia.extensionSearchConsent' => 'Each search sends your words to this HTTPS service. Results open only after you select one.',
+			'universalMedia.extensionSearchLabel' => 'Search media',
+			'universalMedia.extensionSearch' => 'Search',
+			'universalMedia.extensionSearching' => 'Searching…',
+			'universalMedia.extensionNoResults' => 'No safe media results were returned. Try another search.',
+			'universalMedia.extensionInstallTitle' => 'Add this search service?',
+			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
+			'universalMedia.extensionService' => 'Service',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
+			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
+			'universalMedia.extensionInstall' => 'Add service',
+			'universalMedia.extensionReplace' => 'Update service',
+			'universalMedia.extensionRemoveTitle' => 'Remove this search service?',
+			'universalMedia.extensionRemoveHelp' => 'This removes the service from this profile. PlezyNG does not contact its endpoint.',
+			'universalMedia.extensionRemove' => 'Remove service',
+			'universalMedia.extensionInvalidManifest' => 'This file is not a supported extension manifest. See the Open media guide for the format.',
+			'universalMedia.extensionSaveFailed' => 'The extension could not be saved to the active profile.',
+			'universalMedia.extensionSearchFailed' => 'The search service did not return a valid response. Check the endpoint and try again.',
+			'universalMedia.cliTitle' => 'Command line',
+			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
+			'universalMedia.cliCopyExample' => 'Copy command example',
+			'universalMedia.cliCopied' => 'Command example copied.',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
 			'fileSources.add' => 'Add source',
@@ -15017,8 +15311,6 @@ extension on Translations {
 			'fileSources.bookmark' => 'Add bookmark',
 			'fileSources.highlight' => 'Highlight',
 			'fileSources.note' => 'Note',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.delete' => 'Delete',
 			'fileSources.export' => 'Export notes',
 			'fileSources.exported' => 'Notes exported',
@@ -15458,6 +15750,8 @@ extension on Translations {
 			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
 			'deepLinks.showLink' => 'Show link',
+			_ => null,
+		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Show profile link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',

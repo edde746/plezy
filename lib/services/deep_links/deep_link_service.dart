@@ -63,8 +63,9 @@ class DeepLinkService {
 
   static final DeepLinkService instance = DeepLinkService._(
     const MethodChannel('com.plezy/deep_link'),
-    // Windows and Linux register no URL scheme yet.
-    Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
+    // Linux hands cold-start links through argv. Windows also forwards links
+    // from a second launch over the runner's validated WM_COPYDATA channel.
+    Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isWindows,
   );
 
   final MethodChannel _channel;

@@ -19,7 +19,7 @@ continue to inherit from their language parents. The unused `automation.profileN
 message and orphan `videoControls.longPressToUnlock` translations were removed.
 
 `clean_translations.py --check --strict` and `check_localizations.py` pass for
-all 37 locales and 3,520 source messages, including interpolation placeholders
+all 37 locales and 3,593 source messages, including interpolation placeholders
 and the reviewed English source snapshot. This is structural coverage and
 limited targeted AI review; no native-speaker approval or full fluency review
 is claimed.
