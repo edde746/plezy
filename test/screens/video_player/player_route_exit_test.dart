@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:provider/provider.dart';
 
@@ -130,6 +132,148 @@ void main() {
     expect(find.text('Browse'), findsNothing, reason: 'the exit must not unwind past the covering route');
     expect(player.pauseCalls, 1);
   });
+
+  // With frame-rate matching, restoring the display mode renegotiates HDMI.
+  // The page underneath must not be shown at the content rate first, so an
+  // Android TV exit holds the player route until the restore has landed.
+  group('Android display-mode restore on exit', () {
+    Future<void> onAndroid({required bool tv, required Future<void> Function() body}) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      TvDetectionService.debugSetAppleTVOverride(null);
+      if (tv) await TvDetectionService.getInstance(forceTv: true);
+      try {
+        await body();
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+        TvDetectionService.debugReset();
+      }
+    }
+
+    testWidgets('Back on a TV hides the output, restores the mode, then leaves', (tester) async {
+      await onAndroid(
+        tv: true,
+        body: () async {
+          final player = _DisplayRestorePlayer();
+          player.pauseGate.complete();
+          final screen = await _pushHeldPlayer(tester, player);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 2));
+          expect(player.calls, ['pause', 'setVisible(false)', 'clearVideoFrameRate(awaitDisplayRestore: true)']);
+          expect(
+            screen.key.currentState,
+            isNotNull,
+            reason: 'the page below must not show while the link renegotiates',
+          );
+
+          player.restoreGate.complete();
+          await tester.pump();
+          await tester.pump();
+          expect(screen.key.currentState, isNull);
+          expect(find.text('Browse'), findsOneWidget);
+        },
+      );
+    });
+
+    testWidgets('A restore that never lands still lets Back leave', (tester) async {
+      await onAndroid(
+        tv: true,
+        body: () async {
+          final player = _DisplayRestorePlayer();
+          player.pauseGate.complete();
+          final screen = await _pushHeldPlayer(tester, player);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 4));
+          expect(screen.key.currentState, isNotNull);
+          await tester.pump(const Duration(seconds: 1));
+          await tester.pump();
+          expect(screen.key.currentState, isNull);
+          expect(find.text('Browse'), findsOneWidget);
+        },
+      );
+    });
+
+    testWidgets('A player that never pauses leaves on the navigation budget without a restore', (tester) async {
+      await onAndroid(
+        tv: true,
+        body: () async {
+          final player = _DisplayRestorePlayer();
+          final screen = await _pushHeldPlayer(tester, player);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          await tester.pump();
+          expect(screen.key.currentState, isNull);
+          expect(player.calls, ['pause', 'setVisible(false)'], reason: 'dispose restores the mode instead');
+        },
+      );
+    });
+
+    testWidgets('Back off a TV keeps the output and leaves the restore to dispose', (tester) async {
+      // Nothing hides the surface there, and the 400 ms HDR-exit deferral
+      // relies on the surface being gone.
+      await onAndroid(
+        tv: false,
+        body: () async {
+          final player = _DisplayRestorePlayer();
+          player.pauseGate.complete();
+          final screen = await _pushHeldPlayer(tester, player);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          await tester.pump();
+          expect(screen.key.currentState, isNull);
+          expect(player.calls, ['pause']);
+        },
+      );
+    });
+
+    testWidgets('A replacement during the exit leaves the mode to its successor', (tester) async {
+      await onAndroid(
+        tv: true,
+        body: () async {
+          final player = _DisplayRestorePlayer();
+          final screen = await _pushHeldPlayer(tester, player);
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          unawaited(
+            VideoPlayerRoute(builder: (_) => const Scaffold(body: Text('Next'))).push(screen.navigator.currentState!),
+          );
+          // The output retires while the replaced screen is still mounted.
+          player.pauseGate.complete();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          await tester.pump();
+          expect(find.text('Next'), findsOneWidget);
+          expect(player.calls, isNot(contains('clearVideoFrameRate(awaitDisplayRestore: true)')));
+        },
+      );
+    });
+  });
+}
+
+class _DisplayRestorePlayer extends _TouchExitPlayer {
+  final restoreGate = Completer<void>();
+  final calls = <String>[];
+
+  @override
+  Future<void> pause() {
+    calls.add('pause');
+    return super.pause();
+  }
+
+  @override
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
+    calls.add('setVisible($visible)');
+    return true;
+  }
+
+  @override
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {
+    calls.add('clearVideoFrameRate(awaitDisplayRestore: $awaitDisplayRestore)');
+    if (awaitDisplayRestore) await restoreGate.future;
+  }
 }
 
 class _TouchExitPlayer extends FakeSyncPlayer {

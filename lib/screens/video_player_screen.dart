@@ -575,11 +575,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _playerInitializationGeneration = 0;
   Future<void>? _shutdownOperation;
   Future<void>? _routeExitOperation;
+  Future<void>? _routeExitDisplayRestore;
   Future<void>? _systemUiRestoreOperation;
 
   // Bounds navigation only. Native disposal and terminal reporting retain
   // their real futures; expiry never grants permission to reuse the core.
   static const _routeExitNavigationBudget = Duration(seconds: 1);
+
+  // Bounds the hold for a display-mode restore that has started. Covers the
+  // native HDR-exit deferral plus its restore watchdog.
+  static const _routeExitDisplayRestoreBudget = Duration(seconds: 4);
 
   /// One bit, two names: the notifier below is what the UI listens to, this is
   /// the guard every async continuation reads. They were separate fields set by
@@ -2232,13 +2237,60 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// latch, MediaSession pause-suppression window) — see [FrameRateMatcher].
   final FrameRateMatcher _frameRate = FrameRateMatcher();
 
+  /// Android TV hides the video surface before the route leaves. That is also
+  /// what lets the display mode be restored with the player still on screen:
+  /// the hidden surface commits the HDR exit first.
+  bool get _hidesOutputForRouteExit => defaultTargetPlatform == TargetPlatform.android && PlatformDetector.isTV();
+
   Future<void> _pauseAndHidePlayerForRouteExit(Player currentPlayer) async {
     // Dispatch both against the captured owner before yielding. A late pause
     // reply must never dispatch a visibility change against a successor.
     await Future.wait<void>([
       if (currentPlayer.state.isActive) currentPlayer.pause(),
-      if (defaultTargetPlatform == TargetPlatform.android && PlatformDetector.isTV()) currentPlayer.setVisible(false),
+      if (_hidesOutputForRouteExit) currentPlayer.setVisible(false),
     ]);
+  }
+
+  /// With frame-rate matching, restoring the default display mode makes the
+  /// TV renegotiate HDMI. Restored from dispose, after the route had gone, the
+  /// page underneath showed at the content rate, then went black, then came
+  /// back. Restore once the hidden surface retired, and let the exit hold the
+  /// route until the display has left the content mode. The dispose-time
+  /// clear stays the fallback, and is a no-op by then.
+  Future<void> _restoreDisplayModeForRouteExit(Player currentPlayer, Future<void> outputRetired) async {
+    try {
+      await outputRetired;
+    } on Object {
+      // The surface may still be presenting; restoring now would stack the
+      // mode change on the HDR exit. Dispose restores instead. The failure
+      // itself is reported by the shutdown.
+      return;
+    }
+    // A replacement inherits the mode; a successor owns it.
+    if (!mounted || player != currentPlayer || currentPlayer.disposed || _isReplacingWithVideo) return;
+    _routeExitDisplayRestore = _clearVideoFrameRateAwaitingRestore(currentPlayer);
+  }
+
+  // A method, not an inline async closure: the closure's future is a
+  // Future<Null>, whose timeout rejects a void onTimeout at runtime.
+  Future<void> _clearVideoFrameRateAwaitingRestore(Player currentPlayer) async {
+    try {
+      await currentPlayer.clearVideoFrameRate(awaitDisplayRestore: true);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to restore the display mode before leaving the player', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Holds the route for a display restore that has started: the output
+  /// retired within the navigation budget. A player that never retired its
+  /// output leaves on that budget, and dispose restores.
+  Future<void> _awaitRouteExitDisplayRestore() async {
+    final restore = _routeExitDisplayRestore;
+    if (restore == null) return;
+    await restore.timeout(
+      _routeExitDisplayRestoreBudget,
+      onTimeout: () => appLogger.w('Display mode restore did not settle before leaving the player'),
+    );
   }
 
   /// Accept one exit, synchronously fence producers, then give best-effort
@@ -2274,6 +2326,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       try {
         await navigationReady.future;
         deadline.cancel();
+        await _awaitRouteExitDisplayRestore();
         _removePlayerRoute(navigator, route, navigateHome: navigateHome, onHome: onHome);
         completer.complete();
       } catch (error, stackTrace) {
@@ -2507,9 +2560,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
-      // MpvPlayerCore restores the display mode natively on dispose and the
-      // call is idempotent there. Skip it during a player→player replacement,
-      // the Android analog of preserveDisplayMode below.
+      // A no-op after an Android TV route exit, which already restored the
+      // mode. Skip it during a player→player replacement, the Android analog
+      // of preserveDisplayMode below.
       if (!isReplacingWithVideo) {
         player!.clearVideoFrameRate();
       }
@@ -2916,14 +2969,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // yielding. Native stop may reset them. This also retains offline writes
     // and the tracker's terminal watched-state settlement.
     final stoppedReport = _sendStoppedProgressOnce(positionOverride: currentPlayer?.state.position);
+    final outputRetired = currentPlayer == null
+        ? null
+        : (pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop());
+    if (currentPlayer != null && outputRetired != null && pauseForRouteExit && _hidesOutputForRouteExit) {
+      unawaited(_restoreDisplayModeForRouteExit(currentPlayer, outputRetired));
+    }
     unawaited(() async {
       try {
-        await Future.wait<void>([
-          stoppedReport,
-          if (currentPlayer != null)
-            pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop(),
-          ...cancellations,
-        ]);
+        await Future.wait<void>([stoppedReport, ?outputRetired, ...cancellations]);
         completer.complete();
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);

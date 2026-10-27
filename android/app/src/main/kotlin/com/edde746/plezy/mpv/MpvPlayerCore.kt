@@ -332,10 +332,11 @@ class MpvPlayerCore private constructor(
   @Volatile private var hdrSurfaceDecided: Boolean = false
 
   /** Whether this session outputs HDR to an HDR-capable display — via the PQ
-   * GL surface or the MediaCodec plane's decoder dataspace. Gates the
-   * deferred display-mode restore on teardown (see
+   * GL surface or the MediaCodec plane's decoder dataspace. The plugin reads
+   * it to defer the display-mode restore past the HDR exit (see
    * [FrameRateManager.clearVideoFrameRate]). */
-  @Volatile private var hdrDisplayActive: Boolean = false
+  @Volatile var hdrDisplayActive: Boolean = false
+    private set
 
   /** Read at [initialize], before the app's own display-mode switch:
    * `Display.getHdrCapabilities` answers for the active mode, and a
@@ -707,7 +708,10 @@ class MpvPlayerCore private constructor(
     )
   }
 
-  private var frameRateManager: FrameRateManager? = null
+  /** The plugin's window-scoped display-mode owner, set before [initialize]
+   * (null on the audio-only core). The core only requests switches through
+   * it; restoring the window's mode is the plugin's call. */
+  internal var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
   // Result-callback marshaling. Separate from [handler], whose queued
@@ -940,15 +944,11 @@ class MpvPlayerCore private constructor(
         displayHdrSupported = DisplayHdrCapabilities.displaySupportsHdr(context)
         displayDvSupported = DisplayHdrCapabilities.displaySupportsDolbyVision(context)
 
-        frameRateManager = FrameRateManager(
-          activity = activity,
-          handler = handler,
-          log = { emitLog("info", "framerate", it) }
-        )
         emitLog(
           "info",
           "display",
-          "hdr=$displayHdrSupported dv=$displayDvSupported ${frameRateManager!!.describeDisplay()}"
+          "hdr=$displayHdrSupported dv=$displayDvSupported " +
+            (frameRateManager?.describeDisplay() ?: "display modes unavailable")
         )
 
         surfaceContainer = PlayerSurfaceHost.createContainer(activity)
@@ -3068,10 +3068,6 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate(hdrActive = hdrDisplayActive)
-  }
-
   // Cleanup
 
   // A dispose that arrives while an earlier one is still tearing down joins
@@ -3091,16 +3087,7 @@ class MpvPlayerCore private constructor(
     queued.forEach { it.invoke() }
   }
 
-  /**
-   * [preserveDisplayMode] keeps the window's preferredDisplayModeId across
-   * a player→player replacement (the successor inherits the rate without a
-   * second HDMI renegotiation); false restores the display's default mode,
-   * deferred past the HDR exit when the session output HDR
-   * ([FrameRateManager.clearVideoFrameRate]). Restoring here, not only from
-   * Dart's explicit `clearVideoFrameRate`, is what covers activity and
-   * engine detach, which never reach that call.
-   */
-  fun dispose(preserveDisplayMode: Boolean = false, onComplete: (() -> Unit)? = null) {
+  fun dispose(onComplete: (() -> Unit)? = null) {
     if (disposing) {
       // Answering now would report a teardown that is still running; the
       // in-flight disposal settles this caller too.
@@ -3127,15 +3114,8 @@ class MpvPlayerCore private constructor(
 
     handler.removeCallbacksAndMessages(null)
 
-    // Clean up frame rate and audio focus. The display-mode restore is owned
-    // here; Dart's explicit clearVideoFrameRate before dispose is idempotent
-    // against it (the manager returns once preferredDisplayModeId is 0, and
-    // re-arms the same deferred HDR restore otherwise). The deferred restore
-    // runs on the manager's own handler, not [handler], so the wholesale
-    // removeCallbacksAndMessages above cannot cancel it.
-    frameRateManager?.let { manager ->
-      if (preserveDisplayMode) manager.releasePending() else manager.clearVideoFrameRate(hdrActive = hdrDisplayActive)
-    }
+    // Clean up audio focus. The window's display mode is the plugin's: it
+    // restores or keeps it (a player→player replacement) before disposing.
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null

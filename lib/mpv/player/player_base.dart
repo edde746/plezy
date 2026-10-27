@@ -1277,7 +1277,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
-  Future<void> clearVideoFrameRate() async {}
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {}
 
   @override
   // ignore: no-empty-block - base no-op, non-Apple mpv zooms via the video-zoom property

@@ -190,4 +190,186 @@ class FrameRateManagerSwitchTest {
     manager.clearVideoFrameRate()
     assertEquals(0, activity.window.attributes.preferredDisplayModeId)
   }
+
+  // Awaited restore: the player route holds the screen on it, so it may only
+  // answer once the display has actually left the content mode.
+
+  private val restores = mutableListOf<String>()
+
+  private fun switchedTo23976(activity: Activity): FrameRateManager {
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976, hz2997)
+    val manager = buildManager(activity)
+    request(manager, 23.976f)
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz23976.modeId, hz60, hz23976, hz2997)
+    idle(2100)
+    assertEquals(listOf(true), completions)
+    return manager
+  }
+
+  private fun displayOn(mode: Display.Mode) = setDisplayModes(Display.DEFAULT_DISPLAY, mode.modeId, hz60, hz23976, hz2997)
+
+  @Test
+  fun anAwaitedRestoreAnswersOnlyAfterTheDisplayLeavesTheContentModeAndSettles() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+    idle(1000)
+    assertEquals(emptyList<String>(), restores)
+
+    displayOn(hz60)
+    idle(200)
+    assertEquals(emptyList<String>(), restores)
+    idle(100)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun aDisplayThatReturnsToTheContentModeKeepsTheRestorePending() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    displayOn(hz60)
+    idle(100)
+    displayOn(hz23976)
+    idle(500)
+    assertEquals(emptyList<String>(), restores)
+
+    displayOn(hz60)
+    idle(300)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun anIntermediateModeRestartsTheSettle() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    displayOn(hz2997)
+    idle(200)
+    displayOn(hz60)
+    idle(200)
+    assertEquals(emptyList<String>(), restores)
+    idle(100)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun anAwaitedRestoreOnADisplayThatNeverChangesAnswersFromTheWatchdog() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    idle(2900)
+    assertEquals(emptyList<String>(), restores)
+    idle(200)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun anAwaitedHdrRestoreWaitsForTheHdrExitBeforeRestoring() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    idle(300)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+    idle(200)
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+
+    displayOn(hz60)
+    idle(300)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun anAwaitedRestoreWithNothingAppliedAnswersAtOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    val manager = buildManager(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun anAwaitedRestoreOfAPinnedDefaultModeAnswersAtOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz23976.modeId, hz60, hz23976)
+    val manager = buildManager(activity)
+    request(manager, 23.976f)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun aLaterClearJoinsTheRestoreInsteadOfEndingIt() {
+    // The player's dispose-time clear lands while the exit still waits.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate { restores += "exit" }
+    displayOn(hz60)
+    idle(100)
+    manager.clearVideoFrameRate()
+    manager.clearVideoFrameRate { restores += "joined" }
+    assertEquals(emptyList<String>(), restores)
+    idle(200)
+    assertEquals(listOf("exit", "joined"), restores)
+  }
+
+  @Test
+  fun aNewSwitchReleasesTheWaiterAndCancelsTheDeferredRestore() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    manager.setVideoFrameRate(fps = 23.976f, videoDurationMs = 0L, extraDelayMs = 0L) { }
+    assertEquals(listOf("restored"), restores)
+    idle(500)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+  }
+
+  @Test
+  fun aRestoreThatInterruptsASwitchWaitsForTheDisplayToComeBack() {
+    // Back right after the start: the request is applied but the display
+    // has not landed on it yet, so it may still go there and back.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976, hz2997)
+    val manager = buildManager(activity)
+    request(manager, 23.976f)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    assertEquals(listOf(false), completions)
+    assertEquals(emptyList<String>(), restores)
+    displayOn(hz23976)
+    idle(500)
+    assertEquals(emptyList<String>(), restores)
+    displayOn(hz60)
+    idle(300)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun aSessionStartedBeforeTheRestoreLandedKeepsTheOriginalDefault() {
+    // The next title pins the content mode the display has not left yet;
+    // leaving it must still wait for the display to go back to 60 Hz.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+    manager.clearVideoFrameRate()
+    request(manager, 23.976f)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+
+    manager.clearVideoFrameRate { restores += "restored" }
+    assertEquals(emptyList<String>(), restores)
+    displayOn(hz60)
+    idle(300)
+    assertEquals(listOf("restored"), restores)
+  }
 }

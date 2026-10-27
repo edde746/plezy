@@ -711,28 +711,38 @@ class MpvPlayerPluginTest {
     assertNull(getPluginField(plugin, "playerCore"))
   }
 
-  // Display-mode restore on teardown. The window's preferredDisplayModeId
-  // persists past the player, so a session that switched the panel and is
-  // then torn down without restoring leaves the TV at the content rate.
+  // Display-mode ownership. The window's preferredDisplayModeId persists past
+  // the player, so the plugin restores it, not a core: a session torn down
+  // without restoring leaves the TV at the content rate, and what an outgoing
+  // session queued must stay cancellable by its successor.
 
-  private fun coreWithAppliedDisplayMode(activity: Activity, modeId: Int): MpvPlayerCore {
-    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
-    setCoreField(core, "frameRateManager", FrameRateManager(activity, Handler(Looper.getMainLooper())))
+  private fun videoCore(activity: Activity) = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+
+  private fun pluginWithAppliedDisplayMode(
+    activity: Activity,
+    modeId: Int,
+    core: MpvPlayerCore = videoCore(activity)
+  ): MpvPlayerPlugin {
+    val plugin = MpvPlayerPlugin()
+    val manager = FrameRateManager(activity, Handler(Looper.getMainLooper()))
+    setPluginField(plugin, "activity", activity)
+    setPluginField(plugin, "displayMode", manager)
+    core.frameRateManager = manager
+    installCore(plugin, core)
     val attrs = activity.window.attributes
     attrs.preferredDisplayModeId = modeId
     activity.window.attributes = attrs
-    return core
+    return plugin
   }
 
   private fun preferredModeId(activity: Activity): Int = activity.window.attributes.preferredDisplayModeId
 
   @Test
   fun disposeRestoresTheDisplayModeUnlessTheReplacementPreservesIt() {
-    // Leaving playback: Dart's dispose(preserveDisplayMode=false) is the only
-    // restore trigger the mpv backend has, so it must reach the window.
+    // Leaving playback: Dart's dispose(preserveDisplayMode=false) must reach
+    // the window even when the screen never cleared the rate itself.
     val leaving = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val leavingPlugin = MpvPlayerPlugin()
-    installCore(leavingPlugin, coreWithAppliedDisplayMode(leaving, 4))
+    val leavingPlugin = pluginWithAppliedDisplayMode(leaving, 4)
     val leavingResult = RecordingResult()
     leavingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to false)), leavingResult)
     awaitCompletion(leavingResult)
@@ -741,8 +751,7 @@ class MpvPlayerPluginTest {
     // Player→player replacement: the successor inherits the rate instead of
     // renegotiating HDMI twice.
     val replacing = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val replacingPlugin = MpvPlayerPlugin()
-    installCore(replacingPlugin, coreWithAppliedDisplayMode(replacing, 4))
+    val replacingPlugin = pluginWithAppliedDisplayMode(replacing, 4)
     val replacingResult = RecordingResult()
     replacingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to true)), replacingResult)
     awaitCompletion(replacingResult)
@@ -750,13 +759,27 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun leavingAfterAReplacementWhoseCoreNeverInitializedStillRestores() {
+    // The predecessor handed the mode over, the successor's core failed, and
+    // the failed screen's dispose finds no core: the mode is still ours.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = pluginWithAppliedDisplayMode(activity, 4)
+    plugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to true)), RecordingResult())
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(4, preferredModeId(activity))
+
+    val result = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to false)), result)
+    awaitCompletion(result)
+    assertEquals(0, preferredModeId(activity))
+  }
+
+  @Test
   fun activityDetachRestoresTheDisplayMode() {
     // Activity teardown never reaches Dart's clearVideoFrameRate; the native
     // teardown path is the only chance to give the panel back.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val plugin = MpvPlayerPlugin()
-    installCore(plugin, coreWithAppliedDisplayMode(activity, 4))
-    setPluginField(plugin, "activity", activity)
+    val plugin = pluginWithAppliedDisplayMode(activity, 4)
 
     plugin.onDetachedFromActivity()
     shadowOf(Looper.getMainLooper()).idle()
@@ -766,19 +789,66 @@ class MpvPlayerPluginTest {
 
   @Test
   fun hdrSessionDisposeDefersTheRestorePastTheHdrExit() {
-    // Dispose clears the core's own handler wholesale; the deferred HDR-exit
-    // restore (#2172) must live on the manager's, or an HDR session's display
-    // mode is never restored.
+    // Restoring while the display still signals HDR stacks both into one
+    // slow HDMI renegotiation (#2172).
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val core = coreWithAppliedDisplayMode(activity, 4)
+    val core = videoCore(activity)
     setBoolean(core, "hdrDisplayActive", true)
+    val plugin = pluginWithAppliedDisplayMode(activity, 4, core)
 
-    core.dispose()
-    shadowOf(Looper.getMainLooper()).idle()
+    val result = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to false)), result)
+    awaitCompletion(result)
     assertEquals(4, preferredModeId(activity))
 
     shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
     assertEquals(0, preferredModeId(activity))
+  }
+
+  @Test
+  fun aReplacementCancelsTheRestoreItsPredecessorQueued() {
+    // An HDR exit queues the restore, a replacement takes over before it
+    // fires, and the successor requests its rate: the old restore must not
+    // land on the window after the new request.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val outgoing = videoCore(activity)
+    setBoolean(outgoing, "hdrDisplayActive", true)
+    val plugin = pluginWithAppliedDisplayMode(activity, 4, outgoing)
+    plugin.onMethodCall(MethodCall("clearVideoFrameRate", null), RecordingResult())
+    plugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to true)), RecordingResult())
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val successor = videoCore(activity)
+    successor.frameRateManager = getPluginField(plugin, "displayMode") as FrameRateManager
+    installCore(plugin, successor)
+    plugin.onMethodCall(MethodCall("setVideoFrameRate", mapOf("fps" to 23.976)), RecordingResult())
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+    assertEquals(4, preferredModeId(activity))
+    successor.dispose()
+  }
+
+  @Test
+  fun anAwaitedClearRepliesOnlyOnceTheRestoreHasLanded() {
+    // The route exit holds the player on screen on this reply. Robolectric's
+    // display never reports the change, so the watchdog is what answers.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = pluginWithAppliedDisplayMode(activity, 4)
+
+    val unawaited = RecordingResult()
+    plugin.onMethodCall(MethodCall("clearVideoFrameRate", null), unawaited)
+    assertEquals(1, unawaited.completionCount)
+
+    val attrs = activity.window.attributes
+    attrs.preferredDisplayModeId = 4
+    activity.window.attributes = attrs
+    val awaited = RecordingResult()
+    plugin.onMethodCall(MethodCall("clearVideoFrameRate", mapOf("awaitDisplayRestore" to true)), awaited)
+    assertEquals(0, preferredModeId(activity))
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2900))
+    assertEquals(0, awaited.completionCount)
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(200))
+    assertEquals(1, awaited.completionCount)
   }
 
   @Test
