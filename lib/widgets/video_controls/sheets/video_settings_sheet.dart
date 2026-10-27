@@ -1335,8 +1335,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
-      });
-    } catch (error, stackTrace) {
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity output rate', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1376,8 +1376,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
-      });
-    } catch (error, stackTrace) {
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion-compensation quality', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1449,8 +1449,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
-      });
-    } catch (error, stackTrace) {
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity preset', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1501,8 +1501,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
-      });
-    } catch (error, stackTrace) {
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity kernel', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1536,6 +1536,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
+        _state.onMotionClarityChanged?.call();
       }
     } catch (error, stackTrace) {
       try {
@@ -1563,6 +1564,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _motionStatus = result;
       _motionComparisonBypass = result.isComparisonBypass;
     });
+    _state.onMotionClarityChanged?.call();
     if (result.isComparisonBypass != bypass) {
       showErrorSnackBar(context, t.videoSettings.motionClarityCompareFailed);
     }
