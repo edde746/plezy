@@ -426,9 +426,27 @@ run_name = re.search(r"(?m)^run-name: (.*)$", text)
 run_name_expression = run_name.group(1) if run_name else ""
 require(
     all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag"))
-    and "Validate webOS on main" in run_name_expression,
-    "run names must identify the action, pool, release tag or webOS validation",
+    and all(marker in run_name_expression for marker in ("action:", "pool:", "tag:")),
+    "run names must expose the explicit action, pool, and tag claim to the JIT broker",
 )
+
+for action_pool_job in (
+    "validate-trusted-ref",
+    "build-android",
+    "build-webos",
+    "build-ios",
+    "build-tvos",
+    "build-macos",
+    "build-windows",
+    "package-windows",
+    "build-linux",
+):
+    block = job(action_pool_job)
+    require(
+        "inputs.action == 'build'" in block
+        and "inputs.runner_pool == 'private'" in block,
+        f"{action_pool_job} must be gated by the requested build action and private pool",
+    )
 
 release = job("create-release")
 require(
@@ -469,6 +487,7 @@ release_condition = release_if.group(1) if release_if else ""
 require(
     "inputs.mode == 'release'" in release_condition
     and "inputs.action == 'release'" in release_condition
+    and "inputs.runner_pool == 'private'" in release_condition
     and all(f"needs.{name}.result == 'success'" in release_condition for name in (
         "build-android", "build-ios", "build-tvos", "build-macos", "build-windows", "package-windows", "build-linux"))
     and "needs.validate-trusted-ref.result == 'success'" in release_condition

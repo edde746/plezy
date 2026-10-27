@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Require platform build dispatches to carry explicit action and private-pool tags, and gate every build job to that selection.
 - Restore shared focus navigation across source browsing and dialogs, announce source and sync errors accessibly, and explain shared-ID requirements before recovery imports.
 - Use shared focus controls for source search and page loading; make the exclusive sync confirmation scrollable with remote focus support.
 - Make NFS read measurement results accurately labelled, locale-formatted, and usable with remote focus and smaller screens.
