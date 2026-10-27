@@ -1582,8 +1582,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(t.videoSettings.motionClarityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(
+            t.videoSettings.motionClarityControlsHint,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 11),
+          ),
         ),
         ListTile(
           leading: AppIcon(

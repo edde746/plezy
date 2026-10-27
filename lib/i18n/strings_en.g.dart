@@ -6284,7 +6284,9 @@ class Translations$videoSettings$en {
 	String get motionClarity => 'Motion & clarity';
 
 	/// en: 'Smooth refresh mismatches with mpv temporal blending. This is not optical-flow motion generation; stronger filters can soften moving edges. Spatial upscaling remains in Shader presets.'
-	String get motionClarityDescription => 'Smooth refresh mismatches with mpv temporal blending. This is not optical-flow motion generation; stronger filters can soften moving edges. Spatial upscaling remains in Shader presets.';
+	String get motionClarityDescription => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.';
+	/// en: 'Switch presets while playback continues. Use Compare without motion processing for A/B; Custom opens temporal-filter, engine, search-effort and generated-rate controls.'
+	String get motionClarityControlsHint => 'Switch presets while playback continues. Use Compare without motion processing for A/B; Custom opens temporal-filter, engine, search-effort and generated-rate controls.';
 
 	/// en: 'Original'
 	String get motionClarityOriginal => 'Original';
@@ -6326,10 +6328,10 @@ class Translations$videoSettings$en {
 	String get motionClarityOled => 'OLED';
 
 	/// en: 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.'
-	String get motionClarityOledDescription => 'Targets the current display refresh with motion-compensated frames to reduce sample-and-hold blur. Panel modes and response vary; full-rate interpolation can look video-like and cannot remove camera blur.';
+	String get motionClarityOledDescription => 'Targets the current display cadence with motion-compensated frames to reduce sample-and-hold blur. Higher rates create a smoother, more video-like look.';
 
 	/// en: 'OLED uses motion compensation at the current renderer-reported display rate. Choose Custom to change the engine or target rate; this report is not panel scanout measurement.'
-	String get motionClarityOledEngineDescription => 'OLED uses motion compensation at the current renderer-reported display rate. Choose Custom to change the engine or target rate; this report is not panel scanout measurement.';
+	String get motionClarityOledEngineDescription => 'OLED uses motion compensation at the renderer-reported display rate. Choose Custom to adjust the engine or target rate.';
 
 	/// en: 'Custom'
 	String get motionClarityCustom => 'Custom';
@@ -6389,9 +6391,9 @@ class Translations$videoSettings$en {
 	/// en: 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.'
 	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
 	/// en: 'Motion-compensated (experimental)'
-	String get motionClarityMotionCompensated => 'Motion-compensated (experimental)';
+	String get motionClarityMotionCompensated => 'Motion-compensated frames';
 	/// en: 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.'
-	String get motionClarityMotionCompensatedDescription => 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.';
+	String get motionClarityMotionCompensatedDescription => 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.';
 	/// en: 'Generated frame-rate target'
 	String get motionClarityOutputRate => 'Generated frame-rate target';
 	/// en: 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.'
@@ -6415,11 +6417,11 @@ class Translations$videoSettings$en {
 	/// en: '144 fps'
 	String get motionClarityOutput144 => '144 fps';
 	/// en: 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.'
-	String get motionClarityMciProfileDescription => 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.';
+	String get motionClarityMciProfileDescription => 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.';
 	/// en: 'Motion search effort'
 	String get motionClarityMciQuality => 'Motion search effort';
 	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained late-frame or dropped-frame reports can temporarily lower the active search tier; your saved choice stays unchanged.'
-	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained late-frame or dropped-frame reports can temporarily lower the active search tier; your saved choice stays unchanged.';
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.';
 	/// en: 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
 	String get motionClarityGuardReduced => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
 	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
@@ -6437,7 +6439,7 @@ class Translations$videoSettings$en {
 	/// en: 'High search effort'
 	String get motionClarityMciHigh => 'High search effort';
 	/// en: 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.'
-	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A late-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.';
+	String get motionClarityMciConfigured => 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.';
 	/// en: 'Compare without motion processing'
 	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
 	/// en: 'Return to motion processing'
