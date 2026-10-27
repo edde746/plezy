@@ -63,8 +63,12 @@ physical emission time or remove camera/exposure blur already captured in the so
 OLED refresh modes, response, processing limits and viewing conditions vary by set; It does not add neural RIFE interpolation,
 NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
 adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
-search-effort choices are manual and unqualified. No TV superiority, image-quality,
-frame-rate, HDR, battery or performance result has been established. The broader
+search-effort choices are manual and unqualified. A limited runtime guard watches
+mpv's cumulative dropped-frame count and switches MCI to temporal blending after
+three consecutive 2-second windows with new drops. This is not a device benchmark
+or a multi-signal resource governor: it does not measure GPU/CPU headroom, thermal
+state, power use or physical scanout. No TV superiority, image-quality, frame-rate,
+HDR, battery or performance result has been established. The broader
 architecture and gates below remain the plan for that work.
 
 The table below describes the broader product target, not the feature coverage
