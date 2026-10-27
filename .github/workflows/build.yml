@@ -646,6 +646,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
+      - name: Refresh pinned mpv Swift packages
+        run: scripts/refresh_apple_spm.sh ios
+
       - name: Configure optional iOS App Store signing
         id: ios-signing
         env:
@@ -1058,6 +1061,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Refresh pinned mpv Swift packages
+        run: scripts/refresh_apple_spm.sh macos
 
       - name: Configure repository updater trust root
         shell: bash
