@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Verify provisioned SDK and build native dependencies
+      - name: Verify provisioned Samsung SDK and compiler toolchain
         shell: bash
         run: |
           set -euo pipefail
@@ -67,7 +67,6 @@ jobs:
           test -f "$toolchain" || { echo 'A Samsung compiler/sysroot CMake toolchain is required.'; exit 1; }
           test -x "$PLEZYNG_TIZEN_STUDIO_ROOT/tools/ide/bin/tizen" || { echo 'Provision Tizen Studio and Samsung TV extensions on the private JIT image.'; exit 1; }
           printf '%s\n' "$PLEZYNG_TIZEN_STUDIO_ROOT/tools/ide/bin" >> "$GITHUB_PATH"
-          python3 scripts/tizen/package.py native --arch "$PACKAGE_ARCH" --toolchain "$toolchain" --output build/tizen-native
       - name: Materialize the Samsung signing profile for this job
         shell: bash
         env:
@@ -80,6 +79,12 @@ jobs:
             --profile "$SIGNING_PROFILE" \
             --destination "$PROFILE_DESTINATION"
           tizen cli-config -g "default.profiles.path=$PROFILE_DESTINATION/profiles.xml"
+      - name: Build architecture-specific native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$PACKAGE_ARCH" == arm ]]; then toolchain="$TIZEN_CMAKE_TOOLCHAIN_ARM"; else toolchain="$TIZEN_CMAKE_TOOLCHAIN_X64"; fi
+          python3 scripts/tizen/package.py native --arch "$PACKAGE_ARCH" --toolchain "$toolchain" --output build/tizen-native
       - name: Build and inspect signed TV package
         run: >-
           python3 scripts/tizen/package.py build

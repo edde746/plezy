@@ -17,7 +17,6 @@ MAX_ENCODED_BYTES = 64 * 1024
 MAX_ARCHIVE_BYTES = 48 * 1024
 MAX_EXPANDED_BYTES = 8 * 1024 * 1024
 MAX_MEMBERS = 128
-PROFILE_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
 ALLOWED_SUFFIXES = {".p12", ".pwd", ".cer", ".crt", ".pem", ".der"}
 
 
@@ -125,7 +124,12 @@ def resolve_bundled_file(value: str, files: dict[str, Path]) -> Path | None:
 
 
 def prepare_profile(profile_name: str, destination: Path) -> Path:
-    if not PROFILE_NAME.fullmatch(profile_name):
+    if (
+        not profile_name
+        or len(profile_name) > 80
+        or profile_name != profile_name.strip()
+        or any(ord(ch) < 32 or ord(ch) == 127 for ch in profile_name)
+    ):
         raise ProfileError("invalid Samsung security profile name")
     encoded = os.environ.get("SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64", "")
     runner_temp = os.environ.get("RUNNER_TEMP")
@@ -165,6 +169,7 @@ def prepare_profile(profile_name: str, destination: Path) -> Path:
             root.set("active", profile_name)
 
         items = [node for node in chosen.iter() if local_name(node.tag) == "profileitem"]
+        referenced_files: set[Path] = set()
         distributors = {node.get("distributor") for node in items}
         if not items or "0" not in distributors or not (distributors - {"0", None, ""}):
             raise ProfileError("selected profile must include author and distributor certificates")
@@ -174,6 +179,7 @@ def prepare_profile(profile_name: str, destination: Path) -> Path:
             if not key_file or key_file.suffix.lower() != ".p12":
                 raise ProfileError("selected profile's author/distributor certificate is missing")
             item.set("key", str(key_file))
+            referenced_files.add(key_file)
             for attribute in ("password", "ca", "rootca"):
                 value = item.get(attribute, "")
                 if not value or not looks_like_certificate_path(value, attribute):
@@ -182,6 +188,11 @@ def prepare_profile(profile_name: str, destination: Path) -> Path:
                 if bundled is None:
                     raise ProfileError("selected profile references a certificate file missing from the bundle")
                 item.set(attribute, str(bundled))
+                referenced_files.add(bundled)
+
+        for path in files.values():
+            if path != source_xml and path not in referenced_files:
+                path.unlink()
 
         output_xml = destination / "profiles.xml"
         tree = ET.ElementTree(root)
