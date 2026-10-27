@@ -1,0 +1,135 @@
+{
+  "sdk_version": "10.0",
+  "host": "linux-x64",
+  "target": "arm",
+  "target_api": "6.0",
+  "compiler": "GCC 9.2 / LLVM 10",
+  "compatibility": "Experimental Tizen 6-9 candidate; 2026/Tizen 10 requires a separate GCC 14.2 build.",
+  "packages": [
+    {
+      "name": "new-common-cli",
+      "version": "2.5.106",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/new-common-cli_2.5.106_ubuntu-64.zip",
+      "sha256": "46fe580c153276e8f4f90af0d988b52e25725806e31e4c1abeac3e25896b3f91"
+    },
+    {
+      "name": "embedded-java",
+      "version": "0.1.6",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/embedded-java_0.1.6_ubuntu-64.zip",
+      "sha256": "17742fbf6353d65a258c28248b16d4ad28a7b95a467c0f26190d07dd00b78479"
+    },
+    {
+      "name": "certificate-generator",
+      "version": "0.1.4",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/certificate-generator_0.1.4_ubuntu-64.zip",
+      "sha256": "446aa52f249205f4ad573173b02c9c38aa5de0316028b77dd189e44fd5f75964"
+    },
+    {
+      "name": "certificate-encryptor",
+      "version": "1.0.10",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/certificate-encryptor_1.0.10_ubuntu-64.zip",
+      "sha256": "863b4ab35ed8f69c67d1c122c7ba22f7db3ea71cf885f4eaf21091ec94b6b3a3"
+    },
+    {
+      "name": "sdk-info",
+      "version": "2.5.0",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sdk-info_2.5.0_ubuntu-64.zip",
+      "sha256": "a5555a4e165d0b72aa4cd03c208ea73850537ab83912a7bf2056d96d8b8be0a1"
+    },
+    {
+      "name": "sdk-utils",
+      "version": "0.2.26",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sdk-utils_0.2.26_ubuntu-64.zip",
+      "sha256": "e9f79301a4f1783523dffd4dbb6835343c39bf47a3d8e108b394ccf42ba55358"
+    },
+    {
+      "name": "sdk-utils-core",
+      "version": "0.2.26",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sdk-utils-core_0.2.26_ubuntu-64.zip",
+      "sha256": "052ab3197e436cd0fd841ef7e75d73b1a6fc4cd4d28415bb60dfbdf9c84272e2"
+    },
+    {
+      "name": "sdb",
+      "version": "4.2.36",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sdb_4.2.36_ubuntu-64.zip",
+      "sha256": "addf825e1a886a9f220cb3d287e74438cae0ffafe5821b9baca9d4f6c7de5124"
+    },
+    {
+      "name": "new-native-cli",
+      "version": "2.5.107",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/new-native-cli_2.5.107_ubuntu-64.zip",
+      "sha256": "54348f2f4902a0b6bc963dbf66955e90b4f8018bfe6172e90de93d627fa52fe0"
+    },
+    {
+      "name": "sbilib",
+      "version": "1.9.0",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sbilib_1.9.0_ubuntu-64.zip",
+      "sha256": "c597f632916fda024e0452d1b437bdb9521bc0da5f9c4092a8d88e28e5e7da81"
+    },
+    {
+      "name": "tpklib",
+      "version": "1.2.6",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/tpklib_1.2.6_ubuntu-64.zip",
+      "sha256": "e6a27a49f574d2d4f94a49570f443facfffa0d32001e529e1c84ddef0e8b13e1"
+    },
+    {
+      "name": "rpklib",
+      "version": "1.2.6",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/rpklib_1.2.6_ubuntu-64.zip",
+      "sha256": "54859470575458785a73ef56d4fe5fcbb4ef7e3156f1b6150ad791b6f3af6486"
+    },
+    {
+      "name": "smart-build-interface",
+      "version": "1.9.0",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/smart-build-interface_1.9.0_ubuntu-64.zip",
+      "sha256": "4e2d4a309663424ee75edb8e1e2d243f23ded70ec1d48213ff83a797c33dd939"
+    },
+    {
+      "name": "sbi-toolchain-gcc-9.2.cpp.app",
+      "version": "2.2.31",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sbi-toolchain-gcc-9.2.cpp.app_2.2.31_ubuntu-64.zip",
+      "sha256": "ba935db72457e16d8a43051591ac3c11c7096769c4604c4eae34644898d5049f"
+    },
+    {
+      "name": "sbi-toolchain-llvm-10.0.cpp.app",
+      "version": "2.2.31",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/sbi-toolchain-llvm-10.0.cpp.app_2.2.31_ubuntu-64.zip",
+      "sha256": "1efc2f1b60eadd224fcb3132085172ca4b6ef11b63574503c26e9c80d85f83fe"
+    },
+    {
+      "name": "cross-arm-gcc-9.2",
+      "version": "0.1.9",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/cross-arm-gcc-9.2_0.1.9_ubuntu-64.zip",
+      "sha256": "706dd9d3df216fe9cbd706625a0fe8edfc83981b06a55bef302c1f23830b3ca0"
+    },
+    {
+      "name": "llvm-10",
+      "version": "0.0.7",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/llvm-10_0.0.7_ubuntu-64.zip",
+      "sha256": "5e8d61854a1b66f7fa3d5309806b9b8362798761c9174f1e04add88e2fb7aefd"
+    },
+    {
+      "name": "libllvm-10.0.0",
+      "version": "0.0.5",
+      "url": "https://download.tizen.org/sdk/tizenstudio/official/binary/libllvm-10.0.0_0.0.5_ubuntu-64.zip",
+      "sha256": "fd82ee1521f50a34d8b2fbf5a5849e3de4fcefffa0374982b1ff1c6201eac2ff"
+    },
+    {
+      "name": "iot-headed-6.0-rs-device.core",
+      "version": "0.0.78",
+      "url": "https://download.tizen.org/sdk/extensions/Tizen_IoT_Headed/binary/iot-headed-6.0-rs-device.core_0.0.78_ubuntu-64.zip",
+      "sha256": "8cd90f988c43a6a83be24aef8e8853a5cd7153685e2e783268b46c9522cb01d8"
+    },
+    {
+      "name": "iot-headed-6.0-core-add-ons",
+      "version": "0.0.214",
+      "url": "https://download.tizen.org/sdk/extensions/Tizen_IoT_Headed/binary/iot-headed-6.0-core-add-ons_0.0.214_ubuntu-64.zip",
+      "sha256": "6d0bf5a30a42999088a9658e99751411f707afb23496b4e3d612f0d207538ff3"
+    }
+  ],
+  "host_compatibility": {
+    "url": "https://deb.debian.org/debian/pool/main/n/ncurses/libtinfo5_6.4-4_amd64.deb",
+    "sha256": "dd347f794e651039e7b4c391f86c674fed7f415b3dca6b0937beb0d470f09c1a",
+    "requires": "glibc >= 2.34; dpkg-deb"
+  }
+}

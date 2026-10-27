@@ -5,6 +5,8 @@ import struct
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 import zipfile
 
 import package
@@ -30,7 +32,13 @@ class PackageTest(unittest.TestCase):
         entries = {'tizen-manifest.xml': manifest or self.manifest,
                    'author-signature.xml': b'<Signature/>', 'signature1.xml': b'<Signature/>'}
         entries.update({f'lib/{name}': elf(arch) for name in
-                        ('libapp.so', 'libdart_smb2.so', 'libplezy_sqlite3.so')})
+                        ('libapp.so', 'libdart_smb2.so', 'libplezy_sqlite3.so',
+                         'libflutter_engine.so', 'libflutter_plugins.so', 'libflutter_tizen_tv.so',
+                         'libftpw_video_player_videohole.so')})
+        entries.update({'bin/plezyng': elf(arch), 'res/icudtl.dat': b'fixture',
+                        'res/flutter_assets/AssetManifest.bin': b'fixture'})
+        if arch == 'x64' and manifest is None:
+            entries['tizen-manifest.xml'] = self.manifest.replace(b'api-version="6.0"', b'api-version="8.0"')
         entries.update(extra or {})
         entries.pop(omit, None)
         path = self.root / 'fixture.tpk'
@@ -48,7 +56,7 @@ class PackageTest(unittest.TestCase):
         self.assertFalse(report['hardware_qualified'])
 
     def test_emulator_or_mixed_abi_cannot_pass_as_tv(self):
-        for path in (self.archive(arch='x64'),):
+        for path in (self.archive(arch='x64', manifest=self.manifest),):
             with self.assertRaisesRegex(ValueError, 'Wrong architecture'):
                 package.inspect_package(path, 'arm')
         path = self.archive(extra={'lib/plugin.so': elf('x64')})
@@ -56,7 +64,9 @@ class PackageTest(unittest.TestCase):
             package.inspect_package(path, 'arm')
 
     def test_signature_storage_library_and_identity_are_required(self):
-        for omit in ('signature1.xml', 'lib/libdart_smb2.so', 'lib/libplezy_sqlite3.so'):
+        for omit in ('signature1.xml', 'lib/libdart_smb2.so', 'lib/libplezy_sqlite3.so',
+                     'lib/libflutter_engine.so', 'lib/libflutter_plugins.so',
+                     'lib/libftpw_video_player_videohole.so', 'bin/plezyng', 'res/icudtl.dat'):
             with self.subTest(omit=omit), self.assertRaises(ValueError):
                 package.inspect_package(self.archive(omit=omit), 'arm')
         with self.assertRaisesRegex(ValueError, 'identity'):
@@ -85,8 +95,51 @@ class PackageTest(unittest.TestCase):
         self.assertFalse(recipe['enabled'])
         pattern = recipe['assets'][0]['match']
         self.assertIsNotNone(re.fullmatch(pattern, 'PlezyNG-tizen-arm.tpk'))
-        for name in ('PlezyNG-tizen-x64.tpk', 'PlezyNG-tizen-arm.tpk.sha256', 'Other-tizen-arm.tpk'):
+        for name in ('PlezyNG-tizen-x64.tpk', 'PlezyNG-tizen-arm-tester.tpk', 'PlezyNG-tizen-arm-signed.tpk',
+                     'PlezyNG-tizen-arm.tpk.sha256', 'Other-tizen-arm.tpk'):
             self.assertIsNone(re.fullmatch(pattern, name))
+
+    def test_api_floor_and_launcher_abi_are_checked(self):
+        with self.assertRaisesRegex(ValueError, 'Expected API'):
+            package.inspect_package(self.archive(manifest=self.manifest.replace(b'api-version="6.0"', b'api-version="2.24.1"')), 'arm')
+        with self.assertRaisesRegex(ValueError, 'Wrong architecture'):
+            package.inspect_package(self.archive(extra={'bin/plezyng': elf('x64')}), 'arm')
+        self.assertEqual(package.inspect_package(self.archive(arch='x64'), 'x64')['minimum_api'], '8.0')
+
+    def test_resign_rejects_digest_mismatch_without_running_signer(self):
+        args = SimpleNamespace(package=self.archive(), sha256='0' * 64, arch='arm',
+                               security_profile='test', output=self.root / 'signed')
+        with patch.object(package, 'run') as signer, self.assertRaisesRegex(ValueError, 'SHA-256'):
+            package.resign(args)
+        signer.assert_not_called()
+
+    def test_resign_preserves_payload_and_rejects_noop_or_changed_app(self):
+        source = self.archive()
+        for kind in ('valid', 'noop', 'tampered'):
+            args = SimpleNamespace(package=source, sha256=package.sha256(source), arch='arm',
+                                   security_profile='test', output=self.root / kind)
+            def signer(*command, **kwargs):
+                if kind == 'noop':
+                    return
+                path = Path(command[-1])
+                with zipfile.ZipFile(path) as archive:
+                    entries = {row.filename: archive.read(row) for row in archive.infolist()}
+                entries['author-signature.xml'] = b'<Signature>replacement fixture</Signature>'
+                if kind == 'tampered':
+                    entries['res/icudtl.dat'] = b'changed app'
+                with zipfile.ZipFile(path, 'w') as archive:
+                    for name, content in entries.items():
+                        archive.writestr(name, content)
+            with self.subTest(kind=kind), patch.object(package, 'run', side_effect=signer):
+                if kind == 'valid':
+                    package.resign(args)
+                    report = json.loads((args.output / 'PlezyNG-tizen-arm-signed.tpk.json').read_text())
+                    self.assertTrue(report['payload_unchanged'])
+                    self.assertFalse(report['tv_install_verified'])
+                else:
+                    with self.assertRaisesRegex(ValueError, 'no change' if kind == 'noop' else 'changed the application'):
+                        package.resign(args)
+                    self.assertFalse((args.output / 'PlezyNG-tizen-arm-signed.tpk').exists())
 
     def test_stage_keeps_overrides_excludes_untracked_and_checks_native_digests(self):
         source, stage, native = [self.root / p for p in ('source', 'stage', 'native')]
@@ -126,6 +179,7 @@ class PackageTest(unittest.TestCase):
         self.assertIn('path: packages/dart_smb2_tizen', pubspec)
         self.assertFalse((stage / 'author.p12').exists())
         self.assertIn('version="3.4.5"', (stage / 'tizen/tizen-manifest.xml').read_text())
+        self.assertIn('api-version="6.0"', (stage / 'tizen/tizen-manifest.xml').read_text())
         self.assertEqual((smb / 'hook/build.dart').read_text(), '// upstream hook')
         self.assertEqual((stage / 'packages/dart_smb2_tizen/hook/build.dart').read_text(), '// staged hook')
         (native / 'libdart_smb2.so').write_bytes(elf() + b'tampered')

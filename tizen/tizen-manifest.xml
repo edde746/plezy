@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest package="org.snapetech.plezyng" version="2.24.1" api-version="6.0" xmlns="http://tizen.org/ns/packages">
   <profile name="tv" />
-  <ui-application appid="org.snapetech.plezyng" exec="Runner.dll" type="dotnet" multiple="false" nodisplay="false" taskmanage="true">
+  <ui-application appid="org.snapetech.plezyng" exec="plezyng" type="capp" multiple="false" nodisplay="false" taskmanage="true" hw-acceleration="on">
     <label>PlezyNG</label>
     <icon>plezyng.png</icon>
-    <metadata key="http://tizen.org/metadata/prefer_dotnet_aot" value="true" />
-    <metadata key="http://tizen.org/metadata/prefer_nuget_cache" value="true" />
   </ui-application>
   <privileges>
     <privilege>http://tizen.org/privilege/internet</privilege>

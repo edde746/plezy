@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import secrets
 import shutil
 import struct
 import subprocess
@@ -26,7 +28,10 @@ ELF_TARGETS = {'arm': (1, 40), 'x64': (2, 62)}
 
 
 def run(*args, cwd=None):
-    subprocess.run([str(a) for a in args], cwd=cwd, check=True)
+    environment = os.environ.copy()
+    # Suppress Flutter's automatic cloud-instance metadata probe on build hosts.
+    environment.setdefault('CI', 'true')
+    subprocess.run([str(a) for a in args], cwd=cwd, env=environment, check=True)
 
 
 def sha256(path):
@@ -75,7 +80,7 @@ def inspect_package(path, arch, *, signed=True):
         manifest = ET.fromstring(raw)
         app = manifest.find('t:ui-application', NS)
         profile = manifest.find('t:profile', NS)
-        if manifest.get('package') != APP_ID or app is None or app.get('appid') != APP_ID or app.get('type') != 'dotnet':
+        if manifest.get('package') != APP_ID or app is None or app.get('appid') != APP_ID or app.get('type') != 'capp' or app.get('exec') != 'plezyng':
             raise ValueError('Package identity/type does not match PlezyNG')
         if profile is None or profile.get('name') != 'tv':
             raise ValueError('Expected TV profile')
@@ -83,16 +88,23 @@ def inspect_package(path, arch, *, signed=True):
         if not re.fullmatch(r'\d+\.\d+\.\d+', version):
             raise ValueError('Expected numeric Tizen version')
         libraries = [n for n in names if n.endswith('.so') or '.so.' in n]
-        required = {'libapp.so', 'libplezy_sqlite3.so', 'libdart_smb2.so'}
+        required = {'libapp.so', 'libplezy_sqlite3.so', 'libdart_smb2.so',
+                    'libflutter_engine.so', 'libflutter_tizen_tv.so', 'libflutter_plugins.so',
+                    'libftpw_video_player_videohole.so'}
         if not required <= {PurePosixPath(n).name for n in libraries}:
-            raise ValueError('Missing application or native storage libraries')
-        for name in libraries:
+            raise ValueError('Missing application, Flutter runtime or native plugin libraries')
+        if not {'bin/plezyng', 'res/icudtl.dat', 'res/flutter_assets/AssetManifest.bin'} <= set(names):
+            raise ValueError('Missing native launcher or Flutter resources')
+        minimum_api = {'arm': '6.0', 'x64': '8.0'}[arch]
+        if manifest.get('api-version') != minimum_api:
+            raise ValueError(f'Expected API {minimum_api} for {arch}')
+        for name in libraries + ['bin/plezyng']:
             with archive.open(name) as stream:
                 if elf_arch(stream.read(64)) != arch:
                     raise ValueError(f'Wrong architecture: {name}')
         return {'app_id': APP_ID, 'version': version, 'architecture': arch, 'sha256': sha256(path),
-                'size': path.stat().st_size, 'signature_files_present': signed,
-                'hardware_qualified': False, 'native_libraries': libraries}
+                'size': path.stat().st_size, 'signature_files_present': {'author-signature.xml', 'signature1.xml'} <= set(names),
+                'minimum_api': minimum_api, 'hardware_qualified': False, 'native_libraries': libraries}
 
 
 def checkout(repo, revision, destination):
@@ -118,7 +130,23 @@ def native(args):
     ]:
         if (sources / name).exists():
             raise ValueError(f'{sources / name} already exists; use a fresh native output directory')
-        checkout(repo, revision, sources / name)
+        if args.source_root:
+            local = Path(args.source_root).resolve() / name
+            actual = subprocess.check_output(['git', '-C', str(local), 'rev-parse', 'HEAD'], text=True).strip()
+            if actual != revision or subprocess.check_output(['git', '-C', str(local), 'status', '--porcelain']):
+                raise ValueError(f'Offline source must be a clean checkout of {name} at {revision}')
+            # Copy only tracked files; ignored credentials/build caches are not
+            # corresponding source and must never enter the redistribution.
+            paths = subprocess.check_output(['git', '-C', str(local), 'ls-files', '-z']).decode().split('\0')
+            for filename in filter(None, paths):
+                source = local / filename
+                if source.is_symlink():
+                    raise ValueError(f'Unexpected source symlink: {filename}')
+                target = sources / name / filename
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+        else:
+            checkout(repo, revision, sources / name)
     for patch in sorted((sources / 'libsmb2-scripts/patches/libsmb2/shared').glob('patch_*.py')):
         run(sys.executable, patch, sources / 'libsmb2')
     run('cmake', '-S', sources / 'libsmb2', '-B', out / 'smb-build', f'-DCMAKE_TOOLCHAIN_FILE={toolchain}',
@@ -224,7 +252,12 @@ def stage(source, destination, native_dir, arch):
     if version is None:
         raise ValueError('Missing application version')
     manifest = destination / 'tizen/tizen-manifest.xml'
-    manifest.write_text(re.sub(r'(<manifest\b[^>]*\bversion=")[^"]+', lambda m: m[1] + version[1], manifest.read_text()))
+    # Whitespace before version is deliberate: a word boundary also matches
+    # the suffix of api-version and would overwrite the SDK API with 2.24.1.
+    manifest_text = re.sub(r'(<manifest\b[^>]*?\sversion=")[^"]+', lambda m: m[1] + version[1], manifest.read_text())
+    if arch == 'x64':
+        manifest_text = re.sub(r'\bapi-version="[^"]+"', 'api-version="8.0"', manifest_text)
+    manifest.write_text(manifest_text)
 
 
 def build(args):
@@ -232,12 +265,21 @@ def build(args):
     actual = subprocess.check_output(['git', '-C', str(sdk), 'rev-parse', 'HEAD'], text=True).strip()
     if actual != PINS['flutter_tizen_revision']:
         raise ValueError('flutter-tizen revision differs from toolchain.json')
+    actual_flutter = subprocess.check_output(['git', '-C', str(sdk / 'flutter'), 'rev-parse', 'HEAD'], text=True).strip()
+    if actual_flutter != PINS['flutter_revision']:
+        raise ValueError('Flutter revision differs from toolchain.json')
     flutter = sdk / 'bin/flutter-tizen'
-    run(flutter, 'doctor', '-v')
+    run(flutter, '--version')
     run(flutter, 'pub', 'get', '--enforce-lockfile', cwd=ROOT)
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='plezyng-tizen-') as temp:
+    if args.work_dir:
+        work_dir = Path(args.work_dir).resolve()
+        if work_dir.exists() and any(work_dir.iterdir()):
+            raise ValueError('Work directory must be empty; it is preserved for diagnosing build failures')
+        work_dir.mkdir(parents=True, exist_ok=True)
+    context = nullcontext(args.work_dir) if args.work_dir else tempfile.TemporaryDirectory(prefix='plezyng-tizen-')
+    with context as temp:
         project = Path(temp)
         stage(ROOT, project, args.native, args.arch)
         run(flutter, 'pub', 'get', cwd=project)
@@ -247,14 +289,22 @@ def build(args):
         if len(packages) != 1:
             raise ValueError('Expected exactly one newly built TPK')
         report = inspect_package(packages[0], args.arch)
-        name = f'PlezyNG-tizen-{args.arch}.tpk'
+        suffix = '-tester' if args.tester else ''
+        name = f'PlezyNG-tizen-{args.arch}{suffix}.tpk'
         shutil.copyfile(packages[0], output / name)
         (output / (name + '.sha256')).write_text(f"{report['sha256']}  {name}\n")
         report['source_commit'] = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
         report['source_dirty'] = subprocess.run(['git', '-C', str(ROOT), 'diff', '--quiet', 'HEAD']).returncode != 0
         report['toolchain'] = PINS
+        report['native_inputs'] = json.loads((Path(args.native) / 'native-build.json').read_text())
+        report['target_scope'] = ('experimental Tizen 6-9; Tizen 10/GCC 14.2 is not qualified'
+                                  if args.arch == 'arm' else 'experimental x64 emulator; not a TV build')
+        report['signing'] = 'development-only-requires-tv-resigning' if args.tester else 'selected-profile-requires-device-verification'
+        report['tv_install_verified'] = False
+        report['catalogue_eligible'] = False
         (output / (name + '.json')).write_text(json.dumps(report, indent=2) + '\n')
         shutil.copyfile(project / 'pubspec.lock', output / 'pubspec-tizen.lock')
+        shutil.copyfile(Path(args.native) / 'native-build.json', output / 'native-build.json')
         # Preserve corresponding native sources and applied patches for redistribution.
         shutil.make_archive(str(output / f'PlezyNG-tizen-{args.arch}-native-sources'), 'gztar', args.native, 'sources')
 
@@ -268,6 +318,109 @@ def install(args):
         run('tizen', 'run', '-t', args.target, '-p', APP_ID)
 
 
+def package_payload(path):
+    """Hash each uncompressed payload entry so re-signing cannot alter the app."""
+    with zipfile.ZipFile(path) as archive:
+        return {row.filename: hashlib.sha256(archive.read(row)).hexdigest()
+                for row in archive.infolist()
+                if not row.is_dir() and row.filename not in {'author-signature.xml', 'signature1.xml'}}
+
+
+def resign(args):
+    """Apply the tester's existing Samsung profile without compiling anything."""
+    source = Path(args.package).resolve(strict=True)
+    if sha256(source) != args.sha256.lower():
+        raise ValueError('Downloaded package does not match the expected SHA-256')
+    inspect_package(source, args.arch)
+    payload = package_payload(source)
+    output = Path(args.output).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    result = output / f'PlezyNG-tizen-{args.arch}-signed.tpk'
+    if result.exists():
+        raise ValueError('Signed output already exists; choose a fresh output directory')
+    with tempfile.TemporaryDirectory(prefix='plezyng-sign-', dir=output) as temp:
+        staged = Path(temp) / source.name
+        shutil.copyfile(source, staged)
+        run('tizen', 'package', '-t', 'tpk', '-S', 'off', '-s', args.security_profile, '--', staged)
+        candidates = list(Path(temp).glob('*.tpk'))
+        if len(candidates) != 1:
+            raise ValueError('Expected one re-signed TPK')
+        report = inspect_package(candidates[0], args.arch)
+        if package_payload(candidates[0]) != payload:
+            raise ValueError('Re-signing changed the application payload')
+        with zipfile.ZipFile(source) as before, zipfile.ZipFile(candidates[0]) as after:
+            if all(before.read(name) == after.read(name) for name in ('author-signature.xml', 'signature1.xml')):
+                raise ValueError('Signing produced no change; check the selected profile and SDK signing logs')
+        shutil.copyfile(candidates[0], result)
+    (output / (result.name + '.sha256')).write_text(f"{report['sha256']}  {result.name}\n")
+    report.update({'signing': 'tester-selected-profile', 'tv_install_verified': False,
+                   'input_sha256': args.sha256.lower(), 'payload_unchanged': True})
+    (output / (result.name + '.json')).write_text(json.dumps(report, indent=2) + '\n')
+    print(result)
+
+
+def tester_profile(args):
+    """Create a local development profile, without Samsung credentials or DUIDs."""
+    sdk = Path(args.sdk_root).resolve(strict=True)
+    info = dict(line.split('=', 1) for line in (sdk / 'sdk.info').read_text().splitlines() if '=' in line)
+    data = Path(info['TIZEN_SDK_DATA_PATH']).resolve(strict=True)
+    if not re.fullmatch(r'[A-Za-z0-9_-]{1,60}', args.name):
+        raise ValueError('Use a simple, unique profile name')
+    profiles = data / 'profile/profiles.xml'
+    if profiles.exists() and any(row.get('name') == args.name for row in ET.parse(profiles).iter('profile')):
+        raise ValueError('Profile already exists; reuse it explicitly or choose another name')
+    private = data / 'plezyng-development-certificates' / args.name
+    private.mkdir(mode=0o700, parents=True, exist_ok=False)
+    password = secrets.token_urlsafe(24)
+    cli = sdk / 'tools/ide/bin/tizen'
+    if os.name == 'nt':
+        cli = cli.with_suffix('.bat')
+    # The CLI logs its arguments locally. Never upload SDK logs or this private
+    # directory; these credentials are disposable and are not Samsung keys.
+    result = subprocess.run([str(cli), 'certificate', '-a', args.name, '-n', 'PlezyNG development handoff',
+        '-f', 'author', '-p', password, '--', str(private)], capture_output=True)
+    if result.returncode:
+        raise ValueError('Development certificate creation failed; inspect local SDK logs')
+    certificate = private / 'author.p12'
+    certificate.chmod(0o600)
+    # SDK 10 ships an i386 secret-tool that cannot run on every headless x64
+    # host. Its Java reader also supports inline CipherUtil passwords. Use
+    # that SDK implementation only for this disposable development profile.
+    # This is reversible encoding, not secure storage for Samsung signing keys.
+    classpath = str(sdk / 'tools/ide/lib-ncli/*')
+    with tempfile.TemporaryDirectory(prefix='profile-helper-', dir=private) as temp:
+        source = Path(temp) / 'ProfilePassword.java'
+        source.write_text('''import java.io.*;
+import org.tizen.common.util.CipherUtil;
+public class ProfilePassword {
+ public static void main(String[] args) throws Exception {
+  String password=new BufferedReader(new InputStreamReader(System.in,"UTF-8")).readLine();
+  java.nio.file.Files.write(java.nio.file.Paths.get(args[0]), CipherUtil.getEncryptedString(password).getBytes("UTF-8"));
+ }
+}
+''')
+        subprocess.run([str(sdk / 'jdk/bin/javac'), '-cp', classpath, str(source)], cwd=temp, check=True, capture_output=True)
+        encoded_file = Path(temp) / 'encoded'
+        subprocess.run([str(sdk / 'jdk/bin/java'), '-cp', temp + os.pathsep + classpath,
+                        'ProfilePassword', str(encoded_file)], input=password + '\n', text=True,
+                       cwd=temp, capture_output=True, check=True)
+        encoded = encoded_file.read_text().strip()
+    if not encoded or encoded.endswith('.pwd'):
+        raise ValueError('SDK password encoding failed')
+    template = (sdk / 'tools/ide/conf-ncli/profiles.xml').read_text()
+    template = ET.fromstring(template.replace('<SDK_PATH>', str(sdk)).replace('<Your Certificate (.p12) Path>', str(certificate)))
+    profile = next(template.iter('profile'))
+    profile.set('name', args.name)
+    next(item for item in profile if item.get('distributor') == '0').set('password', encoded)
+    tree = ET.parse(profiles) if profiles.exists() else ET.ElementTree(ET.Element('profiles', version='3.1'))
+    tree.getroot().append(profile)
+    profiles.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(profiles, encoding='UTF-8', xml_declaration=True)
+    profiles.chmod(0o600)
+    run(cli, 'cli-config', f'profiles.path={profiles}')
+    print(f'Development-only profile: {args.name}. A TV owner must re-sign the TPK.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -275,25 +428,37 @@ def main():
     n.add_argument('--toolchain', required=True, help='Samsung SDK CMake toolchain file (compiler, sysroot, ABI)')
     n.add_argument('--output', required=True)
     n.add_argument('--jobs', type=int, default=2)
+    n.add_argument('--source-root', help='Optional clean, pinned libsmb2 and libsmb2-scripts checkouts for offline builds')
     b = sub.add_parser('build')
     b.add_argument('--sdk', required=True, help='Pinned flutter-tizen checkout')
     b.add_argument('--native', required=True, help='Output from native subcommand')
     b.add_argument('--output', default=str(ROOT / 'build/tizen-release'))
     b.add_argument('--security-profile', required=True, help='Existing Samsung Certificate Manager profile name')
+    b.add_argument('--tester', action='store_true', help='Produce a development-signed handoff; tester must re-sign for their TV')
+    b.add_argument('--work-dir', help='Optional empty directory to preserve the staged project and build diagnostics')
     i = sub.add_parser('inspect')
     i.add_argument('package')
     ins = sub.add_parser('install')
     ins.add_argument('package')
     ins.add_argument('--target', required=True, help='Explicit Tizen Device Manager target')
     ins.add_argument('--launch', action='store_true')
-    for p in (n, b, i, ins):
+    s = sub.add_parser('resign', help='Re-sign a prebuilt tester TPK with your TV-authorized Samsung profile')
+    s.add_argument('package')
+    s.add_argument('--sha256', required=True, help='Expected SHA-256 from the downloaded handoff')
+    s.add_argument('--security-profile', required=True)
+    s.add_argument('--output', required=True)
+    profile = sub.add_parser('tester-profile', help='Create a development-only profile in a dedicated SDK')
+    profile.add_argument('--sdk-root', required=True, help='Tizen SDK root, not flutter-tizen')
+    profile.add_argument('--name', default='PlezyNG-Tester')
+    for p in (n, b, i, ins, s):
         p.add_argument('--arch', choices=ELF_TARGETS, default='arm')
     args = parser.parse_args()
     try:
         if args.command == 'inspect':
             print(json.dumps(inspect_package(args.package, args.arch), indent=2))
         else:
-            {'native': native, 'build': build, 'install': install}[args.command](args)
+            {'native': native, 'build': build, 'install': install, 'resign': resign,
+             'tester-profile': tester_profile}[args.command](args)
     except (ValueError, OSError, subprocess.CalledProcessError, zipfile.BadZipFile, ET.ParseError) as error:
         parser.exit(1, f'Tizen packaging failed: {error}\n')
 

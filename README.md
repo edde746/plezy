@@ -79,7 +79,7 @@ Published PlezyNG downloads appear on the [GitHub Releases page](https://github.
 | --- | --- |
 | Desktop and mobile | Download links are added after the corresponding release is published. |
 | webOS TV | Experimental ARMv7 IPK; one LG C6 running webOS 26 has been tested. LG's native Flutter floor is webOS 26 Re:New+, and older firmware or other models are not qualified. No webOS package is published yet; see the [compatibility matrix and port status](docs/maintainers/webos-tv.md) |
-| Samsung Tizen TV | Experimental native-media port and TPK packaging tooling. No signed build or TV qualification yet. See the [research, build guide and rollout plan](docs/maintainers/tizen-tv.md). |
+| Samsung Tizen TV | Experimental ARM TPK builds for Tizen 6–9, with a prebuilt tester handoff/re-signing path. TV qualification and the 2026/Tizen 10 target remain pending. See the [research, build guide and rollout plan](docs/maintainers/tizen-tv.md). |
 
 <details>
 <summary>Install with a package manager</summary>
@@ -354,4 +354,3 @@ Plezy is licensed under [GPL-3.0](LICENSE).
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
 - Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
-

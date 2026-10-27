@@ -3,3 +3,7 @@
 /lib/
 /flutter/
 /shared/res/plezyng.png
+/.app.deps.json
+/*.csproj.user
+/Release/
+/Debug/

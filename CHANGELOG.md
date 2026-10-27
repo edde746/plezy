@@ -90,7 +90,7 @@
 
 - Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Add an experimental embedded Android Steam PIN/streaming adapter with encrypted device trust, direct game-ID launch, H.264/HEVC/Opus and a mobile controller. Steam account catalog import and native streaming ports remain in development; Pyrowave is opt-in experimental Android support and still needs real-host and device performance qualification; Games never hands a stream to another app.
 
-- Add an experimental Samsung Tizen TV player, conservative server playback profiles, signed-TPK build and inspection tooling, and a disabled Apps2Samsung catalogue recipe. Device builds and hardware qualification remain pending.
+- Add an experimental Samsung Tizen TV player, conservative server playback profiles, signed-TPK build and inspection tooling, and a disabled Apps2Samsung catalogue recipe. ARM release builds now compile with a native C++ runner, pinned SDK bootstrap and headless development signing; the tester handoff includes digest-checked re-signing without recompilation. Hardware qualification and the 2026/Tizen 10 toolchain remain pending.
 
 - Route every GitHub Actions workflow through compatible private JIT capacity, with no GitHub-hosted fallback.
 - Require an explicit build or release action and private runner pool for platform builds; add a build-only mode that leaves draft releases untouched.
@@ -227,4 +227,3 @@
 ### Removed
 
 - Remove unused upstream website, legacy app-store and Sentry upload automation, and funding links.
-
