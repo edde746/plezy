@@ -2734,7 +2734,7 @@
     "motionClarityTemporalBlend": "Temporal blend",
     "motionClarityTemporalBlendDescription": "Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.",
     "motionClarityMotionCompensated": "Motion-compensated (experimental)",
-    "motionClarityMotionCompensatedDescription": "FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges.",
+    "motionClarityMotionCompensatedDescription": "FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.",
     "motionClarityMciProfileDescription": "Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.",
     "motionClarityMciQuality": "Motion search effort",
     "motionClarityMciQualityDescription": "Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware.",

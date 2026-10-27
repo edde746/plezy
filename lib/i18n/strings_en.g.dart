@@ -6379,8 +6379,8 @@ class Translations$videoSettings$en {
 	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
 	/// en: 'Motion-compensated (experimental)'
 	String get motionClarityMotionCompensated => 'Motion-compensated (experimental)';
-	/// en: 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges.'
-	String get motionClarityMotionCompensatedDescription => 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges.';
+	/// en: 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.'
+	String get motionClarityMotionCompensatedDescription => 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.';
 	/// en: 'Generated frame-rate target'
 	String get motionClarityOutputRate => 'Generated frame-rate target';
 	/// en: 'Match current display'
