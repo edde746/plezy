@@ -1,11 +1,25 @@
 # Architecture and algorithms
 
-This document specifies the target architecture. The current PR implements only
-mpv temporal convolution and its settings lifecycle; nothing here is evidence of a
-motion-compensation, restoration or native-platform engine. Confidence is high in
-the timing architecture, moderate in the chosen synthesis/restoration approach, and
-unknown for per-device throughput and TV superiority until
+This document specifies the target architecture. The current PR implements mpv temporal convolution and an experimental FFmpeg
+`minterpolate` adapter with settings, scoped startup and generated-rate negotiation.
+This narrow adapter is not the proposed native pipeline and is not evidence of
+qualified motion compensation, restoration or native-platform engines. Confidence
+is high in the timing architecture, moderate in the synthesis/restoration approach,
+and unknown for per-device throughput and TV superiority until
 [qualification](qualification.md).
+
+## Current experimental FFmpeg adapter
+
+The MCI option appends a uniquely labelled mpv `lavfi` video filter that invokes
+FFmpeg `minterpolate` on decoded pictures. FFmpeg provides block-based motion
+estimation/compensation, scene-change detection and output-rate configuration.
+Fast/Balanced/High select motion-search cost; they do not provide a strength dial or
+scene-confidence policy equivalent to the target architecture. The filter may cause
+CPU pixel-format conversion or hardware-decoder readback, and its HDR/Dolby Vision
+behavior, seeking, live-stream performance and A/V timing are not qualified. Missing
+or rejected filters fall back to temporal blending; runtime overload is not yet
+measured or automatically governed. Treat all MCI use as experimental until the
+qualification protocol passes on the shipped artifacts and devices.
 
 ## 1. Pipeline and ownership
 
@@ -191,7 +205,8 @@ session. Resume positions, watched markers and chapters remain source-media time
 **Portable flow:** deterministic multiscale bidirectional block matching, subpixel
 refinement, forward/backward consistency, occlusion masks, edge-aware flow upsampling
 and two-sided motion-compensated reconstruction. Implement a CPU oracle and GPU
-kernels; use FFmpeg `minterpolate` only as a comparison/reference, not an assumed
+kernels; use the current FFmpeg `minterpolate` adapter as an integration baseline
+and comparison, not as a replacement for the bounded native engine or an assumed
 real-time 4K engine. A cheap/global-motion-only engine is not sufficient for layered
 motion and must never be passed off as full reconstruction.
 

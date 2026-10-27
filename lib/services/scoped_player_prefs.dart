@@ -83,6 +83,30 @@ abstract final class ScopedPlayerPrefs {
     (kernel) => kernel.name,
   );
 
+  static final motionClarityEngine = ScopedPlayerPref<MotionClarityEngine>._(
+    'motion_clarity_engine',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityEngine,
+    _decodeMotionClarityEngine,
+    (engine) => engine.name,
+  );
+
+  static final motionClarityOutputRate = ScopedPlayerPref<MotionClarityOutputRate>._(
+    'motion_clarity_output_rate',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityOutputRate,
+    _decodeMotionClarityOutputRate,
+    (rate) => rate.name,
+  );
+
+  static final motionClarityMciQuality = ScopedPlayerPref<MotionClarityMciQuality>._(
+    'motion_clarity_mci_quality',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityMciQuality,
+    _decodeMotionClarityMciQuality,
+    (quality) => quality.name,
+  );
+
   static final motionClarityThreshold = ScopedPlayerPref<int>._(
     'motion_clarity_threshold_percent',
     SettingsService.motionClarityScope,
@@ -265,4 +289,13 @@ abstract final class ScopedPlayerPrefs {
 
   static int? _decodeMotionClarityThreshold(Object? raw) =>
       raw is int ? raw.clamp(0, 10).toInt() : null;
+
+  static MotionClarityEngine? _decodeMotionClarityEngine(Object? raw) =>
+      raw is String ? MotionClarityEngine.values.asNameMap()[raw] : null;
+
+  static MotionClarityOutputRate? _decodeMotionClarityOutputRate(Object? raw) =>
+      raw is String ? MotionClarityOutputRate.values.asNameMap()[raw] : null;
+
+  static MotionClarityMciQuality? _decodeMotionClarityMciQuality(Object? raw) =>
+      raw is String ? MotionClarityMciQuality.values.asNameMap()[raw] : null;
 }

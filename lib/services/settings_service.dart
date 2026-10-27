@@ -922,6 +922,21 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: 1,
     transform: (value) => value.clamp(0, 10).toInt(),
   );
+  static const motionClarityEngine = EnumPref<MotionClarityEngine>(
+    'motion_clarity_engine',
+    values: MotionClarityEngine.values,
+    defaultValue: MotionClarityEngine.temporalBlend,
+  );
+  static const motionClarityOutputRate = EnumPref<MotionClarityOutputRate>(
+    'motion_clarity_output_rate',
+    values: MotionClarityOutputRate.values,
+    defaultValue: MotionClarityOutputRate.currentDisplay,
+  );
+  static const motionClarityMciQuality = EnumPref<MotionClarityMciQuality>(
+    'motion_clarity_mci_quality',
+    values: MotionClarityMciQuality.values,
+    defaultValue: MotionClarityMciQuality.balanced,
+  );
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
@@ -1194,7 +1209,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
   static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
-  static final motionClarityScope = PlayerSettingScopePref('motion_clarity_scope', [motionClarityPreset]);
+  static final motionClarityScope = PlayerSettingScopePref('motion_clarity_scope', [
+    motionClarityPreset,
+    motionClarityKernel,
+    motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
+  ]);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
@@ -1848,6 +1870,9 @@ class SettingsService extends BaseSharedPreferencesService {
     motionClarityPreset,
     motionClarityKernel,
     motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
     motionClarityScope,
     tunneledPlayback,
     dvConversionMode,

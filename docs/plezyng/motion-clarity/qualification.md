@@ -100,6 +100,18 @@ deterministic scheduling and no unexplained quality regressions.
 
 At each advertised resolution/format/output/engine tuple:
 
+For the currently implemented experimental FFmpeg path, record the exact mpv and
+FFmpeg build hashes and prove `lavfi`/`minterpolate` availability on every shipped
+artifact. Characterize 23.976/24, 25, 29.97/30, 50, 59.94/60 source rates against
+each selectable 48–144 fps target the device can actually request. Exercise hard
+cuts, flashes, dissolves, occlusion, pans, animation holds, subtitles, HDR metadata,
+seek, pause/resume, audio passthrough and live retunes. Record CPU, GPU,
+hardware-decoder readback, peak memory, p50/p95/p99 processing time, dropped and
+repeated frames, A/V skew, filter activation/fallback reason and actual display
+mode. The current adapter has no automatic overload governor, so missed deadlines
+must be reported as a failure, never hidden by the requested target FPS. A successful
+filter insertion is not a qualification result.
+
 - Ten-minute nominal run after warmup: zero unexplained missed presentation slots
   caused by the motion pipeline. Explicit cut/source repeats are separately counted.
 - Two-hour steady playback plus load transitions: no monotonic memory growth,

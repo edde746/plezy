@@ -9,7 +9,13 @@ part of '../../video_player_screen.dart';
 /// the display once the first frame proves what is being presented, and
 /// resumes. ExoPlayer keeps its metadata-driven pre-open switch.
 class _FrameRateStartupPlan {
-  _FrameRateStartupPlan({required this.fps, this.width = 0, this.height = 0});
+  _FrameRateStartupPlan({
+    required this.fps,
+    this.width = 0,
+    this.height = 0,
+    this.suppressContentRateMatching = false,
+    this.motionCompensatedOutputFps,
+  });
 
   /// The ExoPlayer fps to rate-match; null when refresh-rate matching is off
   /// or the rate is unknown (a resolution-only switch passes 0 natively,
@@ -22,6 +28,14 @@ class _FrameRateStartupPlan {
   /// cadence (0 = unknown).
   final int width;
   final int height;
+
+  /// Keep source cadence from overriding the generated MCI cadence.
+  final bool suppressContentRateMatching;
+
+  /// An explicit generated cadence to negotiate with Android, if selected.
+  /// Null means keep the current display cadence.
+  final double? motionCompensatedOutputFps;
+
   bool preOpenExoHandled = false;
   bool needsPostOpenSwitch = false;
 
@@ -405,15 +419,22 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     Player currentPlayer,
     SettingsService settingsService, {
     required bool hasVideoUrl,
+    bool suppressContentRateMatching = false,
+    double? motionCompensatedOutputFps,
   }) {
     // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
     // the two Android backends (true = the mpv core).
     final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
     if (!isAndroidMpv && !PlatformDetector.isAppleTV()) return null;
-    final plan = _FrameRateStartupPlan(fps: null);
+    final plan = _FrameRateStartupPlan(
+      fps: null,
+      suppressContentRateMatching: suppressContentRateMatching,
+      motionCompensatedOutputFps: motionCompensatedOutputFps,
+    );
     final matchingEnabled =
-        settingsService.read(SettingsService.matchContentFrameRate) ||
-        settingsService.read(SettingsService.matchContentResolution);
+        (!suppressContentRateMatching && settingsService.read(SettingsService.matchContentFrameRate)) ||
+        settingsService.read(SettingsService.matchContentResolution) ||
+        motionCompensatedOutputFps != null;
     // Apple TV matching is a system setting (AVDisplayManager); the gate
     // only exists to keep playback from running through the HDMI blank.
     plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
@@ -436,17 +457,33 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required Future<void> Function() ensureAudioFocus,
     int preKnownWidth = 0,
     int preKnownHeight = 0,
+    bool suppressContentRateMatching = false,
+    double? motionCompensatedOutputFps,
   }) async {
-    final firstFramePlan = _firstFrameStartupPlan(currentPlayer, settingsService, hasVideoUrl: hasVideoUrl);
+    final firstFramePlan = _firstFrameStartupPlan(
+      currentPlayer,
+      settingsService,
+      hasVideoUrl: hasVideoUrl,
+      suppressContentRateMatching: suppressContentRateMatching,
+      motionCompensatedOutputFps: motionCompensatedOutputFps,
+    );
     if (firstFramePlan != null) return firstFramePlan;
 
     // Rate-match only when the user opted in; the plan's fps drives the
     // switch calls, so a resolution-only open passes 0 to the native side.
-    final rateMatchFps = settingsService.read(SettingsService.matchContentFrameRate) ? preKnownFps : null;
-    final plan = _FrameRateStartupPlan(fps: rateMatchFps, width: preKnownWidth, height: preKnownHeight);
+    final rateMatchFps = !suppressContentRateMatching && settingsService.read(SettingsService.matchContentFrameRate)
+        ? preKnownFps
+        : null;
+    final plan = _FrameRateStartupPlan(
+      fps: rateMatchFps,
+      width: preKnownWidth,
+      height: preKnownHeight,
+      suppressContentRateMatching: suppressContentRateMatching,
+      motionCompensatedOutputFps: motionCompensatedOutputFps,
+    );
     final willAutoSwitch = _shouldAutoSwitchDisplayModeForOpen(
       settingsService,
-      fps: preKnownFps,
+      fps: suppressContentRateMatching ? null : preKnownFps,
       width: preKnownWidth,
       height: preKnownHeight,
     );
@@ -605,7 +642,21 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           await holdResumedClock();
           final measurement = await _measurePresentedFormat(currentPlayer);
           if (!isCurrent()) return;
-          final target = _displayTargetFor(settingsService, measurement.output);
+          final target = plan.motionCompensatedOutputFps != null
+              ? (
+                  fps: plan.motionCompensatedOutputFps,
+                  width: settingsService.read(SettingsService.matchContentResolution) && measurement.output.hasDimensions
+                      ? measurement.output.width
+                      : 0,
+                  height: settingsService.read(SettingsService.matchContentResolution) && measurement.output.hasDimensions
+                      ? measurement.output.height
+                      : 0,
+                )
+              : _displayTargetFor(
+                  settingsService,
+                  measurement.output,
+                  suppressContentRateMatching: plan.suppressContentRateMatching,
+                );
           var switched = false;
           if (target != null) {
             switched = await _switchDisplayToTarget(
@@ -1255,6 +1306,16 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     void Function(bool available)? onMediaAvailabilityChanged,
   }) async {
     final displayCriteria = result.mediaInfo?.displayCriteria;
+    final motionCompensatedOutputRate =
+        ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, metadata);
+    final motionCompensatedRequested =
+        currentPlayer.playerType == 'mpv' &&
+        ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, metadata).interpolationEnabled &&
+        ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, metadata) ==
+            MotionClarityEngine.motionCompensated;
+    final motionCompensatedOutputFps = motionCompensatedRequested
+        ? motionCompensatedOutputRate.resolve(null)
+        : null;
 
     final frameRatePlan = await _prepareFrameRateForOpen(
       currentPlayer: currentPlayer,
@@ -1265,6 +1326,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       hasVideoUrl: result.videoUrl != null,
       isTranscoding: result.isTranscoding,
       ensureAudioFocus: ensureAudioFocus,
+      suppressContentRateMatching: motionCompensatedRequested,
+      motionCompensatedOutputFps: motionCompensatedOutputFps,
     );
     if (frameRatePlan == null || (staleGuard != null && !staleGuard())) return false;
 
@@ -1293,6 +1356,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, metadata),
           thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, metadata),
           beforeSourceOpen: true,
+          engine: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, metadata),
+          outputRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, metadata),
+          mciQuality: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, metadata),
+          sourceFps: result.isTranscoding ? null : displayCriteria?.fps,
         );
         if (!motionResult.isSupported && motionResult.reason != null) {
           appLogger.d('PlaybackOpen: motion clarity unavailable for this output: ${motionResult.reason}');

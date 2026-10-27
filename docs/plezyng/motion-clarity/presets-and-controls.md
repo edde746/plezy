@@ -1,10 +1,11 @@
 # Presets, controls and user experience
 
 The full-feature values below are **proposed tuning seeds**, not measured best
-values. The runtime currently exposes mpv's temporal-convolution subset, documented
-in [the implementation status](README.md#current-implementation-boundary); it does
-not use the continuous strength values in this design table. Version tuning only
-using [qualification](qualification.md). The seed fixture is
+values. The runtime exposes mpv temporal convolution and an experimental FFmpeg
+`minterpolate` path, documented in
+[the implementation status](README.md#current-implementation-boundary); it does not
+use the continuous strength values in this design table. Version tuning only using
+[qualification](qualification.md). The seed fixture is
 [presets.v1.json](presets.v1.json). Confidence is unknown until tested.
 
 ## 1. Entry points and default behavior
@@ -50,16 +51,17 @@ its effective state must clearly remain Original/Limited if it cannot run.
 
 These are kernel choices over mpv's temporal axis, not optical-flow strength values,
 not a percentage of synthetic frames and not the complete target presets above.
-The setting follows mpv's detected display clock; it does not choose or switch a
-30/60/120/144 Hz display mode. Higher-rate modes, frame presentation and visual
-quality need separate platform and device qualification. The displayed Hz value
-is renderer-reported, not a measurement of panel scanout. A threshold of 0 maps
-to mpv's documented always-interpolate sentinel. The in-player sheet offers a
-quick A/B toggle that disables only the temporal filter; it is not a split-screen
-comparison and does not change the selected or saved profile. With audio
-passthrough, display-vdrop preserves the encoded audio path, but tiny refresh
-mismatches can still periodically interrupt blending; the sheet explains this
-and offers the continuous threshold setting.
+Temporal blend follows mpv's display clock. MCI chooses current-display cadence or
+an explicit 48–144 fps target; Android mpv uses the generated rate for its first-frame
+mode request, while other routes may keep the display's existing mode. The displayed
+Hz is renderer-reported, not measured panel scanout. MCI's Fast/Balanced/High
+choices alter FFmpeg block-search effort and variable-block refinement; higher
+effort costs more CPU and does not dial the soap-opera effect up or down. MCI output
+rate and quality remain unqualified. A threshold of 0 maps to mpv's documented
+always-interpolate sentinel and applies only to temporal blend. The in-player sheet
+offers quick A/B by bypassing the active motion filter; it is not split-screen and
+does not change the saved profile. With audio passthrough, display-vdrop preserves
+the encoded audio path, but refresh mismatches can still cause uneven video cadence.
 
 ## 2. Preset definitions
 

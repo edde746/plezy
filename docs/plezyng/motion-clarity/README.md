@@ -1,6 +1,6 @@
 # Motion & clarity: runtime and implementation roadmap
 
-Status: **mpv temporal-interpolation controls are implemented; motion-compensated generation, blur restoration, native TV processing and hardware qualification remain unimplemented**.
+Status: **mpv temporal blending and an experimental FFmpeg motion-compensated path are implemented; source-blur restoration, native TV processing and hardware qualification remain unimplemented**.
 
 The original repository inventory was prepared against PlezyNG `main` at
 `af547078ff70df271b04fd35474b8caf7619fa6d`. The implementation changes were
@@ -17,42 +17,50 @@ with TV interpolation off. The player must actually deliver the processed frames
 at the negotiated output rate, retain audio/subtitle synchronization and picture
 format, and preserve ordinary playback whenever processing is unavailable.
 
-This PR now adds an optional mpv temporal-blending feature. It exposes Original,
-Cinema, Balanced, Smooth, Animation, Sports and Custom profiles in Playback Settings
-and the in-player settings sheet. Custom mode exposes the temporal kernel and an
-interpolation threshold. The profile, custom temporal kernel and threshold use the
-same global, library or title scope. The in-player sheet also provides a quick A/B
-toggle that bypasses only temporal blending while keeping display synchronization,
-spatial scaling and audio settings unchanged. The media and live-stream open paths resolve each item's scoped profile before
-opening its decoder. Original remains the default.
+This PR adds two optional mpv processing paths. It exposes Original, Cinema,
+Balanced, Smooth, Animation, Sports and Custom profiles in Playback Settings and
+the in-player settings sheet. Temporal blend exposes a temporal kernel and
+interpolation threshold. Experimental motion compensation uses FFmpeg
+`minterpolate`, with a generated-rate choice and Fast/Balanced/High motion-search
+effort. The settings share one global, library or title scope. VOD and live-stream
+startup resolve those values before opening the decoder. The in-player sheet has
+a quick A/B control that bypasses the active motion filter while keeping the
+selected display mode, spatial scaling and audio settings in place. Original
+remains the default.
 
-When the active mpv output exposes its GPU render stage (`gpu`, `gpu-next` or
-`libmpv`), the feature requests display synchronization (`display-resample` with
-decoded audio, `display-vdrop` with bitstream passthrough), mpv interpolation, a
-temporal kernel, a threshold and bounded decoder reference surfaces. A threshold of
-0 maps to mpv's always-interpolate sentinel. The capability check follows the active
-player and renderer, including libmpv, while native-TV media routes remain
-unavailable. Successful property writes indicate configured options only; actual
-presentation rate and visual quality remain unmeasured. Spatial upscaling remains
-independent in the existing Shader presets.
+Temporal blend requests display synchronization (`display-resample` with decoded
+audio, `display-vdrop` with bitstream passthrough), mpv interpolation, a temporal
+kernel, a threshold and bounded decoder reference surfaces on outputs with a GPU
+render stage (`gpu`, `gpu-next`, `libmpv`). Threshold 0 maps to mpv's documented
+always-interpolate sentinel. Motion compensation installs a labelled mpv `lavfi`
+filter for FFmpeg `minterpolate`; if the filter is absent or rejects its options,
+the service falls back to temporal blend and reports why. Android mpv suppresses
+source-rate switching for generated video and can request the selected generated
+rate instead; current-display mode keeps the active cadence. The operating system
+may decline an explicit rate. Existing Shader presets remain responsible for spatial
+upscaling, after the video filter. These are accepted requests, not measured
+presentation or quality results.
 
 ## Product target and runtime boundary
 
 ### Current implementation boundary
 
-The runtime uses mpv's temporal convolution to blend adjacent decoded frames at
-display-synchronous presentation times. This can reduce cadence judder and frame
-pacing mismatch. It is not motion-compensated optical flow: it cannot reliably move
-objects to their intermediate positions, and stronger temporal kernels can create
-softness, ghosting or a more video-like look. The renderer and display determine
-whether the requested refresh cadence is actually presented.
+Temporal blend uses mpv temporal convolution to combine adjacent decoded frames at
+display-synchronous times. It can soften or double moving edges and is not optical
+flow. The experimental motion-compensated path uses FFmpeg's block-based motion
+estimation and compensation to synthesize intermediate frames at a selected rate.
+It is CPU-intensive, can warp or ghost objects around occlusions and cuts, and its
+search-effort tiers change computation cost rather than interpolation strength.
+Neither path has automatic device benchmarking or a soap-opera-free guarantee.
+The operating system and renderer determine whether generated cadence is presented.
 
 This PR does not remove OLED sample-and-hold persistence blur or camera/exposure
-blur already recorded in a source. It does not add RIFE/NAFNet models, new native
-decoded-frame adapters, Dolby Vision processing, or webOS/Tizen frame access. No
-TV superiority, image-quality, frame-rate, HDR, battery or performance result has
-been qualified. The broader architecture and gates below remain the plan for that
-work.
+blur already recorded in a source. It does not add neural RIFE interpolation,
+NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
+adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
+search-effort choices are manual and unqualified. No TV superiority, image-quality,
+frame-rate, HDR, battery or performance result has been established. The broader
+architecture and gates below remain the plan for that work.
 
 The table below describes the broader product target, not the feature coverage
 of this PR.

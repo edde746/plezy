@@ -3,7 +3,7 @@ import '../models/motion_clarity.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 
-/// Result of requesting mpv's display-synchronous temporal interpolation.
+/// Result of requesting one of PlezyNG's mpv motion-processing paths.
 ///
 /// A successful property write proves configuration was accepted; it does not
 /// prove that every output frame was presented on time or that a display mode
@@ -14,6 +14,9 @@ class MotionClarityApplyResult {
   final bool requiresSourceReload;
   final bool isComparisonBypass;
   final bool audioPassthroughActive;
+  final MotionClarityEngine effectiveEngine;
+  final MotionClarityMciQuality effectiveMciQuality;
+  final double? targetFps;
   final String? outputDriver;
   final double? displayFps;
   final String? reason;
@@ -24,18 +27,21 @@ class MotionClarityApplyResult {
     this.requiresSourceReload = false,
     this.isComparisonBypass = false,
     this.audioPassthroughActive = false,
+    this.effectiveEngine = MotionClarityEngine.temporalBlend,
+    this.effectiveMciQuality = MotionClarityMciQuality.balanced,
+    this.targetFps,
     this.outputDriver,
     this.displayFps,
     this.reason,
   });
 }
 
-/// Configures the mpv renderer's built-in temporal filter on one player.
+/// Configures motion processing on one mpv player.
 ///
-/// The service never copies video frames through Flutter. Interpolation is
-/// available only on mpv outputs that expose the GPU render stage. The engine
-/// performs temporal convolution; it does not provide optical-flow motion
-/// compensation.
+/// The service never copies video frames through Flutter. Temporal blending
+/// uses mpv's GPU render stage. Motion-compensated synthesis uses mpv's video
+/// filter chain and FFmpeg libavfilter; build support and real-time performance
+/// vary by platform and source.
 class MotionClarityService {
   static final Expando<MotionClarityService> _instances = Expando<MotionClarityService>();
 
@@ -43,6 +49,7 @@ class MotionClarityService {
       _instances[player] ??= MotionClarityService._(player);
 
   static const _supportedOutputs = {'gpu', 'gpu-next', 'libmpv'};
+  static const _mciFilterLabel = 'plezyng-motion-clarity';
   static const _trackedOptions = [
     'video-sync',
     'interpolation',
@@ -58,6 +65,12 @@ class MotionClarityService {
   bool _sourceHasOpened = false;
   bool _requiresSourceReload = false;
   bool _comparisonBypass = false;
+  bool _mciFilterAdded = false;
+  String? _mciFilterSpec;
+  MotionClarityEngine _currentEngine = MotionClarityEngine.temporalBlend;
+  MotionClarityOutputRate _currentOutputRate = MotionClarityOutputRate.currentDisplay;
+  double? _currentTargetFps;
+  MotionClarityMciQuality _currentMciQuality = MotionClarityMciQuality.balanced;
   MotionClarityPreset _currentPreset = MotionClarityPreset.original;
   MotionTemporalKernel _currentKernel = MotionTemporalKernel.linear;
   int _currentThresholdPercent = 1;
@@ -67,6 +80,7 @@ class MotionClarityService {
   MotionClarityPreset get currentPreset => _currentPreset;
   MotionTemporalKernel get currentKernel => _currentKernel;
   int get currentThresholdPercent => _currentThresholdPercent;
+  MotionClarityMciQuality get currentMciQuality => _currentMciQuality;
 
   /// Call once the player has opened a source, before applying per-item
   /// overrides. Decoder surface pools are allocated at source open.
@@ -86,7 +100,10 @@ class MotionClarityService {
     final driver = await _readOutputDriver();
     final fps = double.tryParse((await _readProperty('display-fps') ?? '').trim());
     final passthroughActive = _player.audioPassthroughActive;
-    if (driver != null && driver.isNotEmpty && !_supportedOutputs.contains(driver)) {
+    if (_currentEngine == MotionClarityEngine.temporalBlend &&
+        driver != null &&
+        driver.isNotEmpty &&
+        !_supportedOutputs.contains(driver)) {
       return MotionClarityApplyResult(
         isSupported: false,
         isConfigured: false,
@@ -103,6 +120,9 @@ class MotionClarityService {
       requiresSourceReload: _requiresSourceReload,
       isComparisonBypass: _comparisonBypass,
       audioPassthroughActive: passthroughActive,
+      effectiveEngine: _currentEngine,
+      effectiveMciQuality: _currentMciQuality,
+      targetFps: _currentTargetFps,
       outputDriver: driver,
       displayFps: fps,
       reason: driver == null || driver.isEmpty
@@ -116,6 +136,10 @@ class MotionClarityService {
     required MotionTemporalKernel kernel,
     required int thresholdPercent,
     required bool beforeSourceOpen,
+    MotionClarityEngine engine = MotionClarityEngine.temporalBlend,
+    MotionClarityOutputRate outputRate = MotionClarityOutputRate.currentDisplay,
+    MotionClarityMciQuality mciQuality = MotionClarityMciQuality.balanced,
+    double? sourceFps,
   }) async {
     if (!_eligiblePlayer) {
       final result = MotionClarityApplyResult(
@@ -130,9 +154,14 @@ class MotionClarityService {
     final driver = await _readOutputDriver();
     final fps = double.tryParse((await _readProperty('display-fps') ?? '').trim());
     final passthroughActive = _player.audioPassthroughActive;
-    if (driver != null && driver.isNotEmpty && !_supportedOutputs.contains(driver)) {
+    if (engine == MotionClarityEngine.temporalBlend &&
+        driver != null &&
+        driver.isNotEmpty &&
+        !_supportedOutputs.contains(driver)) {
       if (_currentPreset.interpolationEnabled) await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _currentEngine = MotionClarityEngine.temporalBlend;
+      _currentTargetFps = null;
       _comparisonBypass = false;
       _requiresSourceReload = false;
       final result = MotionClarityApplyResult(
@@ -149,6 +178,10 @@ class MotionClarityService {
     if (!preset.interpolationEnabled) {
       await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _currentEngine = engine;
+      _currentOutputRate = outputRate;
+      _currentMciQuality = mciQuality;
+      _currentTargetFps = null;
       _comparisonBypass = false;
       _requiresSourceReload = false;
       _currentKernel = kernel;
@@ -163,6 +196,24 @@ class MotionClarityService {
       return result;
     }
 
+    if (engine == MotionClarityEngine.motionCompensated) {
+      final resolvedSourceFps = sourceFps ??
+          (!beforeSourceOpen ? _readFps(await _readProperty('container-fps')) : null);
+      return _configureMotionCompensated(
+        preset: preset,
+        kernel: kernel,
+        thresholdPercent: thresholdPercent,
+        outputRate: outputRate,
+        mciQuality: mciQuality,
+        sourceFps: resolvedSourceFps,
+        beforeSourceOpen: beforeSourceOpen,
+        driver: driver,
+        displayFps: fps,
+        passthroughActive: passthroughActive,
+      );
+    }
+
+    await _removeMciFilter();
     final effectiveKernel = preset == MotionClarityPreset.custom ? kernel : preset.defaultKernel;
     final effectiveThreshold = preset == MotionClarityPreset.custom
         ? thresholdPercent.clamp(0, 10).toInt()
@@ -199,6 +250,8 @@ class MotionClarityService {
       appLogger.w('MotionClarityService: could not configure temporal interpolation', error: error, stackTrace: stackTrace);
       await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _currentEngine = MotionClarityEngine.temporalBlend;
+      _currentTargetFps = null;
       _comparisonBypass = false;
       _requiresSourceReload = false;
       final result = MotionClarityApplyResult(
@@ -214,6 +267,10 @@ class MotionClarityService {
     }
 
     _currentPreset = preset;
+    _currentEngine = MotionClarityEngine.temporalBlend;
+    _currentOutputRate = outputRate;
+    _currentMciQuality = mciQuality;
+    _currentTargetFps = null;
     _comparisonBypass = false;
     if (beforeSourceOpen) {
       _requiresSourceReload = false;
@@ -251,7 +308,18 @@ class MotionClarityService {
     }
 
     try {
-      await _player.setProperty('interpolation', bypass ? 'no' : 'yes');
+      if (_currentEngine == MotionClarityEngine.motionCompensated) {
+        if (bypass) {
+          await _removeMciFilter(throwOnError: true);
+        } else {
+          final spec = _mciFilterSpec;
+          if (spec == null) throw StateError('No motion-compensation filter is configured');
+          await _player.command(['vf', 'add', spec]);
+          _mciFilterAdded = true;
+        }
+      } else {
+        await _player.setProperty('interpolation', bypass ? 'no' : 'yes');
+      }
       _comparisonBypass = bypass;
     } catch (error, stackTrace) {
       appLogger.w('MotionClarityService: could not switch comparison mode', error: error, stackTrace: stackTrace);
@@ -261,6 +329,9 @@ class MotionClarityService {
         requiresSourceReload: current.requiresSourceReload,
         isComparisonBypass: _comparisonBypass,
         audioPassthroughActive: current.audioPassthroughActive,
+        effectiveEngine: current.effectiveEngine,
+        effectiveMciQuality: current.effectiveMciQuality,
+        targetFps: current.targetFps,
         outputDriver: current.outputDriver,
         displayFps: current.displayFps,
         reason: 'The mpv renderer refused the comparison toggle.',
@@ -273,10 +344,166 @@ class MotionClarityService {
       requiresSourceReload: current.requiresSourceReload,
       isComparisonBypass: _comparisonBypass,
       audioPassthroughActive: current.audioPassthroughActive,
+      effectiveEngine: current.effectiveEngine,
+      effectiveMciQuality: current.effectiveMciQuality,
+      targetFps: current.targetFps,
       outputDriver: current.outputDriver,
       displayFps: current.displayFps,
       reason: current.reason,
     );
+  }
+
+  Future<MotionClarityApplyResult> _configureMotionCompensated({
+    required MotionClarityPreset preset,
+    required MotionTemporalKernel kernel,
+    required int thresholdPercent,
+    required MotionClarityOutputRate outputRate,
+    required MotionClarityMciQuality mciQuality,
+    required double? sourceFps,
+    required bool beforeSourceOpen,
+    required String? driver,
+    required double? displayFps,
+    required bool passthroughActive,
+  }) async {
+    final targetFps = outputRate.resolve(displayFps);
+    if (targetFps == null || !targetFps.isFinite || targetFps < 48) {
+      return _fallbackToTemporal(
+        preset: preset,
+        kernel: kernel,
+        thresholdPercent: thresholdPercent,
+        outputRate: outputRate,
+        beforeSourceOpen: beforeSourceOpen,
+        driver: driver,
+        displayFps: displayFps,
+        passthroughActive: passthroughActive,
+        reason: 'A display rate of at least 48 Hz is required for motion compensation.',
+      );
+    }
+    if (sourceFps != null && sourceFps.isFinite && sourceFps > targetFps + 0.01) {
+      return _fallbackToTemporal(
+        preset: preset,
+        kernel: kernel,
+        thresholdPercent: thresholdPercent,
+        outputRate: outputRate,
+        beforeSourceOpen: beforeSourceOpen,
+        driver: driver,
+        displayFps: displayFps,
+        passthroughActive: passthroughActive,
+        reason: 'The selected output rate is below the source rate.',
+      );
+    }
+
+    final rateText = targetFps.toStringAsFixed(3);
+    final filterSpec =
+        '@$_mciFilterLabel:lavfi=[minterpolate=fps=$rateText:mi_mode=mci:${mciQuality.ffmpegOptions}:scd=fdiff:scd_threshold=10]';
+    final needsReload = !beforeSourceOpen &&
+        _sourceHasOpened &&
+        (!_currentPreset.interpolationEnabled ||
+            _currentEngine != MotionClarityEngine.motionCompensated ||
+            _currentTargetFps != targetFps ||
+            _currentMciQuality != mciQuality);
+
+    try {
+      await _removeMciFilter();
+      await _player.setProperty('video-sync', passthroughActive ? 'display-vdrop' : 'display-resample');
+      await _player.setProperty('interpolation', 'no');
+      // Bidirectional motion search keeps reference frames; this reserve is
+      // bounded and must be configured before the decoder opens.
+      await _player.setProperty('hwdec-extra-frames', '8');
+      await _player.command(['vf', 'add', filterSpec]);
+      _mciFilterAdded = true;
+      _mciFilterSpec = filterSpec;
+    } catch (error, stackTrace) {
+      appLogger.w('MotionClarityService: minterpolate unavailable; falling back to temporal blending', error: error, stackTrace: stackTrace);
+      await _removeMciFilter();
+      await _restoreOriginalValues();
+      return _fallbackToTemporal(
+        preset: preset,
+        kernel: kernel,
+        thresholdPercent: thresholdPercent,
+        outputRate: outputRate,
+        beforeSourceOpen: beforeSourceOpen,
+        driver: driver,
+        displayFps: displayFps,
+        passthroughActive: passthroughActive,
+        reason: 'Motion-compensated processing is unavailable in this mpv build.',
+      );
+    }
+
+    _currentPreset = preset;
+    _currentEngine = MotionClarityEngine.motionCompensated;
+    _currentOutputRate = outputRate;
+    _currentMciQuality = mciQuality;
+    _currentTargetFps = targetFps;
+    _currentKernel = kernel;
+    _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
+    _comparisonBypass = false;
+    _requiresSourceReload = beforeSourceOpen ? false : needsReload;
+    return MotionClarityApplyResult(
+      isSupported: true,
+      isConfigured: true,
+      requiresSourceReload: _requiresSourceReload,
+      effectiveEngine: MotionClarityEngine.motionCompensated,
+      effectiveMciQuality: mciQuality,
+      targetFps: targetFps,
+      audioPassthroughActive: passthroughActive,
+      outputDriver: driver,
+      displayFps: displayFps,
+      reason: 'Experimental FFmpeg motion compensation is active; monitor playback load and artifacts.',
+    );
+  }
+
+  Future<MotionClarityApplyResult> _fallbackToTemporal({
+    required MotionClarityPreset preset,
+    required MotionTemporalKernel kernel,
+    required int thresholdPercent,
+    required MotionClarityOutputRate outputRate,
+    required bool beforeSourceOpen,
+    required String? driver,
+    required double? displayFps,
+    required bool passthroughActive,
+    required String reason,
+  }) async {
+    final result = await configure(
+      preset: preset,
+      kernel: kernel,
+      thresholdPercent: thresholdPercent,
+      beforeSourceOpen: beforeSourceOpen,
+      engine: MotionClarityEngine.temporalBlend,
+      outputRate: outputRate,
+    );
+    return MotionClarityApplyResult(
+      isSupported: result.isSupported,
+      isConfigured: result.isConfigured,
+      requiresSourceReload: result.requiresSourceReload,
+      isComparisonBypass: result.isComparisonBypass,
+      audioPassthroughActive: passthroughActive,
+      effectiveEngine: result.effectiveEngine,
+      outputDriver: driver,
+      displayFps: displayFps,
+      reason: reason + ' ' + (result.reason ?? 'Temporal blending is active.'),
+    );
+  }
+
+  void _resetActiveProcessing() {
+    _currentPreset = MotionClarityPreset.original;
+    _currentEngine = MotionClarityEngine.temporalBlend;
+    _currentOutputRate = MotionClarityOutputRate.currentDisplay;
+    _currentMciQuality = MotionClarityMciQuality.balanced;
+    _currentTargetFps = null;
+    _comparisonBypass = false;
+    _requiresSourceReload = false;
+  }
+
+  Future<void> _removeMciFilter({bool throwOnError = false}) async {
+    if (!_mciFilterAdded) return;
+    try {
+      await _player.command(['vf', 'remove', '@$_mciFilterLabel']);
+      _mciFilterAdded = false;
+    } catch (error, stackTrace) {
+      appLogger.d('MotionClarityService: could not remove minterpolate filter', error: error, stackTrace: stackTrace);
+      if (throwOnError) Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   bool get _eligiblePlayer => _player.playerType == 'mpv' && !PlatformDetector.usesNativeTvMedia();
@@ -290,6 +517,7 @@ class MotionClarityService {
   }
 
   Future<void> _restoreOriginalValues() async {
+    await _removeMciFilter();
     for (final name in _trackedOptions.reversed) {
       final value = _originalValues[name];
       if (value == null) continue;
@@ -299,6 +527,11 @@ class MotionClarityService {
         appLogger.d('MotionClarityService: could not restore $name', error: error, stackTrace: stackTrace);
       }
     }
+  }
+
+  static double? _readFps(String? raw) {
+    final fps = raw == null ? null : double.tryParse(raw.trim());
+    return fps != null && fps.isFinite && fps > 0 ? fps : null;
   }
 
   Future<String?> _readOutputDriver() async {

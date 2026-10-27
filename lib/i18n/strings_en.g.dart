@@ -6355,28 +6355,73 @@ class Translations$videoSettings$en {
 	/// en: 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.'
 	String get motionClarityThresholdDescription => 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.';
 
-	/// en: 'The current video output does not expose mpv\'s GPU interpolation stage.'
-	String get motionClarityOutputUnsupported => 'The current video output does not expose mpv\'s GPU interpolation stage.';
+	/// en: 'This playback route does not expose a supported motion-processing path.'
+	String get motionClarityOutputUnsupported => 'This playback route does not expose a supported motion-processing path.';
 
-	/// en: 'This decoder was opened without interpolation buffers. Restart playback to use the full temporal filter.'
-	String get motionClarityRestartRequired => 'This decoder was opened without interpolation buffers. Restart playback to use the full temporal filter.';
+	/// en: 'Restart playback to allocate the frame buffers required by the selected processing mode.'
+	String get motionClarityRestartRequired => 'Restart playback to allocate the frame buffers required by the selected processing mode.';
 
-	/// en: 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.'
-	String get motionClarityConfigured => 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.';
+	/// en: 'Processing options were accepted. Presented frame rate depends on the active renderer and display.'
+	String get motionClarityConfigured => 'Processing options were accepted. Presented frame rate depends on the active renderer and display.';
 	/// en: 'Renderer-reported display rate'
 	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
-	/// en: 'Audio passthrough uses a different sync mode; very small refresh mismatches can periodically interrupt blending. Set threshold to 0 to keep it active, or use decoded audio.'
-	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different sync mode; very small refresh mismatches can periodically interrupt blending. Set threshold to 0 to keep it active, or use decoded audio.';
-	/// en: 'Compare without temporal blending'
-	String get motionClarityCompareWithoutBlending => 'Compare without temporal blending';
-	/// en: 'Return to temporal blending'
-	String get motionClarityReturnToBlending => 'Return to temporal blending';
-	/// en: 'Temporarily bypass blending while keeping display synchronization, scaling and audio settings unchanged.'
-	String get motionClarityCompareDescription => 'Temporarily bypass blending while keeping display synchronization, scaling and audio settings unchanged.';
+	/// en: 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.'
+	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.';
 	/// en: 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.'
 	String get motionClarityCompareFailed => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.';
 	/// en: 'Couldn\'t save motion clarity settings.'
 	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
+	/// en: 'Motion method'
+	String get motionClarityEngine => 'Motion method';
+	/// en: 'Temporal blend'
+	String get motionClarityTemporalBlend => 'Temporal blend';
+	/// en: 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.'
+	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
+	/// en: 'Motion-compensated (experimental)'
+	String get motionClarityMotionCompensated => 'Motion-compensated (experimental)';
+	/// en: 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges.'
+	String get motionClarityMotionCompensatedDescription => 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges.';
+	/// en: 'Generated frame-rate target'
+	String get motionClarityOutputRate => 'Generated frame-rate target';
+	/// en: 'Match current display'
+	String get motionClarityOutputCurrentDisplay => 'Match current display';
+	/// en: '48 fps'
+	String get motionClarityOutput48 => '48 fps';
+	/// en: '50 fps'
+	String get motionClarityOutput50 => '50 fps';
+	/// en: '60 fps'
+	String get motionClarityOutput60 => '60 fps';
+	/// en: '72 fps'
+	String get motionClarityOutput72 => '72 fps';
+	/// en: '90 fps'
+	String get motionClarityOutput90 => '90 fps';
+	/// en: '100 fps'
+	String get motionClarityOutput100 => '100 fps';
+	/// en: '120 fps'
+	String get motionClarityOutput120 => '120 fps';
+	/// en: '144 fps'
+	String get motionClarityOutput144 => '144 fps';
+	/// en: 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.'
+	String get motionClarityMciProfileDescription => 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.';
+	/// en: 'Motion search effort'
+	String get motionClarityMciQuality => 'Motion search effort';
+	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware.'
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware.';
+	/// en: 'Low search effort'
+	String get motionClarityMciFast => 'Low search effort';
+	/// en: 'Balanced search effort'
+	String get motionClarityMciBalanced => 'Balanced search effort';
+	/// en: 'High search effort'
+	String get motionClarityMciHigh => 'High search effort';
+	/// en: 'Experimental motion compensation is configured. Check performance and moving-edge artifacts; no automatic quality or hardware qualification is available.'
+	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts; no automatic quality or hardware qualification is available.';
+	/// en: 'Compare without motion processing'
+	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
+	/// en: 'Return to motion processing'
+	String get motionClarityReturnToProcessing => 'Return to motion processing';
+	/// en: 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.'
+	String get motionClarityCompareProcessingDescription => 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.';
+
 }
 
 // Path: performanceOverlay

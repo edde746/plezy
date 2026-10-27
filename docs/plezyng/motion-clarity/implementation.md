@@ -9,24 +9,29 @@ A settings surface or successful property write does not complete the full featu
 
 - Adds typed Original, Cinema, Balanced, Smooth, Animation, Sports and Custom
   profiles. The default stays Original.
-- Adds portable preset, kernel and threshold preferences. The selected global/library/title
-  scope applies to the profile and both custom temporal controls.
+- Adds portable preset, kernel, threshold, engine, generated-rate and MCI search-effort
+  preferences. One global/library/title scope applies to every motion preference.
 - Adds Playback Settings and in-player controls, including custom temporal kernel,
-  threshold selection and a quick A/B switch that bypasses only temporal blending.
-- Resolves each source's scoped profile in the media and live-stream pre-open
-  paths, so mpv can allocate decoder reference surfaces before opening that source. Applies display
-  synchronization, temporal convolution and renderer-status reporting. The A/B switch keeps display
-  sync, scaling and audio settings active. It restores the player's pre-feature options
-  when Original is selected.
+  threshold selection and a quick A/B switch that bypasses the active motion filter.
+- Resolves scoped motion preferences in VOD and live-stream pre-open paths, before
+  mpv allocates decoder surfaces. Temporal blend configures display sync, kernel,
+  threshold and renderer status. The optional experimental MCI path installs a labelled
+  FFmpeg `minterpolate` filter, chooses 48–144 fps and Fast/Balanced/High search effort,
+  and applies scene-change detection. Android mpv suppresses source-rate matching for
+  MCI and can negotiate the selected generated rate while preserving resolution matching.
+  Unsupported filter setups fall back to temporal blend. The A/B switch bypasses the active
+  filter while keeping display sync, scaling and audio settings; Original restores captured options.
 - Checks the active mpv output (gpu, gpu-next or libmpv), including supported libmpv
   routes across operating systems, and reports unsupported native-TV outputs. A
   renderer-reported refresh value is labeled as reported, not measured scanout.
 
-This delivers useful cadence-blending controls; it does not implement any of the
-full native frame-processing packages. Motion-compensated interpolation, scene and
-occlusion analysis, camera-blur restoration, capability-qualified scaling, native
-Android/Apple/TV adapters, measured performance telemetry, model packaging and TV
-comparison remain incomplete. This PR has no device qualification evidence.
+This delivers cadence blending and a usable experimental block-motion synthesis path.
+It is not a qualified real-time renderer: filter support, CPU headroom, frame deadlines,
+color paths and actual panel cadence remain unmeasured. The app does not yet have a
+resource governor or adaptive quality fallback for overload. It also lacks neural RIFE,
+custom confidence/occlusion analysis, camera-blur restoration, capability-qualified
+scaling, native Android/Apple/TV frame adapters, verified model packaging and TV
+comparison. This PR has no device qualification evidence.
 
 ## 1. Verified repository integration map
 
@@ -155,8 +160,9 @@ validating the first real embedded playback route.
   subpixel refinement, confidence, occlusions and full-resolution reconstruction.
 - CPU oracle first, then GPU kernels. Compare against held-out ground truth and
   FFmpeg minterpolate; use source fallback where evidence is inadequate.
-- Done: embedded playback generates measurable intermediate object positions,
-  arbitrary phases work, and difficult occlusion tests have bounded artifacts.
+- Done: the native engine independently generates measurable intermediate object
+  positions, arbitrary phases work, and difficult occlusion tests have bounded artifacts.
+  The current FFmpeg `minterpolate` adapter is a prototype baseline, not completion.
   Document the measured resolution/rate limit; CPU completion alone is insufficient.
 
 ### P08 — RIFE adapter and model conversion

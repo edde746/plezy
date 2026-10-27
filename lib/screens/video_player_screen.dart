@@ -2331,6 +2331,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _currentMetadata),
           thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _currentMetadata),
           beforeSourceOpen: true,
+          engine: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _currentMetadata),
+          outputRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _currentMetadata),
+      mciQuality: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _currentMetadata),
         );
         if (!motionResult.isSupported && motionResult.reason != null) {
           appLogger.d('VideoPlayerScreen: motion clarity is unavailable: ${motionResult.reason}');

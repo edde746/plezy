@@ -1,7 +1,8 @@
-/// User-facing motion profiles backed by mpv's temporal renderer interpolation.
+/// Profiles for mpv temporal blending.
 ///
-/// These profiles improve cadence handling by filtering across time. They do
-/// not estimate object motion or recover detail that was blurred into the source.
+/// In motion-compensated mode, any non-Original profile enables the filter;
+/// profile names do not change its interpolation strength. Neither engine
+/// recovers detail that was blurred into the source.
 enum MotionClarityPreset {
   original,
   cinema,
@@ -41,5 +42,51 @@ enum MotionTemporalKernel {
     MotionTemporalKernel.mitchell => 'mitchell',
     MotionTemporalKernel.gaussian => 'gaussian',
     MotionTemporalKernel.bicubic => 'bicubic',
+  };
+}
+
+/// Processing backend. Motion-compensated mode uses FFmpeg's libavfilter
+/// minterpolate block-motion synthesis and is experimental; it is CPU-heavy and
+/// may fall back to temporal blending when the active mpv build or rate is
+/// unavailable.
+enum MotionClarityEngine { temporalBlend, motionCompensated }
+
+/// Motion-search cost for FFmpeg's experimental motion-compensated engine.
+/// Higher tiers perform more expensive block searches; none changes the
+/// amount of interpolation or guarantees a particular visual result.
+enum MotionClarityMciQuality {
+  fast,
+  balanced,
+  high;
+
+  String get ffmpegOptions => switch (this) {
+    MotionClarityMciQuality.fast => 'mc_mode=obmc:me_mode=bilat:me=epzs:search_param=16:vsbmc=0',
+    MotionClarityMciQuality.balanced => 'mc_mode=aobmc:me_mode=bidir:me=epzs:search_param=32:vsbmc=1',
+    MotionClarityMciQuality.high => 'mc_mode=aobmc:me_mode=bidir:me=umh:search_param=48:vsbmc=1',
+  };
+}
+
+/// Target cadence for the optional motion-compensated engine.
+enum MotionClarityOutputRate {
+  currentDisplay,
+  fps48,
+  fps50,
+  fps60,
+  fps72,
+  fps90,
+  fps100,
+  fps120,
+  fps144;
+
+  double? resolve(double? displayFps) => switch (this) {
+    MotionClarityOutputRate.currentDisplay => displayFps,
+    MotionClarityOutputRate.fps48 => 48,
+    MotionClarityOutputRate.fps50 => 50,
+    MotionClarityOutputRate.fps60 => 60,
+    MotionClarityOutputRate.fps72 => 72,
+    MotionClarityOutputRate.fps90 => 90,
+    MotionClarityOutputRate.fps100 => 100,
+    MotionClarityOutputRate.fps120 => 120,
+    MotionClarityOutputRate.fps144 => 144,
   };
 }
