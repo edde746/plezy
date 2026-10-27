@@ -206,8 +206,11 @@ def prepare_native_checkout(scratch: Path) -> tuple[Path, str]:
     command(["git", "fetch", "origin", "main"], cwd=checkout)
     command(["git", "checkout", "--detach", "origin/main"], cwd=checkout)
 
-    sync_native_asset_bases(checkout)
-    if not verify_native_groups(checkout):
+    if verify_native_groups(checkout):
+        # Correct URLs only after the manifest's binaries already verify. A
+        # stale native pin must be rebuilt before any manifest is published.
+        sync_native_asset_bases(checkout)
+    else:
         native_head = command(["git", "rev-parse", "origin/main"], cwd=checkout, capture=True).stdout.strip()
         existing = matching_run(MPV_REPO, MPV_WORKFLOW, native_head, ref="main")
         if existing and existing.get("status") == "completed":
