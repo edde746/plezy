@@ -427,8 +427,7 @@ class MotionClarityService {
         _sourceHasOpened &&
         (!_currentPreset.interpolationEnabled ||
             _currentEngine != MotionClarityEngine.motionCompensated ||
-            _currentTargetFps != targetFps ||
-            _currentMciQuality != mciQuality);
+            _currentTargetFps != targetFps);
 
     try {
       await _removeMciFilter();
@@ -576,6 +575,35 @@ class MotionClarityService {
       final outputRate = _currentOutputRate;
       final quality = _currentMciQuality;
       _stopHealthMonitor();
+
+      // Reduce FFmpeg search cost first, preserving generated cadence and the
+      // user's saved quality preference. Bypass MCI only if the cheapest tier
+      // still misses output deadlines.
+      final lowerQuality = quality.lessExpensive;
+      if (lowerQuality != null) {
+        final reduced = await configure(
+          preset: preset,
+          kernel: kernel,
+          thresholdPercent: threshold,
+          beforeSourceOpen: false,
+          engine: MotionClarityEngine.motionCompensated,
+          outputRate: outputRate,
+          mciQuality: lowerQuality,
+          applyPresetRouting: false,
+        );
+        if (reduced.effectiveEngine == MotionClarityEngine.motionCompensated) {
+          _statusReason =
+              'Repeated dropped frames; active motion-search effort was temporarily reduced to ${lowerQuality.name}. Your saved preference is unchanged. Select the preset again to retry it.';
+          return;
+        }
+        if (reduced.effectiveEngine == MotionClarityEngine.temporalBlend) {
+          _statusReason = reduced.isConfigured
+              ? 'Motion compensation could not keep up after search-effort reduction; temporal blending is active. Select the preset again to retry.'
+              : 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
+          return;
+        }
+      }
+
       final result = await configure(
         preset: preset,
         kernel: kernel,

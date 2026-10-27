@@ -62,6 +62,13 @@ enum MotionClarityMciQuality {
   balanced,
   high;
 
+  /// The next cheaper search tier for a runtime load fallback.
+  MotionClarityMciQuality? get lessExpensive => switch (this) {
+    MotionClarityMciQuality.fast => null,
+    MotionClarityMciQuality.balanced => MotionClarityMciQuality.fast,
+    MotionClarityMciQuality.high => MotionClarityMciQuality.balanced,
+  };
+
   String get ffmpegOptions => switch (this) {
     MotionClarityMciQuality.fast => 'mc_mode=obmc:me_mode=bilat:me=epzs:search_param=16:vsbmc=0',
     MotionClarityMciQuality.balanced => 'mc_mode=aobmc:me_mode=bidir:me=epzs:search_param=32:vsbmc=1',
