@@ -118,7 +118,7 @@ jobs:
           fi
 
       - name: Require successful CI for this commit
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ inputs.mode == 'release' && inputs.action == 'release' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
