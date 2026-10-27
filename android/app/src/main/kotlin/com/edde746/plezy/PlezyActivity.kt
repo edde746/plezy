@@ -900,10 +900,11 @@ class PlezyActivity : FlutterActivity() {
     flutterEngine.plugins.add(MpvAudioPlayerPlugin())
     if (runCatching {
         Class.forName("org.snapetech.plezyng.games.steam.SteamStreamView", false, classLoader)
-      }.isSuccess) {
+      }.isSuccess
+    ) {
       flutterEngine.platformViewsController.registry.registerViewFactory(
         SteamStreamPlatformViewFactory.VIEW_TYPE,
-        SteamStreamPlatformViewFactory(flutterEngine.dartExecutor.binaryMessenger),
+        SteamStreamPlatformViewFactory(flutterEngine.dartExecutor.binaryMessenger)
       )
     }
 

@@ -45,9 +45,9 @@ MpvPlayerPlugin::MpvPlayerPlugin(
     : registrar_(registrar),
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
-      platform_task_message_(platform_task_message != 0
-                                 ? platform_task_message
-                                 : (audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage)) {
+      platform_task_message_(
+          platform_task_message != 0 ? platform_task_message
+                                     : (audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage)) {
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
 
@@ -194,8 +194,7 @@ void MpvPlayerPlugin::HandleMethodCall(
 
     bool experimental_dolby_vision = false;
     const auto* initialization_arguments = method_call.arguments();
-    if (initialization_arguments &&
-        std::holds_alternative<flutter::EncodableMap>(*initialization_arguments)) {
+    if (initialization_arguments && std::holds_alternative<flutter::EncodableMap>(*initialization_arguments)) {
       const auto& arguments = std::get<flutter::EncodableMap>(*initialization_arguments);
       const auto experimental = arguments.find(flutter::EncodableValue("experimentalDolbyVision"));
       if (experimental != arguments.end() && std::holds_alternative<bool>(experimental->second)) {

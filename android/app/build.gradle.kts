@@ -111,8 +111,10 @@ val felAarFile = felAarPath?.let { path ->
     val metadata = archive.getInputStream(archive.getEntry("META-INF/plezyng-dv-engine.json")).bufferedReader().use {
       groovy.json.JsonSlurper().parseText(it.readText()) as? Map<*, *>
     } ?: throw GradleException("Experimental FEL AAR has invalid engine metadata")
-    if (metadata["schema_version"] != 1 || metadata["engine_id"] != "plezyng-dv-fel-v1" ||
-      metadata["ffmpeg_headers"] != "META-INF/plezyng-dv/ffmpeg-headers/") {
+    if (metadata["schema_version"] != 1 ||
+      metadata["engine_id"] != "plezyng-dv-fel-v1" ||
+      metadata["ffmpeg_headers"] != "META-INF/plezyng-dv/ffmpeg-headers/"
+    ) {
       throw GradleException("Experimental FEL AAR metadata does not describe the paired engine and its matching FFmpeg headers")
     }
     val declaredAbis = (metadata["abis"] as? List<*>)?.filterIsInstance<String>()?.sorted()
@@ -128,7 +130,7 @@ val felAarFile = felAarPath?.let { path ->
       "${headerPrefix}libavcodec/jni.h",
       "${headerPrefix}libavutil/avconfig.h",
       "${headerPrefix}libavutil/channel_layout.h",
-      "${headerPrefix}libswresample/swresample.h",
+      "${headerPrefix}libswresample/swresample.h"
     )
     if (!headerEntries.containsAll(requiredHeaders)) {
       throw GradleException("Experimental FEL AAR is missing FFmpeg headers required by the shared Media3 bridge: ${(requiredHeaders - headerEntries).joinToString()}")
@@ -268,8 +270,12 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
           sourceCommit
         }
         val requiredHeaders = listOf(
-          "libavcodec/avcodec.h", "libavcodec/mediacodec.h", "libavcodec/jni.h",
-          "libavutil/avconfig.h", "libavutil/channel_layout.h", "libswresample/swresample.h"
+          "libavcodec/avcodec.h",
+          "libavcodec/mediacodec.h",
+          "libavcodec/jni.h",
+          "libavutil/avconfig.h",
+          "libavutil/channel_layout.h",
+          "libswresample/swresample.h"
         )
         val missingHeaders = requiredHeaders.map { File(includeDir, it) }.filterNot(File::isFile)
         if (missingHeaders.isNotEmpty()) {

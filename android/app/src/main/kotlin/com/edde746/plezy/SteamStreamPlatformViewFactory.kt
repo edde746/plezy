@@ -10,8 +10,7 @@ import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 
 /** Flutter adapter for the optional retained Steam view in the :steam module. */
-internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMessenger) :
-  PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMessenger) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
   companion object {
     const val VIEW_TYPE = "com.plezy/games/steam_stream"
   }
@@ -44,13 +43,13 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
             "setControllerState",
             arrayOf(Map::class.java, Map::class.java),
             call.argument<Map<*, *>>("buttons") ?: emptyMap<Any, Any>(),
-            call.argument<Map<*, *>>("axes") ?: emptyMap<Any, Any>(),
+            call.argument<Map<*, *>>("axes") ?: emptyMap<Any, Any>()
           )
           "inputKey" -> invoke(
             "inputKey",
             arrayOf(String::class.java, booleanType),
             call.argument<String>("key") ?: "",
-            call.argument<Boolean>("down") == true,
+            call.argument<Boolean>("down") == true
           )
           "resetInput" -> invoke("resetInput")
           else -> {

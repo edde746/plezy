@@ -4163,7 +4163,7 @@ class ExoPlayerCore(private val activity: Activity) :
     top: Int,
     right: Int,
     bottom: Int,
-    devicePixelRatio: Double,
+    devicePixelRatio: Double
   ) {
     if (disposing) return
     activity.runOnUiThread {
@@ -4193,8 +4193,7 @@ class ExoPlayerCore(private val activity: Activity) :
     if (!enabled) audioFocusManager?.abandonAudioFocus()
   }
 
-  override fun requestAudioFocus(): Boolean =
-    if (!audioFocusEnabled) true else audioFocusManager?.requestAudioFocus() ?: false
+  override fun requestAudioFocus(): Boolean = if (!audioFocusEnabled) true else audioFocusManager?.requestAudioFocus() ?: false
 
   override fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()
@@ -4523,4 +4522,3 @@ class ExoPlayerCore(private val activity: Activity) :
     Log.d(TAG, "Disposed")
   }
 }
-

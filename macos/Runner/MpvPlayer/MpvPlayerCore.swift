@@ -236,7 +236,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     let width = CGFloat(right - left) / scale
     let height = CGFloat(bottom - top) / scale
     let topOffset = CGFloat(top) / scale
-    let y = contentView.isFlipped
+    let y =
+      contentView.isFlipped
       ? contentView.bounds.minY + topOffset
       : contentView.bounds.maxY - topOffset - height
     let frame = CGRect(x: x, y: y, width: width, height: height)

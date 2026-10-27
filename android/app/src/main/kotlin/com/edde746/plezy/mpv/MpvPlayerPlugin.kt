@@ -610,8 +610,13 @@ open class MpvPlayerPlugin(
     val right = call.argument<Number>("right")?.toInt()
     val bottom = call.argument<Number>("bottom")?.toInt()
     val devicePixelRatio = call.argument<Number>("devicePixelRatio")?.toDouble()
-    if (left == null || top == null || right == null || bottom == null ||
-      devicePixelRatio == null || !devicePixelRatio.isFinite() || devicePixelRatio <= 0.0
+    if (left == null ||
+      top == null ||
+      right == null ||
+      bottom == null ||
+      devicePixelRatio == null ||
+      !devicePixelRatio.isFinite() ||
+      devicePixelRatio <= 0.0
     ) {
       result.error("INVALID_ARGS", "Missing or invalid video rectangle", null)
       return

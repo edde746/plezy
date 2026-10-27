@@ -77,8 +77,8 @@ internal class GamesChannel(private val activity: Activity) {
             "library" to (available && protocol == "gameStream"),
             // Moonlight still owns an Activity and process-wide callbacks; only Steam exposes a
             // retained, independently disposable Android surface for Multiview panes.
-            "embeddedSurface" to (available && protocol == "steam"),
-          ),
+            "embeddedSurface" to (available && protocol == "steam")
+          )
         )
       }
       "artwork" -> {

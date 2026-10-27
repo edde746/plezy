@@ -31,6 +31,7 @@ class GpuVoPolicyTest {
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "no"))
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "mediacodec", felEngine = true))
   }
+
   @Test
   fun `P5 without native support is routed`() {
     assertTrue(GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = false))
@@ -578,4 +579,3 @@ class GpuVoPolicyTest {
     )
   }
 }
-

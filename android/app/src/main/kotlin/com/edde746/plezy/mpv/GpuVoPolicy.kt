@@ -16,10 +16,13 @@ internal object GpuVoPolicy {
    * server metadata, which mis-tags DV routinely. Only `auto` routes; the
    * other modes are explicit user choices.
    */
-  fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean,
-                       felEngine: Boolean = false): Boolean =
-    (dvProfile == 7L && felEngine) ||
-      (dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively)
+  fun needsDvReshaping(
+    dvProfile: Long?,
+    conversionMode: String,
+    canPlayP5Natively: Boolean,
+    felEngine: Boolean = false
+  ): Boolean = (dvProfile == 7L && felEngine) ||
+    (dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively)
 
   const val FEL_ENGINE_ID = "plezyng-dv-fel-v1"
 
@@ -192,8 +195,12 @@ internal object GpuVoPolicy {
    * cannot make software-decoded P5 into a compatible base layer. Reacting
    * to the outcome is what keeps a wrong prediction from scanning the base layer out as SDR BT.2020.
    */
-  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?,
-                                     felEngine: Boolean = false): Boolean = needsSoftwareRender(hwdecCurrent) &&
+  fun softwareDecodeNeedsDvReshaping(
+    dvProfile: Long?,
+    conversionMode: String,
+    hwdecCurrent: String?,
+    felEngine: Boolean = false
+  ): Boolean = needsSoftwareRender(hwdecCurrent) &&
     ((dvProfile == 7L && felEngine) || (dvProfile == 5L && conversionMode in DV_CONVERSION_MODES))
 
   /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
@@ -225,20 +232,27 @@ internal object GpuVoPolicy {
    * P7 strips to its base layer either way. Throws for an unrecognised mode;
    * validate against [DV_CONVERSION_MODES] first.
    */
-  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, dvProfile: Long?, canPlayP5Natively: Boolean,
-                       felEngine: Boolean = false): DvDecoderOptions = if (dvProfile == 7L && felEngine) {
+  fun dvDecoderOptions(
+    conversionMode: String,
+    displaySupportsDv: Boolean,
+    dvProfile: Long?,
+    canPlayP5Natively: Boolean,
+    felEngine: Boolean = false
+  ): DvDecoderOptions = if (dvProfile == 7L && felEngine) {
     // The paired decoder needs the original EL and RPU; P7->8.1 and strip
     // discard the residual before the GPU can reconstruct it.
     DvDecoderOptions(dolbyVision = true, p7Mode = "native")
-  } else when (conversionMode) {
-    "auto" -> when {
-      displaySupportsDv -> DvDecoderOptions(dolbyVision = true, p7Mode = "auto")
-      else -> DvDecoderOptions(dolbyVision = dvProfile == 5L && canPlayP5Natively, p7Mode = "strip")
+  } else {
+    when (conversionMode) {
+      "auto" -> when {
+        displaySupportsDv -> DvDecoderOptions(dolbyVision = true, p7Mode = "auto")
+        else -> DvDecoderOptions(dolbyVision = dvProfile == 5L && canPlayP5Natively, p7Mode = "strip")
+      }
+      "disabled", "native" -> DvDecoderOptions(dolbyVision = true, p7Mode = "native")
+      "dv81" -> DvDecoderOptions(dolbyVision = true, p7Mode = "convert")
+      "hevc", "hevc_strip" -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
+      else -> throw IllegalArgumentException("Invalid DV conversion mode: $conversionMode")
     }
-    "disabled", "native" -> DvDecoderOptions(dolbyVision = true, p7Mode = "native")
-    "dv81" -> DvDecoderOptions(dolbyVision = true, p7Mode = "convert")
-    "hevc", "hevc_strip" -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
-    else -> throw IllegalArgumentException("Invalid DV conversion mode: $conversionMode")
   }
 
   /** The conversion mode and display answer the DV routing decides with; see [dvRouting]. */
@@ -426,4 +440,3 @@ internal object GpuVoPolicy {
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }
-

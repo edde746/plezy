@@ -98,7 +98,7 @@ internal object PlayerSurfaceHost {
     top: Int,
     right: Int,
     bottom: Int,
-    devicePixelRatio: Double,
+    devicePixelRatio: Double
   ) {
     if (!devicePixelRatio.isFinite() || devicePixelRatio <= 0.0) return
     val width = (right - left).coerceAtLeast(1)
@@ -115,7 +115,7 @@ internal object PlayerSurfaceHost {
     container.layoutParams = FrameLayout.LayoutParams(
       width,
       height,
-      Gravity.TOP or Gravity.LEFT,
+      Gravity.TOP or Gravity.LEFT
     ).apply {
       leftMargin = left + offsetX
       topMargin = top + offsetY

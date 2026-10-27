@@ -73,7 +73,6 @@ class ExoPlayerPluginTest {
     assertEquals(listOf("dolby-vision-output" to "no", "hdr-sdr-conversion" to "player"), writes)
   }
 
-
   @Test
   fun fallbackGetStatsCompletesAfterActivityDetach() {
     val plugin = ExoPlayerPlugin()
@@ -1138,4 +1137,3 @@ class ExoPlayerPluginTest {
     override fun endOfStream() = Unit
   }
 }
-

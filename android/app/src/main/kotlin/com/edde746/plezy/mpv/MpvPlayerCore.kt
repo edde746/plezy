@@ -1633,15 +1633,21 @@ class MpvPlayerCore private constructor(
     )
     val felActive = configureP7FelFilter(p, wantsP7Fel)
     val needsP7Fel = (wantsP7Fel && felActive) || (profile == 7L && felEngineAvailable)
-    val needsP5Reshape = profile == 5L && GpuVoPolicy.needsDvReshaping(
-      dvProfile = profile,
-      conversionMode = mode,
-      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5,
-      felEngine = felEngineAvailable
-    )
+    val needsP5Reshape = profile == 5L &&
+      GpuVoPolicy.needsDvReshaping(
+        dvProfile = profile,
+        conversionMode = mode,
+        canPlayP5Natively = p5Decoder != null && routing.allowNativeP5,
+        felEngine = felEngineAvailable
+      )
     val needs = needsP5Reshape || needsP7Fel
-    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile,
-      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5, felEngine = needsP7Fel)
+    val options = GpuVoPolicy.dvDecoderOptions(
+      mode,
+      routing.displaySupportsDv,
+      profile,
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5,
+      felEngine = needsP7Fel
+    )
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
@@ -1730,8 +1736,15 @@ class MpvPlayerCore private constructor(
     val needsP5Reshape = profile == 5L && GpuVoPolicy.softwareDecodeNeedsDvReshaping(profile, mode, hwdecCurrent = "no")
     val needs = needsP5Reshape || needsP7Fel
     if (needsP7Fel) {
-      writeDvDecoderOptions(GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv,
-        profile, canPlayP5Natively = false, felEngine = true))
+      writeDvDecoderOptions(
+        GpuVoPolicy.dvDecoderOptions(
+          mode,
+          routing.displaySupportsDv,
+          profile,
+          canPlayP5Natively = false,
+          felEngine = true
+        )
+      )
     }
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
@@ -3173,7 +3186,7 @@ class MpvPlayerCore private constructor(
     top: Int,
     right: Int,
     bottom: Int,
-    devicePixelRatio: Double,
+    devicePixelRatio: Double
   ) {
     if (audioOnly || disposing) return
     runOnMain {
@@ -3459,4 +3472,3 @@ class MpvPlayerCore private constructor(
     }
   }
 }
-
