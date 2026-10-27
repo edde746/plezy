@@ -90,7 +90,7 @@ sudo pacman -S plezy
 [Distribution package](https://github.com/aerynOS/recipes/tree/main/p/plezy).
 
 ```bash
-sudo moss it plezy
+sudo moss pad plezy
 ```
 
 </details>
