@@ -177,6 +177,7 @@ class _Translations$appIcon$tr extends Translations$appIcon$en {
 	@override String get launcherHint => 'Yeni simge, PlezyNG\'den çıktığınızda ana ekranınızda görünür.';
 	@override String get tvLauncherHint => 'Yeni banner, PlezyNG\'den çıktığınızda görünür. Android TV, TV yeniden başlatılana kadar eskisini göstermeye devam edebilir.';
 	@override late final _Translations$appIcon$names$tr names = _Translations$appIcon$names$tr._(_root);
+	@override String get description => 'Cihazınızın başlatıcısı tarafından gösterilen simgeyi seçin. önizlemeler her seçeneğin nasıl göründüğünü gösterir.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$tr extends Translations$common$en {
 	@override String get cancel => 'İptal';
 	@override String get save => 'Kaydet';
 	@override String get close => 'Kapat';
+	@override String get closeMiniPlayer => 'Yakın Mini Oyuncu';
+	@override String get closeWorkspaceWindow => 'Yakın pencere';
+	@override String get returnToFullView => 'Tam Görünüm\'e Geri Dönüş';
+	@override String get manageMediaSessions => 'Medya Toplantıları Yönetimi';
+	@override String get hideMediaSessions => 'Medya Toplantıları';
+	@override String get mediaSessions => 'Medya Toplantısı';
+	@override String get mediaSessionsHint => 'Bir oturumu ileriye getirmek için seçin. park penceresini gizler ama açık tutar. geri dönüş tam görünümde açılır; yakında sona erer.';
+	@override String get sessionInWorkspace => 'Çalışma alanında';
+	@override String get sessionParked => 'Parkı';
+	@override String get sessionFullscreen => 'Tam Ekran';
+	@override String get switchToNextWindow => 'Bir sonraki pencere ile değiştirin';
+	@override String get moveWindow => 'Giriş penceresi';
+	@override String get finishMovingWindow => 'Hareketli pencereleri bitirmek';
+	@override String get moveWindowHint => 'Uzun basın ve pencereyi harekete geçirmek için sürükleyin. bu kontrol ayrıca mermi anahtarı hareketini sağlar.';
+	@override String get movingWindowHelp => 'Taşınmak için çekiş · Çekiş anahtarları ayarlayın · Kaynaklar girin · Kaçış iptal';
+	@override String get resizeWindow => 'Rize penceresi';
+	@override String get resizeWindowHint => 'Bu elini çekmek veya pencereyi yeniden şekillendirmek için kurşun anahtarlarını kullanın.';
+	@override String get workspaceWindowHint => 'Hareket kontrolü veya uzun baskı ve harekete geçmek için sürükleyin.';
+	@override String get workspacePaneHint => 'Bu paneli odaklanmak için seçin. genişletmek için tam ekran kontrolünü kullanın.';
+	@override String workspaceWindowLabel({required Object title}) => 'Toplantı penceresi: ${title}';
+	@override String get workspaceTitleHint => 'Başlık çubuğunu hareket etmek için sürükle; genişletmek için tam ekran düğmesini kullanın.';
+	@override String get moveToSessionTray => 'Session Tray\'ye gidin';
+	@override String get moveToSessionTrayHint => 'Bu oturum, penceresini göstermeden kullanılabilir hale getirir.';
+	@override String get closeSessionHint => 'Bu pencereyi kapatın ve oturumunu sona erdirin.';
+	@override String get sideBySideLayout => 'Side-by-side layout\'a geçiş yapın';
+	@override String get floatingWindows => 'Sürücüsüz pencereleri değiştirmek için';
 	@override String get clear => 'Temizle';
 	@override String get reset => 'Sıfırla';
 	@override String get later => 'Daha Sonra';
@@ -678,6 +705,13 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Yerel DV7\'yi zorla ve DV dönüştürme yeniden denemesini engelle';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1\'e satır içi RPU dönüştürmeyi zorla';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun';
+	@override String get experimentalDolbyVision => 'Deneysel Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.';
+	@override String get dvExperimentUnavailableDescription => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.';
+	@override String get dvCompatibilityFallback => 'Uyumluluk yedeği';
+	@override String get dvCompatibilityFallbackDescription => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.';
+	@override String get dvExperimentDiagnostics => 'Video deneyi günlükleri';
+	@override String get dvExperimentDiagnosticsDescription => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.';
 	@override String get disableDolbyVision => 'Dolby Vision\'ı Devre Dışı Bırak';
 	@override String get disableDolbyVisionDescription => 'Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat';
 	@override String get hdrSdrConversion => 'HDR\'den SDR\'ye Dönüştürme';
@@ -764,13 +798,81 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.';
 	@override String get metadataLanguage => 'Meta veri dili';
 	@override String get metadataLanguageDescription => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.';
-	@override String get experimentalDolbyVision => 'Deneysel Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.';
-	@override String get dvExperimentUnavailableDescription => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.';
-	@override String get dvCompatibilityFallback => 'Uyumluluk yedeği';
-	@override String get dvCompatibilityFallbackDescription => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.';
-	@override String get dvExperimentDiagnostics => 'Video deneyi günlükleri';
-	@override String get dvExperimentDiagnosticsDescription => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.';
+	@override String get enterFullscreenOnPlaybackStart => 'Playback başlarken tam ekranı girin';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Playback başlatıldığında tam ekranlı masaüstü video açılır';
+	@override String get extendVideoIntoDisplayCutout => 'Video\'yu Ekran Kutu\'na Genişletin';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Tam ekran videoları Android telefonlarda kamera kesimi kullanın';
+	@override String get languageDescription => 'PlezyNG kontrolleri ve mesajları için kullanılan dil seçin. sistem izleme cihazınızın dili.';
+	@override String get themeDescription => 'Uygulama boyunca kullanılan renk ve kontrast seçin.';
+	@override String get libraryDensityDescription => 'Kütüphane kartlarının sayısını her satırda değiştirin.';
+	@override String get displayScaleDescription => 'Bu araba ekranındaki arayüzü cihazınızdaki metin boyutunu değiştirmeden yeniden yapılandırın.';
+	@override String get themeSongVolumeDescription => 'Konu şarkılarının diğer sesle ilgili hacmini ayarlayın.';
+	@override String get viewModeDescription => 'Kütüphane öğelerinin bir ağda poster olarak veya kompakt bir liste olarak göründüğünü seçin.';
+	@override String get gridViewDescription => 'Kütüphane öğelerini posterlerin satırlarında ve sütunlarında düzenleyin.';
+	@override String get listViewDescription => 'Kütüphane öğeleri vertikal bir listede, öğe başına daha fazla metin ile gösterilir.';
+	@override String get gridSpacingDescription => 'Kütüphane ağlarında posterler arasındaki boşluğu ayarlayın.';
+	@override String get gridSpacingTightDescription => 'Daha küçük boşluklarla ekranda daha fazla poster yapıştırın.';
+	@override String get gridSpacingNormalDescription => 'Posterler arasındaki standart boşluğu kullanın.';
+	@override String get gridSpacingSpaciousDescription => 'Daha fazla ayrılık için posterler arasında daha büyük boşluklar ekleyin.';
+	@override String get episodePosterModeDescription => 'Bölüm kartlarında hangi sanat eserinin göründüğünü seçin.';
+	@override String get seriesPosterDescription => 'Her bölüm için serinin posterini kullanın.';
+	@override String get seasonPosterDescription => 'Mevsim posterini her bölüm için kullanın.';
+	@override String get episodeThumbnailDescription => 'Mevcut olduğunda bölümden bir çerçeve kullanın.';
+	@override String get continueWatchingActionDescription => 'Devamlı izleme kartını etkinleştirirken neler olup bittiğini seçin.';
+	@override String get continueWatchingPlayDescription => 'Film veya bölümleri hemen başlatın.';
+	@override String get continueWatchingDetailsDescription => 'Başlık sayfasını öncelikle açın, böylece ayrıntıları inceleyebilir ve bir eylem seçebilirsiniz.';
+	@override String get episodeActionDescription => 'Bir bölüm kartını etkinleştirdiğinizde ne olacağını seçin.';
+	@override String get episodePlayDescription => 'Olayları hemen başlatın.';
+	@override String get episodeDetailsDescription => 'Playback öncesinde bölüm sayfasını açın.';
+	@override String get contentScreensaverDelayDescription => 'Artwork göstermeden önce PlezyNG\'nin giriş olmadan ne kadar beklediğini seçin.';
+	@override String get continueWatchingRowSizeDescription => 'Sürekli İzleme satırında kartların ne kadar büyük olduğunu seçin.';
+	@override String get rowSizeCompactDescription => 'Daha küçük kartları gösterin, böylece satır boyunca daha fazla öğe uygun olur.';
+	@override String get rowSizeStandardDescription => 'Standart kart boyutunu kullanın.';
+	@override String get rowSizeLargeDescription => 'Daha büyük kartlar ve daha fazla sanat ayrıntıları ile gösterin.';
+	@override String get visualEffectsDescription => 'Bu cihaz için animasyon ve sanat etkisi bütçesini seçin.';
+	@override String get visualEffectsFullDescription => 'Her cihazda tam animasyon ve sanat eserleri etkilerini kullanın.';
+	@override String get startupSectionDescription => 'PlezyNG başladığında hangi bölümün açıldığını seçin.';
+	@override late final _Translations$settings$startupSectionOptions$tr startupSectionOptions = _Translations$settings$startupSectionOptions$tr._(_root);
+	@override String get smallSkipDurationDescription => 'Kısa geriye doğru hareket eden mesafeyi ayarlayın ve kontrolleri arayın.';
+	@override String get largeSkipDurationDescription => 'Uzun geriye doğru hareket eden mesafeyi ayarlayın ve kontrolleri arayın.';
+	@override String get rewindOnResumeDescription => 'Bir video yeniden çekildiğinde bu miktarda geri oynatma hareketi.';
+	@override String get defaultSleepTimerDescription => 'Uyumaya başladığınızda kullanılan başlangıç süresini ayarlayın.';
+	@override String get playNextCountdownDescription => 'Bir sonraki bölümü başlatmadan önce uzun süre bekleyin. hemen başlamak için 0\'a ayarlayın.';
+	@override String get autoSkipDelaySettingDescription => 'Bir giriş, kredi veya reklam otomatik olarak geçmek için ayarlandığında geçerlidir.';
+	@override String get downmixCenterBoostDescription => 'Orta kanalda diyaloğu yükseltin, çevresel ses stereo\'ya karıştırıldığında.';
+	@override String get displaySwitchDelayDescription => 'Ekran modunu değiştirmeden önce bekleyin, böylece TV veya alıcı önceki anahtarını tamamlayabilir.';
+	@override String get playerBackendDescription => 'Hangi oynatma motoru bu cihazda videoyu dekore eder ve geri dönüştürür.';
+	@override String get exoPlayerDescription => 'Android\'in yerli Media3 tabanlı oyuncusu ve desteklenen donanım yollarını kullanın.';
+	@override String get mpvDescription => 'MPV\'yi kullanın, ek oynatma, alt başlık ve video işleme kontrollerini ortaya çıkarır.';
+	@override String get scopeOffDescription => 'Sadece geçerli playback oturumu için değişiklikleri tutun.';
+	@override String get scopeGlobalDescription => 'Her kütüphane ve başlık için aynı değeri tekrar kullanın.';
+	@override String get scopeLibraryDescription => 'Her kütüphane için ayrı bir değer hatırlayın.';
+	@override String get scopeTitleDescription => 'Her şov veya film için ayrı bir değer hatırlayın.';
+	@override String get specialsOrderingServerDescription => 'Medya sunucusu tarafından sağlanan bölüm siparişi tutun.';
+	@override String get specialsOrderingAirDateDescription => 'Hava tarihlerine göre düzenli bölümler arasında özel yerleştirin.';
+	@override String get specialsOrderingLastDescription => 'Düzenli mevsimlerden sonra her özel yerleştirin.';
+	@override String get skipIntroModeDescription => 'Giriş işaretleyicilerinin normal oynadığını, bir kaydırma düğmesini veya otomatik kaydırmayı seçin.';
+	@override String get skipCreditsModeDescription => 'Kredi normal oynadığını, bir kaydırma düğmesini veya otomatik kaydırmayı seçin.';
+	@override String get skipAdsModeDescription => 'Keşfedilen reklamların normal oynadığını, bir kaydırma düğmesini veya otomatik olarak kaydırmayı seçin.';
+	@override String get playbackBufferAutoDescription => 'Aktif oyuncunun normal büyüklüğünü seçmesine izin verin.';
+	@override String get playbackBufferLargeDescription => 'Playback öncesinde daha fazla medya hazır tutun; bu daha fazla hafıza kullanır.';
+	@override String get playbackBufferExtraLargeDescription => 'En büyük okuma alanı bufferini tutun; bu hafızayı en çok kullanır.';
+	@override String get defaultQualityDescription => 'Varsayılan video çözünürlüğünü ayarlayın ve sunucu tarafından kodlanan akışlar için çatı bitrat.';
+	@override String get cellularQualityDescription => 'Cihazın yalnızca bir hücresel bağlantıyı kullandığında varsayılan kaliteyi aşmak.';
+	@override String get remoteQualityDescription => 'Bir uzaktan bağlantı üzerinden bir sunucuya bağlandığınızda varsayılan kaliteyi aşın.';
+	@override String get qualityPresetOriginalDescription => 'Kaynakları mevcut kalitede oynatın, sunucunun onu transkod etmesini istemeden.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Sunucuya yukarıda gösterilen çözünürlük ve bitrate kullanılarak dönüştürülmüş bir akış için sor.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Default Quality olarak seçilen kaliteyi kullanın.';
+	@override String get musicQualityDescription => 'Sunucu tarafından talep edilen maksimum ses bitrasını ayarlayın; Orijinal kaynak akışını tutar.';
+	@override String get musicQualityOriginalDescription => 'Kaynak sesini bitrate-capped transcode olmadan oynatın.';
+	@override String get musicQualityTranscodeOptionDescription => 'Yukarıda gösterilen bitrate yakınında kaplanmış bir sunucu transkodı isteyin; gerçek çıkış değişebilir.';
+	@override String get maxVolumeInputLabel => 'Maksimum hacim (% )';
+	@override String get checkForUpdatesDescription => 'Şimdi PlezyNG\'nin daha yeni bir versiyonu olup olmadığını kontrol edin.';
+	@override String get appearanceDescription => 'Uygulama teması seçin ve kütüphane kartlarını, Ev satırlarını ve navigasyonunu ayarlayın.';
+	@override String get prerollLibraryDescription => 'Film öncesi roller olarak mevcut klipleri içeren kütüphaneyi seçin.';
+	@override String get prerollSelectionDescription => 'Seçilen kütüphaneden hangi klipleri filmlerden önce oynayabilirsiniz seçin.';
+	@override String get contentScreensaverDelayOptionDescription => 'Ekran koruyucu sanat eserini göstermeden önce giriş olmadan bu uzun dakikaları bekleyin.';
+	@override String get videoCodecOptionDescription => 'Desteklendiğinde bu kodek için doğrudan oynatma izin verin. kontrolsüz kodekler medya sunucusu tarafından şifrelenir.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$tr extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} dk kaldı';
 	@override String get previewSwitch => 'Otomatik oynatma';
 	@override String get previewMutedText => 'İkincil metin böyle görünür';
+	@override String get themeSystemDescription => 'Cihazınızın görünümünü izleyin ve ışık ile karanlık arasında otomatik olarak geçin.';
+	@override String get themeLightDescription => 'Karanlık metin ile parlak bir arka plan kullanın.';
+	@override String get themeDarkDescription => 'Işık metin ile karanlık bir arka plan kullanın.';
+	@override String get themeOledDescription => 'OLED ekranlarda ışığı azaltan yakın siyah yüzeyler kullanın.';
+	@override String get themeEmberDescription => 'Sıcak kırmızı ve amber aksanlı renkler kullanın.';
+	@override String get themeGlacierDescription => 'Soğuk mavi aksanlı renkler kullanın.';
+	@override String get themeForestDescription => 'Doğal ve yeşil renkler kullanın.';
+	@override String get themePlumDescription => 'Violet ve plum aksanlı renkler kullanın.';
+	@override String get themePaperDescription => 'Sıcak kağıt gibi yüzeyleri ve mürekkep ilhamlı renkler kullanın.';
+	@override String get themeCustomDescription => 'Özelleştirilmiş tema editöründe oluşturduğunuz renk paleti kullanın.';
+	@override String get editorDescription => 'Bir palet rengi seçin, boyutunu, doymuşluğunu, parlaklığını veya açıklığını ayarlayın ve tasarruf etmeden önce önizleme güncelleştirmesini görün.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$tr extends Translations$accessibility$en {
 	@override String get largeTargets => 'Daha büyük dokunmatik hedefler';
 	@override String get largeTargetsHint => 'Paylaşılan kontroller dokunmatik ve yardımcı navigasyon için daha fazla yer verir.';
 	@override String get navigationHint => 'Kontroller arasında geçiş yapmak için Tab ve Shift+Tab, etkinleştirmek için Enter veya boşluk tuşu, kapatmak için Escape veya Geri düğmesini kullanın. Kitap açıkken yakınlaştırma ve okuma tercihleri kullanılabilir.';
+	@override String get textSizeDescription => 'PlezyNG\'de ölçekli arayüz metni, cihazınızın sistem metin boyutu ayarına ek olarak.';
+	@override String get boldTextHint => 'Bir arayüz etiketleri ve mesajları için daha ağır bir ağırlık kullanın, bunları ayırt etmek kolay hale getirin.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Kod dönüştürme kullanılamıyor — orijinal kalitede oynatılıyor';
 	@override String get subtitleUnavailableFallback => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor';
 	@override String get pipButton => 'Pencere İçinde Pencere modu';
+	@override String get openMiniPlayer => 'Açık Mini Oyuncu';
+	@override String get returnToFullPlayer => 'Tam oyuncuya geri dönmek';
 	@override String get aspectRatioButton => 'En boy oranı';
 	@override String get ambientLighting => 'Ortam aydınlatması';
 	@override String get fullscreenButton => 'Tam ekrana geç';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$tr extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'İşleme Çözünürlüğü';
 	@override String get renderResolutionScreen => 'Ekran çözünürlüğü';
 	@override String get renderResolutionVideo => 'Video çözünürlüğü';
+	@override String get fontSizeDescription => 'Bu cihazda alt başlık metin boyutunu ayarlayın.';
+	@override String get textColorDescription => 'Subtitle metni için kullanılan renk seçin.';
+	@override String get borderSizeDescription => 'Subtitle metnin etrafında çıkışın kalınlığını ayarlayın.';
+	@override String get borderColorDescription => 'Alt başlık için kullanılan renk seçin.';
+	@override String get backgroundColorDescription => 'Altyazılı metnin arkasındaki renk seçin.';
+	@override String get backgroundOpacityDescription => 'Alt başlık arka planının ne kadar şeffaf olduğunu ayarlayın:% 0 açık ve% 100 sağlamdır.';
+	@override String get positionDescription => 'Alt başlıkları dikey olarak hareket edin.% 0 videonun üst kısmıdır ve% 100 alt kısmıdır.';
+	@override String get assOverrideDescription => 'Oyuncu, ASS alt başlıklarına yerleştirilen stilleri izler, ayarlar, değiştirir veya kaldırır.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$tr assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$tr._(_root);
+	@override String get renderResolutionDescription => 'Görüntü ve ASS alt başlıklarını rasterize etmek için kullanılan çözünürlüğünü seçin.Düşük Android ölçeği performansını azaltabilir, ancak daha yumuşak görünebilir.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$tr renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$tr._(_root);
+	@override String get boldDescription => 'Subtitle metni daha ağır bir ağırlıkta çizin.';
+	@override String get italicDescription => 'İtalyanca\'da alt başlık yazısı yapıştırın.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$tr extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$tr watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$tr._(_root);
 	@override String get mediaReviewsVisibility => 'Puanlar ve yorumlar';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$tr mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$tr._(_root);
+	@override String get preferredAudioLanguageDescription => 'Bu dilde ses izlerini tercih edersiniz, sunucu veya oynatıcı otomatik olarak bir iz seçer.';
+	@override String get preferredSubtitleLanguageDescription => 'Subtitles otomatik olarak seçildiğinde bu dilde alt başlık izlerini tercih eder.';
+	@override String get subtitleAccessibilityDescription => 'Otomatik alt başlık seçimi sırasında SDH kaplamalarının tercih edildiğini veya gerekli olup olmadığını seçin.';
+	@override String get forcedSubtitleDescription => 'Otomatik seçim sırasında zorunlu alt başlık izlerinin tercih edildiğini veya gerekli olup olmadığını seçin.';
+	@override String get watchedIndicatorDescription => 'Hangi medya tipleri sunucu arayüzünde gözlemlenen bir kontrol işareti almayı seçin.';
+	@override String get mediaReviewsVisibilityDescription => 'Hangi seyirci ve eleştirel değerlendirmeleri sunucunun medya sayfalarında gösterdiğini seçin.';
+	@override String get subtitleModeDescription => 'Bu sunucu hesabı için alt başlıklar otomatik olarak ne zaman açılır seçin.';
+	@override String get hubDescription => 'Bu tercihler medya sunucusu hesabınızda kaydedilir ve diğer müşteriler için de geçerli olabilir.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$tr extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG temel katmanı';
 	@override String get dvRouteBaseLayerSdr => 'SDR temel katmanı';
 	@override String get dvRouteReshaped => 'RPU ile yeniden şekillendirilmiş (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Deneysel P7 FEL grafikleri (bilinmeyen)';
 	@override String get p7Conversion => 'P7 Dönüştürme';
 	@override String get sampleRate => 'Örnekleme Hızı';
 	@override String get pixelFormat => 'Piksel Biçimi';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$tr extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Harici oynatıcı açılamadı';
 	@override String appNotInstalled({required Object name}) => '${name} yüklü değil';
 	@override String get playInExternalPlayer => 'Harici Oynatıcıda Oynat';
+	@override String get description => 'Video açmak için başka bir uygulama seçin. mevcut oyuncular cihazınıza ve yüklü uygulamalarına bağlıdır.';
+	@override String get systemDefaultDescription => 'İşletim sisteminin videoyu varsayılan uygulama ile açmasına izin verin.';
+	@override String playerOptionDescription({required Object player}) => '${player} ile videoyu açın.';
+	@override String get playerNameDescription => 'Oyun listesinde gösterilen etiket.';
+	@override String get playerPackageDescription => 'Oyuncu uygulamasının Android paket adını girin, örneğin com.example.player.';
+	@override String get playerCommandDescription => 'Bu cihaz için yüklü oyuncu komutunu veya yürütülebilir yolu girin.';
+	@override String get playerUrlSchemeDescription => 'Oyuncu başlatmak için kullanılan URL şeması ve seçmeli URL şablonunu girin.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$tr extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$tr oauthProxy = _Translations$services$oauthProxy$tr._(_root);
 	@override late final _Translations$services$pendingAuth$tr pendingAuth = _Translations$services$pendingAuth$tr._(_root);
 	@override late final _Translations$services$libraryFilter$tr libraryFilter = _Translations$services$libraryFilter$tr._(_root);
+	@override String get seerrDescription => 'Seerr veya Overseerr\'e bağlanın başlıkları aramak ve medya istekleri göndermek için.';
+	@override late final _Translations$services$trackerDescriptions$tr trackerDescriptions = _Translations$services$trackerDescriptions$tr._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$tr extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'On';
 	@override String get resetHeroButtonDescription => 'Her satırın kahraman ayarlarını devre dışı bırakır ve kahraman satırlarının varlığından önce olduğu gibi tek bir döner bannerı yukarıya getirir.';
+	@override String get tapHeroCardDescription => 'Bir kahraman kartının oynatılmasını veya ayrıntılarını açtığını seçin.';
+	@override String get heroTapPlayDescription => 'Seçilen öğeyi hemen başlatın.';
+	@override String get heroTapDetailsDescription => 'Bir eylem seçmeden önce seçilen öğenin ayrıntılarını açın.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get source => 'Kaynak';
 	@override String get name => 'Adı :';
 	@override String get endpoint => 'Sunucu URL\'si';
+	@override String get smbEndpointHint => 'Örnek: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Bir SMB sunucusu ve bir paylaşılan klasör girin.';
 	@override String get root => 'Folders veya Prefix';
+	@override String get smbFolderHelp => 'Paylaşılan klasörün tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.';
 	@override String get username => 'Kullanıcı adı';
+	@override String get smbDomain => 'Etki alanı (isteğe bağlı)';
 	@override String get password => 'Şifre';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Anahtar Giriş ID';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth müşteri kimliği';
 	@override String get clientSecret => 'OAuth müşteri gizliliği (yalnızca Google masaüstü)';
 	@override String get allowHttp => 'Güvenilir bir ağda şifrelenmemiş HTTP bağlantısına izin ver';
+	@override String get smbEncryption => 'SMB3 bağlantısını şifrele';
+	@override String get smbEncryptionHint => 'NAS destekliyorsa SMB3 şifrelemesi kullanın.';
 	@override String get connect => 'Bağlan';
 	@override String get cancel => 'İptal';
 	@override String get save => 'Kaydet';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get useFiles => 'Dosyaları ve kitapları kullanın';
 	@override String get cancelScan => 'İptal Scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Örnek: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Bir SMB sunucusu ve bir paylaşılan klasör girin.';
-	@override String get smbFolderHelp => 'Paylaşılan klasörün tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.';
-	@override String get smbDomain => 'Etki alanı (isteğe bağlı)';
-	@override String get smbEncryption => 'SMB3 bağlantısını şifrele';
-	@override String get smbEncryptionHint => 'NAS destekliyorsa SMB3 şifrelemesi kullanın.';
+	@override String get offlineQuota => 'Offline indirme sınırı';
+	@override String get offlineQuotaHelp => 'Çevrimdışı kopyalar, ithal edilen dosyalar ve indirilmiş indirimler için kullanılan maksimum alanı ayarlayın. sınırı düşürmek mevcut kopyaları kaldırmaz.';
+	@override String get offlineStorageUsage => 'Offline depolama';
+	@override String get reservedStorage => 'Rezervasyon';
+	@override String get downloadQueue => 'İndir Queue';
+	@override String get downloadRunning => 'İndirme';
+	@override String get downloadQueued => 'bekleyen';
+	@override String get downloadPaused => 'Dinlenme';
+	@override String get downloadFailed => 'İhtiyaçlar geri çekiliyor';
+	@override String get importing => 'İthalat';
+	@override String get importInterrupted => 'İhracat kesildi · kaldırma açık';
+	@override String get errorQuotaExceeded => 'Çevrimdışı depolama sınırı ulaştı. sınırı kaldırın veya indirilmiş bir kopyasını kaldırın.';
+	@override String get errorStorageLow => 'Korunan rezervini korumak için yeterli ücretsiz cihaz depolama alanı yoktur.';
+	@override String get errorStorageUnavailable => 'PlezyNG ücretsiz cihaz depolama kontrol edemedi, bu yüzden yazma durduruldu.';
+	@override String get removeDownloadJob => 'Download İndir';
+	@override String get downloadAlreadyComplete => 'Bu indirme, kaldırılmadan önce tamamlanmıştır. öğe artık çevrimdışı olarak mevcuttur.';
+	@override String get confirmRemoveDownloadJob => 'Bu indirmeyi kaldırın ve kısmen indirilmiş herhangi bir veriyi silin? pozisyonunuz ve notlarınız kalır.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get statusFinished => 'bitmiş';
 	@override String get goToTime => 'Zamanına gidin';
 	@override String get timeHelp => 'Saatler: dakikalar: saniye veya dakikalar: saniye';
+	@override String get recoveryHelp => 'Son zamanlarda şifrelenmiş bir kopyasını aktarmadan önce veya senkronizasyon verilerini düzeltmeden önce ihraç edin. ithalat mevcut durumla birleşir; yerel senkrona geçmişi asla değiştirmezler. senkronu ayrı tutun.';
+	@override String get recoveryExport => 'İhracat şifreli kurtarma dosyası';
+	@override String get recoveryImport => 'İthalat Şifreli Kurtarma Dosyası';
+	@override String get recoveryImportConfirm => 'Bu şifreli kurtarma dosyasını mevcut okuma pozisyonları ve notları ile birleştirin? Mevcut geçmişi muhafaza edilecektir. Paylaşılan kütüphane ve öğe kimlikleri dahil değildir; ithal etmeden önce her cihazda eşleşen kimlikler ayarlayın.';
+	@override String get recoveryExported => 'Şifreli kurtarma dosyası kaydedildi.';
+	@override String get recoveryImported => 'Kurtarma verileri birleşti.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$tr extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Seçilen istemci kimliği: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Puan ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Altyazı indiriliyor: ${title}';
+	@override String get sharedEntryPair => 'Bu öğeyi çiftleştirin';
+	@override String get sharedEntryPairHelp => 'Her cihazda bu öğe için aynı kimliği girin. istikrarlı bir paylaşılan tanımlayıcı kullanın veya birini oluşturun ve eşleşen öğeye kopyalayın. ilerleme çiftleri yalnızca sürüm dosya türleri, boyutları ve sipariş eşleştiğinde. Blank bu haritalama kaldırır.';
+	@override String get sharedEntryId => 'Paylaşılan öğe ID';
+	@override String get generateSharedEntryId => 'Paylaşılan öğe ID oluşturma';
+	@override String get sharedLibraryId => 'Paylaşılan Kütüphane Kimliği (Seçmeli)';
+	@override String get sharedLibraryHelp => 'Aynı kütüphaneyi açan cihazlarda aynı kimliği kullanın.Bu kamu kimliği, farklı kaynak bağlantıları üzerindeki okuma ilerlemesini ve notlarını taşımaya yardımcı olur; bir şifre değildir. Tedarikçiler farklı öğe kimliklerini kullandıklarında, bu öğeleri ayrıntılı ekranlarından eşleştirin.';
+	@override String get sharedLibraryInvalid => '8-100 harf, sayılar, noktalar, alt puanlar veya hyphens kullanın.';
+	@override String get generateSharedLibraryId => 'Paylaşılan bir kütüphane kimliği oluşturun';
+	@override String get nfsReadAhead => 'NFS read-ahead talepleri';
+	@override String get nfsReadAheadHelp => 'Daha fazla paralel okuma hızlı bir NAS veya ağ üzerindeki geçiş kapasitesini geliştirebilir. 1 kullanın, eğer sunucu eşzamanlı talepleri sınırlarsa.';
+	@override String get nfsReadTest => 'NFS performansını ölçmek';
+	@override String get nfsReadTestHelp => 'Bu NAS bağlantısını ölçmek için en büyük dosyadan 64 MiB\'ye kadar okur. bu ağ bant genişliği kullanır.';
+	@override String get nfsQualificationResult => 'NFS Okuma Ölçümleri';
+	@override String get nfsReadBytes => 'Bilgiler okuma';
+	@override String get nfsReadSpeed => 'ölçülen hız';
+	@override String get nfsReadRequests => 'talepleri okuyun';
+	@override String get sharedEntryConflict => 'Bu paylaşılan öğe kimliği zaten bu kütüphanede başka bir öğe ile eşleştirilmiştir.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$tr extends Translations$common$mediaKind$en
 	@override String get clip => 'Klip';
 	@override String get photo => 'Fotoğraf';
 	@override String get folder => 'Klasör';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$tr extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Bağlantılı keşif kaynaklarından öneriler ve öğeler açılır.';
+	@override String get libraries => 'Bağlantılı medya kütüphanelerinizi açın.';
+	@override String get liveTv => 'Bir sunucunun sağladığı zaman canlı TV\'yi açın; aksi takdirde başlangıç Home\'a geri düşer.';
+	@override String get search => 'Açık medya arama.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$tr extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Bir hata oluştu: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$tr extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Yazılar, renkler, boyutlar ve yerleştirme alt başlık dosyasında yazılmış tutun.';
+	@override String get yes => 'Oyuncunun alt başlık tarzı ayarlarını ASS alt başlığı ayarlamasına izin verin.';
+	@override String get scale => 'Oyuncu stilini ve video boyutlarına uymak için yerleşik boyutları ölçeği uygulayın.';
+	@override String get force => 'Yerleşik ASS stillerini oyuncunun alt başlık tarzı ile değiştirin.';
+	@override String get strip => 'Yerleşik ASS biçimlendirmesi kaldırın ve alt başlık metni açık bir şekilde yapın.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$tr extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'En keskin sonuç için tam ekran yüzey çözünürlüğüne girin.';
+	@override String get video => 'Referans olarak video çözünürlüğünü kullanır, bu da yüksek çözünümlü ekranlarda çalışmayı azaltabilir.';
+	@override String get threeQuarter => 'Ekran yüzey çözünürlüğünün %75\'ine indirim, mütevazı performans tasarrufu sağlar.';
+	@override String get half => 'Ekran yüzey çözünürlüğünün %50\'sine indirmek, daha yumuşak kenarlar ile çalışmayı azaltmak için.';
+	@override String get third => 'Ekran yüzey çözünürlüğünün üçte birinde, yumuşak kenarlar ile çalışmayı azaltmak için kaydırın.';
+	@override String get quarter => 'Ekran yüzey çözünürlüğünün dörtte birinde çalışmayı azaltmak, en yumuşak sonucu elde etmek.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$tr extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$tr extends T
 	@override String get preferSdh => 'SDH altyazıları tercih et';
 	@override String get onlySdh => 'Yalnızca SDH altyazılar';
 	@override String get onlyNonSdh => 'Yalnızca SDH olmayan altyazılar';
+	@override String get preferNonSdhDescription => 'Standart ve SDH versiyonları mevcut olduğunda standart alt başlıklar tercih edilir.';
+	@override String get preferSdhDescription => 'Mevcut olduğunda SDH alt başlıkları tercih eder, ancak standart alt başlığı bir düşüş olarak izin verir.';
+	@override String get onlySdhDescription => 'Sadece SDH alt başlıkları kullanın; standart alt başlığa geri dönmeyin.';
+	@override String get onlyNonSdhDescription => 'Sadece standart alt başlıkları kullanın; SDH alt başlığı hariç tutun.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$tr extends Translat
 	@override String get preferForced => 'Zorunlu altyazıları tercih et';
 	@override String get onlyForced => 'Yalnızca zorunlu altyazılar';
 	@override String get onlyNonForced => 'Yalnızca zorunlu olmayan altyazılar';
+	@override String get preferNonForcedDescription => 'Düzenli alt başlıkları tercih eder, ancak bir düşüş olarak zorunlu izleri izin verir.';
+	@override String get preferForcedDescription => 'Mevcut olduğunda zorunlu izleri tercih eder, ancak düşüş olarak düzenli alt başlıkları izin verir.';
+	@override String get onlyForcedDescription => 'Sadece zorunlu olarak işaretlenmiş yolları kullanın.';
+	@override String get onlyNonForcedDescription => 'Zorunlu olarak işaretlenmiş yollar hariç tutulur.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$tr extends Transl
 	@override String get moviesAndShows => 'Filmler ve TV dizileri';
 	@override String get movies => 'Yalnızca filmler';
 	@override String get shows => 'Yalnızca TV dizileri';
+	@override String get noneDescription => 'İzlenmiş kontrol işaretlerini göstermeyin.';
+	@override String get moviesAndShowsDescription => 'Filmler ve TV şovları için izlenen kontrol işaretlerini gösterin.';
+	@override String get moviesDescription => 'Sadece filmler için izlenen kontrol işaretlerini gösterin.';
+	@override String get showsDescription => 'Sadece TV şovları için izlenen kontrol işaretlerini gösterin.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$tr extends Translatio
 	@override String get usersOnly => 'Yalnızca kullanıcılar';
 	@override String get criticsOnly => 'Yalnızca eleştirmenler';
 	@override String get nobody => 'Gizli';
+	@override String get usersAndCriticsDescription => 'Hem kullanıcı derecelendirmeleri hem de eleştirel değerlendirmeleri gösterin.';
+	@override String get usersOnlyDescription => 'Kullanıcılar tarafından sunulan değerlendirmeleri ve incelemeleri gösterin.';
+	@override String get criticsOnlyDescription => 'Eleştirel değerlendirmeleri ve incelemeleri gösterin.';
+	@override String get nobodyDescription => 'Değerlendirmeleri ve değerlendirmeleri gizleyin.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$tr extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Yalnızca aşağıda işaretlenen kitaplıkları eşitle.';
 	@override String get libraries => 'Kitaplıklar';
 	@override String get noLibraries => 'Kitaplık bulunmuyor';
+	@override String get modeDescription => 'Kontrol edilen kütüphanelerin senkronize edilmesini engellediğini veya senkrona giren tek kütüphane olup olmadığını seçin.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$tr extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Trakt hesabınızla izlenen bölümleri ve filmleri senkronize edin.';
+	@override String get mal => 'Anime listeleri senkronize edin ve MyAnimeList ile ilerlemeyi izleyin.';
+	@override String get anilist => 'Anime listeleri senkronize edin ve AniList ile ilerlemeyi izleyin.';
+	@override String get simkl => 'Simkl ile filmler, TV şovları ve anime izledi.';
+	@override String get mdblist => 'Önerilerde MDBList dereceleri ve listeleri gösterin ve Keşfedin.';
 }
 
 /// The flat map containing all translations for locale <tr>.
@@ -4481,6 +4754,7 @@ extension on TranslationsTr {
 			'appIcon.names.strata' => 'Katmanlar',
 			'appIcon.names.facet' => 'Faset',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Cihazınızın başlatıcısı tarafından gösterilen simgeyi seçin. önizlemeler her seçeneğin nasıl göründüğünü gösterir.',
 			'auth.signInWithPlex' => 'Plex ile Giriş Yap',
 			'auth.showQRCode' => 'QR Kodunu Göster',
 			'auth.authenticate' => 'Doğrula',
@@ -4502,6 +4776,32 @@ extension on TranslationsTr {
 			'common.cancel' => 'İptal',
 			'common.save' => 'Kaydet',
 			'common.close' => 'Kapat',
+			'common.closeMiniPlayer' => 'Yakın Mini Oyuncu',
+			'common.closeWorkspaceWindow' => 'Yakın pencere',
+			'common.returnToFullView' => 'Tam Görünüm\'e Geri Dönüş',
+			'common.manageMediaSessions' => 'Medya Toplantıları Yönetimi',
+			'common.hideMediaSessions' => 'Medya Toplantıları',
+			'common.mediaSessions' => 'Medya Toplantısı',
+			'common.mediaSessionsHint' => 'Bir oturumu ileriye getirmek için seçin. park penceresini gizler ama açık tutar. geri dönüş tam görünümde açılır; yakında sona erer.',
+			'common.sessionInWorkspace' => 'Çalışma alanında',
+			'common.sessionParked' => 'Parkı',
+			'common.sessionFullscreen' => 'Tam Ekran',
+			'common.switchToNextWindow' => 'Bir sonraki pencere ile değiştirin',
+			'common.moveWindow' => 'Giriş penceresi',
+			'common.finishMovingWindow' => 'Hareketli pencereleri bitirmek',
+			'common.moveWindowHint' => 'Uzun basın ve pencereyi harekete geçirmek için sürükleyin. bu kontrol ayrıca mermi anahtarı hareketini sağlar.',
+			'common.movingWindowHelp' => 'Taşınmak için çekiş · Çekiş anahtarları ayarlayın · Kaynaklar girin · Kaçış iptal',
+			'common.resizeWindow' => 'Rize penceresi',
+			'common.resizeWindowHint' => 'Bu elini çekmek veya pencereyi yeniden şekillendirmek için kurşun anahtarlarını kullanın.',
+			'common.workspaceWindowHint' => 'Hareket kontrolü veya uzun baskı ve harekete geçmek için sürükleyin.',
+			'common.workspacePaneHint' => 'Bu paneli odaklanmak için seçin. genişletmek için tam ekran kontrolünü kullanın.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Toplantı penceresi: ${title}',
+			'common.workspaceTitleHint' => 'Başlık çubuğunu hareket etmek için sürükle; genişletmek için tam ekran düğmesini kullanın.',
+			'common.moveToSessionTray' => 'Session Tray\'ye gidin',
+			'common.moveToSessionTrayHint' => 'Bu oturum, penceresini göstermeden kullanılabilir hale getirir.',
+			'common.closeSessionHint' => 'Bu pencereyi kapatın ve oturumunu sona erdirin.',
+			'common.sideBySideLayout' => 'Side-by-side layout\'a geçiş yapın',
+			'common.floatingWindows' => 'Sürücüsüz pencereleri değiştirmek için',
 			'common.clear' => 'Temizle',
 			'common.reset' => 'Sıfırla',
 			'common.later' => 'Daha Sonra',
@@ -4919,6 +5219,8 @@ extension on TranslationsTr {
 			'settings.audioPassthrough' => 'Ses Doğrudan Geçişi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughDescriptionApple' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. iOS, iPadOS ve tvOS 26 veya sonrasında TrueHD Atmos ve DTS:X uzamsal ses olarak oynatılır. Diğer DTS ve TrueHD parçaları çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ses normalleştirme açıkken kapalıdır',
 			'settings.audioChannelLimit' => 'Ses Kanalları',
@@ -4945,9 +5247,14 @@ extension on TranslationsTr {
 			'settings.dvConversionNativeDescription' => 'Yerel DV7\'yi zorla ve DV dönüştürme yeniden denemesini engelle',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1\'e satır içi RPU dönüştürmeyi zorla',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun',
+			'settings.experimentalDolbyVision' => 'Deneysel Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.',
+			'settings.dvCompatibilityFallback' => 'Uyumluluk yedeği',
+			'settings.dvCompatibilityFallbackDescription' => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.',
+			'settings.dvExperimentDiagnostics' => 'Video deneyi günlükleri',
+			'settings.dvExperimentDiagnosticsDescription' => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.',
 			'settings.disableDolbyVision' => 'Dolby Vision\'ı Devre Dışı Bırak',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat',
 			'settings.hdrSdrConversion' => 'HDR\'den SDR\'ye Dönüştürme',
 			'settings.hdrSdrConversionDescription' => 'Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.',
@@ -5033,13 +5340,84 @@ extension on TranslationsTr {
 			'settings.regionFormatDescription' => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.',
 			'settings.metadataLanguage' => 'Meta veri dili',
 			'settings.metadataLanguageDescription' => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.',
-			'settings.experimentalDolbyVision' => 'Deneysel Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.',
-			'settings.dvExperimentUnavailableDescription' => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.',
-			'settings.dvCompatibilityFallback' => 'Uyumluluk yedeği',
-			'settings.dvCompatibilityFallbackDescription' => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.',
-			'settings.dvExperimentDiagnostics' => 'Video deneyi günlükleri',
-			'settings.dvExperimentDiagnosticsDescription' => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Playback başlarken tam ekranı girin',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Playback başlatıldığında tam ekranlı masaüstü video açılır',
+			'settings.extendVideoIntoDisplayCutout' => 'Video\'yu Ekran Kutu\'na Genişletin',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Tam ekran videoları Android telefonlarda kamera kesimi kullanın',
+			'settings.languageDescription' => 'PlezyNG kontrolleri ve mesajları için kullanılan dil seçin. sistem izleme cihazınızın dili.',
+			'settings.themeDescription' => 'Uygulama boyunca kullanılan renk ve kontrast seçin.',
+			'settings.libraryDensityDescription' => 'Kütüphane kartlarının sayısını her satırda değiştirin.',
+			'settings.displayScaleDescription' => 'Bu araba ekranındaki arayüzü cihazınızdaki metin boyutunu değiştirmeden yeniden yapılandırın.',
+			'settings.themeSongVolumeDescription' => 'Konu şarkılarının diğer sesle ilgili hacmini ayarlayın.',
+			'settings.viewModeDescription' => 'Kütüphane öğelerinin bir ağda poster olarak veya kompakt bir liste olarak göründüğünü seçin.',
+			'settings.gridViewDescription' => 'Kütüphane öğelerini posterlerin satırlarında ve sütunlarında düzenleyin.',
+			'settings.listViewDescription' => 'Kütüphane öğeleri vertikal bir listede, öğe başına daha fazla metin ile gösterilir.',
+			'settings.gridSpacingDescription' => 'Kütüphane ağlarında posterler arasındaki boşluğu ayarlayın.',
+			'settings.gridSpacingTightDescription' => 'Daha küçük boşluklarla ekranda daha fazla poster yapıştırın.',
+			'settings.gridSpacingNormalDescription' => 'Posterler arasındaki standart boşluğu kullanın.',
+			'settings.gridSpacingSpaciousDescription' => 'Daha fazla ayrılık için posterler arasında daha büyük boşluklar ekleyin.',
+			'settings.episodePosterModeDescription' => 'Bölüm kartlarında hangi sanat eserinin göründüğünü seçin.',
+			'settings.seriesPosterDescription' => 'Her bölüm için serinin posterini kullanın.',
+			'settings.seasonPosterDescription' => 'Mevsim posterini her bölüm için kullanın.',
+			'settings.episodeThumbnailDescription' => 'Mevcut olduğunda bölümden bir çerçeve kullanın.',
+			'settings.continueWatchingActionDescription' => 'Devamlı izleme kartını etkinleştirirken neler olup bittiğini seçin.',
+			'settings.continueWatchingPlayDescription' => 'Film veya bölümleri hemen başlatın.',
+			'settings.continueWatchingDetailsDescription' => 'Başlık sayfasını öncelikle açın, böylece ayrıntıları inceleyebilir ve bir eylem seçebilirsiniz.',
+			'settings.episodeActionDescription' => 'Bir bölüm kartını etkinleştirdiğinizde ne olacağını seçin.',
+			'settings.episodePlayDescription' => 'Olayları hemen başlatın.',
+			'settings.episodeDetailsDescription' => 'Playback öncesinde bölüm sayfasını açın.',
+			'settings.contentScreensaverDelayDescription' => 'Artwork göstermeden önce PlezyNG\'nin giriş olmadan ne kadar beklediğini seçin.',
+			'settings.continueWatchingRowSizeDescription' => 'Sürekli İzleme satırında kartların ne kadar büyük olduğunu seçin.',
+			'settings.rowSizeCompactDescription' => 'Daha küçük kartları gösterin, böylece satır boyunca daha fazla öğe uygun olur.',
+			'settings.rowSizeStandardDescription' => 'Standart kart boyutunu kullanın.',
+			'settings.rowSizeLargeDescription' => 'Daha büyük kartlar ve daha fazla sanat ayrıntıları ile gösterin.',
+			'settings.visualEffectsDescription' => 'Bu cihaz için animasyon ve sanat etkisi bütçesini seçin.',
+			'settings.visualEffectsFullDescription' => 'Her cihazda tam animasyon ve sanat eserleri etkilerini kullanın.',
+			'settings.startupSectionDescription' => 'PlezyNG başladığında hangi bölümün açıldığını seçin.',
+			'settings.startupSectionOptions.discover' => 'Bağlantılı keşif kaynaklarından öneriler ve öğeler açılır.',
+			'settings.startupSectionOptions.libraries' => 'Bağlantılı medya kütüphanelerinizi açın.',
+			'settings.startupSectionOptions.liveTv' => 'Bir sunucunun sağladığı zaman canlı TV\'yi açın; aksi takdirde başlangıç Home\'a geri düşer.',
+			'settings.startupSectionOptions.search' => 'Açık medya arama.',
+			'settings.smallSkipDurationDescription' => 'Kısa geriye doğru hareket eden mesafeyi ayarlayın ve kontrolleri arayın.',
+			'settings.largeSkipDurationDescription' => 'Uzun geriye doğru hareket eden mesafeyi ayarlayın ve kontrolleri arayın.',
+			'settings.rewindOnResumeDescription' => 'Bir video yeniden çekildiğinde bu miktarda geri oynatma hareketi.',
+			'settings.defaultSleepTimerDescription' => 'Uyumaya başladığınızda kullanılan başlangıç süresini ayarlayın.',
+			'settings.playNextCountdownDescription' => 'Bir sonraki bölümü başlatmadan önce uzun süre bekleyin. hemen başlamak için 0\'a ayarlayın.',
+			'settings.autoSkipDelaySettingDescription' => 'Bir giriş, kredi veya reklam otomatik olarak geçmek için ayarlandığında geçerlidir.',
+			'settings.downmixCenterBoostDescription' => 'Orta kanalda diyaloğu yükseltin, çevresel ses stereo\'ya karıştırıldığında.',
+			'settings.displaySwitchDelayDescription' => 'Ekran modunu değiştirmeden önce bekleyin, böylece TV veya alıcı önceki anahtarını tamamlayabilir.',
+			'settings.playerBackendDescription' => 'Hangi oynatma motoru bu cihazda videoyu dekore eder ve geri dönüştürür.',
+			'settings.exoPlayerDescription' => 'Android\'in yerli Media3 tabanlı oyuncusu ve desteklenen donanım yollarını kullanın.',
+			'settings.mpvDescription' => 'MPV\'yi kullanın, ek oynatma, alt başlık ve video işleme kontrollerini ortaya çıkarır.',
+			'settings.scopeOffDescription' => 'Sadece geçerli playback oturumu için değişiklikleri tutun.',
+			'settings.scopeGlobalDescription' => 'Her kütüphane ve başlık için aynı değeri tekrar kullanın.',
+			'settings.scopeLibraryDescription' => 'Her kütüphane için ayrı bir değer hatırlayın.',
+			'settings.scopeTitleDescription' => 'Her şov veya film için ayrı bir değer hatırlayın.',
+			'settings.specialsOrderingServerDescription' => 'Medya sunucusu tarafından sağlanan bölüm siparişi tutun.',
+			'settings.specialsOrderingAirDateDescription' => 'Hava tarihlerine göre düzenli bölümler arasında özel yerleştirin.',
+			'settings.specialsOrderingLastDescription' => 'Düzenli mevsimlerden sonra her özel yerleştirin.',
+			'settings.skipIntroModeDescription' => 'Giriş işaretleyicilerinin normal oynadığını, bir kaydırma düğmesini veya otomatik kaydırmayı seçin.',
+			'settings.skipCreditsModeDescription' => 'Kredi normal oynadığını, bir kaydırma düğmesini veya otomatik kaydırmayı seçin.',
+			'settings.skipAdsModeDescription' => 'Keşfedilen reklamların normal oynadığını, bir kaydırma düğmesini veya otomatik olarak kaydırmayı seçin.',
+			'settings.playbackBufferAutoDescription' => 'Aktif oyuncunun normal büyüklüğünü seçmesine izin verin.',
+			'settings.playbackBufferLargeDescription' => 'Playback öncesinde daha fazla medya hazır tutun; bu daha fazla hafıza kullanır.',
+			'settings.playbackBufferExtraLargeDescription' => 'En büyük okuma alanı bufferini tutun; bu hafızayı en çok kullanır.',
+			'settings.defaultQualityDescription' => 'Varsayılan video çözünürlüğünü ayarlayın ve sunucu tarafından kodlanan akışlar için çatı bitrat.',
+			'settings.cellularQualityDescription' => 'Cihazın yalnızca bir hücresel bağlantıyı kullandığında varsayılan kaliteyi aşmak.',
+			'settings.remoteQualityDescription' => 'Bir uzaktan bağlantı üzerinden bir sunucuya bağlandığınızda varsayılan kaliteyi aşın.',
+			'settings.qualityPresetOriginalDescription' => 'Kaynakları mevcut kalitede oynatın, sunucunun onu transkod etmesini istemeden.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Sunucuya yukarıda gösterilen çözünürlük ve bitrate kullanılarak dönüştürülmüş bir akış için sor.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Default Quality olarak seçilen kaliteyi kullanın.',
+			'settings.musicQualityDescription' => 'Sunucu tarafından talep edilen maksimum ses bitrasını ayarlayın; Orijinal kaynak akışını tutar.',
+			'settings.musicQualityOriginalDescription' => 'Kaynak sesini bitrate-capped transcode olmadan oynatın.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Yukarıda gösterilen bitrate yakınında kaplanmış bir sunucu transkodı isteyin; gerçek çıkış değişebilir.',
+			'settings.maxVolumeInputLabel' => 'Maksimum hacim (% )',
+			'settings.checkForUpdatesDescription' => 'Şimdi PlezyNG\'nin daha yeni bir versiyonu olup olmadığını kontrol edin.',
+			'settings.appearanceDescription' => 'Uygulama teması seçin ve kütüphane kartlarını, Ev satırlarını ve navigasyonunu ayarlayın.',
+			'settings.prerollLibraryDescription' => 'Film öncesi roller olarak mevcut klipleri içeren kütüphaneyi seçin.',
+			'settings.prerollSelectionDescription' => 'Seçilen kütüphaneden hangi klipleri filmlerden önce oynayabilirsiniz seçin.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Ekran koruyucu sanat eserini göstermeden önce giriş olmadan bu uzun dakikaları bekleyin.',
+			'settings.videoCodecOptionDescription' => 'Desteklendiğinde bu kodek için doğrudan oynatma izin verin. kontrolsüz kodekler medya sunucusu tarafından şifrelenir.',
 			'themeEditor.builtIn' => 'Yerleşik',
 			'themeEditor.presets' => 'Hazır Temalar',
 			'themeEditor.custom' => 'Özel',
@@ -5078,6 +5456,17 @@ extension on TranslationsTr {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} dk kaldı',
 			'themeEditor.previewSwitch' => 'Otomatik oynatma',
 			'themeEditor.previewMutedText' => 'İkincil metin böyle görünür',
+			'themeEditor.themeSystemDescription' => 'Cihazınızın görünümünü izleyin ve ışık ile karanlık arasında otomatik olarak geçin.',
+			'themeEditor.themeLightDescription' => 'Karanlık metin ile parlak bir arka plan kullanın.',
+			'themeEditor.themeDarkDescription' => 'Işık metin ile karanlık bir arka plan kullanın.',
+			'themeEditor.themeOledDescription' => 'OLED ekranlarda ışığı azaltan yakın siyah yüzeyler kullanın.',
+			'themeEditor.themeEmberDescription' => 'Sıcak kırmızı ve amber aksanlı renkler kullanın.',
+			'themeEditor.themeGlacierDescription' => 'Soğuk mavi aksanlı renkler kullanın.',
+			'themeEditor.themeForestDescription' => 'Doğal ve yeşil renkler kullanın.',
+			'themeEditor.themePlumDescription' => 'Violet ve plum aksanlı renkler kullanın.',
+			'themeEditor.themePaperDescription' => 'Sıcak kağıt gibi yüzeyleri ve mürekkep ilhamlı renkler kullanın.',
+			'themeEditor.themeCustomDescription' => 'Özelleştirilmiş tema editöründe oluşturduğunuz renk paleti kullanın.',
+			'themeEditor.editorDescription' => 'Bir palet rengi seçin, boyutunu, doymuşluğunu, parlaklığını veya açıklığını ayarlayın ve tasarruf etmeden önce önizleme güncelleştirmesini görün.',
 			'search.hint' => 'Film, dizi, müzik ara...',
 			'search.tryDifferentTerm' => 'Farklı bir arama terimi deneyin',
 			'search.searchYourMedia' => 'Medyanızda arayın',
@@ -5323,6 +5712,8 @@ extension on TranslationsTr {
 			'accessibility.largeTargets' => 'Daha büyük dokunmatik hedefler',
 			'accessibility.largeTargetsHint' => 'Paylaşılan kontroller dokunmatik ve yardımcı navigasyon için daha fazla yer verir.',
 			'accessibility.navigationHint' => 'Kontroller arasında geçiş yapmak için Tab ve Shift+Tab, etkinleştirmek için Enter veya boşluk tuşu, kapatmak için Escape veya Geri düğmesini kullanın. Kitap açıkken yakınlaştırma ve okuma tercihleri kullanılabilir.',
+			'accessibility.textSizeDescription' => 'PlezyNG\'de ölçekli arayüz metni, cihazınızın sistem metin boyutu ayarına ek olarak.',
+			'accessibility.boldTextHint' => 'Bir arayüz etiketleri ve mesajları için daha ağır bir ağırlık kullanın, bunları ayırt etmek kolay hale getirin.',
 			'tooltips.shufflePlay' => 'Karışık oynat',
 			'tooltips.playTrailer' => 'Fragmanı oynat',
 			'tooltips.markAsWatched' => 'İzlendi olarak işaretle',
@@ -5342,6 +5733,8 @@ extension on TranslationsTr {
 			'videoControls.sleepTimerEndOfVideo' => 'Mevcut videonun sonu',
 			'videoControls.sleepTimerStopAtHeader' => 'Durma zamanı',
 			'videoControls.sleepTimerDurationHeader' => 'Zamanlayıcı',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Oynatma bu videonun sonunda duraklatılacak',
 			'videoControls.stillWatching' => 'Hâlâ izliyor musunuz?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}sn içinde duraklatılıyor',
@@ -5376,6 +5769,8 @@ extension on TranslationsTr {
 			'videoControls.transcodeUnavailableFallback' => 'Kod dönüştürme kullanılamıyor — orijinal kalitede oynatılıyor',
 			'videoControls.subtitleUnavailableFallback' => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor',
 			'videoControls.pipButton' => 'Pencere İçinde Pencere modu',
+			'videoControls.openMiniPlayer' => 'Açık Mini Oyuncu',
+			'videoControls.returnToFullPlayer' => 'Tam oyuncuya geri dönmek',
 			'videoControls.aspectRatioButton' => 'En boy oranı',
 			'videoControls.ambientLighting' => 'Ortam aydınlatması',
 			'videoControls.fullscreenButton' => 'Tam ekrana geç',
@@ -5460,8 +5855,6 @@ extension on TranslationsTr {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" için kitaplık taraması başladı',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kitaplık taranamadı: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" için meta veriler yenileniyor...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" için meta veri yenilemesi başladı',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Meta veriler yenilenemedi: ${error}',
 			'messages.logoutConfirm' => 'Çıkış yapmak istediğinizden emin misiniz?',
@@ -5521,6 +5914,28 @@ extension on TranslationsTr {
 			'subtitlingStyling.renderResolution' => 'İşleme Çözünürlüğü',
 			'subtitlingStyling.renderResolutionScreen' => 'Ekran çözünürlüğü',
 			'subtitlingStyling.renderResolutionVideo' => 'Video çözünürlüğü',
+			'subtitlingStyling.fontSizeDescription' => 'Bu cihazda alt başlık metin boyutunu ayarlayın.',
+			'subtitlingStyling.textColorDescription' => 'Subtitle metni için kullanılan renk seçin.',
+			'subtitlingStyling.borderSizeDescription' => 'Subtitle metnin etrafında çıkışın kalınlığını ayarlayın.',
+			'subtitlingStyling.borderColorDescription' => 'Alt başlık için kullanılan renk seçin.',
+			'subtitlingStyling.backgroundColorDescription' => 'Altyazılı metnin arkasındaki renk seçin.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Alt başlık arka planının ne kadar şeffaf olduğunu ayarlayın:% 0 açık ve% 100 sağlamdır.',
+			'subtitlingStyling.positionDescription' => 'Alt başlıkları dikey olarak hareket edin.% 0 videonun üst kısmıdır ve% 100 alt kısmıdır.',
+			'subtitlingStyling.assOverrideDescription' => 'Oyuncu, ASS alt başlıklarına yerleştirilen stilleri izler, ayarlar, değiştirir veya kaldırır.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Yazılar, renkler, boyutlar ve yerleştirme alt başlık dosyasında yazılmış tutun.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Oyuncunun alt başlık tarzı ayarlarını ASS alt başlığı ayarlamasına izin verin.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Oyuncu stilini ve video boyutlarına uymak için yerleşik boyutları ölçeği uygulayın.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Yerleşik ASS stillerini oyuncunun alt başlık tarzı ile değiştirin.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Yerleşik ASS biçimlendirmesi kaldırın ve alt başlık metni açık bir şekilde yapın.',
+			'subtitlingStyling.renderResolutionDescription' => 'Görüntü ve ASS alt başlıklarını rasterize etmek için kullanılan çözünürlüğünü seçin.Düşük Android ölçeği performansını azaltabilir, ancak daha yumuşak görünebilir.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'En keskin sonuç için tam ekran yüzey çözünürlüğüne girin.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Referans olarak video çözünürlüğünü kullanır, bu da yüksek çözünümlü ekranlarda çalışmayı azaltabilir.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Ekran yüzey çözünürlüğünün %75\'ine indirim, mütevazı performans tasarrufu sağlar.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Ekran yüzey çözünürlüğünün %50\'sine indirmek, daha yumuşak kenarlar ile çalışmayı azaltmak için.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Ekran yüzey çözünürlüğünün üçte birinde, yumuşak kenarlar ile çalışmayı azaltmak için kaydırın.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Ekran yüzey çözünürlüğünün dörtte birinde çalışmayı azaltmak, en yumuşak sonucu elde etmek.',
+			'subtitlingStyling.boldDescription' => 'Subtitle metni daha ağır bir ağırlıkta çizin.',
+			'subtitlingStyling.italicDescription' => 'İtalyanca\'da alt başlık yazısı yapıştırın.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Gelişmiş video oynatıcı ayarları',
 			'mpvConfig.presets' => 'Önayarlar',
@@ -5657,11 +6072,19 @@ extension on TranslationsTr {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH altyazıları tercih et',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Yalnızca SDH altyazılar',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Yalnızca SDH olmayan altyazılar',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Standart ve SDH versiyonları mevcut olduğunda standart alt başlıklar tercih edilir.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Mevcut olduğunda SDH alt başlıkları tercih eder, ancak standart alt başlığı bir düşüş olarak izin verir.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Sadece SDH alt başlıkları kullanın; standart alt başlığa geri dönmeyin.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Sadece standart alt başlıkları kullanın; SDH alt başlığı hariç tutun.',
 			'accountPreferences.forcedSubtitles' => 'Zorunlu altyazılar',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Zorunlu olmayan altyazıları tercih et',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Zorunlu altyazıları tercih et',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Yalnızca zorunlu altyazılar',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Yalnızca zorunlu olmayan altyazılar',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Düzenli alt başlıkları tercih eder, ancak bir düşüş olarak zorunlu izleri izin verir.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Mevcut olduğunda zorunlu izleri tercih eder, ancak düşüş olarak düzenli alt başlıkları izin verir.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Sadece zorunlu olarak işaretlenmiş yolları kullanın.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Zorunlu olarak işaretlenmiş yollar hariç tutulur.',
 			'accountPreferences.displayMissingEpisodes' => 'Eksik bölümleri göster',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Sunucunun bildiği ancak dosyası olmayan bölümleri listele.',
 			'accountPreferences.hidePlayedInLatest' => 'Son Eklenenler\'de izlenen ögeleri gizle',
@@ -5675,11 +6098,27 @@ extension on TranslationsTr {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmler ve TV dizileri',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Yalnızca filmler',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Yalnızca TV dizileri',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'İzlenmiş kontrol işaretlerini göstermeyin.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Filmler ve TV şovları için izlenen kontrol işaretlerini gösterin.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Sadece filmler için izlenen kontrol işaretlerini gösterin.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Sadece TV şovları için izlenen kontrol işaretlerini gösterin.',
 			'accountPreferences.mediaReviewsVisibility' => 'Puanlar ve yorumlar',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Kullanıcılar ve eleştirmenler',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Yalnızca kullanıcılar',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Yalnızca eleştirmenler',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Gizli',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Hem kullanıcı derecelendirmeleri hem de eleştirel değerlendirmeleri gösterin.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Kullanıcılar tarafından sunulan değerlendirmeleri ve incelemeleri gösterin.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Eleştirel değerlendirmeleri ve incelemeleri gösterin.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Değerlendirmeleri ve değerlendirmeleri gizleyin.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Bu dilde ses izlerini tercih edersiniz, sunucu veya oynatıcı otomatik olarak bir iz seçer.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Subtitles otomatik olarak seçildiğinde bu dilde alt başlık izlerini tercih eder.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Otomatik alt başlık seçimi sırasında SDH kaplamalarının tercih edildiğini veya gerekli olup olmadığını seçin.',
+			'accountPreferences.forcedSubtitleDescription' => 'Otomatik seçim sırasında zorunlu alt başlık izlerinin tercih edildiğini veya gerekli olup olmadığını seçin.',
+			'accountPreferences.watchedIndicatorDescription' => 'Hangi medya tipleri sunucu arayüzünde gözlemlenen bir kontrol işareti almayı seçin.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Hangi seyirci ve eleştirel değerlendirmeleri sunucunun medya sayfalarında gösterdiğini seçin.',
+			'accountPreferences.subtitleModeDescription' => 'Bu sunucu hesabı için alt başlıklar otomatik olarak ne zaman açılır seçin.',
+			'accountPreferences.hubDescription' => 'Bu tercihler medya sunucusu hesabınızda kaydedilir ve diğer müşteriler için de geçerli olabilir.',
 			'discover.title' => 'Keşfet',
 			'discover.noContentAvailable' => 'İçerik bulunmuyor',
 			'discover.addMediaToLibraries' => 'Kitaplıklarınıza biraz medya ekleyin',
@@ -5808,6 +6247,8 @@ extension on TranslationsTr {
 			'libraries.all' => 'Tümü',
 			'libraries.clearAll' => 'Tümünü Temizle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını taramak istediğinizden emin misiniz?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını analiz etmek istediğinizden emin misiniz?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" kitaplığı için meta verileri yenilemek istediğinizden emin misiniz?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" için çöpü boşaltmak istediğinizden emin misiniz?',
@@ -5974,8 +6415,6 @@ extension on TranslationsTr {
 			'explore.mdblistShelves.nameHint' => 'Kaynak listesi adını kullanmak için boş bırakın.',
 			'explore.mdblistShelves.add' => 'Şelale ekle',
 			'explore.mdblistShelves.save' => 'kurtarma şemaları',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Yürüyüş ${title} yukarı',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} aşağı hareket',
 			'explore.mdblistShelves.unavailable' => 'Bu liste mevcut değildir. ayarlarda şelalesi geri veya kaldırın.',
@@ -6322,6 +6761,8 @@ extension on TranslationsTr {
 			'watchTogether.connecting' => 'Bağlanılıyor...',
 			'watchTogether.relayPublic' => 'Odalar herkese açık Open Watch Party aktarıcılarını kullanır.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Odalar ${url} adresindeki aktarıcınızı kullanır.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Son Odalar',
 			'watchTogether.roomActions' => 'Oda eylemleri',
 			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
@@ -6488,8 +6929,6 @@ extension on TranslationsTr {
 			'downloads.resumeDownload' => 'İndirmeyi devam ettir',
 			'downloads.cancelledDownload' => 'İptal edilen indirme',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eşitleniyor)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'İndirildi ${file} - Tamamlamak için tıklayın',
 			'downloads.partialDownloadClickToComplete' => 'Kısmen indirildi - Tamamlamak için tıklayın',
 			'downloads.deleting' => 'Siliniyor...',
@@ -6748,6 +7187,7 @@ extension on TranslationsTr {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG temel katmanı',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR temel katmanı',
 			'performanceOverlay.dvRouteReshaped' => 'RPU ile yeniden şekillendirilmiş (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Deneysel P7 FEL grafikleri (bilinmeyen)',
 			'performanceOverlay.p7Conversion' => 'P7 Dönüştürme',
 			'performanceOverlay.sampleRate' => 'Örnekleme Hızı',
 			'performanceOverlay.pixelFormat' => 'Piksel Biçimi',
@@ -6799,6 +7239,13 @@ extension on TranslationsTr {
 			'externalPlayer.launchFailed' => 'Harici oynatıcı açılamadı',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} yüklü değil',
 			'externalPlayer.playInExternalPlayer' => 'Harici Oynatıcıda Oynat',
+			'externalPlayer.description' => 'Video açmak için başka bir uygulama seçin. mevcut oyuncular cihazınıza ve yüklü uygulamalarına bağlıdır.',
+			'externalPlayer.systemDefaultDescription' => 'İşletim sisteminin videoyu varsayılan uygulama ile açmasına izin verin.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => '${player} ile videoyu açın.',
+			'externalPlayer.playerNameDescription' => 'Oyun listesinde gösterilen etiket.',
+			'externalPlayer.playerPackageDescription' => 'Oyuncu uygulamasının Android paket adını girin, örneğin com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Bu cihaz için yüklü oyuncu komutunu veya yürütülebilir yolu girin.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Oyuncu başlatmak için kullanılan URL şeması ve seçmeli URL şablonunu girin.',
 			'metadataEdit.editMetadata' => 'Düzenle...',
 			'metadataEdit.screenTitle' => 'Meta Verileri Düzenle',
 			'metadataEdit.basicInfo' => 'Temel Bilgiler',
@@ -6828,6 +7275,8 @@ extension on TranslationsTr {
 			'metadataEdit.metadataUpdateFailed' => 'Meta veriler güncellenemedi',
 			'metadataEdit.artworkUpdated' => 'Görseller güncellendi',
 			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Görsel bulunmuyor',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}, seçildi',
@@ -6988,6 +7437,13 @@ extension on TranslationsTr {
 			'services.libraryFilter.modeHintWhitelist' => 'Yalnızca aşağıda işaretlenen kitaplıkları eşitle.',
 			'services.libraryFilter.libraries' => 'Kitaplıklar',
 			'services.libraryFilter.noLibraries' => 'Kitaplık bulunmuyor',
+			'services.libraryFilter.modeDescription' => 'Kontrol edilen kütüphanelerin senkronize edilmesini engellediğini veya senkrona giren tek kütüphane olup olmadığını seçin.',
+			'services.seerrDescription' => 'Seerr veya Overseerr\'e bağlanın başlıkları aramak ve medya istekleri göndermek için.',
+			'services.trackerDescriptions.trakt' => 'Trakt hesabınızla izlenen bölümleri ve filmleri senkronize edin.',
+			'services.trackerDescriptions.mal' => 'Anime listeleri senkronize edin ve MyAnimeList ile ilerlemeyi izleyin.',
+			'services.trackerDescriptions.anilist' => 'Anime listeleri senkronize edin ve AniList ile ilerlemeyi izleyin.',
+			'services.trackerDescriptions.simkl' => 'Simkl ile filmler, TV şovları ve anime izledi.',
+			'services.trackerDescriptions.mdblist' => 'Önerilerde MDBList dereceleri ve listeleri gösterin ve Keşfedin.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} sunucusu ekle',
 			'addServer.serverUrls' => 'Sunucu URL\'leri',
 			'addServer.serverUrlsHelper' => 'Virgülle ayrılmış birden fazla URL\'ye izin verilir.',
@@ -7002,8 +7458,6 @@ extension on TranslationsTr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Giriş başarısız: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Hızlı Bağlantı başarısız: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex ile Giriş Yap',
 			'addServer.pinExpired' => 'Giriş yapmadan önce PIN süresi doldu. Lütfen tekrar deneyin.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hesap kaydı başarısız oldu: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsTr {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Her satırın kahraman ayarlarını devre dışı bırakır ve kahraman satırlarının varlığından önce olduğu gibi tek bir döner bannerı yukarıya getirir.',
+			'homeLayout.tapHeroCardDescription' => 'Bir kahraman kartının oynatılmasını veya ayrıntılarını açtığını seçin.',
+			'homeLayout.heroTapPlayDescription' => 'Seçilen öğeyi hemen başlatın.',
+			'homeLayout.heroTapDetailsDescription' => 'Bir eylem seçmeden önce seçilen öğenin ayrıntılarını açın.',
 			'platform.localNetworkPermission' => 'PlezyNG yerel ağınızda medya sunucularınıza ve oynatma cihazlarına bağlanır.',
 			'platform.locationPermission' => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.',
 			'platform.photoLibraryPermission' => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.',
@@ -7169,8 +7626,12 @@ extension on TranslationsTr {
 			'fileSources.source' => 'Kaynak',
 			'fileSources.name' => 'Adı :',
 			'fileSources.endpoint' => 'Sunucu URL\'si',
+			'fileSources.smbEndpointHint' => 'Örnek: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Bir SMB sunucusu ve bir paylaşılan klasör girin.',
 			'fileSources.root' => 'Folders veya Prefix',
+			'fileSources.smbFolderHelp' => 'Paylaşılan klasörün tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.',
 			'fileSources.username' => 'Kullanıcı adı',
+			'fileSources.smbDomain' => 'Etki alanı (isteğe bağlı)',
 			'fileSources.password' => 'Şifre',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Anahtar Giriş ID',
@@ -7180,6 +7641,8 @@ extension on TranslationsTr {
 			'fileSources.clientId' => 'OAuth müşteri kimliği',
 			'fileSources.clientSecret' => 'OAuth müşteri gizliliği (yalnızca Google masaüstü)',
 			'fileSources.allowHttp' => 'Güvenilir bir ağda şifrelenmemiş HTTP bağlantısına izin ver',
+			'fileSources.smbEncryption' => 'SMB3 bağlantısını şifrele',
+			'fileSources.smbEncryptionHint' => 'NAS destekliyorsa SMB3 şifrelemesi kullanın.',
 			'fileSources.connect' => 'Bağlan',
 			'fileSources.cancel' => 'İptal',
 			'fileSources.save' => 'Kaydet',
@@ -7322,12 +7785,25 @@ extension on TranslationsTr {
 			'fileSources.useFiles' => 'Dosyaları ve kitapları kullanın',
 			'fileSources.cancelScan' => 'İptal Scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Örnek: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Bir SMB sunucusu ve bir paylaşılan klasör girin.',
-			'fileSources.smbFolderHelp' => 'Paylaşılan klasörün tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.',
-			'fileSources.smbDomain' => 'Etki alanı (isteğe bağlı)',
-			'fileSources.smbEncryption' => 'SMB3 bağlantısını şifrele',
-			'fileSources.smbEncryptionHint' => 'NAS destekliyorsa SMB3 şifrelemesi kullanın.',
+			'fileSources.offlineQuota' => 'Offline indirme sınırı',
+			'fileSources.offlineQuotaHelp' => 'Çevrimdışı kopyalar, ithal edilen dosyalar ve indirilmiş indirimler için kullanılan maksimum alanı ayarlayın. sınırı düşürmek mevcut kopyaları kaldırmaz.',
+			'fileSources.offlineStorageUsage' => 'Offline depolama',
+			'fileSources.reservedStorage' => 'Rezervasyon',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'İndir Queue',
+			'fileSources.downloadRunning' => 'İndirme',
+			'fileSources.downloadQueued' => 'bekleyen',
+			'fileSources.downloadPaused' => 'Dinlenme',
+			'fileSources.downloadFailed' => 'İhtiyaçlar geri çekiliyor',
+			'fileSources.importing' => 'İthalat',
+			'fileSources.importInterrupted' => 'İhracat kesildi · kaldırma açık',
+			'fileSources.errorQuotaExceeded' => 'Çevrimdışı depolama sınırı ulaştı. sınırı kaldırın veya indirilmiş bir kopyasını kaldırın.',
+			'fileSources.errorStorageLow' => 'Korunan rezervini korumak için yeterli ücretsiz cihaz depolama alanı yoktur.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG ücretsiz cihaz depolama kontrol edemedi, bu yüzden yazma durduruldu.',
+			'fileSources.removeDownloadJob' => 'Download İndir',
+			'fileSources.downloadAlreadyComplete' => 'Bu indirme, kaldırılmadan önce tamamlanmıştır. öğe artık çevrimdışı olarak mevcuttur.',
+			'fileSources.confirmRemoveDownloadJob' => 'Bu indirmeyi kaldırın ve kısmen indirilmiş herhangi bir veriyi silin? pozisyonunuz ve notlarınız kalır.',
 			'lending.title' => 'Halk Kütüphaneleri',
 			'lending.add' => 'Bir kütüphane ekle',
 			'lending.other' => 'başka bir kütüphane',
@@ -7429,6 +7905,12 @@ extension on TranslationsTr {
 			'audiobook.statusFinished' => 'bitmiş',
 			'audiobook.goToTime' => 'Zamanına gidin',
 			'audiobook.timeHelp' => 'Saatler: dakikalar: saniye veya dakikalar: saniye',
+			'audiobook.recoveryHelp' => 'Son zamanlarda şifrelenmiş bir kopyasını aktarmadan önce veya senkronizasyon verilerini düzeltmeden önce ihraç edin. ithalat mevcut durumla birleşir; yerel senkrona geçmişi asla değiştirmezler. senkronu ayrı tutun.',
+			'audiobook.recoveryExport' => 'İhracat şifreli kurtarma dosyası',
+			'audiobook.recoveryImport' => 'İthalat Şifreli Kurtarma Dosyası',
+			'audiobook.recoveryImportConfirm' => 'Bu şifreli kurtarma dosyasını mevcut okuma pozisyonları ve notları ile birleştirin? Mevcut geçmişi muhafaza edilecektir. Paylaşılan kütüphane ve öğe kimlikleri dahil değildir; ithal etmeden önce her cihazda eşleşen kimlikler ayarlayın.',
+			'audiobook.recoveryExported' => 'Şifreli kurtarma dosyası kaydedildi.',
+			'audiobook.recoveryImported' => 'Kurtarma verileri birleşti.',
 			'sourceSetup.savedCertificate' => 'Kaydedilmiş sunucu sertifikası',
 			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export gibi bir NFS URL’si girin.',
 			'sourceSetup.dlnaNone' => 'DLNA sunucusu bulunamadı. Aygıt açıklamasının URL’sini elle girin.',
@@ -7516,8 +7998,6 @@ extension on TranslationsTr {
 			'sourceSetup.smbEncrypted' => 'SMB3 şifrelemesi açık',
 			'sourceSetup.smbUnencrypted' => 'SMB3 şifrelemesi kapalı',
 			'sourceSetup.httpUnencrypted' => 'Aktarım şifrelemesi olmadan HTTP',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Uç nokta güvenliğini kontrol et',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} gereklidir.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} için ${min} ile ${max} arasında bir değer girin.',
@@ -7525,6 +8005,23 @@ extension on TranslationsTr {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Seçilen istemci kimliği: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Puan ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Altyazı indiriliyor: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Bu öğeyi çiftleştirin',
+			'sourceSetup.sharedEntryPairHelp' => 'Her cihazda bu öğe için aynı kimliği girin. istikrarlı bir paylaşılan tanımlayıcı kullanın veya birini oluşturun ve eşleşen öğeye kopyalayın. ilerleme çiftleri yalnızca sürüm dosya türleri, boyutları ve sipariş eşleştiğinde. Blank bu haritalama kaldırır.',
+			'sourceSetup.sharedEntryId' => 'Paylaşılan öğe ID',
+			'sourceSetup.generateSharedEntryId' => 'Paylaşılan öğe ID oluşturma',
+			'sourceSetup.sharedLibraryId' => 'Paylaşılan Kütüphane Kimliği (Seçmeli)',
+			'sourceSetup.sharedLibraryHelp' => 'Aynı kütüphaneyi açan cihazlarda aynı kimliği kullanın.Bu kamu kimliği, farklı kaynak bağlantıları üzerindeki okuma ilerlemesini ve notlarını taşımaya yardımcı olur; bir şifre değildir. Tedarikçiler farklı öğe kimliklerini kullandıklarında, bu öğeleri ayrıntılı ekranlarından eşleştirin.',
+			'sourceSetup.sharedLibraryInvalid' => '8-100 harf, sayılar, noktalar, alt puanlar veya hyphens kullanın.',
+			'sourceSetup.generateSharedLibraryId' => 'Paylaşılan bir kütüphane kimliği oluşturun',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead talepleri',
+			'sourceSetup.nfsReadAheadHelp' => 'Daha fazla paralel okuma hızlı bir NAS veya ağ üzerindeki geçiş kapasitesini geliştirebilir. 1 kullanın, eğer sunucu eşzamanlı talepleri sınırlarsa.',
+			'sourceSetup.nfsReadTest' => 'NFS performansını ölçmek',
+			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantısını ölçmek için en büyük dosyadan 64 MiB\'ye kadar okur. bu ağ bant genişliği kullanır.',
+			'sourceSetup.nfsQualificationResult' => 'NFS Okuma Ölçümleri',
+			'sourceSetup.nfsReadBytes' => 'Bilgiler okuma',
+			'sourceSetup.nfsReadSpeed' => 'ölçülen hız',
+			'sourceSetup.nfsReadRequests' => 'talepleri okuyun',
+			'sourceSetup.sharedEntryConflict' => 'Bu paylaşılan öğe kimliği zaten bu kütüphanede başka bir öğe ile eşleştirilmiştir.',
 			'comics.fitHeight' => 'Yüksekliğe sığdır',
 			'comics.readingMode' => 'Okuma modu',
 			'comics.paged' => 'Sayfalar',
@@ -7599,6 +8096,15 @@ extension on TranslationsTr {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

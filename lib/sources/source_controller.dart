@@ -753,8 +753,9 @@ class SourceController extends ChangeNotifier {
   Future<String?> sharedEntryMapping(SourceEntry entry) async {
     await ready;
     requireSession();
-    if (!sources.any((source) => source.id == entry.sourceId))
+    if (!sources.any((source) => source.id == entry.sourceId)) {
       throw const SourceException(SourceFailure.authentication);
+    }
     return cloudSync.sharedEntryMapping(profileId!, entry);
   }
 

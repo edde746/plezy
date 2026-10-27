@@ -268,14 +268,16 @@ class PublicationSync {
         add([file], file.fingerprint);
       }
     } else if (mode == PublicationMode.listening) {
-      if (entry.audio.isNotEmpty)
+      if (entry.audio.isNotEmpty) {
         add(entry.audio, sourceDigest(jsonEncode(entry.audio.map((f) => f.fingerprint).toList())));
+      }
       for (final file in entry.files) {
         add([file], sourceDigest(jsonEncode([file.fingerprint])));
       }
     } else {
-      if (entry.files.isNotEmpty)
+      if (entry.files.isNotEmpty) {
         add(entry.files, sourceDigest(jsonEncode(entry.files.map((f) => f.fingerprint).toList())));
+      }
       for (final file in entry.files) {
         add([file], sourceDigest(jsonEncode([file.fingerprint])));
       }
@@ -382,7 +384,7 @@ class PublicationSync {
               ? editionMigrations[_editionMigrationKey(oldIdentity, mode, oldEdition)] ?? oldEdition
               : oldEdition;
           if (newIdentity == oldIdentity && newEdition == oldEdition) continue;
-          final migratedData = {...data, if (newEdition != null) 'edition': newEdition};
+          final migratedData = {...data, 'edition': ?newEdition};
           final migratedValue = {...value, 'entry': newIdentity, 'data': migratedData};
           final String? migratedKey;
           if (type == 'progress' && newEdition is String && mode != null) {
@@ -459,7 +461,7 @@ class PublicationSync {
   static Map<String, dynamic> _progressValue(String identity, PublicationProgress p, {String? edition}) => {
     'type': 'progress',
     'entry': identity,
-    'data': {...p.toJson(), if (edition != null) 'edition': edition}
+    'data': {...p.toJson(), 'edition': ?edition}
       ..remove('entryKey')
       ..remove('session')
       ..remove('revision')
@@ -468,7 +470,7 @@ class PublicationSync {
   static Map<String, dynamic> _annotationValue(String identity, BookAnnotation a, {String? edition}) => {
     'type': 'annotation',
     'entry': identity,
-    'data': {...a.toJson(), if (edition != null) 'edition': edition}
+    'data': {...a.toJson(), 'edition': ?edition}
       ..remove('entryKey')
       ..remove('updatedAt'),
   };

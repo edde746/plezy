@@ -177,6 +177,7 @@ class _Translations$appIcon$ko extends Translations$appIcon$en {
 	@override String get launcherHint => 'Plezy를 나가면 홈 화면에 새 아이콘이 표시됩니다.';
 	@override String get tvLauncherHint => 'Plezy를 나가면 새 배너가 표시됩니다. Android TV에서는 TV를 다시 시작할 때까지 이전 배너가 계속 표시될 수 있습니다.';
 	@override late final _Translations$appIcon$names$ko names = _Translations$appIcon$names$ko._(_root);
+	@override String get description => '장치 시작자에 의해 표시된 아이콘을 선택합니다.예비 보기에서는 각 옵션이 어떻게 보이는지 보여줍니다.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$ko extends Translations$common$en {
 	@override String get cancel => '취소';
 	@override String get save => '저장';
 	@override String get close => '닫기';
+	@override String get closeMiniPlayer => '미니 플레이어 근처';
+	@override String get closeWorkspaceWindow => '가까운 창문';
+	@override String get returnToFullView => '완전한 시야로 돌아가기';
+	@override String get manageMediaSessions => '미디어 세션 관리';
+	@override String get hideMediaSessions => '미디어 세션 숨기기';
+	@override String get mediaSessions => '미디어 세션';
+	@override String get mediaSessionsHint => '파크는 창을 숨기지만 열려 있습니다. 반환은 완전한 전망으로 열립니다; 가까운 끝은 그것입니다.';
+	@override String get sessionInWorkspace => '워크샵에서';
+	@override String get sessionParked => '주차';
+	@override String get sessionFullscreen => '전체 스크린';
+	@override String get switchToNextWindow => '다음 창으로 전환';
+	@override String get moveWindow => '움직이는 창문';
+	@override String get finishMovingWindow => '움직이는 창을 마무리';
+	@override String get moveWindowHint => '긴 밀어 넣고 창을 끌어서 이동합니다.이 컨트롤은 또한 열쇠 움직임을 허용합니다.';
+	@override String get movingWindowHelp => '끌기 이동 · 끌 키 조정 · 입력 저장 · 탈출 취소';
+	@override String get resizeWindow => '윈도우 재설정';
+	@override String get resizeWindowHint => '이 손잡이를 끌거나 창을 재구성하기 위해 총 열쇠를 사용하십시오.';
+	@override String get workspaceWindowHint => '움직임 컨트롤 또는 긴 압축을 사용 하 여 이동 하 고 끌어.';
+	@override String get workspacePaneHint => '이 패널을 선택하여 초점을 맞추십시오.전체 스크린 컨트롤을 사용하여 확장합니다.';
+	@override String workspaceWindowLabel({required Object title}) => '세션 창: ${title}';
+	@override String get workspaceTitleHint => '초점을 선택합니다. 이동하려면 제목 바를 끌어; 확장하기 위해 전체 스크린 버튼을 사용합니다.';
+	@override String get moveToSessionTray => '세션 트레이로 이동';
+	@override String get moveToSessionTrayHint => '이 세션은 창을 표시하지 않고 사용할 수 있습니다.';
+	@override String get closeSessionHint => '이 창을 닫고 세션이 끝납니다.';
+	@override String get sideBySideLayout => '스위치 - Side-by-side layout';
+	@override String get floatingWindows => '윈도우를 흐르는 스위치';
 	@override String get clear => '지우기';
 	@override String get reset => '초기화';
 	@override String get later => '나중에';
@@ -676,6 +703,13 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다';
 	@override String get dvConversionDv81Description => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다';
+	@override String get experimentalDolbyVision => '실험적 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.';
+	@override String get dvExperimentUnavailableDescription => '이 실험은 현재 Linux에서만 사용할 수 있습니다.';
+	@override String get dvCompatibilityFallback => '호환성 대체 모드';
+	@override String get dvCompatibilityFallbackDescription => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.';
+	@override String get dvExperimentDiagnostics => '비디오 실험 로그';
+	@override String get dvExperimentDiagnosticsDescription => '다음 재생에서 상세 플레이어 로그를 활성화합니다.';
 	@override String get disableDolbyVision => 'Dolby Vision 끄기';
 	@override String get disableDolbyVisionDescription => '파일에 HDR10 또는 HLG 레이어가 있으면 Dolby Vision 대신 해당 레이어를 재생합니다';
 	@override String get hdrSdrConversion => 'HDR을 SDR로 변환';
@@ -762,13 +796,81 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get regionFormatDescription => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.';
 	@override String get metadataLanguage => '메타데이터 언어';
 	@override String get metadataLanguageDescription => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.';
-	@override String get experimentalDolbyVision => '실험적 Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.';
-	@override String get dvExperimentUnavailableDescription => '이 실험은 현재 Linux에서만 사용할 수 있습니다.';
-	@override String get dvCompatibilityFallback => '호환성 대체 모드';
-	@override String get dvCompatibilityFallbackDescription => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.';
-	@override String get dvExperimentDiagnostics => '비디오 실험 로그';
-	@override String get dvExperimentDiagnosticsDescription => '다음 재생에서 상세 플레이어 로그를 활성화합니다.';
+	@override String get enterFullscreenOnPlaybackStart => '플레이백이 시작되면 전체 스크린을 입력합니다.';
+	@override String get enterFullscreenOnPlaybackStartDescription => '플레이백이 시작되면 풀 스크린으로 데스크톱 비디오를 열어보세요.';
+	@override String get extendVideoIntoDisplayCutout => '비디오를 디스플레이 Cutout로 확장';
+	@override String get extendVideoIntoDisplayCutoutDescription => '전체 스크린 비디오를 안드로이드 휴대폰에서 카메라 절단을 사용하십시오.';
+	@override String get languageDescription => 'PlezyNG 컨트롤 및 메시지에 사용되는 언어를 선택하십시오.Follow system tracks your device language.';
+	@override String get themeDescription => '앱 전체에 걸쳐 사용되는 색상과 대조를 선택합니다.';
+	@override String get libraryDensityDescription => '각 라인에 얼마나 많은 도서관 카드가 적합한지 변경합니다.';
+	@override String get displayScaleDescription => '이 차 디스플레이에 있는 인터페이스를 다시 만들고 장치 전체 텍스트 크기를 변경하지 않습니다.';
+	@override String get themeSongVolumeDescription => '다른 오디오와 비교하여 테마 노래의 볼륨을 설정합니다.';
+	@override String get viewModeDescription => '도서관 항목이 네트워크에 포스터 또는 컴팩트 목록으로 표시되는지 여부를 선택합니다.';
+	@override String get gridViewDescription => '도서관 항목을 포스터의 줄과 열로 배열하십시오.';
+	@override String get listViewDescription => '수직 목록에서 도서관 항목을 표시하여 항목 당 더 많은 텍스트를 제공합니다.';
+	@override String get gridSpacingDescription => '도서관 네트워크에서 포스터 사이의 격차를 설정합니다.';
+	@override String get gridSpacingTightDescription => '더 작은 격차로 화면 위에 더 많은 포스터를 적합합니다.';
+	@override String get gridSpacingNormalDescription => '포스터 사이의 표준 간격을 사용하십시오.';
+	@override String get gridSpacingSpaciousDescription => '더 많은 분리를 위해 포스터 사이에 더 큰 격차를 추가합니다.';
+	@override String get episodePosterModeDescription => '에피소드 카드에 어떤 예술 작품이 나타나는지 선택합니다.';
+	@override String get seriesPosterDescription => '각 에피소드에 대한 쇼 시리즈 포스터를 사용하십시오.';
+	@override String get seasonPosterDescription => '사용할 때 각 에피소드에 대한 시즌 포스터를 사용하십시오.';
+	@override String get episodeThumbnailDescription => '사용할 때 에피소드에서 프레임을 사용하십시오.';
+	@override String get continueWatchingActionDescription => '계속 시청 카드를 활성화할 때 무슨 일이 일어나는지 선택합니다.';
+	@override String get continueWatchingPlayDescription => '즉시 영화 또는 에피소드를 시작합니다.';
+	@override String get continueWatchingDetailsDescription => '제목 페이지를 먼저 열어서 세부 사항을 검토하고 행동을 선택할 수 있습니다.';
+	@override String get episodeActionDescription => '에피소드 카드를 활성화할 때 무슨 일이 일어나는지 선택합니다.';
+	@override String get episodePlayDescription => '즉시 에피소드를 시작합니다.';
+	@override String get episodeDetailsDescription => 'Playback 전에 에피소드 페이지를 열어보세요.';
+	@override String get contentScreensaverDelayDescription => '예술 작품을 보여주기 전에 PlezyNG가 입력없이 얼마나 오래 기다리는지 선택하십시오.';
+	@override String get continueWatchingRowSizeDescription => '계속 관찰 라인에서 카드가 얼마나 큰지 선택하십시오.';
+	@override String get rowSizeCompactDescription => '더 작은 카드를 표시하여 더 많은 항목이 라인에 맞게됩니다.';
+	@override String get rowSizeStandardDescription => '표준 카드 크기를 사용하십시오.';
+	@override String get rowSizeLargeDescription => '더 큰 카드와 더 많은 예술 작품 세부 사항을 표시합니다.';
+	@override String get visualEffectsDescription => '이 장치에 대한 애니메이션 및 예술 효과 예산을 선택합니다.';
+	@override String get visualEffectsFullDescription => '모든 장치에 완전한 애니메이션 및 예술 작품 효과를 사용하십시오.';
+	@override String get startupSectionDescription => 'PlezyNG 시작할 때 어떤 섹션이 열리는지 선택합니다.';
+	@override late final _Translations$settings$startupSectionOptions$ko startupSectionOptions = _Translations$settings$startupSectionOptions$ko._(_root);
+	@override String get smallSkipDurationDescription => '짧은 뒤쪽으로 이동하는 거리를 설정하고 앞으로 컨트롤을 찾습니다.';
+	@override String get largeSkipDurationDescription => '긴 뒤쪽으로 움직이는 거리를 설정하고 앞으로 통제를 찾습니다.';
+	@override String get rewindOnResumeDescription => '비디오를 다시 재생할 때 이 금액으로 재생을 이동합니다.';
+	@override String get defaultSleepTimerDescription => '잠자리 타이머를 시작할 때 사용되는 초기 기간을 설정합니다.';
+	@override String get playNextCountdownDescription => '다음 에피소드를 시작하기 전에 이것을 오랫동안 기다리십시오. 즉시 시작하려면 0으로 설정합니다.';
+	@override String get autoSkipDelaySettingDescription => '입력, 크레딧 또는 광고가 자동으로 스파이를 설정할 때 적용됩니다.';
+	@override String get downmixCenterBoostDescription => '중앙 채널에서 대화를 높이면 주변 오디오가 스테레오로 혼합됩니다.';
+	@override String get displaySwitchDelayDescription => '디스플레이 모드를 변경하기 전에 TV 또는 수신기가 이전 스위치를 완료 할 수 있도록 기다리십시오.';
+	@override String get playerBackendDescription => '어떤 재생 엔진이 이 장치에서 비디오를 해독하고 회전하는지 선택합니다.';
+	@override String get exoPlayerDescription => '안드로이드의 원주민 Media3 기반 플레이어와 지원되는 하드웨어 경로를 사용하십시오.';
+	@override String get mpvDescription => 'MPV를 사용하여 추가 재생, 하위 제목 및 비디오 처리 컨트롤을 표시합니다.';
+	@override String get scopeOffDescription => '현재 플레이백 세션에 대한 변경 사항만 유지합니다.';
+	@override String get scopeGlobalDescription => '각 도서관 및 제목에 대해 동일한 가치를 다시 사용합니다.';
+	@override String get scopeLibraryDescription => '각 도서관에 대한 별도의 가치를 기억하십시오.';
+	@override String get scopeTitleDescription => '각 쇼 또는 영화에 대해 별도의 값을 기억하십시오.';
+	@override String get specialsOrderingServerDescription => '미디어 서버에 의해 제공되는 에피소드 주문을 유지합니다.';
+	@override String get specialsOrderingAirDateDescription => '그들의 날짜에 따라 정기적 인 에피소드 중 특별한 장소.';
+	@override String get specialsOrderingLastDescription => '각각의 특별한 장소는 정규 시즌 후에 배치합니다.';
+	@override String get skipIntroModeDescription => '입력 마커가 정상적으로 재생하는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.';
+	@override String get skipCreditsModeDescription => '크레딧이 정상적으로 재생되는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.';
+	@override String get skipAdsModeDescription => '발견된 광고가 정상적으로 재생되는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.';
+	@override String get playbackBufferAutoDescription => '활성 플레이어가 정상 버퍼 크기를 선택하도록 허용합니다.';
+	@override String get playbackBufferLargeDescription => '재생 전에 더 많은 미디어를 준비하십시오; 이것은 더 많은 메모리를 사용합니다.';
+	@override String get playbackBufferExtraLargeDescription => '가장 큰 읽기 넓은 버퍼를 유지하십시오; 이것은 대부분의 메모리를 사용합니다.';
+	@override String get defaultQualityDescription => '기본 비디오 해상도를 설정하고 서버가 트랜스코드하는 스트림에 대한 지붕을 비트레이션합니다.';
+	@override String get cellularQualityDescription => '장치가 셀룰러만 연결을 사용하는 경우 기본 품질을 초과합니다.';
+	@override String get remoteQualityDescription => '원격 연결을 통해 서버에 연결할 때 기본 품질을 초과합니다.';
+	@override String get qualityPresetOriginalDescription => '서버가 그것을 트랜스코드하도록 요청하지 않고 사용할 수있는 품질에서 소스를 재생합니다.';
+	@override String get qualityPresetTranscodeOptionDescription => '위에서 표시된 해상도와 비트라이트를 사용하여 서버에 변환 된 스트림을 요청하십시오.';
+	@override String get qualityPresetSameAsDefaultDescription => '기본 품질에서 선택한 품질을 사용합니다.';
+	@override String get musicQualityDescription => '서버에서 요청한 최대 오디오 비트 속도를 설정; 원본은 소스 스트림을 유지합니다.';
+	@override String get musicQualityOriginalDescription => '비트라이트 카프 트랜스코드 없이 소스 오디오를 재생합니다.';
+	@override String get musicQualityTranscodeOptionDescription => '위에서 표시된 비트 속도 근처에 서버 트랜스코드를 요청하십시오; 실제 출력은 다를 수 있습니다.';
+	@override String get maxVolumeInputLabel => '최대 수량 ( % )';
+	@override String get checkForUpdatesDescription => '이제 PlezyNG의 새 버전이 사용할 수 있는지 확인하십시오.';
+	@override String get appearanceDescription => '앱 테마를 선택하고 도서관 카드, 홈 라인 및 네비게이션을 조정합니다.';
+	@override String get prerollLibraryDescription => '영화 프리 롤로 사용할 수있는 클립을 포함하는 도서관을 선택합니다.';
+	@override String get prerollSelectionDescription => '선택한 도서관에서 어떤 클립이 영화 전에 재생할 수 있는지 선택합니다.';
+	@override String get contentScreensaverDelayOptionDescription => '스크린 저장 예술 작품을 보여주기 전에 입력없이 많은 분을 기다리십시오.';
+	@override String get videoCodecOptionDescription => '이 코덱을 지원할 때 직접 재생할 수 있습니다.Unchecked codecs are transcoded by the media server.';
 }
 
 // Path: themeEditor
@@ -805,6 +907,17 @@ class _Translations$themeEditor$ko extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes}분 남음';
 	@override String get previewSwitch => '자동 재생';
 	@override String get previewMutedText => '보조 텍스트는 이렇게 표시됩니다';
+	@override String get themeSystemDescription => '장치의 모습을 추적하고 빛과 어둠 사이를 자동으로 전환합니다.';
+	@override String get themeLightDescription => '어두운 텍스트와 함께 밝은 배경을 사용하십시오.';
+	@override String get themeDarkDescription => '밝은 텍스트를 가진 어두운 배경을 사용하십시오.';
+	@override String get themeOledDescription => 'OLED 스크린에 빛을 줄이는 가까운 검은 표면을 사용하십시오.';
+	@override String get themeEmberDescription => '따뜻한 빨간색과 암버 액센트 색상을 사용하십시오.';
+	@override String get themeGlacierDescription => '차가운 파란색 액센트 색상을 사용하십시오.';
+	@override String get themeForestDescription => '녹색과 자연적인 강조 색상을 사용하십시오.';
+	@override String get themePlumDescription => '바이올렛과 플루미 액센트 색상을 사용합니다.';
+	@override String get themePaperDescription => '따뜻한 종이와 같은 표면과 잉크 영감을받은 색상을 사용하십시오.';
+	@override String get themeCustomDescription => '사용자 지정 테마 편집기에서 만든 색상 패널을 사용하십시오.';
+	@override String get editorDescription => '팔레트 색상을 선택하고, 그것의 색깔, 만족도, 밝기 또는 오파시티를 조정하고, 예비 보기 업데이트를 보시기 전에 저장할 수 있습니다.';
 }
 
 // Path: search
@@ -1085,6 +1198,8 @@ class _Translations$accessibility$ko extends Translations$accessibility$en {
 	@override String get largeTargets => '더 큰 터치 목표';
 	@override String get largeTargetsHint => '공통 컨트롤의 영역을 넓혀 터치와 보조 기술을 통한 탐색을 쉽게 합니다.';
 	@override String get navigationHint => 'Tab과 Shift+Tab으로 컨트롤 사이를 이동하고, Enter 또는 Space로 실행하고, Escape 또는 뒤로 버튼으로 닫으세요. 책을 열면 확대/축소와 읽기 설정을 사용할 수 있습니다.';
+	@override String get textSizeDescription => 'PlezyNG에서 스케일 인터페이스 텍스트는 장치의 시스템 텍스트 크기 설정 외에도.';
+	@override String get boldTextHint => '인터페이스 라벨과 메시지에 더 무거운 무게를 사용하여 구별하기 쉽습니다.';
 }
 
 // Path: tooltips
@@ -1168,6 +1283,8 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생';
 	@override String get subtitleUnavailableFallback => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다';
 	@override String get pipButton => '픽처 인 픽처 모드';
+	@override String get openMiniPlayer => '오픈 미니 플레이어';
+	@override String get returnToFullPlayer => '완전한 플레이어로 돌아가기';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get ambientLighting => '주변 조명';
 	@override String get fullscreenButton => '전체 화면';
@@ -1325,6 +1442,19 @@ class _Translations$subtitlingStyling$ko extends Translations$subtitlingStyling$
 	@override String get renderResolution => '렌더링 해상도';
 	@override String get renderResolutionScreen => '화면 해상도';
 	@override String get renderResolutionVideo => '영상 해상도';
+	@override String get fontSizeDescription => '이 장치에 서브 텍스트 크기를 설정합니다.';
+	@override String get textColorDescription => 'Subtitle 텍스트에 사용되는 색상을 선택합니다.';
+	@override String get borderSizeDescription => 'Subtitle 텍스트 주위에 출력의 두께를 설정합니다.';
+	@override String get borderColorDescription => '서브 타이틀에 사용되는 색상을 선택합니다.';
+	@override String get backgroundColorDescription => '서브 타이틀 텍스트 뒤에 있는 색상을 선택합니다.';
+	@override String get backgroundOpacityDescription => '서브 타이틀 배경이 얼마나 투명한지 설정하십시오: 0%는 명확하고 100%는 견고합니다.';
+	@override String get positionDescription => '0 %는 비디오의 상단이며 100 %는 바닥입니다.';
+	@override String get assOverrideDescription => '플레이어가 ASS 하위 제목에 삽입 된 스타일링을 추적, 조정, 교체 또는 제거하는지 여부를 선택합니다.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$ko assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$ko._(_root);
+	@override String get renderResolutionDescription => '이미지와 ASS 서브 타이틀을 라스테리화하는 데 사용되는 해상도를 선택합니다.더 낮은 안드로이드 스케일은 rendering 작업을 줄일 수 있지만 더 부드럽게 보입니다.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$ko renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$ko._(_root);
+	@override String get boldDescription => '더 무거운 무게로 서브 타이틀 텍스트를 그리십시오.';
+	@override String get italicDescription => '이탈리아어로 발음한 Subtitle 텍스트';
 }
 
 // Path: mpvConfig
@@ -1506,6 +1636,14 @@ class _Translations$accountPreferences$ko extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$ko watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$ko._(_root);
 	@override String get mediaReviewsVisibility => '평점 및 리뷰';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$ko mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$ko._(_root);
+	@override String get preferredAudioLanguageDescription => '서버 또는 플레이어가 자동으로 트랙을 선택할 때이 언어로 오디오 트래크를 선호합니다.';
+	@override String get preferredSubtitleLanguageDescription => '자막이 자동으로 선택되면 이 언어에서 자막을 추적하는 것을 선호합니다.';
+	@override String get subtitleAccessibilityDescription => '자동 하위 제목 선택 중에 SDH 캡션이 선호되거나 요구되는지 여부를 선택합니다.';
+	@override String get forcedSubtitleDescription => '자동 선택 중에 강제 서브 타이틀 트랙이 선호되거나 요구되는지 여부를 선택합니다.';
+	@override String get watchedIndicatorDescription => '어떤 미디어 유형이 서버 인터페이스에서 관찰된 체크 마크를 받는지 선택합니다.';
+	@override String get mediaReviewsVisibilityDescription => '서버가 미디어 페이지에 표시하는 관객과 비판적 평가를 선택합니다.';
+	@override String get subtitleModeDescription => '이 서버 계정에서 하위 제목이 자동으로 켜질 때를 선택합니다.';
+	@override String get hubDescription => '이러한 선호도는 미디어 서버 계정에 저장되며 다른 고객에게도 적용될 수 있습니다.';
 }
 
 // Path: discover
@@ -2404,6 +2542,7 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG 베이스 레이어';
 	@override String get dvRouteBaseLayerSdr => 'SDR 베이스 레이어';
 	@override String get dvRouteReshaped => 'RPU 리셰이핑 (gpu-next)';
+	@override String get dvRouteFelGraphActive => '실험 P7 FEL 그래픽 (무료)';
 	@override String get p7Conversion => 'P7 변환';
 	@override String get sampleRate => '샘플 레이트';
 	@override String get pixelFormat => '픽셀 형식';
@@ -2464,6 +2603,13 @@ class _Translations$externalPlayer$ko extends Translations$externalPlayer$en {
 	@override String get launchFailed => '외부 플레이어를 열 수 없습니다';
 	@override String appNotInstalled({required Object name}) => '${name}이(가) 설치되어 있지 않습니다';
 	@override String get playInExternalPlayer => '외부 플레이어에서 재생';
+	@override String get description => '다른 앱을 선택하여 비디오를 열 수 있습니다. 이용 가능한 플레이어는 장치와 설치된 앱에 따라 달라집니다.';
+	@override String get systemDefaultDescription => '운영 체제가 기본 앱으로 비디오를 열어주십시오.';
+	@override String playerOptionDescription({required Object player}) => '${player}와 함께 비디오를 열어보세요.';
+	@override String get playerNameDescription => '플레이어 목록에 표시된 레이블.';
+	@override String get playerPackageDescription => '플레이어 앱의 안드로이드 패키지 이름, 예를 들어 com.example.player을 입력합니다.';
+	@override String get playerCommandDescription => '이 장치에 대한 설치된 플레이어 명령 또는 실행 가능한 경로를 입력합니다.';
+	@override String get playerUrlSchemeDescription => 'URL 스케줄과 플레이어를 시작하는 데 사용되는 선택적인 URL 템플릿을 입력합니다.';
 }
 
 // Path: metadataEdit
@@ -2683,6 +2829,8 @@ class _Translations$services$ko extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$ko oauthProxy = _Translations$services$oauthProxy$ko._(_root);
 	@override late final _Translations$services$pendingAuth$ko pendingAuth = _Translations$services$pendingAuth$ko._(_root);
 	@override late final _Translations$services$libraryFilter$ko libraryFilter = _Translations$services$libraryFilter$ko._(_root);
+	@override String get seerrDescription => 'Seerr 또는 Overseerr에 연결하여 제목을 검색하고 미디어 요청을 제출합니다.';
+	@override late final _Translations$services$trackerDescriptions$ko trackerDescriptions = _Translations$services$trackerDescriptions$ko._(_root);
 }
 
 // Path: addServer
@@ -2877,6 +3025,9 @@ class _Translations$homeLayout$ko extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => '에';
 	@override String get resetHeroButtonDescription => '각 라인의 영웅 설정을 끄고 영웅 라인이 존재하기 전과 마찬가지로 상단에 단일 회전 밴드를 반환합니다.';
+	@override String get tapHeroCardDescription => '영웅 카드를 탭하거나 선택하면 재생이 시작되거나 세부 사항이 열립니다.';
+	@override String get heroTapPlayDescription => '선택한 항목을 즉시 시작합니다.';
+	@override String get heroTapDetailsDescription => '선택한 항목의 세부 사항을 열기 전에 행동을 선택합니다.';
 }
 
 // Path: platform
@@ -2907,8 +3058,12 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get source => '출처';
 	@override String get name => '이름';
 	@override String get endpoint => '서버 URL';
+	@override String get smbEndpointHint => '예: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB 서버와 공유 폴더 하나를 입력하세요.';
 	@override String get root => '폴더 또는 접두사';
+	@override String get smbFolderHelp => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.';
 	@override String get username => '사용자 이름';
+	@override String get smbDomain => '도메인(선택 사항)';
 	@override String get password => '비밀번호';
 	@override String get token => 'API 토큰';
 	@override String get accessKey => '액세스 키 ID';
@@ -2918,6 +3073,8 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth 고객 ID';
 	@override String get clientSecret => 'OAuth 클라이언트 비밀 (Google 데스크톱만)';
 	@override String get allowHttp => '신뢰할 수 있는 네트워크에서 암호화되지 않은 HTTP 허용';
+	@override String get smbEncryption => 'SMB3 연결 암호화';
+	@override String get smbEncryptionHint => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.';
 	@override String get connect => '연결';
 	@override String get cancel => '취소';
 	@override String get save => '저장';
@@ -3062,12 +3219,23 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get useFiles => '파일과 책을 사용하십시오';
 	@override String get cancelScan => '스캔 취소';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => '예: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB 서버와 공유 폴더 하나를 입력하세요.';
-	@override String get smbFolderHelp => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.';
-	@override String get smbDomain => '도메인(선택 사항)';
-	@override String get smbEncryption => 'SMB3 연결 암호화';
-	@override String get smbEncryptionHint => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.';
+	@override String get offlineQuota => 'Offline 다운로드 제한';
+	@override String get offlineQuotaHelp => '오프라인 복사본, 수입된 파일 및 쿠웨이드 다운로드에 사용되는 최대 공간을 설정합니다.제한을 낮추는 것은 기존 복사를 제거하지 않습니다.';
+	@override String get offlineStorageUsage => '오프라인 스토리지';
+	@override String get reservedStorage => '예약';
+	@override String get downloadQueue => '다운로드 Queue';
+	@override String get downloadRunning => '다운로드';
+	@override String get downloadQueued => '기다리는';
+	@override String get downloadPaused => '휴식';
+	@override String get downloadFailed => '탈퇴가 필요하다';
+	@override String get importing => '수입';
+	@override String get importInterrupted => '수입 중단 · 제거 삭제';
+	@override String get errorQuotaExceeded => '오프라인 스토리지 제한이 달성되었습니다.제한을 올리거나 다운로드 된 복사본을 제거합니다.';
+	@override String get errorStorageLow => '보호된 저장소를 유지하기에 충분한 무료 장치 스토리지가 없습니다.';
+	@override String get errorStorageUnavailable => 'PlezyNG는 무료 장치 저장소를 확인할 수 없었으므로 글쓰기가 중단되었습니다.';
+	@override String get removeDownloadJob => '다운로드 삭제';
+	@override String get downloadAlreadyComplete => '이 다운로드는 삭제되기 전에 완료되었습니다.이 항목은 이제 오프라인으로 사용할 수 있습니다.';
+	@override String get confirmRemoveDownloadJob => '이 다운로드를 제거하고 부분적으로 다운로드 된 데이터를 삭제하십시오.당신의 위치와 노트는 남아있을 것입니다.';
 }
 
 // Path: lending
@@ -3187,6 +3355,12 @@ class _Translations$audiobook$ko extends Translations$audiobook$en {
 	@override String get statusFinished => '마무리';
 	@override String get goToTime => '시간에 가라';
 	@override String get timeHelp => '시간:분:초 또는 분:초';
+	@override String get recoveryHelp => '동기화 데이터를 이동하거나 복구하기 전에 최근 암호화 된 복사본을 수출합니다.수입은 현재 상태와 결합됩니다; 그들은 결코 지역 동기 역사를 대체하지 않습니다.';
+	@override String get recoveryExport => '수출 암호화 된 복구 파일';
+	@override String get recoveryImport => '암호화된 복구 파일 수입';
+	@override String get recoveryImportConfirm => '이 암호화 된 복구 파일을 현재 읽기 위치 및 노트와 결합하십시오? 기존 역사는 유지됩니다. 공유 라이브러리 및 항목 ID는 포함되지 않습니다; 수입하기 전에 각 장치에 해당 ID를 설정합니다.';
+	@override String get recoveryExported => '암호화 된 복구 파일이 저장되었습니다.';
+	@override String get recoveryImported => '복구 데이터가 합쳐졌습니다.';
 }
 
 // Path: sourceSetup
@@ -3290,6 +3464,23 @@ class _Translations$sourceSetup$ko extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '선택한 클라이언트 인증 정보: ${name}';
 	@override String subtitleRating({required Object rating}) => '평점 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '자막 다운로드 중: ${title}';
+	@override String get sharedEntryPair => '이 항목을 쌍으로';
+	@override String get sharedEntryPairHelp => '각 장치에서 이 항목에 대한 동일한 ID를 입력하십시오. 안정적인 공유 식별자를 사용하거나 하나를 생성하고 해당 항목으로 복사합니다. 업그레이드 파일 유형, 크기 및 주문이 일치하는 경우에만 커플됩니다. Blank은 이 맵링을 제거합니다.';
+	@override String get sharedEntryId => '공유 항목 ID';
+	@override String get generateSharedEntryId => '공유 항목 ID 생성';
+	@override String get sharedLibraryId => '공유 도서관 ID (선택)';
+	@override String get sharedLibraryHelp => '같은 도서관을 열고 있는 장치에서 동일한 ID를 사용하십시오.이 공공 ID는 다른 출처 연결을 통해 읽기 진행과 메모를 수행하는 데 도움이됩니다; 그것은 암호가 아닙니다.';
+	@override String get sharedLibraryInvalid => '8 ~ 100 문자, 숫자, 포인트, 하위 코어 또는 하이펜을 사용하십시오.';
+	@override String get generateSharedLibraryId => '공유 도서관 ID 만들기';
+	@override String get nfsReadAhead => 'NFS 읽기-하이드 요청';
+	@override String get nfsReadAheadHelp => '더 많은 병렬 리더는 빠른 NAS 또는 네트워크의 통로를 향상시킬 수 있습니다. 서버가 동일한 요청을 제한하는 경우 1을 사용합니다.';
+	@override String get nfsReadTest => 'NFS 읽기 성능 측정';
+	@override String get nfsReadTestHelp => '이 NAS 연결을 측정하기 위해 가장 큰 파일에서 64 MiB까지 읽습니다.이것은 네트워크 밴드 폭을 사용합니다.';
+	@override String get nfsQualificationResult => 'NFS 읽기 측정';
+	@override String get nfsReadBytes => '데이터 읽기';
+	@override String get nfsReadSpeed => '속도 측정';
+	@override String get nfsReadRequests => '요청 읽기';
+	@override String get sharedEntryConflict => '이 공유 항목 ID는 이미 이 도서관의 다른 항목과 조화되어 있습니다.';
 }
 
 // Path: comics
@@ -3382,6 +3573,15 @@ class _Translations$games$ko extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3462,6 +3662,19 @@ class _Translations$common$mediaKind$ko extends Translations$common$mediaKind$en
 	@override String get clip => '클립';
 	@override String get photo => '사진';
 	@override String get folder => '폴더';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$ko extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => '연결된 발견 출처의 권장 사항 및 항목을 열어보세요.';
+	@override String get libraries => '연결된 미디어 라이브러리를 열어보세요.';
+	@override String get liveTv => '서버가 제공 할 때 라이브 TV를 열어; 그렇지 않으면 스타트업이 홈으로 돌아갑니다.';
+	@override String get search => '오픈 미디어 검색';
 }
 
 // Path: themeEditor.slots
@@ -3550,6 +3763,35 @@ class _Translations$videoControls$pipErrors$ko extends Translations$videoControl
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$ko extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => '글꼴, 색상, 크기 및 배치가 서브 타이틀 파일에 기록되어 있습니다.';
+	@override String get yes => '플레이어의 하위 제목 스타일 설정을 ASS 하위 타이틀을 조정하도록 허용합니다.';
+	@override String get scale => '플레이어 스타일링 및 스케일 내장 크기를 적용하여 비디오 차원과 일치합니다.';
+	@override String get force => '삽입된 ASS 스타일을 플레이어의 하위 타이틀 스타일로 대체합니다.';
+	@override String get strip => '삽입 된 ASS 형식을 제거하고 서브 타이틀 텍스트를 명확하게 수행합니다.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$ko extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => '가장 뚜렷한 결과를 위해 전체 표면 해상도에서 렌더링합니다.';
+	@override String get video => '참조로 비디오 해상도를 사용하여 고해상도 디스플레이에서 작업을 줄일 수 있습니다.';
+	@override String get threeQuarter => '겸손한 성능 절약을 위해 디스플레이 표면 해상도의 75 %를 할인합니다.';
+	@override String get half => '작업을 줄이기 위해 표시 표면 해상도의 50 %로 렌더링, 더 부드러운 가장자리.';
+	@override String get third => '작업을 줄이기 위해 화면 표면 해상도의 3 분의 1에서 렌더링, 더 부드러운 가장자리.';
+	@override String get quarter => '작업을 줄이기 위해 디스플레이 표면 해상도의 1 분의 1에서 렌더, 가장 부드러운 결과.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$ko extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -3592,6 +3834,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$ko extends T
 	@override String get preferSdh => 'SDH 자막 선호';
 	@override String get onlySdh => 'SDH 자막만';
 	@override String get onlyNonSdh => 'SDH가 아닌 자막만';
+	@override String get preferNonSdhDescription => '기본 및 SDH 버전 모두 사용할 수 있는 경우 표준 하위 제목을 선호합니다.';
+	@override String get preferSdhDescription => '사용할 때 SDH 하위 제목을 선호하지만 표준 하위 타이틀을 붕괴로 허용합니다.';
+	@override String get onlySdhDescription => 'SDH 하위 제목만 사용하십시오; 표준 하위 타이틀으로 돌아가지 마십시오.';
+	@override String get onlyNonSdhDescription => '표준 하위 제목만 사용하십시오; SDH 하위 이름을 제외합니다.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3605,6 +3851,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$ko extends Translat
 	@override String get preferForced => '강제 자막 선호';
 	@override String get onlyForced => '강제 자막만';
 	@override String get onlyNonForced => '강제가 아닌 자막만';
+	@override String get preferNonForcedDescription => '정기적 인 서브 타이틀을 선호하지만 붕괴로 강제 트랙을 허용합니다.';
+	@override String get preferForcedDescription => '사용할 때 강제 트랙을 선호하지만, 붕괴로 정기적 인 서브 타이틀을 허용합니다.';
+	@override String get onlyForcedDescription => '강제로 표시된 트랙만 사용하십시오.';
+	@override String get onlyNonForcedDescription => '강제로 표시된 트랙을 제외합니다.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3618,6 +3868,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$ko extends Transl
 	@override String get moviesAndShows => '영화 및 TV 프로그램';
 	@override String get movies => '영화만';
 	@override String get shows => 'TV 프로그램만';
+	@override String get noneDescription => '보관된 체크마크를 표시하지 마십시오.';
+	@override String get moviesAndShowsDescription => '영화 및 TV 쇼에 대한 체크 마커를 표시합니다.';
+	@override String get moviesDescription => '영화에만 시청된 체크 마크를 표시합니다.';
+	@override String get showsDescription => '텔레비전 쇼에만 시청된 체크 마크를 표시합니다.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3631,6 +3885,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$ko extends Translatio
 	@override String get usersOnly => '사용자만';
 	@override String get criticsOnly => '평론가만';
 	@override String get nobody => '숨김';
+	@override String get usersAndCriticsDescription => '사용자 평가와 비판적 평가를 모두 표시합니다.';
+	@override String get usersOnlyDescription => '사용자가 제출한 평가 및 리뷰를 표시합니다.';
+	@override String get criticsOnlyDescription => '비판적 인 평가 및 리뷰를 표시합니다.';
+	@override String get nobodyDescription => '평가 및 리뷰를 숨기십시오.';
 }
 
 // Path: discover.findNext
@@ -4419,6 +4677,21 @@ class _Translations$services$libraryFilter$ko extends Translations$services$libr
 	@override String get modeHintWhitelist => '아래에 선택한 라이브러리만 동기화합니다.';
 	@override String get libraries => '라이브러리';
 	@override String get noLibraries => '사용 가능한 라이브러리가 없습니다';
+	@override String get modeDescription => '검사된 도서관이 동기화에서 차단되었는지, 아니면 동기화를 하는 유일한 라이브러리인지 선택합니다.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$ko extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => '트랙 계정과 함께 시청된 에피소드와 영화를 동기화합니다.';
+	@override String get mal => '애니메이션 목록을 동기화하고 MyAnimeList로 진행을 시청합니다.';
+	@override String get anilist => '애니메이션 목록을 동기화하고 AniList와 함께 진행을 지켜보십시오.';
+	@override String get simkl => 'Sync는 Simkl와 함께 영화, TV 쇼 및 애니메이션을 보았습니다.';
+	@override String get mdblist => '추천 및 탐색에서 MDBList 등급 및 목록을 표시합니다.';
 }
 
 /// The flat map containing all translations for locale <ko>.
@@ -4476,6 +4749,7 @@ extension on TranslationsKo {
 			'appIcon.names.strata' => '지층',
 			'appIcon.names.facet' => '패싯',
 			'appIcon.names.tilde' => '물결',
+			'appIcon.description' => '장치 시작자에 의해 표시된 아이콘을 선택합니다.예비 보기에서는 각 옵션이 어떻게 보이는지 보여줍니다.',
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드 표시',
 			'auth.authenticate' => '인증',
@@ -4497,6 +4771,32 @@ extension on TranslationsKo {
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
+			'common.closeMiniPlayer' => '미니 플레이어 근처',
+			'common.closeWorkspaceWindow' => '가까운 창문',
+			'common.returnToFullView' => '완전한 시야로 돌아가기',
+			'common.manageMediaSessions' => '미디어 세션 관리',
+			'common.hideMediaSessions' => '미디어 세션 숨기기',
+			'common.mediaSessions' => '미디어 세션',
+			'common.mediaSessionsHint' => '파크는 창을 숨기지만 열려 있습니다. 반환은 완전한 전망으로 열립니다; 가까운 끝은 그것입니다.',
+			'common.sessionInWorkspace' => '워크샵에서',
+			'common.sessionParked' => '주차',
+			'common.sessionFullscreen' => '전체 스크린',
+			'common.switchToNextWindow' => '다음 창으로 전환',
+			'common.moveWindow' => '움직이는 창문',
+			'common.finishMovingWindow' => '움직이는 창을 마무리',
+			'common.moveWindowHint' => '긴 밀어 넣고 창을 끌어서 이동합니다.이 컨트롤은 또한 열쇠 움직임을 허용합니다.',
+			'common.movingWindowHelp' => '끌기 이동 · 끌 키 조정 · 입력 저장 · 탈출 취소',
+			'common.resizeWindow' => '윈도우 재설정',
+			'common.resizeWindowHint' => '이 손잡이를 끌거나 창을 재구성하기 위해 총 열쇠를 사용하십시오.',
+			'common.workspaceWindowHint' => '움직임 컨트롤 또는 긴 압축을 사용 하 여 이동 하 고 끌어.',
+			'common.workspacePaneHint' => '이 패널을 선택하여 초점을 맞추십시오.전체 스크린 컨트롤을 사용하여 확장합니다.',
+			'common.workspaceWindowLabel' => ({required Object title}) => '세션 창: ${title}',
+			'common.workspaceTitleHint' => '초점을 선택합니다. 이동하려면 제목 바를 끌어; 확장하기 위해 전체 스크린 버튼을 사용합니다.',
+			'common.moveToSessionTray' => '세션 트레이로 이동',
+			'common.moveToSessionTrayHint' => '이 세션은 창을 표시하지 않고 사용할 수 있습니다.',
+			'common.closeSessionHint' => '이 창을 닫고 세션이 끝납니다.',
+			'common.sideBySideLayout' => '스위치 - Side-by-side layout',
+			'common.floatingWindows' => '윈도우를 흐르는 스위치',
 			'common.clear' => '지우기',
 			'common.reset' => '초기화',
 			'common.later' => '나중에',
@@ -4914,6 +5214,8 @@ extension on TranslationsKo {
 			'settings.audioPassthrough' => '오디오 패스스루',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. iOS, iPadOS, tvOS 26 이상에서는 TrueHD Atmos와 DTS:X가 공간 오디오로 재생됩니다. 그 밖의 DTS 및 TrueHD 트랙은 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.audioPassthroughOverriddenByNormalization' => '음량 정규화가 켜져 있는 동안 꺼짐',
 			'settings.audioChannelLimit' => '오디오 채널',
@@ -4940,9 +5242,14 @@ extension on TranslationsKo {
 			'settings.dvConversionNativeDescription' => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다',
 			'settings.dvConversionDv81Description' => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다',
+			'settings.experimentalDolbyVision' => '실험적 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.',
+			'settings.dvExperimentUnavailableDescription' => '이 실험은 현재 Linux에서만 사용할 수 있습니다.',
+			'settings.dvCompatibilityFallback' => '호환성 대체 모드',
+			'settings.dvCompatibilityFallbackDescription' => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.',
+			'settings.dvExperimentDiagnostics' => '비디오 실험 로그',
+			'settings.dvExperimentDiagnosticsDescription' => '다음 재생에서 상세 플레이어 로그를 활성화합니다.',
 			'settings.disableDolbyVision' => 'Dolby Vision 끄기',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => '파일에 HDR10 또는 HLG 레이어가 있으면 Dolby Vision 대신 해당 레이어를 재생합니다',
 			'settings.hdrSdrConversion' => 'HDR을 SDR로 변환',
 			'settings.hdrSdrConversionDescription' => '디스플레이가 HDR을 표시할 수 없을 때 HDR 동영상을 무엇으로 변환할지 선택합니다.',
@@ -5028,13 +5335,84 @@ extension on TranslationsKo {
 			'settings.regionFormatDescription' => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.',
 			'settings.metadataLanguage' => '메타데이터 언어',
 			'settings.metadataLanguageDescription' => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.',
-			'settings.experimentalDolbyVision' => '실험적 Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.',
-			'settings.dvExperimentUnavailableDescription' => '이 실험은 현재 Linux에서만 사용할 수 있습니다.',
-			'settings.dvCompatibilityFallback' => '호환성 대체 모드',
-			'settings.dvCompatibilityFallbackDescription' => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.',
-			'settings.dvExperimentDiagnostics' => '비디오 실험 로그',
-			'settings.dvExperimentDiagnosticsDescription' => '다음 재생에서 상세 플레이어 로그를 활성화합니다.',
+			'settings.enterFullscreenOnPlaybackStart' => '플레이백이 시작되면 전체 스크린을 입력합니다.',
+			'settings.enterFullscreenOnPlaybackStartDescription' => '플레이백이 시작되면 풀 스크린으로 데스크톱 비디오를 열어보세요.',
+			'settings.extendVideoIntoDisplayCutout' => '비디오를 디스플레이 Cutout로 확장',
+			'settings.extendVideoIntoDisplayCutoutDescription' => '전체 스크린 비디오를 안드로이드 휴대폰에서 카메라 절단을 사용하십시오.',
+			'settings.languageDescription' => 'PlezyNG 컨트롤 및 메시지에 사용되는 언어를 선택하십시오.Follow system tracks your device language.',
+			'settings.themeDescription' => '앱 전체에 걸쳐 사용되는 색상과 대조를 선택합니다.',
+			'settings.libraryDensityDescription' => '각 라인에 얼마나 많은 도서관 카드가 적합한지 변경합니다.',
+			'settings.displayScaleDescription' => '이 차 디스플레이에 있는 인터페이스를 다시 만들고 장치 전체 텍스트 크기를 변경하지 않습니다.',
+			'settings.themeSongVolumeDescription' => '다른 오디오와 비교하여 테마 노래의 볼륨을 설정합니다.',
+			'settings.viewModeDescription' => '도서관 항목이 네트워크에 포스터 또는 컴팩트 목록으로 표시되는지 여부를 선택합니다.',
+			'settings.gridViewDescription' => '도서관 항목을 포스터의 줄과 열로 배열하십시오.',
+			'settings.listViewDescription' => '수직 목록에서 도서관 항목을 표시하여 항목 당 더 많은 텍스트를 제공합니다.',
+			'settings.gridSpacingDescription' => '도서관 네트워크에서 포스터 사이의 격차를 설정합니다.',
+			'settings.gridSpacingTightDescription' => '더 작은 격차로 화면 위에 더 많은 포스터를 적합합니다.',
+			'settings.gridSpacingNormalDescription' => '포스터 사이의 표준 간격을 사용하십시오.',
+			'settings.gridSpacingSpaciousDescription' => '더 많은 분리를 위해 포스터 사이에 더 큰 격차를 추가합니다.',
+			'settings.episodePosterModeDescription' => '에피소드 카드에 어떤 예술 작품이 나타나는지 선택합니다.',
+			'settings.seriesPosterDescription' => '각 에피소드에 대한 쇼 시리즈 포스터를 사용하십시오.',
+			'settings.seasonPosterDescription' => '사용할 때 각 에피소드에 대한 시즌 포스터를 사용하십시오.',
+			'settings.episodeThumbnailDescription' => '사용할 때 에피소드에서 프레임을 사용하십시오.',
+			'settings.continueWatchingActionDescription' => '계속 시청 카드를 활성화할 때 무슨 일이 일어나는지 선택합니다.',
+			'settings.continueWatchingPlayDescription' => '즉시 영화 또는 에피소드를 시작합니다.',
+			'settings.continueWatchingDetailsDescription' => '제목 페이지를 먼저 열어서 세부 사항을 검토하고 행동을 선택할 수 있습니다.',
+			'settings.episodeActionDescription' => '에피소드 카드를 활성화할 때 무슨 일이 일어나는지 선택합니다.',
+			'settings.episodePlayDescription' => '즉시 에피소드를 시작합니다.',
+			'settings.episodeDetailsDescription' => 'Playback 전에 에피소드 페이지를 열어보세요.',
+			'settings.contentScreensaverDelayDescription' => '예술 작품을 보여주기 전에 PlezyNG가 입력없이 얼마나 오래 기다리는지 선택하십시오.',
+			'settings.continueWatchingRowSizeDescription' => '계속 관찰 라인에서 카드가 얼마나 큰지 선택하십시오.',
+			'settings.rowSizeCompactDescription' => '더 작은 카드를 표시하여 더 많은 항목이 라인에 맞게됩니다.',
+			'settings.rowSizeStandardDescription' => '표준 카드 크기를 사용하십시오.',
+			'settings.rowSizeLargeDescription' => '더 큰 카드와 더 많은 예술 작품 세부 사항을 표시합니다.',
+			'settings.visualEffectsDescription' => '이 장치에 대한 애니메이션 및 예술 효과 예산을 선택합니다.',
+			'settings.visualEffectsFullDescription' => '모든 장치에 완전한 애니메이션 및 예술 작품 효과를 사용하십시오.',
+			'settings.startupSectionDescription' => 'PlezyNG 시작할 때 어떤 섹션이 열리는지 선택합니다.',
+			'settings.startupSectionOptions.discover' => '연결된 발견 출처의 권장 사항 및 항목을 열어보세요.',
+			'settings.startupSectionOptions.libraries' => '연결된 미디어 라이브러리를 열어보세요.',
+			'settings.startupSectionOptions.liveTv' => '서버가 제공 할 때 라이브 TV를 열어; 그렇지 않으면 스타트업이 홈으로 돌아갑니다.',
+			'settings.startupSectionOptions.search' => '오픈 미디어 검색',
+			'settings.smallSkipDurationDescription' => '짧은 뒤쪽으로 이동하는 거리를 설정하고 앞으로 컨트롤을 찾습니다.',
+			'settings.largeSkipDurationDescription' => '긴 뒤쪽으로 움직이는 거리를 설정하고 앞으로 통제를 찾습니다.',
+			'settings.rewindOnResumeDescription' => '비디오를 다시 재생할 때 이 금액으로 재생을 이동합니다.',
+			'settings.defaultSleepTimerDescription' => '잠자리 타이머를 시작할 때 사용되는 초기 기간을 설정합니다.',
+			'settings.playNextCountdownDescription' => '다음 에피소드를 시작하기 전에 이것을 오랫동안 기다리십시오. 즉시 시작하려면 0으로 설정합니다.',
+			'settings.autoSkipDelaySettingDescription' => '입력, 크레딧 또는 광고가 자동으로 스파이를 설정할 때 적용됩니다.',
+			'settings.downmixCenterBoostDescription' => '중앙 채널에서 대화를 높이면 주변 오디오가 스테레오로 혼합됩니다.',
+			'settings.displaySwitchDelayDescription' => '디스플레이 모드를 변경하기 전에 TV 또는 수신기가 이전 스위치를 완료 할 수 있도록 기다리십시오.',
+			'settings.playerBackendDescription' => '어떤 재생 엔진이 이 장치에서 비디오를 해독하고 회전하는지 선택합니다.',
+			'settings.exoPlayerDescription' => '안드로이드의 원주민 Media3 기반 플레이어와 지원되는 하드웨어 경로를 사용하십시오.',
+			'settings.mpvDescription' => 'MPV를 사용하여 추가 재생, 하위 제목 및 비디오 처리 컨트롤을 표시합니다.',
+			'settings.scopeOffDescription' => '현재 플레이백 세션에 대한 변경 사항만 유지합니다.',
+			'settings.scopeGlobalDescription' => '각 도서관 및 제목에 대해 동일한 가치를 다시 사용합니다.',
+			'settings.scopeLibraryDescription' => '각 도서관에 대한 별도의 가치를 기억하십시오.',
+			'settings.scopeTitleDescription' => '각 쇼 또는 영화에 대해 별도의 값을 기억하십시오.',
+			'settings.specialsOrderingServerDescription' => '미디어 서버에 의해 제공되는 에피소드 주문을 유지합니다.',
+			'settings.specialsOrderingAirDateDescription' => '그들의 날짜에 따라 정기적 인 에피소드 중 특별한 장소.',
+			'settings.specialsOrderingLastDescription' => '각각의 특별한 장소는 정규 시즌 후에 배치합니다.',
+			'settings.skipIntroModeDescription' => '입력 마커가 정상적으로 재생하는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.',
+			'settings.skipCreditsModeDescription' => '크레딧이 정상적으로 재생되는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.',
+			'settings.skipAdsModeDescription' => '발견된 광고가 정상적으로 재생되는지, 스키 버튼을 표시하거나 자동으로 스키를 선택합니다.',
+			'settings.playbackBufferAutoDescription' => '활성 플레이어가 정상 버퍼 크기를 선택하도록 허용합니다.',
+			'settings.playbackBufferLargeDescription' => '재생 전에 더 많은 미디어를 준비하십시오; 이것은 더 많은 메모리를 사용합니다.',
+			'settings.playbackBufferExtraLargeDescription' => '가장 큰 읽기 넓은 버퍼를 유지하십시오; 이것은 대부분의 메모리를 사용합니다.',
+			'settings.defaultQualityDescription' => '기본 비디오 해상도를 설정하고 서버가 트랜스코드하는 스트림에 대한 지붕을 비트레이션합니다.',
+			'settings.cellularQualityDescription' => '장치가 셀룰러만 연결을 사용하는 경우 기본 품질을 초과합니다.',
+			'settings.remoteQualityDescription' => '원격 연결을 통해 서버에 연결할 때 기본 품질을 초과합니다.',
+			'settings.qualityPresetOriginalDescription' => '서버가 그것을 트랜스코드하도록 요청하지 않고 사용할 수있는 품질에서 소스를 재생합니다.',
+			'settings.qualityPresetTranscodeOptionDescription' => '위에서 표시된 해상도와 비트라이트를 사용하여 서버에 변환 된 스트림을 요청하십시오.',
+			'settings.qualityPresetSameAsDefaultDescription' => '기본 품질에서 선택한 품질을 사용합니다.',
+			'settings.musicQualityDescription' => '서버에서 요청한 최대 오디오 비트 속도를 설정; 원본은 소스 스트림을 유지합니다.',
+			'settings.musicQualityOriginalDescription' => '비트라이트 카프 트랜스코드 없이 소스 오디오를 재생합니다.',
+			'settings.musicQualityTranscodeOptionDescription' => '위에서 표시된 비트 속도 근처에 서버 트랜스코드를 요청하십시오; 실제 출력은 다를 수 있습니다.',
+			'settings.maxVolumeInputLabel' => '최대 수량 ( % )',
+			'settings.checkForUpdatesDescription' => '이제 PlezyNG의 새 버전이 사용할 수 있는지 확인하십시오.',
+			'settings.appearanceDescription' => '앱 테마를 선택하고 도서관 카드, 홈 라인 및 네비게이션을 조정합니다.',
+			'settings.prerollLibraryDescription' => '영화 프리 롤로 사용할 수있는 클립을 포함하는 도서관을 선택합니다.',
+			'settings.prerollSelectionDescription' => '선택한 도서관에서 어떤 클립이 영화 전에 재생할 수 있는지 선택합니다.',
+			'settings.contentScreensaverDelayOptionDescription' => '스크린 저장 예술 작품을 보여주기 전에 입력없이 많은 분을 기다리십시오.',
+			'settings.videoCodecOptionDescription' => '이 코덱을 지원할 때 직접 재생할 수 있습니다.Unchecked codecs are transcoded by the media server.',
 			'themeEditor.builtIn' => '기본 제공',
 			'themeEditor.presets' => '프리셋',
 			'themeEditor.custom' => '사용자 지정',
@@ -5073,6 +5451,17 @@ extension on TranslationsKo {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes}분 남음',
 			'themeEditor.previewSwitch' => '자동 재생',
 			'themeEditor.previewMutedText' => '보조 텍스트는 이렇게 표시됩니다',
+			'themeEditor.themeSystemDescription' => '장치의 모습을 추적하고 빛과 어둠 사이를 자동으로 전환합니다.',
+			'themeEditor.themeLightDescription' => '어두운 텍스트와 함께 밝은 배경을 사용하십시오.',
+			'themeEditor.themeDarkDescription' => '밝은 텍스트를 가진 어두운 배경을 사용하십시오.',
+			'themeEditor.themeOledDescription' => 'OLED 스크린에 빛을 줄이는 가까운 검은 표면을 사용하십시오.',
+			'themeEditor.themeEmberDescription' => '따뜻한 빨간색과 암버 액센트 색상을 사용하십시오.',
+			'themeEditor.themeGlacierDescription' => '차가운 파란색 액센트 색상을 사용하십시오.',
+			'themeEditor.themeForestDescription' => '녹색과 자연적인 강조 색상을 사용하십시오.',
+			'themeEditor.themePlumDescription' => '바이올렛과 플루미 액센트 색상을 사용합니다.',
+			'themeEditor.themePaperDescription' => '따뜻한 종이와 같은 표면과 잉크 영감을받은 색상을 사용하십시오.',
+			'themeEditor.themeCustomDescription' => '사용자 지정 테마 편집기에서 만든 색상 패널을 사용하십시오.',
+			'themeEditor.editorDescription' => '팔레트 색상을 선택하고, 그것의 색깔, 만족도, 밝기 또는 오파시티를 조정하고, 예비 보기 업데이트를 보시기 전에 저장할 수 있습니다.',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -5318,6 +5707,8 @@ extension on TranslationsKo {
 			'accessibility.largeTargets' => '더 큰 터치 목표',
 			'accessibility.largeTargetsHint' => '공통 컨트롤의 영역을 넓혀 터치와 보조 기술을 통한 탐색을 쉽게 합니다.',
 			'accessibility.navigationHint' => 'Tab과 Shift+Tab으로 컨트롤 사이를 이동하고, Enter 또는 Space로 실행하고, Escape 또는 뒤로 버튼으로 닫으세요. 책을 열면 확대/축소와 읽기 설정을 사용할 수 있습니다.',
+			'accessibility.textSizeDescription' => 'PlezyNG에서 스케일 인터페이스 텍스트는 장치의 시스템 텍스트 크기 설정 외에도.',
+			'accessibility.boldTextHint' => '인터페이스 라벨과 메시지에 더 무거운 무게를 사용하여 구별하기 쉽습니다.',
 			'tooltips.shufflePlay' => '무작위 재생',
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
@@ -5337,6 +5728,8 @@ extension on TranslationsKo {
 			'videoControls.sleepTimerEndOfVideo' => '현재 비디오의 끝',
 			'videoControls.sleepTimerStopAtHeader' => '정지 시점',
 			'videoControls.sleepTimerDurationHeader' => '타이머',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => '재생이 이 비디오의 끝에서 일시 중지됩니다',
 			'videoControls.stillWatching' => '아직 시청 중이신가요?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}초 후 일시 정지',
@@ -5371,6 +5764,8 @@ extension on TranslationsKo {
 			'videoControls.transcodeUnavailableFallback' => '트랜스코딩을 사용할 수 없음 — 원본 화질로 재생',
 			'videoControls.subtitleUnavailableFallback' => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
+			'videoControls.openMiniPlayer' => '오픈 미니 플레이어',
+			'videoControls.returnToFullPlayer' => '완전한 플레이어로 돌아가기',
 			'videoControls.aspectRatioButton' => '화면비율',
 			'videoControls.ambientLighting' => '주변 조명',
 			'videoControls.fullscreenButton' => '전체 화면',
@@ -5455,8 +5850,6 @@ extension on TranslationsKo {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃하시겠습니까?',
@@ -5516,6 +5909,28 @@ extension on TranslationsKo {
 			'subtitlingStyling.renderResolution' => '렌더링 해상도',
 			'subtitlingStyling.renderResolutionScreen' => '화면 해상도',
 			'subtitlingStyling.renderResolutionVideo' => '영상 해상도',
+			'subtitlingStyling.fontSizeDescription' => '이 장치에 서브 텍스트 크기를 설정합니다.',
+			'subtitlingStyling.textColorDescription' => 'Subtitle 텍스트에 사용되는 색상을 선택합니다.',
+			'subtitlingStyling.borderSizeDescription' => 'Subtitle 텍스트 주위에 출력의 두께를 설정합니다.',
+			'subtitlingStyling.borderColorDescription' => '서브 타이틀에 사용되는 색상을 선택합니다.',
+			'subtitlingStyling.backgroundColorDescription' => '서브 타이틀 텍스트 뒤에 있는 색상을 선택합니다.',
+			'subtitlingStyling.backgroundOpacityDescription' => '서브 타이틀 배경이 얼마나 투명한지 설정하십시오: 0%는 명확하고 100%는 견고합니다.',
+			'subtitlingStyling.positionDescription' => '0 %는 비디오의 상단이며 100 %는 바닥입니다.',
+			'subtitlingStyling.assOverrideDescription' => '플레이어가 ASS 하위 제목에 삽입 된 스타일링을 추적, 조정, 교체 또는 제거하는지 여부를 선택합니다.',
+			'subtitlingStyling.assOverrideOptions.no' => '글꼴, 색상, 크기 및 배치가 서브 타이틀 파일에 기록되어 있습니다.',
+			'subtitlingStyling.assOverrideOptions.yes' => '플레이어의 하위 제목 스타일 설정을 ASS 하위 타이틀을 조정하도록 허용합니다.',
+			'subtitlingStyling.assOverrideOptions.scale' => '플레이어 스타일링 및 스케일 내장 크기를 적용하여 비디오 차원과 일치합니다.',
+			'subtitlingStyling.assOverrideOptions.force' => '삽입된 ASS 스타일을 플레이어의 하위 타이틀 스타일로 대체합니다.',
+			'subtitlingStyling.assOverrideOptions.strip' => '삽입 된 ASS 형식을 제거하고 서브 타이틀 텍스트를 명확하게 수행합니다.',
+			'subtitlingStyling.renderResolutionDescription' => '이미지와 ASS 서브 타이틀을 라스테리화하는 데 사용되는 해상도를 선택합니다.더 낮은 안드로이드 스케일은 rendering 작업을 줄일 수 있지만 더 부드럽게 보입니다.',
+			'subtitlingStyling.renderResolutionOptions.screen' => '가장 뚜렷한 결과를 위해 전체 표면 해상도에서 렌더링합니다.',
+			'subtitlingStyling.renderResolutionOptions.video' => '참조로 비디오 해상도를 사용하여 고해상도 디스플레이에서 작업을 줄일 수 있습니다.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => '겸손한 성능 절약을 위해 디스플레이 표면 해상도의 75 %를 할인합니다.',
+			'subtitlingStyling.renderResolutionOptions.half' => '작업을 줄이기 위해 표시 표면 해상도의 50 %로 렌더링, 더 부드러운 가장자리.',
+			'subtitlingStyling.renderResolutionOptions.third' => '작업을 줄이기 위해 화면 표면 해상도의 3 분의 1에서 렌더링, 더 부드러운 가장자리.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => '작업을 줄이기 위해 디스플레이 표면 해상도의 1 분의 1에서 렌더, 가장 부드러운 결과.',
+			'subtitlingStyling.boldDescription' => '더 무거운 무게로 서브 타이틀 텍스트를 그리십시오.',
+			'subtitlingStyling.italicDescription' => '이탈리아어로 발음한 Subtitle 텍스트',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.presets' => '프리셋',
@@ -5652,11 +6067,19 @@ extension on TranslationsKo {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH 자막 선호',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'SDH 자막만',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'SDH가 아닌 자막만',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => '기본 및 SDH 버전 모두 사용할 수 있는 경우 표준 하위 제목을 선호합니다.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => '사용할 때 SDH 하위 제목을 선호하지만 표준 하위 타이틀을 붕괴로 허용합니다.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'SDH 하위 제목만 사용하십시오; 표준 하위 타이틀으로 돌아가지 마십시오.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => '표준 하위 제목만 사용하십시오; SDH 하위 이름을 제외합니다.',
 			'accountPreferences.forcedSubtitles' => '강제 자막',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => '강제가 아닌 자막 선호',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => '강제 자막 선호',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => '강제 자막만',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => '강제가 아닌 자막만',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => '정기적 인 서브 타이틀을 선호하지만 붕괴로 강제 트랙을 허용합니다.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => '사용할 때 강제 트랙을 선호하지만, 붕괴로 정기적 인 서브 타이틀을 허용합니다.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => '강제로 표시된 트랙만 사용하십시오.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => '강제로 표시된 트랙을 제외합니다.',
 			'accountPreferences.displayMissingEpisodes' => '누락된 에피소드 표시',
 			'accountPreferences.displayMissingEpisodesDescription' => '서버가 알고 있지만 파일이 없는 에피소드를 나열합니다.',
 			'accountPreferences.hidePlayedInLatest' => '최신 항목에서 시청한 항목 숨기기',
@@ -5670,11 +6093,27 @@ extension on TranslationsKo {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => '영화 및 TV 프로그램',
 			'accountPreferences.watchedIndicatorOptions.movies' => '영화만',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV 프로그램만',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => '보관된 체크마크를 표시하지 마십시오.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => '영화 및 TV 쇼에 대한 체크 마커를 표시합니다.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => '영화에만 시청된 체크 마크를 표시합니다.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => '텔레비전 쇼에만 시청된 체크 마크를 표시합니다.',
 			'accountPreferences.mediaReviewsVisibility' => '평점 및 리뷰',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => '사용자 및 평론가',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => '사용자만',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => '평론가만',
 			'accountPreferences.mediaReviewsOptions.nobody' => '숨김',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => '사용자 평가와 비판적 평가를 모두 표시합니다.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => '사용자가 제출한 평가 및 리뷰를 표시합니다.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => '비판적 인 평가 및 리뷰를 표시합니다.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => '평가 및 리뷰를 숨기십시오.',
+			'accountPreferences.preferredAudioLanguageDescription' => '서버 또는 플레이어가 자동으로 트랙을 선택할 때이 언어로 오디오 트래크를 선호합니다.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => '자막이 자동으로 선택되면 이 언어에서 자막을 추적하는 것을 선호합니다.',
+			'accountPreferences.subtitleAccessibilityDescription' => '자동 하위 제목 선택 중에 SDH 캡션이 선호되거나 요구되는지 여부를 선택합니다.',
+			'accountPreferences.forcedSubtitleDescription' => '자동 선택 중에 강제 서브 타이틀 트랙이 선호되거나 요구되는지 여부를 선택합니다.',
+			'accountPreferences.watchedIndicatorDescription' => '어떤 미디어 유형이 서버 인터페이스에서 관찰된 체크 마크를 받는지 선택합니다.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => '서버가 미디어 페이지에 표시하는 관객과 비판적 평가를 선택합니다.',
+			'accountPreferences.subtitleModeDescription' => '이 서버 계정에서 하위 제목이 자동으로 켜질 때를 선택합니다.',
+			'accountPreferences.hubDescription' => '이러한 선호도는 미디어 서버 계정에 저장되며 다른 고객에게도 적용될 수 있습니다.',
 			'discover.title' => '둘러보기',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
@@ -5803,6 +6242,8 @@ extension on TranslationsKo {
 			'libraries.all' => '전체',
 			'libraries.clearAll' => '모두 삭제',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 스캔하시겠습니까?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 분석하시겠습니까?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
@@ -5969,8 +6410,6 @@ extension on TranslationsKo {
 			'explore.mdblistShelves.nameHint' => '출처 목록 이름을 사용하기 위해 빈을 남겨 두십시오.',
 			'explore.mdblistShelves.add' => '셰일프 추가',
 			'explore.mdblistShelves.save' => '좌석을 구하라',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '이동 ${title} 위로',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '이동 ${title} 아래로',
 			'explore.mdblistShelves.unavailable' => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.',
@@ -6317,6 +6756,8 @@ extension on TranslationsKo {
 			'watchTogether.connecting' => '연결 중...',
 			'watchTogether.relayPublic' => '방은 공개 Open Watch Party 릴레이를 사용합니다.',
 			'watchTogether.relayCustom' => ({required Object url}) => '방은 ${url}에 있는 내 릴레이를 사용합니다.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => '최근 참여한 방',
 			'watchTogether.roomActions' => '방 작업',
 			'watchTogether.renameRoom' => '방 이름 변경',
@@ -6483,8 +6924,6 @@ extension on TranslationsKo {
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
 			'downloads.partialDownloadClickToComplete' => '부분 다운로드됨 — 클릭하여 완료',
 			'downloads.deleting' => '삭제 중...',
@@ -6743,6 +7182,7 @@ extension on TranslationsKo {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG 베이스 레이어',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR 베이스 레이어',
 			'performanceOverlay.dvRouteReshaped' => 'RPU 리셰이핑 (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => '실험 P7 FEL 그래픽 (무료)',
 			'performanceOverlay.p7Conversion' => 'P7 변환',
 			'performanceOverlay.sampleRate' => '샘플 레이트',
 			'performanceOverlay.pixelFormat' => '픽셀 형식',
@@ -6794,6 +7234,13 @@ extension on TranslationsKo {
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
+			'externalPlayer.description' => '다른 앱을 선택하여 비디오를 열 수 있습니다. 이용 가능한 플레이어는 장치와 설치된 앱에 따라 달라집니다.',
+			'externalPlayer.systemDefaultDescription' => '운영 체제가 기본 앱으로 비디오를 열어주십시오.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => '${player}와 함께 비디오를 열어보세요.',
+			'externalPlayer.playerNameDescription' => '플레이어 목록에 표시된 레이블.',
+			'externalPlayer.playerPackageDescription' => '플레이어 앱의 안드로이드 패키지 이름, 예를 들어 com.example.player을 입력합니다.',
+			'externalPlayer.playerCommandDescription' => '이 장치에 대한 설치된 플레이어 명령 또는 실행 가능한 경로를 입력합니다.',
+			'externalPlayer.playerUrlSchemeDescription' => 'URL 스케줄과 플레이어를 시작하는 데 사용되는 선택적인 URL 템플릿을 입력합니다.',
 			'metadataEdit.editMetadata' => '편집...',
 			'metadataEdit.screenTitle' => '메타데이터 편집',
 			'metadataEdit.basicInfo' => '기본 정보',
@@ -6823,6 +7270,8 @@ extension on TranslationsKo {
 			'metadataEdit.metadataUpdateFailed' => '메타데이터 업데이트 실패',
 			'metadataEdit.artworkUpdated' => '아트워크가 업데이트되었습니다',
 			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => '사용 가능한 아트워크 없음',
 			'metadataEdit.artworkOption' => ({required Object index}) => '아트워크 옵션 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '아트워크 옵션 ${index}, 선택됨',
@@ -6983,6 +7432,13 @@ extension on TranslationsKo {
 			'services.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
 			'services.libraryFilter.libraries' => '라이브러리',
 			'services.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
+			'services.libraryFilter.modeDescription' => '검사된 도서관이 동기화에서 차단되었는지, 아니면 동기화를 하는 유일한 라이브러리인지 선택합니다.',
+			'services.seerrDescription' => 'Seerr 또는 Overseerr에 연결하여 제목을 검색하고 미디어 요청을 제출합니다.',
+			'services.trackerDescriptions.trakt' => '트랙 계정과 함께 시청된 에피소드와 영화를 동기화합니다.',
+			'services.trackerDescriptions.mal' => '애니메이션 목록을 동기화하고 MyAnimeList로 진행을 시청합니다.',
+			'services.trackerDescriptions.anilist' => '애니메이션 목록을 동기화하고 AniList와 함께 진행을 지켜보십시오.',
+			'services.trackerDescriptions.simkl' => 'Sync는 Simkl와 함께 영화, TV 쇼 및 애니메이션을 보았습니다.',
+			'services.trackerDescriptions.mdblist' => '추천 및 탐색에서 MDBList 등급 및 목록을 표시합니다.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} 서버 추가',
 			'addServer.serverUrls' => '서버 URL',
 			'addServer.serverUrlsHelper' => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.',
@@ -6997,8 +7453,6 @@ extension on TranslationsKo {
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex로 로그인',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
@@ -7152,6 +7606,9 @@ extension on TranslationsKo {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => '에',
 			'homeLayout.resetHeroButtonDescription' => '각 라인의 영웅 설정을 끄고 영웅 라인이 존재하기 전과 마찬가지로 상단에 단일 회전 밴드를 반환합니다.',
+			'homeLayout.tapHeroCardDescription' => '영웅 카드를 탭하거나 선택하면 재생이 시작되거나 세부 사항이 열립니다.',
+			'homeLayout.heroTapPlayDescription' => '선택한 항목을 즉시 시작합니다.',
+			'homeLayout.heroTapDetailsDescription' => '선택한 항목의 세부 사항을 열기 전에 행동을 선택합니다.',
 			'platform.localNetworkPermission' => 'PlezyNG은 현지 네트워크에서 미디어 서버 및 플레이백 장치에 연결됩니다.',
 			'platform.locationPermission' => 'PlezyNG는 로컬 네트워크를 찾고 미디어 서버에 연결하는 데 iOS가 요구하는 경우 위치 접근 권한을 사용합니다.',
 			'platform.photoLibraryPermission' => '사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.',
@@ -7164,8 +7621,12 @@ extension on TranslationsKo {
 			'fileSources.source' => '출처',
 			'fileSources.name' => '이름',
 			'fileSources.endpoint' => '서버 URL',
+			'fileSources.smbEndpointHint' => '예: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB 서버와 공유 폴더 하나를 입력하세요.',
 			'fileSources.root' => '폴더 또는 접두사',
+			'fileSources.smbFolderHelp' => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.',
 			'fileSources.username' => '사용자 이름',
+			'fileSources.smbDomain' => '도메인(선택 사항)',
 			'fileSources.password' => '비밀번호',
 			'fileSources.token' => 'API 토큰',
 			'fileSources.accessKey' => '액세스 키 ID',
@@ -7175,6 +7636,8 @@ extension on TranslationsKo {
 			'fileSources.clientId' => 'OAuth 고객 ID',
 			'fileSources.clientSecret' => 'OAuth 클라이언트 비밀 (Google 데스크톱만)',
 			'fileSources.allowHttp' => '신뢰할 수 있는 네트워크에서 암호화되지 않은 HTTP 허용',
+			'fileSources.smbEncryption' => 'SMB3 연결 암호화',
+			'fileSources.smbEncryptionHint' => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.',
 			'fileSources.connect' => '연결',
 			'fileSources.cancel' => '취소',
 			'fileSources.save' => '저장',
@@ -7317,12 +7780,25 @@ extension on TranslationsKo {
 			'fileSources.useFiles' => '파일과 책을 사용하십시오',
 			'fileSources.cancelScan' => '스캔 취소',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => '예: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB 서버와 공유 폴더 하나를 입력하세요.',
-			'fileSources.smbFolderHelp' => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.',
-			'fileSources.smbDomain' => '도메인(선택 사항)',
-			'fileSources.smbEncryption' => 'SMB3 연결 암호화',
-			'fileSources.smbEncryptionHint' => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.',
+			'fileSources.offlineQuota' => 'Offline 다운로드 제한',
+			'fileSources.offlineQuotaHelp' => '오프라인 복사본, 수입된 파일 및 쿠웨이드 다운로드에 사용되는 최대 공간을 설정합니다.제한을 낮추는 것은 기존 복사를 제거하지 않습니다.',
+			'fileSources.offlineStorageUsage' => '오프라인 스토리지',
+			'fileSources.reservedStorage' => '예약',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => '다운로드 Queue',
+			'fileSources.downloadRunning' => '다운로드',
+			'fileSources.downloadQueued' => '기다리는',
+			'fileSources.downloadPaused' => '휴식',
+			'fileSources.downloadFailed' => '탈퇴가 필요하다',
+			'fileSources.importing' => '수입',
+			'fileSources.importInterrupted' => '수입 중단 · 제거 삭제',
+			'fileSources.errorQuotaExceeded' => '오프라인 스토리지 제한이 달성되었습니다.제한을 올리거나 다운로드 된 복사본을 제거합니다.',
+			'fileSources.errorStorageLow' => '보호된 저장소를 유지하기에 충분한 무료 장치 스토리지가 없습니다.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG는 무료 장치 저장소를 확인할 수 없었으므로 글쓰기가 중단되었습니다.',
+			'fileSources.removeDownloadJob' => '다운로드 삭제',
+			'fileSources.downloadAlreadyComplete' => '이 다운로드는 삭제되기 전에 완료되었습니다.이 항목은 이제 오프라인으로 사용할 수 있습니다.',
+			'fileSources.confirmRemoveDownloadJob' => '이 다운로드를 제거하고 부분적으로 다운로드 된 데이터를 삭제하십시오.당신의 위치와 노트는 남아있을 것입니다.',
 			'lending.title' => '공공 도서관',
 			'lending.add' => '도서관 추가',
 			'lending.other' => '또 다른 도서관',
@@ -7424,6 +7900,12 @@ extension on TranslationsKo {
 			'audiobook.statusFinished' => '마무리',
 			'audiobook.goToTime' => '시간에 가라',
 			'audiobook.timeHelp' => '시간:분:초 또는 분:초',
+			'audiobook.recoveryHelp' => '동기화 데이터를 이동하거나 복구하기 전에 최근 암호화 된 복사본을 수출합니다.수입은 현재 상태와 결합됩니다; 그들은 결코 지역 동기 역사를 대체하지 않습니다.',
+			'audiobook.recoveryExport' => '수출 암호화 된 복구 파일',
+			'audiobook.recoveryImport' => '암호화된 복구 파일 수입',
+			'audiobook.recoveryImportConfirm' => '이 암호화 된 복구 파일을 현재 읽기 위치 및 노트와 결합하십시오? 기존 역사는 유지됩니다. 공유 라이브러리 및 항목 ID는 포함되지 않습니다; 수입하기 전에 각 장치에 해당 ID를 설정합니다.',
+			'audiobook.recoveryExported' => '암호화 된 복구 파일이 저장되었습니다.',
+			'audiobook.recoveryImported' => '복구 데이터가 합쳐졌습니다.',
 			'sourceSetup.savedCertificate' => '저장된 서버 인증서',
 			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export와 같은 NFS URL을 입력하세요.',
 			'sourceSetup.dlnaNone' => 'DLNA 서버를 찾지 못했습니다. 장치 설명 URL을 직접 입력하세요.',
@@ -7511,8 +7993,6 @@ extension on TranslationsKo {
 			'sourceSetup.smbEncrypted' => 'SMB3 암호화 켜짐',
 			'sourceSetup.smbUnencrypted' => 'SMB3 암호화 꺼짐',
 			'sourceSetup.httpUnencrypted' => '전송 암호화 없는 HTTP',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => '엔드포인트 보안 확인',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '필수 입력 항목: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}: ${min}부터 ${max}까지의 값을 입력하세요.',
@@ -7520,6 +8000,23 @@ extension on TranslationsKo {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '선택한 클라이언트 인증 정보: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '평점 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '자막 다운로드 중: ${title}',
+			'sourceSetup.sharedEntryPair' => '이 항목을 쌍으로',
+			'sourceSetup.sharedEntryPairHelp' => '각 장치에서 이 항목에 대한 동일한 ID를 입력하십시오. 안정적인 공유 식별자를 사용하거나 하나를 생성하고 해당 항목으로 복사합니다. 업그레이드 파일 유형, 크기 및 주문이 일치하는 경우에만 커플됩니다. Blank은 이 맵링을 제거합니다.',
+			'sourceSetup.sharedEntryId' => '공유 항목 ID',
+			'sourceSetup.generateSharedEntryId' => '공유 항목 ID 생성',
+			'sourceSetup.sharedLibraryId' => '공유 도서관 ID (선택)',
+			'sourceSetup.sharedLibraryHelp' => '같은 도서관을 열고 있는 장치에서 동일한 ID를 사용하십시오.이 공공 ID는 다른 출처 연결을 통해 읽기 진행과 메모를 수행하는 데 도움이됩니다; 그것은 암호가 아닙니다.',
+			'sourceSetup.sharedLibraryInvalid' => '8 ~ 100 문자, 숫자, 포인트, 하위 코어 또는 하이펜을 사용하십시오.',
+			'sourceSetup.generateSharedLibraryId' => '공유 도서관 ID 만들기',
+			'sourceSetup.nfsReadAhead' => 'NFS 읽기-하이드 요청',
+			'sourceSetup.nfsReadAheadHelp' => '더 많은 병렬 리더는 빠른 NAS 또는 네트워크의 통로를 향상시킬 수 있습니다. 서버가 동일한 요청을 제한하는 경우 1을 사용합니다.',
+			'sourceSetup.nfsReadTest' => 'NFS 읽기 성능 측정',
+			'sourceSetup.nfsReadTestHelp' => '이 NAS 연결을 측정하기 위해 가장 큰 파일에서 64 MiB까지 읽습니다.이것은 네트워크 밴드 폭을 사용합니다.',
+			'sourceSetup.nfsQualificationResult' => 'NFS 읽기 측정',
+			'sourceSetup.nfsReadBytes' => '데이터 읽기',
+			'sourceSetup.nfsReadSpeed' => '속도 측정',
+			'sourceSetup.nfsReadRequests' => '요청 읽기',
+			'sourceSetup.sharedEntryConflict' => '이 공유 항목 ID는 이미 이 도서관의 다른 항목과 조화되어 있습니다.',
 			'comics.fitHeight' => '높이에 맞춤',
 			'comics.readingMode' => '읽기 모드',
 			'comics.paged' => '페이지',
@@ -7594,6 +8091,15 @@ extension on TranslationsKo {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

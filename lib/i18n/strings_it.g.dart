@@ -177,6 +177,7 @@ class _Translations$appIcon$it extends Translations$appIcon$en {
 	@override String get launcherHint => 'La nuova icona appare nella schermata Home quando esci da PlezyNG.';
 	@override String get tvLauncherHint => 'Il nuovo banner appare quando esci da PlezyNG. Android TV potrebbe continuare a mostrare quello precedente fino al riavvio del televisore.';
 	@override late final _Translations$appIcon$names$it names = _Translations$appIcon$names$it._(_root);
+	@override String get description => 'Scegli l\'icona mostrata dal lanciatore del dispositivo. le previsioni mostrano come appare ogni opzione.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$it extends Translations$common$en {
 	@override String get cancel => 'Annulla';
 	@override String get save => 'Salva';
 	@override String get close => 'Chiudi';
+	@override String get closeMiniPlayer => 'Mini giocatore vicino';
+	@override String get closeWorkspaceWindow => 'Finestra vicina';
+	@override String get returnToFullView => 'Il ritorno alla vista completa';
+	@override String get manageMediaSessions => 'Gestione delle sessioni di media';
+	@override String get hideMediaSessions => 'Sessioni di media nascosti';
+	@override String get mediaSessions => 'Sessioni di Media';
+	@override String get mediaSessionsHint => 'Selezionare per portare una sessione in avanti.Parco nasconde la sua finestra ma la mantiene aperta.Ritorno lo apre in vista completa; vicino si conclude.';
+	@override String get sessionInWorkspace => 'nel laboratorio';
+	@override String get sessionParked => 'Parcheggiato';
+	@override String get sessionFullscreen => 'schermo completo';
+	@override String get switchToNextWindow => 'Swap con la finestra successiva';
+	@override String get moveWindow => 'Move la finestra';
+	@override String get finishMovingWindow => 'Finita la finestra in movimento';
+	@override String get moveWindowHint => 'Long-press e tirare la finestra per spostarla. Questo controllo consente anche il movimento della chiave di pistola.';
+	@override String get movingWindowHelp => 'Tracciare per muoversi · Aggiungere le chiavi · Entrare i salvatori · Cancelli di escape';
+	@override String get resizeWindow => 'Ristrutturare la finestra';
+	@override String get resizeWindowHint => 'Rimuovere questo manuale o utilizzare le chiavi della pistola per ripristinare la finestra.';
+	@override String get workspaceWindowHint => 'Utilizzare il controllo di movimento o lunghi pressioni e tirare per muoversi.';
+	@override String get workspacePaneHint => 'Selezionare questo pannello per focalizzarlo. utilizzare il suo controllo a schermo pieno per espandere.';
+	@override String workspaceWindowLabel({required Object title}) => 'Finestra di sessione: ${title}';
+	@override String get workspaceTitleHint => 'Selezionare per concentrarsi. spostare la barra di titolo per muoversi; utilizzare il pulsante a schermo pieno per espandere.';
+	@override String get moveToSessionTray => 'Trasferimento alla sessione tray';
+	@override String get moveToSessionTrayHint => 'La sessione è disponibile senza mostrare la sua finestra.';
+	@override String get closeSessionHint => 'Chiude questa finestra e conclude la sua sessione.';
+	@override String get sideBySideLayout => 'Conversione a layout laterale';
+	@override String get floatingWindows => 'Switch per fluttuare le finestre';
 	@override String get clear => 'Cancella';
 	@override String get reset => 'Ripristina';
 	@override String get later => 'Più tardi';
@@ -680,6 +707,13 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Forza il DV7 nativo e impedisce nuovi tentativi di conversione DV';
 	@override String get dvConversionDv81Description => 'Forza la conversione RPU diretta al profilo Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Rimuove i livelli RPU/EL di Dolby Vision e riproduce il video come semplice HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision sperimentale';
+	@override String get experimentalDolbyVisionDescription => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.';
+	@override String get dvExperimentUnavailableDescription => 'Questo esperimento è attualmente disponibile solo su Linux.';
+	@override String get dvCompatibilityFallback => 'Alternativa di compatibilità';
+	@override String get dvCompatibilityFallbackDescription => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.';
+	@override String get dvExperimentDiagnostics => 'Registro dell’esperimento video';
+	@override String get dvExperimentDiagnosticsDescription => 'Attiva i log dettagliati del lettore alla prossima riproduzione.';
 	@override String get disableDolbyVision => 'Disattiva Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Riproduci il livello HDR10 o HLG del file al posto di Dolby Vision, se presente';
 	@override String get hdrSdrConversion => 'Conversione da HDR a SDR';
@@ -766,13 +800,81 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Scegli come visualizzare date, numeri e unità di misura.';
 	@override String get metadataLanguage => 'Lingua dei metadati';
 	@override String get metadataLanguageDescription => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.';
-	@override String get experimentalDolbyVision => 'Dolby Vision sperimentale';
-	@override String get experimentalDolbyVisionDescription => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.';
-	@override String get dvExperimentUnavailableDescription => 'Questo esperimento è attualmente disponibile solo su Linux.';
-	@override String get dvCompatibilityFallback => 'Alternativa di compatibilità';
-	@override String get dvCompatibilityFallbackDescription => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.';
-	@override String get dvExperimentDiagnostics => 'Registro dell’esperimento video';
-	@override String get dvExperimentDiagnosticsDescription => 'Attiva i log dettagliati del lettore alla prossima riproduzione.';
+	@override String get enterFullscreenOnPlaybackStart => 'Inserisci la schermata completa quando si inizia il playback';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Aprire video desktop in schermo pieno quando si avvia il playback';
+	@override String get extendVideoIntoDisplayCutout => 'Estendere il video in display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Lascia che il video a schermo pieno utilizzi la cutout della fotocamera sui telefoni Android';
+	@override String get languageDescription => 'Selezionare il linguaggio utilizzato per i controlli e i messaggi PlezyNG. Seguire il sistema traccia la lingua del dispositivo.';
+	@override String get themeDescription => 'Scegliere i colori e il contrasto utilizzati in tutta l\'app.';
+	@override String get libraryDensityDescription => 'Cambiare quante carte di libreria si adatta in ogni riga.';
+	@override String get displayScaleDescription => 'Ristrutturare l\'interfaccia su questo display auto senza cambiare la dimensione del testo in tutto il dispositivo.';
+	@override String get themeSongVolumeDescription => 'Imposta il volume delle canzoni di tema relativamente ad altri audio.';
+	@override String get viewModeDescription => 'Scegli se gli articoli della biblioteca vengono visualizzati come poster in una rete o come elenco compatto.';
+	@override String get gridViewDescription => 'Ordina gli articoli della biblioteca in righe e colonne di poster.';
+	@override String get listViewDescription => 'Mostra gli articoli della biblioteca in una lista verticale con più testo per oggetto.';
+	@override String get gridSpacingDescription => 'Imposta la distanza tra i poster nelle reti della biblioteca.';
+	@override String get gridSpacingTightDescription => 'Pianificare più poster sullo schermo con piccole lacune.';
+	@override String get gridSpacingNormalDescription => 'Utilizzare la differenza standard tra i poster.';
+	@override String get gridSpacingSpaciousDescription => 'Aggiungi più grandi lacune tra i poster per una maggiore separazione.';
+	@override String get episodePosterModeDescription => 'Scegliere quale opera d\'arte appare sulle carte di episodio.';
+	@override String get seriesPosterDescription => 'Utilizzare il poster della serie dello show per ogni episodio.';
+	@override String get seasonPosterDescription => 'Utilizzare il poster di stagione per ogni episodio quando disponibile.';
+	@override String get episodeThumbnailDescription => 'Utilizzare un quadro dell\'episodio quando disponibile.';
+	@override String get continueWatchingActionDescription => 'Scegli ciò che accade quando si attiva una scheda di Continuing Watching.';
+	@override String get continueWatchingPlayDescription => 'Inizia subito il film o l’episodio.';
+	@override String get continueWatchingDetailsDescription => 'Apri prima la pagina titolo in modo da poter rivedere i dettagli e scegliere una azione.';
+	@override String get episodeActionDescription => 'Scegli ciò che accade quando si attiva una scheda di episodio.';
+	@override String get episodePlayDescription => 'Inizia subito l’episodio.';
+	@override String get episodeDetailsDescription => 'Apri la pagina dell\'episodio prima del playback.';
+	@override String get contentScreensaverDelayDescription => 'Scegli quanto tempo PlezyNG aspetta senza input prima di mostrare opere d\'arte.';
+	@override String get continueWatchingRowSizeDescription => 'Scegliamo quanto sono grandi le carte nella riga Continuing Watching.';
+	@override String get rowSizeCompactDescription => 'Mostra carte più piccole in modo che più articoli si adattino per tutta la riga.';
+	@override String get rowSizeStandardDescription => 'Utilizzare la dimensione standard della scheda.';
+	@override String get rowSizeLargeDescription => 'Mostra mappe più grandi con maggiori dettagli artwork.';
+	@override String get visualEffectsDescription => 'Scegli il budget di animazione e effetti artificiali per questo dispositivo.';
+	@override String get visualEffectsFullDescription => 'Utilizzare tutti gli effetti di animazione e arte su ogni dispositivo.';
+	@override String get startupSectionDescription => 'Selezionare quale sezione si apre quando PlezyNG inizia.';
+	@override late final _Translations$settings$startupSectionOptions$it startupSectionOptions = _Translations$settings$startupSectionOptions$it._(_root);
+	@override String get smallSkipDurationDescription => 'Imposta la distanza spostata dal breve ritorno e avanti cerca controlli.';
+	@override String get largeSkipDurationDescription => 'Imposta la distanza spostata dal lungo ritorno e avanti cerca controlli.';
+	@override String get rewindOnResumeDescription => 'Spostare il ripristino di questo importo quando si riprende un video.';
+	@override String get defaultSleepTimerDescription => 'Imposta la durata iniziale utilizzata quando si inizia il timer del sonno.';
+	@override String get playNextCountdownDescription => 'Attendere molto prima di iniziare il prossimo episodio. impostare a 0 per iniziare immediatamente.';
+	@override String get autoSkipDelaySettingDescription => 'Si applica quando un intro, credito o annuncio è impostato per scappare automaticamente.';
+	@override String get downmixCenterBoostDescription => 'Aumentare il dialogo nel canale centrale quando l\'audio circostante viene mescolato in stereo.';
+	@override String get displaySwitchDelayDescription => 'Aspettate prima di cambiare il modo di visualizzazione in modo che la TV o il ricevitore possa completare il suo precedente switch.';
+	@override String get playerBackendDescription => 'Selezionare quale motore di riproduzione decodifica e renderà il video su questo dispositivo.';
+	@override String get exoPlayerDescription => 'Utilizzare il player basato su Media3 nativo di Android e i percorsi hardware supportati.';
+	@override String get mpvDescription => 'Utilizzare mpv, che esprime ulteriori controlli di riproduzione, sottotitoli e video processing.';
+	@override String get scopeOffDescription => 'Mantenere i cambiamenti per l\'attuale sessione di riproduzione solo.';
+	@override String get scopeGlobalDescription => 'Ripristinare lo stesso valore per ogni biblioteca e titolo.';
+	@override String get scopeLibraryDescription => 'Ricordate un valore separato per ciascuna biblioteca.';
+	@override String get scopeTitleDescription => 'Ricorda un valore separato per ogni spettacolo o film.';
+	@override String get specialsOrderingServerDescription => 'Mantenere l\'ordine dell\'episodio fornito dal server media.';
+	@override String get specialsOrderingAirDateDescription => 'Posizionare speciali tra episodi regolari per la loro data aerea.';
+	@override String get specialsOrderingLastDescription => 'Posizionare ogni speciale dopo le stagioni regolari.';
+	@override String get skipIntroModeDescription => 'Scegli se i marcatori intro giocano normalmente, mostrano un pulsante di salto o scappano automaticamente.';
+	@override String get skipCreditsModeDescription => 'Selezionare se i crediti giocano normalmente, mostrare un pulsante di salto o saltare automaticamente.';
+	@override String get skipAdsModeDescription => 'Scegli se gli annunci rilevati si svolgono normalmente, visualizzano un pulsante di salto o scappano automaticamente.';
+	@override String get playbackBufferAutoDescription => 'Lascia che il giocatore attivo sceglie la sua dimensione normale del buffer.';
+	@override String get playbackBufferLargeDescription => 'Mantenere più media pronti prima della riproduzione; questo utilizza più memoria.';
+	@override String get playbackBufferExtraLargeDescription => 'Mantenere il più grande buffer di lettura; questo utilizza la maggior parte della memoria.';
+	@override String get defaultQualityDescription => 'Configurare la risoluzione video predefinita e il tetto bitrate per i flussi che il server trascoda.';
+	@override String get cellularQualityDescription => 'Superare la qualità predefinita quando il dispositivo utilizza una connessione solo cellulare.';
+	@override String get remoteQualityDescription => 'Superare la qualità predefinita quando si connette a un server tramite una connessione remota.';
+	@override String get qualityPresetOriginalDescription => 'Gioca la fonte alla sua qualità disponibile senza chiedere al server di trascodirla.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Chiedi al server un flusso convertito utilizzando la risoluzione e il bitrate mostrato sopra.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Utilizzare la qualità selezionata in Qualità predefinita.';
+	@override String get musicQualityDescription => 'Imposta la bitrate audio massima richiesta dal server; originale mantiene il flusso di sorgente.';
+	@override String get musicQualityOriginalDescription => 'Gioca l\'audio sorgente senza un transcode cappato a bitrate.';
+	@override String get musicQualityTranscodeOptionDescription => 'Richiedi un codice trans server capped vicino alla bitrate mostrata sopra; la produzione effettiva può variare.';
+	@override String get maxVolumeInputLabel => 'Il volume massimo (%)';
+	@override String get checkForUpdatesDescription => 'Scopri ora se è disponibile una versione più recente di PlezyNG.';
+	@override String get appearanceDescription => 'Selezionare il tema dell\'app e personalizzare le schede della biblioteca, le righe di casa e la navigazione.';
+	@override String get prerollLibraryDescription => 'Scegli la libreria che contiene i clip disponibili come pre-roll di film.';
+	@override String get prerollSelectionDescription => 'Scegli i clip dalla biblioteca selezionata che puoi giocare prima dei film.';
+	@override String get contentScreensaverDelayOptionDescription => 'Aspettate questi molti minuti senza input prima di mostrare screensaver artwork.';
+	@override String get videoCodecOptionDescription => 'Permettere la riproduzione diretta di questo codec quando supportato. i codec non controllati sono trascoditi dal server dei media.';
 }
 
 // Path: themeEditor
@@ -809,6 +911,17 @@ class _Translations$themeEditor$it extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} min rimanenti';
 	@override String get previewSwitch => 'Riproduzione automatica';
 	@override String get previewMutedText => 'Così appare il testo secondario';
+	@override String get themeSystemDescription => 'Seguire l\'aspetto del dispositivo e scorrere tra luce e buio automaticamente.';
+	@override String get themeLightDescription => 'Utilizzare un background luminoso con testo scuro.';
+	@override String get themeDarkDescription => 'Utilizzare un background scuro con testo leggero.';
+	@override String get themeOledDescription => 'Utilizzare superfici di colore nero che riducono la luce su schermi OLED.';
+	@override String get themeEmberDescription => 'Utilizzare colori di accento rosso e amber.';
+	@override String get themeGlacierDescription => 'Utilizzare colori accenti blu freddi.';
+	@override String get themeForestDescription => 'Utilizzare i colori di accento verde e naturale.';
+	@override String get themePlumDescription => 'Utilizzare i colori di accento violetto e plum.';
+	@override String get themePaperDescription => 'Utilizzare superfici calde come carta e colori ispirati all\'ingrosso.';
+	@override String get themeCustomDescription => 'Utilizzare la paletta dei colori che hai creato nell\'editor di tema personalizzato.';
+	@override String get editorDescription => 'Scegli un colore di palette, regolare la sua tonalità, saturazione, luminosità o opacità e vedere l\'aggiornamento preview prima di risparmiare.';
 }
 
 // Path: search
@@ -1089,6 +1202,8 @@ class _Translations$accessibility$it extends Translations$accessibility$en {
 	@override String get largeTargets => 'obiettivi touch più grandi';
 	@override String get largeTargetsHint => 'Gioca i controlli condivisi più spazio per la navigazione a touch e assistive.';
 	@override String get navigationHint => 'Usa Tab e Shift+Tab per spostarti tra i controlli, Enter o la barra spaziatrice per attivarli ed Escape o Indietro per chiudere. Quando un libro è aperto, puoi regolare lo zoom e le preferenze di lettura.';
+	@override String get textSizeDescription => 'Scala il testo dell\'interfaccia in PlezyNG oltre alla configurazione di dimensioni del testo del sistema del dispositivo.';
+	@override String get boldTextHint => 'Utilizzare un peso più pesante per le etichette e i messaggi di interfaccia per renderli più facili da distinguere.';
 }
 
 // Path: tooltips
@@ -1172,6 +1287,8 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcodifica non disponibile — riproduzione in qualità originale';
 	@override String get subtitleUnavailableFallback => 'Impossibile caricare i sottotitoli selezionati — la riproduzione continua senza sottotitoli';
 	@override String get pipButton => 'Modalità Picture-in-Picture';
+	@override String get openMiniPlayer => 'Mini giocatore aperto';
+	@override String get returnToFullPlayer => 'Il ritorno al giocatore completo';
 	@override String get aspectRatioButton => 'Proporzioni';
 	@override String get ambientLighting => 'Illuminazione ambientale';
 	@override String get fullscreenButton => 'Attiva schermo intero';
@@ -1329,6 +1446,19 @@ class _Translations$subtitlingStyling$it extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Risoluzione di rendering';
 	@override String get renderResolutionScreen => 'Risoluzione dello schermo';
 	@override String get renderResolutionVideo => 'Risoluzione del video';
+	@override String get fontSizeDescription => 'Imposta la dimensione del testo di sottotitolo su questo dispositivo.';
+	@override String get textColorDescription => 'Selezionare il colore utilizzato per il testo sottotitolo.';
+	@override String get borderSizeDescription => 'Imposta la spessore dell\'outline intorno al testo sottotitolo.';
+	@override String get borderColorDescription => 'Scegliere il colore utilizzato per l\'outline del sottotitolo.';
+	@override String get backgroundColorDescription => 'Selezionare il colore dietro il testo sottotitolo.';
+	@override String get backgroundOpacityDescription => 'Imposta quanto sia trasparente il background del sottotitolo: 0% è chiaro e 100% solido.';
+	@override String get positionDescription => 'Movi i sottotitoli verticalmente. 0% è la parte superiore del video e 100% è il fondo.';
+	@override String get assOverrideDescription => 'Scegli se il giocatore segue, adatta, sostituisce o rimuove lo stile inserito nei sottotitoli ASS.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$it assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$it._(_root);
+	@override String get renderResolutionDescription => 'Scegli la risoluzione utilizzata per rasterizzare l\'immagine e i sottotitoli ASS. Le scale Android inferiori possono ridurre il lavoro di rendering ma sembrano più sottili.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$it renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$it._(_root);
+	@override String get boldDescription => 'Tracciare il sottotitolo in un peso più pesante.';
+	@override String get italicDescription => 'Tracciare il sottotitolo in italiano.';
 }
 
 // Path: mpvConfig
@@ -1510,6 +1640,14 @@ class _Translations$accountPreferences$it extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$it watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$it._(_root);
 	@override String get mediaReviewsVisibility => 'Valutazioni e recensioni';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$it mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$it._(_root);
+	@override String get preferredAudioLanguageDescription => 'Preferisce le tracce audio in questo linguaggio quando il server o giocatore seleziona automaticamente una traccia.';
+	@override String get preferredSubtitleLanguageDescription => 'Preferisci le tracce di sottotitoli in questo linguaggio quando i subtitoli sono selezionati automaticamente.';
+	@override String get subtitleAccessibilityDescription => 'Selezionare se le capzioni SDH sono preferite o richieste durante la selezione automatica dei sottotitoli.';
+	@override String get forcedSubtitleDescription => 'Scegli se le tracce di sottotitoli forzati sono preferite o richieste durante la selezione automatica.';
+	@override String get watchedIndicatorDescription => 'Selezionare quali tipi di media ricevono un checkmark osservato nell\'interfaccia del server.';
+	@override String get mediaReviewsVisibilityDescription => 'Scegliere quale pubblico e quali valutazioni critiche il server mostra sulle pagine dei media.';
+	@override String get subtitleModeDescription => 'Selezionare quando i sottotitoli si attivano automaticamente per questo account server.';
+	@override String get hubDescription => 'Queste preferenze sono memorizzate sul tuo account media-server e possono applicarsi anche ad altri clienti.';
 }
 
 // Path: discover
@@ -2411,6 +2549,7 @@ class _Translations$performanceOverlay$it extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'Livello base HLG';
 	@override String get dvRouteBaseLayerSdr => 'Livello base SDR';
 	@override String get dvRouteReshaped => 'Rimodellato con RPU (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Il grafico sperimentale P7 FEL (non qualificato)';
 	@override String get p7Conversion => 'Conv. P7';
 	@override String get sampleRate => 'Frequenza camp.';
 	@override String get pixelFormat => 'Formato pixel';
@@ -2471,6 +2610,13 @@ class _Translations$externalPlayer$it extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Impossibile aprire il lettore esterno';
 	@override String appNotInstalled({required Object name}) => '${name} non è installato';
 	@override String get playInExternalPlayer => 'Riproduci nel lettore esterno';
+	@override String get description => 'Scegli un\'altra app per aprire i video in. I giocatori disponibili dipendono dal tuo dispositivo e dalle applicazioni installate.';
+	@override String get systemDefaultDescription => 'Lascia che il sistema operativo apri il video con la sua app predefinita.';
+	@override String playerOptionDescription({required Object player}) => 'Apri i video con ${player}.';
+	@override String get playerNameDescription => 'L\'etichetta visualizzata nella lista dei giocatori.';
+	@override String get playerPackageDescription => 'Inserisci il nome del pacchetto Android dell\'app giocatore, come com.example.player.';
+	@override String get playerCommandDescription => 'Inserisci il comando del giocatore installato o la strada eseguibile per questo dispositivo.';
+	@override String get playerUrlSchemeDescription => 'Inserisci lo schema URL e il modello URL opzionale utilizzato per lanciare il giocatore.';
 }
 
 // Path: metadataEdit
@@ -2690,6 +2836,8 @@ class _Translations$services$it extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$it oauthProxy = _Translations$services$oauthProxy$it._(_root);
 	@override late final _Translations$services$pendingAuth$it pendingAuth = _Translations$services$pendingAuth$it._(_root);
 	@override late final _Translations$services$libraryFilter$it libraryFilter = _Translations$services$libraryFilter$it._(_root);
+	@override String get seerrDescription => 'Connettiti a Seerr o Overseerr per cercare titoli e inviare richieste di media.';
+	@override late final _Translations$services$trackerDescriptions$it trackerDescriptions = _Translations$services$trackerDescriptions$it._(_root);
 }
 
 // Path: addServer
@@ -2884,6 +3032,9 @@ class _Translations$homeLayout$it extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'di';
 	@override String get resetHeroButtonDescription => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotante in cima, come prima che le riga eroe esistessero.';
+	@override String get tapHeroCardDescription => 'Selezionare se tappando o selezionando una carta Hero inizia la riproduzione o si aprono i suoi dettagli.';
+	@override String get heroTapPlayDescription => 'Inizia subito l’oggetto selezionato.';
+	@override String get heroTapDetailsDescription => 'Apri i dettagli dell\'oggetto selezionato prima di scegliere un\'azione.';
 }
 
 // Path: platform
@@ -2914,8 +3065,12 @@ class _Translations$fileSources$it extends Translations$fileSources$en {
 	@override String get source => 'Fonte';
 	@override String get name => 'Nome';
 	@override String get endpoint => 'URL del server';
+	@override String get smbEndpointHint => 'Esempio: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Inserisci un server SMB e una cartella condivisa.';
 	@override String get root => 'Foldere o prefix';
+	@override String get smbFolderHelp => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.';
 	@override String get username => 'Nome utente';
+	@override String get smbDomain => 'Dominio (facoltativo)';
 	@override String get password => 'Password';
 	@override String get token => 'API Toccano';
 	@override String get accessKey => 'ID chiave di accesso';
@@ -2925,6 +3080,8 @@ class _Translations$fileSources$it extends Translations$fileSources$en {
 	@override String get clientId => 'ID client di OAuth';
 	@override String get clientSecret => 'OAuth client secret (solo Google desktop)';
 	@override String get allowHttp => 'Consenti HTTP non crittografato su una rete attendibile';
+	@override String get smbEncryption => 'Crittografa la connessione SMB3';
+	@override String get smbEncryptionHint => 'Usa la crittografia SMB3 quando il NAS la supporta.';
 	@override String get connect => 'Connetti';
 	@override String get cancel => 'Annulla';
 	@override String get save => 'Salva';
@@ -3071,12 +3228,23 @@ class _Translations$fileSources$it extends Translations$fileSources$en {
 	@override String get useFiles => 'Utilizzare file e libri';
 	@override String get cancelScan => 'Cancelare la scansione';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Esempio: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Inserisci un server SMB e una cartella condivisa.';
-	@override String get smbFolderHelp => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.';
-	@override String get smbDomain => 'Dominio (facoltativo)';
-	@override String get smbEncryption => 'Crittografa la connessione SMB3';
-	@override String get smbEncryptionHint => 'Usa la crittografia SMB3 quando il NAS la supporta.';
+	@override String get offlineQuota => 'Limiti di download offline';
+	@override String get offlineQuotaHelp => 'Configurare lo spazio massimo utilizzato da copie offline, file importati e download corrotti. La riduzione del limite non rimuove le copie esistenti.';
+	@override String get offlineStorageUsage => 'Storaggio Offline';
+	@override String get reservedStorage => 'riservato';
+	@override String get downloadQueue => 'Scarica il Queue';
+	@override String get downloadRunning => 'Scarica';
+	@override String get downloadQueued => 'Aspettando';
+	@override String get downloadPaused => 'Pausa';
+	@override String get downloadFailed => 'La necessità di ritorno';
+	@override String get importing => 'Importazione';
+	@override String get importInterrupted => 'Importazione interrotta · rimuovere a chiarire';
+	@override String get errorQuotaExceeded => 'Il limite di archiviazione offline è stato raggiunto. Aumentare il limite o rimuovere una copia scaricata.';
+	@override String get errorStorageLow => 'Non c\'è sufficiente archiviazione gratuita per mantenere la riserva protetta.';
+	@override String get errorStorageUnavailable => 'PlezyNG non poteva controllare lo storage del dispositivo gratuito, quindi la scrittura è stata interrotta.';
+	@override String get removeDownloadJob => 'Rimuovere download';
+	@override String get downloadAlreadyComplete => 'Questo download è finito prima che possa essere rimosso. l\'articolo è ora disponibile offline.';
+	@override String get confirmRemoveDownloadJob => 'Rimuovere questo download e rimuovere tutti i dati parzialmente scaricati? la tua posizione e le note rimarranno.';
 }
 
 // Path: lending
@@ -3196,6 +3364,12 @@ class _Translations$audiobook$it extends Translations$audiobook$en {
 	@override String get statusFinished => 'Completato';
 	@override String get goToTime => 'Vai al tempo indicato';
 	@override String get timeHelp => 'ore:minuti:secondi oppure minuti:secondi';
+	@override String get recoveryHelp => 'Esportare una copia recentemente crittografata prima di spostare o riparare i dati di sincronizzazione. Le importazioni si uniscono allo stato corrente; non sostituiscono mai la storia locale della sincronizzazione.';
+	@override String get recoveryExport => 'Esporta il file di recupero crittografato';
+	@override String get recoveryImport => 'Importa il file di recupero crittografato';
+	@override String get recoveryImportConfirm => 'Combinare questo file di recupero crittografato con posizioni di lettura corrente e note? Storia esistente sarà conservata. ID della biblioteca condivisa e degli articoli non sono inclusi; impostare ID corrispondenti su ogni dispositivo prima dell\'importazione.';
+	@override String get recoveryExported => 'Il file di recupero crittografato salvato.';
+	@override String get recoveryImported => 'I dati di recupero sono misti.';
 }
 
 // Path: sourceSetup
@@ -3299,6 +3473,23 @@ class _Translations$sourceSetup$it extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Identità client selezionata: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Valutazione ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Download dei sottotitoli: ${title}';
+	@override String get sharedEntryPair => 'Coppia questo articolo';
+	@override String get sharedEntryPairHelp => 'Inserisci lo stesso ID per questo elemento su ciascun dispositivo. Utilizzare un identificatore condiviso stabile o generare uno e copiarlo all\'oggetto che corrisponde. Progress coppia solo quando i tipi di file edizioni, le dimensioni e l\'ordine corrispondono. Blank rimuove questa mappatura.';
+	@override String get sharedEntryId => 'ID di oggetto condiviso';
+	@override String get generateSharedEntryId => 'Generare un ID di oggetto condiviso';
+	@override String get sharedLibraryId => 'ID della biblioteca condivisa (opzionale)';
+	@override String get sharedLibraryHelp => 'Utilizzare lo stesso ID su dispositivi che aprono la stessa biblioteca.Questo ID pubblico aiuta a portare il progresso della lettura e delle note attraverso diverse connessioni sorgente; non è una password.Quando i fornitori utilizzano diversi ID di oggetto, coppia questi elementi dalle loro schermi dettagliati.';
+	@override String get sharedLibraryInvalid => 'Utilizzare 8-100 lettere, numeri, punti, sottoscori o hyphens.';
+	@override String get generateSharedLibraryId => 'Generare un ID della biblioteca condivisa';
+	@override String get nfsReadAhead => 'Le richieste di read-ahead della NFS';
+	@override String get nfsReadAheadHelp => 'Più letture parallele possono migliorare la capacità di passaggio su un NAS o una rete veloce. Utilizzare 1 se il server limita le richieste concorrenti.';
+	@override String get nfsReadTest => 'Misurare le prestazioni di NFS';
+	@override String get nfsReadTestHelp => 'Legge fino a 64 MiB dal file più grande per misurare questa connessione NAS. Questo utilizza la larghezza di banda della rete.';
+	@override String get nfsQualificationResult => 'NFS Leggi la misura';
+	@override String get nfsReadBytes => 'Dati di lettura';
+	@override String get nfsReadSpeed => 'velocità misurata';
+	@override String get nfsReadRequests => 'Leggi le richieste';
+	@override String get sharedEntryConflict => 'Questo ID di oggetto condiviso è già associato ad un altro elemento in questa biblioteca.';
 }
 
 // Path: comics
@@ -3391,6 +3582,15 @@ class _Translations$games$it extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3471,6 +3671,19 @@ class _Translations$common$mediaKind$it extends Translations$common$mediaKind$en
 	@override String get clip => 'Clip';
 	@override String get photo => 'Foto';
 	@override String get folder => 'Cartella';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$it extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Apri raccomandazioni e articoli da fonti di scoperta collegate.';
+	@override String get libraries => 'Apri le tue biblioteche multimediali connesse.';
+	@override String get liveTv => 'Apri Live TV quando un server lo fornisce; altrimenti la startup ritorna a Home.';
+	@override String get search => 'La ricerca dei media aperti.';
 }
 
 // Path: themeEditor.slots
@@ -3559,6 +3772,35 @@ class _Translations$videoControls$pipErrors$it extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Si è verificato un errore: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$it extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Mantenere le lettere, i colori, le dimensioni e la posizione scritte nel file sottotitolo.';
+	@override String get yes => 'Permettere che le impostazioni di stile del sottotitolo del giocatore adattino i sottotitoli ASS.';
+	@override String get scale => 'Applicare lo stile del giocatore e scalare le dimensioni incorporate per corrispondere alle dimensioni video.';
+	@override String get force => 'Sostituisci gli stili ASS incorporati con lo stile di sottotitolo del giocatore.';
+	@override String get strip => 'Rimuovere il formato ASS incorporato e rendere chiaro il testo sottotitolo.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$it extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render alla piena risoluzione della superficie dello schermo per il risultato più acuto.';
+	@override String get video => 'Render utilizzando la risoluzione video come riferimento, che può ridurre il lavoro su display ad alta risoluzione.';
+	@override String get threeQuarter => 'Render al 75% della risoluzione superficiale dello schermo per un modesto risparmio di prestazioni.';
+	@override String get half => 'Render al 50% della risoluzione superficiale dello schermo per ridurre il lavoro, con margini più sottili.';
+	@override String get third => 'Render a un terzo della risoluzione superficiale dello schermo per ridurre il lavoro, con margini più sottili.';
+	@override String get quarter => 'Render a un quarto della risoluzione superficie dello schermo per ridurre il lavoro, con il risultato più morbido.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$it extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$it._(TranslationsIt root) : this._root = root, super.internal(root);
@@ -3601,6 +3843,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$it extends T
 	@override String get preferSdh => 'Preferisci i sottotitoli SDH';
 	@override String get onlySdh => 'Solo sottotitoli SDH';
 	@override String get onlyNonSdh => 'Solo sottotitoli non SDH';
+	@override String get preferNonSdhDescription => 'Preferisce i sottotitoli standard quando sono disponibili sia le versioni standard che SDH.';
+	@override String get preferSdhDescription => 'Preferisce i sottotitoli SDH quando disponibili, ma consente sottotitole standard come un fallback.';
+	@override String get onlySdhDescription => 'Utilizzare solo i sottotitoli SDH; non cadere indietro ai subtitoli standard.';
+	@override String get onlyNonSdhDescription => 'Utilizzare solo i sottotitoli standard; escludere i sottotiti SDH.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3614,6 +3860,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$it extends Translat
 	@override String get preferForced => 'Preferisci i sottotitoli forzati';
 	@override String get onlyForced => 'Solo sottotitoli forzati';
 	@override String get onlyNonForced => 'Solo sottotitoli non forzati';
+	@override String get preferNonForcedDescription => 'Preferisce sottotitoli regolari, ma consente tracce forzate come una caduta.';
+	@override String get preferForcedDescription => 'Preferisce tracce forzate quando disponibili, ma consente sottotitoli regolari come ritorno.';
+	@override String get onlyForcedDescription => 'Utilizzare solo tracce segnalate come forzate.';
+	@override String get onlyNonForcedDescription => 'Escluse le tracce segnalate come forzate.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3627,6 +3877,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$it extends Transl
 	@override String get moviesAndShows => 'Film e serie TV';
 	@override String get movies => 'Solo film';
 	@override String get shows => 'Solo serie TV';
+	@override String get noneDescription => 'Non mostrare segni di controllo osservati.';
+	@override String get moviesAndShowsDescription => 'Mostra segnalazioni guardate per film e spettacoli televisivi.';
+	@override String get moviesDescription => 'Mostra segnalazioni visualizzate solo per i film.';
+	@override String get showsDescription => 'Mostra segnalazioni guardate solo per i programmi televisivi.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3640,6 +3894,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$it extends Translatio
 	@override String get usersOnly => 'Solo utenti';
 	@override String get criticsOnly => 'Solo critici';
 	@override String get nobody => 'Nascoste';
+	@override String get usersAndCriticsDescription => 'Visualizza entrambe le valutazioni degli utenti e le valutazione critica.';
+	@override String get usersOnlyDescription => 'Mostra le valutazioni e le recensioni presentate dagli utenti.';
+	@override String get criticsOnlyDescription => 'Mostra valutazioni critiche e recensioni.';
+	@override String get nobodyDescription => 'Scopri le valutazioni e le recensioni.';
 }
 
 // Path: discover.findNext
@@ -4428,6 +4686,21 @@ class _Translations$services$libraryFilter$it extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Sincronizza solo le librerie selezionate qui sotto.';
 	@override String get libraries => 'Librerie';
 	@override String get noLibraries => 'Nessuna libreria disponibile';
+	@override String get modeDescription => 'Scegli se le biblioteche controllate sono bloccate dalla sincronizzazione o sono le uniche biblioteche che sincronizzano.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$it extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Sincronare episodi e film guardati con il tuo account Trakt.';
+	@override String get mal => 'Sync anime elenchi e guardare il progresso con MyAnimeList.';
+	@override String get anilist => 'Sync anime elenchi e guardare il progresso con AniList.';
+	@override String get simkl => 'Sync ha guardato film, programmi televisivi e anime con Simkl.';
+	@override String get mdblist => 'Mostra valutazioni e elenchi MDBList nelle raccomandazioni e esplora.';
 }
 
 /// The flat map containing all translations for locale <it>.
@@ -4485,6 +4758,7 @@ extension on TranslationsIt {
 			'appIcon.names.strata' => 'Strati',
 			'appIcon.names.facet' => 'Sfaccettature',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Scegli l\'icona mostrata dal lanciatore del dispositivo. le previsioni mostrano come appare ogni opzione.',
 			'auth.signInWithPlex' => 'Accedi con Plex',
 			'auth.showQRCode' => 'Mostra codice QR',
 			'auth.authenticate' => 'Autenticati',
@@ -4506,6 +4780,32 @@ extension on TranslationsIt {
 			'common.cancel' => 'Annulla',
 			'common.save' => 'Salva',
 			'common.close' => 'Chiudi',
+			'common.closeMiniPlayer' => 'Mini giocatore vicino',
+			'common.closeWorkspaceWindow' => 'Finestra vicina',
+			'common.returnToFullView' => 'Il ritorno alla vista completa',
+			'common.manageMediaSessions' => 'Gestione delle sessioni di media',
+			'common.hideMediaSessions' => 'Sessioni di media nascosti',
+			'common.mediaSessions' => 'Sessioni di Media',
+			'common.mediaSessionsHint' => 'Selezionare per portare una sessione in avanti.Parco nasconde la sua finestra ma la mantiene aperta.Ritorno lo apre in vista completa; vicino si conclude.',
+			'common.sessionInWorkspace' => 'nel laboratorio',
+			'common.sessionParked' => 'Parcheggiato',
+			'common.sessionFullscreen' => 'schermo completo',
+			'common.switchToNextWindow' => 'Swap con la finestra successiva',
+			'common.moveWindow' => 'Move la finestra',
+			'common.finishMovingWindow' => 'Finita la finestra in movimento',
+			'common.moveWindowHint' => 'Long-press e tirare la finestra per spostarla. Questo controllo consente anche il movimento della chiave di pistola.',
+			'common.movingWindowHelp' => 'Tracciare per muoversi · Aggiungere le chiavi · Entrare i salvatori · Cancelli di escape',
+			'common.resizeWindow' => 'Ristrutturare la finestra',
+			'common.resizeWindowHint' => 'Rimuovere questo manuale o utilizzare le chiavi della pistola per ripristinare la finestra.',
+			'common.workspaceWindowHint' => 'Utilizzare il controllo di movimento o lunghi pressioni e tirare per muoversi.',
+			'common.workspacePaneHint' => 'Selezionare questo pannello per focalizzarlo. utilizzare il suo controllo a schermo pieno per espandere.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Finestra di sessione: ${title}',
+			'common.workspaceTitleHint' => 'Selezionare per concentrarsi. spostare la barra di titolo per muoversi; utilizzare il pulsante a schermo pieno per espandere.',
+			'common.moveToSessionTray' => 'Trasferimento alla sessione tray',
+			'common.moveToSessionTrayHint' => 'La sessione è disponibile senza mostrare la sua finestra.',
+			'common.closeSessionHint' => 'Chiude questa finestra e conclude la sua sessione.',
+			'common.sideBySideLayout' => 'Conversione a layout laterale',
+			'common.floatingWindows' => 'Switch per fluttuare le finestre',
 			'common.clear' => 'Cancella',
 			'common.reset' => 'Ripristina',
 			'common.later' => 'Più tardi',
@@ -4923,6 +5223,8 @@ extension on TranslationsIt {
 			'settings.audioPassthrough' => 'Passthrough audio',
 			'settings.audioPassthroughDescription' => 'Invia l\'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l\'audio surround. Disattiva questa opzione se non senti alcun suono.',
 			'settings.audioPassthroughDescriptionApple' => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. Su iOS, iPadOS e tvOS 26 o versioni successive, TrueHD Atmos e DTS:X vengono riprodotti come audio spaziale. Le altre tracce DTS e TrueHD vengono riprodotte come PCM multicanale. Disattiva questa opzione se non senti alcun suono.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Disattivato mentre la normalizzazione del volume è attiva',
 			'settings.audioChannelLimit' => 'Canali audio',
@@ -4949,9 +5251,14 @@ extension on TranslationsIt {
 			'settings.dvConversionNativeDescription' => 'Forza il DV7 nativo e impedisce nuovi tentativi di conversione DV',
 			'settings.dvConversionDv81Description' => 'Forza la conversione RPU diretta al profilo Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Rimuove i livelli RPU/EL di Dolby Vision e riproduce il video come semplice HEVC',
+			'settings.experimentalDolbyVision' => 'Dolby Vision sperimentale',
+			'settings.experimentalDolbyVisionDescription' => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.',
+			'settings.dvExperimentUnavailableDescription' => 'Questo esperimento è attualmente disponibile solo su Linux.',
+			'settings.dvCompatibilityFallback' => 'Alternativa di compatibilità',
+			'settings.dvCompatibilityFallbackDescription' => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.',
+			'settings.dvExperimentDiagnostics' => 'Registro dell’esperimento video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Attiva i log dettagliati del lettore alla prossima riproduzione.',
 			'settings.disableDolbyVision' => 'Disattiva Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Riproduci il livello HDR10 o HLG del file al posto di Dolby Vision, se presente',
 			'settings.hdrSdrConversion' => 'Conversione da HDR a SDR',
 			'settings.hdrSdrConversionDescription' => 'Scegli cosa converte i video HDR quando lo schermo non può mostrare l\'HDR.',
@@ -5037,13 +5344,84 @@ extension on TranslationsIt {
 			'settings.regionFormatDescription' => 'Scegli come visualizzare date, numeri e unità di misura.',
 			'settings.metadataLanguage' => 'Lingua dei metadati',
 			'settings.metadataLanguageDescription' => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision sperimentale',
-			'settings.experimentalDolbyVisionDescription' => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.',
-			'settings.dvExperimentUnavailableDescription' => 'Questo esperimento è attualmente disponibile solo su Linux.',
-			'settings.dvCompatibilityFallback' => 'Alternativa di compatibilità',
-			'settings.dvCompatibilityFallbackDescription' => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.',
-			'settings.dvExperimentDiagnostics' => 'Registro dell’esperimento video',
-			'settings.dvExperimentDiagnosticsDescription' => 'Attiva i log dettagliati del lettore alla prossima riproduzione.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Inserisci la schermata completa quando si inizia il playback',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Aprire video desktop in schermo pieno quando si avvia il playback',
+			'settings.extendVideoIntoDisplayCutout' => 'Estendere il video in display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Lascia che il video a schermo pieno utilizzi la cutout della fotocamera sui telefoni Android',
+			'settings.languageDescription' => 'Selezionare il linguaggio utilizzato per i controlli e i messaggi PlezyNG. Seguire il sistema traccia la lingua del dispositivo.',
+			'settings.themeDescription' => 'Scegliere i colori e il contrasto utilizzati in tutta l\'app.',
+			'settings.libraryDensityDescription' => 'Cambiare quante carte di libreria si adatta in ogni riga.',
+			'settings.displayScaleDescription' => 'Ristrutturare l\'interfaccia su questo display auto senza cambiare la dimensione del testo in tutto il dispositivo.',
+			'settings.themeSongVolumeDescription' => 'Imposta il volume delle canzoni di tema relativamente ad altri audio.',
+			'settings.viewModeDescription' => 'Scegli se gli articoli della biblioteca vengono visualizzati come poster in una rete o come elenco compatto.',
+			'settings.gridViewDescription' => 'Ordina gli articoli della biblioteca in righe e colonne di poster.',
+			'settings.listViewDescription' => 'Mostra gli articoli della biblioteca in una lista verticale con più testo per oggetto.',
+			'settings.gridSpacingDescription' => 'Imposta la distanza tra i poster nelle reti della biblioteca.',
+			'settings.gridSpacingTightDescription' => 'Pianificare più poster sullo schermo con piccole lacune.',
+			'settings.gridSpacingNormalDescription' => 'Utilizzare la differenza standard tra i poster.',
+			'settings.gridSpacingSpaciousDescription' => 'Aggiungi più grandi lacune tra i poster per una maggiore separazione.',
+			'settings.episodePosterModeDescription' => 'Scegliere quale opera d\'arte appare sulle carte di episodio.',
+			'settings.seriesPosterDescription' => 'Utilizzare il poster della serie dello show per ogni episodio.',
+			'settings.seasonPosterDescription' => 'Utilizzare il poster di stagione per ogni episodio quando disponibile.',
+			'settings.episodeThumbnailDescription' => 'Utilizzare un quadro dell\'episodio quando disponibile.',
+			'settings.continueWatchingActionDescription' => 'Scegli ciò che accade quando si attiva una scheda di Continuing Watching.',
+			'settings.continueWatchingPlayDescription' => 'Inizia subito il film o l’episodio.',
+			'settings.continueWatchingDetailsDescription' => 'Apri prima la pagina titolo in modo da poter rivedere i dettagli e scegliere una azione.',
+			'settings.episodeActionDescription' => 'Scegli ciò che accade quando si attiva una scheda di episodio.',
+			'settings.episodePlayDescription' => 'Inizia subito l’episodio.',
+			'settings.episodeDetailsDescription' => 'Apri la pagina dell\'episodio prima del playback.',
+			'settings.contentScreensaverDelayDescription' => 'Scegli quanto tempo PlezyNG aspetta senza input prima di mostrare opere d\'arte.',
+			'settings.continueWatchingRowSizeDescription' => 'Scegliamo quanto sono grandi le carte nella riga Continuing Watching.',
+			'settings.rowSizeCompactDescription' => 'Mostra carte più piccole in modo che più articoli si adattino per tutta la riga.',
+			'settings.rowSizeStandardDescription' => 'Utilizzare la dimensione standard della scheda.',
+			'settings.rowSizeLargeDescription' => 'Mostra mappe più grandi con maggiori dettagli artwork.',
+			'settings.visualEffectsDescription' => 'Scegli il budget di animazione e effetti artificiali per questo dispositivo.',
+			'settings.visualEffectsFullDescription' => 'Utilizzare tutti gli effetti di animazione e arte su ogni dispositivo.',
+			'settings.startupSectionDescription' => 'Selezionare quale sezione si apre quando PlezyNG inizia.',
+			'settings.startupSectionOptions.discover' => 'Apri raccomandazioni e articoli da fonti di scoperta collegate.',
+			'settings.startupSectionOptions.libraries' => 'Apri le tue biblioteche multimediali connesse.',
+			'settings.startupSectionOptions.liveTv' => 'Apri Live TV quando un server lo fornisce; altrimenti la startup ritorna a Home.',
+			'settings.startupSectionOptions.search' => 'La ricerca dei media aperti.',
+			'settings.smallSkipDurationDescription' => 'Imposta la distanza spostata dal breve ritorno e avanti cerca controlli.',
+			'settings.largeSkipDurationDescription' => 'Imposta la distanza spostata dal lungo ritorno e avanti cerca controlli.',
+			'settings.rewindOnResumeDescription' => 'Spostare il ripristino di questo importo quando si riprende un video.',
+			'settings.defaultSleepTimerDescription' => 'Imposta la durata iniziale utilizzata quando si inizia il timer del sonno.',
+			'settings.playNextCountdownDescription' => 'Attendere molto prima di iniziare il prossimo episodio. impostare a 0 per iniziare immediatamente.',
+			'settings.autoSkipDelaySettingDescription' => 'Si applica quando un intro, credito o annuncio è impostato per scappare automaticamente.',
+			'settings.downmixCenterBoostDescription' => 'Aumentare il dialogo nel canale centrale quando l\'audio circostante viene mescolato in stereo.',
+			'settings.displaySwitchDelayDescription' => 'Aspettate prima di cambiare il modo di visualizzazione in modo che la TV o il ricevitore possa completare il suo precedente switch.',
+			'settings.playerBackendDescription' => 'Selezionare quale motore di riproduzione decodifica e renderà il video su questo dispositivo.',
+			'settings.exoPlayerDescription' => 'Utilizzare il player basato su Media3 nativo di Android e i percorsi hardware supportati.',
+			'settings.mpvDescription' => 'Utilizzare mpv, che esprime ulteriori controlli di riproduzione, sottotitoli e video processing.',
+			'settings.scopeOffDescription' => 'Mantenere i cambiamenti per l\'attuale sessione di riproduzione solo.',
+			'settings.scopeGlobalDescription' => 'Ripristinare lo stesso valore per ogni biblioteca e titolo.',
+			'settings.scopeLibraryDescription' => 'Ricordate un valore separato per ciascuna biblioteca.',
+			'settings.scopeTitleDescription' => 'Ricorda un valore separato per ogni spettacolo o film.',
+			'settings.specialsOrderingServerDescription' => 'Mantenere l\'ordine dell\'episodio fornito dal server media.',
+			'settings.specialsOrderingAirDateDescription' => 'Posizionare speciali tra episodi regolari per la loro data aerea.',
+			'settings.specialsOrderingLastDescription' => 'Posizionare ogni speciale dopo le stagioni regolari.',
+			'settings.skipIntroModeDescription' => 'Scegli se i marcatori intro giocano normalmente, mostrano un pulsante di salto o scappano automaticamente.',
+			'settings.skipCreditsModeDescription' => 'Selezionare se i crediti giocano normalmente, mostrare un pulsante di salto o saltare automaticamente.',
+			'settings.skipAdsModeDescription' => 'Scegli se gli annunci rilevati si svolgono normalmente, visualizzano un pulsante di salto o scappano automaticamente.',
+			'settings.playbackBufferAutoDescription' => 'Lascia che il giocatore attivo sceglie la sua dimensione normale del buffer.',
+			'settings.playbackBufferLargeDescription' => 'Mantenere più media pronti prima della riproduzione; questo utilizza più memoria.',
+			'settings.playbackBufferExtraLargeDescription' => 'Mantenere il più grande buffer di lettura; questo utilizza la maggior parte della memoria.',
+			'settings.defaultQualityDescription' => 'Configurare la risoluzione video predefinita e il tetto bitrate per i flussi che il server trascoda.',
+			'settings.cellularQualityDescription' => 'Superare la qualità predefinita quando il dispositivo utilizza una connessione solo cellulare.',
+			'settings.remoteQualityDescription' => 'Superare la qualità predefinita quando si connette a un server tramite una connessione remota.',
+			'settings.qualityPresetOriginalDescription' => 'Gioca la fonte alla sua qualità disponibile senza chiedere al server di trascodirla.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Chiedi al server un flusso convertito utilizzando la risoluzione e il bitrate mostrato sopra.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Utilizzare la qualità selezionata in Qualità predefinita.',
+			'settings.musicQualityDescription' => 'Imposta la bitrate audio massima richiesta dal server; originale mantiene il flusso di sorgente.',
+			'settings.musicQualityOriginalDescription' => 'Gioca l\'audio sorgente senza un transcode cappato a bitrate.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Richiedi un codice trans server capped vicino alla bitrate mostrata sopra; la produzione effettiva può variare.',
+			'settings.maxVolumeInputLabel' => 'Il volume massimo (%)',
+			'settings.checkForUpdatesDescription' => 'Scopri ora se è disponibile una versione più recente di PlezyNG.',
+			'settings.appearanceDescription' => 'Selezionare il tema dell\'app e personalizzare le schede della biblioteca, le righe di casa e la navigazione.',
+			'settings.prerollLibraryDescription' => 'Scegli la libreria che contiene i clip disponibili come pre-roll di film.',
+			'settings.prerollSelectionDescription' => 'Scegli i clip dalla biblioteca selezionata che puoi giocare prima dei film.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Aspettate questi molti minuti senza input prima di mostrare screensaver artwork.',
+			'settings.videoCodecOptionDescription' => 'Permettere la riproduzione diretta di questo codec quando supportato. i codec non controllati sono trascoditi dal server dei media.',
 			'themeEditor.builtIn' => 'Integrati',
 			'themeEditor.presets' => 'Preimpostati',
 			'themeEditor.custom' => 'Personalizzato',
@@ -5082,6 +5460,17 @@ extension on TranslationsIt {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min rimanenti',
 			'themeEditor.previewSwitch' => 'Riproduzione automatica',
 			'themeEditor.previewMutedText' => 'Così appare il testo secondario',
+			'themeEditor.themeSystemDescription' => 'Seguire l\'aspetto del dispositivo e scorrere tra luce e buio automaticamente.',
+			'themeEditor.themeLightDescription' => 'Utilizzare un background luminoso con testo scuro.',
+			'themeEditor.themeDarkDescription' => 'Utilizzare un background scuro con testo leggero.',
+			'themeEditor.themeOledDescription' => 'Utilizzare superfici di colore nero che riducono la luce su schermi OLED.',
+			'themeEditor.themeEmberDescription' => 'Utilizzare colori di accento rosso e amber.',
+			'themeEditor.themeGlacierDescription' => 'Utilizzare colori accenti blu freddi.',
+			'themeEditor.themeForestDescription' => 'Utilizzare i colori di accento verde e naturale.',
+			'themeEditor.themePlumDescription' => 'Utilizzare i colori di accento violetto e plum.',
+			'themeEditor.themePaperDescription' => 'Utilizzare superfici calde come carta e colori ispirati all\'ingrosso.',
+			'themeEditor.themeCustomDescription' => 'Utilizzare la paletta dei colori che hai creato nell\'editor di tema personalizzato.',
+			'themeEditor.editorDescription' => 'Scegli un colore di palette, regolare la sua tonalità, saturazione, luminosità o opacità e vedere l\'aggiornamento preview prima di risparmiare.',
 			'search.hint' => 'Cerca film, serie TV e musica...',
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
 			'search.searchYourMedia' => 'Cerca nei tuoi media',
@@ -5327,6 +5716,8 @@ extension on TranslationsIt {
 			'accessibility.largeTargets' => 'obiettivi touch più grandi',
 			'accessibility.largeTargetsHint' => 'Gioca i controlli condivisi più spazio per la navigazione a touch e assistive.',
 			'accessibility.navigationHint' => 'Usa Tab e Shift+Tab per spostarti tra i controlli, Enter o la barra spaziatrice per attivarli ed Escape o Indietro per chiudere. Quando un libro è aperto, puoi regolare lo zoom e le preferenze di lettura.',
+			'accessibility.textSizeDescription' => 'Scala il testo dell\'interfaccia in PlezyNG oltre alla configurazione di dimensioni del testo del sistema del dispositivo.',
+			'accessibility.boldTextHint' => 'Utilizzare un peso più pesante per le etichette e i messaggi di interfaccia per renderli più facili da distinguere.',
 			'tooltips.shufflePlay' => 'Riproduzione casuale',
 			'tooltips.playTrailer' => 'Riproduci trailer',
 			'tooltips.markAsWatched' => 'Segna come visto',
@@ -5346,6 +5737,8 @@ extension on TranslationsIt {
 			'videoControls.sleepTimerEndOfVideo' => 'Fine del video corrente',
 			'videoControls.sleepTimerStopAtHeader' => 'Interrompi alle',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'La riproduzione verrà messa in pausa alla fine di questo video',
 			'videoControls.stillWatching' => 'Stai ancora guardando?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausa tra ${seconds}s',
@@ -5380,6 +5773,8 @@ extension on TranslationsIt {
 			'videoControls.transcodeUnavailableFallback' => 'Transcodifica non disponibile — riproduzione in qualità originale',
 			'videoControls.subtitleUnavailableFallback' => 'Impossibile caricare i sottotitoli selezionati — la riproduzione continua senza sottotitoli',
 			'videoControls.pipButton' => 'Modalità Picture-in-Picture',
+			'videoControls.openMiniPlayer' => 'Mini giocatore aperto',
+			'videoControls.returnToFullPlayer' => 'Il ritorno al giocatore completo',
 			'videoControls.aspectRatioButton' => 'Proporzioni',
 			'videoControls.ambientLighting' => 'Illuminazione ambientale',
 			'videoControls.fullscreenButton' => 'Attiva schermo intero',
@@ -5464,8 +5859,6 @@ extension on TranslationsIt {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scansione della libreria avviata per "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Impossibile eseguire la scansione della libreria: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Aggiornamento dei metadati di "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aggiornamento dei metadati avviato per "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Impossibile aggiornare i metadati: ${error}',
 			'messages.logoutConfirm' => 'Vuoi uscire dall\'account?',
@@ -5525,6 +5918,28 @@ extension on TranslationsIt {
 			'subtitlingStyling.renderResolution' => 'Risoluzione di rendering',
 			'subtitlingStyling.renderResolutionScreen' => 'Risoluzione dello schermo',
 			'subtitlingStyling.renderResolutionVideo' => 'Risoluzione del video',
+			'subtitlingStyling.fontSizeDescription' => 'Imposta la dimensione del testo di sottotitolo su questo dispositivo.',
+			'subtitlingStyling.textColorDescription' => 'Selezionare il colore utilizzato per il testo sottotitolo.',
+			'subtitlingStyling.borderSizeDescription' => 'Imposta la spessore dell\'outline intorno al testo sottotitolo.',
+			'subtitlingStyling.borderColorDescription' => 'Scegliere il colore utilizzato per l\'outline del sottotitolo.',
+			'subtitlingStyling.backgroundColorDescription' => 'Selezionare il colore dietro il testo sottotitolo.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Imposta quanto sia trasparente il background del sottotitolo: 0% è chiaro e 100% solido.',
+			'subtitlingStyling.positionDescription' => 'Movi i sottotitoli verticalmente. 0% è la parte superiore del video e 100% è il fondo.',
+			'subtitlingStyling.assOverrideDescription' => 'Scegli se il giocatore segue, adatta, sostituisce o rimuove lo stile inserito nei sottotitoli ASS.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Mantenere le lettere, i colori, le dimensioni e la posizione scritte nel file sottotitolo.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Permettere che le impostazioni di stile del sottotitolo del giocatore adattino i sottotitoli ASS.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Applicare lo stile del giocatore e scalare le dimensioni incorporate per corrispondere alle dimensioni video.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Sostituisci gli stili ASS incorporati con lo stile di sottotitolo del giocatore.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Rimuovere il formato ASS incorporato e rendere chiaro il testo sottotitolo.',
+			'subtitlingStyling.renderResolutionDescription' => 'Scegli la risoluzione utilizzata per rasterizzare l\'immagine e i sottotitoli ASS. Le scale Android inferiori possono ridurre il lavoro di rendering ma sembrano più sottili.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render alla piena risoluzione della superficie dello schermo per il risultato più acuto.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render utilizzando la risoluzione video come riferimento, che può ridurre il lavoro su display ad alta risoluzione.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render al 75% della risoluzione superficiale dello schermo per un modesto risparmio di prestazioni.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render al 50% della risoluzione superficiale dello schermo per ridurre il lavoro, con margini più sottili.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render a un terzo della risoluzione superficiale dello schermo per ridurre il lavoro, con margini più sottili.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render a un quarto della risoluzione superficie dello schermo per ridurre il lavoro, con il risultato più morbido.',
+			'subtitlingStyling.boldDescription' => 'Tracciare il sottotitolo in un peso più pesante.',
+			'subtitlingStyling.italicDescription' => 'Tracciare il sottotitolo in italiano.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Impostazioni avanzate del lettore video',
 			'mpvConfig.presets' => 'Preset',
@@ -5661,11 +6076,19 @@ extension on TranslationsIt {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Preferisci i sottotitoli SDH',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Solo sottotitoli SDH',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Solo sottotitoli non SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Preferisce i sottotitoli standard quando sono disponibili sia le versioni standard che SDH.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Preferisce i sottotitoli SDH quando disponibili, ma consente sottotitole standard come un fallback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Utilizzare solo i sottotitoli SDH; non cadere indietro ai subtitoli standard.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Utilizzare solo i sottotitoli standard; escludere i sottotiti SDH.',
 			'accountPreferences.forcedSubtitles' => 'Sottotitoli forzati',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Preferisci i sottotitoli non forzati',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Preferisci i sottotitoli forzati',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Solo sottotitoli forzati',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Solo sottotitoli non forzati',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Preferisce sottotitoli regolari, ma consente tracce forzate come una caduta.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Preferisce tracce forzate quando disponibili, ma consente sottotitoli regolari come ritorno.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Utilizzare solo tracce segnalate come forzate.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Escluse le tracce segnalate come forzate.',
 			'accountPreferences.displayMissingEpisodes' => 'Mostra gli episodi mancanti',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Elenca gli episodi noti al server ma senza un file associato.',
 			'accountPreferences.hidePlayedInLatest' => 'Nascondi gli elementi visti da Aggiunti di recente',
@@ -5679,11 +6102,27 @@ extension on TranslationsIt {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Film e serie TV',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Solo film',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Solo serie TV',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Non mostrare segni di controllo osservati.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Mostra segnalazioni guardate per film e spettacoli televisivi.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Mostra segnalazioni visualizzate solo per i film.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Mostra segnalazioni guardate solo per i programmi televisivi.',
 			'accountPreferences.mediaReviewsVisibility' => 'Valutazioni e recensioni',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Utenti e critici',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Solo utenti',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Solo critici',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Nascoste',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Visualizza entrambe le valutazioni degli utenti e le valutazione critica.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Mostra le valutazioni e le recensioni presentate dagli utenti.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Mostra valutazioni critiche e recensioni.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Scopri le valutazioni e le recensioni.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Preferisce le tracce audio in questo linguaggio quando il server o giocatore seleziona automaticamente una traccia.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Preferisci le tracce di sottotitoli in questo linguaggio quando i subtitoli sono selezionati automaticamente.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Selezionare se le capzioni SDH sono preferite o richieste durante la selezione automatica dei sottotitoli.',
+			'accountPreferences.forcedSubtitleDescription' => 'Scegli se le tracce di sottotitoli forzati sono preferite o richieste durante la selezione automatica.',
+			'accountPreferences.watchedIndicatorDescription' => 'Selezionare quali tipi di media ricevono un checkmark osservato nell\'interfaccia del server.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Scegliere quale pubblico e quali valutazioni critiche il server mostra sulle pagine dei media.',
+			'accountPreferences.subtitleModeDescription' => 'Selezionare quando i sottotitoli si attivano automaticamente per questo account server.',
+			'accountPreferences.hubDescription' => 'Queste preferenze sono memorizzate sul tuo account media-server e possono applicarsi anche ad altri clienti.',
 			'discover.title' => 'Esplora',
 			'discover.noContentAvailable' => 'Nessun contenuto disponibile',
 			'discover.addMediaToLibraries' => 'Aggiungi contenuti multimediali alle tue librerie',
@@ -5812,6 +6251,8 @@ extension on TranslationsIt {
 			'libraries.all' => 'Tutto',
 			'libraries.clearAll' => 'Azzera tutto',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Vuoi scansionare "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Vuoi analizzare "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Vuoi aggiornare i metadati di "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Vuoi svuotare il cestino di "${title}"?',
@@ -5978,8 +6419,6 @@ extension on TranslationsIt {
 			'explore.mdblistShelves.nameHint' => 'Lascia la lista di fonti per utilizzare il nome della lista di fondi.',
 			'explore.mdblistShelves.add' => 'Aggiungi Shelf',
 			'explore.mdblistShelves.save' => 'Salva le scale',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} in alto',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Rimuovere ${title}',
 			'explore.mdblistShelves.unavailable' => 'Questo elenco non è disponibile. rimuovere o rimuovere la sua scheda nelle impostazioni.',
@@ -6326,6 +6765,8 @@ extension on TranslationsIt {
 			'watchTogether.connecting' => 'Connessione in corso...',
 			'watchTogether.relayPublic' => 'Le stanze usano i relay pubblici di Open Watch Party.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Le stanze usano il tuo relay all\'indirizzo ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Stanze usate di recente',
 			'watchTogether.roomActions' => 'Azioni della stanza',
 			'watchTogether.renameRoom' => 'Rinomina stanza',
@@ -6492,8 +6933,6 @@ extension on TranslationsIt {
 			'downloads.resumeDownload' => 'Riprendi il download',
 			'downloads.cancelledDownload' => 'Download annullato',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sincronizzazione ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} scaricato — fai clic per completare',
 			'downloads.partialDownloadClickToComplete' => 'Scaricato parzialmente — fai clic per completare',
 			'downloads.deleting' => 'Eliminazione...',
@@ -6752,6 +7191,7 @@ extension on TranslationsIt {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'Livello base HLG',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'Livello base SDR',
 			'performanceOverlay.dvRouteReshaped' => 'Rimodellato con RPU (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Il grafico sperimentale P7 FEL (non qualificato)',
 			'performanceOverlay.p7Conversion' => 'Conv. P7',
 			'performanceOverlay.sampleRate' => 'Frequenza camp.',
 			'performanceOverlay.pixelFormat' => 'Formato pixel',
@@ -6803,6 +7243,13 @@ extension on TranslationsIt {
 			'externalPlayer.launchFailed' => 'Impossibile aprire il lettore esterno',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} non è installato',
 			'externalPlayer.playInExternalPlayer' => 'Riproduci nel lettore esterno',
+			'externalPlayer.description' => 'Scegli un\'altra app per aprire i video in. I giocatori disponibili dipendono dal tuo dispositivo e dalle applicazioni installate.',
+			'externalPlayer.systemDefaultDescription' => 'Lascia che il sistema operativo apri il video con la sua app predefinita.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Apri i video con ${player}.',
+			'externalPlayer.playerNameDescription' => 'L\'etichetta visualizzata nella lista dei giocatori.',
+			'externalPlayer.playerPackageDescription' => 'Inserisci il nome del pacchetto Android dell\'app giocatore, come com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Inserisci il comando del giocatore installato o la strada eseguibile per questo dispositivo.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Inserisci lo schema URL e il modello URL opzionale utilizzato per lanciare il giocatore.',
 			'metadataEdit.editMetadata' => 'Modifica...',
 			'metadataEdit.screenTitle' => 'Modifica metadati',
 			'metadataEdit.basicInfo' => 'Informazioni di base',
@@ -6832,6 +7279,8 @@ extension on TranslationsIt {
 			'metadataEdit.metadataUpdateFailed' => 'Impossibile aggiornare i metadati',
 			'metadataEdit.artworkUpdated' => 'Immagini aggiornate',
 			'metadataEdit.artworkUpdateFailed' => 'Impossibile aggiornare le immagini',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Nessuna immagine disponibile',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opzione immagine ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opzione immagine ${index}, selezionata',
@@ -6992,6 +7441,13 @@ extension on TranslationsIt {
 			'services.libraryFilter.modeHintWhitelist' => 'Sincronizza solo le librerie selezionate qui sotto.',
 			'services.libraryFilter.libraries' => 'Librerie',
 			'services.libraryFilter.noLibraries' => 'Nessuna libreria disponibile',
+			'services.libraryFilter.modeDescription' => 'Scegli se le biblioteche controllate sono bloccate dalla sincronizzazione o sono le uniche biblioteche che sincronizzano.',
+			'services.seerrDescription' => 'Connettiti a Seerr o Overseerr per cercare titoli e inviare richieste di media.',
+			'services.trackerDescriptions.trakt' => 'Sincronare episodi e film guardati con il tuo account Trakt.',
+			'services.trackerDescriptions.mal' => 'Sync anime elenchi e guardare il progresso con MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Sync anime elenchi e guardare il progresso con AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync ha guardato film, programmi televisivi e anime con Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Mostra valutazioni e elenchi MDBList nelle raccomandazioni e esplora.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Aggiungi server ${product}',
 			'addServer.serverUrls' => 'URL del server',
 			'addServer.serverUrlsHelper' => 'Sono consentiti più URL, separati da virgole.',
@@ -7006,8 +7462,6 @@ extension on TranslationsIt {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Accesso non riuscito: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect non riuscito: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Accedi con Plex',
 			'addServer.pinExpired' => 'PIN scaduto prima dell\'accesso. Riprova.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Registrazione account non riuscita: ${error}',
@@ -7161,6 +7615,9 @@ extension on TranslationsIt {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'di',
 			'homeLayout.resetHeroButtonDescription' => 'Ritorna il set di eroe di ogni riga e riporta il singolo banner rotante in cima, come prima che le riga eroe esistessero.',
+			'homeLayout.tapHeroCardDescription' => 'Selezionare se tappando o selezionando una carta Hero inizia la riproduzione o si aprono i suoi dettagli.',
+			'homeLayout.heroTapPlayDescription' => 'Inizia subito l’oggetto selezionato.',
+			'homeLayout.heroTapDetailsDescription' => 'Apri i dettagli dell\'oggetto selezionato prima di scegliere un\'azione.',
 			'platform.localNetworkPermission' => 'PlezyNG connette ai tuoi server multimediali e dispositivi di riproduzione sulla tua rete locale.',
 			'platform.locationPermission' => 'PlezyNG utilizza l\'accesso alla localizzazione quando iOS lo richiede per rilevare la tua rete locale e connetterti ai tuoi server multimediali.',
 			'platform.photoLibraryPermission' => 'Scegli immagini dalla tua libreria fotografica da usare come copertine e illustrazioni dei contenuti multimediali.',
@@ -7173,8 +7630,12 @@ extension on TranslationsIt {
 			'fileSources.source' => 'Fonte',
 			'fileSources.name' => 'Nome',
 			'fileSources.endpoint' => 'URL del server',
+			'fileSources.smbEndpointHint' => 'Esempio: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Inserisci un server SMB e una cartella condivisa.',
 			'fileSources.root' => 'Foldere o prefix',
+			'fileSources.smbFolderHelp' => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.',
 			'fileSources.username' => 'Nome utente',
+			'fileSources.smbDomain' => 'Dominio (facoltativo)',
 			'fileSources.password' => 'Password',
 			'fileSources.token' => 'API Toccano',
 			'fileSources.accessKey' => 'ID chiave di accesso',
@@ -7184,6 +7645,8 @@ extension on TranslationsIt {
 			'fileSources.clientId' => 'ID client di OAuth',
 			'fileSources.clientSecret' => 'OAuth client secret (solo Google desktop)',
 			'fileSources.allowHttp' => 'Consenti HTTP non crittografato su una rete attendibile',
+			'fileSources.smbEncryption' => 'Crittografa la connessione SMB3',
+			'fileSources.smbEncryptionHint' => 'Usa la crittografia SMB3 quando il NAS la supporta.',
 			'fileSources.connect' => 'Connetti',
 			'fileSources.cancel' => 'Annulla',
 			'fileSources.save' => 'Salva',
@@ -7326,12 +7789,25 @@ extension on TranslationsIt {
 			'fileSources.useFiles' => 'Utilizzare file e libri',
 			'fileSources.cancelScan' => 'Cancelare la scansione',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Esempio: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Inserisci un server SMB e una cartella condivisa.',
-			'fileSources.smbFolderHelp' => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.',
-			'fileSources.smbDomain' => 'Dominio (facoltativo)',
-			'fileSources.smbEncryption' => 'Crittografa la connessione SMB3',
-			'fileSources.smbEncryptionHint' => 'Usa la crittografia SMB3 quando il NAS la supporta.',
+			'fileSources.offlineQuota' => 'Limiti di download offline',
+			'fileSources.offlineQuotaHelp' => 'Configurare lo spazio massimo utilizzato da copie offline, file importati e download corrotti. La riduzione del limite non rimuove le copie esistenti.',
+			'fileSources.offlineStorageUsage' => 'Storaggio Offline',
+			'fileSources.reservedStorage' => 'riservato',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Scarica il Queue',
+			'fileSources.downloadRunning' => 'Scarica',
+			'fileSources.downloadQueued' => 'Aspettando',
+			'fileSources.downloadPaused' => 'Pausa',
+			'fileSources.downloadFailed' => 'La necessità di ritorno',
+			'fileSources.importing' => 'Importazione',
+			'fileSources.importInterrupted' => 'Importazione interrotta · rimuovere a chiarire',
+			'fileSources.errorQuotaExceeded' => 'Il limite di archiviazione offline è stato raggiunto. Aumentare il limite o rimuovere una copia scaricata.',
+			'fileSources.errorStorageLow' => 'Non c\'è sufficiente archiviazione gratuita per mantenere la riserva protetta.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG non poteva controllare lo storage del dispositivo gratuito, quindi la scrittura è stata interrotta.',
+			'fileSources.removeDownloadJob' => 'Rimuovere download',
+			'fileSources.downloadAlreadyComplete' => 'Questo download è finito prima che possa essere rimosso. l\'articolo è ora disponibile offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Rimuovere questo download e rimuovere tutti i dati parzialmente scaricati? la tua posizione e le note rimarranno.',
 			'lending.title' => 'Biblioteche pubbliche',
 			'lending.add' => 'Aggiungi una biblioteca',
 			'lending.other' => 'Un’altra biblioteca',
@@ -7433,6 +7909,12 @@ extension on TranslationsIt {
 			'audiobook.statusFinished' => 'Completato',
 			'audiobook.goToTime' => 'Vai al tempo indicato',
 			'audiobook.timeHelp' => 'ore:minuti:secondi oppure minuti:secondi',
+			'audiobook.recoveryHelp' => 'Esportare una copia recentemente crittografata prima di spostare o riparare i dati di sincronizzazione. Le importazioni si uniscono allo stato corrente; non sostituiscono mai la storia locale della sincronizzazione.',
+			'audiobook.recoveryExport' => 'Esporta il file di recupero crittografato',
+			'audiobook.recoveryImport' => 'Importa il file di recupero crittografato',
+			'audiobook.recoveryImportConfirm' => 'Combinare questo file di recupero crittografato con posizioni di lettura corrente e note? Storia esistente sarà conservata. ID della biblioteca condivisa e degli articoli non sono inclusi; impostare ID corrispondenti su ogni dispositivo prima dell\'importazione.',
+			'audiobook.recoveryExported' => 'Il file di recupero crittografato salvato.',
+			'audiobook.recoveryImported' => 'I dati di recupero sono misti.',
 			'sourceSetup.savedCertificate' => 'Certificato del server salvato',
 			'sourceSetup.nfsEndpointInvalid' => 'Inserisci un URL NFS, ad esempio nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Nessun server DLNA trovato. Inserisci manualmente l’URL della descrizione del dispositivo.',
@@ -7520,8 +8002,6 @@ extension on TranslationsIt {
 			'sourceSetup.smbEncrypted' => 'Crittografia SMB3 attiva',
 			'sourceSetup.smbUnencrypted' => 'Crittografia SMB3 disattivata',
 			'sourceSetup.httpUnencrypted' => 'HTTP senza crittografia del trasporto',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Controlla la sicurezza dell’endpoint',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Campo obbligatorio: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Inserisci ${label} tra ${min} e ${max}.',
@@ -7529,6 +8009,23 @@ extension on TranslationsIt {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identità client selezionata: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Valutazione ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Download dei sottotitoli: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Coppia questo articolo',
+			'sourceSetup.sharedEntryPairHelp' => 'Inserisci lo stesso ID per questo elemento su ciascun dispositivo. Utilizzare un identificatore condiviso stabile o generare uno e copiarlo all\'oggetto che corrisponde. Progress coppia solo quando i tipi di file edizioni, le dimensioni e l\'ordine corrispondono. Blank rimuove questa mappatura.',
+			'sourceSetup.sharedEntryId' => 'ID di oggetto condiviso',
+			'sourceSetup.generateSharedEntryId' => 'Generare un ID di oggetto condiviso',
+			'sourceSetup.sharedLibraryId' => 'ID della biblioteca condivisa (opzionale)',
+			'sourceSetup.sharedLibraryHelp' => 'Utilizzare lo stesso ID su dispositivi che aprono la stessa biblioteca.Questo ID pubblico aiuta a portare il progresso della lettura e delle note attraverso diverse connessioni sorgente; non è una password.Quando i fornitori utilizzano diversi ID di oggetto, coppia questi elementi dalle loro schermi dettagliati.',
+			'sourceSetup.sharedLibraryInvalid' => 'Utilizzare 8-100 lettere, numeri, punti, sottoscori o hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Generare un ID della biblioteca condivisa',
+			'sourceSetup.nfsReadAhead' => 'Le richieste di read-ahead della NFS',
+			'sourceSetup.nfsReadAheadHelp' => 'Più letture parallele possono migliorare la capacità di passaggio su un NAS o una rete veloce. Utilizzare 1 se il server limita le richieste concorrenti.',
+			'sourceSetup.nfsReadTest' => 'Misurare le prestazioni di NFS',
+			'sourceSetup.nfsReadTestHelp' => 'Legge fino a 64 MiB dal file più grande per misurare questa connessione NAS. Questo utilizza la larghezza di banda della rete.',
+			'sourceSetup.nfsQualificationResult' => 'NFS Leggi la misura',
+			'sourceSetup.nfsReadBytes' => 'Dati di lettura',
+			'sourceSetup.nfsReadSpeed' => 'velocità misurata',
+			'sourceSetup.nfsReadRequests' => 'Leggi le richieste',
+			'sourceSetup.sharedEntryConflict' => 'Questo ID di oggetto condiviso è già associato ad un altro elemento in questa biblioteca.',
 			'comics.fitHeight' => 'Adatta all’altezza',
 			'comics.readingMode' => 'Modalità di lettura',
 			'comics.paged' => 'Pagine',
@@ -7603,6 +8100,15 @@ extension on TranslationsIt {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

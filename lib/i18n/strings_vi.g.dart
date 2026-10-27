@@ -177,6 +177,7 @@ class _Translations$appIcon$vi extends Translations$appIcon$en {
 	@override String get launcherHint => 'biểu tượng mới sẽ xuất hiện trên màn hình nhà của bạn một khi bạn rời khỏi PlezyNG.';
 	@override String get tvLauncherHint => 'Banner mới xuất hiện một khi bạn rời khỏi PlezyNG. Android TV có thể tiếp tục hiển thị một cũ cho đến khi TV khởi động lại.';
 	@override late final _Translations$appIcon$names$vi names = _Translations$appIcon$names$vi._(_root);
+	@override String get description => 'Chọn biểu tượng được hiển thị bởi người khởi động thiết bị của bạn. các bản xem trước cho thấy mỗi tùy chọn trông như thế nào.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$vi extends Translations$common$en {
 	@override String get cancel => 'Hủy bỏ';
 	@override String get save => 'Lưu';
 	@override String get close => 'Đóng';
+	@override String get closeMiniPlayer => 'Trò chơi mini gần';
+	@override String get closeWorkspaceWindow => 'cửa sổ gần';
+	@override String get returnToFullView => 'Trở về View Full';
+	@override String get manageMediaSessions => 'Quản lý các phiên truyền thông';
+	@override String get hideMediaSessions => 'Giữ các buổi truyền thông';
+	@override String get mediaSessions => 'Các buổi truyền thông';
+	@override String get mediaSessionsHint => 'Chọn để đưa một phiên về phía trước. Park che giấu cửa sổ của nó nhưng giữ cho nó mở. Return mở nó trong toàn diện; gần kết thúc nó.';
+	@override String get sessionInWorkspace => 'trong Workspace';
+	@override String get sessionParked => 'đậu xe';
+	@override String get sessionFullscreen => 'màn hình đầy đủ';
+	@override String get switchToNextWindow => 'Chuyển đổi với cửa sổ tiếp theo';
+	@override String get moveWindow => 'di chuyển cửa sổ';
+	@override String get finishMovingWindow => 'Kết thúc cửa sổ di chuyển';
+	@override String get moveWindowHint => 'Nhấn dài và kéo cửa sổ để di chuyển nó. điều khiển này cũng cho phép phong trào mũi tên-chìa khóa.';
+	@override String get movingWindowHelp => 'Tắt để di chuyển · Cài đặt chìa khóa · Enter Saves · Escape Cancel';
+	@override String get resizeWindow => 'Tải lại cửa sổ';
+	@override String get resizeWindowHint => 'Tắt bàn tay này hoặc sử dụng chìa khóa mũi tên để khôi phục lại cửa sổ.';
+	@override String get workspaceWindowHint => 'Sử dụng điều khiển chuyển động hoặc kéo dài và kéo để di chuyển.';
+	@override String get workspacePaneHint => 'Chọn bảng điều khiển này để tập trung vào nó. Sử dụng kiểm soát màn hình đầy đủ của nó để mở rộng.';
+	@override String workspaceWindowLabel({required Object title}) => 'Màn hình: ${title}';
+	@override String get workspaceTitleHint => 'Chọn để tập trung. kéo thanh tiêu đề để di chuyển; sử dụng nút màn hình đầy đủ để mở rộng.';
+	@override String get moveToSessionTray => 'Chuyển sang session tray';
+	@override String get moveToSessionTrayHint => 'Khóa phiên này có sẵn mà không hiển thị cửa sổ của nó.';
+	@override String get closeSessionHint => 'Bắt cửa sổ này và kết thúc phiên.';
+	@override String get sideBySideLayout => 'Chuyển đổi sang side-by-side layout';
+	@override String get floatingWindows => 'Chuyển đổi để floating windows';
 	@override String get clear => 'rõ ràng';
 	@override String get reset => 'Đặt lại';
 	@override String get later => 'Sau đó';
@@ -676,6 +703,13 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Native Force DV7 và suppress DV conversion retry';
 	@override String get dvConversionDv81Description => 'Chuyển đổi RPU mạnh vào hồ sơ Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Dây Dolby Vision lớp RPU/EL và mặt bằng hiện tại HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
+	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
+	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
+	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
+	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
+	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
+	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
 	@override String get disableDolbyVision => 'Không thể bỏ qua Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một';
 	@override String get hdrSdrConversion => 'HDR sang SDR chuyển đổi';
@@ -762,13 +796,81 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Chọn cách hiển thị ngày, số và đơn vị đo.';
 	@override String get metadataLanguage => 'Ngôn ngữ siêu dữ liệu';
 	@override String get metadataLanguageDescription => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.';
-	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
-	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
-	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
-	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
-	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
-	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
-	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
+	@override String get enterFullscreenOnPlaybackStart => 'Nhập màn hình đầy đủ khi playback bắt đầu';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Mở video desktop trên màn hình đầy đủ khi playback bắt đầu';
+	@override String get extendVideoIntoDisplayCutout => 'mở rộng video vào display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Hãy để video màn hình đầy đủ sử dụng camera cutout trên điện thoại Android';
+	@override String get languageDescription => 'Chọn ngôn ngữ được sử dụng cho các điều khiển và thông điệp PlezyNG. Theo hệ thống theo dõi ngôn ngữ thiết bị của bạn.';
+	@override String get themeDescription => 'Chọn các màu sắc và tương phản được sử dụng trong toàn bộ ứng dụng.';
+	@override String get libraryDensityDescription => 'Thay đổi số thẻ thư viện phù hợp trong mỗi hàng.';
+	@override String get displayScaleDescription => 'Khôi phục lại giao diện trên màn hình xe này mà không thay đổi kích thước văn bản trên thiết bị của bạn.';
+	@override String get themeSongVolumeDescription => 'Thiết lập khối lượng của bài hát chủ đề so với các âm thanh khác.';
+	@override String get viewModeDescription => 'Chọn xem các mục thư viện có xuất hiện như poster trong một mạng lưới hay là danh sách nhỏ gọn.';
+	@override String get gridViewDescription => 'sắp xếp các mục thư viện trong hàng và cột poster.';
+	@override String get listViewDescription => 'Hiển thị các mục thư viện trong một danh sách dọc với nhiều văn bản hơn cho mỗi mục.';
+	@override String get gridSpacingDescription => 'Đặt khoảng cách giữa các poster trong các mạng thư viện.';
+	@override String get gridSpacingTightDescription => 'Thích hợp nhiều poster trên màn hình với khoảng trống nhỏ hơn.';
+	@override String get gridSpacingNormalDescription => 'Sử dụng khoảng cách tiêu chuẩn giữa các poster.';
+	@override String get gridSpacingSpaciousDescription => 'Thêm khoảng cách lớn hơn giữa các poster cho sự tách rời nhiều hơn.';
+	@override String get episodePosterModeDescription => 'Chọn tác phẩm nghệ thuật nào xuất hiện trên các thẻ tập.';
+	@override String get seriesPosterDescription => 'Sử dụng poster series của chương trình cho mỗi tập.';
+	@override String get seasonPosterDescription => 'Sử dụng poster mùa cho mỗi tập khi có sẵn.';
+	@override String get episodeThumbnailDescription => 'Sử dụng một khung từ tập phim khi có sẵn.';
+	@override String get continueWatchingActionDescription => 'Chọn những gì xảy ra khi bạn kích hoạt một thẻ tiếp tục xem.';
+	@override String get continueWatchingPlayDescription => 'Bắt đầu bộ phim hoặc tập ngay lập tức.';
+	@override String get continueWatchingDetailsDescription => 'Mở trang tiêu đề đầu tiên để bạn có thể xem xét chi tiết và chọn một hành động.';
+	@override String get episodeActionDescription => 'Chọn những gì xảy ra khi bạn kích hoạt một thẻ episode.';
+	@override String get episodePlayDescription => 'Bắt đầu sự kiện ngay lập tức.';
+	@override String get episodeDetailsDescription => 'Mở trang tập trước khi playback.';
+	@override String get contentScreensaverDelayDescription => 'Chọn bao lâu PlezyNG chờ đợi mà không có đầu vào trước khi hiển thị tác phẩm nghệ thuật.';
+	@override String get continueWatchingRowSizeDescription => 'Chọn kích thước của các thẻ trong dòng tiếp tục xem.';
+	@override String get rowSizeCompactDescription => 'Hiển thị các thẻ nhỏ hơn để nhiều mục phù hợp trên hàng.';
+	@override String get rowSizeStandardDescription => 'Sử dụng kích thước thẻ tiêu chuẩn.';
+	@override String get rowSizeLargeDescription => 'Hiển thị các thẻ lớn hơn với chi tiết nghệ thuật nhiều hơn.';
+	@override String get visualEffectsDescription => 'Chọn ngân sách hoạt hình và hiệu ứng nghệ thuật cho thiết bị này.';
+	@override String get visualEffectsFullDescription => 'Sử dụng các hiệu ứng hoạt hình và nghệ thuật đầy đủ trên mỗi thiết bị.';
+	@override String get startupSectionDescription => 'Chọn phần nào mở khi PlezyNG bắt đầu.';
+	@override late final _Translations$settings$startupSectionOptions$vi startupSectionOptions = _Translations$settings$startupSectionOptions$vi._(_root);
+	@override String get smallSkipDurationDescription => 'Thiết lập khoảng cách di chuyển bởi phía sau ngắn và phía trước tìm kiếm kiểm soát.';
+	@override String get largeSkipDurationDescription => 'Thiết lập khoảng cách di chuyển bởi phía sau dài và phía trước tìm kiếm kiểm soát.';
+	@override String get rewindOnResumeDescription => 'Chuyển đổi playback trở lại với số tiền này khi quay lại một video.';
+	@override String get defaultSleepTimerDescription => 'Thiết lập thời gian ban đầu được sử dụng khi bạn bắt đầu giờ ngủ.';
+	@override String get playNextCountdownDescription => 'Hãy đợi điều này lâu trước khi bắt đầu tập tiếp theo. thiết lập đến 0 để bắt đầu ngay lập tức.';
+	@override String get autoSkipDelaySettingDescription => 'Ứng dụng khi một intro, tín chỉ hoặc quảng cáo được thiết lập để tự động bỏ qua.';
+	@override String get downmixCenterBoostDescription => 'Tăng sự đối thoại trong kênh trung tâm khi âm thanh xung quanh được trộn xuống stereo.';
+	@override String get displaySwitchDelayDescription => 'Đợi trước khi thay đổi chế độ hiển thị để TV hoặc người nhận có thể hoàn thành chuyển đổi trước đó.';
+	@override String get playerBackendDescription => 'Chọn động cơ playback nào giải mã và render video trên thiết bị này.';
+	@override String get exoPlayerDescription => 'Sử dụng người chơi gốc của Android dựa trên Media3 và các con đường phần cứng được hỗ trợ.';
+	@override String get mpvDescription => 'Sử dụng mpv, mà tiết lộ thêm playback, subtitle và kiểm soát xử lý video.';
+	@override String get scopeOffDescription => 'Chỉ giữ các thay đổi cho phiên bản playback hiện tại.';
+	@override String get scopeGlobalDescription => 'Sử dụng lại cùng một giá trị cho mỗi thư viện và tiêu đề.';
+	@override String get scopeLibraryDescription => 'Hãy nhớ một giá trị riêng biệt cho mỗi thư viện.';
+	@override String get scopeTitleDescription => 'Hãy nhớ một giá trị riêng biệt cho mỗi chương trình hoặc bộ phim.';
+	@override String get specialsOrderingServerDescription => 'Giữ lệnh episode được cung cấp bởi máy chủ truyền thông.';
+	@override String get specialsOrderingAirDateDescription => 'Đặt đặc biệt trong số các tập thường xuyên theo ngày không của họ.';
+	@override String get specialsOrderingLastDescription => 'Đặt mỗi đặc biệt sau các mùa thường xuyên.';
+	@override String get skipIntroModeDescription => 'Chọn xem các markers intro chơi bình thường, hiển thị một nút skip hoặc skip tự động.';
+	@override String get skipCreditsModeDescription => 'Chọn xem tín dụng chơi bình thường, hiển thị một nút skip hoặc tự động skip.';
+	@override String get skipAdsModeDescription => 'Chọn xem quảng cáo được phát hiện có chơi bình thường hay không, hiển thị nút skip hoặc skip tự động.';
+	@override String get playbackBufferAutoDescription => 'Cho phép người chơi hoạt động chọn kích thước buffer bình thường của nó.';
+	@override String get playbackBufferLargeDescription => 'Giữ nhiều phương tiện truyền thông sẵn sàng trước khi chơi; điều này sử dụng thêm bộ nhớ.';
+	@override String get playbackBufferExtraLargeDescription => 'Giữ buffer lớn nhất để đọc; điều này sử dụng bộ nhớ nhiều nhất.';
+	@override String get defaultQualityDescription => 'Thiết lập độ phân giải video mặc định và bitrate mái cho các dòng mà máy chủ chuyển mã.';
+	@override String get cellularQualityDescription => 'Override Chất lượng mặc định khi thiết bị đang sử dụng một kết nối cell-only.';
+	@override String get remoteQualityDescription => 'Override Chất lượng mặc định khi kết nối với một máy chủ thông qua kết nối từ xa.';
+	@override String get qualityPresetOriginalDescription => 'Chơi nguồn với chất lượng có sẵn mà không yêu cầu máy chủ chuyển mã nó.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Yêu cầu máy chủ cho một dòng chuyển đổi bằng cách sử dụng độ phân giải và bitrate được hiển thị ở trên.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Sử dụng chất lượng được chọn trong Chất lượng mặc định.';
+	@override String get musicQualityDescription => 'Thiết lập tốc độ bit âm thanh tối đa được yêu cầu từ máy chủ; Original giữ dòng nguồn.';
+	@override String get musicQualityOriginalDescription => 'Chơi âm thanh nguồn mà không có transcode bitrate.';
+	@override String get musicQualityTranscodeOptionDescription => 'Yêu cầu một transcode máy chủ được cáp gần bitrate hiển thị ở trên; kết quả thực tế có thể thay đổi.';
+	@override String get maxVolumeInputLabel => 'Số lượng tối đa (%)';
+	@override String get checkForUpdatesDescription => 'Bây giờ kiểm tra xem phiên bản mới hơn của PlezyNG có sẵn hay không.';
+	@override String get appearanceDescription => 'Chọn chủ đề ứng dụng và điều chỉnh thư viện thẻ, dòng nhà, và di chuyển.';
+	@override String get prerollLibraryDescription => 'Chọn thư viện chứa các clip có sẵn như phim pre-rolls.';
+	@override String get prerollSelectionDescription => 'Chọn clip nào từ thư viện được chọn có thể chơi trước khi xem phim.';
+	@override String get contentScreensaverDelayOptionDescription => 'Đợi nhiều phút này mà không cần nhập trước khi hiển thị màn hình bảo vệ nghệ thuật.';
+	@override String get videoCodecOptionDescription => 'Cho phép phát trực tiếp cho codec này khi được hỗ trợ. codec không kiểm tra được chuyển mã bởi máy chủ truyền thông.';
 }
 
 // Path: themeEditor
@@ -805,6 +907,17 @@ class _Translations$themeEditor$vi extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} phút left';
 	@override String get previewSwitch => 'Tự động phát';
 	@override String get previewMutedText => 'Bài viết thứ hai đọc như thế này';
+	@override String get themeSystemDescription => 'Theo dõi sự xuất hiện của thiết bị và tự động chuyển đổi giữa ánh sáng và bóng tối.';
+	@override String get themeLightDescription => 'Sử dụng nền sáng với văn bản tối.';
+	@override String get themeDarkDescription => 'Sử dụng nền tối với văn bản sáng.';
+	@override String get themeOledDescription => 'Sử dụng các bề mặt gần đen làm giảm ánh sáng trên màn hình OLED.';
+	@override String get themeEmberDescription => 'Sử dụng màu đỏ ấm và accent amber.';
+	@override String get themeGlacierDescription => 'Sử dụng màu sắc accent xanh mát mẻ.';
+	@override String get themeForestDescription => 'Sử dụng màu xanh lá cây và sắc thái tự nhiên.';
+	@override String get themePlumDescription => 'Sử dụng màu violet và plum accent.';
+	@override String get themePaperDescription => 'Sử dụng các bề mặt như giấy ấm áp và màu sắc được truyền cảm hứng từ sơn.';
+	@override String get themeCustomDescription => 'Sử dụng bảng màu mà bạn tạo trong biên tập chủ đề tùy chỉnh.';
+	@override String get editorDescription => 'Chọn một màu palette, điều chỉnh độ ẩm, độ ăn kiêng, độ sáng hoặc độ không chính xác của nó và xem bản cập nhật trước khi tiết kiệm. bạn cũng có thể nhập màu hex.';
 }
 
 // Path: search
@@ -1082,6 +1195,8 @@ class _Translations$accessibility$vi extends Translations$accessibility$en {
 	@override String get largeTargets => 'Mục tiêu Touch lớn hơn';
 	@override String get largeTargetsHint => 'Tăng diện tích các điều khiển dùng chung để dễ chạm và điều hướng bằng công nghệ hỗ trợ.';
 	@override String get navigationHint => 'Dùng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, Escape hoặc nút Quay lại để đóng. Bạn có thể chỉnh mức thu phóng và tùy chọn đọc khi mở sách.';
+	@override String get textSizeDescription => 'Tích hợp văn bản giao diện trong PlezyNG ngoài thiết lập kích thước văn bản hệ thống của thiết bị của bạn.';
+	@override String get boldTextHint => 'Sử dụng trọng lượng nặng hơn cho các nhãn giao diện và tin nhắn để làm cho chúng dễ dàng phân biệt.';
 }
 
 // Path: tooltips
@@ -1164,6 +1279,8 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoding unavailable — chơi chất lượng ban đầu';
 	@override String get subtitleUnavailableFallback => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề';
 	@override String get pipButton => 'Hình ảnh trong hình ảnh mode';
+	@override String get openMiniPlayer => 'Trò chơi Mini Open';
+	@override String get returnToFullPlayer => 'Trở lại cầu thủ đầy đủ';
 	@override String get aspectRatioButton => 'Tỷ Lệ Khung Hình';
 	@override String get ambientLighting => 'Ánh sáng môi trường';
 	@override String get fullscreenButton => 'Nhập Fullscreen';
@@ -1320,6 +1437,19 @@ class _Translations$subtitlingStyling$vi extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Quyết định Render';
 	@override String get renderResolutionScreen => 'Độ Phân Giải Màn Hình';
 	@override String get renderResolutionVideo => 'Độ phân giải video';
+	@override String get fontSizeDescription => 'Thiết lập kích thước văn bản subtitle trên thiết bị này.';
+	@override String get textColorDescription => 'Chọn màu được sử dụng cho subtitle text.';
+	@override String get borderSizeDescription => 'Đặt độ dày của outline xung quanh văn bản subtitle.';
+	@override String get borderColorDescription => 'Chọn màu được sử dụng cho dòng outline subtitle.';
+	@override String get backgroundColorDescription => 'Chọn màu đằng sau subtitle text.';
+	@override String get backgroundOpacityDescription => 'Thiết lập độ minh bạch của nền chủ đề là: 0% rõ ràng và 100% vững chắc.';
+	@override String get positionDescription => 'Di chuyển các tiêu đề theo chiều dọc. 0% là trên cùng của video và 100% là dưới cùng.';
+	@override String get assOverrideDescription => 'Chọn xem người chơi có theo dõi, điều chỉnh, thay thế hoặc loại bỏ kiểu dáng được tích hợp trong các tiêu đề ASS.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$vi assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$vi._(_root);
+	@override String get renderResolutionDescription => 'Chọn độ phân giải được sử dụng để rasterize hình ảnh và ASS subtitles. Lượng Android thấp hơn có thể làm giảm công việc rendering nhưng trông mềm hơn.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$vi renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$vi._(_root);
+	@override String get boldDescription => 'Vẽ văn bản subtitle trong một trọng lượng nặng hơn.';
+	@override String get italicDescription => 'Tạo subtitle văn bản trong tiếng Ý.';
 }
 
 // Path: mpvConfig
@@ -1501,6 +1631,14 @@ class _Translations$accountPreferences$vi extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$vi watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$vi._(_root);
 	@override String get mediaReviewsVisibility => 'Đánh giá & đánh giá';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$vi mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$vi._(_root);
+	@override String get preferredAudioLanguageDescription => 'Thích theo dõi âm thanh trong ngôn ngữ này khi máy chủ hoặc người chơi tự động chọn một track.';
+	@override String get preferredSubtitleLanguageDescription => 'Thích theo dõi subtitle trong ngôn ngữ này khi subtitles được chọn tự động.';
+	@override String get subtitleAccessibilityDescription => 'Chọn xem mục SDH có được yêu cầu hay không trong quá trình tự động chọn subtitle.';
+	@override String get forcedSubtitleDescription => 'Chọn xem các đường dẫn subtitle bắt buộc có được ưu tiên hay yêu cầu trong quá trình tự động chọn.';
+	@override String get watchedIndicatorDescription => 'Chọn loại phương tiện nào nhận được dấu kiểm theo dõi trong giao diện máy chủ.';
+	@override String get mediaReviewsVisibilityDescription => 'Chọn loại khán giả và đánh giá quan trọng mà máy chủ hiển thị trên các trang truyền thông.';
+	@override String get subtitleModeDescription => 'Chọn khi subtitles tự động bật cho tài khoản máy chủ này.';
+	@override String get hubDescription => 'Những tùy chọn này được lưu trữ trên tài khoản máy chủ phương tiện của bạn và có thể áp dụng cho các khách hàng khác.';
 }
 
 // Path: discover
@@ -2389,6 +2527,7 @@ class _Translations$performanceOverlay$vi extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG cơ sở lớp';
 	@override String get dvRouteBaseLayerSdr => 'SDR cơ sở';
 	@override String get dvRouteReshaped => 'RPU tái tạo (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'P7 FEL biểu đồ thí nghiệm (không đủ điều kiện)';
 	@override String get p7Conversion => 'Chuyển đổi P7';
 	@override String get sampleRate => 'Tỷ lệ mẫu';
 	@override String get pixelFormat => 'Đánh giá Pixel Fmt';
@@ -2449,6 +2588,13 @@ class _Translations$externalPlayer$vi extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Không mở cầu thủ bên ngoài';
 	@override String appNotInstalled({required Object name}) => '${name} không được cài đặt';
 	@override String get playInExternalPlayer => 'Chơi trong người chơi bên ngoài';
+	@override String get description => 'Chọn một ứng dụng khác để mở video trong. Người chơi có sẵn phụ thuộc vào thiết bị của bạn và các ứng dụng được cài đặt.';
+	@override String get systemDefaultDescription => 'Hãy để hệ điều hành mở video với ứng dụng mặc định của nó.';
+	@override String playerOptionDescription({required Object player}) => 'Mở video với ${player}.';
+	@override String get playerNameDescription => 'Nhãn được hiển thị trong danh sách người chơi.';
+	@override String get playerPackageDescription => 'Nhập tên gói Android của ứng dụng người chơi, chẳng hạn như com.example.player.';
+	@override String get playerCommandDescription => 'Nhập lệnh người chơi cài đặt hoặc con đường thực hiện cho thiết bị này.';
+	@override String get playerUrlSchemeDescription => 'Nhập biểu đồ URL và mẫu URL tùy chọn được sử dụng để khởi động người chơi.';
 }
 
 // Path: metadataEdit
@@ -2668,6 +2814,8 @@ class _Translations$services$vi extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$vi oauthProxy = _Translations$services$oauthProxy$vi._(_root);
 	@override late final _Translations$services$pendingAuth$vi pendingAuth = _Translations$services$pendingAuth$vi._(_root);
 	@override late final _Translations$services$libraryFilter$vi libraryFilter = _Translations$services$libraryFilter$vi._(_root);
+	@override String get seerrDescription => 'Kết nối với Seerr hoặc Overseerr để tìm kiếm tiêu đề và gửi yêu cầu phương tiện truyền thông.';
+	@override late final _Translations$services$trackerDescriptions$vi trackerDescriptions = _Translations$services$trackerDescriptions$vi._(_root);
 }
 
 // Path: addServer
@@ -2862,6 +3010,9 @@ class _Translations$homeLayout$vi extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'trên';
 	@override String get resetHeroButtonDescription => 'Nó xoay khỏi thiết lập anh hùng của mỗi hàng và mang lại một banner xoay duy nhất ở phía trên, giống như trước khi hàng anh hùng tồn tại.';
+	@override String get tapHeroCardDescription => 'Chọn xem đánh hoặc chọn một thẻ Hero bắt đầu phát lại hay mở chi tiết của nó.';
+	@override String get heroTapPlayDescription => 'Bắt đầu mục được chọn ngay lập tức.';
+	@override String get heroTapDetailsDescription => 'Mở chi tiết của mục được chọn trước khi chọn một hành động.';
 }
 
 // Path: platform
@@ -2892,8 +3043,12 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get source => 'Nguồn';
 	@override String get name => 'Tên';
 	@override String get endpoint => 'URL máy chủ';
+	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Nhập một máy chủ SMB và một thư mục chia sẻ.';
 	@override String get root => 'Folder hoặc Prefix';
+	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
 	@override String get username => 'Tên đăng nhập';
+	@override String get smbDomain => 'Miền (không bắt buộc)';
 	@override String get password => 'Mật Khẩu';
 	@override String get token => 'API Đánh giá';
 	@override String get accessKey => 'Access Key ID';
@@ -2903,6 +3058,8 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get clientId => 'ID khách hàng OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (chỉ Google Desktop)';
 	@override String get allowHttp => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy';
+	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
+	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.';
 	@override String get connect => 'Kết nối';
 	@override String get cancel => 'Hủy bỏ';
 	@override String get save => 'Lưu';
@@ -3047,12 +3204,23 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get useFiles => 'Sử dụng file và sách';
 	@override String get cancelScan => 'Đặt hủy scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Nhập một máy chủ SMB và một thư mục chia sẻ.';
-	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
-	@override String get smbDomain => 'Miền (không bắt buộc)';
-	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
-	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.';
+	@override String get offlineQuota => 'Offline download giới hạn';
+	@override String get offlineQuotaHelp => 'Thiết lập không gian tối đa được sử dụng bởi các bản sao ngoại tuyến, tệp nhập khẩu và tải xuống. Giảm giới hạn sẽ không loại bỏ các bản gốc hiện có.';
+	@override String get offlineStorageUsage => 'Lưu trữ Offline';
+	@override String get reservedStorage => 'Bảo Vệ';
+	@override String get downloadQueue => 'Tải Queue';
+	@override String get downloadRunning => 'tải xuống';
+	@override String get downloadQueued => 'chờ đợi';
+	@override String get downloadPaused => 'nghỉ ngơi';
+	@override String get downloadFailed => 'Phải nghỉ hưu';
+	@override String get importing => 'nhập khẩu';
+	@override String get importInterrupted => 'nhập khẩu bị gián đoạn · xóa để làm rõ';
+	@override String get errorQuotaExceeded => 'Giới hạn lưu trữ offline đã đạt được.Tăng giới hạn hoặc xóa bản sao tải xuống.';
+	@override String get errorStorageLow => 'Không có đủ lưu trữ thiết bị miễn phí để giữ bảo tồn được bảo vệ.';
+	@override String get errorStorageUnavailable => 'PlezyNG không thể kiểm tra lưu trữ thiết bị miễn phí, vì vậy việc viết đã dừng lại.';
+	@override String get removeDownloadJob => 'xóa download';
+	@override String get downloadAlreadyComplete => 'Tải xuống này đã hoàn thành trước khi nó có thể được xóa. mục bây giờ có sẵn offline.';
+	@override String get confirmRemoveDownloadJob => 'Loại bỏ tải xuống này và loại bỏ bất kỳ dữ liệu được tải về một phần? vị trí và ghi chú của bạn sẽ ở lại.';
 }
 
 // Path: lending
@@ -3172,6 +3340,12 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get statusFinished => 'Kết thúc';
 	@override String get goToTime => 'Đi đến thời gian';
 	@override String get timeHelp => 'Thời gian: phút: giây, hoặc phút: giây';
+	@override String get recoveryHelp => 'Xuất một bản sao được mã hóa gần đây trước khi di chuyển hoặc sửa chữa dữ liệu đồng bộ. nhập khẩu kết hợp với trạng thái hiện tại; họ không bao giờ thay thế lịch sử đồng bộ địa phương. Giữ mã đồng bộ riêng biệt.';
+	@override String get recoveryExport => 'Xuất khẩu file recovery mã hóa';
+	@override String get recoveryImport => 'nhập file recovery mã hóa';
+	@override String get recoveryImportConfirm => 'Kết hợp tệp phục hồi mã hóa này với các vị trí đọc và ghi chú hiện tại? Lịch sử hiện có sẽ được giữ lại. Thư viện chia sẻ và ID mục không bao gồm; thiết lập ID phù hợp trên mỗi thiết bị trước khi nhập khẩu.';
+	@override String get recoveryExported => 'Tệp phục hồi mã hóa đã được lưu.';
+	@override String get recoveryImported => 'Dữ liệu phục hồi kết hợp.';
 }
 
 // Path: sourceSetup
@@ -3275,6 +3449,23 @@ class _Translations$sourceSetup$vi extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Danh tính máy khách đã chọn: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Điểm đánh giá ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Đang tải phụ đề: ${title}';
+	@override String get sharedEntryPair => 'Cặp bài này';
+	@override String get sharedEntryPairHelp => 'Nhập ID tương tự cho mục này trên mỗi thiết bị. Sử dụng một định dạng chia sẻ ổn định hoặc tạo một và sao chép nó vào mục phù hợp. tiến bộ cặp chỉ khi các loại tệp phiên bản, kích thước, và đơn đặt hàng tương ứng. Blank xóa bản đồ này.';
+	@override String get sharedEntryId => 'chia sẻ item ID';
+	@override String get generateSharedEntryId => 'Tạo ID mục chia sẻ';
+	@override String get sharedLibraryId => 'ID thư viện chia sẻ (tùy chọn)';
+	@override String get sharedLibraryHelp => 'Sử dụng ID tương tự trên các thiết bị mở cùng một thư viện. ID công cộng này giúp mang lại tiến bộ đọc và ghi chú qua các kết nối nguồn khác nhau; nó không phải là mật khẩu. Khi nhà cung cấp sử dụng ID mục khác nhau, cặp những mục từ màn hình chi tiết của họ.';
+	@override String get sharedLibraryInvalid => 'Sử dụng 8-100 lá thư, số lượng, điểm, subscores hoặc hyphens.';
+	@override String get generateSharedLibraryId => 'Tạo một ID thư viện chia sẻ';
+	@override String get nfsReadAhead => 'NFS read-ahead yêu cầu';
+	@override String get nfsReadAheadHelp => 'Đọc song song nhiều hơn có thể cải thiện khả năng thông qua trên một NAS nhanh hoặc mạng lưới. sử dụng 1 nếu máy chủ giới hạn các yêu cầu tương đương.';
+	@override String get nfsReadTest => 'Đánh giá hiệu suất NFS';
+	@override String get nfsReadTestHelp => 'Đọc lên đến 64 MiB từ tệp lớn nhất để đo kết nối NAS này.';
+	@override String get nfsQualificationResult => 'NFS đọc đo lường';
+	@override String get nfsReadBytes => 'Dữ liệu đọc';
+	@override String get nfsReadSpeed => 'Tốc độ đo';
+	@override String get nfsReadRequests => 'Đọc yêu cầu';
+	@override String get sharedEntryConflict => 'ID mục được chia sẻ này đã được kết hợp với một mục khác trong thư viện này.';
 }
 
 // Path: comics
@@ -3367,6 +3558,15 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3447,6 +3647,19 @@ class _Translations$common$mediaKind$vi extends Translations$common$mediaKind$en
 	@override String get clip => 'Video ngắn';
 	@override String get photo => 'Hình Ảnh';
 	@override String get folder => 'Thư mục';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$vi extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Mở các khuyến nghị và mục từ các nguồn phát hiện liên kết.';
+	@override String get libraries => 'Mở thư viện truyền thông liên kết của bạn.';
+	@override String get liveTv => 'Mở Live TV khi một máy chủ cung cấp nó; nếu không, khởi động sẽ trở về nhà.';
+	@override String get search => 'Khởi mở Media Search.';
 }
 
 // Path: themeEditor.slots
@@ -3535,6 +3748,35 @@ class _Translations$videoControls$pipErrors$vi extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Một lỗi xảy ra: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$vi extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Giữ các phông chữ, màu sắc, kích cỡ và vị trí được viết trong tệp chủ đề.';
+	@override String get yes => 'Cho phép cài đặt phong cách subtitle của người chơi để điều chỉnh các subtitles ASS.';
+	@override String get scale => 'Ứng dụng phong cách người chơi và quy mô các kích cỡ tích hợp để phù hợp với kích thước video.';
+	@override String get force => 'Thay thế các phong cách ASS tích hợp với phong cách subtitle của người chơi.';
+	@override String get strip => 'Xóa định dạng ASS tích hợp và làm cho văn bản chủ đề rõ ràng.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$vi extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render ở độ phân giải bề mặt màn hình đầy đủ cho kết quả sắc nét nhất.';
+	@override String get video => 'Render sử dụng độ phân giải video như là tham chiếu, có thể làm giảm công việc trên màn hình độ phân biệt cao.';
+	@override String get threeQuarter => 'Render tại 75% độ phân giải bề mặt hiển thị để tiết kiệm hiệu suất khiêm tốn.';
+	@override String get half => 'Tải xuống 50% độ phân giải bề mặt hiển thị để giảm công việc, với các cạnh mềm hơn.';
+	@override String get third => 'Render tại một phần ba độ phân giải bề mặt hiển thị để giảm công việc, với các cạnh mềm hơn.';
+	@override String get quarter => 'Render tại một phần tư độ phân giải bề mặt hiển thị để giảm công việc, với kết quả mềm nhất.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$vi extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$vi._(TranslationsVi root) : this._root = root, super.internal(root);
@@ -3577,6 +3819,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$vi extends T
 	@override String get preferSdh => 'Ưu đãi SDH Subtitles';
 	@override String get onlySdh => 'Chỉ có SDH Subtitles';
 	@override String get onlyNonSdh => 'Chỉ có các tiêu đề không SDH';
+	@override String get preferNonSdhDescription => 'Thích các tiêu chuẩn khi cả phiên bản tiêu chuẩn và SDH đều có sẵn.';
+	@override String get preferSdhDescription => 'Thích các tiêu đề SDH khi có sẵn, nhưng cho phép tiêu chuẩn tiêu đề như là một sự sụp đổ.';
+	@override String get onlySdhDescription => 'Chỉ sử dụng các tiêu đề SDH; không rơi trở lại các tiêu chuẩn.';
+	@override String get onlyNonSdhDescription => 'Chỉ sử dụng các tiêu chuẩn; loại trừ các tiêu đề SDH.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3590,6 +3836,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$vi extends Translat
 	@override String get preferForced => 'Ưu tiên Subtitles';
 	@override String get onlyForced => 'Chỉ có các subtitles';
 	@override String get onlyNonForced => 'Chỉ có các subtitles không bắt buộc';
+	@override String get preferNonForcedDescription => 'Thích các tiêu đề thường xuyên, nhưng cho phép những con đường bắt buộc như một sự sụp đổ.';
+	@override String get preferForcedDescription => 'Tốt nhất là bắt buộc theo dõi khi có sẵn, nhưng cho phép các tiêu đề thường xuyên như một sự sụp đổ.';
+	@override String get onlyForcedDescription => 'Chỉ sử dụng các con đường được đánh dấu là bắt buộc.';
+	@override String get onlyNonForcedDescription => 'Trừ các dấu vết được đánh dấu là bắt buộc.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3603,6 +3853,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$vi extends Transl
 	@override String get moviesAndShows => 'phim và chương trình truyền hình';
 	@override String get movies => 'phim chỉ';
 	@override String get shows => 'TV Show Chỉ';
+	@override String get noneDescription => 'Đừng hiển thị các dấu hiệu kiểm tra được xem.';
+	@override String get moviesAndShowsDescription => 'Hiển thị kiểm tra được xem cho các bộ phim và chương trình truyền hình.';
+	@override String get moviesDescription => 'Hiển thị các dấu hiệu kiểm tra chỉ cho phim.';
+	@override String get showsDescription => 'Chỉ hiển thị dấu đánh dấu đã xem cho các chương trình truyền hình.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3616,6 +3870,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$vi extends Translatio
 	@override String get usersOnly => 'Người dùng chỉ';
 	@override String get criticsOnly => 'Chỉ có những người chỉ trích';
 	@override String get nobody => 'Ẩn';
+	@override String get usersAndCriticsDescription => 'Hiển thị cả đánh giá người dùng và đánh giá quan trọng.';
+	@override String get usersOnlyDescription => 'Hiển thị đánh giá và đánh giá được gửi bởi người dùng.';
+	@override String get criticsOnlyDescription => 'Hiển thị đánh giá và đánh giá quan trọng.';
+	@override String get nobodyDescription => 'Ẩn đánh giá và đánh giá.';
 }
 
 // Path: discover.findNext
@@ -4402,6 +4660,21 @@ class _Translations$services$libraryFilter$vi extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Đồng bộ chỉ các thư viện được kiểm tra dưới đây.';
 	@override String get libraries => 'Thư viện';
 	@override String get noLibraries => 'Không có thư viện';
+	@override String get modeDescription => 'Chọn xem các thư viện được kiểm tra có bị chặn khỏi đồng bộ hoặc là thư viện duy nhất đồng bộ.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$vi extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Đồng bộ xem các tập và phim với tài khoản Trakt của bạn.';
+	@override String get mal => 'Đồng bộ danh sách anime và xem tiến trình với MyAnimeList.';
+	@override String get anilist => 'Đồng bộ danh sách anime và xem tiến bộ với AniList.';
+	@override String get simkl => 'Sync xem phim, chương trình truyền hình và anime với Simkl.';
+	@override String get mdblist => 'Hiển thị xếp hạng và danh sách MDBList trong khuyến nghị và Khám phá.';
 }
 
 /// The flat map containing all translations for locale <vi>.
@@ -4459,6 +4732,7 @@ extension on TranslationsVi {
 			'appIcon.names.strata' => 'đường phố',
 			'appIcon.names.facet' => 'mặt',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Chọn biểu tượng được hiển thị bởi người khởi động thiết bị của bạn. các bản xem trước cho thấy mỗi tùy chọn trông như thế nào.',
 			'auth.signInWithPlex' => 'Đăng ký với Plex',
 			'auth.showQRCode' => 'Hiển thị QR Code',
 			'auth.authenticate' => 'xác thực',
@@ -4480,6 +4754,32 @@ extension on TranslationsVi {
 			'common.cancel' => 'Hủy bỏ',
 			'common.save' => 'Lưu',
 			'common.close' => 'Đóng',
+			'common.closeMiniPlayer' => 'Trò chơi mini gần',
+			'common.closeWorkspaceWindow' => 'cửa sổ gần',
+			'common.returnToFullView' => 'Trở về View Full',
+			'common.manageMediaSessions' => 'Quản lý các phiên truyền thông',
+			'common.hideMediaSessions' => 'Giữ các buổi truyền thông',
+			'common.mediaSessions' => 'Các buổi truyền thông',
+			'common.mediaSessionsHint' => 'Chọn để đưa một phiên về phía trước. Park che giấu cửa sổ của nó nhưng giữ cho nó mở. Return mở nó trong toàn diện; gần kết thúc nó.',
+			'common.sessionInWorkspace' => 'trong Workspace',
+			'common.sessionParked' => 'đậu xe',
+			'common.sessionFullscreen' => 'màn hình đầy đủ',
+			'common.switchToNextWindow' => 'Chuyển đổi với cửa sổ tiếp theo',
+			'common.moveWindow' => 'di chuyển cửa sổ',
+			'common.finishMovingWindow' => 'Kết thúc cửa sổ di chuyển',
+			'common.moveWindowHint' => 'Nhấn dài và kéo cửa sổ để di chuyển nó. điều khiển này cũng cho phép phong trào mũi tên-chìa khóa.',
+			'common.movingWindowHelp' => 'Tắt để di chuyển · Cài đặt chìa khóa · Enter Saves · Escape Cancel',
+			'common.resizeWindow' => 'Tải lại cửa sổ',
+			'common.resizeWindowHint' => 'Tắt bàn tay này hoặc sử dụng chìa khóa mũi tên để khôi phục lại cửa sổ.',
+			'common.workspaceWindowHint' => 'Sử dụng điều khiển chuyển động hoặc kéo dài và kéo để di chuyển.',
+			'common.workspacePaneHint' => 'Chọn bảng điều khiển này để tập trung vào nó. Sử dụng kiểm soát màn hình đầy đủ của nó để mở rộng.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Màn hình: ${title}',
+			'common.workspaceTitleHint' => 'Chọn để tập trung. kéo thanh tiêu đề để di chuyển; sử dụng nút màn hình đầy đủ để mở rộng.',
+			'common.moveToSessionTray' => 'Chuyển sang session tray',
+			'common.moveToSessionTrayHint' => 'Khóa phiên này có sẵn mà không hiển thị cửa sổ của nó.',
+			'common.closeSessionHint' => 'Bắt cửa sổ này và kết thúc phiên.',
+			'common.sideBySideLayout' => 'Chuyển đổi sang side-by-side layout',
+			'common.floatingWindows' => 'Chuyển đổi để floating windows',
 			'common.clear' => 'rõ ràng',
 			'common.reset' => 'Đặt lại',
 			'common.later' => 'Sau đó',
@@ -4897,6 +5197,8 @@ extension on TranslationsVi {
 			'settings.audioPassthrough' => 'Âm thanh trượt',
 			'settings.audioPassthroughDescription' => 'Gửi âm thanh Dolby/DTS đến máy nhận hoặc TV của bạn mà không cần mã hóa lại, duy trì âm thanh xung quanh.',
 			'settings.audioPassthroughDescriptionApple' => 'Sử dụng bộ giải mã Dolby gốc của Apple cho Dolby Digital Plus, bao gồm Atmos. DTS và TrueHD vẫn chơi như PCM đa kênh.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Sử dụng bộ giải mã Dolby bản địa của Apple cho Dolby Digital Plus, bao gồm Atmos. Trên iOS, iPadOS và tvOS 26 hoặc sau đó, TrueHD Atmos và DTS:X chơi như âm thanh không gian.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Tắt trong khi bình thường hóa âm thanh',
 			'settings.audioChannelLimit' => 'Kênh âm thanh',
@@ -4923,9 +5225,14 @@ extension on TranslationsVi {
 			'settings.dvConversionNativeDescription' => 'Native Force DV7 và suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Chuyển đổi RPU mạnh vào hồ sơ Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Dây Dolby Vision lớp RPU/EL và mặt bằng hiện tại HEVC',
+			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
+			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
+			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
+			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
+			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
+			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
 			'settings.disableDolbyVision' => 'Không thể bỏ qua Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một',
 			'settings.hdrSdrConversion' => 'HDR sang SDR chuyển đổi',
 			'settings.hdrSdrConversionDescription' => 'Chọn những gì chuyển đổi video HDR khi màn hình không thể hiển thị HDR.',
@@ -5011,13 +5318,84 @@ extension on TranslationsVi {
 			'settings.regionFormatDescription' => 'Chọn cách hiển thị ngày, số và đơn vị đo.',
 			'settings.metadataLanguage' => 'Ngôn ngữ siêu dữ liệu',
 			'settings.metadataLanguageDescription' => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
-			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
-			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
-			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
-			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
-			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
-			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Nhập màn hình đầy đủ khi playback bắt đầu',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Mở video desktop trên màn hình đầy đủ khi playback bắt đầu',
+			'settings.extendVideoIntoDisplayCutout' => 'mở rộng video vào display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Hãy để video màn hình đầy đủ sử dụng camera cutout trên điện thoại Android',
+			'settings.languageDescription' => 'Chọn ngôn ngữ được sử dụng cho các điều khiển và thông điệp PlezyNG. Theo hệ thống theo dõi ngôn ngữ thiết bị của bạn.',
+			'settings.themeDescription' => 'Chọn các màu sắc và tương phản được sử dụng trong toàn bộ ứng dụng.',
+			'settings.libraryDensityDescription' => 'Thay đổi số thẻ thư viện phù hợp trong mỗi hàng.',
+			'settings.displayScaleDescription' => 'Khôi phục lại giao diện trên màn hình xe này mà không thay đổi kích thước văn bản trên thiết bị của bạn.',
+			'settings.themeSongVolumeDescription' => 'Thiết lập khối lượng của bài hát chủ đề so với các âm thanh khác.',
+			'settings.viewModeDescription' => 'Chọn xem các mục thư viện có xuất hiện như poster trong một mạng lưới hay là danh sách nhỏ gọn.',
+			'settings.gridViewDescription' => 'sắp xếp các mục thư viện trong hàng và cột poster.',
+			'settings.listViewDescription' => 'Hiển thị các mục thư viện trong một danh sách dọc với nhiều văn bản hơn cho mỗi mục.',
+			'settings.gridSpacingDescription' => 'Đặt khoảng cách giữa các poster trong các mạng thư viện.',
+			'settings.gridSpacingTightDescription' => 'Thích hợp nhiều poster trên màn hình với khoảng trống nhỏ hơn.',
+			'settings.gridSpacingNormalDescription' => 'Sử dụng khoảng cách tiêu chuẩn giữa các poster.',
+			'settings.gridSpacingSpaciousDescription' => 'Thêm khoảng cách lớn hơn giữa các poster cho sự tách rời nhiều hơn.',
+			'settings.episodePosterModeDescription' => 'Chọn tác phẩm nghệ thuật nào xuất hiện trên các thẻ tập.',
+			'settings.seriesPosterDescription' => 'Sử dụng poster series của chương trình cho mỗi tập.',
+			'settings.seasonPosterDescription' => 'Sử dụng poster mùa cho mỗi tập khi có sẵn.',
+			'settings.episodeThumbnailDescription' => 'Sử dụng một khung từ tập phim khi có sẵn.',
+			'settings.continueWatchingActionDescription' => 'Chọn những gì xảy ra khi bạn kích hoạt một thẻ tiếp tục xem.',
+			'settings.continueWatchingPlayDescription' => 'Bắt đầu bộ phim hoặc tập ngay lập tức.',
+			'settings.continueWatchingDetailsDescription' => 'Mở trang tiêu đề đầu tiên để bạn có thể xem xét chi tiết và chọn một hành động.',
+			'settings.episodeActionDescription' => 'Chọn những gì xảy ra khi bạn kích hoạt một thẻ episode.',
+			'settings.episodePlayDescription' => 'Bắt đầu sự kiện ngay lập tức.',
+			'settings.episodeDetailsDescription' => 'Mở trang tập trước khi playback.',
+			'settings.contentScreensaverDelayDescription' => 'Chọn bao lâu PlezyNG chờ đợi mà không có đầu vào trước khi hiển thị tác phẩm nghệ thuật.',
+			'settings.continueWatchingRowSizeDescription' => 'Chọn kích thước của các thẻ trong dòng tiếp tục xem.',
+			'settings.rowSizeCompactDescription' => 'Hiển thị các thẻ nhỏ hơn để nhiều mục phù hợp trên hàng.',
+			'settings.rowSizeStandardDescription' => 'Sử dụng kích thước thẻ tiêu chuẩn.',
+			'settings.rowSizeLargeDescription' => 'Hiển thị các thẻ lớn hơn với chi tiết nghệ thuật nhiều hơn.',
+			'settings.visualEffectsDescription' => 'Chọn ngân sách hoạt hình và hiệu ứng nghệ thuật cho thiết bị này.',
+			'settings.visualEffectsFullDescription' => 'Sử dụng các hiệu ứng hoạt hình và nghệ thuật đầy đủ trên mỗi thiết bị.',
+			'settings.startupSectionDescription' => 'Chọn phần nào mở khi PlezyNG bắt đầu.',
+			'settings.startupSectionOptions.discover' => 'Mở các khuyến nghị và mục từ các nguồn phát hiện liên kết.',
+			'settings.startupSectionOptions.libraries' => 'Mở thư viện truyền thông liên kết của bạn.',
+			'settings.startupSectionOptions.liveTv' => 'Mở Live TV khi một máy chủ cung cấp nó; nếu không, khởi động sẽ trở về nhà.',
+			'settings.startupSectionOptions.search' => 'Khởi mở Media Search.',
+			'settings.smallSkipDurationDescription' => 'Thiết lập khoảng cách di chuyển bởi phía sau ngắn và phía trước tìm kiếm kiểm soát.',
+			'settings.largeSkipDurationDescription' => 'Thiết lập khoảng cách di chuyển bởi phía sau dài và phía trước tìm kiếm kiểm soát.',
+			'settings.rewindOnResumeDescription' => 'Chuyển đổi playback trở lại với số tiền này khi quay lại một video.',
+			'settings.defaultSleepTimerDescription' => 'Thiết lập thời gian ban đầu được sử dụng khi bạn bắt đầu giờ ngủ.',
+			'settings.playNextCountdownDescription' => 'Hãy đợi điều này lâu trước khi bắt đầu tập tiếp theo. thiết lập đến 0 để bắt đầu ngay lập tức.',
+			'settings.autoSkipDelaySettingDescription' => 'Ứng dụng khi một intro, tín chỉ hoặc quảng cáo được thiết lập để tự động bỏ qua.',
+			'settings.downmixCenterBoostDescription' => 'Tăng sự đối thoại trong kênh trung tâm khi âm thanh xung quanh được trộn xuống stereo.',
+			'settings.displaySwitchDelayDescription' => 'Đợi trước khi thay đổi chế độ hiển thị để TV hoặc người nhận có thể hoàn thành chuyển đổi trước đó.',
+			'settings.playerBackendDescription' => 'Chọn động cơ playback nào giải mã và render video trên thiết bị này.',
+			'settings.exoPlayerDescription' => 'Sử dụng người chơi gốc của Android dựa trên Media3 và các con đường phần cứng được hỗ trợ.',
+			'settings.mpvDescription' => 'Sử dụng mpv, mà tiết lộ thêm playback, subtitle và kiểm soát xử lý video.',
+			'settings.scopeOffDescription' => 'Chỉ giữ các thay đổi cho phiên bản playback hiện tại.',
+			'settings.scopeGlobalDescription' => 'Sử dụng lại cùng một giá trị cho mỗi thư viện và tiêu đề.',
+			'settings.scopeLibraryDescription' => 'Hãy nhớ một giá trị riêng biệt cho mỗi thư viện.',
+			'settings.scopeTitleDescription' => 'Hãy nhớ một giá trị riêng biệt cho mỗi chương trình hoặc bộ phim.',
+			'settings.specialsOrderingServerDescription' => 'Giữ lệnh episode được cung cấp bởi máy chủ truyền thông.',
+			'settings.specialsOrderingAirDateDescription' => 'Đặt đặc biệt trong số các tập thường xuyên theo ngày không của họ.',
+			'settings.specialsOrderingLastDescription' => 'Đặt mỗi đặc biệt sau các mùa thường xuyên.',
+			'settings.skipIntroModeDescription' => 'Chọn xem các markers intro chơi bình thường, hiển thị một nút skip hoặc skip tự động.',
+			'settings.skipCreditsModeDescription' => 'Chọn xem tín dụng chơi bình thường, hiển thị một nút skip hoặc tự động skip.',
+			'settings.skipAdsModeDescription' => 'Chọn xem quảng cáo được phát hiện có chơi bình thường hay không, hiển thị nút skip hoặc skip tự động.',
+			'settings.playbackBufferAutoDescription' => 'Cho phép người chơi hoạt động chọn kích thước buffer bình thường của nó.',
+			'settings.playbackBufferLargeDescription' => 'Giữ nhiều phương tiện truyền thông sẵn sàng trước khi chơi; điều này sử dụng thêm bộ nhớ.',
+			'settings.playbackBufferExtraLargeDescription' => 'Giữ buffer lớn nhất để đọc; điều này sử dụng bộ nhớ nhiều nhất.',
+			'settings.defaultQualityDescription' => 'Thiết lập độ phân giải video mặc định và bitrate mái cho các dòng mà máy chủ chuyển mã.',
+			'settings.cellularQualityDescription' => 'Override Chất lượng mặc định khi thiết bị đang sử dụng một kết nối cell-only.',
+			'settings.remoteQualityDescription' => 'Override Chất lượng mặc định khi kết nối với một máy chủ thông qua kết nối từ xa.',
+			'settings.qualityPresetOriginalDescription' => 'Chơi nguồn với chất lượng có sẵn mà không yêu cầu máy chủ chuyển mã nó.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Yêu cầu máy chủ cho một dòng chuyển đổi bằng cách sử dụng độ phân giải và bitrate được hiển thị ở trên.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Sử dụng chất lượng được chọn trong Chất lượng mặc định.',
+			'settings.musicQualityDescription' => 'Thiết lập tốc độ bit âm thanh tối đa được yêu cầu từ máy chủ; Original giữ dòng nguồn.',
+			'settings.musicQualityOriginalDescription' => 'Chơi âm thanh nguồn mà không có transcode bitrate.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Yêu cầu một transcode máy chủ được cáp gần bitrate hiển thị ở trên; kết quả thực tế có thể thay đổi.',
+			'settings.maxVolumeInputLabel' => 'Số lượng tối đa (%)',
+			'settings.checkForUpdatesDescription' => 'Bây giờ kiểm tra xem phiên bản mới hơn của PlezyNG có sẵn hay không.',
+			'settings.appearanceDescription' => 'Chọn chủ đề ứng dụng và điều chỉnh thư viện thẻ, dòng nhà, và di chuyển.',
+			'settings.prerollLibraryDescription' => 'Chọn thư viện chứa các clip có sẵn như phim pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Chọn clip nào từ thư viện được chọn có thể chơi trước khi xem phim.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Đợi nhiều phút này mà không cần nhập trước khi hiển thị màn hình bảo vệ nghệ thuật.',
+			'settings.videoCodecOptionDescription' => 'Cho phép phát trực tiếp cho codec này khi được hỗ trợ. codec không kiểm tra được chuyển mã bởi máy chủ truyền thông.',
 			'themeEditor.builtIn' => 'xây dựng',
 			'themeEditor.presets' => 'Lời bài hát',
 			'themeEditor.custom' => 'Tùy chọn',
@@ -5056,6 +5434,17 @@ extension on TranslationsVi {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} phút left',
 			'themeEditor.previewSwitch' => 'Tự động phát',
 			'themeEditor.previewMutedText' => 'Bài viết thứ hai đọc như thế này',
+			'themeEditor.themeSystemDescription' => 'Theo dõi sự xuất hiện của thiết bị và tự động chuyển đổi giữa ánh sáng và bóng tối.',
+			'themeEditor.themeLightDescription' => 'Sử dụng nền sáng với văn bản tối.',
+			'themeEditor.themeDarkDescription' => 'Sử dụng nền tối với văn bản sáng.',
+			'themeEditor.themeOledDescription' => 'Sử dụng các bề mặt gần đen làm giảm ánh sáng trên màn hình OLED.',
+			'themeEditor.themeEmberDescription' => 'Sử dụng màu đỏ ấm và accent amber.',
+			'themeEditor.themeGlacierDescription' => 'Sử dụng màu sắc accent xanh mát mẻ.',
+			'themeEditor.themeForestDescription' => 'Sử dụng màu xanh lá cây và sắc thái tự nhiên.',
+			'themeEditor.themePlumDescription' => 'Sử dụng màu violet và plum accent.',
+			'themeEditor.themePaperDescription' => 'Sử dụng các bề mặt như giấy ấm áp và màu sắc được truyền cảm hứng từ sơn.',
+			'themeEditor.themeCustomDescription' => 'Sử dụng bảng màu mà bạn tạo trong biên tập chủ đề tùy chỉnh.',
+			'themeEditor.editorDescription' => 'Chọn một màu palette, điều chỉnh độ ẩm, độ ăn kiêng, độ sáng hoặc độ không chính xác của nó và xem bản cập nhật trước khi tiết kiệm. bạn cũng có thể nhập màu hex.',
 			'search.hint' => 'Tìm kiếm phim, chương trình, âm nhạc...',
 			'search.tryDifferentTerm' => 'Thử một thuật ngữ tìm kiếm khác',
 			'search.searchYourMedia' => 'Tìm kiếm phương tiện truyền thông của bạn',
@@ -5301,6 +5690,8 @@ extension on TranslationsVi {
 			'accessibility.largeTargets' => 'Mục tiêu Touch lớn hơn',
 			'accessibility.largeTargetsHint' => 'Tăng diện tích các điều khiển dùng chung để dễ chạm và điều hướng bằng công nghệ hỗ trợ.',
 			'accessibility.navigationHint' => 'Dùng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, Escape hoặc nút Quay lại để đóng. Bạn có thể chỉnh mức thu phóng và tùy chọn đọc khi mở sách.',
+			'accessibility.textSizeDescription' => 'Tích hợp văn bản giao diện trong PlezyNG ngoài thiết lập kích thước văn bản hệ thống của thiết bị của bạn.',
+			'accessibility.boldTextHint' => 'Sử dụng trọng lượng nặng hơn cho các nhãn giao diện và tin nhắn để làm cho chúng dễ dàng phân biệt.',
 			'tooltips.shufflePlay' => 'Shuffle chơi',
 			'tooltips.playTrailer' => 'Trò chơi Trailer',
 			'tooltips.markAsWatched' => 'Mark theo dõi',
@@ -5320,6 +5711,8 @@ extension on TranslationsVi {
 			'videoControls.sleepTimerEndOfVideo' => 'Kết thúc video hiện tại',
 			'videoControls.sleepTimerStopAtHeader' => 'dừng lại',
 			'videoControls.sleepTimerDurationHeader' => 'Thời gian',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback sẽ nghỉ ngơi vào cuối video này',
 			'videoControls.stillWatching' => 'vẫn đang xem?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Đánh giá tại ${seconds}s',
@@ -5354,6 +5747,8 @@ extension on TranslationsVi {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — chơi chất lượng ban đầu',
 			'videoControls.subtitleUnavailableFallback' => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề',
 			'videoControls.pipButton' => 'Hình ảnh trong hình ảnh mode',
+			'videoControls.openMiniPlayer' => 'Trò chơi Mini Open',
+			'videoControls.returnToFullPlayer' => 'Trở lại cầu thủ đầy đủ',
 			'videoControls.aspectRatioButton' => 'Tỷ Lệ Khung Hình',
 			'videoControls.ambientLighting' => 'Ánh sáng môi trường',
 			'videoControls.fullscreenButton' => 'Nhập Fullscreen',
@@ -5438,8 +5833,6 @@ extension on TranslationsVi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Thư viện quét bắt đầu cho "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Không thể quét thư viện: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Tải về các thông tin mới cho "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata update bắt đầu cho "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Không cập nhật dữ liệu siêu dữ liệu: ${error}',
 			'messages.logoutConfirm' => 'Bạn có chắc chắn bạn muốn đăng nhập không?',
@@ -5499,6 +5892,28 @@ extension on TranslationsVi {
 			'subtitlingStyling.renderResolution' => 'Quyết định Render',
 			'subtitlingStyling.renderResolutionScreen' => 'Độ Phân Giải Màn Hình',
 			'subtitlingStyling.renderResolutionVideo' => 'Độ phân giải video',
+			'subtitlingStyling.fontSizeDescription' => 'Thiết lập kích thước văn bản subtitle trên thiết bị này.',
+			'subtitlingStyling.textColorDescription' => 'Chọn màu được sử dụng cho subtitle text.',
+			'subtitlingStyling.borderSizeDescription' => 'Đặt độ dày của outline xung quanh văn bản subtitle.',
+			'subtitlingStyling.borderColorDescription' => 'Chọn màu được sử dụng cho dòng outline subtitle.',
+			'subtitlingStyling.backgroundColorDescription' => 'Chọn màu đằng sau subtitle text.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Thiết lập độ minh bạch của nền chủ đề là: 0% rõ ràng và 100% vững chắc.',
+			'subtitlingStyling.positionDescription' => 'Di chuyển các tiêu đề theo chiều dọc. 0% là trên cùng của video và 100% là dưới cùng.',
+			'subtitlingStyling.assOverrideDescription' => 'Chọn xem người chơi có theo dõi, điều chỉnh, thay thế hoặc loại bỏ kiểu dáng được tích hợp trong các tiêu đề ASS.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Giữ các phông chữ, màu sắc, kích cỡ và vị trí được viết trong tệp chủ đề.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Cho phép cài đặt phong cách subtitle của người chơi để điều chỉnh các subtitles ASS.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Ứng dụng phong cách người chơi và quy mô các kích cỡ tích hợp để phù hợp với kích thước video.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Thay thế các phong cách ASS tích hợp với phong cách subtitle của người chơi.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Xóa định dạng ASS tích hợp và làm cho văn bản chủ đề rõ ràng.',
+			'subtitlingStyling.renderResolutionDescription' => 'Chọn độ phân giải được sử dụng để rasterize hình ảnh và ASS subtitles. Lượng Android thấp hơn có thể làm giảm công việc rendering nhưng trông mềm hơn.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render ở độ phân giải bề mặt màn hình đầy đủ cho kết quả sắc nét nhất.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render sử dụng độ phân giải video như là tham chiếu, có thể làm giảm công việc trên màn hình độ phân biệt cao.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render tại 75% độ phân giải bề mặt hiển thị để tiết kiệm hiệu suất khiêm tốn.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Tải xuống 50% độ phân giải bề mặt hiển thị để giảm công việc, với các cạnh mềm hơn.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render tại một phần ba độ phân giải bề mặt hiển thị để giảm công việc, với các cạnh mềm hơn.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render tại một phần tư độ phân giải bề mặt hiển thị để giảm công việc, với kết quả mềm nhất.',
+			'subtitlingStyling.boldDescription' => 'Vẽ văn bản subtitle trong một trọng lượng nặng hơn.',
+			'subtitlingStyling.italicDescription' => 'Tạo subtitle văn bản trong tiếng Ý.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Cài đặt Video Player Advanced',
 			'mpvConfig.presets' => 'Lời bài hát',
@@ -5635,11 +6050,19 @@ extension on TranslationsVi {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Ưu đãi SDH Subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Chỉ có SDH Subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Chỉ có các tiêu đề không SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Thích các tiêu chuẩn khi cả phiên bản tiêu chuẩn và SDH đều có sẵn.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Thích các tiêu đề SDH khi có sẵn, nhưng cho phép tiêu chuẩn tiêu đề như là một sự sụp đổ.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Chỉ sử dụng các tiêu đề SDH; không rơi trở lại các tiêu chuẩn.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Chỉ sử dụng các tiêu chuẩn; loại trừ các tiêu đề SDH.',
 			'accountPreferences.forcedSubtitles' => 'Subtitles buộc',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Ưu tiên không bắt buộc subtitles',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Ưu tiên Subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Chỉ có các subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Chỉ có các subtitles không bắt buộc',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Thích các tiêu đề thường xuyên, nhưng cho phép những con đường bắt buộc như một sự sụp đổ.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Tốt nhất là bắt buộc theo dõi khi có sẵn, nhưng cho phép các tiêu đề thường xuyên như một sự sụp đổ.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Chỉ sử dụng các con đường được đánh dấu là bắt buộc.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Trừ các dấu vết được đánh dấu là bắt buộc.',
 			'accountPreferences.displayMissingEpisodes' => 'Xem các chương trình thiếu',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Danh sách các tập tin mà máy chủ biết về nhưng không có tệp cho.',
 			'accountPreferences.hidePlayedInLatest' => 'Ẩn các mục được xem trong Latest',
@@ -5653,11 +6076,27 @@ extension on TranslationsVi {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'phim và chương trình truyền hình',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'phim chỉ',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV Show Chỉ',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Đừng hiển thị các dấu hiệu kiểm tra được xem.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Hiển thị kiểm tra được xem cho các bộ phim và chương trình truyền hình.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Hiển thị các dấu hiệu kiểm tra chỉ cho phim.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Chỉ hiển thị dấu đánh dấu đã xem cho các chương trình truyền hình.',
 			'accountPreferences.mediaReviewsVisibility' => 'Đánh giá & đánh giá',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Người dùng và các nhà phê bình',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Người dùng chỉ',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Chỉ có những người chỉ trích',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Ẩn',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Hiển thị cả đánh giá người dùng và đánh giá quan trọng.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Hiển thị đánh giá và đánh giá được gửi bởi người dùng.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Hiển thị đánh giá và đánh giá quan trọng.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Ẩn đánh giá và đánh giá.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Thích theo dõi âm thanh trong ngôn ngữ này khi máy chủ hoặc người chơi tự động chọn một track.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Thích theo dõi subtitle trong ngôn ngữ này khi subtitles được chọn tự động.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Chọn xem mục SDH có được yêu cầu hay không trong quá trình tự động chọn subtitle.',
+			'accountPreferences.forcedSubtitleDescription' => 'Chọn xem các đường dẫn subtitle bắt buộc có được ưu tiên hay yêu cầu trong quá trình tự động chọn.',
+			'accountPreferences.watchedIndicatorDescription' => 'Chọn loại phương tiện nào nhận được dấu kiểm theo dõi trong giao diện máy chủ.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Chọn loại khán giả và đánh giá quan trọng mà máy chủ hiển thị trên các trang truyền thông.',
+			'accountPreferences.subtitleModeDescription' => 'Chọn khi subtitles tự động bật cho tài khoản máy chủ này.',
+			'accountPreferences.hubDescription' => 'Những tùy chọn này được lưu trữ trên tài khoản máy chủ phương tiện của bạn và có thể áp dụng cho các khách hàng khác.',
 			'discover.title' => 'Khám phá',
 			'discover.noContentAvailable' => 'Không có nội dung có sẵn',
 			'discover.addMediaToLibraries' => 'Thêm một số phương tiện truyền thông vào thư viện của bạn',
@@ -5786,6 +6225,8 @@ extension on TranslationsVi {
 			'libraries.all' => 'Tất cả',
 			'libraries.clearAll' => 'Tất cả rõ ràng',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn quét "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn phân tích "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn cập nhật dữ liệu metadata cho "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn làm trống rỗng cho "${title}"?',
@@ -5952,8 +6393,6 @@ extension on TranslationsVi {
 			'explore.mdblistShelves.nameHint' => 'Để lại màu trắng để sử dụng tên danh sách nguồn.',
 			'explore.mdblistShelves.add' => 'Thêm Shelf',
 			'explore.mdblistShelves.save' => 'Bảo vệ shelves',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Chuyển ${title} lên',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Chuyển ${title} xuống',
 			'explore.mdblistShelves.unavailable' => 'Danh sách này không sẵn dùng. rút hoặc xóa hộp trong cài đặt.',
@@ -6300,6 +6739,8 @@ extension on TranslationsVi {
 			'watchTogether.connecting' => 'Kết nối...',
 			'watchTogether.relayPublic' => 'Các phòng sử dụng các phát sóng Open Watch Party công cộng.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Các căn phòng sử dụng điện thoại của bạn tại ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Phòng mới',
 			'watchTogether.roomActions' => 'Phòng hành động',
 			'watchTogether.renameRoom' => 'Đặt phòng',
@@ -6466,8 +6907,6 @@ extension on TranslationsVi {
 			'downloads.resumeDownload' => 'Đánh giá download',
 			'downloads.cancelledDownload' => 'Hủy download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (tính hợp ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Tải về ${file} - Click để hoàn thành',
 			'downloads.partialDownloadClickToComplete' => 'Tải về - Click to complete',
 			'downloads.deleting' => 'xóa...',
@@ -6726,6 +7165,7 @@ extension on TranslationsVi {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG cơ sở lớp',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR cơ sở',
 			'performanceOverlay.dvRouteReshaped' => 'RPU tái tạo (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'P7 FEL biểu đồ thí nghiệm (không đủ điều kiện)',
 			'performanceOverlay.p7Conversion' => 'Chuyển đổi P7',
 			'performanceOverlay.sampleRate' => 'Tỷ lệ mẫu',
 			'performanceOverlay.pixelFormat' => 'Đánh giá Pixel Fmt',
@@ -6777,6 +7217,13 @@ extension on TranslationsVi {
 			'externalPlayer.launchFailed' => 'Không mở cầu thủ bên ngoài',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} không được cài đặt',
 			'externalPlayer.playInExternalPlayer' => 'Chơi trong người chơi bên ngoài',
+			'externalPlayer.description' => 'Chọn một ứng dụng khác để mở video trong. Người chơi có sẵn phụ thuộc vào thiết bị của bạn và các ứng dụng được cài đặt.',
+			'externalPlayer.systemDefaultDescription' => 'Hãy để hệ điều hành mở video với ứng dụng mặc định của nó.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Mở video với ${player}.',
+			'externalPlayer.playerNameDescription' => 'Nhãn được hiển thị trong danh sách người chơi.',
+			'externalPlayer.playerPackageDescription' => 'Nhập tên gói Android của ứng dụng người chơi, chẳng hạn như com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Nhập lệnh người chơi cài đặt hoặc con đường thực hiện cho thiết bị này.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Nhập biểu đồ URL và mẫu URL tùy chọn được sử dụng để khởi động người chơi.',
 			'metadataEdit.editMetadata' => 'Sửa',
 			'metadataEdit.screenTitle' => 'Sửa dữ liệu mô tả',
 			'metadataEdit.basicInfo' => 'Thông tin cơ bản',
@@ -6806,6 +7253,8 @@ extension on TranslationsVi {
 			'metadataEdit.metadataUpdateFailed' => 'Không cập nhật metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork cập nhật',
 			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Không có tác phẩm nghệ thuật',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Tùy chọn nghệ thuật ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Tùy chọn Artwork ${index}, được chọn',
@@ -6966,6 +7415,13 @@ extension on TranslationsVi {
 			'services.libraryFilter.modeHintWhitelist' => 'Đồng bộ chỉ các thư viện được kiểm tra dưới đây.',
 			'services.libraryFilter.libraries' => 'Thư viện',
 			'services.libraryFilter.noLibraries' => 'Không có thư viện',
+			'services.libraryFilter.modeDescription' => 'Chọn xem các thư viện được kiểm tra có bị chặn khỏi đồng bộ hoặc là thư viện duy nhất đồng bộ.',
+			'services.seerrDescription' => 'Kết nối với Seerr hoặc Overseerr để tìm kiếm tiêu đề và gửi yêu cầu phương tiện truyền thông.',
+			'services.trackerDescriptions.trakt' => 'Đồng bộ xem các tập và phim với tài khoản Trakt của bạn.',
+			'services.trackerDescriptions.mal' => 'Đồng bộ danh sách anime và xem tiến trình với MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Đồng bộ danh sách anime và xem tiến bộ với AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync xem phim, chương trình truyền hình và anime với Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Hiển thị xếp hạng và danh sách MDBList trong khuyến nghị và Khám phá.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Thêm máy chủ ${product}',
 			'addServer.serverUrls' => 'Server URL của bạn',
 			'addServer.serverUrlsHelper' => 'Nhiều URL được cho phép, tách biệt bởi commas.',
@@ -6980,8 +7436,6 @@ extension on TranslationsVi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Không thể truy cập máy chủ: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Đăng ký thất bại: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect thất bại: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Đăng ký với Plex',
 			'addServer.pinExpired' => 'PIN đã hết hạn trước khi đăng nhập. xin vui lòng thử lại.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Không đăng ký tài khoản: ${error}',
@@ -7135,6 +7589,9 @@ extension on TranslationsVi {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'trên',
 			'homeLayout.resetHeroButtonDescription' => 'Nó xoay khỏi thiết lập anh hùng của mỗi hàng và mang lại một banner xoay duy nhất ở phía trên, giống như trước khi hàng anh hùng tồn tại.',
+			'homeLayout.tapHeroCardDescription' => 'Chọn xem đánh hoặc chọn một thẻ Hero bắt đầu phát lại hay mở chi tiết của nó.',
+			'homeLayout.heroTapPlayDescription' => 'Bắt đầu mục được chọn ngay lập tức.',
+			'homeLayout.heroTapDetailsDescription' => 'Mở chi tiết của mục được chọn trước khi chọn một hành động.',
 			'platform.localNetworkPermission' => 'PlezyNG kết nối với máy chủ truyền thông và thiết bị phát lại trên mạng địa phương của bạn.',
 			'platform.locationPermission' => 'PlezyNG sử dụng quyền truy cập vị trí khi iOS yêu cầu nó để phát hiện mạng lưới địa phương của bạn và kết nối với máy chủ truyền thông của bạn.',
 			'platform.photoLibraryPermission' => 'Chọn hình ảnh từ thư viện ảnh của bạn để sử dụng như một công việc nghệ thuật phương tiện truyền thông.',
@@ -7147,8 +7604,12 @@ extension on TranslationsVi {
 			'fileSources.source' => 'Nguồn',
 			'fileSources.name' => 'Tên',
 			'fileSources.endpoint' => 'URL máy chủ',
+			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Nhập một máy chủ SMB và một thư mục chia sẻ.',
 			'fileSources.root' => 'Folder hoặc Prefix',
+			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
 			'fileSources.username' => 'Tên đăng nhập',
+			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
 			'fileSources.password' => 'Mật Khẩu',
 			'fileSources.token' => 'API Đánh giá',
 			'fileSources.accessKey' => 'Access Key ID',
@@ -7158,6 +7619,8 @@ extension on TranslationsVi {
 			'fileSources.clientId' => 'ID khách hàng OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (chỉ Google Desktop)',
 			'fileSources.allowHttp' => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy',
+			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
+			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.',
 			'fileSources.connect' => 'Kết nối',
 			'fileSources.cancel' => 'Hủy bỏ',
 			'fileSources.save' => 'Lưu',
@@ -7300,12 +7763,25 @@ extension on TranslationsVi {
 			'fileSources.useFiles' => 'Sử dụng file và sách',
 			'fileSources.cancelScan' => 'Đặt hủy scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Nhập một máy chủ SMB và một thư mục chia sẻ.',
-			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
-			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
-			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
-			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.',
+			'fileSources.offlineQuota' => 'Offline download giới hạn',
+			'fileSources.offlineQuotaHelp' => 'Thiết lập không gian tối đa được sử dụng bởi các bản sao ngoại tuyến, tệp nhập khẩu và tải xuống. Giảm giới hạn sẽ không loại bỏ các bản gốc hiện có.',
+			'fileSources.offlineStorageUsage' => 'Lưu trữ Offline',
+			'fileSources.reservedStorage' => 'Bảo Vệ',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Tải Queue',
+			'fileSources.downloadRunning' => 'tải xuống',
+			'fileSources.downloadQueued' => 'chờ đợi',
+			'fileSources.downloadPaused' => 'nghỉ ngơi',
+			'fileSources.downloadFailed' => 'Phải nghỉ hưu',
+			'fileSources.importing' => 'nhập khẩu',
+			'fileSources.importInterrupted' => 'nhập khẩu bị gián đoạn · xóa để làm rõ',
+			'fileSources.errorQuotaExceeded' => 'Giới hạn lưu trữ offline đã đạt được.Tăng giới hạn hoặc xóa bản sao tải xuống.',
+			'fileSources.errorStorageLow' => 'Không có đủ lưu trữ thiết bị miễn phí để giữ bảo tồn được bảo vệ.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG không thể kiểm tra lưu trữ thiết bị miễn phí, vì vậy việc viết đã dừng lại.',
+			'fileSources.removeDownloadJob' => 'xóa download',
+			'fileSources.downloadAlreadyComplete' => 'Tải xuống này đã hoàn thành trước khi nó có thể được xóa. mục bây giờ có sẵn offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Loại bỏ tải xuống này và loại bỏ bất kỳ dữ liệu được tải về một phần? vị trí và ghi chú của bạn sẽ ở lại.',
 			'lending.title' => 'Thư viện công cộng',
 			'lending.add' => 'Thêm một thư viện',
 			'lending.other' => 'Thư viện khác',
@@ -7407,6 +7883,12 @@ extension on TranslationsVi {
 			'audiobook.statusFinished' => 'Kết thúc',
 			'audiobook.goToTime' => 'Đi đến thời gian',
 			'audiobook.timeHelp' => 'Thời gian: phút: giây, hoặc phút: giây',
+			'audiobook.recoveryHelp' => 'Xuất một bản sao được mã hóa gần đây trước khi di chuyển hoặc sửa chữa dữ liệu đồng bộ. nhập khẩu kết hợp với trạng thái hiện tại; họ không bao giờ thay thế lịch sử đồng bộ địa phương. Giữ mã đồng bộ riêng biệt.',
+			'audiobook.recoveryExport' => 'Xuất khẩu file recovery mã hóa',
+			'audiobook.recoveryImport' => 'nhập file recovery mã hóa',
+			'audiobook.recoveryImportConfirm' => 'Kết hợp tệp phục hồi mã hóa này với các vị trí đọc và ghi chú hiện tại? Lịch sử hiện có sẽ được giữ lại. Thư viện chia sẻ và ID mục không bao gồm; thiết lập ID phù hợp trên mỗi thiết bị trước khi nhập khẩu.',
+			'audiobook.recoveryExported' => 'Tệp phục hồi mã hóa đã được lưu.',
+			'audiobook.recoveryImported' => 'Dữ liệu phục hồi kết hợp.',
 			'sourceSetup.savedCertificate' => 'Chứng chỉ máy chủ đã lưu',
 			'sourceSetup.nfsEndpointInvalid' => 'Nhập URL NFS, chẳng hạn nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Không tìm thấy máy chủ DLNA. Hãy nhập thủ công URL mô tả thiết bị.',
@@ -7494,8 +7976,6 @@ extension on TranslationsVi {
 			'sourceSetup.smbEncrypted' => 'Mã hóa SMB3 bật',
 			'sourceSetup.smbUnencrypted' => 'Mã hóa SMB3 tắt',
 			'sourceSetup.httpUnencrypted' => 'HTTP không mã hóa đường truyền',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kiểm tra bảo mật điểm cuối',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} là bắt buộc.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Nhập ${label} từ ${min} đến ${max}.',
@@ -7503,6 +7983,23 @@ extension on TranslationsVi {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Danh tính máy khách đã chọn: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Điểm đánh giá ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Đang tải phụ đề: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Cặp bài này',
+			'sourceSetup.sharedEntryPairHelp' => 'Nhập ID tương tự cho mục này trên mỗi thiết bị. Sử dụng một định dạng chia sẻ ổn định hoặc tạo một và sao chép nó vào mục phù hợp. tiến bộ cặp chỉ khi các loại tệp phiên bản, kích thước, và đơn đặt hàng tương ứng. Blank xóa bản đồ này.',
+			'sourceSetup.sharedEntryId' => 'chia sẻ item ID',
+			'sourceSetup.generateSharedEntryId' => 'Tạo ID mục chia sẻ',
+			'sourceSetup.sharedLibraryId' => 'ID thư viện chia sẻ (tùy chọn)',
+			'sourceSetup.sharedLibraryHelp' => 'Sử dụng ID tương tự trên các thiết bị mở cùng một thư viện. ID công cộng này giúp mang lại tiến bộ đọc và ghi chú qua các kết nối nguồn khác nhau; nó không phải là mật khẩu. Khi nhà cung cấp sử dụng ID mục khác nhau, cặp những mục từ màn hình chi tiết của họ.',
+			'sourceSetup.sharedLibraryInvalid' => 'Sử dụng 8-100 lá thư, số lượng, điểm, subscores hoặc hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Tạo một ID thư viện chia sẻ',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead yêu cầu',
+			'sourceSetup.nfsReadAheadHelp' => 'Đọc song song nhiều hơn có thể cải thiện khả năng thông qua trên một NAS nhanh hoặc mạng lưới. sử dụng 1 nếu máy chủ giới hạn các yêu cầu tương đương.',
+			'sourceSetup.nfsReadTest' => 'Đánh giá hiệu suất NFS',
+			'sourceSetup.nfsReadTestHelp' => 'Đọc lên đến 64 MiB từ tệp lớn nhất để đo kết nối NAS này.',
+			'sourceSetup.nfsQualificationResult' => 'NFS đọc đo lường',
+			'sourceSetup.nfsReadBytes' => 'Dữ liệu đọc',
+			'sourceSetup.nfsReadSpeed' => 'Tốc độ đo',
+			'sourceSetup.nfsReadRequests' => 'Đọc yêu cầu',
+			'sourceSetup.sharedEntryConflict' => 'ID mục được chia sẻ này đã được kết hợp với một mục khác trong thư viện này.',
 			'comics.fitHeight' => 'Vừa chiều cao',
 			'comics.readingMode' => 'Chế độ đọc',
 			'comics.paged' => 'Trang',
@@ -7577,6 +8074,15 @@ extension on TranslationsVi {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

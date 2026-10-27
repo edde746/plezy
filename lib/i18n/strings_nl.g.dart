@@ -177,6 +177,7 @@ class _Translations$appIcon$nl extends Translations$appIcon$en {
 	@override String get launcherHint => 'Het nieuwe icoon verschijnt op je beginscherm zodra je PlezyNG verlaat.';
 	@override String get tvLauncherHint => 'De nieuwe banner verschijnt zodra je PlezyNG verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.';
 	@override late final _Translations$appIcon$names$nl names = _Translations$appIcon$names$nl._(_root);
+	@override String get description => 'Kies de icon die wordt weergegeven door uw apparaat lancerer.De vooruitzichten tonen hoe elke optie eruit ziet.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$nl extends Translations$common$en {
 	@override String get cancel => 'Annuleren';
 	@override String get save => 'Opslaan';
 	@override String get close => 'Sluiten';
+	@override String get closeMiniPlayer => 'Kleine mini speler';
+	@override String get closeWorkspaceWindow => 'dichtbij venster';
+	@override String get returnToFullView => 'Terug naar Full View';
+	@override String get manageMediaSessions => 'Media Sessie beheer';
+	@override String get hideMediaSessions => 'Verborgen media sessies';
+	@override String get mediaSessions => 'Media Sessie';
+	@override String get mediaSessionsHint => 'Selecteer om een sessie naar voren te brengen. Park verbergt zijn raam maar houdt het open. Return opent het in volledige visie; dicht eindigt het.';
+	@override String get sessionInWorkspace => 'In de workspace';
+	@override String get sessionParked => 'Parkeren';
+	@override String get sessionFullscreen => 'Volledige scherm';
+	@override String get switchToNextWindow => 'Swap met het volgende raam';
+	@override String get moveWindow => 'Verplaats het raam';
+	@override String get finishMovingWindow => 'Beëindigen van bewegende ramen';
+	@override String get moveWindowHint => 'Lange druk en trek het raam om het te bewegen. Deze controle maakt ook de pijl-key beweging mogelijk.';
+	@override String get movingWindowHelp => 'Draai naar bewegen · Draai sleutels aanpassen · Enter Saves · Escape annuleren';
+	@override String get resizeWindow => 'Verwijder venster';
+	@override String get resizeWindowHint => 'Draag deze handleiding of gebruik de pijl sleutels om het raam te hersturen.';
+	@override String get workspaceWindowHint => 'Gebruik de bewegingscontrole of lange druk en trek om te bewegen.';
+	@override String get workspacePaneHint => 'Selecteer dit paneel om het te richten. Gebruik de fullscreen control om uit te breiden.';
+	@override String workspaceWindowLabel({required Object title}) => 'Sessie venster: ${title}';
+	@override String get workspaceTitleHint => 'Kies voor focus. Draai de titelbalk om te bewegen; gebruik de volledige schermknop om uit te breiden.';
+	@override String get moveToSessionTray => 'Verplaats naar Session Tray';
+	@override String get moveToSessionTrayHint => 'Keep deze sessie beschikbaar zonder het raam te tonen.';
+	@override String get closeSessionHint => 'Sluit dit venster en eindigt de sessie.';
+	@override String get sideBySideLayout => 'Switch naar side-by-side layout';
+	@override String get floatingWindows => 'Switch voor het vloeien van ramen';
 	@override String get clear => 'Wissen';
 	@override String get reset => 'Resetten';
 	@override String get later => 'Later';
@@ -678,6 +705,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie';
 	@override String get dvConversionDv81Description => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af';
 	@override String get dvConversionHevcStripDescription => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan';
+	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
+	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
+	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
+	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
+	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 	@override String get disableDolbyVision => 'Dolby Vision uitschakelen';
 	@override String get disableDolbyVisionDescription => 'Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig';
 	@override String get hdrSdrConversion => 'HDR-naar-SDR-conversie';
@@ -764,13 +798,81 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Kies hoe datums, getallen en maateenheden worden weergegeven.';
 	@override String get metadataLanguage => 'Taal van metadata';
 	@override String get metadataLanguageDescription => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.';
-	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
-	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
-	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
-	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
-	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
+	@override String get enterFullscreenOnPlaybackStart => 'Volledige scherm opnemen wanneer de playback begint';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Open desktop video op volle scherm wanneer de playback begint';
+	@override String get extendVideoIntoDisplayCutout => 'Video uitbreiden naar display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Laat full-screen video gebruik maken van de camera cutout op Android telefoons';
+	@override String get languageDescription => 'Selecteer de taal die wordt gebruikt voor PlezyNG-controles en berichten.Storage system tracks your device language.';
+	@override String get themeDescription => 'Kies de kleuren en contrast die in de hele app worden gebruikt.';
+	@override String get libraryDensityDescription => 'Verander hoeveel bibliotheekkaarten in elke rij passen.';
+	@override String get displayScaleDescription => 'Verwijder de interface op deze auto-display zonder de tekstgrootte van uw apparaat te veranderen.';
+	@override String get themeSongVolumeDescription => 'Stel het volume van thema liedjes in relatie tot andere audio.';
+	@override String get viewModeDescription => 'Kies of bibliotheek items verschijnen als poster in een netwerk of als een compacte lijst.';
+	@override String get gridViewDescription => 'Ordineer bibliotheek items in rijen en kolommen van posters.';
+	@override String get listViewDescription => 'Toon bibliotheek items in een verticale lijst met meer tekst per item.';
+	@override String get gridSpacingDescription => 'Stel de kloof tussen posters in bibliotheeknetwerken.';
+	@override String get gridSpacingTightDescription => 'Voeg meer posters over het scherm aan met kleinere gaten.';
+	@override String get gridSpacingNormalDescription => 'Gebruik de standaardbreek tussen posters.';
+	@override String get gridSpacingSpaciousDescription => 'Voeg grotere vlekken toe tussen posters voor meer scheiding.';
+	@override String get episodePosterModeDescription => 'Kies welke kunstwerk op de episode kaarten verschijnt.';
+	@override String get seriesPosterDescription => 'Gebruik de serie poster voor elke aflevering.';
+	@override String get seasonPosterDescription => 'Gebruik de seizoensposter voor elke aflevering wanneer beschikbaar.';
+	@override String get episodeThumbnailDescription => 'Gebruik een frame van de aflevering wanneer beschikbaar.';
+	@override String get continueWatchingActionDescription => 'Kies wat er gebeurt wanneer u een Continue Watching-kaart activeert.';
+	@override String get continueWatchingPlayDescription => 'Begin de film of aflevering meteen.';
+	@override String get continueWatchingDetailsDescription => 'Open eerst de titelpagina zodat u details kunt beoordelen en een actie kunt kiezen.';
+	@override String get episodeActionDescription => 'Kies wat er gebeurt wanneer u een episode kaart activeert.';
+	@override String get episodePlayDescription => 'Begin de aflevering meteen.';
+	@override String get episodeDetailsDescription => 'Open de afleveringspagina vóór de playback.';
+	@override String get contentScreensaverDelayDescription => 'Kies hoe lang PlezyNG wacht zonder invoer voordat u kunstwerken toont.';
+	@override String get continueWatchingRowSizeDescription => 'Kies hoe groot de kaarten in de Continue Watching-lijn zijn.';
+	@override String get rowSizeCompactDescription => 'Toon kleinere kaarten zodat meer items in de rij passen.';
+	@override String get rowSizeStandardDescription => 'Gebruik de standaard kaartgrootte.';
+	@override String get rowSizeLargeDescription => 'Toon grotere kaarten met meer kunstwerk detail.';
+	@override String get visualEffectsDescription => 'Kies de animatie en kunstwerk effecten budget voor dit apparaat.';
+	@override String get visualEffectsFullDescription => 'Gebruik de volledige animatie en kunstwerk effecten op elk apparaat.';
+	@override String get startupSectionDescription => 'Kies welke sectie wordt geopend wanneer PlezyNG begint.';
+	@override late final _Translations$settings$startupSectionOptions$nl startupSectionOptions = _Translations$settings$startupSectionOptions$nl._(_root);
+	@override String get smallSkipDurationDescription => 'Stel de afstand bewegen door de korte achterweg en vooruit zoeken controles.';
+	@override String get largeSkipDurationDescription => 'Stel de afstand bewegen door de lange achterweg en vooruit zoeken controles.';
+	@override String get rewindOnResumeDescription => 'Move playback terug met dit bedrag bij het opnieuw maken van een video.';
+	@override String get defaultSleepTimerDescription => 'Stel de oorspronkelijke duur toe die wordt gebruikt bij het starten van de slaaptijmer.';
+	@override String get playNextCountdownDescription => 'Wacht dit lang voordat de volgende episode begint. Set op 0 om onmiddellijk te beginnen.';
+	@override String get autoSkipDelaySettingDescription => 'Dit geldt wanneer een intro, credit of advertentie wordt ingesteld om automatisch te schakelen.';
+	@override String get downmixCenterBoostDescription => 'Verhoog de dialoog in het centraal kanaal wanneer surround audio wordt gemengd naar beneden op stereo.';
+	@override String get displaySwitchDelayDescription => 'Wacht voordat u het displaymodus wijzigt, zodat de tv of ontvanger zijn vorige schakelaar kan beëindigen.';
+	@override String get playerBackendDescription => 'Selecteer welke playback-machine video op dit apparaat decodeert en rendert.';
+	@override String get exoPlayerDescription => 'Gebruik Android\'s native Media3-gebaseerde speler en ondersteunde hardware paden.';
+	@override String get mpvDescription => 'Gebruik mpv, die extra playback, subtitle en video-verwerking controles blootstelt.';
+	@override String get scopeOffDescription => 'Behoud wijzigingen voor de huidige playback-sessie alleen.';
+	@override String get scopeGlobalDescription => 'Hergebruik dezelfde waarde voor elke bibliotheek en titel.';
+	@override String get scopeLibraryDescription => 'Vergeet een aparte waarde voor elke bibliotheek.';
+	@override String get scopeTitleDescription => 'Vergeet een afzonderlijke waarde voor elke show of film.';
+	@override String get specialsOrderingServerDescription => 'Houd de aflevering bestelling geleverd door de media server.';
+	@override String get specialsOrderingAirDateDescription => 'Plaats bijzondere onder regelmatige episodes op hun luchtdatum.';
+	@override String get specialsOrderingLastDescription => 'Plaats elk speciaal na de reguliere seizoenen.';
+	@override String get skipIntroModeDescription => 'Kies of de intro markers normaal spelen, een skip-knop weergeven of automatisch skiën.';
+	@override String get skipCreditsModeDescription => 'Kies of de credits normaal spelen, een skip-knop weergeven of automatisch skiën.';
+	@override String get skipAdsModeDescription => 'Selecteer of de geïdentificeerde advertenties normaal spelen, een skip-knop weergeven of automatisch skip.';
+	@override String get playbackBufferAutoDescription => 'Laat de actieve speler zijn normale buffergrootte kiezen.';
+	@override String get playbackBufferLargeDescription => 'Houd meer media klaar voor playback; dit gebruikt meer geheugen.';
+	@override String get playbackBufferExtraLargeDescription => 'Houd de grootste leesbuffer; dit maakt gebruik van het meeste geheugen.';
+	@override String get defaultQualityDescription => 'Set de standaard video-resolutie en bitrate plafond voor stromen die de server transcodes.';
+	@override String get cellularQualityDescription => 'Override de standaardkwaliteit wanneer het apparaat een cellulaire verbinding gebruikt.';
+	@override String get remoteQualityDescription => 'Override de standaardkwaliteit bij het verbinden met een server via een afstandsverbinding.';
+	@override String get qualityPresetOriginalDescription => 'Speel de bron op zijn beschikbare kwaliteit zonder dat de server vraagt om deze te transcoderen.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Vraag de server voor een omgekeerde stroom met behulp van de bovenstaande resolutie en bitrate.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Gebruik de geselecteerde kwaliteit in standaardkwaliteit.';
+	@override String get musicQualityDescription => 'Stel de maximale audio-bitrate die wordt gevraagd van de server; Original behoudt de bronstromen.';
+	@override String get musicQualityOriginalDescription => 'Speel de bron audio zonder een bitrate-capped transcode.';
+	@override String get musicQualityTranscodeOptionDescription => 'Vraag een servertranscode gecapideerd in de buurt van de bovenstaande bitrate; de werkelijke output kan variëren.';
+	@override String get maxVolumeInputLabel => 'Maximale hoeveelheid (%)';
+	@override String get checkForUpdatesDescription => 'Controleer nu of een nieuwere versie van PlezyNG beschikbaar is.';
+	@override String get appearanceDescription => 'Kies de app thema en aanpassen van bibliotheek kaarten, Home rijen en navigatie.';
+	@override String get prerollLibraryDescription => 'Kies de bibliotheek die de clips bevat die beschikbaar zijn als filmpre-rolls.';
+	@override String get prerollSelectionDescription => 'Kies welke clips uit de geselecteerde bibliotheek kan worden gespeeld vóór films.';
+	@override String get contentScreensaverDelayOptionDescription => 'Wacht dit vele minuten zonder input voordat u screensaver kunstwerk toont.';
+	@override String get videoCodecOptionDescription => 'Toegeeft direct afspelen voor deze codec wanneer ondersteund. Unchecked codecs worden gecodeerd door de media server.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$nl extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => 'Nog ${minutes} min';
 	@override String get previewSwitch => 'Automatisch afspelen';
 	@override String get previewMutedText => 'Secundaire tekst ziet er zo uit';
+	@override String get themeSystemDescription => 'Volg het uiterlijk van uw apparaat en schakelt u automatisch tussen licht en duisternis.';
+	@override String get themeLightDescription => 'Gebruik een heldere achtergrond met donkere tekst.';
+	@override String get themeDarkDescription => 'Gebruik een donkere achtergrond met licht tekst.';
+	@override String get themeOledDescription => 'Gebruik nabij zwarte oppervlakken die licht op OLED-screens verminderen.';
+	@override String get themeEmberDescription => 'Gebruik warm rood en amber accent kleuren.';
+	@override String get themeGlacierDescription => 'Gebruik koude blauwe accent kleuren.';
+	@override String get themeForestDescription => 'Gebruik gemuteerde groene en natuurlijke accent kleuren.';
+	@override String get themePlumDescription => 'Gebruik violet en plum accent kleuren.';
+	@override String get themePaperDescription => 'Gebruik warme papieren oppervlakken en ink geïnspireerde kleuren.';
+	@override String get themeCustomDescription => 'Gebruik de kleurpalet die je hebt gecreëerd in de aangepaste thema-editor.';
+	@override String get editorDescription => 'Kies een paletkleur, aanpassen van de hoek, verzadiging, helderheid of onzuiverheid en bekijk de voorbeeldupdate voordat u bespaart.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$nl extends Translations$accessibility$en {
 	@override String get largeTargets => 'Grotere touch doelen';
 	@override String get largeTargetsHint => 'Geef gedeelde controles meer ruimte voor touch en assistieve navigatie.';
 	@override String get navigationHint => 'Gebruik Tab en Shift+Tab om tussen bedieningselementen te bewegen, Enter of de spatiebalk om ze te activeren en Escape of Terug om te sluiten. Als een boek geopend is, zijn zoom en leesvoorkeuren beschikbaar.';
+	@override String get textSizeDescription => 'Scale interface tekst in PlezyNG naast de systeem-text-size instelling van uw apparaat.';
+	@override String get boldTextHint => 'Gebruik een zwaarder gewicht voor interface labels en berichten om ze gemakkelijker te onderscheiden.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld';
 	@override String get subtitleUnavailableFallback => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels';
 	@override String get pipButton => 'Beeld-in-beeldmodus';
+	@override String get openMiniPlayer => 'Open mini speler';
+	@override String get returnToFullPlayer => 'Terug naar volle speler';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get ambientLighting => 'Omgevingsverlichting';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$nl extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Renderresolutie';
 	@override String get renderResolutionScreen => 'Schermresolutie';
 	@override String get renderResolutionVideo => 'Videoresolutie';
+	@override String get fontSizeDescription => 'Stel de subtitle-tekstgrootte op dit apparaat vast.';
+	@override String get textColorDescription => 'Selecteer de kleur die wordt gebruikt voor subtitle tekst.';
+	@override String get borderSizeDescription => 'Stel de dikte van de outline rond subtitle tekst.';
+	@override String get borderColorDescription => 'Selecteer de kleur die wordt gebruikt voor de subtitle outline.';
+	@override String get backgroundColorDescription => 'Selecteer de kleur achter subtitle tekst.';
+	@override String get backgroundOpacityDescription => 'Stel hoe transparant de ondertitel achtergrond is: 0% is duidelijk en 100% solide.';
+	@override String get positionDescription => 'Move subtitels vertically. 0% is de top van de video en 100% is de onderkant.';
+	@override String get assOverrideDescription => 'Kies of de speler volgt, aanpast, vervangt of verwijdert styling ingebouwd in ASS subtitels.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$nl assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$nl._(_root);
+	@override String get renderResolutionDescription => 'Kies de resolutie die wordt gebruikt om afbeeldingen en ASS subtitels te rasteriseren.Lower Android scales kunnen rendering werk verminderen, maar lijken zachter.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$nl renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$nl._(_root);
+	@override String get boldDescription => 'Schakel subtitelstekst in een zwaarder gewicht.';
+	@override String get italicDescription => 'Schrijf subtitels in het Italiaans.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$nl extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nl._(_root);
 	@override String get mediaReviewsVisibility => 'Beoordelingen en recensies';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$nl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$nl._(_root);
+	@override String get preferredAudioLanguageDescription => 'Prefereren audio tracks in deze taal wanneer de server of speler automatisch een track selecteert.';
+	@override String get preferredSubtitleLanguageDescription => 'Prefereren ondertitels in deze taal wanneer subtitels automatisch worden geselecteerd.';
+	@override String get subtitleAccessibilityDescription => 'Selecteer of SDH-capties worden gepresenteerd of vereist tijdens de automatische selectie van subtitels.';
+	@override String get forcedSubtitleDescription => 'Selecteer of gedwongen subtitels worden gepresenteerd of vereist tijdens de automatische selectie.';
+	@override String get watchedIndicatorDescription => 'Kies welke media-types een waargenomen checkmarker ontvangen in de serverinterface.';
+	@override String get mediaReviewsVisibilityDescription => 'Kies welke publiek en kritische ratings de server op mediapagina\'s toont.';
+	@override String get subtitleModeDescription => 'Kies wanneer subtitels automatisch worden geactiveerd voor dit serveraccount.';
+	@override String get hubDescription => 'Deze voorkeuren worden op uw media-server-account opgeslagen en kunnen ook van toepassing zijn op andere klanten.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-basislaag';
 	@override String get dvRouteBaseLayerSdr => 'SDR-basislaag';
 	@override String get dvRouteReshaped => 'RPU-reshaping (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Experimentele P7 FEL grafiek (niet gekwalificeerd)';
 	@override String get p7Conversion => 'P7-conv.';
 	@override String get sampleRate => 'Samplefrequentie';
 	@override String get pixelFormat => 'Pixelformaat';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$nl extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Kan externe speler niet openen';
 	@override String appNotInstalled({required Object name}) => '${name} is niet geïnstalleerd';
 	@override String get playInExternalPlayer => 'Afspelen in externe speler';
+	@override String get description => 'Kies een andere app om video\'s in te openen. beschikbare spelers zijn afhankelijk van uw apparaat en geïnstalleerde apps.';
+	@override String get systemDefaultDescription => 'Laat het besturingssysteem de video openen met zijn standaard app.';
+	@override String playerOptionDescription({required Object player}) => 'Open video\'s met ${player}.';
+	@override String get playerNameDescription => 'Het label dat wordt weergegeven in de spelerlijst.';
+	@override String get playerPackageDescription => 'Voer de Android-pakketnaam van de spelerapp in, zoals com.example.player.';
+	@override String get playerCommandDescription => 'Voer de geïnstalleerde spelercommand of uitvoerbare route voor dit apparaat in.';
+	@override String get playerUrlSchemeDescription => 'Voer het URL-schema en de optionele URL-template in die wordt gebruikt om de speler te lanceren.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$nl extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$nl oauthProxy = _Translations$services$oauthProxy$nl._(_root);
 	@override late final _Translations$services$pendingAuth$nl pendingAuth = _Translations$services$pendingAuth$nl._(_root);
 	@override late final _Translations$services$libraryFilter$nl libraryFilter = _Translations$services$libraryFilter$nl._(_root);
+	@override String get seerrDescription => 'Neem verbinding met Seerr of Overseerr om titels te zoeken en mediaverzoeken in te dienen.';
+	@override late final _Translations$services$trackerDescriptions$nl trackerDescriptions = _Translations$services$trackerDescriptions$nl._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$nl extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'op';
 	@override String get resetHeroButtonDescription => 'Het schakelt de heldinstelling van elke rij uit en brengt de single rotating banner terug naar de top, net als voordat de held-lijnen bestaan.';
+	@override String get tapHeroCardDescription => 'Selecteer of het tappen of selecteren van een Hero-kaart de playback begint of de details ervan opent.';
+	@override String get heroTapPlayDescription => 'Start het geselecteerde item meteen.';
+	@override String get heroTapDetailsDescription => 'Open de details van het geselecteerde item voordat u een actie kiest.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get source => 'Bron';
 	@override String get name => 'naam';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
 	@override String get root => 'Folders of prefix';
+	@override String get smbFolderHelp => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.';
 	@override String get username => 'Gebruikersnaam';
+	@override String get smbDomain => 'Domein (optioneel)';
 	@override String get password => 'Wachtwoord';
 	@override String get token => 'API Token';
 	@override String get accessKey => 'Toegang tot de sleutel ID';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klant ID';
 	@override String get clientSecret => 'OAuth client secret (de desktop Google alleen)';
 	@override String get allowHttp => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk';
+	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
+	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.';
 	@override String get connect => 'Verbinden';
 	@override String get cancel => 'Annuleren';
 	@override String get save => 'Opslaan';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get useFiles => 'Gebruik bestanden en boeken';
 	@override String get cancelScan => 'Scan af te sluiten';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
-	@override String get smbFolderHelp => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.';
-	@override String get smbDomain => 'Domein (optioneel)';
-	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
-	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.';
+	@override String get offlineQuota => 'Offline download beperking';
+	@override String get offlineQuotaHelp => 'Stel de maximale ruimte die wordt gebruikt door offline kopieën, geïmporteerde bestanden en gekleurde downloads. Het verlagen van de limiet verwijdert niet bestaande copies.';
+	@override String get offlineStorageUsage => 'Offline opslag';
+	@override String get reservedStorage => 'Reserveerd';
+	@override String get downloadQueue => 'Download van Queue';
+	@override String get downloadRunning => 'downloaden';
+	@override String get downloadQueued => 'wachten';
+	@override String get downloadPaused => 'Pauze';
+	@override String get downloadFailed => 'Reeds terugkeren';
+	@override String get importing => 'Importeren';
+	@override String get importInterrupted => 'Import onderbroken · verwijderen naar schoonmaken';
+	@override String get errorQuotaExceeded => 'De offline opslaggrens is bereikt. Verhoog de limiet of verwijder een gedownload kopie.';
+	@override String get errorStorageLow => 'Er is niet genoeg gratis opslag voor het behoud van de beschermde reserve.';
+	@override String get errorStorageUnavailable => 'PlezyNG kon de gratis opslag van het apparaat niet controleren, dus het schrijven werd gestopt.';
+	@override String get removeDownloadJob => 'verwijderen download';
+	@override String get downloadAlreadyComplete => 'Deze download is voltooid voordat het kan worden verwijderd. het item is nu offline beschikbaar.';
+	@override String get confirmRemoveDownloadJob => 'Verwijder deze download en verwijder alle gedeeltelijk gedownload gegevens? uw positie en notities blijven.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$nl extends Translations$audiobook$en {
 	@override String get statusFinished => 'Afgerond';
 	@override String get goToTime => 'Ga naar de tijd';
 	@override String get timeHelp => 'uur: minuten: seconden of minuten: seconden';
+	@override String get recoveryHelp => 'Exporteer een recente versleutelde kopie voor het verplaatsen of repareren van synchronisatiegegevens.Importeren verschijnt met de huidige toestand; ze vervangen nooit de lokale sync-geschiedenis.';
+	@override String get recoveryExport => 'Export versleutelde herstel bestanden';
+	@override String get recoveryImport => 'Geïmporteerde versleutelde herstelbestanden';
+	@override String get recoveryImportConfirm => 'Combineer deze versleutelde herstelbestand met de huidige leesposities en noten? bestaande geschiedenis zal worden bewaard. gedeelde bibliotheek en item-ID\'s zijn niet opgenomen; set matching ID\'s on each device before importing.';
+	@override String get recoveryExported => 'Encrypt herstel bestand is opgeslagen.';
+	@override String get recoveryImported => 'Recovery data samengesteld.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$nl extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Geselecteerde clientidentiteit: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Beoordeling ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Ondertitel downloaden: ${title}';
+	@override String get sharedEntryPair => 'Paar dit item';
+	@override String get sharedEntryPairHelp => 'Voer hetzelfde ID voor dit item in op elk apparaat. Gebruik een stabiele gedeelde identificator of genereer een en kopieer het naar het matching item. Progress paarden alleen wanneer de editie bestandtypes, grootte en order passen. Blank verwijdert deze mappen.';
+	@override String get sharedEntryId => 'gedeelde item ID';
+	@override String get generateSharedEntryId => 'Het genereren van gedeelde item ID';
+	@override String get sharedLibraryId => 'gedeelde bibliotheek ID (optional)';
+	@override String get sharedLibraryHelp => 'Gebruik hetzelfde ID op apparaten die dezelfde bibliotheek openen. Dit publieke ID helpt om de leesprocedure en notities over verschillende bronverbindingen te brengen; het is geen wachtwoord. Wanneer leveranciers verschillende item-ID\'s gebruiken, koppelen deze items uit hun detailscherm.';
+	@override String get sharedLibraryInvalid => 'Gebruik 8-100 letters, cijfers, punten, ondertekeningen of hyphens.';
+	@override String get generateSharedLibraryId => 'Een gedeelde bibliotheek ID genereren';
+	@override String get nfsReadAhead => 'NFS read-ahead verzoeken';
+	@override String get nfsReadAheadHelp => 'Meer parallelle lezingen kunnen de doorvoer op een snelle NAS of netwerk verbeteren. gebruik 1 als de server concurrerende aanvragen beperkt.';
+	@override String get nfsReadTest => 'NFS lees prestaties';
+	@override String get nfsReadTestHelp => 'Het leest tot 64 MiB van de grootste bestand om deze NAS-verbinding te meten.';
+	@override String get nfsQualificationResult => 'NFS lezen meting';
+	@override String get nfsReadBytes => 'Data lezen';
+	@override String get nfsReadSpeed => 'gemeten snelheid';
+	@override String get nfsReadRequests => 'Lees verzoeken';
+	@override String get sharedEntryConflict => 'Deze gedeelde item ID is al gepaard met een ander item in deze bibliotheek.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$nl extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$nl extends Translations$common$mediaKind$en
 	@override String get clip => 'Clip';
 	@override String get photo => 'Foto';
 	@override String get folder => 'Map';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$nl extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Open aanbevelingen en items van aangesloten ontdekkingsbronnen.';
+	@override String get libraries => 'Open uw verbonden media bibliotheek.';
+	@override String get liveTv => 'Open Live TV wanneer een server het aanbiedt; anders valt de start-up terug naar Home.';
+	@override String get search => 'Open media zoeken.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$nl extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$nl extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Houd de lettertypen, kleuren, grootte en plaatsen geschreven in het subtitlebestand.';
+	@override String get yes => 'Laat de subtitels van de speler stijl-instellingen aanpassen om ASS subtitles aan te passen.';
+	@override String get scale => 'Gebruik de spelerstyling en schaal ingebouwde grootte om de video-dimensies aan te passen.';
+	@override String get force => 'Vervang ingebouwde ASS stijlen met de subtitelstijl van de speler.';
+	@override String get strip => 'Verwijder ingebouwde ASS-formaat en maak de subtitle tekst duidelijk.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$nl extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render aan de volledige oppervlakteoplossing voor het scherpste resultaat.';
+	@override String get video => 'Render met behulp van de video-resolutie als referentie, die werk op high-resolution displays kan verminderen.';
+	@override String get threeQuarter => 'Render op 75% van de displayoppervlakkige resolutie voor een bescheiden prestatiebesparing.';
+	@override String get half => 'Render op 50% van de displayoppervlakkige resolutie om het werk te verminderen, met zachte randen.';
+	@override String get third => 'Render op een derde van de displayoppervlakkige resolutie om het werk te verminderen, met zachte randen.';
+	@override String get quarter => 'Render op een kwart van de displayoppervlakte resolutie om werk te verminderen, met het zachtste resultaat.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$nl extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$nl extends T
 	@override String get preferSdh => 'Voorkeur voor SDH-ondertitels';
 	@override String get onlySdh => 'Alleen SDH-ondertitels';
 	@override String get onlyNonSdh => 'Alleen niet-SDH-ondertitels';
+	@override String get preferNonSdhDescription => 'Prefereren standaard subtitels wanneer zowel de standaard- als SDH-versies beschikbaar zijn.';
+	@override String get preferSdhDescription => 'Prefereren SDH-subtitels wanneer beschikbaar, maar toestaan standaard subtitels als een fallback.';
+	@override String get onlySdhDescription => 'Gebruik SDH-subtitels alleen; valt niet terug naar standaard subtitels.';
+	@override String get onlyNonSdhDescription => 'Gebruik alleen standaard subtitels; sluit SDH-subtitels uit.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$nl extends Translat
 	@override String get preferForced => 'Voorkeur voor geforceerde ondertitels';
 	@override String get onlyForced => 'Alleen geforceerde ondertitels';
 	@override String get onlyNonForced => 'Alleen niet-geforceerde ondertitels';
+	@override String get preferNonForcedDescription => 'Prefereren regelmatige ondertitels, maar toestaan gedwongen tracks als een fallback.';
+	@override String get preferForcedDescription => 'Prefereren gedwongen tracks wanneer beschikbaar, maar toelaten regelmatige subtitels als een fallback.';
+	@override String get onlyForcedDescription => 'Gebruik alleen tracks aangeduid als gedwongen.';
+	@override String get onlyNonForcedDescription => 'Verwijder tracks als gedwongen.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$nl extends Transl
 	@override String get moviesAndShows => 'Films en tv-series';
 	@override String get movies => 'Alleen films';
 	@override String get shows => 'Alleen tv-series';
+	@override String get noneDescription => 'Zorg niet voor waargenomen checkmarken.';
+	@override String get moviesAndShowsDescription => 'Show watched checkmarks voor films en tv shows.';
+	@override String get moviesDescription => 'Show watched checkmarks for films alleen.';
+	@override String get showsDescription => 'Show watched checkmarks voor tv shows alleen.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$nl extends Translatio
 	@override String get usersOnly => 'Alleen gebruikers';
 	@override String get criticsOnly => 'Alleen critici';
 	@override String get nobody => 'Verborgen';
+	@override String get usersAndCriticsDescription => 'Zie zowel gebruikersbeoordelingen als kritische beoordelingen.';
+	@override String get usersOnlyDescription => 'Bekijk de beoordelingen en reviews die door gebruikers zijn ingediend.';
+	@override String get criticsOnlyDescription => 'Toon kritische ratings en beoordelingen.';
+	@override String get nobodyDescription => 'Verborgen ratings en beoordelingen.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$nl extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.';
 	@override String get libraries => 'Bibliotheken';
 	@override String get noLibraries => 'Geen bibliotheken beschikbaar';
+	@override String get modeDescription => 'Kies of de gecontroleerde bibliotheken worden geblokkeerd van synchronisatie of de enige bibliotheek zijn die synchroon maakt.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$nl extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Synchroniseren bekeken episodes en films met uw Trakt-account.';
+	@override String get mal => 'Synchroniseren anime lijsten en bekijken vooruitgang met MyAnimeList.';
+	@override String get anilist => 'Sync anime lijsten en kijk vooruitgang met AniList.';
+	@override String get simkl => 'Sync zag films, tv-shows en anime met Simkl.';
+	@override String get mdblist => 'MDBList ratings en lijsten weergeven in aanbevelingen en verkennen.';
 }
 
 /// The flat map containing all translations for locale <nl>.
@@ -4481,6 +4754,7 @@ extension on TranslationsNl {
 			'appIcon.names.strata' => 'Lagen',
 			'appIcon.names.facet' => 'Facet',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Kies de icon die wordt weergegeven door uw apparaat lancerer.De vooruitzichten tonen hoe elke optie eruit ziet.',
 			'auth.signInWithPlex' => 'Inloggen met Plex',
 			'auth.showQRCode' => 'Toon QR-code',
 			'auth.authenticate' => 'Authenticeren',
@@ -4502,6 +4776,32 @@ extension on TranslationsNl {
 			'common.cancel' => 'Annuleren',
 			'common.save' => 'Opslaan',
 			'common.close' => 'Sluiten',
+			'common.closeMiniPlayer' => 'Kleine mini speler',
+			'common.closeWorkspaceWindow' => 'dichtbij venster',
+			'common.returnToFullView' => 'Terug naar Full View',
+			'common.manageMediaSessions' => 'Media Sessie beheer',
+			'common.hideMediaSessions' => 'Verborgen media sessies',
+			'common.mediaSessions' => 'Media Sessie',
+			'common.mediaSessionsHint' => 'Selecteer om een sessie naar voren te brengen. Park verbergt zijn raam maar houdt het open. Return opent het in volledige visie; dicht eindigt het.',
+			'common.sessionInWorkspace' => 'In de workspace',
+			'common.sessionParked' => 'Parkeren',
+			'common.sessionFullscreen' => 'Volledige scherm',
+			'common.switchToNextWindow' => 'Swap met het volgende raam',
+			'common.moveWindow' => 'Verplaats het raam',
+			'common.finishMovingWindow' => 'Beëindigen van bewegende ramen',
+			'common.moveWindowHint' => 'Lange druk en trek het raam om het te bewegen. Deze controle maakt ook de pijl-key beweging mogelijk.',
+			'common.movingWindowHelp' => 'Draai naar bewegen · Draai sleutels aanpassen · Enter Saves · Escape annuleren',
+			'common.resizeWindow' => 'Verwijder venster',
+			'common.resizeWindowHint' => 'Draag deze handleiding of gebruik de pijl sleutels om het raam te hersturen.',
+			'common.workspaceWindowHint' => 'Gebruik de bewegingscontrole of lange druk en trek om te bewegen.',
+			'common.workspacePaneHint' => 'Selecteer dit paneel om het te richten. Gebruik de fullscreen control om uit te breiden.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Sessie venster: ${title}',
+			'common.workspaceTitleHint' => 'Kies voor focus. Draai de titelbalk om te bewegen; gebruik de volledige schermknop om uit te breiden.',
+			'common.moveToSessionTray' => 'Verplaats naar Session Tray',
+			'common.moveToSessionTrayHint' => 'Keep deze sessie beschikbaar zonder het raam te tonen.',
+			'common.closeSessionHint' => 'Sluit dit venster en eindigt de sessie.',
+			'common.sideBySideLayout' => 'Switch naar side-by-side layout',
+			'common.floatingWindows' => 'Switch voor het vloeien van ramen',
 			'common.clear' => 'Wissen',
 			'common.reset' => 'Resetten',
 			'common.later' => 'Later',
@@ -4919,6 +5219,8 @@ extension on TranslationsNl {
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionApple' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. Op iOS, iPadOS en tvOS 26 of nieuwer worden TrueHD Atmos en DTS:X als ruimtelijke audio afgespeeld. Andere DTS- en TrueHD-sporen worden als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
 			'settings.audioChannelLimit' => 'Audiokanalen',
@@ -4945,9 +5247,14 @@ extension on TranslationsNl {
 			'settings.dvConversionNativeDescription' => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie',
 			'settings.dvConversionDv81Description' => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af',
 			'settings.dvConversionHevcStripDescription' => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan',
+			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
+			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
+			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
+			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
+			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
 			'settings.disableDolbyVision' => 'Dolby Vision uitschakelen',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig',
 			'settings.hdrSdrConversion' => 'HDR-naar-SDR-conversie',
 			'settings.hdrSdrConversionDescription' => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.',
@@ -5033,13 +5340,84 @@ extension on TranslationsNl {
 			'settings.regionFormatDescription' => 'Kies hoe datums, getallen en maateenheden worden weergegeven.',
 			'settings.metadataLanguage' => 'Taal van metadata',
 			'settings.metadataLanguageDescription' => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.',
-			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
-			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
-			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
-			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
-			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Volledige scherm opnemen wanneer de playback begint',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Open desktop video op volle scherm wanneer de playback begint',
+			'settings.extendVideoIntoDisplayCutout' => 'Video uitbreiden naar display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Laat full-screen video gebruik maken van de camera cutout op Android telefoons',
+			'settings.languageDescription' => 'Selecteer de taal die wordt gebruikt voor PlezyNG-controles en berichten.Storage system tracks your device language.',
+			'settings.themeDescription' => 'Kies de kleuren en contrast die in de hele app worden gebruikt.',
+			'settings.libraryDensityDescription' => 'Verander hoeveel bibliotheekkaarten in elke rij passen.',
+			'settings.displayScaleDescription' => 'Verwijder de interface op deze auto-display zonder de tekstgrootte van uw apparaat te veranderen.',
+			'settings.themeSongVolumeDescription' => 'Stel het volume van thema liedjes in relatie tot andere audio.',
+			'settings.viewModeDescription' => 'Kies of bibliotheek items verschijnen als poster in een netwerk of als een compacte lijst.',
+			'settings.gridViewDescription' => 'Ordineer bibliotheek items in rijen en kolommen van posters.',
+			'settings.listViewDescription' => 'Toon bibliotheek items in een verticale lijst met meer tekst per item.',
+			'settings.gridSpacingDescription' => 'Stel de kloof tussen posters in bibliotheeknetwerken.',
+			'settings.gridSpacingTightDescription' => 'Voeg meer posters over het scherm aan met kleinere gaten.',
+			'settings.gridSpacingNormalDescription' => 'Gebruik de standaardbreek tussen posters.',
+			'settings.gridSpacingSpaciousDescription' => 'Voeg grotere vlekken toe tussen posters voor meer scheiding.',
+			'settings.episodePosterModeDescription' => 'Kies welke kunstwerk op de episode kaarten verschijnt.',
+			'settings.seriesPosterDescription' => 'Gebruik de serie poster voor elke aflevering.',
+			'settings.seasonPosterDescription' => 'Gebruik de seizoensposter voor elke aflevering wanneer beschikbaar.',
+			'settings.episodeThumbnailDescription' => 'Gebruik een frame van de aflevering wanneer beschikbaar.',
+			'settings.continueWatchingActionDescription' => 'Kies wat er gebeurt wanneer u een Continue Watching-kaart activeert.',
+			'settings.continueWatchingPlayDescription' => 'Begin de film of aflevering meteen.',
+			'settings.continueWatchingDetailsDescription' => 'Open eerst de titelpagina zodat u details kunt beoordelen en een actie kunt kiezen.',
+			'settings.episodeActionDescription' => 'Kies wat er gebeurt wanneer u een episode kaart activeert.',
+			'settings.episodePlayDescription' => 'Begin de aflevering meteen.',
+			'settings.episodeDetailsDescription' => 'Open de afleveringspagina vóór de playback.',
+			'settings.contentScreensaverDelayDescription' => 'Kies hoe lang PlezyNG wacht zonder invoer voordat u kunstwerken toont.',
+			'settings.continueWatchingRowSizeDescription' => 'Kies hoe groot de kaarten in de Continue Watching-lijn zijn.',
+			'settings.rowSizeCompactDescription' => 'Toon kleinere kaarten zodat meer items in de rij passen.',
+			'settings.rowSizeStandardDescription' => 'Gebruik de standaard kaartgrootte.',
+			'settings.rowSizeLargeDescription' => 'Toon grotere kaarten met meer kunstwerk detail.',
+			'settings.visualEffectsDescription' => 'Kies de animatie en kunstwerk effecten budget voor dit apparaat.',
+			'settings.visualEffectsFullDescription' => 'Gebruik de volledige animatie en kunstwerk effecten op elk apparaat.',
+			'settings.startupSectionDescription' => 'Kies welke sectie wordt geopend wanneer PlezyNG begint.',
+			'settings.startupSectionOptions.discover' => 'Open aanbevelingen en items van aangesloten ontdekkingsbronnen.',
+			'settings.startupSectionOptions.libraries' => 'Open uw verbonden media bibliotheek.',
+			'settings.startupSectionOptions.liveTv' => 'Open Live TV wanneer een server het aanbiedt; anders valt de start-up terug naar Home.',
+			'settings.startupSectionOptions.search' => 'Open media zoeken.',
+			'settings.smallSkipDurationDescription' => 'Stel de afstand bewegen door de korte achterweg en vooruit zoeken controles.',
+			'settings.largeSkipDurationDescription' => 'Stel de afstand bewegen door de lange achterweg en vooruit zoeken controles.',
+			'settings.rewindOnResumeDescription' => 'Move playback terug met dit bedrag bij het opnieuw maken van een video.',
+			'settings.defaultSleepTimerDescription' => 'Stel de oorspronkelijke duur toe die wordt gebruikt bij het starten van de slaaptijmer.',
+			'settings.playNextCountdownDescription' => 'Wacht dit lang voordat de volgende episode begint. Set op 0 om onmiddellijk te beginnen.',
+			'settings.autoSkipDelaySettingDescription' => 'Dit geldt wanneer een intro, credit of advertentie wordt ingesteld om automatisch te schakelen.',
+			'settings.downmixCenterBoostDescription' => 'Verhoog de dialoog in het centraal kanaal wanneer surround audio wordt gemengd naar beneden op stereo.',
+			'settings.displaySwitchDelayDescription' => 'Wacht voordat u het displaymodus wijzigt, zodat de tv of ontvanger zijn vorige schakelaar kan beëindigen.',
+			'settings.playerBackendDescription' => 'Selecteer welke playback-machine video op dit apparaat decodeert en rendert.',
+			'settings.exoPlayerDescription' => 'Gebruik Android\'s native Media3-gebaseerde speler en ondersteunde hardware paden.',
+			'settings.mpvDescription' => 'Gebruik mpv, die extra playback, subtitle en video-verwerking controles blootstelt.',
+			'settings.scopeOffDescription' => 'Behoud wijzigingen voor de huidige playback-sessie alleen.',
+			'settings.scopeGlobalDescription' => 'Hergebruik dezelfde waarde voor elke bibliotheek en titel.',
+			'settings.scopeLibraryDescription' => 'Vergeet een aparte waarde voor elke bibliotheek.',
+			'settings.scopeTitleDescription' => 'Vergeet een afzonderlijke waarde voor elke show of film.',
+			'settings.specialsOrderingServerDescription' => 'Houd de aflevering bestelling geleverd door de media server.',
+			'settings.specialsOrderingAirDateDescription' => 'Plaats bijzondere onder regelmatige episodes op hun luchtdatum.',
+			'settings.specialsOrderingLastDescription' => 'Plaats elk speciaal na de reguliere seizoenen.',
+			'settings.skipIntroModeDescription' => 'Kies of de intro markers normaal spelen, een skip-knop weergeven of automatisch skiën.',
+			'settings.skipCreditsModeDescription' => 'Kies of de credits normaal spelen, een skip-knop weergeven of automatisch skiën.',
+			'settings.skipAdsModeDescription' => 'Selecteer of de geïdentificeerde advertenties normaal spelen, een skip-knop weergeven of automatisch skip.',
+			'settings.playbackBufferAutoDescription' => 'Laat de actieve speler zijn normale buffergrootte kiezen.',
+			'settings.playbackBufferLargeDescription' => 'Houd meer media klaar voor playback; dit gebruikt meer geheugen.',
+			'settings.playbackBufferExtraLargeDescription' => 'Houd de grootste leesbuffer; dit maakt gebruik van het meeste geheugen.',
+			'settings.defaultQualityDescription' => 'Set de standaard video-resolutie en bitrate plafond voor stromen die de server transcodes.',
+			'settings.cellularQualityDescription' => 'Override de standaardkwaliteit wanneer het apparaat een cellulaire verbinding gebruikt.',
+			'settings.remoteQualityDescription' => 'Override de standaardkwaliteit bij het verbinden met een server via een afstandsverbinding.',
+			'settings.qualityPresetOriginalDescription' => 'Speel de bron op zijn beschikbare kwaliteit zonder dat de server vraagt om deze te transcoderen.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Vraag de server voor een omgekeerde stroom met behulp van de bovenstaande resolutie en bitrate.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Gebruik de geselecteerde kwaliteit in standaardkwaliteit.',
+			'settings.musicQualityDescription' => 'Stel de maximale audio-bitrate die wordt gevraagd van de server; Original behoudt de bronstromen.',
+			'settings.musicQualityOriginalDescription' => 'Speel de bron audio zonder een bitrate-capped transcode.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Vraag een servertranscode gecapideerd in de buurt van de bovenstaande bitrate; de werkelijke output kan variëren.',
+			'settings.maxVolumeInputLabel' => 'Maximale hoeveelheid (%)',
+			'settings.checkForUpdatesDescription' => 'Controleer nu of een nieuwere versie van PlezyNG beschikbaar is.',
+			'settings.appearanceDescription' => 'Kies de app thema en aanpassen van bibliotheek kaarten, Home rijen en navigatie.',
+			'settings.prerollLibraryDescription' => 'Kies de bibliotheek die de clips bevat die beschikbaar zijn als filmpre-rolls.',
+			'settings.prerollSelectionDescription' => 'Kies welke clips uit de geselecteerde bibliotheek kan worden gespeeld vóór films.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Wacht dit vele minuten zonder input voordat u screensaver kunstwerk toont.',
+			'settings.videoCodecOptionDescription' => 'Toegeeft direct afspelen voor deze codec wanneer ondersteund. Unchecked codecs worden gecodeerd door de media server.',
 			'themeEditor.builtIn' => 'Ingebouwd',
 			'themeEditor.presets' => 'Voorinstellingen',
 			'themeEditor.custom' => 'Aangepast',
@@ -5078,6 +5456,17 @@ extension on TranslationsNl {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => 'Nog ${minutes} min',
 			'themeEditor.previewSwitch' => 'Automatisch afspelen',
 			'themeEditor.previewMutedText' => 'Secundaire tekst ziet er zo uit',
+			'themeEditor.themeSystemDescription' => 'Volg het uiterlijk van uw apparaat en schakelt u automatisch tussen licht en duisternis.',
+			'themeEditor.themeLightDescription' => 'Gebruik een heldere achtergrond met donkere tekst.',
+			'themeEditor.themeDarkDescription' => 'Gebruik een donkere achtergrond met licht tekst.',
+			'themeEditor.themeOledDescription' => 'Gebruik nabij zwarte oppervlakken die licht op OLED-screens verminderen.',
+			'themeEditor.themeEmberDescription' => 'Gebruik warm rood en amber accent kleuren.',
+			'themeEditor.themeGlacierDescription' => 'Gebruik koude blauwe accent kleuren.',
+			'themeEditor.themeForestDescription' => 'Gebruik gemuteerde groene en natuurlijke accent kleuren.',
+			'themeEditor.themePlumDescription' => 'Gebruik violet en plum accent kleuren.',
+			'themeEditor.themePaperDescription' => 'Gebruik warme papieren oppervlakken en ink geïnspireerde kleuren.',
+			'themeEditor.themeCustomDescription' => 'Gebruik de kleurpalet die je hebt gecreëerd in de aangepaste thema-editor.',
+			'themeEditor.editorDescription' => 'Kies een paletkleur, aanpassen van de hoek, verzadiging, helderheid of onzuiverheid en bekijk de voorbeeldupdate voordat u bespaart.',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -5323,6 +5712,8 @@ extension on TranslationsNl {
 			'accessibility.largeTargets' => 'Grotere touch doelen',
 			'accessibility.largeTargetsHint' => 'Geef gedeelde controles meer ruimte voor touch en assistieve navigatie.',
 			'accessibility.navigationHint' => 'Gebruik Tab en Shift+Tab om tussen bedieningselementen te bewegen, Enter of de spatiebalk om ze te activeren en Escape of Terug om te sluiten. Als een boek geopend is, zijn zoom en leesvoorkeuren beschikbaar.',
+			'accessibility.textSizeDescription' => 'Scale interface tekst in PlezyNG naast de systeem-text-size instelling van uw apparaat.',
+			'accessibility.boldTextHint' => 'Gebruik een zwaarder gewicht voor interface labels en berichten om ze gemakkelijker te onderscheiden.',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Als bekeken markeren',
@@ -5342,6 +5733,8 @@ extension on TranslationsNl {
 			'videoControls.sleepTimerEndOfVideo' => 'Einde van huidige video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stoppen bij',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Afspelen wordt gepauzeerd aan het einde van deze video',
 			'videoControls.stillWatching' => 'Kijk je nog?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauze over ${seconds}s',
@@ -5376,6 +5769,8 @@ extension on TranslationsNl {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld',
 			'videoControls.subtitleUnavailableFallback' => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels',
 			'videoControls.pipButton' => 'Beeld-in-beeldmodus',
+			'videoControls.openMiniPlayer' => 'Open mini speler',
+			'videoControls.returnToFullPlayer' => 'Terug naar volle speler',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
 			'videoControls.ambientLighting' => 'Omgevingsverlichting',
 			'videoControls.fullscreenButton' => 'Volledig scherm activeren',
@@ -5460,8 +5855,6 @@ extension on TranslationsNl {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheekscan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Bibliotheek scannen mislukt: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata voor "${title}" vernieuwen...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Vernieuwen van metadata gestart voor "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadata vernieuwen mislukt: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
@@ -5521,6 +5914,28 @@ extension on TranslationsNl {
 			'subtitlingStyling.renderResolution' => 'Renderresolutie',
 			'subtitlingStyling.renderResolutionScreen' => 'Schermresolutie',
 			'subtitlingStyling.renderResolutionVideo' => 'Videoresolutie',
+			'subtitlingStyling.fontSizeDescription' => 'Stel de subtitle-tekstgrootte op dit apparaat vast.',
+			'subtitlingStyling.textColorDescription' => 'Selecteer de kleur die wordt gebruikt voor subtitle tekst.',
+			'subtitlingStyling.borderSizeDescription' => 'Stel de dikte van de outline rond subtitle tekst.',
+			'subtitlingStyling.borderColorDescription' => 'Selecteer de kleur die wordt gebruikt voor de subtitle outline.',
+			'subtitlingStyling.backgroundColorDescription' => 'Selecteer de kleur achter subtitle tekst.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Stel hoe transparant de ondertitel achtergrond is: 0% is duidelijk en 100% solide.',
+			'subtitlingStyling.positionDescription' => 'Move subtitels vertically. 0% is de top van de video en 100% is de onderkant.',
+			'subtitlingStyling.assOverrideDescription' => 'Kies of de speler volgt, aanpast, vervangt of verwijdert styling ingebouwd in ASS subtitels.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Houd de lettertypen, kleuren, grootte en plaatsen geschreven in het subtitlebestand.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Laat de subtitels van de speler stijl-instellingen aanpassen om ASS subtitles aan te passen.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Gebruik de spelerstyling en schaal ingebouwde grootte om de video-dimensies aan te passen.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Vervang ingebouwde ASS stijlen met de subtitelstijl van de speler.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Verwijder ingebouwde ASS-formaat en maak de subtitle tekst duidelijk.',
+			'subtitlingStyling.renderResolutionDescription' => 'Kies de resolutie die wordt gebruikt om afbeeldingen en ASS subtitels te rasteriseren.Lower Android scales kunnen rendering werk verminderen, maar lijken zachter.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render aan de volledige oppervlakteoplossing voor het scherpste resultaat.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render met behulp van de video-resolutie als referentie, die werk op high-resolution displays kan verminderen.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render op 75% van de displayoppervlakkige resolutie voor een bescheiden prestatiebesparing.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render op 50% van de displayoppervlakkige resolutie om het werk te verminderen, met zachte randen.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render op een derde van de displayoppervlakkige resolutie om het werk te verminderen, met zachte randen.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render op een kwart van de displayoppervlakte resolutie om werk te verminderen, met het zachtste resultaat.',
+			'subtitlingStyling.boldDescription' => 'Schakel subtitelstekst in een zwaarder gewicht.',
+			'subtitlingStyling.italicDescription' => 'Schrijf subtitels in het Italiaans.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Geavanceerde videospelerinstellingen',
 			'mpvConfig.presets' => 'Voorinstellingen',
@@ -5657,11 +6072,19 @@ extension on TranslationsNl {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Voorkeur voor SDH-ondertitels',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Alleen SDH-ondertitels',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Alleen niet-SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Prefereren standaard subtitels wanneer zowel de standaard- als SDH-versies beschikbaar zijn.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Prefereren SDH-subtitels wanneer beschikbaar, maar toestaan standaard subtitels als een fallback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Gebruik SDH-subtitels alleen; valt niet terug naar standaard subtitels.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Gebruik alleen standaard subtitels; sluit SDH-subtitels uit.',
 			'accountPreferences.forcedSubtitles' => 'Geforceerde ondertitels',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Voorkeur voor niet-geforceerde ondertitels',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Voorkeur voor geforceerde ondertitels',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Alleen geforceerde ondertitels',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Alleen niet-geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Prefereren regelmatige ondertitels, maar toestaan gedwongen tracks als een fallback.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Prefereren gedwongen tracks wanneer beschikbaar, maar toelaten regelmatige subtitels als een fallback.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Gebruik alleen tracks aangeduid als gedwongen.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Verwijder tracks als gedwongen.',
 			'accountPreferences.displayMissingEpisodes' => 'Ontbrekende afleveringen tonen',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.',
 			'accountPreferences.hidePlayedInLatest' => 'Bekeken items verbergen in \'Nieuwste\'',
@@ -5675,11 +6098,27 @@ extension on TranslationsNl {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Films en tv-series',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Alleen films',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Alleen tv-series',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Zorg niet voor waargenomen checkmarken.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Show watched checkmarks voor films en tv shows.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Show watched checkmarks for films alleen.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Show watched checkmarks voor tv shows alleen.',
 			'accountPreferences.mediaReviewsVisibility' => 'Beoordelingen en recensies',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Gebruikers en critici',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Alleen gebruikers',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Alleen critici',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Verborgen',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Zie zowel gebruikersbeoordelingen als kritische beoordelingen.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Bekijk de beoordelingen en reviews die door gebruikers zijn ingediend.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Toon kritische ratings en beoordelingen.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Verborgen ratings en beoordelingen.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Prefereren audio tracks in deze taal wanneer de server of speler automatisch een track selecteert.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Prefereren ondertitels in deze taal wanneer subtitels automatisch worden geselecteerd.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Selecteer of SDH-capties worden gepresenteerd of vereist tijdens de automatische selectie van subtitels.',
+			'accountPreferences.forcedSubtitleDescription' => 'Selecteer of gedwongen subtitels worden gepresenteerd of vereist tijdens de automatische selectie.',
+			'accountPreferences.watchedIndicatorDescription' => 'Kies welke media-types een waargenomen checkmarker ontvangen in de serverinterface.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Kies welke publiek en kritische ratings de server op mediapagina\'s toont.',
+			'accountPreferences.subtitleModeDescription' => 'Kies wanneer subtitels automatisch worden geactiveerd voor dit serveraccount.',
+			'accountPreferences.hubDescription' => 'Deze voorkeuren worden op uw media-server-account opgeslagen en kunnen ook van toepassing zijn op andere klanten.',
 			'discover.title' => 'Ontdekken',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
@@ -5808,6 +6247,8 @@ extension on TranslationsNl {
 			'libraries.all' => 'Alles',
 			'libraries.clearAll' => 'Alles wissen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
@@ -5974,8 +6415,6 @@ extension on TranslationsNl {
 			'explore.mdblistShelves.nameHint' => 'Laat het blanke om de bronlijstnaam te gebruiken.',
 			'explore.mdblistShelves.add' => 'Voeg shelf toe',
 			'explore.mdblistShelves.save' => 'Save de shelves',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Verplaats ${title} naar boven',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Verplaats ${title} naar beneden',
 			'explore.mdblistShelves.unavailable' => 'Deze lijst is niet beschikbaar. verwijderen of verwijderen van de schelfs in instellingen.',
@@ -6322,6 +6761,8 @@ extension on TranslationsNl {
 			'watchTogether.connecting' => 'Verbinden...',
 			'watchTogether.relayPublic' => 'Kamers gebruiken de openbare Open Watch Party-relays.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Kamers gebruiken je relay op ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Recente kamers',
 			'watchTogether.roomActions' => 'Acties voor kamer',
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
@@ -6488,8 +6929,6 @@ extension on TranslationsNl {
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
 			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
@@ -6748,6 +7187,7 @@ extension on TranslationsNl {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-basislaag',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-basislaag',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-reshaping (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Experimentele P7 FEL grafiek (niet gekwalificeerd)',
 			'performanceOverlay.p7Conversion' => 'P7-conv.',
 			'performanceOverlay.sampleRate' => 'Samplefrequentie',
 			'performanceOverlay.pixelFormat' => 'Pixelformaat',
@@ -6799,6 +7239,13 @@ extension on TranslationsNl {
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
+			'externalPlayer.description' => 'Kies een andere app om video\'s in te openen. beschikbare spelers zijn afhankelijk van uw apparaat en geïnstalleerde apps.',
+			'externalPlayer.systemDefaultDescription' => 'Laat het besturingssysteem de video openen met zijn standaard app.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Open video\'s met ${player}.',
+			'externalPlayer.playerNameDescription' => 'Het label dat wordt weergegeven in de spelerlijst.',
+			'externalPlayer.playerPackageDescription' => 'Voer de Android-pakketnaam van de spelerapp in, zoals com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Voer de geïnstalleerde spelercommand of uitvoerbare route voor dit apparaat in.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Voer het URL-schema en de optionele URL-template in die wordt gebruikt om de speler te lanceren.',
 			'metadataEdit.editMetadata' => 'Bewerken...',
 			'metadataEdit.screenTitle' => 'Metadata bewerken',
 			'metadataEdit.basicInfo' => 'Basisinformatie',
@@ -6828,6 +7275,8 @@ extension on TranslationsNl {
 			'metadataEdit.metadataUpdateFailed' => 'Metadata bijwerken mislukt',
 			'metadataEdit.artworkUpdated' => 'Illustraties bijgewerkt',
 			'metadataEdit.artworkUpdateFailed' => 'Illustraties bijwerken mislukt',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Geen illustraties beschikbaar',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Illustratie ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Illustratie ${index}, geselecteerd',
@@ -6988,6 +7437,13 @@ extension on TranslationsNl {
 			'services.libraryFilter.modeHintWhitelist' => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.',
 			'services.libraryFilter.libraries' => 'Bibliotheken',
 			'services.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
+			'services.libraryFilter.modeDescription' => 'Kies of de gecontroleerde bibliotheken worden geblokkeerd van synchronisatie of de enige bibliotheek zijn die synchroon maakt.',
+			'services.seerrDescription' => 'Neem verbinding met Seerr of Overseerr om titels te zoeken en mediaverzoeken in te dienen.',
+			'services.trackerDescriptions.trakt' => 'Synchroniseren bekeken episodes en films met uw Trakt-account.',
+			'services.trackerDescriptions.mal' => 'Synchroniseren anime lijsten en bekijken vooruitgang met MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Sync anime lijsten en kijk vooruitgang met AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync zag films, tv-shows en anime met Simkl.',
+			'services.trackerDescriptions.mdblist' => 'MDBList ratings en lijsten weergeven in aanbevelingen en verkennen.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product}-server toevoegen',
 			'addServer.serverUrls' => 'Server-URL\'s',
 			'addServer.serverUrlsHelper' => 'Meerdere URL\'s toegestaan, gescheiden door komma\'s.',
@@ -7002,8 +7458,6 @@ extension on TranslationsNl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggen mislukt: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislukt: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Inloggen met Plex',
 			'addServer.pinExpired' => 'De pincode verliep voordat je kon inloggen. Probeer het opnieuw.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Account registreren mislukt: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsNl {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'op',
 			'homeLayout.resetHeroButtonDescription' => 'Het schakelt de heldinstelling van elke rij uit en brengt de single rotating banner terug naar de top, net als voordat de held-lijnen bestaan.',
+			'homeLayout.tapHeroCardDescription' => 'Selecteer of het tappen of selecteren van een Hero-kaart de playback begint of de details ervan opent.',
+			'homeLayout.heroTapPlayDescription' => 'Start het geselecteerde item meteen.',
+			'homeLayout.heroTapDetailsDescription' => 'Open de details van het geselecteerde item voordat u een actie kiest.',
 			'platform.localNetworkPermission' => 'PlezyNG verbindt zich met uw media servers en afspelenapparaten op uw lokale netwerk.',
 			'platform.locationPermission' => 'PlezyNG maakt gebruik van locatie-toegang wanneer iOS nodig heeft om uw lokale netwerk te detecteren en verbinding te maken met uw media servers.',
 			'platform.photoLibraryPermission' => 'Kies afbeeldingen uit je fotobibliotheek als omslag of illustratie voor je media.',
@@ -7169,8 +7626,12 @@ extension on TranslationsNl {
 			'fileSources.source' => 'Bron',
 			'fileSources.name' => 'naam',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
 			'fileSources.root' => 'Folders of prefix',
+			'fileSources.smbFolderHelp' => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.',
 			'fileSources.username' => 'Gebruikersnaam',
+			'fileSources.smbDomain' => 'Domein (optioneel)',
 			'fileSources.password' => 'Wachtwoord',
 			'fileSources.token' => 'API Token',
 			'fileSources.accessKey' => 'Toegang tot de sleutel ID',
@@ -7180,6 +7641,8 @@ extension on TranslationsNl {
 			'fileSources.clientId' => 'OAuth klant ID',
 			'fileSources.clientSecret' => 'OAuth client secret (de desktop Google alleen)',
 			'fileSources.allowHttp' => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk',
+			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
+			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.',
 			'fileSources.connect' => 'Verbinden',
 			'fileSources.cancel' => 'Annuleren',
 			'fileSources.save' => 'Opslaan',
@@ -7322,12 +7785,25 @@ extension on TranslationsNl {
 			'fileSources.useFiles' => 'Gebruik bestanden en boeken',
 			'fileSources.cancelScan' => 'Scan af te sluiten',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
-			'fileSources.smbFolderHelp' => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.',
-			'fileSources.smbDomain' => 'Domein (optioneel)',
-			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
-			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.',
+			'fileSources.offlineQuota' => 'Offline download beperking',
+			'fileSources.offlineQuotaHelp' => 'Stel de maximale ruimte die wordt gebruikt door offline kopieën, geïmporteerde bestanden en gekleurde downloads. Het verlagen van de limiet verwijdert niet bestaande copies.',
+			'fileSources.offlineStorageUsage' => 'Offline opslag',
+			'fileSources.reservedStorage' => 'Reserveerd',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Download van Queue',
+			'fileSources.downloadRunning' => 'downloaden',
+			'fileSources.downloadQueued' => 'wachten',
+			'fileSources.downloadPaused' => 'Pauze',
+			'fileSources.downloadFailed' => 'Reeds terugkeren',
+			'fileSources.importing' => 'Importeren',
+			'fileSources.importInterrupted' => 'Import onderbroken · verwijderen naar schoonmaken',
+			'fileSources.errorQuotaExceeded' => 'De offline opslaggrens is bereikt. Verhoog de limiet of verwijder een gedownload kopie.',
+			'fileSources.errorStorageLow' => 'Er is niet genoeg gratis opslag voor het behoud van de beschermde reserve.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG kon de gratis opslag van het apparaat niet controleren, dus het schrijven werd gestopt.',
+			'fileSources.removeDownloadJob' => 'verwijderen download',
+			'fileSources.downloadAlreadyComplete' => 'Deze download is voltooid voordat het kan worden verwijderd. het item is nu offline beschikbaar.',
+			'fileSources.confirmRemoveDownloadJob' => 'Verwijder deze download en verwijder alle gedeeltelijk gedownload gegevens? uw positie en notities blijven.',
 			'lending.title' => 'Public Library',
 			'lending.add' => 'Voeg een bibliotheek toe',
 			'lending.other' => 'Een andere bibliotheek',
@@ -7429,6 +7905,12 @@ extension on TranslationsNl {
 			'audiobook.statusFinished' => 'Afgerond',
 			'audiobook.goToTime' => 'Ga naar de tijd',
 			'audiobook.timeHelp' => 'uur: minuten: seconden of minuten: seconden',
+			'audiobook.recoveryHelp' => 'Exporteer een recente versleutelde kopie voor het verplaatsen of repareren van synchronisatiegegevens.Importeren verschijnt met de huidige toestand; ze vervangen nooit de lokale sync-geschiedenis.',
+			'audiobook.recoveryExport' => 'Export versleutelde herstel bestanden',
+			'audiobook.recoveryImport' => 'Geïmporteerde versleutelde herstelbestanden',
+			'audiobook.recoveryImportConfirm' => 'Combineer deze versleutelde herstelbestand met de huidige leesposities en noten? bestaande geschiedenis zal worden bewaard. gedeelde bibliotheek en item-ID\'s zijn niet opgenomen; set matching ID\'s on each device before importing.',
+			'audiobook.recoveryExported' => 'Encrypt herstel bestand is opgeslagen.',
+			'audiobook.recoveryImported' => 'Recovery data samengesteld.',
 			'sourceSetup.savedCertificate' => 'Opgeslagen servercertificaat',
 			'sourceSetup.nfsEndpointInvalid' => 'Voer een NFS-URL in, zoals nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Geen DLNA-servers gevonden. Voer de URL van de apparaatbeschrijving handmatig in.',
@@ -7516,8 +7998,6 @@ extension on TranslationsNl {
 			'sourceSetup.smbEncrypted' => 'SMB3-versleuteling aan',
 			'sourceSetup.smbUnencrypted' => 'SMB3-versleuteling uit',
 			'sourceSetup.httpUnencrypted' => 'HTTP zonder transportversleuteling',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Beveiliging van het eindpunt controleren',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is vereist.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Voer ${label} in tussen ${min} en ${max}.',
@@ -7525,6 +8005,23 @@ extension on TranslationsNl {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Geselecteerde clientidentiteit: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Beoordeling ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Ondertitel downloaden: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Paar dit item',
+			'sourceSetup.sharedEntryPairHelp' => 'Voer hetzelfde ID voor dit item in op elk apparaat. Gebruik een stabiele gedeelde identificator of genereer een en kopieer het naar het matching item. Progress paarden alleen wanneer de editie bestandtypes, grootte en order passen. Blank verwijdert deze mappen.',
+			'sourceSetup.sharedEntryId' => 'gedeelde item ID',
+			'sourceSetup.generateSharedEntryId' => 'Het genereren van gedeelde item ID',
+			'sourceSetup.sharedLibraryId' => 'gedeelde bibliotheek ID (optional)',
+			'sourceSetup.sharedLibraryHelp' => 'Gebruik hetzelfde ID op apparaten die dezelfde bibliotheek openen. Dit publieke ID helpt om de leesprocedure en notities over verschillende bronverbindingen te brengen; het is geen wachtwoord. Wanneer leveranciers verschillende item-ID\'s gebruiken, koppelen deze items uit hun detailscherm.',
+			'sourceSetup.sharedLibraryInvalid' => 'Gebruik 8-100 letters, cijfers, punten, ondertekeningen of hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Een gedeelde bibliotheek ID genereren',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead verzoeken',
+			'sourceSetup.nfsReadAheadHelp' => 'Meer parallelle lezingen kunnen de doorvoer op een snelle NAS of netwerk verbeteren. gebruik 1 als de server concurrerende aanvragen beperkt.',
+			'sourceSetup.nfsReadTest' => 'NFS lees prestaties',
+			'sourceSetup.nfsReadTestHelp' => 'Het leest tot 64 MiB van de grootste bestand om deze NAS-verbinding te meten.',
+			'sourceSetup.nfsQualificationResult' => 'NFS lezen meting',
+			'sourceSetup.nfsReadBytes' => 'Data lezen',
+			'sourceSetup.nfsReadSpeed' => 'gemeten snelheid',
+			'sourceSetup.nfsReadRequests' => 'Lees verzoeken',
+			'sourceSetup.sharedEntryConflict' => 'Deze gedeelde item ID is al gepaard met een ander item in deze bibliotheek.',
 			'comics.fitHeight' => 'Aan hoogte aanpassen',
 			'comics.readingMode' => 'Leesmodus',
 			'comics.paged' => 'Pagina’s',
@@ -7599,6 +8096,15 @@ extension on TranslationsNl {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

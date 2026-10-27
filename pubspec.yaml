@@ -195,6 +195,8 @@ dev_dependencies:
   analyzer: 10.2.0
   web_socket: ^1.0.1
 
+  code_assets: any
+  hooks: any
 dependency_overrides:
   permission_handler_windows:
     path: packages/permission_handler_windows

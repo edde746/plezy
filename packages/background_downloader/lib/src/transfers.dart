@@ -199,14 +199,14 @@ class Transfers {
       var succeeded = 0;
       var failed = 0;
       for (final transfer in resultTransfers) {
-        transfer.result.then((update) {
+        unawaited(transfer.result.then((update) {
           if (update.status == TaskStatus.complete) {
             succeeded++;
           } else {
             failed++;
           }
           onProgress(succeeded, failed);
-        });
+        }));
       }
     }
 
@@ -287,14 +287,14 @@ class Transfers {
             failed++;
           }
         } else {
-          transfer.result.then((update) {
+          unawaited(transfer.result.then((update) {
             if (update.status == TaskStatus.complete) {
               succeeded++;
             } else {
               failed++;
             }
             onProgress(succeeded, failed);
-          });
+          }));
         }
       }
       onProgress(succeeded, failed);

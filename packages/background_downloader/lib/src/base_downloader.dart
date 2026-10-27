@@ -458,7 +458,7 @@ abstract base class BaseDownloader {
       );
     }
     if (timer != null) {
-      taskCompleter.future.then((_) => timer?.cancel());
+      unawaited(taskCompleter.future.then((_) => timer?.cancel()));
     }
     return taskCompleter.future;
   }

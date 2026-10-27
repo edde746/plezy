@@ -177,6 +177,7 @@ class _Translations$appIcon$cs extends Translations$appIcon$en {
 	@override String get launcherHint => 'Nová ikona se objeví na domácím obrazovce, jakmile opustíte PlezyNG.';
 	@override String get tvLauncherHint => 'Nový banner se objeví, jakmile opustíte PlezyNG. Android TV může pokračovat v zobrazování starého, dokud se televizor neotevře.';
 	@override late final _Translations$appIcon$names$cs names = _Translations$appIcon$names$cs._(_root);
+	@override String get description => 'Vyberte ikonu zobrazenou spuštěčem zařízení. Předpovědi ukazují, jak vypadá každá možnost.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$cs extends Translations$common$en {
 	@override String get cancel => 'Zrušit';
 	@override String get save => 'Uložit';
 	@override String get close => 'Zavřít';
+	@override String get closeMiniPlayer => 'Blízký mini hráč';
+	@override String get closeWorkspaceWindow => 'blízko okna';
+	@override String get returnToFullView => 'Zpět na Full View';
+	@override String get manageMediaSessions => 'Řízení mediálních zasedání';
+	@override String get hideMediaSessions => 'ukrytí mediálních zasedání';
+	@override String get mediaSessions => 'Mediální zasedání';
+	@override String get mediaSessionsHint => 'Park skrývá okno, ale udržuje otevřené. Návrat ho otevírá v plném zobrazení; blízko končí.';
+	@override String get sessionInWorkspace => 'v pracovním prostoru';
+	@override String get sessionParked => 'Parkování';
+	@override String get sessionFullscreen => 'Plný obrazovek';
+	@override String get switchToNextWindow => 'Přepínání s příštím oknem';
+	@override String get moveWindow => 'Pohybujte okno';
+	@override String get finishMovingWindow => 'Konec pohybující se okna';
+	@override String get moveWindowHint => 'Dlouho stiskněte a vytáhněte okno, abyste ho přesunuli.Tento ovládací prvek také umožňuje pohyb klíče šípky.';
+	@override String get movingWindowHelp => 'Přejít na pohyb · Přejíždět klíče přizpůsobit · Zadejte zálohy · Únik zrušit';
+	@override String get resizeWindow => 'Odstranit okno';
+	@override String get resizeWindowHint => 'Vyzvedněte tuto rukojeti nebo použijte klíče strelu, aby se okno znovu rozmazalo.';
+	@override String get workspaceWindowHint => 'Použijte pohybový ovládací prvek nebo dlouhý tlak a přejděte se.';
+	@override String get workspacePaneHint => 'Vyberte tuto panelu, abyste ji zaměřili. Použijte její kontrolu na plný obrazovek k rozšíření.';
+	@override String workspaceWindowLabel({required Object title}) => 'Okno sezení: ${title}';
+	@override String get workspaceTitleHint => 'Vyberte se zaměřit. Přejděte titulní řádek k pohybu; použijte tlačítko na plný obrazovku k rozšíření.';
+	@override String get moveToSessionTray => 'Přejděte na Session Tray';
+	@override String get moveToSessionTrayHint => 'Tato schůzka je k dispozici bez zobrazení okna.';
+	@override String get closeSessionHint => 'Zavřete tento okno a ukončíte jeho zasedání.';
+	@override String get sideBySideLayout => 'Přepínání na side-by-side layout';
+	@override String get floatingWindows => 'Přepínání k plovoucímu oknu';
 	@override String get clear => 'jasné';
 	@override String get reset => 'Resetovat';
 	@override String get later => 'Později';
@@ -682,6 +709,13 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Force native DV7 a potlačení DV konverze zpět';
 	@override String get dvConversionDv81Description => 'Konverze RPU na profil Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL vrstvy a současná rovina HEVC';
+	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
+	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
+	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
+	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
+	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
+	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
 	@override String get disableDolbyVision => 'Zrušení Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden';
 	@override String get hdrSdrConversion => 'HDR na SDR konverze';
@@ -768,13 +802,81 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.';
 	@override String get metadataLanguage => 'Jazyk metadat';
 	@override String get metadataLanguageDescription => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.';
-	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
-	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
-	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
-	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
-	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
-	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
+	@override String get enterFullscreenOnPlaybackStart => 'Přihlaste se k plné obrazovce, když začíná playback';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Otevřete desktopové video na plném obrazovce, když začíná playback';
+	@override String get extendVideoIntoDisplayCutout => 'Rozšířte video do displeje Cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Umožňujte, aby video s plnou obrazovkou používalo fotoaparát na telefonech Android';
+	@override String get languageDescription => 'Vyberte jazyk používaný pro kontroly a zprávy PlezyNG.Sledujte systém sleduje jazyk vašeho zařízení.';
+	@override String get themeDescription => 'Vyberte barvy a kontrast používané v celé aplikaci.';
+	@override String get libraryDensityDescription => 'Změňte, kolik knihovních karet se hodí v každém řádku.';
+	@override String get displayScaleDescription => 'Přehrávejte rozhraní na tomto autovém displeji, aniž byste změnili velikost textu v celé zařízení.';
+	@override String get themeSongVolumeDescription => 'Nastavení objemu tematických písní ve vztahu k jiným zvukům.';
+	@override String get viewModeDescription => 'Vyberte, zda se knižní položky zobrazují jako plakáty v síti nebo jako kompaktní seznam.';
+	@override String get gridViewDescription => 'Nastavení knihovních položek v řádcích a sloupcích plakátů.';
+	@override String get listViewDescription => 'Zobrazit položky knihovny v vertikálním seznamu s více textem na položku.';
+	@override String get gridSpacingDescription => 'Nastavte rozdíl mezi plakáty v knihovních sítích.';
+	@override String get gridSpacingTightDescription => 'Připravte více plakátů přes obrazovku s menšími mezery.';
+	@override String get gridSpacingNormalDescription => 'Použijte standardní mezeru mezi plakáty.';
+	@override String get gridSpacingSpaciousDescription => 'Přidejte větší mezery mezi plakáty pro více oddělení.';
+	@override String get episodePosterModeDescription => 'Vyberte, které umělecké dílo se objeví na karetách epizod.';
+	@override String get seriesPosterDescription => 'Použijte seriálový plakát pro každou epizodu.';
+	@override String get seasonPosterDescription => 'Použijte sezónní plakát pro každou epizodu, když je k dispozici.';
+	@override String get episodeThumbnailDescription => 'Použijte rám z epizody, když je k dispozici.';
+	@override String get continueWatchingActionDescription => 'Vyberte si, co se stane, když aktivujete kartu Pokračující sledování.';
+	@override String get continueWatchingPlayDescription => 'Začněte film nebo epizodu okamžitě.';
+	@override String get continueWatchingDetailsDescription => 'Nejprve otevřete titulní stránku, abyste si mohli prohlédnout detaily a vybrat akci.';
+	@override String get episodeActionDescription => 'Vyberte si, co se stane, když aktivujete epizodovou kartu.';
+	@override String get episodePlayDescription => 'Hra začíná okamžitě.';
+	@override String get episodeDetailsDescription => 'Otevřete stránku epizody před playbackem.';
+	@override String get contentScreensaverDelayDescription => 'Vyberte si, jak dlouho PlezyNG čeká bez vstupu před zobrazením uměleckého díla.';
+	@override String get continueWatchingRowSizeDescription => 'Vyberte si, jak velké jsou karty v řádku Pokračující sledování.';
+	@override String get rowSizeCompactDescription => 'Zobrazit menší karty, takže více položek se hodí po řádku.';
+	@override String get rowSizeStandardDescription => 'Použijte standardní velikost karty.';
+	@override String get rowSizeLargeDescription => 'Zobrazit větší karty s více uměleckých detailů.';
+	@override String get visualEffectsDescription => 'Vyberte rozpočet animace a uměleckých efektů pro toto zařízení.';
+	@override String get visualEffectsFullDescription => 'Použijte plné animace a umělecké efekty na každém zařízení.';
+	@override String get startupSectionDescription => 'Vyberte, která sekce se otevře při zahájení PlezyNG.';
+	@override late final _Translations$settings$startupSectionOptions$cs startupSectionOptions = _Translations$settings$startupSectionOptions$cs._(_root);
+	@override String get smallSkipDurationDescription => 'Nastavte vzdálenost pohybující se krátkou zpětnou a dopředu hledat kontroly.';
+	@override String get largeSkipDurationDescription => 'Nastavte vzdálenost pohybující se dlouhým zpětným a dopředu hledat kontroly.';
+	@override String get rewindOnResumeDescription => 'Převod playback zpět tímto množstvím při opětovném natáčení videa.';
+	@override String get defaultSleepTimerDescription => 'Nastavení počáteční doby použité při zahájení času spánku.';
+	@override String get playNextCountdownDescription => 'Čekejte to dlouho, než začnete další epizodu. nastavit na 0 začít okamžitě.';
+	@override String get autoSkipDelaySettingDescription => 'Použije se, když je intro, kredit nebo reklama nastaven k automatické přerušení.';
+	@override String get downmixCenterBoostDescription => 'Zvýšte dialog v centrálním kanálu, když je surround audio smícháno dolů na stereo.';
+	@override String get displaySwitchDelayDescription => 'Počkejte před změnou režimu zobrazení, aby televizor nebo přijímač mohl dokončit svůj předchozí přepín.';
+	@override String get playerBackendDescription => 'Vyberte si, který přehrávač dekóduje a renderuje video na tomto zařízení.';
+	@override String get exoPlayerDescription => 'Použijte nativní přehrávač založený na Media3 a podporované hardwarové trasy systému Android.';
+	@override String get mpvDescription => 'Použijte mpv, který vystavuje další playback, subtitle a video zpracování ovládacích prvků.';
+	@override String get scopeOffDescription => 'Udržujte změny pouze pro aktuální playback.';
+	@override String get scopeGlobalDescription => 'Opět použijte stejnou hodnotu pro každou knihovnu a titul.';
+	@override String get scopeLibraryDescription => 'Pamatujte si na samostatnou hodnotu pro každou knihovnu.';
+	@override String get scopeTitleDescription => 'Pamatujte si samostatnou hodnotu pro každou představu nebo film.';
+	@override String get specialsOrderingServerDescription => 'Udržujte objednávku epizody poskytovanou mediálním serverem.';
+	@override String get specialsOrderingAirDateDescription => 'Vložte speciály mezi pravidelné epizody podle jejich datum vzduchu.';
+	@override String get specialsOrderingLastDescription => 'Každá speciální položka po pravidelných sezónách.';
+	@override String get skipIntroModeDescription => 'Vyberte, zda intro markery hrají normálně, zobrazí tlačítko skip nebo automaticky skip.';
+	@override String get skipCreditsModeDescription => 'Vyberte, zda se kredity běžně hrají, zobrazí tlačítko skok nebo automaticky skok.';
+	@override String get skipAdsModeDescription => 'Vyberte, zda zjištěné reklamy hrají normálně, zobrazí tlačítko skip nebo automaticky skip.';
+	@override String get playbackBufferAutoDescription => 'Nechte aktivního hráče zvolit jeho normální velikost bufetu.';
+	@override String get playbackBufferLargeDescription => 'Udržujte více médií připravených před přehráváním; to využívá více paměti.';
+	@override String get playbackBufferExtraLargeDescription => 'Udržujte největší čtenářský buffer, který využívá nejvíce paměti.';
+	@override String get defaultQualityDescription => 'Nastavení výchozí video rozlišení a bitrate strop pro toky, které server transkóduje.';
+	@override String get cellularQualityDescription => 'Override Standardní kvalita, když zařízení používá pouze buněčné připojení.';
+	@override String get remoteQualityDescription => 'Override Default Quality při připojení k serveru prostřednictvím vzdáleného připojenia.';
+	@override String get qualityPresetOriginalDescription => 'Přehrávejte zdroj v dostupné kvalitě, aniž byste požádali server o jeho překódování.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Požádejte server o převedený tok pomocí výše uvedené rozlišení a bitrate.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Použijte kvalitu vybranou v předvolené kvalitě.';
+	@override String get musicQualityDescription => 'Nastavte maximální požadovanou audio bitovou rychlost od serveru; originál zachovává zdrojový tok.';
+	@override String get musicQualityOriginalDescription => 'Přehrávejte zdrojový zvuk bez bitrate-capped transcode.';
+	@override String get musicQualityTranscodeOptionDescription => 'Požádejte o transkód serveru v blízkosti výše uvedené bitové rychlosti; skutečný výsledek se může lišit.';
+	@override String get maxVolumeInputLabel => 'Maximální objem (%)';
+	@override String get checkForUpdatesDescription => 'Zkontrolujte, zda je k dispozici novější verze PlezyNG.';
+	@override String get appearanceDescription => 'Vyberte téma aplikace a přizpůsobte karty knihovny, domovské řádky a navigaci.';
+	@override String get prerollLibraryDescription => 'Vyberte si knihovnu, která obsahuje klipy k dispozici jako filmové pre-rolls.';
+	@override String get prerollSelectionDescription => 'Vyberte, které klipy z vybrané knihovny můžete hrát před filmy.';
+	@override String get contentScreensaverDelayOptionDescription => 'Počkejte na to mnoho minut bez vstupu, než se zobrazí obrazovkový záložní umělecké dílo.';
+	@override String get videoCodecOptionDescription => 'Umožňujte přímé přehrávání pro tento kodek, když je podporován. nekontrolované kodeky jsou transkódovány mediálním serverem.';
 }
 
 // Path: themeEditor
@@ -811,6 +913,17 @@ class _Translations$themeEditor$cs extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => 'Zbývá ${minutes} min';
 	@override String get previewSwitch => 'Automatické přehrávání';
 	@override String get previewMutedText => 'Druhý text se takhle čte';
+	@override String get themeSystemDescription => 'Sledujte vzhled vašeho zařízení a automaticky přejděte mezi světlem a temnotou.';
+	@override String get themeLightDescription => 'Použijte jasný pozadí s tmavým textem.';
+	@override String get themeDarkDescription => 'Použijte tmavé pozadí s lehkým textem.';
+	@override String get themeOledDescription => 'Používejte černé povrchy, které snižují světlo na OLED obrazovkách.';
+	@override String get themeEmberDescription => 'Použijte teplé červené a amber akcentní barvy.';
+	@override String get themeGlacierDescription => 'Použijte barevné modré akcenty.';
+	@override String get themeForestDescription => 'Použijte zelené a přírodní barevné akcenty.';
+	@override String get themePlumDescription => 'Použijte violetní a plumové akcentní barvy.';
+	@override String get themePaperDescription => 'Použijte teplé papírové povrchy a barvy inspirované inkoustem.';
+	@override String get themeCustomDescription => 'Použijte barevnou paletu, kterou jste vytvořili v přizpůsobeném editoru témat.';
+	@override String get editorDescription => 'Vyberte si barvu palety, upravte její hustotu, nasycení, jasnost nebo opacitu a předchozí aktualizace se zobrazí.';
 }
 
 // Path: search
@@ -1097,6 +1210,8 @@ class _Translations$accessibility$cs extends Translations$accessibility$en {
 	@override String get largeTargets => 'větší cíle dotyku';
 	@override String get largeTargetsHint => 'Dáváme sdíleným ovládacím prvkům více prostoru pro dotyk a asistenční navigaci.';
 	@override String get navigationHint => 'Mezi ovládacími prvky se přesouvejte klávesami Tab a Shift+Tab, aktivujte je klávesou Enter nebo mezerníkem a zavírejte klávesou Escape nebo tlačítkem Zpět. Při otevřené knize je dostupné přiblížení a nastavení čtení.';
+	@override String get textSizeDescription => 'Rozsah textového rozhraní v PlezyNG kromě nastavení velikosti textu systému vašeho zařízení.';
+	@override String get boldTextHint => 'Použijte těžší váhu pro rozhraní etikety a zprávy, aby je jednodušší rozlišovat.';
 }
 
 // Path: tooltips
@@ -1182,6 +1297,8 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Překódování není k dispozici – hraje originální kvalitu';
 	@override String get subtitleUnavailableFallback => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů';
 	@override String get pipButton => 'Obrazový režim - Picture in-Picture';
+	@override String get openMiniPlayer => 'Otevřený mini hráč';
+	@override String get returnToFullPlayer => 'Zpět na plný hráč';
 	@override String get aspectRatioButton => 'Poměr stran';
 	@override String get ambientLighting => 'Atmosférické osvětlení';
 	@override String get fullscreenButton => 'Vstup na plný obrazovek';
@@ -1339,6 +1456,19 @@ class _Translations$subtitlingStyling$cs extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Renderová rezoluce';
 	@override String get renderResolutionScreen => 'Rozlišení obrazovky';
 	@override String get renderResolutionVideo => 'Rozlišení videa';
+	@override String get fontSizeDescription => 'Na tomto zařízení nastavíte velikost podtitulu textu.';
+	@override String get textColorDescription => 'Vyberte barvu použité pro text podtitulů.';
+	@override String get borderSizeDescription => 'Nastavení tloušťky výstupu kolem podtitulového textu.';
+	@override String get borderColorDescription => 'Zvolte barvu použité pro podtitulový výstup.';
+	@override String get backgroundColorDescription => 'Zvolte barvu za textem.';
+	@override String get backgroundOpacityDescription => 'Nastavte, jak transparentní je podtitulový pozadí: 0% je jasný a 100% pevný.';
+	@override String get positionDescription => '0 % je horní část videa a 100 % dolní část.';
+	@override String get assOverrideDescription => 'Vyberte, zda hráč sleduje, upravuje, nahrazuje nebo odstraňuje styling vložený do podtitulů ASS.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$cs assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$cs._(_root);
+	@override String get renderResolutionDescription => 'Vyberte rozlišení používané k rasterizování obrazu a ASS podtitulů. nižší Android stupnice mohou snížit rendering práci, ale vypadat jemněji.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$cs renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$cs._(_root);
+	@override String get boldDescription => 'Vložte text podtitulu v těžší hmotnosti.';
+	@override String get italicDescription => 'Podtitulový text v italštině.';
 }
 
 // Path: mpvConfig
@@ -1520,6 +1650,14 @@ class _Translations$accountPreferences$cs extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$cs watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$cs._(_root);
 	@override String get mediaReviewsVisibility => 'Hodnocení & recenze';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$cs mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$cs._(_root);
+	@override String get preferredAudioLanguageDescription => 'Upřednostňuje zvukové stopy v tomto jazyce, když server nebo přehrávač automaticky vybere stopu.';
+	@override String get preferredSubtitleLanguageDescription => 'Doporučuje se sledovat podtituly v tomto jazyce, když jsou subtituly automaticky vybrány.';
+	@override String get subtitleAccessibilityDescription => 'Vyberte, zda jsou SDH captions preferovány nebo požadovány během automatického výběru podtitulů.';
+	@override String get forcedSubtitleDescription => 'Vyberte si, zda jsou při automatickém výběru preferovány nebo požadovány nucené podtitulové stopy.';
+	@override String get watchedIndicatorDescription => 'Vyberte, které typy médií obdrží sledovanou kontrolu v rozhraní serveru.';
+	@override String get mediaReviewsVisibilityDescription => 'Vyberte, které publikum a kritické hodnocení server zobrazuje na stránkách médií.';
+	@override String get subtitleModeDescription => 'Vyberte, kdy se podtituly automaticky zapnou pro tento serverový účet.';
+	@override String get hubDescription => 'Tyto preference jsou uloženy na vašem účtu mediálního serveru a mohou se vztahovat i na ostatní klienty.';
 }
 
 // Path: discover
@@ -2442,6 +2580,7 @@ class _Translations$performanceOverlay$cs extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG základní vrstva';
 	@override String get dvRouteBaseLayerSdr => 'SDR základní vrstva';
 	@override String get dvRouteReshaped => 'RPU obnovené (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Experimentální graf P7 FEL (nekvalifikovaný)';
 	@override String get p7Conversion => 'Převod P7';
 	@override String get sampleRate => 'Vzorkovací frekvence';
 	@override String get pixelFormat => 'Formát pixelu';
@@ -2502,6 +2641,13 @@ class _Translations$externalPlayer$cs extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Neschopnost otevřít externí hráče';
 	@override String appNotInstalled({required Object name}) => '${name} není instalován';
 	@override String get playInExternalPlayer => 'Hrajte v externím hráči';
+	@override String get description => 'Vyberte si jinou aplikaci k otevření videa v. Dostupné hráče závisí na vašem zařízení a na instalovaných aplikacích.';
+	@override String get systemDefaultDescription => 'Nechte operační systém video otevřít pomocí své výchozí aplikace.';
+	@override String playerOptionDescription({required Object player}) => 'Otevřete videa pomocí ${player}.';
+	@override String get playerNameDescription => 'Značka zobrazená v seznamu hráčů.';
+	@override String get playerPackageDescription => 'Zadejte název balíčku Android aplikace pro hráče, jako je com.example.player.';
+	@override String get playerCommandDescription => 'Vložte nainstalovaný přehrávač příkaz nebo spustitelnou dráhu pro toto zařízení.';
+	@override String get playerUrlSchemeDescription => 'Zadejte schéma URL a volitelný šablona URL používaný k spuštění hráče.';
 }
 
 // Path: metadataEdit
@@ -2721,6 +2867,8 @@ class _Translations$services$cs extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$cs oauthProxy = _Translations$services$oauthProxy$cs._(_root);
 	@override late final _Translations$services$pendingAuth$cs pendingAuth = _Translations$services$pendingAuth$cs._(_root);
 	@override late final _Translations$services$libraryFilter$cs libraryFilter = _Translations$services$libraryFilter$cs._(_root);
+	@override String get seerrDescription => 'Připojte se k Seerr nebo Overseerr pro vyhledávání titulů a předložte mediální požadavky.';
+	@override late final _Translations$services$trackerDescriptions$cs trackerDescriptions = _Translations$services$trackerDescriptions$cs._(_root);
 }
 
 // Path: addServer
@@ -2915,6 +3063,9 @@ class _Translations$homeLayout$cs extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'Na';
 	@override String get resetHeroButtonDescription => 'Odstraní postavy hrdiny každé řady a přináší zpět jediný otáčící banner na vrcholu, stejně jako předtím, než hrdinské řady existovaly.';
+	@override String get tapHeroCardDescription => 'Vyberte, zda klepnutí nebo výběr karty Hero zahájí přehrávání nebo otevírá jeho detaily.';
+	@override String get heroTapPlayDescription => 'Začněte vybranou položku ihned.';
+	@override String get heroTapDetailsDescription => 'Otevřete podrobnosti vybraného položky před výběrem akce.';
 }
 
 // Path: platform
@@ -2945,8 +3096,12 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get source => 'Zdroj';
 	@override String get name => 'Jméno';
 	@override String get endpoint => 'server URL';
+	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
 	@override String get root => 'Složka nebo předpona';
+	@override String get smbFolderHelp => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.';
 	@override String get username => 'Uživatelské jméno';
+	@override String get smbDomain => 'Doména (nepovinné)';
 	@override String get password => 'Heslo';
 	@override String get token => 'API token';
 	@override String get accessKey => 'přístupový klíč ID';
@@ -2956,6 +3111,8 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth klientská tajemství (pouze desktop Google)';
 	@override String get allowHttp => 'Povolit nešifrované HTTP v důvěryhodné síti';
+	@override String get smbEncryption => 'Šifrovat připojení SMB3';
+	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
 	@override String get connect => 'Připojit';
 	@override String get cancel => 'Zrušit';
 	@override String get save => 'Uložit';
@@ -3103,12 +3260,23 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get useFiles => 'Použijte soubory a knihy';
 	@override String get cancelScan => 'Zrušit skenování';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
-	@override String get smbFolderHelp => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.';
-	@override String get smbDomain => 'Doména (nepovinné)';
-	@override String get smbEncryption => 'Šifrovat připojení SMB3';
-	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
+	@override String get offlineQuota => 'Limit pro offline stahování';
+	@override String get offlineQuotaHelp => 'Nastavení maximálního místa použitého offline kopie, dovezené soubory a stažené stahování. Snížení limitu neodstraňuje stávající kopie.';
+	@override String get offlineStorageUsage => 'Offline skladování';
+	@override String get reservedStorage => 'Rezervované';
+	@override String get downloadQueue => 'Stáhnout Queue';
+	@override String get downloadRunning => 'Stáhnout';
+	@override String get downloadQueued => 'Čekání';
+	@override String get downloadPaused => 'Odpočinek';
+	@override String get downloadFailed => 'Potřebuji zpět';
+	@override String get importing => 'dovoz';
+	@override String get importInterrupted => 'Import přerušený · odstranit k vymazání';
+	@override String get errorQuotaExceeded => 'Zvýšení limitu nebo odstranění stažené kopie.';
+	@override String get errorStorageLow => 'Neexistuje dostatek bezplatného ukládání zařízení k zachování chráněné rezervy.';
+	@override String get errorStorageUnavailable => 'PlezyNG nemohl kontrolovat bezplatné ukládání zařízení, takže psaní bylo zastaveno.';
+	@override String get removeDownloadJob => 'Odstranit download';
+	@override String get downloadAlreadyComplete => 'Toto stahování bylo dokončeno, než by mohlo být odstraněno. položka je nyní k dispozici offline.';
+	@override String get confirmRemoveDownloadJob => 'Odstranit toto stahování a odstraňovat jakékoli částečně stažené údaje? Vaše poloha a poznámky zůstane.';
 }
 
 // Path: lending
@@ -3228,6 +3396,12 @@ class _Translations$audiobook$cs extends Translations$audiobook$en {
 	@override String get statusFinished => 'Dokončené';
 	@override String get goToTime => 'Jděte do času';
 	@override String get timeHelp => 'Hodiny: minuty: sekundy nebo minuty: sekundy';
+	@override String get recoveryHelp => 'Exportujte nedávnou šifrovanou kopii před přenesením nebo opravou synchronizačních dat. Importy se spojí s aktuálním stavem; nikdy nenahrazují místní historii synchromu.';
+	@override String get recoveryExport => 'Export šifrované obnovení souborů';
+	@override String get recoveryImport => 'Import šifrované obnovení souborů';
+	@override String get recoveryImportConfirm => 'Spojte tento šifrovaný obnovení soubor s aktuálními čtení pozic a poznámky? existující historie bude zachována. sdílená knihovna a ID položky nejsou zahrnuty; nastavit odpovídající ID na každém zařízení před dovozem.';
+	@override String get recoveryExported => 'Šifrované obnovení souboru je uloženo.';
+	@override String get recoveryImported => 'Údaje o obnově se smítají.';
 }
 
 // Path: sourceSetup
@@ -3331,6 +3505,23 @@ class _Translations$sourceSetup$cs extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Vybraná identita klienta: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Hodnocení ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Stahování titulků: ${title}';
+	@override String get sharedEntryPair => 'Porovnejte tuto položku';
+	@override String get sharedEntryPairHelp => 'Vložte stejný ID pro tento položka na každém zařízení. Použijte stabilní sdílený identifikátor nebo vytvořte jeden a kopírujte ho do odpovídajícího položky. Pokrok se páří pouze tehdy, když typy souboru vydání, velikosti a objednávky se shodují. Blank odstraní toto mapování.';
+	@override String get sharedEntryId => 'Sdílené položky ID';
+	@override String get generateSharedEntryId => 'Vytvoření sdíleného ID položky';
+	@override String get sharedLibraryId => 'ID sdílené knihovny (volitelné)';
+	@override String get sharedLibraryHelp => 'Použijte stejný ID na zařízeních, které otevírají stejnou knihovnu.Tento veřejný ID pomáhá přenášet postup čtení a poznámky přes různé zdrojové připojení; není to heslo.Když poskytovatelé používají různé položky ID, páry těchto položek z jejich detailních obrazovek.';
+	@override String get sharedLibraryInvalid => 'Použijte 8 až 100 písmen, čísel, bodů, podkoží nebo hyfen.';
+	@override String get generateSharedLibraryId => 'Vytvoření sdíleného ID knihovny';
+	@override String get nfsReadAhead => 'Žádosti o čtení NFS';
+	@override String get nfsReadAheadHelp => 'Více paralelních čtení může zlepšit průchod na rychlém NAS nebo síti. Použijte 1 pokud server omezuje souběžné požadavky.';
+	@override String get nfsReadTest => 'Měření NFS čtení výkonu';
+	@override String get nfsReadTestHelp => 'Čte až 64 MiB z největšího souboru pro měření tohoto připojení NAS. To používá síťovou šířku pásma.';
+	@override String get nfsQualificationResult => 'NFS číst měření';
+	@override String get nfsReadBytes => 'Data čtení';
+	@override String get nfsReadSpeed => 'měřená rychlost';
+	@override String get nfsReadRequests => 'Čtěte žádosti';
+	@override String get sharedEntryConflict => 'Tento sdílený ID položky je již připojen k dalším položkám v této knihovně.';
 }
 
 // Path: comics
@@ -3423,6 +3614,15 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3503,6 +3703,19 @@ class _Translations$common$mediaKind$cs extends Translations$common$mediaKind$en
 	@override String get clip => 'Filmový klip';
 	@override String get photo => 'Fotka';
 	@override String get folder => 'Složka';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$cs extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Otevřete doporučení a položky z propojených zdrojů objevování.';
+	@override String get libraries => 'Otevřete své propojené mediální knihovny.';
+	@override String get liveTv => 'Otevřete Live TV, když ji server poskytuje; jinak startup padne zpět na domov.';
+	@override String get search => 'Vyhledávání otevřených médií.';
 }
 
 // Path: themeEditor.slots
@@ -3591,6 +3804,35 @@ class _Translations$videoControls$pipErrors$cs extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Chyba se vyskytla: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$cs extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Udržujte písma, barvy, velikosti a umístění napsané v souboru podtitulů.';
+	@override String get yes => 'Umožňujte nastavení podtitulového stylu hráče přizpůsobit podtituly ASS.';
+	@override String get scale => 'Aplikujte stylování hráče a rozsah vestavěných velikostí, aby odpovídala video rozměrů.';
+	@override String get force => 'Nahraďte vestavěné styly ASS stylem subtitu hráče.';
+	@override String get strip => 'Odstranit vestavěné formátování ASS a přinést podtitul text jasně.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$cs extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render na plné rozlišení povrchu displeje pro nejjasnější výsledek.';
+	@override String get video => 'Render používá video rozlišení jako odkaz, který může snížit práci na vysoce rozlišených obrazovkách.';
+	@override String get threeQuarter => 'Render na 75% rozlišení povrchu displeje pro skromné úspory výkonu.';
+	@override String get half => 'Odstranit na 50% rozlišení povrchu displeje, aby se snížila práce, s jemnějšími okraji.';
+	@override String get third => 'Render na třetinu rozlišení povrchu displeje ke snížení práce, s jemnějšími okraji.';
+	@override String get quarter => 'Render na jednu čtvrtinu rozlišení povrchu displeje ke snížení práce, s nejjemnější výsledkem.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$cs extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$cs._(TranslationsCs root) : this._root = root, super.internal(root);
@@ -3633,6 +3875,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$cs extends T
 	@override String get preferSdh => 'Přednost SDH podtitulů';
 	@override String get onlySdh => 'Pouze subtituly SDH';
 	@override String get onlyNonSdh => 'Pouze ne-SDH podtituly';
+	@override String get preferNonSdhDescription => 'Přednost standardních titulů, když jsou k dispozici jak standardní, tak i verze SDH.';
+	@override String get preferSdhDescription => 'Přednost SDH podtitulů, když jsou k dispozici, ale umožňují standardní podtituly jako padnutí.';
+	@override String get onlySdhDescription => 'Použijte pouze podtituly SDH; nepadněte zpět do standardních podtitulů.';
+	@override String get onlyNonSdhDescription => 'Používejte pouze standardní podtituly; vyloučte SDH.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3646,6 +3892,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$cs extends Translat
 	@override String get preferForced => 'Upřednostňujeme podtitulky';
 	@override String get onlyForced => 'Pouze podtitulky';
 	@override String get onlyNonForced => 'Pouze nepovinné podtitulky';
+	@override String get preferNonForcedDescription => 'Upřednostňuje pravidelné podtituly, ale umožňuje nucené stopy jako padnutí.';
+	@override String get preferForcedDescription => 'Upřednostňuje nucené stopy, když jsou k dispozici, ale umožňují pravidelné podtituly jako padnutí.';
+	@override String get onlyForcedDescription => 'Použijte pouze stopy označené jako nucené.';
+	@override String get onlyNonForcedDescription => 'Vylučte stopy označené jako nucené.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3659,6 +3909,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$cs extends Transl
 	@override String get moviesAndShows => 'Filmy a televizní představení';
 	@override String get movies => 'Filmy pouze';
 	@override String get shows => 'Televizní show pouze';
+	@override String get noneDescription => 'Nevykazujte sledované kontrolní značky.';
+	@override String get moviesAndShowsDescription => 'Zobrazit sledované kontroly pro filmy a televizní pořady.';
+	@override String get moviesDescription => 'Zobrazit sledované kontroly pouze pro filmy.';
+	@override String get showsDescription => 'Zobrazit sledované kontroly pouze pro televizní pořady.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3672,6 +3926,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$cs extends Translatio
 	@override String get usersOnly => 'Pouze uživatelé';
 	@override String get criticsOnly => 'Kritika pouze';
 	@override String get nobody => 'skryté';
+	@override String get usersAndCriticsDescription => 'Zobrazit uživatelské hodnocení a kritické hodnotení.';
+	@override String get usersOnlyDescription => 'Zobrazit hodnocení a recenze předložené uživateli.';
+	@override String get criticsOnlyDescription => 'Zobrazit kritické hodnocení a recenze.';
+	@override String get nobodyDescription => 'Ukrývejte hodnocení a recenze.';
 }
 
 // Path: discover.findNext
@@ -4462,6 +4720,21 @@ class _Translations$services$libraryFilter$cs extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Synchronizujte pouze níže kontrolované knihovny.';
 	@override String get libraries => 'Knihovny';
 	@override String get noLibraries => 'Žádné knihovny k dispozici';
+	@override String get modeDescription => 'Vyberte, zda jsou kontrolované knihovny zablokovány od synchronizace nebo jsou jedinými knihovnami, které synchronifikují.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$cs extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Synchronizujte sledované epizody a filmy s vaším účtem Trakt.';
+	@override String get mal => 'Synchronizovat anime seznamy a sledovat pokrok s MyAnimeList.';
+	@override String get anilist => 'Synchronizujte anime seznamy a sledujte pokrok s AniList.';
+	@override String get simkl => 'Sync sledoval filmy, televizní pořady a anime s Simkl.';
+	@override String get mdblist => 'Zobrazit hodnocení a seznamy MDBList v doporučeních a prozkoumat.';
 }
 
 /// The flat map containing all translations for locale <cs>.
@@ -4519,6 +4792,7 @@ extension on TranslationsCs {
 			'appIcon.names.strata' => 'Vrstvy',
 			'appIcon.names.facet' => 'tvář',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Vyberte ikonu zobrazenou spuštěčem zařízení. Předpovědi ukazují, jak vypadá každá možnost.',
 			'auth.signInWithPlex' => 'Přihlaste se na číslo Plex',
 			'auth.showQRCode' => 'Zobrazit QR kód',
 			'auth.authenticate' => 'autentické',
@@ -4540,6 +4814,32 @@ extension on TranslationsCs {
 			'common.cancel' => 'Zrušit',
 			'common.save' => 'Uložit',
 			'common.close' => 'Zavřít',
+			'common.closeMiniPlayer' => 'Blízký mini hráč',
+			'common.closeWorkspaceWindow' => 'blízko okna',
+			'common.returnToFullView' => 'Zpět na Full View',
+			'common.manageMediaSessions' => 'Řízení mediálních zasedání',
+			'common.hideMediaSessions' => 'ukrytí mediálních zasedání',
+			'common.mediaSessions' => 'Mediální zasedání',
+			'common.mediaSessionsHint' => 'Park skrývá okno, ale udržuje otevřené. Návrat ho otevírá v plném zobrazení; blízko končí.',
+			'common.sessionInWorkspace' => 'v pracovním prostoru',
+			'common.sessionParked' => 'Parkování',
+			'common.sessionFullscreen' => 'Plný obrazovek',
+			'common.switchToNextWindow' => 'Přepínání s příštím oknem',
+			'common.moveWindow' => 'Pohybujte okno',
+			'common.finishMovingWindow' => 'Konec pohybující se okna',
+			'common.moveWindowHint' => 'Dlouho stiskněte a vytáhněte okno, abyste ho přesunuli.Tento ovládací prvek také umožňuje pohyb klíče šípky.',
+			'common.movingWindowHelp' => 'Přejít na pohyb · Přejíždět klíče přizpůsobit · Zadejte zálohy · Únik zrušit',
+			'common.resizeWindow' => 'Odstranit okno',
+			'common.resizeWindowHint' => 'Vyzvedněte tuto rukojeti nebo použijte klíče strelu, aby se okno znovu rozmazalo.',
+			'common.workspaceWindowHint' => 'Použijte pohybový ovládací prvek nebo dlouhý tlak a přejděte se.',
+			'common.workspacePaneHint' => 'Vyberte tuto panelu, abyste ji zaměřili. Použijte její kontrolu na plný obrazovek k rozšíření.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Okno sezení: ${title}',
+			'common.workspaceTitleHint' => 'Vyberte se zaměřit. Přejděte titulní řádek k pohybu; použijte tlačítko na plný obrazovku k rozšíření.',
+			'common.moveToSessionTray' => 'Přejděte na Session Tray',
+			'common.moveToSessionTrayHint' => 'Tato schůzka je k dispozici bez zobrazení okna.',
+			'common.closeSessionHint' => 'Zavřete tento okno a ukončíte jeho zasedání.',
+			'common.sideBySideLayout' => 'Přepínání na side-by-side layout',
+			'common.floatingWindows' => 'Přepínání k plovoucímu oknu',
 			'common.clear' => 'jasné',
 			'common.reset' => 'Resetovat',
 			'common.later' => 'Později',
@@ -4957,6 +5257,8 @@ extension on TranslationsCs {
 			'settings.audioPassthrough' => 'zvuková pasáž',
 			'settings.audioPassthroughDescription' => 'Odeslat Dolby/DTS audio do přijímače nebo televize bez re-kódování, zachování okolního zvuku.',
 			'settings.audioPassthroughDescriptionApple' => 'Použijte nativní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. DTS a TrueHD stále hrají jako multichannel PCM.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Použijte původní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. Na iOS, iPadOS a tvOS 26 nebo později, TrueHD Atmos a DTS:X přehrávat jako prostorový audio. Ostatní DTS a TrueHD stopy přehrávat jako multichannel PCM.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Zastavte, zatímco normalizace hluku je na',
 			'settings.audioChannelLimit' => 'Počet kanálů zvuku',
@@ -4983,9 +5285,14 @@ extension on TranslationsCs {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 a potlačení DV konverze zpět',
 			'settings.dvConversionDv81Description' => 'Konverze RPU na profil Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL vrstvy a současná rovina HEVC',
+			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
+			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
+			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
+			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
+			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
+			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
 			'settings.disableDolbyVision' => 'Zrušení Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden',
 			'settings.hdrSdrConversion' => 'HDR na SDR konverze',
 			'settings.hdrSdrConversionDescription' => 'Vyberte, co konvertuje HDR video, když displej nedokáže zobrazit HDR.',
@@ -5071,13 +5378,84 @@ extension on TranslationsCs {
 			'settings.regionFormatDescription' => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.',
 			'settings.metadataLanguage' => 'Jazyk metadat',
 			'settings.metadataLanguageDescription' => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.',
-			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
-			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
-			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
-			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
-			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
-			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Přihlaste se k plné obrazovce, když začíná playback',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Otevřete desktopové video na plném obrazovce, když začíná playback',
+			'settings.extendVideoIntoDisplayCutout' => 'Rozšířte video do displeje Cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Umožňujte, aby video s plnou obrazovkou používalo fotoaparát na telefonech Android',
+			'settings.languageDescription' => 'Vyberte jazyk používaný pro kontroly a zprávy PlezyNG.Sledujte systém sleduje jazyk vašeho zařízení.',
+			'settings.themeDescription' => 'Vyberte barvy a kontrast používané v celé aplikaci.',
+			'settings.libraryDensityDescription' => 'Změňte, kolik knihovních karet se hodí v každém řádku.',
+			'settings.displayScaleDescription' => 'Přehrávejte rozhraní na tomto autovém displeji, aniž byste změnili velikost textu v celé zařízení.',
+			'settings.themeSongVolumeDescription' => 'Nastavení objemu tematických písní ve vztahu k jiným zvukům.',
+			'settings.viewModeDescription' => 'Vyberte, zda se knižní položky zobrazují jako plakáty v síti nebo jako kompaktní seznam.',
+			'settings.gridViewDescription' => 'Nastavení knihovních položek v řádcích a sloupcích plakátů.',
+			'settings.listViewDescription' => 'Zobrazit položky knihovny v vertikálním seznamu s více textem na položku.',
+			'settings.gridSpacingDescription' => 'Nastavte rozdíl mezi plakáty v knihovních sítích.',
+			'settings.gridSpacingTightDescription' => 'Připravte více plakátů přes obrazovku s menšími mezery.',
+			'settings.gridSpacingNormalDescription' => 'Použijte standardní mezeru mezi plakáty.',
+			'settings.gridSpacingSpaciousDescription' => 'Přidejte větší mezery mezi plakáty pro více oddělení.',
+			'settings.episodePosterModeDescription' => 'Vyberte, které umělecké dílo se objeví na karetách epizod.',
+			'settings.seriesPosterDescription' => 'Použijte seriálový plakát pro každou epizodu.',
+			'settings.seasonPosterDescription' => 'Použijte sezónní plakát pro každou epizodu, když je k dispozici.',
+			'settings.episodeThumbnailDescription' => 'Použijte rám z epizody, když je k dispozici.',
+			'settings.continueWatchingActionDescription' => 'Vyberte si, co se stane, když aktivujete kartu Pokračující sledování.',
+			'settings.continueWatchingPlayDescription' => 'Začněte film nebo epizodu okamžitě.',
+			'settings.continueWatchingDetailsDescription' => 'Nejprve otevřete titulní stránku, abyste si mohli prohlédnout detaily a vybrat akci.',
+			'settings.episodeActionDescription' => 'Vyberte si, co se stane, když aktivujete epizodovou kartu.',
+			'settings.episodePlayDescription' => 'Hra začíná okamžitě.',
+			'settings.episodeDetailsDescription' => 'Otevřete stránku epizody před playbackem.',
+			'settings.contentScreensaverDelayDescription' => 'Vyberte si, jak dlouho PlezyNG čeká bez vstupu před zobrazením uměleckého díla.',
+			'settings.continueWatchingRowSizeDescription' => 'Vyberte si, jak velké jsou karty v řádku Pokračující sledování.',
+			'settings.rowSizeCompactDescription' => 'Zobrazit menší karty, takže více položek se hodí po řádku.',
+			'settings.rowSizeStandardDescription' => 'Použijte standardní velikost karty.',
+			'settings.rowSizeLargeDescription' => 'Zobrazit větší karty s více uměleckých detailů.',
+			'settings.visualEffectsDescription' => 'Vyberte rozpočet animace a uměleckých efektů pro toto zařízení.',
+			'settings.visualEffectsFullDescription' => 'Použijte plné animace a umělecké efekty na každém zařízení.',
+			'settings.startupSectionDescription' => 'Vyberte, která sekce se otevře při zahájení PlezyNG.',
+			'settings.startupSectionOptions.discover' => 'Otevřete doporučení a položky z propojených zdrojů objevování.',
+			'settings.startupSectionOptions.libraries' => 'Otevřete své propojené mediální knihovny.',
+			'settings.startupSectionOptions.liveTv' => 'Otevřete Live TV, když ji server poskytuje; jinak startup padne zpět na domov.',
+			'settings.startupSectionOptions.search' => 'Vyhledávání otevřených médií.',
+			'settings.smallSkipDurationDescription' => 'Nastavte vzdálenost pohybující se krátkou zpětnou a dopředu hledat kontroly.',
+			'settings.largeSkipDurationDescription' => 'Nastavte vzdálenost pohybující se dlouhým zpětným a dopředu hledat kontroly.',
+			'settings.rewindOnResumeDescription' => 'Převod playback zpět tímto množstvím při opětovném natáčení videa.',
+			'settings.defaultSleepTimerDescription' => 'Nastavení počáteční doby použité při zahájení času spánku.',
+			'settings.playNextCountdownDescription' => 'Čekejte to dlouho, než začnete další epizodu. nastavit na 0 začít okamžitě.',
+			'settings.autoSkipDelaySettingDescription' => 'Použije se, když je intro, kredit nebo reklama nastaven k automatické přerušení.',
+			'settings.downmixCenterBoostDescription' => 'Zvýšte dialog v centrálním kanálu, když je surround audio smícháno dolů na stereo.',
+			'settings.displaySwitchDelayDescription' => 'Počkejte před změnou režimu zobrazení, aby televizor nebo přijímač mohl dokončit svůj předchozí přepín.',
+			'settings.playerBackendDescription' => 'Vyberte si, který přehrávač dekóduje a renderuje video na tomto zařízení.',
+			'settings.exoPlayerDescription' => 'Použijte nativní přehrávač založený na Media3 a podporované hardwarové trasy systému Android.',
+			'settings.mpvDescription' => 'Použijte mpv, který vystavuje další playback, subtitle a video zpracování ovládacích prvků.',
+			'settings.scopeOffDescription' => 'Udržujte změny pouze pro aktuální playback.',
+			'settings.scopeGlobalDescription' => 'Opět použijte stejnou hodnotu pro každou knihovnu a titul.',
+			'settings.scopeLibraryDescription' => 'Pamatujte si na samostatnou hodnotu pro každou knihovnu.',
+			'settings.scopeTitleDescription' => 'Pamatujte si samostatnou hodnotu pro každou představu nebo film.',
+			'settings.specialsOrderingServerDescription' => 'Udržujte objednávku epizody poskytovanou mediálním serverem.',
+			'settings.specialsOrderingAirDateDescription' => 'Vložte speciály mezi pravidelné epizody podle jejich datum vzduchu.',
+			'settings.specialsOrderingLastDescription' => 'Každá speciální položka po pravidelných sezónách.',
+			'settings.skipIntroModeDescription' => 'Vyberte, zda intro markery hrají normálně, zobrazí tlačítko skip nebo automaticky skip.',
+			'settings.skipCreditsModeDescription' => 'Vyberte, zda se kredity běžně hrají, zobrazí tlačítko skok nebo automaticky skok.',
+			'settings.skipAdsModeDescription' => 'Vyberte, zda zjištěné reklamy hrají normálně, zobrazí tlačítko skip nebo automaticky skip.',
+			'settings.playbackBufferAutoDescription' => 'Nechte aktivního hráče zvolit jeho normální velikost bufetu.',
+			'settings.playbackBufferLargeDescription' => 'Udržujte více médií připravených před přehráváním; to využívá více paměti.',
+			'settings.playbackBufferExtraLargeDescription' => 'Udržujte největší čtenářský buffer, který využívá nejvíce paměti.',
+			'settings.defaultQualityDescription' => 'Nastavení výchozí video rozlišení a bitrate strop pro toky, které server transkóduje.',
+			'settings.cellularQualityDescription' => 'Override Standardní kvalita, když zařízení používá pouze buněčné připojení.',
+			'settings.remoteQualityDescription' => 'Override Default Quality při připojení k serveru prostřednictvím vzdáleného připojenia.',
+			'settings.qualityPresetOriginalDescription' => 'Přehrávejte zdroj v dostupné kvalitě, aniž byste požádali server o jeho překódování.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Požádejte server o převedený tok pomocí výše uvedené rozlišení a bitrate.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Použijte kvalitu vybranou v předvolené kvalitě.',
+			'settings.musicQualityDescription' => 'Nastavte maximální požadovanou audio bitovou rychlost od serveru; originál zachovává zdrojový tok.',
+			'settings.musicQualityOriginalDescription' => 'Přehrávejte zdrojový zvuk bez bitrate-capped transcode.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Požádejte o transkód serveru v blízkosti výše uvedené bitové rychlosti; skutečný výsledek se může lišit.',
+			'settings.maxVolumeInputLabel' => 'Maximální objem (%)',
+			'settings.checkForUpdatesDescription' => 'Zkontrolujte, zda je k dispozici novější verze PlezyNG.',
+			'settings.appearanceDescription' => 'Vyberte téma aplikace a přizpůsobte karty knihovny, domovské řádky a navigaci.',
+			'settings.prerollLibraryDescription' => 'Vyberte si knihovnu, která obsahuje klipy k dispozici jako filmové pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Vyberte, které klipy z vybrané knihovny můžete hrát před filmy.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Počkejte na to mnoho minut bez vstupu, než se zobrazí obrazovkový záložní umělecké dílo.',
+			'settings.videoCodecOptionDescription' => 'Umožňujte přímé přehrávání pro tento kodek, když je podporován. nekontrolované kodeky jsou transkódovány mediálním serverem.',
 			'themeEditor.builtIn' => 'stavět-in',
 			'themeEditor.presets' => 'přednášky',
 			'themeEditor.custom' => 'Vlastní',
@@ -5116,6 +5494,17 @@ extension on TranslationsCs {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => 'Zbývá ${minutes} min',
 			'themeEditor.previewSwitch' => 'Automatické přehrávání',
 			'themeEditor.previewMutedText' => 'Druhý text se takhle čte',
+			'themeEditor.themeSystemDescription' => 'Sledujte vzhled vašeho zařízení a automaticky přejděte mezi světlem a temnotou.',
+			'themeEditor.themeLightDescription' => 'Použijte jasný pozadí s tmavým textem.',
+			'themeEditor.themeDarkDescription' => 'Použijte tmavé pozadí s lehkým textem.',
+			'themeEditor.themeOledDescription' => 'Používejte černé povrchy, které snižují světlo na OLED obrazovkách.',
+			'themeEditor.themeEmberDescription' => 'Použijte teplé červené a amber akcentní barvy.',
+			'themeEditor.themeGlacierDescription' => 'Použijte barevné modré akcenty.',
+			'themeEditor.themeForestDescription' => 'Použijte zelené a přírodní barevné akcenty.',
+			'themeEditor.themePlumDescription' => 'Použijte violetní a plumové akcentní barvy.',
+			'themeEditor.themePaperDescription' => 'Použijte teplé papírové povrchy a barvy inspirované inkoustem.',
+			'themeEditor.themeCustomDescription' => 'Použijte barevnou paletu, kterou jste vytvořili v přizpůsobeném editoru témat.',
+			'themeEditor.editorDescription' => 'Vyberte si barvu palety, upravte její hustotu, nasycení, jasnost nebo opacitu a předchozí aktualizace se zobrazí.',
 			'search.hint' => 'Hledat filmy, představení, hudba...',
 			'search.tryDifferentTerm' => 'Vyzkoušejte jiný vyhledávací termín',
 			'search.searchYourMedia' => 'Vyhledejte své média',
@@ -5361,6 +5750,8 @@ extension on TranslationsCs {
 			'accessibility.largeTargets' => 'větší cíle dotyku',
 			'accessibility.largeTargetsHint' => 'Dáváme sdíleným ovládacím prvkům více prostoru pro dotyk a asistenční navigaci.',
 			'accessibility.navigationHint' => 'Mezi ovládacími prvky se přesouvejte klávesami Tab a Shift+Tab, aktivujte je klávesou Enter nebo mezerníkem a zavírejte klávesou Escape nebo tlačítkem Zpět. Při otevřené knize je dostupné přiblížení a nastavení čtení.',
+			'accessibility.textSizeDescription' => 'Rozsah textového rozhraní v PlezyNG kromě nastavení velikosti textu systému vašeho zařízení.',
+			'accessibility.boldTextHint' => 'Použijte těžší váhu pro rozhraní etikety a zprávy, aby je jednodušší rozlišovat.',
 			'tooltips.shufflePlay' => 'Shuffle hraje',
 			'tooltips.playTrailer' => 'Hrajte trailer',
 			'tooltips.markAsWatched' => 'Mark jako sledovaný',
@@ -5380,6 +5771,8 @@ extension on TranslationsCs {
 			'videoControls.sleepTimerEndOfVideo' => 'Konec aktuálního videa',
 			'videoControls.sleepTimerStopAtHeader' => 'Zastavte se',
 			'videoControls.sleepTimerDurationHeader' => 'Časový',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback se zastaví na konci tohoto videa',
 			'videoControls.stillWatching' => 'Stále se díváte?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Odpočinek v ${seconds}s',
@@ -5414,6 +5807,8 @@ extension on TranslationsCs {
 			'videoControls.transcodeUnavailableFallback' => 'Překódování není k dispozici – hraje originální kvalitu',
 			'videoControls.subtitleUnavailableFallback' => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů',
 			'videoControls.pipButton' => 'Obrazový režim - Picture in-Picture',
+			'videoControls.openMiniPlayer' => 'Otevřený mini hráč',
+			'videoControls.returnToFullPlayer' => 'Zpět na plný hráč',
 			'videoControls.aspectRatioButton' => 'Poměr stran',
 			'videoControls.ambientLighting' => 'Atmosférické osvětlení',
 			'videoControls.fullscreenButton' => 'Vstup na plný obrazovek',
@@ -5498,8 +5893,6 @@ extension on TranslationsCs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Skenování knihovny začíná pro "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Knihovna se neskončila: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Znovuzavírací metadata pro "${title}..."',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aktualizace metadata začíná pro "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nepodařilo se aktualizovat metadata: ${error}',
 			'messages.logoutConfirm' => 'Jste si jisti, že se chcete přihlásit?',
@@ -5559,6 +5952,28 @@ extension on TranslationsCs {
 			'subtitlingStyling.renderResolution' => 'Renderová rezoluce',
 			'subtitlingStyling.renderResolutionScreen' => 'Rozlišení obrazovky',
 			'subtitlingStyling.renderResolutionVideo' => 'Rozlišení videa',
+			'subtitlingStyling.fontSizeDescription' => 'Na tomto zařízení nastavíte velikost podtitulu textu.',
+			'subtitlingStyling.textColorDescription' => 'Vyberte barvu použité pro text podtitulů.',
+			'subtitlingStyling.borderSizeDescription' => 'Nastavení tloušťky výstupu kolem podtitulového textu.',
+			'subtitlingStyling.borderColorDescription' => 'Zvolte barvu použité pro podtitulový výstup.',
+			'subtitlingStyling.backgroundColorDescription' => 'Zvolte barvu za textem.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Nastavte, jak transparentní je podtitulový pozadí: 0% je jasný a 100% pevný.',
+			'subtitlingStyling.positionDescription' => '0 % je horní část videa a 100 % dolní část.',
+			'subtitlingStyling.assOverrideDescription' => 'Vyberte, zda hráč sleduje, upravuje, nahrazuje nebo odstraňuje styling vložený do podtitulů ASS.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Udržujte písma, barvy, velikosti a umístění napsané v souboru podtitulů.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Umožňujte nastavení podtitulového stylu hráče přizpůsobit podtituly ASS.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Aplikujte stylování hráče a rozsah vestavěných velikostí, aby odpovídala video rozměrů.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Nahraďte vestavěné styly ASS stylem subtitu hráče.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Odstranit vestavěné formátování ASS a přinést podtitul text jasně.',
+			'subtitlingStyling.renderResolutionDescription' => 'Vyberte rozlišení používané k rasterizování obrazu a ASS podtitulů. nižší Android stupnice mohou snížit rendering práci, ale vypadat jemněji.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render na plné rozlišení povrchu displeje pro nejjasnější výsledek.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render používá video rozlišení jako odkaz, který může snížit práci na vysoce rozlišených obrazovkách.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render na 75% rozlišení povrchu displeje pro skromné úspory výkonu.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Odstranit na 50% rozlišení povrchu displeje, aby se snížila práce, s jemnějšími okraji.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render na třetinu rozlišení povrchu displeje ke snížení práce, s jemnějšími okraji.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render na jednu čtvrtinu rozlišení povrchu displeje ke snížení práce, s nejjemnější výsledkem.',
+			'subtitlingStyling.boldDescription' => 'Vložte text podtitulu v těžší hmotnosti.',
+			'subtitlingStyling.italicDescription' => 'Podtitulový text v italštině.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Pokročilé nastavení videohrávače',
 			'mpvConfig.presets' => 'přednášky',
@@ -5695,11 +6110,19 @@ extension on TranslationsCs {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Přednost SDH podtitulů',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Pouze subtituly SDH',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Pouze ne-SDH podtituly',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Přednost standardních titulů, když jsou k dispozici jak standardní, tak i verze SDH.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Přednost SDH podtitulů, když jsou k dispozici, ale umožňují standardní podtituly jako padnutí.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Použijte pouze podtituly SDH; nepadněte zpět do standardních podtitulů.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Používejte pouze standardní podtituly; vyloučte SDH.',
 			'accountPreferences.forcedSubtitles' => 'Povinné podtitulky',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Přednost nepovinných titulů',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Upřednostňujeme podtitulky',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Pouze podtitulky',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Pouze nepovinné podtitulky',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Upřednostňuje pravidelné podtituly, ale umožňuje nucené stopy jako padnutí.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Upřednostňuje nucené stopy, když jsou k dispozici, ale umožňují pravidelné podtituly jako padnutí.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Použijte pouze stopy označené jako nucené.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Vylučte stopy označené jako nucené.',
 			'accountPreferences.displayMissingEpisodes' => 'Zobrazit chybějící epizody',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Seznam epizod, o kterých server ví, ale nemá žádné soubory.',
 			'accountPreferences.hidePlayedInLatest' => 'Ukryte sledované položky v Poslední',
@@ -5713,11 +6136,27 @@ extension on TranslationsCs {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmy a televizní představení',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Filmy pouze',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Televizní show pouze',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Nevykazujte sledované kontrolní značky.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Zobrazit sledované kontroly pro filmy a televizní pořady.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Zobrazit sledované kontroly pouze pro filmy.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Zobrazit sledované kontroly pouze pro televizní pořady.',
 			'accountPreferences.mediaReviewsVisibility' => 'Hodnocení & recenze',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Uživatelé a kritikové',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Pouze uživatelé',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Kritika pouze',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'skryté',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Zobrazit uživatelské hodnocení a kritické hodnotení.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Zobrazit hodnocení a recenze předložené uživateli.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Zobrazit kritické hodnocení a recenze.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Ukrývejte hodnocení a recenze.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Upřednostňuje zvukové stopy v tomto jazyce, když server nebo přehrávač automaticky vybere stopu.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Doporučuje se sledovat podtituly v tomto jazyce, když jsou subtituly automaticky vybrány.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Vyberte, zda jsou SDH captions preferovány nebo požadovány během automatického výběru podtitulů.',
+			'accountPreferences.forcedSubtitleDescription' => 'Vyberte si, zda jsou při automatickém výběru preferovány nebo požadovány nucené podtitulové stopy.',
+			'accountPreferences.watchedIndicatorDescription' => 'Vyberte, které typy médií obdrží sledovanou kontrolu v rozhraní serveru.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Vyberte, které publikum a kritické hodnocení server zobrazuje na stránkách médií.',
+			'accountPreferences.subtitleModeDescription' => 'Vyberte, kdy se podtituly automaticky zapnou pro tento serverový účet.',
+			'accountPreferences.hubDescription' => 'Tyto preference jsou uloženy na vašem účtu mediálního serveru a mohou se vztahovat i na ostatní klienty.',
 			'discover.title' => 'Objevovat',
 			'discover.noContentAvailable' => 'Žádný obsah k dispozici',
 			'discover.addMediaToLibraries' => 'Přidejte nějaké média do knihoven',
@@ -5846,6 +6285,8 @@ extension on TranslationsCs {
 			'libraries.all' => 'Vše',
 			'libraries.clearAll' => 'Jasné vše',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete skenovat "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete analyzovat "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Jste si jisti, že chcete aktualizovat metadata pro "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Jste si jisti, že chcete prázdný odpad pro "${title}"?',
@@ -6012,8 +6453,6 @@ extension on TranslationsCs {
 			'explore.mdblistShelves.nameHint' => 'Zanechte pryč, abyste použili název zdrojového seznamu.',
 			'explore.mdblistShelves.add' => 'Přidejte shelf',
 			'explore.mdblistShelves.save' => 'Záchranářská schůzka',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Přesun ${title} nahoru',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Stáhnout ${title} dolů',
 			'explore.mdblistShelves.unavailable' => 'Tento seznam není k dispozici. Odstranit nebo odstranit jeho šálek v nastavení.',
@@ -6360,6 +6799,8 @@ extension on TranslationsCs {
 			'watchTogether.connecting' => 'Připojení...',
 			'watchTogether.relayPublic' => 'Pokoje využívají veřejné Open Watch Party relace.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Pokoje používají váš relay na ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Poslední pokoje',
 			'watchTogether.roomActions' => 'Akce v místnosti',
 			'watchTogether.renameRoom' => 'Rekonstrukce pokoje',
@@ -6526,8 +6967,6 @@ extension on TranslationsCs {
 			'downloads.resumeDownload' => 'Recenze download',
 			'downloads.cancelledDownload' => 'Zrušený download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncování ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Stáhnout ${file} - Klikněte pro dokončení',
 			'downloads.partialDownloadClickToComplete' => 'Částečně stáhnout - klikněte na dokončit',
 			'downloads.deleting' => 'Odstranění...',
@@ -6786,6 +7225,7 @@ extension on TranslationsCs {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG základní vrstva',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR základní vrstva',
 			'performanceOverlay.dvRouteReshaped' => 'RPU obnovené (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Experimentální graf P7 FEL (nekvalifikovaný)',
 			'performanceOverlay.p7Conversion' => 'Převod P7',
 			'performanceOverlay.sampleRate' => 'Vzorkovací frekvence',
 			'performanceOverlay.pixelFormat' => 'Formát pixelu',
@@ -6837,6 +7277,13 @@ extension on TranslationsCs {
 			'externalPlayer.launchFailed' => 'Neschopnost otevřít externí hráče',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} není instalován',
 			'externalPlayer.playInExternalPlayer' => 'Hrajte v externím hráči',
+			'externalPlayer.description' => 'Vyberte si jinou aplikaci k otevření videa v. Dostupné hráče závisí na vašem zařízení a na instalovaných aplikacích.',
+			'externalPlayer.systemDefaultDescription' => 'Nechte operační systém video otevřít pomocí své výchozí aplikace.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Otevřete videa pomocí ${player}.',
+			'externalPlayer.playerNameDescription' => 'Značka zobrazená v seznamu hráčů.',
+			'externalPlayer.playerPackageDescription' => 'Zadejte název balíčku Android aplikace pro hráče, jako je com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Vložte nainstalovaný přehrávač příkaz nebo spustitelnou dráhu pro toto zařízení.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Zadejte schéma URL a volitelný šablona URL používaný k spuštění hráče.',
 			'metadataEdit.editMetadata' => 'Upravit',
 			'metadataEdit.screenTitle' => 'Upravit metadata',
 			'metadataEdit.basicInfo' => 'Základní info',
@@ -6866,6 +7313,8 @@ extension on TranslationsCs {
 			'metadataEdit.metadataUpdateFailed' => 'Nedokázal aktualizovat metadata',
 			'metadataEdit.artworkUpdated' => 'Umělecká aktualizace',
 			'metadataEdit.artworkUpdateFailed' => 'Nedokázal aktualizovat umělecké dílo',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'K dispozici žádné umělecké dílo',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Umělecká volba ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Možnost umělecké práce ${index}, vybraná',
@@ -7026,6 +7475,13 @@ extension on TranslationsCs {
 			'services.libraryFilter.modeHintWhitelist' => 'Synchronizujte pouze níže kontrolované knihovny.',
 			'services.libraryFilter.libraries' => 'Knihovny',
 			'services.libraryFilter.noLibraries' => 'Žádné knihovny k dispozici',
+			'services.libraryFilter.modeDescription' => 'Vyberte, zda jsou kontrolované knihovny zablokovány od synchronizace nebo jsou jedinými knihovnami, které synchronifikují.',
+			'services.seerrDescription' => 'Připojte se k Seerr nebo Overseerr pro vyhledávání titulů a předložte mediální požadavky.',
+			'services.trackerDescriptions.trakt' => 'Synchronizujte sledované epizody a filmy s vaším účtem Trakt.',
+			'services.trackerDescriptions.mal' => 'Synchronizovat anime seznamy a sledovat pokrok s MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Synchronizujte anime seznamy a sledujte pokrok s AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync sledoval filmy, televizní pořady a anime s Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Zobrazit hodnocení a seznamy MDBList v doporučeních a prozkoumat.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Přidat server ${product}',
 			'addServer.serverUrls' => 'Serverové URL',
 			'addServer.serverUrlsHelper' => 'Mnoho URL je povoleno, odděleno komami.',
@@ -7040,8 +7496,6 @@ extension on TranslationsCs {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nemohla se dostat na server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Přihláška neúspěšná: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect selhalo: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Přihlaste se na číslo Plex',
 			'addServer.pinExpired' => 'PIN skončil před přihlášením, zkuste to znovu.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Účet se nezregistroval: ${error}',
@@ -7195,6 +7649,9 @@ extension on TranslationsCs {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'Na',
 			'homeLayout.resetHeroButtonDescription' => 'Odstraní postavy hrdiny každé řady a přináší zpět jediný otáčící banner na vrcholu, stejně jako předtím, než hrdinské řady existovaly.',
+			'homeLayout.tapHeroCardDescription' => 'Vyberte, zda klepnutí nebo výběr karty Hero zahájí přehrávání nebo otevírá jeho detaily.',
+			'homeLayout.heroTapPlayDescription' => 'Začněte vybranou položku ihned.',
+			'homeLayout.heroTapDetailsDescription' => 'Otevřete podrobnosti vybraného položky před výběrem akce.',
 			'platform.localNetworkPermission' => 'PlezyNG se připojí k vašim mediálním serverům a přehrávačům na vaší místní síti.',
 			'platform.locationPermission' => 'PlezyNG používá přístup k místu, když iOS vyžaduje, aby detekovala vaši místní síť a připojila se k vašim mediálním serverům.',
 			'platform.photoLibraryPermission' => 'Vyberte si obrázky z vaší knihovny fotografií pro použití jako umělecké dílo.',
@@ -7207,8 +7664,12 @@ extension on TranslationsCs {
 			'fileSources.source' => 'Zdroj',
 			'fileSources.name' => 'Jméno',
 			'fileSources.endpoint' => 'server URL',
+			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
 			'fileSources.root' => 'Složka nebo předpona',
+			'fileSources.smbFolderHelp' => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.',
 			'fileSources.username' => 'Uživatelské jméno',
+			'fileSources.smbDomain' => 'Doména (nepovinné)',
 			'fileSources.password' => 'Heslo',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'přístupový klíč ID',
@@ -7218,6 +7679,8 @@ extension on TranslationsCs {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth klientská tajemství (pouze desktop Google)',
 			'fileSources.allowHttp' => 'Povolit nešifrované HTTP v důvěryhodné síti',
+			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
+			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
 			'fileSources.connect' => 'Připojit',
 			'fileSources.cancel' => 'Zrušit',
 			'fileSources.save' => 'Uložit',
@@ -7360,12 +7823,25 @@ extension on TranslationsCs {
 			'fileSources.useFiles' => 'Použijte soubory a knihy',
 			'fileSources.cancelScan' => 'Zrušit skenování',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
-			'fileSources.smbFolderHelp' => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.',
-			'fileSources.smbDomain' => 'Doména (nepovinné)',
-			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
-			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
+			'fileSources.offlineQuota' => 'Limit pro offline stahování',
+			'fileSources.offlineQuotaHelp' => 'Nastavení maximálního místa použitého offline kopie, dovezené soubory a stažené stahování. Snížení limitu neodstraňuje stávající kopie.',
+			'fileSources.offlineStorageUsage' => 'Offline skladování',
+			'fileSources.reservedStorage' => 'Rezervované',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Stáhnout Queue',
+			'fileSources.downloadRunning' => 'Stáhnout',
+			'fileSources.downloadQueued' => 'Čekání',
+			'fileSources.downloadPaused' => 'Odpočinek',
+			'fileSources.downloadFailed' => 'Potřebuji zpět',
+			'fileSources.importing' => 'dovoz',
+			'fileSources.importInterrupted' => 'Import přerušený · odstranit k vymazání',
+			'fileSources.errorQuotaExceeded' => 'Zvýšení limitu nebo odstranění stažené kopie.',
+			'fileSources.errorStorageLow' => 'Neexistuje dostatek bezplatného ukládání zařízení k zachování chráněné rezervy.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG nemohl kontrolovat bezplatné ukládání zařízení, takže psaní bylo zastaveno.',
+			'fileSources.removeDownloadJob' => 'Odstranit download',
+			'fileSources.downloadAlreadyComplete' => 'Toto stahování bylo dokončeno, než by mohlo být odstraněno. položka je nyní k dispozici offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Odstranit toto stahování a odstraňovat jakékoli částečně stažené údaje? Vaše poloha a poznámky zůstane.',
 			'lending.title' => 'veřejné knihovny',
 			'lending.add' => 'Přidejte knihovnu',
 			'lending.other' => 'Další knihovna',
@@ -7467,6 +7943,12 @@ extension on TranslationsCs {
 			'audiobook.statusFinished' => 'Dokončené',
 			'audiobook.goToTime' => 'Jděte do času',
 			'audiobook.timeHelp' => 'Hodiny: minuty: sekundy nebo minuty: sekundy',
+			'audiobook.recoveryHelp' => 'Exportujte nedávnou šifrovanou kopii před přenesením nebo opravou synchronizačních dat. Importy se spojí s aktuálním stavem; nikdy nenahrazují místní historii synchromu.',
+			'audiobook.recoveryExport' => 'Export šifrované obnovení souborů',
+			'audiobook.recoveryImport' => 'Import šifrované obnovení souborů',
+			'audiobook.recoveryImportConfirm' => 'Spojte tento šifrovaný obnovení soubor s aktuálními čtení pozic a poznámky? existující historie bude zachována. sdílená knihovna a ID položky nejsou zahrnuty; nastavit odpovídající ID na každém zařízení před dovozem.',
+			'audiobook.recoveryExported' => 'Šifrované obnovení souboru je uloženo.',
+			'audiobook.recoveryImported' => 'Údaje o obnově se smítají.',
 			'sourceSetup.savedCertificate' => 'Uložený certifikát serveru',
 			'sourceSetup.nfsEndpointInvalid' => 'Zadejte adresu NFS, například nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Nenalezen žádný server DLNA. Zadejte adresu popisu zařízení ručně.',
@@ -7554,8 +8036,6 @@ extension on TranslationsCs {
 			'sourceSetup.smbEncrypted' => 'Šifrování SMB3 zapnuto',
 			'sourceSetup.smbUnencrypted' => 'Šifrování SMB3 vypnuto',
 			'sourceSetup.httpUnencrypted' => 'HTTP bez šifrování přenosu',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Zkontrolovat zabezpečení koncového bodu',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Povinné pole: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Pro pole „${label}“ zadejte hodnotu od ${min} do ${max}.',
@@ -7563,6 +8043,23 @@ extension on TranslationsCs {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Vybraná identita klienta: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Hodnocení ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Stahování titulků: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Porovnejte tuto položku',
+			'sourceSetup.sharedEntryPairHelp' => 'Vložte stejný ID pro tento položka na každém zařízení. Použijte stabilní sdílený identifikátor nebo vytvořte jeden a kopírujte ho do odpovídajícího položky. Pokrok se páří pouze tehdy, když typy souboru vydání, velikosti a objednávky se shodují. Blank odstraní toto mapování.',
+			'sourceSetup.sharedEntryId' => 'Sdílené položky ID',
+			'sourceSetup.generateSharedEntryId' => 'Vytvoření sdíleného ID položky',
+			'sourceSetup.sharedLibraryId' => 'ID sdílené knihovny (volitelné)',
+			'sourceSetup.sharedLibraryHelp' => 'Použijte stejný ID na zařízeních, které otevírají stejnou knihovnu.Tento veřejný ID pomáhá přenášet postup čtení a poznámky přes různé zdrojové připojení; není to heslo.Když poskytovatelé používají různé položky ID, páry těchto položek z jejich detailních obrazovek.',
+			'sourceSetup.sharedLibraryInvalid' => 'Použijte 8 až 100 písmen, čísel, bodů, podkoží nebo hyfen.',
+			'sourceSetup.generateSharedLibraryId' => 'Vytvoření sdíleného ID knihovny',
+			'sourceSetup.nfsReadAhead' => 'Žádosti o čtení NFS',
+			'sourceSetup.nfsReadAheadHelp' => 'Více paralelních čtení může zlepšit průchod na rychlém NAS nebo síti. Použijte 1 pokud server omezuje souběžné požadavky.',
+			'sourceSetup.nfsReadTest' => 'Měření NFS čtení výkonu',
+			'sourceSetup.nfsReadTestHelp' => 'Čte až 64 MiB z největšího souboru pro měření tohoto připojení NAS. To používá síťovou šířku pásma.',
+			'sourceSetup.nfsQualificationResult' => 'NFS číst měření',
+			'sourceSetup.nfsReadBytes' => 'Data čtení',
+			'sourceSetup.nfsReadSpeed' => 'měřená rychlost',
+			'sourceSetup.nfsReadRequests' => 'Čtěte žádosti',
+			'sourceSetup.sharedEntryConflict' => 'Tento sdílený ID položky je již připojen k dalším položkám v této knihovně.',
 			'comics.fitHeight' => 'Přizpůsobit výšce',
 			'comics.readingMode' => 'Režim čtení',
 			'comics.paged' => 'Stránky',
@@ -7637,6 +8134,15 @@ extension on TranslationsCs {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

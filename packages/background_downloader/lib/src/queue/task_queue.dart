@@ -202,7 +202,7 @@ class MemoryTaskQueue implements TaskQueue {
       _readyForEnqueue = Completer();
       enqueued.add(task);
       _incrementCounts(task);
-      enqueue(task).then((success) async {
+      unawaited(enqueue(task).then((success) async {
         if (!success) {
           _log.warning(
             'TaskId ${task.taskId} did not enqueue successfully and will be ignored',
@@ -213,8 +213,8 @@ class MemoryTaskQueue implements TaskQueue {
         }
         await Future.delayed(minInterval);
         _readyForEnqueue.complete();
-      });
-      _readyForEnqueue.future.then((_) => advanceQueue());
+      }));
+      unawaited(_readyForEnqueue.future.then((_) => advanceQueue()));
     }
   }
 

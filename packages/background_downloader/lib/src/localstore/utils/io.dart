@@ -48,11 +48,11 @@ final class Utils implements UtilsImpl {
     _locks[path] = newFuture;
 
     // Cleanup
-    newFuture.whenComplete(() {
+    unawaited(newFuture.whenComplete(() {
       if (_locks[path] == newFuture) {
         _locks.remove(path);
       }
-    });
+    }));
 
     return controller.future;
   }

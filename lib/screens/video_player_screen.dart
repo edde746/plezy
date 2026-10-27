@@ -2350,7 +2350,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       player = currentPlayer;
       if (workspace != null && workspace.sessionCount > 0) {
-        this._registerVideoWorkspaceSession(workspace);
+        _registerVideoWorkspaceSession(workspace);
       }
       _playerBackendLabel = currentPlayer.playerType;
 

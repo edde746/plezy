@@ -348,7 +348,7 @@ Future<bool> prepareResume(
   try {
     final file = await tempFile.open(mode: FileMode.writeOnlyAppend);
     await file.truncate(startByte);
-    file.close();
+    await file.close();
   } on FileSystemException {
     log.fine('Could not truncate temp file');
     taskException = TaskResumeException('Could not truncate temp file');

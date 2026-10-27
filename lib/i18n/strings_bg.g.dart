@@ -177,6 +177,7 @@ class _Translations$appIcon$bg extends Translations$appIcon$en {
 	@override String get launcherHint => 'Новата икона ще се появи на началния ви екран, след като излезете от PlezyNG.';
 	@override String get tvLauncherHint => 'Новият банер ще се появи, след като излезете от PlezyNG. Android TV може да продължи да показва стария, докато телевизорът не бъде рестартиран.';
 	@override late final _Translations$appIcon$names$bg names = _Translations$appIcon$names$bg._(_root);
+	@override String get description => 'Изберете иконата, показана от стартиращия устройството ви. Прегледите показват как изглежда всяка опция.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$bg extends Translations$common$en {
 	@override String get cancel => 'Отказ';
 	@override String get save => 'Запази';
 	@override String get close => 'Затвори';
+	@override String get closeMiniPlayer => 'Близо до мини играч';
+	@override String get closeWorkspaceWindow => 'Късно прозорче';
+	@override String get returnToFullView => 'Завръщане към пълен поглед';
+	@override String get manageMediaSessions => 'Управление на медийни сесии';
+	@override String get hideMediaSessions => 'Скриване на медийни сесии';
+	@override String get mediaSessions => 'Медийни сесии';
+	@override String get mediaSessionsHint => 'Изберете, за да доведете сесия напред. Паркът крие прозореца си, но го държи отворен. Завръщането я отваря в пълен вид; близо завършва.';
+	@override String get sessionInWorkspace => 'В работното пространство';
+	@override String get sessionParked => 'паркиран';
+	@override String get sessionFullscreen => 'Пълният екран';
+	@override String get switchToNextWindow => 'Свържете с следващото прозорче';
+	@override String get moveWindow => 'Преместване на прозореца';
+	@override String get finishMovingWindow => 'Завършване на движещото се прозореца';
+	@override String get moveWindowHint => 'Дълго натиснете и извлечете прозореца, за да го преместите. Този контрол също позволява движението на стрелката ключ.';
+	@override String get movingWindowHelp => 'Изтегляне за движение · Направете настройки на ключове · Въведете съхранения · Избягване отклонения';
+	@override String get resizeWindow => 'Резервирайте прозореца';
+	@override String get resizeWindowHint => 'Вземете тази ръкавица или използвайте стрелките, за да преобразувате прозореца.';
+	@override String get workspaceWindowHint => 'Използвайте контрола на движението или дългата натиска и привличане за движение.';
+	@override String get workspacePaneHint => 'Изберете този панел, за да го фокусирате. използвайте пълния екран на контрола за разширяване.';
+	@override String workspaceWindowLabel({required Object title}) => 'Прозорец за сесия: ${title}';
+	@override String get workspaceTitleHint => 'Изберете, за да се фокусирате. Натиснете лентата за заглавие да се движи; използвайте бутона на пълен екран за разширяване.';
+	@override String get moveToSessionTray => 'Преместване на сесия трей';
+	@override String get moveToSessionTrayHint => 'Тази сесия е достъпна без да показва прозореца си.';
+	@override String get closeSessionHint => 'Затваря този прозорец и приключва сесията му.';
+	@override String get sideBySideLayout => 'Преместване на страничен layout';
+	@override String get floatingWindows => 'Преместване за плаващи прозорци';
 	@override String get clear => 'Изчисти';
 	@override String get reset => 'Нулирай';
 	@override String get later => 'По-късно';
@@ -678,6 +705,13 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване';
 	@override String get dvConversionDv81Description => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток';
+	@override String get experimentalDolbyVision => 'Експериментален Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.';
+	@override String get dvExperimentUnavailableDescription => 'Този експеримент засега е достъпен само под Linux.';
+	@override String get dvCompatibilityFallback => 'Резервен режим за съвместимост';
+	@override String get dvCompatibilityFallbackDescription => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.';
+	@override String get dvExperimentDiagnostics => 'Дневник на видео експеримента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.';
 	@override String get disableDolbyVision => 'Изключване на Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Възпроизвежда слоя HDR10 или HLG на файла вместо Dolby Vision, когато има такъв';
 	@override String get hdrSdrConversion => 'Преобразуване от HDR към SDR';
@@ -764,13 +798,81 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Изберете как да се показват датите, числата и мерните единици.';
 	@override String get metadataLanguage => 'Език на метаданните';
 	@override String get metadataLanguageDescription => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.';
-	@override String get experimentalDolbyVision => 'Експериментален Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.';
-	@override String get dvExperimentUnavailableDescription => 'Този експеримент засега е достъпен само под Linux.';
-	@override String get dvCompatibilityFallback => 'Резервен режим за съвместимост';
-	@override String get dvCompatibilityFallbackDescription => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.';
-	@override String get dvExperimentDiagnostics => 'Дневник на видео експеримента';
-	@override String get dvExperimentDiagnosticsDescription => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.';
+	@override String get enterFullscreenOnPlaybackStart => 'Влезте в пълния екран, когато започва репродукцията';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Отворете десктоп видео на пълен екран, когато стартира възпроизвеждането';
+	@override String get extendVideoIntoDisplayCutout => 'Разширяване на видео към дисплея Cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Пуснете видео с пълен екран, за да използвате камерата на Android телефоните';
+	@override String get languageDescription => 'Изберете езика, който се използва за контролите и съобщенията на PlezyNG. Следвайте системата проследява езика на устройството ви.';
+	@override String get themeDescription => 'Изберете цветовете и контрастите, които се използват в цялата програма.';
+	@override String get libraryDensityDescription => 'Променете броя на библиотечните карти, които са подходящи за всеки ред.';
+	@override String get displayScaleDescription => 'Изтеглете интерфейса на този екран на автомобила, без да промените размера на текста в цялото устройство.';
+	@override String get themeSongVolumeDescription => 'Поставете обема на тематичните песни по отношение на други аудио.';
+	@override String get viewModeDescription => 'Изберете дали библиотечните елементи се появяват като плакати в мрежа или като компактен списък.';
+	@override String get gridViewDescription => 'Подредете библиотечните елементи в редове и колони от плакати.';
+	@override String get listViewDescription => 'Покажете елементи от библиотеката в вертикален списък с повече текст на елемент.';
+	@override String get gridSpacingDescription => 'Поставете разстоянието между плакатите в библиотечните мрежи.';
+	@override String get gridSpacingTightDescription => 'Свържете повече плакати по екрана с по-малки пропуски.';
+	@override String get gridSpacingNormalDescription => 'Използвайте стандартната разстояние между плакатите.';
+	@override String get gridSpacingSpaciousDescription => 'Добавете по-големи пропуски между плакатите за повече разделяне.';
+	@override String get episodePosterModeDescription => 'Изберете кое произведение се появява на карти за епизоди.';
+	@override String get seriesPosterDescription => 'Използвайте сериен плакат на шоуто за всеки епизод.';
+	@override String get seasonPosterDescription => 'Използвайте сезонния плакат за всеки епизод, когато е налице.';
+	@override String get episodeThumbnailDescription => 'Използвайте рамка от епизода, когато е налице.';
+	@override String get continueWatchingActionDescription => 'Изберете какво се случва, когато активирате картата за непрекъснато наблюдение.';
+	@override String get continueWatchingPlayDescription => 'Започнете филма или епизода веднага.';
+	@override String get continueWatchingDetailsDescription => 'Първо отворите страницата за заглавие, така че да можете да прегледате детайлите и да изберете действие.';
+	@override String get episodeActionDescription => 'Изберете какво се случва, когато активирате епизодна карта.';
+	@override String get episodePlayDescription => 'Започнете епизода веднага.';
+	@override String get episodeDetailsDescription => 'Отворете страницата на епизода преди възпроизвеждане.';
+	@override String get contentScreensaverDelayDescription => 'Изберете колко дълго PlezyNG чака без вход, преди да покаже произведения на изкуството.';
+	@override String get continueWatchingRowSizeDescription => 'Изберете колко големи са картите в редовете за непрекъснато наблюдение.';
+	@override String get rowSizeCompactDescription => 'Показване на по-малки карти, така че повече елементи да се вписват през реда.';
+	@override String get rowSizeStandardDescription => 'Използвайте стандартния размер на картата.';
+	@override String get rowSizeLargeDescription => 'Показване на по-големи карти с повече подробности за произведението.';
+	@override String get visualEffectsDescription => 'Изберете анимационния и художествени ефекти бюджет за това устройство.';
+	@override String get visualEffectsFullDescription => 'Използвайте пълните анимационни и художествени ефекти на всяко устройство.';
+	@override String get startupSectionDescription => 'Изберете коя секция се отваря, когато PlezyNG започва.';
+	@override late final _Translations$settings$startupSectionOptions$bg startupSectionOptions = _Translations$settings$startupSectionOptions$bg._(_root);
+	@override String get smallSkipDurationDescription => 'Поставете разстоянието, което се движи от кратката задната и напред търси контрола.';
+	@override String get largeSkipDurationDescription => 'Поставете разстоянието, преместено от дългата обратна и напред търсене на контроли.';
+	@override String get rewindOnResumeDescription => 'Преместете възпроизвеждането обратно с тази сума, когато рецимирате видео.';
+	@override String get defaultSleepTimerDescription => 'Определете първоначалната продължителност, използвана при стартиране на часовете за сън.';
+	@override String get playNextCountdownDescription => 'Изчакайте дълго, преди да започнете следващия епизод.';
+	@override String get autoSkipDelaySettingDescription => 'Применя се, когато интро, кредити или реклама е зададена за автоматично прекъсване.';
+	@override String get downmixCenterBoostDescription => 'Повишаване на диалога в централния канал, когато surround аудио се смесва надолу към стерео.';
+	@override String get displaySwitchDelayDescription => 'Изчакайте, преди да промените режима на дисплея, така че телевизорът или приемникът да може да завърши предишния си превключвател.';
+	@override String get playerBackendDescription => 'Изберете коя игрална система декодира и предава видеото на това устройство.';
+	@override String get exoPlayerDescription => 'Използвайте индианския Player Media3 на Android и поддържаните хардуерни пътища.';
+	@override String get mpvDescription => 'Използвайте mpv, който излага допълнителни възпроизвеждане, субтитри и видео обработка контрола.';
+	@override String get scopeOffDescription => 'Съхранявайте промените само за текущата сесия на възпроизвеждане.';
+	@override String get scopeGlobalDescription => 'Повторно използвайте една и съща стойност за всяка библиотека и заглавие.';
+	@override String get scopeLibraryDescription => 'Имайте предвид отделна стойност за всяка библиотека.';
+	@override String get scopeTitleDescription => 'Спомнете си отделна стойност за всяко шоу или филм.';
+	@override String get specialsOrderingServerDescription => 'Поддържайте реда на епизода, предоставен от медийния сървър.';
+	@override String get specialsOrderingAirDateDescription => 'Поставете специалности сред редовните епизоди по тяхната дата на въздуха.';
+	@override String get specialsOrderingLastDescription => 'Поставете всеки специален след редовните сезони.';
+	@override String get skipIntroModeDescription => 'Изберете дали интро маркерите играят нормално, показват бутон за скачане или скачат автоматично.';
+	@override String get skipCreditsModeDescription => 'Изберете дали кредитите играят нормално, показвайте бутона за скачане или скачате автоматично.';
+	@override String get skipAdsModeDescription => 'Изберете дали откритите реклами играят нормално, показват бутон за скачане или скачат автоматично.';
+	@override String get playbackBufferAutoDescription => 'Нека активният играч избере нормалния си размер на буфер.';
+	@override String get playbackBufferLargeDescription => 'Дръжте повече медии готови преди възпроизвеждане; това използва повече памет.';
+	@override String get playbackBufferExtraLargeDescription => 'Дръжте най-големият буфер за четене; това използва по-голямата част от паметта.';
+	@override String get defaultQualityDescription => 'Настройване на подразбиране видео резолюция и битрат таван за потоците, които сървърът транскодира.';
+	@override String get cellularQualityDescription => 'Превишаване на стандартното качество, когато устройството използва само клетъчно свързване.';
+	@override String get remoteQualityDescription => 'Превишаване на качеството по подразбиране, когато се свързвате с сървър чрез дистанционно свързване.';
+	@override String get qualityPresetOriginalDescription => 'Играйте източника в наличното му качество, без да поискате от сървъра да го транскодира.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Попитайте сървъра за конвертиран поток, като използвате горепосочената резолюция и скорост на бит.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Използвайте качеството, което е избрано по подразбиране.';
+	@override String get musicQualityDescription => 'Настройване на максималната аудио битрата, изисквана от сървъра; Оригиналът поддържа източния поток.';
+	@override String get musicQualityOriginalDescription => 'Възпроизвеждане на аудио източник без битратен транскод.';
+	@override String get musicQualityTranscodeOptionDescription => 'Искайте транскод на сървъра, който е запечатан в близост до посочената по-горе скорост на бит; действителният изход може да варира.';
+	@override String get maxVolumeInputLabel => 'Максимален обем (%)';
+	@override String get checkForUpdatesDescription => 'Сега проверете дали е налична по-нова версия на PlezyNG.';
+	@override String get appearanceDescription => 'Изберете темата на приложението и коригирайте библиотечните карти, домашните редове и навигацията.';
+	@override String get prerollLibraryDescription => 'Изберете библиотеката, която съдържа клиповете, които са налични като филми.';
+	@override String get prerollSelectionDescription => 'Изберете кои клипове от избраната библиотека могат да се играят преди филмите.';
+	@override String get contentScreensaverDelayOptionDescription => 'Изчакайте много минути без въвеждане, преди да покажете екран за съхранение на изкуството.';
+	@override String get videoCodecOptionDescription => 'Допускайте директна възпроизвеждане на този кодек, когато е поддържан.Непровержените кодове се транскодират от медийния сървър.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$bg extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => 'Остават ${minutes} мин';
 	@override String get previewSwitch => 'Автоматично пускане';
 	@override String get previewMutedText => 'Вторичният текст изглежда така';
+	@override String get themeSystemDescription => 'Следвайте външния вид на устройството и автоматично премествайте светлината и тъмнината.';
+	@override String get themeLightDescription => 'Използвайте ярка поза с тъмен текст.';
+	@override String get themeDarkDescription => 'Използвайте тъмен фон с светъл текст.';
+	@override String get themeOledDescription => 'Използвайте близо черни повърхности, които намаляват светлината на OLED екраните.';
+	@override String get themeEmberDescription => 'Използвайте топло червено и амбер акцент цветове.';
+	@override String get themeGlacierDescription => 'Използвайте цветни сини акценти.';
+	@override String get themeForestDescription => 'Използвайте зелени и естествени акцентни цветове.';
+	@override String get themePlumDescription => 'Използвайте синьо и плумен акцент цветове.';
+	@override String get themePaperDescription => 'Използвайте топли хартиени повърхности и инк-инспирирани цветове.';
+	@override String get themeCustomDescription => 'Използвайте цветовата палитра, която сте създали в персонализирания редактор за теми.';
+	@override String get editorDescription => 'Изберете цвят на палета, коригирайте неговия цвят, заситеност, яркост или несигурност и вижте актуализацията за преглед преди да спестите.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$bg extends Translations$accessibility$en {
 	@override String get largeTargets => 'По-големи цели за докосване';
 	@override String get largeTargetsHint => 'Дават споделени контрола повече място за докосване и асистирана навигация.';
 	@override String get navigationHint => 'Използвайте Tab и Shift+Tab за преминаване между контролите, Enter или интервал за активиране и Escape или бутона Назад за затваряне. Когато е отворена книга, са достъпни мащабиране и настройки за четене.';
+	@override String get textSizeDescription => 'Скалиране на интерфейса текст в PlezyNG в допълнение към настройката за текстови размери на устройството.';
+	@override String get boldTextHint => 'Използвайте по-тежка тежест за етикетите на интерфейса и съобщенията, за да ги направите по-лесни за разграничаване.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Транскодирането не е налично — пуска се оригиналното качество';
 	@override String get subtitleUnavailableFallback => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри';
 	@override String get pipButton => 'Режим картина в картината';
+	@override String get openMiniPlayer => 'Отворени мини играчи';
+	@override String get returnToFullPlayer => 'Завръщане на пълен играч';
 	@override String get aspectRatioButton => 'Съотношение на страните';
 	@override String get ambientLighting => 'Амбиентно осветление';
 	@override String get fullscreenButton => 'Влез на цял екран';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$bg extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Резолюция на изобразяване';
 	@override String get renderResolutionScreen => 'Резолюция на екрана';
 	@override String get renderResolutionVideo => 'Резолюция на видеото';
+	@override String get fontSizeDescription => 'Поставете размера на текста на субтитрата на това устройство.';
+	@override String get textColorDescription => 'Изберете цвета, който се използва за подзаглавието текст.';
+	@override String get borderSizeDescription => 'Поставете дебелината на изтичането около субтитрания текст.';
+	@override String get borderColorDescription => 'Изберете цвета, който се използва за подзаглавието.';
+	@override String get backgroundColorDescription => 'Изберете цветовете зад текста на субтитрите.';
+	@override String get backgroundOpacityDescription => 'Определете колко прозрачен е подзаглавието: 0% е ясен и 100% е твърд.';
+	@override String get positionDescription => '0% е горната част на видеото, а 100% - дъното.';
+	@override String get assOverrideDescription => 'Изберете дали играчът следва, коригира, замества или премахва стиловете, вградени в субтитри на ASS.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$bg assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$bg._(_root);
+	@override String get renderResolutionDescription => 'Изберете резолюцията, използвана за растерзиране на изображението и ASS субтитри. По-ниски Android скали могат да намалят rendering работа, но изглеждат по-меки.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$bg renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$bg._(_root);
+	@override String get boldDescription => 'Нарежете подзаглавието в по-тежка тежест.';
+	@override String get italicDescription => 'Изграждане на подзаглавие текст в италиански.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$bg extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$bg watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$bg._(_root);
 	@override String get mediaReviewsVisibility => 'Оценки и ревюта';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$bg mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$bg._(_root);
+	@override String get preferredAudioLanguageDescription => 'Предпочитате аудио следи на този език, когато сървърът или играчът автоматично избере следа.';
+	@override String get preferredSubtitleLanguageDescription => 'Предпочитате подзаглавието да се проследява на този език, когато подзаврите са избрани автоматично.';
+	@override String get subtitleAccessibilityDescription => 'Изберете дали SDH капаците са предпочитани или изисквани по време на автоматичния подзаглавен избор.';
+	@override String get forcedSubtitleDescription => 'Изберете дали принудителните подзаглавия са предпочитани или изисквани по време на автоматичния избор.';
+	@override String get watchedIndicatorDescription => 'Изберете кои медийни типове получават наблюдавана проверка в интерфейса на сървъра.';
+	@override String get mediaReviewsVisibilityDescription => 'Изберете кои аудитории и критични оценки сървърът показва на медийни страници.';
+	@override String get subtitleModeDescription => 'Изберете, когато субтитрите се включват автоматично за този сървър акаунт.';
+	@override String get hubDescription => 'Тези предпочитания се съхраняват в акаунта ви на медийния сървър и могат да се прилагат и за други клиенти.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$bg extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'Базов слой HLG';
 	@override String get dvRouteBaseLayerSdr => 'Базов слой SDR';
 	@override String get dvRouteReshaped => 'Преоформено с RPU (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Експериментален график P7 FEL (неквалифициран)';
 	@override String get p7Conversion => 'P7 конв.';
 	@override String get sampleRate => 'Честота';
 	@override String get pixelFormat => 'Пикселен формат';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$bg extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Неуспешно отваряне на външен плеър';
 	@override String appNotInstalled({required Object name}) => '${name} не е инсталиран';
 	@override String get playInExternalPlayer => 'Пусни във външен плеър';
+	@override String get description => 'Изберете друга програма, за да отворите видеоклипове в. Наличните играчи зависят от устройството ви и инсталираните приложения.';
+	@override String get systemDefaultDescription => 'Нека операционната система отваря видеото с приложението по подразбиране.';
+	@override String playerOptionDescription({required Object player}) => 'Отворете видеоклипове с ${player}.';
+	@override String get playerNameDescription => 'Етикетът е показан в списъка на играчите.';
+	@override String get playerPackageDescription => 'Въведете името на пакета Android на приложението за играч, като например com.example.player.';
+	@override String get playerCommandDescription => 'Въведете инсталиран команд или изпълнителен маршрут за това устройство.';
+	@override String get playerUrlSchemeDescription => 'Въведете схемата на URL и опционалния шаблон на URL, който се използва за стартиране на играча.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$bg extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$bg oauthProxy = _Translations$services$oauthProxy$bg._(_root);
 	@override late final _Translations$services$pendingAuth$bg pendingAuth = _Translations$services$pendingAuth$bg._(_root);
 	@override late final _Translations$services$libraryFilter$bg libraryFilter = _Translations$services$libraryFilter$bg._(_root);
+	@override String get seerrDescription => 'Свържете се с Seerr или Overseerr, за да търсите заглавия и да подадете медийни запитвания.';
+	@override late final _Translations$services$trackerDescriptions$bg trackerDescriptions = _Translations$services$trackerDescriptions$bg._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$bg extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'на';
 	@override String get resetHeroButtonDescription => 'Отклонява настройката на героя на всяка линия и връща един ротиращ банер на върха, както преди героите на редиците съществуват.';
+	@override String get tapHeroCardDescription => 'Изберете дали тапирането или избора на карта Hero започва възпроизвеждане или отваря неговите подробности.';
+	@override String get heroTapPlayDescription => 'Започнете избрания елемент веднага.';
+	@override String get heroTapDetailsDescription => 'Отворете детайлите на избрания елемент, преди да изберете действие.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get source => 'източник';
 	@override String get name => 'Име';
 	@override String get endpoint => 'URL на сървъра';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Въведете SMB сървър и една споделена папка.';
 	@override String get root => 'Снимка или префикс';
+	@override String get smbFolderHelp => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.';
 	@override String get username => 'Потребителско име';
+	@override String get smbDomain => 'Домейн (незадължително)';
 	@override String get password => 'Парола';
 	@override String get token => 'API Токен';
 	@override String get accessKey => 'Идентифициране на ключови';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get clientId => 'Идентифициране на клиента';
 	@override String get clientSecret => 'OAuth клиент тайната (само на работното място на Google)';
 	@override String get allowHttp => 'Разрешаване на нешифрован HTTP в доверена мрежа';
+	@override String get smbEncryption => 'Шифроване на SMB3 връзката';
+	@override String get smbEncryptionHint => 'Използвайте SMB3 шифроване, когато NAS го поддържа.';
 	@override String get connect => 'Свържи';
 	@override String get cancel => 'Отказ';
 	@override String get save => 'Запази';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get useFiles => 'Използвайте файлове и книги';
 	@override String get cancelScan => 'Отмяна на сканира';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Въведете SMB сървър и една споделена папка.';
-	@override String get smbFolderHelp => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.';
-	@override String get smbDomain => 'Домейн (незадължително)';
-	@override String get smbEncryption => 'Шифроване на SMB3 връзката';
-	@override String get smbEncryptionHint => 'Използвайте SMB3 шифроване, когато NAS го поддържа.';
+	@override String get offlineQuota => 'Офлайн лимит за изтегляне';
+	@override String get offlineQuotaHelp => 'Определете максималното пространство, което се използва от офлайн копии, импортирани файлове и изтегляне. намаляване на лимита не премахва съществуващите копия.';
+	@override String get offlineStorageUsage => 'Офлайн съхранение';
+	@override String get reservedStorage => 'резервирани';
+	@override String get downloadQueue => 'Изтеглете Queue';
+	@override String get downloadRunning => 'Изтегляне';
+	@override String get downloadQueued => 'В очакване';
+	@override String get downloadPaused => 'Пауза';
+	@override String get downloadFailed => 'Трябва да се оттегли';
+	@override String get importing => 'Вносът';
+	@override String get importInterrupted => 'Внос прекъснат · премахване до изчистване';
+	@override String get errorQuotaExceeded => 'Ограничението за офлайн съхранение е достигнато. повишете лимита или премахнете копие, което сте изтеглили.';
+	@override String get errorStorageLow => 'Няма достатъчно свободно съхранение на устройството, за да се запази защитената резерва.';
+	@override String get errorStorageUnavailable => 'PlezyNG не може да провери свободното съхранение на устройството, така че писането е спряно.';
+	@override String get removeDownloadJob => 'Премахване на Download';
+	@override String get downloadAlreadyComplete => 'Това изтегляне е завършено, преди да може да бъде премахната. елементът сега е на разположение офлайн.';
+	@override String get confirmRemoveDownloadJob => 'Премахнете това изтегляне и изтрийте всички частично изтеглени данни? Вашето местоположение и бележки ще останат.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$bg extends Translations$audiobook$en {
 	@override String get statusFinished => 'Завършен';
 	@override String get goToTime => 'Отидете в времето';
 	@override String get timeHelp => 'Време: минути: секунди или минути: секунди';
+	@override String get recoveryHelp => 'Експортирайте неотдавна шифрована копие, преди да преместите или поправите данни за синхронизиране. Импортират се с текущото състояние; те никога не заместват местната история на синхронността.';
+	@override String get recoveryExport => 'Износ на криптирани файлове за възстановяване';
+	@override String get recoveryImport => 'Въвеждане на криптирани файлове за възстановяване';
+	@override String get recoveryImportConfirm => 'Комбинирайте този криптиран файл за възстановяване с текущи позиции за четене и бележки? съществуващата история ще бъде запазена. споделена библиотека и идентификатори на елементи не са включени; зададете съответстващите идентификации на всяко устройство, преди да импортирате.';
+	@override String get recoveryExported => 'Закритирани файлове за възстановяване са спасени.';
+	@override String get recoveryImported => 'Данните за възстановяване се сливат.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$bg extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Избрана клиентска самоличност: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Оценка ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Изтегляне на субтитри: ${title}';
+	@override String get sharedEntryPair => 'Свържете този елемент';
+	@override String get sharedEntryPairHelp => 'Въведете същия ID за този елемент на всяко устройство. Използвайте стабилен споделен идентификатор или генерирайте един и го копирате в съответния елемент. Прогрес двойки само когато изданието файлови типове, размери и поръчки се отнасят. Blank премахва тази карта.';
+	@override String get sharedEntryId => 'Идентифициране на елемента';
+	@override String get generateSharedEntryId => 'Създаване на споделен елемент ID';
+	@override String get sharedLibraryId => 'Идентифициране на библиотеката (опционално)';
+	@override String get sharedLibraryHelp => 'Използвайте същия ID на устройства, които отварят една и съща библиотека. Този публичен ID помага да се води напредъкът в четенето и белезите през различни източни връзки; това не е парола. Когато доставчиците използват различни идентификатори за елементи, тези елементи се споделят с техните подробни екрани.';
+	@override String get sharedLibraryInvalid => 'Използвайте 8-100 букви, цифри, точки, подкори или хифини.';
+	@override String get generateSharedLibraryId => 'Създаване на споделена библиотека ID';
+	@override String get nfsReadAhead => 'НФС прочетени искания';
+	@override String get nfsReadAheadHelp => 'Повече паралелни четове могат да подобрят пропускането на бърз NAS или мрежа. Използвайте 1 ако сървърът ограничава съпътстващите искания.';
+	@override String get nfsReadTest => 'Измерване на NFS четене производителност';
+	@override String get nfsReadTestHelp => 'Прочетете до 64 МиБ от най-големия файл за измерване на тази NAS връзка.';
+	@override String get nfsQualificationResult => 'НФС прочетено измерване';
+	@override String get nfsReadBytes => 'Прочети данни';
+	@override String get nfsReadSpeed => 'Измерване на скоростта';
+	@override String get nfsReadRequests => 'Прочетете исканията';
+	@override String get sharedEntryConflict => 'Този идентификатор на споделен елемент вече е парализиран с друг елемент в тази библиотека.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$bg extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$bg extends Translations$common$mediaKind$en
 	@override String get clip => 'Клип';
 	@override String get photo => 'Снимка';
 	@override String get folder => 'Папка';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$bg extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Отворени препоръки и елементи от свързани източници на откриване.';
+	@override String get libraries => 'Отворете свързаните ви медийни библиотеки.';
+	@override String get liveTv => 'Отворете Live TV, когато сървърът го предоставя; в противен случай стартапът ще се върне на Home.';
+	@override String get search => 'Търсене на отворени медии.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$bg extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Възникна грешка: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$bg extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Запазете шрифтове, цветове, размери и местоположение, написани в подзаглавието.';
+	@override String get yes => 'Позволете на настройките за стил на субтитрите на играча да коригират субтитите на ASS.';
+	@override String get scale => 'Използвайте стил на играча и скалирани вградени размери, за да съответстват на видео измеренията.';
+	@override String get force => 'Заменете вградените стилове на ASS със стилът на субтитрата на играча.';
+	@override String get strip => 'Премахнете вграденото форматиране на ASS и направете подзаглавието текст ясно.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$bg extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Изтегляне на пълната дисплейна повърхностна резолюция за най-остър резултат.';
+	@override String get video => 'Използвайте видео резолюцията като референт, което може да намали работата на дисплеи с висока резолюция.';
+	@override String get threeQuarter => 'Изтегляне на 75% от разделителната повърхност на дисплея за скромно спестяване на производителност.';
+	@override String get half => 'Премахване на 50% от разделителната повърхност на дисплея за намаляване на работата, с меки ръбове.';
+	@override String get third => 'Изтегляне на една трета от повърхностната резолюция на дисплея, за да се намали работата, с меки ръбове.';
+	@override String get quarter => 'Рендер на една четвърт от разделителната повърхност на дисплея, за да се намали работата, с най-меките резултати.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$bg extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$bg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$bg extends T
 	@override String get preferSdh => 'Предпочитай SDH субтитри';
 	@override String get onlySdh => 'Само SDH субтитри';
 	@override String get onlyNonSdh => 'Само субтитри без SDH';
+	@override String get preferNonSdhDescription => 'Предпочитате стандартни субтитри, когато са налични както стандартни, така и SDH версии.';
+	@override String get preferSdhDescription => 'Преферира SDH субтитри, когато са налични, но позволява стандартни подтитри като спад.';
+	@override String get onlySdhDescription => 'Използвайте само SDH субтитри; не се връщате към стандартните подтитри.';
+	@override String get onlyNonSdhDescription => 'Използвайте само стандартни субтитри; изключете SDH.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$bg extends Translat
 	@override String get preferForced => 'Предпочитай принудителни субтитри';
 	@override String get onlyForced => 'Само принудителни субтитри';
 	@override String get onlyNonForced => 'Само субтитри без принудителни';
+	@override String get preferNonForcedDescription => 'Предпочита редовни субтитри, но позволява на принудителни пътеки като падане.';
+	@override String get preferForcedDescription => 'Предпочитат принудителни пътеки, когато са на разположение, но позволяват редовни субтитри като спад.';
+	@override String get onlyForcedDescription => 'Използвайте само пътеки, маркирани като принудени.';
+	@override String get onlyNonForcedDescription => 'Изключване на пътеки, маркирани като принудителни.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$bg extends Transl
 	@override String get moviesAndShows => 'Филми и ТВ сериали';
 	@override String get movies => 'Само филми';
 	@override String get shows => 'Само ТВ сериали';
+	@override String get noneDescription => 'Не показвайте наблюдавани знаци.';
+	@override String get moviesAndShowsDescription => 'Покажете наблюдаваните показатели за филми и телевизионни шоута.';
+	@override String get moviesDescription => 'Покажете наблюдавани показатели само за филми.';
+	@override String get showsDescription => 'Покажете наблюдаваните показатели само за телевизионни предавания.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$bg extends Translatio
 	@override String get usersOnly => 'Само потребители';
 	@override String get criticsOnly => 'Само критици';
 	@override String get nobody => 'Скрити';
+	@override String get usersAndCriticsDescription => 'Покажете както потребителски оценки, така и критични оценки.';
+	@override String get usersOnlyDescription => 'Показване на оценки и отзиви, представени от потребителите.';
+	@override String get criticsOnlyDescription => 'Покажете критични оценки и прегледи.';
+	@override String get nobodyDescription => 'Скрийте рейтинги и прегледи.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$bg extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Синхронизирай само отметнатите по-долу библиотеки.';
 	@override String get libraries => 'Библиотеки';
 	@override String get noLibraries => 'Няма налични библиотеки';
+	@override String get modeDescription => 'Изберете дали проверените библиотеки са блокирани от синхронизиране или са единствените библиотекари, които синхронират.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$bg extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Синхронизирате гледаните епизоди и филми с акаунта Ви в Тракт.';
+	@override String get mal => 'Синхронизиране на аниме списъци и наблюдение на напредъка с MyAnimeList.';
+	@override String get anilist => 'Синхронизиране на аниме списъци и наблюдение на напредъка с AniList.';
+	@override String get simkl => 'Sync гледал филми, телевизионни шоута и аниме с Simkl.';
+	@override String get mdblist => 'Покажете рейтингите и списъците на MDBList в препоръките и Проверявайте.';
 }
 
 /// The flat map containing all translations for locale <bg>.
@@ -4481,6 +4754,7 @@ extension on TranslationsBg {
 			'appIcon.names.strata' => 'Пластове',
 			'appIcon.names.facet' => 'Фасета',
 			'appIcon.names.tilde' => 'Тилда',
+			'appIcon.description' => 'Изберете иконата, показана от стартиращия устройството ви. Прегледите показват как изглежда всяка опция.',
 			'auth.signInWithPlex' => 'Вход с Plex',
 			'auth.showQRCode' => 'Покажи QR код',
 			'auth.authenticate' => 'Удостовери се',
@@ -4502,6 +4776,32 @@ extension on TranslationsBg {
 			'common.cancel' => 'Отказ',
 			'common.save' => 'Запази',
 			'common.close' => 'Затвори',
+			'common.closeMiniPlayer' => 'Близо до мини играч',
+			'common.closeWorkspaceWindow' => 'Късно прозорче',
+			'common.returnToFullView' => 'Завръщане към пълен поглед',
+			'common.manageMediaSessions' => 'Управление на медийни сесии',
+			'common.hideMediaSessions' => 'Скриване на медийни сесии',
+			'common.mediaSessions' => 'Медийни сесии',
+			'common.mediaSessionsHint' => 'Изберете, за да доведете сесия напред. Паркът крие прозореца си, но го държи отворен. Завръщането я отваря в пълен вид; близо завършва.',
+			'common.sessionInWorkspace' => 'В работното пространство',
+			'common.sessionParked' => 'паркиран',
+			'common.sessionFullscreen' => 'Пълният екран',
+			'common.switchToNextWindow' => 'Свържете с следващото прозорче',
+			'common.moveWindow' => 'Преместване на прозореца',
+			'common.finishMovingWindow' => 'Завършване на движещото се прозореца',
+			'common.moveWindowHint' => 'Дълго натиснете и извлечете прозореца, за да го преместите. Този контрол също позволява движението на стрелката ключ.',
+			'common.movingWindowHelp' => 'Изтегляне за движение · Направете настройки на ключове · Въведете съхранения · Избягване отклонения',
+			'common.resizeWindow' => 'Резервирайте прозореца',
+			'common.resizeWindowHint' => 'Вземете тази ръкавица или използвайте стрелките, за да преобразувате прозореца.',
+			'common.workspaceWindowHint' => 'Използвайте контрола на движението или дългата натиска и привличане за движение.',
+			'common.workspacePaneHint' => 'Изберете този панел, за да го фокусирате. използвайте пълния екран на контрола за разширяване.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Прозорец за сесия: ${title}',
+			'common.workspaceTitleHint' => 'Изберете, за да се фокусирате. Натиснете лентата за заглавие да се движи; използвайте бутона на пълен екран за разширяване.',
+			'common.moveToSessionTray' => 'Преместване на сесия трей',
+			'common.moveToSessionTrayHint' => 'Тази сесия е достъпна без да показва прозореца си.',
+			'common.closeSessionHint' => 'Затваря този прозорец и приключва сесията му.',
+			'common.sideBySideLayout' => 'Преместване на страничен layout',
+			'common.floatingWindows' => 'Преместване за плаващи прозорци',
 			'common.clear' => 'Изчисти',
 			'common.reset' => 'Нулирай',
 			'common.later' => 'По-късно',
@@ -4919,6 +5219,8 @@ extension on TranslationsBg {
 			'settings.audioPassthrough' => 'Директно предаване на аудио',
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughDescriptionApple' => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. На iOS, iPadOS и tvOS 26 или по-нова версия TrueHD Atmos и DTS:X се възпроизвеждат като пространствено аудио. Останалите DTS и TrueHD пътечки се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Изключено, докато е включено нормализирането на силата на звука',
 			'settings.audioChannelLimit' => 'Аудио канали',
@@ -4945,9 +5247,14 @@ extension on TranslationsBg {
 			'settings.dvConversionNativeDescription' => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване',
 			'settings.dvConversionDv81Description' => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток',
+			'settings.experimentalDolbyVision' => 'Експериментален Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.',
+			'settings.dvExperimentUnavailableDescription' => 'Този експеримент засега е достъпен само под Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервен режим за съвместимост',
+			'settings.dvCompatibilityFallbackDescription' => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.',
+			'settings.dvExperimentDiagnostics' => 'Дневник на видео експеримента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.',
 			'settings.disableDolbyVision' => 'Изключване на Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Възпроизвежда слоя HDR10 или HLG на файла вместо Dolby Vision, когато има такъв',
 			'settings.hdrSdrConversion' => 'Преобразуване от HDR към SDR',
 			'settings.hdrSdrConversionDescription' => 'Изберете какво да преобразува HDR видеото, когато дисплеят не поддържа HDR.',
@@ -5033,13 +5340,84 @@ extension on TranslationsBg {
 			'settings.regionFormatDescription' => 'Изберете как да се показват датите, числата и мерните единици.',
 			'settings.metadataLanguage' => 'Език на метаданните',
 			'settings.metadataLanguageDescription' => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.',
-			'settings.experimentalDolbyVision' => 'Експериментален Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.',
-			'settings.dvExperimentUnavailableDescription' => 'Този експеримент засега е достъпен само под Linux.',
-			'settings.dvCompatibilityFallback' => 'Резервен режим за съвместимост',
-			'settings.dvCompatibilityFallbackDescription' => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.',
-			'settings.dvExperimentDiagnostics' => 'Дневник на видео експеримента',
-			'settings.dvExperimentDiagnosticsDescription' => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Влезте в пълния екран, когато започва репродукцията',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Отворете десктоп видео на пълен екран, когато стартира възпроизвеждането',
+			'settings.extendVideoIntoDisplayCutout' => 'Разширяване на видео към дисплея Cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Пуснете видео с пълен екран, за да използвате камерата на Android телефоните',
+			'settings.languageDescription' => 'Изберете езика, който се използва за контролите и съобщенията на PlezyNG. Следвайте системата проследява езика на устройството ви.',
+			'settings.themeDescription' => 'Изберете цветовете и контрастите, които се използват в цялата програма.',
+			'settings.libraryDensityDescription' => 'Променете броя на библиотечните карти, които са подходящи за всеки ред.',
+			'settings.displayScaleDescription' => 'Изтеглете интерфейса на този екран на автомобила, без да промените размера на текста в цялото устройство.',
+			'settings.themeSongVolumeDescription' => 'Поставете обема на тематичните песни по отношение на други аудио.',
+			'settings.viewModeDescription' => 'Изберете дали библиотечните елементи се появяват като плакати в мрежа или като компактен списък.',
+			'settings.gridViewDescription' => 'Подредете библиотечните елементи в редове и колони от плакати.',
+			'settings.listViewDescription' => 'Покажете елементи от библиотеката в вертикален списък с повече текст на елемент.',
+			'settings.gridSpacingDescription' => 'Поставете разстоянието между плакатите в библиотечните мрежи.',
+			'settings.gridSpacingTightDescription' => 'Свържете повече плакати по екрана с по-малки пропуски.',
+			'settings.gridSpacingNormalDescription' => 'Използвайте стандартната разстояние между плакатите.',
+			'settings.gridSpacingSpaciousDescription' => 'Добавете по-големи пропуски между плакатите за повече разделяне.',
+			'settings.episodePosterModeDescription' => 'Изберете кое произведение се появява на карти за епизоди.',
+			'settings.seriesPosterDescription' => 'Използвайте сериен плакат на шоуто за всеки епизод.',
+			'settings.seasonPosterDescription' => 'Използвайте сезонния плакат за всеки епизод, когато е налице.',
+			'settings.episodeThumbnailDescription' => 'Използвайте рамка от епизода, когато е налице.',
+			'settings.continueWatchingActionDescription' => 'Изберете какво се случва, когато активирате картата за непрекъснато наблюдение.',
+			'settings.continueWatchingPlayDescription' => 'Започнете филма или епизода веднага.',
+			'settings.continueWatchingDetailsDescription' => 'Първо отворите страницата за заглавие, така че да можете да прегледате детайлите и да изберете действие.',
+			'settings.episodeActionDescription' => 'Изберете какво се случва, когато активирате епизодна карта.',
+			'settings.episodePlayDescription' => 'Започнете епизода веднага.',
+			'settings.episodeDetailsDescription' => 'Отворете страницата на епизода преди възпроизвеждане.',
+			'settings.contentScreensaverDelayDescription' => 'Изберете колко дълго PlezyNG чака без вход, преди да покаже произведения на изкуството.',
+			'settings.continueWatchingRowSizeDescription' => 'Изберете колко големи са картите в редовете за непрекъснато наблюдение.',
+			'settings.rowSizeCompactDescription' => 'Показване на по-малки карти, така че повече елементи да се вписват през реда.',
+			'settings.rowSizeStandardDescription' => 'Използвайте стандартния размер на картата.',
+			'settings.rowSizeLargeDescription' => 'Показване на по-големи карти с повече подробности за произведението.',
+			'settings.visualEffectsDescription' => 'Изберете анимационния и художествени ефекти бюджет за това устройство.',
+			'settings.visualEffectsFullDescription' => 'Използвайте пълните анимационни и художествени ефекти на всяко устройство.',
+			'settings.startupSectionDescription' => 'Изберете коя секция се отваря, когато PlezyNG започва.',
+			'settings.startupSectionOptions.discover' => 'Отворени препоръки и елементи от свързани източници на откриване.',
+			'settings.startupSectionOptions.libraries' => 'Отворете свързаните ви медийни библиотеки.',
+			'settings.startupSectionOptions.liveTv' => 'Отворете Live TV, когато сървърът го предоставя; в противен случай стартапът ще се върне на Home.',
+			'settings.startupSectionOptions.search' => 'Търсене на отворени медии.',
+			'settings.smallSkipDurationDescription' => 'Поставете разстоянието, което се движи от кратката задната и напред търси контрола.',
+			'settings.largeSkipDurationDescription' => 'Поставете разстоянието, преместено от дългата обратна и напред търсене на контроли.',
+			'settings.rewindOnResumeDescription' => 'Преместете възпроизвеждането обратно с тази сума, когато рецимирате видео.',
+			'settings.defaultSleepTimerDescription' => 'Определете първоначалната продължителност, използвана при стартиране на часовете за сън.',
+			'settings.playNextCountdownDescription' => 'Изчакайте дълго, преди да започнете следващия епизод.',
+			'settings.autoSkipDelaySettingDescription' => 'Применя се, когато интро, кредити или реклама е зададена за автоматично прекъсване.',
+			'settings.downmixCenterBoostDescription' => 'Повишаване на диалога в централния канал, когато surround аудио се смесва надолу към стерео.',
+			'settings.displaySwitchDelayDescription' => 'Изчакайте, преди да промените режима на дисплея, така че телевизорът или приемникът да може да завърши предишния си превключвател.',
+			'settings.playerBackendDescription' => 'Изберете коя игрална система декодира и предава видеото на това устройство.',
+			'settings.exoPlayerDescription' => 'Използвайте индианския Player Media3 на Android и поддържаните хардуерни пътища.',
+			'settings.mpvDescription' => 'Използвайте mpv, който излага допълнителни възпроизвеждане, субтитри и видео обработка контрола.',
+			'settings.scopeOffDescription' => 'Съхранявайте промените само за текущата сесия на възпроизвеждане.',
+			'settings.scopeGlobalDescription' => 'Повторно използвайте една и съща стойност за всяка библиотека и заглавие.',
+			'settings.scopeLibraryDescription' => 'Имайте предвид отделна стойност за всяка библиотека.',
+			'settings.scopeTitleDescription' => 'Спомнете си отделна стойност за всяко шоу или филм.',
+			'settings.specialsOrderingServerDescription' => 'Поддържайте реда на епизода, предоставен от медийния сървър.',
+			'settings.specialsOrderingAirDateDescription' => 'Поставете специалности сред редовните епизоди по тяхната дата на въздуха.',
+			'settings.specialsOrderingLastDescription' => 'Поставете всеки специален след редовните сезони.',
+			'settings.skipIntroModeDescription' => 'Изберете дали интро маркерите играят нормално, показват бутон за скачане или скачат автоматично.',
+			'settings.skipCreditsModeDescription' => 'Изберете дали кредитите играят нормално, показвайте бутона за скачане или скачате автоматично.',
+			'settings.skipAdsModeDescription' => 'Изберете дали откритите реклами играят нормално, показват бутон за скачане или скачат автоматично.',
+			'settings.playbackBufferAutoDescription' => 'Нека активният играч избере нормалния си размер на буфер.',
+			'settings.playbackBufferLargeDescription' => 'Дръжте повече медии готови преди възпроизвеждане; това използва повече памет.',
+			'settings.playbackBufferExtraLargeDescription' => 'Дръжте най-големият буфер за четене; това използва по-голямата част от паметта.',
+			'settings.defaultQualityDescription' => 'Настройване на подразбиране видео резолюция и битрат таван за потоците, които сървърът транскодира.',
+			'settings.cellularQualityDescription' => 'Превишаване на стандартното качество, когато устройството използва само клетъчно свързване.',
+			'settings.remoteQualityDescription' => 'Превишаване на качеството по подразбиране, когато се свързвате с сървър чрез дистанционно свързване.',
+			'settings.qualityPresetOriginalDescription' => 'Играйте източника в наличното му качество, без да поискате от сървъра да го транскодира.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Попитайте сървъра за конвертиран поток, като използвате горепосочената резолюция и скорост на бит.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Използвайте качеството, което е избрано по подразбиране.',
+			'settings.musicQualityDescription' => 'Настройване на максималната аудио битрата, изисквана от сървъра; Оригиналът поддържа източния поток.',
+			'settings.musicQualityOriginalDescription' => 'Възпроизвеждане на аудио източник без битратен транскод.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Искайте транскод на сървъра, който е запечатан в близост до посочената по-горе скорост на бит; действителният изход може да варира.',
+			'settings.maxVolumeInputLabel' => 'Максимален обем (%)',
+			'settings.checkForUpdatesDescription' => 'Сега проверете дали е налична по-нова версия на PlezyNG.',
+			'settings.appearanceDescription' => 'Изберете темата на приложението и коригирайте библиотечните карти, домашните редове и навигацията.',
+			'settings.prerollLibraryDescription' => 'Изберете библиотеката, която съдържа клиповете, които са налични като филми.',
+			'settings.prerollSelectionDescription' => 'Изберете кои клипове от избраната библиотека могат да се играят преди филмите.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Изчакайте много минути без въвеждане, преди да покажете екран за съхранение на изкуството.',
+			'settings.videoCodecOptionDescription' => 'Допускайте директна възпроизвеждане на този кодек, когато е поддържан.Непровержените кодове се транскодират от медийния сървър.',
 			'themeEditor.builtIn' => 'Вградени',
 			'themeEditor.presets' => 'Готови теми',
 			'themeEditor.custom' => 'Персонализирана',
@@ -5078,6 +5456,17 @@ extension on TranslationsBg {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => 'Остават ${minutes} мин',
 			'themeEditor.previewSwitch' => 'Автоматично пускане',
 			'themeEditor.previewMutedText' => 'Вторичният текст изглежда така',
+			'themeEditor.themeSystemDescription' => 'Следвайте външния вид на устройството и автоматично премествайте светлината и тъмнината.',
+			'themeEditor.themeLightDescription' => 'Използвайте ярка поза с тъмен текст.',
+			'themeEditor.themeDarkDescription' => 'Използвайте тъмен фон с светъл текст.',
+			'themeEditor.themeOledDescription' => 'Използвайте близо черни повърхности, които намаляват светлината на OLED екраните.',
+			'themeEditor.themeEmberDescription' => 'Използвайте топло червено и амбер акцент цветове.',
+			'themeEditor.themeGlacierDescription' => 'Използвайте цветни сини акценти.',
+			'themeEditor.themeForestDescription' => 'Използвайте зелени и естествени акцентни цветове.',
+			'themeEditor.themePlumDescription' => 'Използвайте синьо и плумен акцент цветове.',
+			'themeEditor.themePaperDescription' => 'Използвайте топли хартиени повърхности и инк-инспирирани цветове.',
+			'themeEditor.themeCustomDescription' => 'Използвайте цветовата палитра, която сте създали в персонализирания редактор за теми.',
+			'themeEditor.editorDescription' => 'Изберете цвят на палета, коригирайте неговия цвят, заситеност, яркост или несигурност и вижте актуализацията за преглед преди да спестите.',
 			'search.hint' => 'Търсене на филми, сериали, музика...',
 			'search.tryDifferentTerm' => 'Опитайте с различна дума за търсене',
 			'search.searchYourMedia' => 'Търсете в медийното си съдържание',
@@ -5323,6 +5712,8 @@ extension on TranslationsBg {
 			'accessibility.largeTargets' => 'По-големи цели за докосване',
 			'accessibility.largeTargetsHint' => 'Дават споделени контрола повече място за докосване и асистирана навигация.',
 			'accessibility.navigationHint' => 'Използвайте Tab и Shift+Tab за преминаване между контролите, Enter или интервал за активиране и Escape или бутона Назад за затваряне. Когато е отворена книга, са достъпни мащабиране и настройки за четене.',
+			'accessibility.textSizeDescription' => 'Скалиране на интерфейса текст в PlezyNG в допълнение към настройката за текстови размери на устройството.',
+			'accessibility.boldTextHint' => 'Използвайте по-тежка тежест за етикетите на интерфейса и съобщенията, за да ги направите по-лесни за разграничаване.',
 			'tooltips.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'tooltips.playTrailer' => 'Пусни трейлър',
 			'tooltips.markAsWatched' => 'Маркирай като гледано',
@@ -5342,6 +5733,8 @@ extension on TranslationsBg {
 			'videoControls.sleepTimerEndOfVideo' => 'Край на текущото видео',
 			'videoControls.sleepTimerStopAtHeader' => 'Спиране при',
 			'videoControls.sleepTimerDurationHeader' => 'Таймер',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Възпроизвеждането ще спре в края на това видео',
 			'videoControls.stillWatching' => 'Още ли гледате?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Пауза след ${seconds} сек.',
@@ -5376,6 +5769,8 @@ extension on TranslationsBg {
 			'videoControls.transcodeUnavailableFallback' => 'Транскодирането не е налично — пуска се оригиналното качество',
 			'videoControls.subtitleUnavailableFallback' => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри',
 			'videoControls.pipButton' => 'Режим картина в картината',
+			'videoControls.openMiniPlayer' => 'Отворени мини играчи',
+			'videoControls.returnToFullPlayer' => 'Завръщане на пълен играч',
 			'videoControls.aspectRatioButton' => 'Съотношение на страните',
 			'videoControls.ambientLighting' => 'Амбиентно осветление',
 			'videoControls.fullscreenButton' => 'Влез на цял екран',
@@ -5460,8 +5855,6 @@ extension on TranslationsBg {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Опресняване на метаданни за "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Опресняването на метаданни е стартирано за "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Неуспешно опресняване на метаданни: ${error}',
 			'messages.logoutConfirm' => 'Сигурни ли сте, че искате да излезете?',
@@ -5521,6 +5914,28 @@ extension on TranslationsBg {
 			'subtitlingStyling.renderResolution' => 'Резолюция на изобразяване',
 			'subtitlingStyling.renderResolutionScreen' => 'Резолюция на екрана',
 			'subtitlingStyling.renderResolutionVideo' => 'Резолюция на видеото',
+			'subtitlingStyling.fontSizeDescription' => 'Поставете размера на текста на субтитрата на това устройство.',
+			'subtitlingStyling.textColorDescription' => 'Изберете цвета, който се използва за подзаглавието текст.',
+			'subtitlingStyling.borderSizeDescription' => 'Поставете дебелината на изтичането около субтитрания текст.',
+			'subtitlingStyling.borderColorDescription' => 'Изберете цвета, който се използва за подзаглавието.',
+			'subtitlingStyling.backgroundColorDescription' => 'Изберете цветовете зад текста на субтитрите.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Определете колко прозрачен е подзаглавието: 0% е ясен и 100% е твърд.',
+			'subtitlingStyling.positionDescription' => '0% е горната част на видеото, а 100% - дъното.',
+			'subtitlingStyling.assOverrideDescription' => 'Изберете дали играчът следва, коригира, замества или премахва стиловете, вградени в субтитри на ASS.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Запазете шрифтове, цветове, размери и местоположение, написани в подзаглавието.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Позволете на настройките за стил на субтитрите на играча да коригират субтитите на ASS.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Използвайте стил на играча и скалирани вградени размери, за да съответстват на видео измеренията.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Заменете вградените стилове на ASS със стилът на субтитрата на играча.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Премахнете вграденото форматиране на ASS и направете подзаглавието текст ясно.',
+			'subtitlingStyling.renderResolutionDescription' => 'Изберете резолюцията, използвана за растерзиране на изображението и ASS субтитри. По-ниски Android скали могат да намалят rendering работа, но изглеждат по-меки.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Изтегляне на пълната дисплейна повърхностна резолюция за най-остър резултат.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Използвайте видео резолюцията като референт, което може да намали работата на дисплеи с висока резолюция.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Изтегляне на 75% от разделителната повърхност на дисплея за скромно спестяване на производителност.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Премахване на 50% от разделителната повърхност на дисплея за намаляване на работата, с меки ръбове.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Изтегляне на една трета от повърхностната резолюция на дисплея, за да се намали работата, с меки ръбове.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Рендер на една четвърт от разделителната повърхност на дисплея, за да се намали работата, с най-меките резултати.',
+			'subtitlingStyling.boldDescription' => 'Нарежете подзаглавието в по-тежка тежест.',
+			'subtitlingStyling.italicDescription' => 'Изграждане на подзаглавие текст в италиански.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Разширени настройки на видео плейъра',
 			'mpvConfig.presets' => 'Пресети',
@@ -5657,11 +6072,19 @@ extension on TranslationsBg {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Предпочитай SDH субтитри',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Само SDH субтитри',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Само субтитри без SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Предпочитате стандартни субтитри, когато са налични както стандартни, така и SDH версии.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Преферира SDH субтитри, когато са налични, но позволява стандартни подтитри като спад.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Използвайте само SDH субтитри; не се връщате към стандартните подтитри.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Използвайте само стандартни субтитри; изключете SDH.',
 			'accountPreferences.forcedSubtitles' => 'Принудителни субтитри',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Предпочитай субтитри без принудителни',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Предпочитай принудителни субтитри',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Само принудителни субтитри',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Само субтитри без принудителни',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Предпочита редовни субтитри, но позволява на принудителни пътеки като падане.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Предпочитат принудителни пътеки, когато са на разположение, но позволяват редовни субтитри като спад.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Използвайте само пътеки, маркирани като принудени.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Изключване на пътеки, маркирани като принудителни.',
 			'accountPreferences.displayMissingEpisodes' => 'Показвай липсващи епизоди',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Изброявай епизоди, за които сървърът знае, но няма файл.',
 			'accountPreferences.hidePlayedInLatest' => 'Скривай изгледаните елементи в „Последни“',
@@ -5675,11 +6098,27 @@ extension on TranslationsBg {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Филми и ТВ сериали',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Само филми',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Само ТВ сериали',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Не показвайте наблюдавани знаци.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Покажете наблюдаваните показатели за филми и телевизионни шоута.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Покажете наблюдавани показатели само за филми.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Покажете наблюдаваните показатели само за телевизионни предавания.',
 			'accountPreferences.mediaReviewsVisibility' => 'Оценки и ревюта',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Потребители и критици',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Само потребители',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Само критици',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Скрити',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Покажете както потребителски оценки, така и критични оценки.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Показване на оценки и отзиви, представени от потребителите.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Покажете критични оценки и прегледи.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Скрийте рейтинги и прегледи.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Предпочитате аудио следи на този език, когато сървърът или играчът автоматично избере следа.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Предпочитате подзаглавието да се проследява на този език, когато подзаврите са избрани автоматично.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Изберете дали SDH капаците са предпочитани или изисквани по време на автоматичния подзаглавен избор.',
+			'accountPreferences.forcedSubtitleDescription' => 'Изберете дали принудителните подзаглавия са предпочитани или изисквани по време на автоматичния избор.',
+			'accountPreferences.watchedIndicatorDescription' => 'Изберете кои медийни типове получават наблюдавана проверка в интерфейса на сървъра.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Изберете кои аудитории и критични оценки сървърът показва на медийни страници.',
+			'accountPreferences.subtitleModeDescription' => 'Изберете, когато субтитрите се включват автоматично за този сървър акаунт.',
+			'accountPreferences.hubDescription' => 'Тези предпочитания се съхраняват в акаунта ви на медийния сървър и могат да се прилагат и за други клиенти.',
 			'discover.title' => 'Открий',
 			'discover.noContentAvailable' => 'Няма налично съдържание',
 			'discover.addMediaToLibraries' => 'Добавете медия към библиотеките си',
@@ -5808,6 +6247,8 @@ extension on TranslationsBg {
 			'libraries.all' => 'Всички',
 			'libraries.clearAll' => 'Изчисти всички',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да сканирате "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да анализирате "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да опресните метаданните за "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да изпразните кошчето за "${title}"?',
@@ -5974,8 +6415,6 @@ extension on TranslationsBg {
 			'explore.mdblistShelves.nameHint' => 'Оставете бял, за да използвате името на източника.',
 			'explore.mdblistShelves.add' => 'Добавете шаф',
 			'explore.mdblistShelves.save' => 'Спасяване на леглата',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Изтегляне ${title} нагоре',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Изтегляне ${title} надолу',
 			'explore.mdblistShelves.unavailable' => 'Този списък не е наличен. Изтегляне или премахване на шейла в настройките.',
@@ -6322,6 +6761,8 @@ extension on TranslationsBg {
 			'watchTogether.connecting' => 'Свързване...',
 			'watchTogether.relayPublic' => 'Стаите използват публичните релейни сървъри на Open Watch Party.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Стаите използват вашия релеен сървър на ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Скорошни стаи',
 			'watchTogether.roomActions' => 'Действия за стаята',
 			'watchTogether.renameRoom' => 'Преименувай стая',
@@ -6488,8 +6929,6 @@ extension on TranslationsBg {
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} е изтеглен — щракнете, за да завършите',
 			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете, за да завършите',
 			'downloads.deleting' => 'Изтриване...',
@@ -6748,6 +7187,7 @@ extension on TranslationsBg {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'Базов слой HLG',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'Базов слой SDR',
 			'performanceOverlay.dvRouteReshaped' => 'Преоформено с RPU (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Експериментален график P7 FEL (неквалифициран)',
 			'performanceOverlay.p7Conversion' => 'P7 конв.',
 			'performanceOverlay.sampleRate' => 'Честота',
 			'performanceOverlay.pixelFormat' => 'Пикселен формат',
@@ -6799,6 +7239,13 @@ extension on TranslationsBg {
 			'externalPlayer.launchFailed' => 'Неуспешно отваряне на външен плеър',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не е инсталиран',
 			'externalPlayer.playInExternalPlayer' => 'Пусни във външен плеър',
+			'externalPlayer.description' => 'Изберете друга програма, за да отворите видеоклипове в. Наличните играчи зависят от устройството ви и инсталираните приложения.',
+			'externalPlayer.systemDefaultDescription' => 'Нека операционната система отваря видеото с приложението по подразбиране.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Отворете видеоклипове с ${player}.',
+			'externalPlayer.playerNameDescription' => 'Етикетът е показан в списъка на играчите.',
+			'externalPlayer.playerPackageDescription' => 'Въведете името на пакета Android на приложението за играч, като например com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Въведете инсталиран команд или изпълнителен маршрут за това устройство.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Въведете схемата на URL и опционалния шаблон на URL, който се използва за стартиране на играча.',
 			'metadataEdit.editMetadata' => 'Редактирай...',
 			'metadataEdit.screenTitle' => 'Редактиране на метаданни',
 			'metadataEdit.basicInfo' => 'Основна информация',
@@ -6828,6 +7275,8 @@ extension on TranslationsBg {
 			'metadataEdit.metadataUpdateFailed' => 'Неуспешно обновяване на метаданни',
 			'metadataEdit.artworkUpdated' => 'Обложката е обновена',
 			'metadataEdit.artworkUpdateFailed' => 'Неуспешно обновяване на обложката',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Няма налична обложка',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Вариант за обложка ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Вариант за обложка ${index}, избран',
@@ -6988,6 +7437,13 @@ extension on TranslationsBg {
 			'services.libraryFilter.modeHintWhitelist' => 'Синхронизирай само отметнатите по-долу библиотеки.',
 			'services.libraryFilter.libraries' => 'Библиотеки',
 			'services.libraryFilter.noLibraries' => 'Няма налични библиотеки',
+			'services.libraryFilter.modeDescription' => 'Изберете дали проверените библиотеки са блокирани от синхронизиране или са единствените библиотекари, които синхронират.',
+			'services.seerrDescription' => 'Свържете се с Seerr или Overseerr, за да търсите заглавия и да подадете медийни запитвания.',
+			'services.trackerDescriptions.trakt' => 'Синхронизирате гледаните епизоди и филми с акаунта Ви в Тракт.',
+			'services.trackerDescriptions.mal' => 'Синхронизиране на аниме списъци и наблюдение на напредъка с MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Синхронизиране на аниме списъци и наблюдение на напредъка с AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync гледал филми, телевизионни шоута и аниме с Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Покажете рейтингите и списъците на MDBList в препоръките и Проверявайте.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Добави ${product} сървър',
 			'addServer.serverUrls' => 'URL адреси на сървъра',
 			'addServer.serverUrlsHelper' => 'Позволени са няколко URL адреса, разделени със запетаи.',
@@ -7002,8 +7458,6 @@ extension on TranslationsBg {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Входът е неуспешен: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не бе успешно: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Вход с Plex',
 			'addServer.pinExpired' => 'PIN-ът изтече преди вход. Моля, опитайте отново.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Неуспешна регистрация на акаунт: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsBg {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'на',
 			'homeLayout.resetHeroButtonDescription' => 'Отклонява настройката на героя на всяка линия и връща един ротиращ банер на върха, както преди героите на редиците съществуват.',
+			'homeLayout.tapHeroCardDescription' => 'Изберете дали тапирането или избора на карта Hero започва възпроизвеждане или отваря неговите подробности.',
+			'homeLayout.heroTapPlayDescription' => 'Започнете избрания елемент веднага.',
+			'homeLayout.heroTapDetailsDescription' => 'Отворете детайлите на избрания елемент, преди да изберете действие.',
 			'platform.localNetworkPermission' => 'PlezyNG се свързва с вашите медийни сървъри и устройства за възпроизвеждане на локална мрежа.',
 			'platform.locationPermission' => 'PlezyNG използва достъп до местоположението, когато iOS го изисква за откриване на локалната мрежа и свързване с медийните ви сървъри.',
 			'platform.photoLibraryPermission' => 'Изберете снимки от фотобиблиотеката за изображения към медийното съдържание.',
@@ -7169,8 +7626,12 @@ extension on TranslationsBg {
 			'fileSources.source' => 'източник',
 			'fileSources.name' => 'Име',
 			'fileSources.endpoint' => 'URL на сървъра',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Въведете SMB сървър и една споделена папка.',
 			'fileSources.root' => 'Снимка или префикс',
+			'fileSources.smbFolderHelp' => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.',
 			'fileSources.username' => 'Потребителско име',
+			'fileSources.smbDomain' => 'Домейн (незадължително)',
 			'fileSources.password' => 'Парола',
 			'fileSources.token' => 'API Токен',
 			'fileSources.accessKey' => 'Идентифициране на ключови',
@@ -7180,6 +7641,8 @@ extension on TranslationsBg {
 			'fileSources.clientId' => 'Идентифициране на клиента',
 			'fileSources.clientSecret' => 'OAuth клиент тайната (само на работното място на Google)',
 			'fileSources.allowHttp' => 'Разрешаване на нешифрован HTTP в доверена мрежа',
+			'fileSources.smbEncryption' => 'Шифроване на SMB3 връзката',
+			'fileSources.smbEncryptionHint' => 'Използвайте SMB3 шифроване, когато NAS го поддържа.',
 			'fileSources.connect' => 'Свържи',
 			'fileSources.cancel' => 'Отказ',
 			'fileSources.save' => 'Запази',
@@ -7322,12 +7785,25 @@ extension on TranslationsBg {
 			'fileSources.useFiles' => 'Използвайте файлове и книги',
 			'fileSources.cancelScan' => 'Отмяна на сканира',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Въведете SMB сървър и една споделена папка.',
-			'fileSources.smbFolderHelp' => 'Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.',
-			'fileSources.smbDomain' => 'Домейн (незадължително)',
-			'fileSources.smbEncryption' => 'Шифроване на SMB3 връзката',
-			'fileSources.smbEncryptionHint' => 'Използвайте SMB3 шифроване, когато NAS го поддържа.',
+			'fileSources.offlineQuota' => 'Офлайн лимит за изтегляне',
+			'fileSources.offlineQuotaHelp' => 'Определете максималното пространство, което се използва от офлайн копии, импортирани файлове и изтегляне. намаляване на лимита не премахва съществуващите копия.',
+			'fileSources.offlineStorageUsage' => 'Офлайн съхранение',
+			'fileSources.reservedStorage' => 'резервирани',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Изтеглете Queue',
+			'fileSources.downloadRunning' => 'Изтегляне',
+			'fileSources.downloadQueued' => 'В очакване',
+			'fileSources.downloadPaused' => 'Пауза',
+			'fileSources.downloadFailed' => 'Трябва да се оттегли',
+			'fileSources.importing' => 'Вносът',
+			'fileSources.importInterrupted' => 'Внос прекъснат · премахване до изчистване',
+			'fileSources.errorQuotaExceeded' => 'Ограничението за офлайн съхранение е достигнато. повишете лимита или премахнете копие, което сте изтеглили.',
+			'fileSources.errorStorageLow' => 'Няма достатъчно свободно съхранение на устройството, за да се запази защитената резерва.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG не може да провери свободното съхранение на устройството, така че писането е спряно.',
+			'fileSources.removeDownloadJob' => 'Премахване на Download',
+			'fileSources.downloadAlreadyComplete' => 'Това изтегляне е завършено, преди да може да бъде премахната. елементът сега е на разположение офлайн.',
+			'fileSources.confirmRemoveDownloadJob' => 'Премахнете това изтегляне и изтрийте всички частично изтеглени данни? Вашето местоположение и бележки ще останат.',
 			'lending.title' => 'Публични библиотеки',
 			'lending.add' => 'Добавете библиотека',
 			'lending.other' => 'Друга библиотека',
@@ -7429,6 +7905,12 @@ extension on TranslationsBg {
 			'audiobook.statusFinished' => 'Завършен',
 			'audiobook.goToTime' => 'Отидете в времето',
 			'audiobook.timeHelp' => 'Време: минути: секунди или минути: секунди',
+			'audiobook.recoveryHelp' => 'Експортирайте неотдавна шифрована копие, преди да преместите или поправите данни за синхронизиране. Импортират се с текущото състояние; те никога не заместват местната история на синхронността.',
+			'audiobook.recoveryExport' => 'Износ на криптирани файлове за възстановяване',
+			'audiobook.recoveryImport' => 'Въвеждане на криптирани файлове за възстановяване',
+			'audiobook.recoveryImportConfirm' => 'Комбинирайте този криптиран файл за възстановяване с текущи позиции за четене и бележки? съществуващата история ще бъде запазена. споделена библиотека и идентификатори на елементи не са включени; зададете съответстващите идентификации на всяко устройство, преди да импортирате.',
+			'audiobook.recoveryExported' => 'Закритирани файлове за възстановяване са спасени.',
+			'audiobook.recoveryImported' => 'Данните за възстановяване се сливат.',
 			'sourceSetup.savedCertificate' => 'Запазен сертификат на сървъра',
 			'sourceSetup.nfsEndpointInvalid' => 'Въведете NFS URL, например nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Не са намерени DLNA сървъри. Въведете ръчно URL адреса на описанието на устройството.',
@@ -7516,8 +7998,6 @@ extension on TranslationsBg {
 			'sourceSetup.smbEncrypted' => 'SMB3 шифроването е включено',
 			'sourceSetup.smbUnencrypted' => 'SMB3 шифроването е изключено',
 			'sourceSetup.httpUnencrypted' => 'HTTP без шифроване на преноса',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Проверка на сигурността на крайната точка',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Задължително поле: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'За „${label}“ въведете стойност от ${min} до ${max}.',
@@ -7525,6 +8005,23 @@ extension on TranslationsBg {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Избрана клиентска самоличност: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Оценка ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Изтегляне на субтитри: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Свържете този елемент',
+			'sourceSetup.sharedEntryPairHelp' => 'Въведете същия ID за този елемент на всяко устройство. Използвайте стабилен споделен идентификатор или генерирайте един и го копирате в съответния елемент. Прогрес двойки само когато изданието файлови типове, размери и поръчки се отнасят. Blank премахва тази карта.',
+			'sourceSetup.sharedEntryId' => 'Идентифициране на елемента',
+			'sourceSetup.generateSharedEntryId' => 'Създаване на споделен елемент ID',
+			'sourceSetup.sharedLibraryId' => 'Идентифициране на библиотеката (опционално)',
+			'sourceSetup.sharedLibraryHelp' => 'Използвайте същия ID на устройства, които отварят една и съща библиотека. Този публичен ID помага да се води напредъкът в четенето и белезите през различни източни връзки; това не е парола. Когато доставчиците използват различни идентификатори за елементи, тези елементи се споделят с техните подробни екрани.',
+			'sourceSetup.sharedLibraryInvalid' => 'Използвайте 8-100 букви, цифри, точки, подкори или хифини.',
+			'sourceSetup.generateSharedLibraryId' => 'Създаване на споделена библиотека ID',
+			'sourceSetup.nfsReadAhead' => 'НФС прочетени искания',
+			'sourceSetup.nfsReadAheadHelp' => 'Повече паралелни четове могат да подобрят пропускането на бърз NAS или мрежа. Използвайте 1 ако сървърът ограничава съпътстващите искания.',
+			'sourceSetup.nfsReadTest' => 'Измерване на NFS четене производителност',
+			'sourceSetup.nfsReadTestHelp' => 'Прочетете до 64 МиБ от най-големия файл за измерване на тази NAS връзка.',
+			'sourceSetup.nfsQualificationResult' => 'НФС прочетено измерване',
+			'sourceSetup.nfsReadBytes' => 'Прочети данни',
+			'sourceSetup.nfsReadSpeed' => 'Измерване на скоростта',
+			'sourceSetup.nfsReadRequests' => 'Прочетете исканията',
+			'sourceSetup.sharedEntryConflict' => 'Този идентификатор на споделен елемент вече е парализиран с друг елемент в тази библиотека.',
 			'comics.fitHeight' => 'Побиране по височина',
 			'comics.readingMode' => 'Режим на четене',
 			'comics.paged' => 'Страници',
@@ -7599,6 +8096,15 @@ extension on TranslationsBg {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

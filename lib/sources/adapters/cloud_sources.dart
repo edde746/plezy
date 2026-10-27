@@ -156,7 +156,7 @@ class GoogleDriveSourceAdapter extends OAuthSourceAdapter {
     final refresh = await _backgroundRefresh('googleDrive', refreshCredentials, {
       'fileId': id,
       'revision': revision,
-      if (size != null) 'size': size,
+      'size': ?size,
       if (ref['resourceKey'] is String) 'resourceKey': ref['resourceKey'] as String,
     });
     return ContentLease(
@@ -242,8 +242,8 @@ class OneDriveSourceAdapter extends OAuthSourceAdapter {
     final credentials = await backgroundCredentials?.call() ?? const <String, String>{};
     final refresh = await _backgroundRefresh('oneDrive', credentials, {
       'fileId': file.id,
-      if (revision != null) 'revision': revision,
-      if (size != null) 'size': size,
+      'revision': ?revision,
+      'size': ?size,
       if (source.options['driveId']?.isNotEmpty == true) 'driveId': source.options['driveId']!,
     });
     return ContentLease(
@@ -314,8 +314,8 @@ class DropboxSourceAdapter extends OAuthSourceAdapter {
     final credentials = await backgroundCredentials?.call() ?? const <String, String>{};
     final refresh = await _backgroundRefresh('dropbox', credentials, {
       'fileId': file.id,
-      if (revision != null) 'revision': revision,
-      if (size != null) 'size': size,
+      'revision': ?revision,
+      'size': ?size,
     });
     return ContentLease(
       uri,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/platform_detector.dart';
 import 'app_icon.dart';
@@ -49,7 +50,7 @@ class SettingsHelpHint extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 1),
-          child: Icon(Icons.info_outline_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+          child: AppIcon(Symbols.info_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(width: 8),
         Expanded(

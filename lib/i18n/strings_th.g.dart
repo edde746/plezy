@@ -177,6 +177,7 @@ class _Translations$appIcon$th extends Translations$appIcon$en {
 	@override String get launcherHint => 'สัญลักษณ์ใหม่จะปรากฏบนหน้าจอบ้านของคุณเมื่อคุณออกจาก PlezyNG';
 	@override String get tvLauncherHint => 'แบนเนอร์ใหม่จะปรากฏเมื่อคุณออกจาก PlezyNG. Android TV สามารถยังคงแสดงแบนเนอร์เก่าจนกว่าทีวีจะเปิดใหม่';
 	@override late final _Translations$appIcon$names$th names = _Translations$appIcon$names$th._(_root);
+	@override String get description => 'เลือกไอคอนที่แสดงโดยผู้เริ่มต้นอุปกรณ์ของคุณ แสดงให้เห็นว่าตัวเลือกแต่ละตัวจะดูอย่างไร';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$th extends Translations$common$en {
 	@override String get cancel => 'ยกเลิก';
 	@override String get save => 'บันทึก';
 	@override String get close => 'ปิด';
+	@override String get closeMiniPlayer => 'มินิผู้เล่น';
+	@override String get closeWorkspaceWindow => 'หน้าต่างใกล้';
+	@override String get returnToFullView => 'กลับไปดูเต็มรูปแบบ';
+	@override String get manageMediaSessions => 'การจัดการการประชุมสื่อ';
+	@override String get hideMediaSessions => 'การประชุมสื่อที่ซ่อนอยู่';
+	@override String get mediaSessions => 'การประชุมสื่อ';
+	@override String get mediaSessionsHint => 'เลือกเพื่อนําเซสชั่นไปข้างหน้า พาร์คซ่อนหน้าต่างของเขา แต่ยังคงเปิด Return เปิดมันในมุมมองเต็ม; close ends it.';
+	@override String get sessionInWorkspace => 'ในพื้นที่งาน';
+	@override String get sessionParked => 'ที่จอดรถ';
+	@override String get sessionFullscreen => 'หน้าจอเต็มรูปแบบ';
+	@override String get switchToNextWindow => 'สวิทช์กับหน้าต่างต่อไป';
+	@override String get moveWindow => 'ปิดหน้าต่าง';
+	@override String get finishMovingWindow => 'เสร็จสิ้นหน้าต่างย้าย';
+	@override String get moveWindowHint => 'ยาวกดและดึงหน้าต่างเพื่อย้ายมัน การควบคุมนี้ยังช่วยให้การเคลื่อนไหวของปุ่ม';
+	@override String get movingWindowHelp => 'การเคลื่อนไหว · ปรับปุ่มปืน · Enter Saves · Escape Cancels';
+	@override String get resizeWindow => 'ตู้คืนหน้าต่าง';
+	@override String get resizeWindowHint => 'ลวดมือนี้หรือใช้คีย์ปืนเพื่อรีไซเคิลหน้าต่าง';
+	@override String get workspaceWindowHint => 'ใช้การควบคุมการเคลื่อนไหวหรือกดยาวและดึงเพื่อย้าย ใช้มือ resize เพื่อ resize';
+	@override String get workspacePaneHint => 'เลือกแผงนี้เพื่อมุ่งเน้นมัน ใช้การควบคุมหน้าจอเต็มเพื่อขยาย';
+	@override String workspaceWindowLabel({required Object title}) => 'หน้าต่างการประชุม: ${title}';
+	@override String get workspaceTitleHint => 'เลือกเพื่อมุ่งเน้น แดร์แถบหัวเพื่อย้าย ใช้ปุ่มหน้าจอเต็มเพื่อขยาย';
+	@override String get moveToSessionTray => 'การเคลื่อนย้ายไปยังเซสชั่นสาม';
+	@override String get moveToSessionTrayHint => 'Keeps การประชุมนี้พร้อมใช้งานโดยไม่ต้องแสดงหน้าต่างของมัน';
+	@override String get closeSessionHint => 'ปิดหน้าต่างนี้และเสร็จสิ้นการประชุม';
+	@override String get sideBySideLayout => 'สวิตช์ไปยัง layout side-by-side';
+	@override String get floatingWindows => 'สวิทช์เพื่อลอยหน้าต่าง';
 	@override String get clear => 'หมายเหตุ';
 	@override String get reset => 'รีเซ็ต';
 	@override String get later => 'ต่อไป';
@@ -676,6 +703,13 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Force native DV7 และยับยั้งการแปลง DV Retry';
 	@override String get dvConversionDv81Description => 'แปลง RPU ในร่องรัดไป Dolby Vision โปรไฟล์ 8.1';
 	@override String get dvConversionHevcStripDescription => 'เกรด Dolby Vision ชั้น RPU/EL และแบนปัจจุบัน HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
+	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
+	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
+	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
+	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
+	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
+	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
 	@override String get disableDolbyVision => 'ไม่สามารถใช้งานได้ Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'เล่นไฟล์ HDR10 หรือชั้น HLG แทน Dolby Vision เมื่อมี';
 	@override String get hdrSdrConversion => 'การแปลง HDR ไปยัง SDR';
@@ -762,13 +796,81 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get regionFormatDescription => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด';
 	@override String get metadataLanguage => 'ภาษาข้อมูลสื่อ';
 	@override String get metadataLanguageDescription => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน';
-	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
-	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
-	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
-	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
-	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
-	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
-	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
+	@override String get enterFullscreenOnPlaybackStart => 'เข้าสู่หน้าจอเต็มเมื่อ playback เริ่มต้น';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'เปิดวิดีโอเดสก์ท็อปในหน้าจอเต็มเมื่อเริ่มเล่น';
+	@override String get extendVideoIntoDisplayCutout => 'วิดีโอขยายไปยัง Display Cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'ให้วิดีโอเต็มหน้าจอใช้กล้องตัดบนโทรศัพท์ Android';
+	@override String get languageDescription => 'เลือกภาษาที่ใช้สําหรับการควบคุม PlezyNG และข้อความ ติดตามระบบติดตามภาษาอุปกรณ์ของคุณ';
+	@override String get themeDescription => 'เลือกสีและ contrast ที่ใช้ตลอด app';
+	@override String get libraryDensityDescription => 'เปลี่ยนจํานวนบัตรห้องสมุดที่เหมาะสมในแต่ละแถว';
+	@override String get displayScaleDescription => 'รีไซเคิลอินเตอร์เฟซบนจอแสดงผลรถยนต์นี้โดยไม่ต้องเปลี่ยนขนาดข้อความในอุปกรณ์ของคุณ';
+	@override String get themeSongVolumeDescription => 'กําหนดปริมาณของเพลงธีมในความสัมพันธ์กับเสียงอื่น ๆ';
+	@override String get viewModeDescription => 'เลือกว่ารายการห้องสมุดจะปรากฏเป็นโพสต์ในเครือข่ายหรือเป็นรายการขนาดกะทัดรัด';
+	@override String get gridViewDescription => 'จัดรายการห้องสมุดในแถวและคอลัมน์ของโพสต์';
+	@override String get listViewDescription => 'แสดงรายการห้องสมุดในรายชื่อแนวตั้งที่มีข้อความเพิ่มเติมต่อรายการ';
+	@override String get gridSpacingDescription => 'กําหนดความแตกต่างระหว่างโพสต์ในเครือข่ายห้องสมุด';
+	@override String get gridSpacingTightDescription => 'เหมาะกับโพสต์เพิ่มเติมทั่วหน้าจอด้วยช่องว่างขนาดเล็ก';
+	@override String get gridSpacingNormalDescription => 'ใช้ช่องว่างมาตรฐานระหว่างโพสต์';
+	@override String get gridSpacingSpaciousDescription => 'เพิ่มช่องว่างที่ใหญ่กว่าระหว่างโพสต์เพื่อแยกมากขึ้น';
+	@override String get episodePosterModeDescription => 'เลือกงานศิลปะใดที่ปรากฏบนการ์ด episode';
+	@override String get seriesPosterDescription => 'ใช้โพสต์ชุดของงานแสดงสําหรับแต่ละส่วน';
+	@override String get seasonPosterDescription => 'ใช้โพสต์ฤดูกาลสําหรับแต่ละ episode เมื่อมี';
+	@override String get episodeThumbnailDescription => 'ใช้กรอบจาก epizode เมื่อมี';
+	@override String get continueWatchingActionDescription => 'เลือกสิ่งที่เกิดขึ้นเมื่อคุณเปิดใช้งานบัตรตรวจสอบต่อเนื่อง';
+	@override String get continueWatchingPlayDescription => 'เริ่มต้นฟิล์มหรือ epizode ได้ทันที';
+	@override String get continueWatchingDetailsDescription => 'เปิดหน้าหัวแรกเพื่อให้คุณสามารถตรวจสอบรายละเอียดและเลือกการดําเนินการ';
+	@override String get episodeActionDescription => 'เลือกสิ่งที่เกิดขึ้นเมื่อคุณเปิดใช้งานการ์ด epizode';
+	@override String get episodePlayDescription => 'เริ่มต้นฉบับทันที';
+	@override String get episodeDetailsDescription => 'เปิดหน้าส่วนก่อน playback';
+	@override String get contentScreensaverDelayDescription => 'เลือกระยะเวลาที่ PlezyNG รอโดยไม่มีการเข้าถึงก่อนที่จะแสดงงานศิลปะ';
+	@override String get continueWatchingRowSizeDescription => 'เลือกขนาดของบัตรในสายการตรวจสอบต่อเนื่อง';
+	@override String get rowSizeCompactDescription => 'แสดงการ์ดขนาดเล็กเพื่อให้รายการมากขึ้นเหมาะกับเส้น';
+	@override String get rowSizeStandardDescription => 'ใช้ขนาดบัตรมาตรฐาน';
+	@override String get rowSizeLargeDescription => 'แสดงการ์ดขนาดใหญ่พร้อมรายละเอียดงานศิลปะมากขึ้น';
+	@override String get visualEffectsDescription => 'เลือกการเคลื่อนไหวและผลลัพธ์ศิลปะสําหรับอุปกรณ์นี้';
+	@override String get visualEffectsFullDescription => 'ใช้ผลการเคลื่อนไหวและงานศิลปะเต็มรูปแบบบนอุปกรณ์ใด ๆ';
+	@override String get startupSectionDescription => 'เลือกส่วนที่เปิดเมื่อ PlezyNG เริ่มต้น';
+	@override late final _Translations$settings$startupSectionOptions$th startupSectionOptions = _Translations$settings$startupSectionOptions$th._(_root);
+	@override String get smallSkipDurationDescription => 'กําหนดระยะทางที่เคลื่อนย้ายโดยสั้นด้านหลังและไปข้างหน้าค้นหาการควบคุม';
+	@override String get largeSkipDurationDescription => 'กําหนดระยะทางที่เคลื่อนย้ายโดยหลังยาวและไปข้างหน้าค้นหาการควบคุม';
+	@override String get rewindOnResumeDescription => 'การเคลื่อนย้ายการเล่นกลับด้วยจํานวนนี้เมื่อรีไซเคิลวิดีโอ';
+	@override String get defaultSleepTimerDescription => 'กําหนดระยะเวลาเริ่มต้นที่ใช้เมื่อคุณเริ่มชั่วโมงนอน';
+	@override String get playNextCountdownDescription => 'รอเวลานานนี้ก่อนที่จะเริ่มต้นส่วนต่อไป การตั้งค่าที่ 0 เพื่อเริ่มทันที';
+	@override String get autoSkipDelaySettingDescription => 'ใช้เมื่อ intro, credits หรือโฆษณาตั้งค่าเพื่อลบโดยอัตโนมัติ';
+	@override String get downmixCenterBoostDescription => 'เพิ่มการสนทนาในช่องกลางเมื่อเสียงรอบผสมลงไปสเตอริโอ';
+	@override String get displaySwitchDelayDescription => 'รอก่อนที่จะเปลี่ยนโหมดจอแสดงผลเพื่อให้ทีวีหรือผู้รับสามารถเสร็จสิ้นการสลับก่อนหน้านี้';
+	@override String get playerBackendDescription => 'เลือกเครื่องเล่นที่ decodes และ renders วีดีโอ บนอุปกรณ์นี้';
+	@override String get exoPlayerDescription => 'ใช้ผู้เล่น Media3 ที่มาของ Android และวิธีการฮาร์ดแวร์ที่ได้รับการสนับสนุน';
+	@override String get mpvDescription => 'ใช้ mpv ซึ่งแสดงให้เห็นการเล่นเพิ่มเติมหัวข้อและควบคุมการประมวลผลวิดีโอ';
+	@override String get scopeOffDescription => 'เก็บการเปลี่ยนแปลงสําหรับเซสชั่น playback ปัจจุบันเท่านั้น';
+	@override String get scopeGlobalDescription => 'ใช้ใหม่ค่าเดียวกันสําหรับแต่ละห้องสมุดและชื่อ';
+	@override String get scopeLibraryDescription => 'โปรดจําไว้ค่าที่แยกต่างหากสําหรับแต่ละห้องสมุด';
+	@override String get scopeTitleDescription => 'โปรดจําค่าที่แยกต่างหากสําหรับแต่ละแสดงหรือภาพยนตร์';
+	@override String get specialsOrderingServerDescription => 'เก็บคําสั่งซื้อส่วนที่จัดหาโดยเซิร์ฟเวอร์สื่อ';
+	@override String get specialsOrderingAirDateDescription => 'โพสต์พิเศษในส่วนที่ปกติตามวันที่อากาศของพวกเขา';
+	@override String get specialsOrderingLastDescription => 'โพสต์แต่ละพิเศษหลังจากฤดูกาลปกติ';
+	@override String get skipIntroModeDescription => 'เลือกว่าเครื่องหมายการเข้าเล่นตามปกติแสดงปุ่มสกีหรือสกีโดยอัตโนมัติ';
+	@override String get skipCreditsModeDescription => 'เลือกว่าเครดิตเล่นตามปกติแสดงปุ่มสกีหรือสกีโดยอัตโนมัติ';
+	@override String get skipAdsModeDescription => 'เลือกว่าโฆษณาที่พบจะเล่นตามปกติแสดงปุ่มสไลด์หรือสไลท์โดยอัตโนมัติ';
+	@override String get playbackBufferAutoDescription => 'ปล่อยให้ผู้เล่นที่ใช้งานเลือกขนาดบูเฟอร์ปกติ';
+	@override String get playbackBufferLargeDescription => 'รักษาสื่อมากขึ้นพร้อมก่อนการเล่น; นี้ใช้หน่วยความจํามากขึ้น';
+	@override String get playbackBufferExtraLargeDescription => 'เก็บรูฟเฟอร์ Read-ahead ที่ใหญ่ที่สุด ซึ่งใช้หน่วยความจํามากที่สุด';
+	@override String get defaultQualityDescription => 'กําหนดความละเอียดวิดีโอแบบกําหนดเองและบิตเพดานสําหรับกระแสที่เซิร์ฟเวอร์รหัส';
+	@override String get cellularQualityDescription => 'Override คุณภาพเริ่มต้นเมื่ออุปกรณ์ใช้การเชื่อมต่อเซลล์เท่านั้น';
+	@override String get remoteQualityDescription => 'Override คุณภาพเริ่มต้นเมื่อเชื่อมต่อกับเซิร์ฟเวอร์ผ่านการเชื่อมโยงระยะไกล';
+	@override String get qualityPresetOriginalDescription => 'เล่นแหล่งที่มาในคุณภาพที่มีอยู่โดยไม่ต้องขอให้เซิร์ฟเวอร์โอนรหัส';
+	@override String get qualityPresetTranscodeOptionDescription => 'คําถามจากเซิร์ฟเวอร์สําหรับกระแสแปลงโดยใช้ความละเอียดและอัตราบิตที่แสดงไว้ข้างต้น';
+	@override String get qualityPresetSameAsDefaultDescription => 'ใช้คุณภาพที่เลือกใน คุณภาพเริ่มต้น';
+	@override String get musicQualityDescription => 'การตั้งค่าอัตราบิตเสียงสูงสุดที่ต้องการจากเซิร์ฟเวอร์ หลักยังคงไหลแหล่งข้อมูล';
+	@override String get musicQualityOriginalDescription => 'Play the source audio without a bitrate-capped transcode';
+	@override String get musicQualityTranscodeOptionDescription => 'ต้องการ transcode เซิร์ฟเวอร์ capped ใกล้กับอัตราบิตที่แสดงไว้ข้างต้น; ผลออกจริงสามารถเปลี่ยนแปลงได้';
+	@override String get maxVolumeInputLabel => 'จํานวนสูงสุด (%)';
+	@override String get checkForUpdatesDescription => 'ตรวจสอบตอนนี้ว่ารุ่นใหม่ของ PlezyNG มีอยู่หรือไม่';
+	@override String get appearanceDescription => 'เลือกธีมแอปและปรับการ์ดห้องสมุดสายบ้านและการนําทาง';
+	@override String get prerollLibraryDescription => 'เลือกห้องสมุดซึ่งมีคลิปที่มีอยู่ในรูปแบบของ pre-rolls ภาพยนตร์';
+	@override String get prerollSelectionDescription => 'เลือกคลิปจากห้องสมุดที่เลือกที่จะเล่นก่อนภาพยนตร์';
+	@override String get contentScreensaverDelayOptionDescription => 'รอนี้หลายนาทีโดยไม่มีการเข้าสู่ระบบก่อนที่จะแสดงงานศิลปะ screensaver';
+	@override String get videoCodecOptionDescription => 'ให้การเล่นโดยตรงสําหรับโค้ดนี้เมื่อได้รับการสนับสนุน การเข้ารหัสที่ไม่ได้ตรวจสอบจะถูกรหัสผ่านจากเซิร์ฟเวอร์สื่อ';
 }
 
 // Path: themeEditor
@@ -805,6 +907,17 @@ class _Translations$themeEditor$th extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} นาที left';
 	@override String get previewSwitch => 'รถยนต์';
 	@override String get previewMutedText => 'ภาษาไทยอ่านเช่นนี้';
+	@override String get themeSystemDescription => 'ตรวจสอบการปรากฏของอุปกรณ์ของคุณและเปลี่ยนระหว่างแสงและสีดําโดยอัตโนมัติ';
+	@override String get themeLightDescription => 'ใช้พื้นหลังที่สดใสกับข้อความเข้ม';
+	@override String get themeDarkDescription => 'ใช้พื้นหลังที่เข้มพร้อมข้อความสดใส';
+	@override String get themeOledDescription => 'ใช้พื้นผิวสีดําใกล้ซึ่งลดแสงบนหน้าจอ OLED';
+	@override String get themeEmberDescription => 'ใช้สีแดงร้อนและ accent amber';
+	@override String get themeGlacierDescription => 'ใช้สี accent สีฟ้าเย็น';
+	@override String get themeForestDescription => 'ใช้สีเขียวและธรรมชาติ accent';
+	@override String get themePlumDescription => 'ใช้สีม่วงและ accent plum';
+	@override String get themePaperDescription => 'ใช้พื้นผิวที่อบอุ่นเช่นกระดาษและสีที่ได้รับแรงบันดาลใจจากหมึก';
+	@override String get themeCustomDescription => 'ใช้แพลตฟอร์มสีที่คุณสร้างขึ้นในตัวแก้ไขธีมที่กําหนดเอง';
+	@override String get editorDescription => 'เลือกสีพลาสติกปรับความชื้น saturation, brightness หรือ opacity ของมันและดูการอัพเกรด Preview ก่อนที่จะบันทึก คุณยังสามารถใส่สี hex';
 }
 
 // Path: search
@@ -1082,6 +1195,8 @@ class _Translations$accessibility$th extends Translations$accessibility$en {
 	@override String get largeTargets => 'เป้าหมายสัมผัสขนาดใหญ่';
 	@override String get largeTargetsHint => 'ให้การควบคุมร่วมกันพื้นที่มากขึ้นสําหรับสัมผัสและนิวเวชั่นช่วย';
 	@override String get navigationHint => 'ใช้ Tab และ Shift+Tab เพื่อย้ายระหว่างควบคุม Enter หรือ Space เพื่อเปิดใช้งาน และ Escape หรือ Back เพื่อปิด โปรแกรมอ่าน zoom และเลือกอ่านพร้อมใช้งานในขณะที่หนังสือเปิด';
+	@override String get textSizeDescription => 'หมายเลขอินเตอร์เฟซขนาดใน PlezyNG นอกจากการตั้งค่าขนาดข้อความระบบของอุปกรณ์ของคุณ';
+	@override String get boldTextHint => 'ใช้น้ําหนักที่หนักขึ้นสําหรับแท็กอินเตอร์เฟซและข้อความเพื่อให้ง่ายต่อการแยกต่างหาก';
 }
 
 // Path: tooltips
@@ -1164,6 +1279,8 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'การเข้ารหัสผ่านไม่สามารถใช้ได้ - เล่นคุณภาพเดิม';
 	@override String get subtitleUnavailableFallback => 'หัวฉบับที่เลือกไม่สามารถโหลดได้ - ต่อเนื่องโดยไม่มีหัวฉบับ';
 	@override String get pipButton => 'รูปภาพในโหมด';
+	@override String get openMiniPlayer => 'ผู้เล่นขนาดเล็กเปิด';
+	@override String get returnToFullPlayer => 'กลับผู้เล่นเต็มรูปแบบ';
 	@override String get aspectRatioButton => 'อัตราส่วน';
 	@override String get ambientLighting => 'แสงสภาพแวดล้อม';
 	@override String get fullscreenButton => 'หน้าจอเต็มรูปแบบ';
@@ -1320,6 +1437,19 @@ class _Translations$subtitlingStyling$th extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'โซลูชั่น Render';
 	@override String get renderResolutionScreen => 'ความละเอียดจอ';
 	@override String get renderResolutionVideo => 'วีดีโอ Resolution';
+	@override String get fontSizeDescription => 'ปรับขนาดข้อความหัวข้อในอุปกรณ์นี้';
+	@override String get textColorDescription => 'เลือกสีที่ใช้สําหรับหัวข้อข้อความ';
+	@override String get borderSizeDescription => 'กําหนดความหนาของต้นฉบับรอบหัวข้อข้อความ';
+	@override String get borderColorDescription => 'เลือกสีที่ใช้สําหรับหัวฉบับ';
+	@override String get backgroundColorDescription => 'เลือกสีด้านหลังของหัวข้อข้อความ';
+	@override String get backgroundOpacityDescription => 'กําหนดความโปร่งใสของพื้นหลังหัวข้อ: 0% เป็นที่ชัดเจนและ 100% เป็นที่แข็งแกร่ง';
+	@override String get positionDescription => 'เปลี่ยนหัวข้อแนวตั้ง 0% เป็นด้านบนของวิดีโอและ 100% เป็นด้านล่าง';
+	@override String get assOverrideDescription => 'เลือกว่าผู้เล่นจะติดตามการปรับเปลี่ยนหรือลบรูปแบบที่รวมอยู่ในหัวข้อ ASS';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$th assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$th._(_root);
+	@override String get renderResolutionDescription => 'เลือกความละเอียดที่ใช้ในการ rasterize ภาพและ ASS subtitles ขนาด Android ที่ต่ํากว่าสามารถลดการทํางาน rendering แต่ดูอ่อนโยนมากขึ้น';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$th renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$th._(_root);
+	@override String get boldDescription => 'เลือกข้อความ subtitle ในน้ําหนักที่หนักขึ้น';
+	@override String get italicDescription => 'เลือกหัวข้อในอิตาลี';
 }
 
 // Path: mpvConfig
@@ -1501,6 +1631,14 @@ class _Translations$accountPreferences$th extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$th watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$th._(_root);
 	@override String get mediaReviewsVisibility => 'การประเมิน & รีวิว';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$th mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$th._(_root);
+	@override String get preferredAudioLanguageDescription => 'มักจะติดตามเสียงในภาษานี้เมื่อเซิร์ฟเวอร์หรือผู้เล่นเลือกติดตามโดยอัตโนมัติ';
+	@override String get preferredSubtitleLanguageDescription => 'มักจะติดตามหัวข้อในภาษานี้เมื่อหัวข้อถูกเลือกโดยอัตโนมัติ';
+	@override String get subtitleAccessibilityDescription => 'เลือกว่าแคปชัน SDH เป็นที่ต้องการหรือจําเป็นในระหว่างการเลือกหัวข้ออัตโนมัติ';
+	@override String get forcedSubtitleDescription => 'เลือกว่าติดตามหัวข้อบังคับจะได้รับความต้องการหรือจําเป็นในระหว่างการเลือกอัตโนมัติ';
+	@override String get watchedIndicatorDescription => 'เลือกประเภทสื่อที่ได้รับการตรวจสอบในอินเตอร์เฟซเซิร์ฟเวอร์';
+	@override String get mediaReviewsVisibilityDescription => 'เลือกผู้ชมและคะแนนวิจารณ์ที่เซิร์ฟเวอร์แสดงบนหน้าสื่อ';
+	@override String get subtitleModeDescription => 'เลือกเมื่อ subtitles เปิดใช้งานโดยอัตโนมัติสําหรับบัญชีเซิร์ฟเวอร์นี้';
+	@override String get hubDescription => 'ข้อกําหนดเหล่านี้จะถูกเก็บไว้ในบัญชี Media-server ของคุณและอาจใช้กับลูกค้าอื่น ๆ';
 }
 
 // Path: discover
@@ -2389,6 +2527,7 @@ class _Translations$performanceOverlay$th extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG ฐานชั้น';
 	@override String get dvRouteBaseLayerSdr => 'SDR ฐานชั้น';
 	@override String get dvRouteReshaped => 'RPU แก้ไข (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'การทดลอง P7 เฟลกราฟ (ไม่รับรอง)';
 	@override String get p7Conversion => 'การแปลง P7';
 	@override String get sampleRate => 'ตัวอย่างอัตรา';
 	@override String get pixelFormat => 'พิกเซล Fmt';
@@ -2449,6 +2588,13 @@ class _Translations$externalPlayer$th extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'ไม่สามารถเปิดผู้เล่นภายนอกได้';
 	@override String appNotInstalled({required Object name}) => '${name} ไม่ติดตั้ง';
 	@override String get playInExternalPlayer => 'เล่นในผู้เล่นภายนอก';
+	@override String get description => 'เลือกแอปอื่นเพื่อเปิดวิดีโอใน ผู้เล่นที่มีอยู่ขึ้นอยู่กับอุปกรณ์ของคุณและแอปที่ติดตั้ง';
+	@override String get systemDefaultDescription => 'ให้ระบบปฏิบัติการเปิดวิดีโอด้วยแอปพลิเคชันที่กําหนดเอง';
+	@override String playerOptionDescription({required Object player}) => 'เปิดวิดีโอด้วย ${player}';
+	@override String get playerNameDescription => 'แท็กที่แสดงในรายการผู้เล่น';
+	@override String get playerPackageDescription => 'ป้อนชื่อแพคเกจ Android ของแอปพลิเคชันผู้เล่นเช่น com.example.player';
+	@override String get playerCommandDescription => 'ป้อนคําสั่งผู้เล่นที่ติดตั้งหรือเส้นทางที่สามารถดําเนินการได้สําหรับอุปกรณ์นี้';
+	@override String get playerUrlSchemeDescription => 'ใส่แผนที่ URL และรูปแบบ URL ที่เลือกที่ใช้ในการเปิดตัวผู้เล่น';
 }
 
 // Path: metadataEdit
@@ -2668,6 +2814,8 @@ class _Translations$services$th extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$th oauthProxy = _Translations$services$oauthProxy$th._(_root);
 	@override late final _Translations$services$pendingAuth$th pendingAuth = _Translations$services$pendingAuth$th._(_root);
 	@override late final _Translations$services$libraryFilter$th libraryFilter = _Translations$services$libraryFilter$th._(_root);
+	@override String get seerrDescription => 'เชื่อมต่อกับ Seerr หรือ Overseerr เพื่อค้นหาชื่อและส่งคําขอสื่อ';
+	@override late final _Translations$services$trackerDescriptions$th trackerDescriptions = _Translations$services$trackerDescriptions$th._(_root);
 }
 
 // Path: addServer
@@ -2862,6 +3010,9 @@ class _Translations$homeLayout$th extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'ใน';
 	@override String get resetHeroButtonDescription => 'ปิดการตั้งค่าฮีโร่ของแต่ละแถวและนําแบรนด์หมุนเดียวกลับไปด้านบนเช่นเดียวกับก่อนที่แถวฮีโร่มีอยู่ แถวจะถูกเก็บไว้';
+	@override String get tapHeroCardDescription => 'เลือกว่าการแท็บหรือเลือกบัตรฮีโร่จะเริ่มเล่นหรือเปิดรายละเอียดของมัน';
+	@override String get heroTapPlayDescription => 'เริ่มต้นรายการที่เลือกทันที';
+	@override String get heroTapDetailsDescription => 'เปิดรายละเอียดของรายการที่เลือกก่อนที่จะเลือกการดําเนินการ';
 }
 
 // Path: platform
@@ -2892,8 +3043,12 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get source => 'หลักสูตร';
 	@override String get name => 'ชื่อ';
 	@override String get endpoint => 'URL ของเซิร์ฟเวอร์';
+	@override String get smbEndpointHint => 'ตัวอย่าง: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์';
 	@override String get root => 'โฟลเดอร์หรือคำนำหน้า';
+	@override String get smbFolderHelp => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น';
 	@override String get username => 'ชื่อผู้ใช้';
+	@override String get smbDomain => 'โดเมน (ไม่บังคับ)';
 	@override String get password => 'คู่มือ';
 	@override String get token => 'API โค้น';
 	@override String get accessKey => 'การเข้าถึง ID Key';
@@ -2903,6 +3058,8 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ID ลูกค้า';
 	@override String get clientSecret => 'OAuth คีย์ความลับ (เดสก์ท็อป Google เท่านั้น)';
 	@override String get allowHttp => 'อนุญาต HTTP ที่ไม่เข้ารหัสบนเครือข่ายที่เชื่อถือได้';
+	@override String get smbEncryption => 'เข้ารหัสการเชื่อมต่อ SMB3';
+	@override String get smbEncryptionHint => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ';
 	@override String get connect => 'เชื่อมต่อ';
 	@override String get cancel => 'ยกเลิก';
 	@override String get save => 'บันทึก';
@@ -3047,12 +3204,23 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get useFiles => 'ใช้ไฟล์และหนังสือ';
 	@override String get cancelScan => 'สแกนลบ';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'ตัวอย่าง: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์';
-	@override String get smbFolderHelp => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น';
-	@override String get smbDomain => 'โดเมน (ไม่บังคับ)';
-	@override String get smbEncryption => 'เข้ารหัสการเชื่อมต่อ SMB3';
-	@override String get smbEncryptionHint => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ';
+	@override String get offlineQuota => 'ออฟไลน์ดาวน์โหลด จํากัด';
+	@override String get offlineQuotaHelp => 'การตั้งค่าพื้นที่สูงสุดที่ใช้โดยการคัดลอกแบบออฟไลน์ไฟล์ที่นําเข้าและดาวน์โหลดสั้น การลดข้อ จํากัด ไม่จะถอดรหัสที่มีอยู่';
+	@override String get offlineStorageUsage => 'ออฟไลน์จัดเก็บ';
+	@override String get reservedStorage => 'เก็บ';
+	@override String get downloadQueue => 'ดาวน์โหลด Queue';
+	@override String get downloadRunning => 'ดาวน์โหลด';
+	@override String get downloadQueued => 'รอ';
+	@override String get downloadPaused => 'การพักผ่อน';
+	@override String get downloadFailed => 'ต้องการรีด';
+	@override String get importing => 'การนําเข้า';
+	@override String get importInterrupted => 'ปิดการนําเข้า · ลบเพื่อทําความสะอาด';
+	@override String get errorQuotaExceeded => 'จํากัด การจัดเก็บข้อมูลแบบออฟไลน์ได้รับการบรรลุ ขึ้นขีด จํากัด หรือลบสําเนาที่ดาวน์โหลด';
+	@override String get errorStorageLow => 'ไม่มีการจัดเก็บอุปกรณ์ฟรีเพียงพอเพื่อรักษาความปลอดภัย';
+	@override String get errorStorageUnavailable => 'PlezyNG ไม่สามารถตรวจสอบการจัดเก็บอุปกรณ์ฟรีดังนั้นการเขียนถูกหยุด';
+	@override String get removeDownloadJob => 'ดาวน์โหลด';
+	@override String get downloadAlreadyComplete => 'ดาวน์โหลดนี้เสร็จสิ้นก่อนที่จะสามารถลบได้ รายการนี้จะพร้อมใช้งาน offline';
+	@override String get confirmRemoveDownloadJob => 'ดาวน์โหลดนี้และลบข้อมูลที่ดาวน์โหลดบางส่วนหรือไม่? ตําแหน่งและบันทึกของคุณจะยังคงอยู่';
 }
 
 // Path: lending
@@ -3172,6 +3340,12 @@ class _Translations$audiobook$th extends Translations$audiobook$en {
 	@override String get statusFinished => 'เสร็จ';
 	@override String get goToTime => 'ไปยัง เวลา';
 	@override String get timeHelp => 'ชั่วโมง:นาที:วินาทีหรือนาที:วินาที';
+	@override String get recoveryHelp => 'Export a recent encrypted copy before moving or repairing sync data. นําเข้ามาพร้อมกับสถานะปัจจุบัน พวกเขาไม่เคยแทนที่ประวัติการซิงค์ในท้องถิ่น ให้รหัสซิงโครแยกกัน';
+	@override String get recoveryExport => 'การส่งออกไฟล์การกู้คืนที่เข้ารหัส';
+	@override String get recoveryImport => 'นําเข้าไฟล์การกู้คืนที่เข้ารหัส';
+	@override String get recoveryImportConfirm => 'ผสมไฟล์การกู้คืนที่เข้ารหัสนี้กับตําแหน่งอ่านปัจจุบันและบันทึก? ประวัติศาสตร์ที่มีอยู่จะถูกเก็บไว้. หมายเลขห้องสมุดร่วมกันและรายการไม่รวม; การตั้งค่าหมายเลขที่เกี่ยวข้องในแต่ละอุปกรณ์ก่อนที่จะนําเข้า';
+	@override String get recoveryExported => 'ไฟล์การกู้คืนที่เข้ารหัสถูกบันทึก';
+	@override String get recoveryImported => 'ข้อมูลการกู้คืนรวม';
 }
 
 // Path: sourceSetup
@@ -3275,6 +3449,23 @@ class _Translations$sourceSetup$th extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}';
 	@override String subtitleRating({required Object rating}) => 'คะแนน ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}';
+	@override String get sharedEntryPair => 'คู่รายการนี้';
+	@override String get sharedEntryPairHelp => 'ป้อน ID ที่เดียวกันสําหรับรายการนี้บนอุปกรณ์แต่ละเครื่อง ใช้ตัวระบุร่วมกันที่มั่นคงหรือสร้างหนึ่งและคัดลอกมันไปยังรายการที่เกี่ยวข้อง Progress คู่เฉพาะเมื่อไฟล์รุ่นประเภทขนาดและคําสั่งตรง Blank จะกําจัดแผนที่นี้';
+	@override String get sharedEntryId => 'แบ่งปันรายการ ID';
+	@override String get generateSharedEntryId => 'สร้างรายการที่แบ่งปัน ID';
+	@override String get sharedLibraryId => 'แบ่งปันห้องสมุด ID (ตัวเลือก)';
+	@override String get sharedLibraryHelp => 'ใช้ ID ที่เหมือนกันบนอุปกรณ์ที่เปิดห้องสมุดเดียวกัน ID สาธารณะนี้ช่วยให้มีการอ่านขั้นตอนและบันทึกผ่านการเชื่อมต่อแหล่งข้อมูลต่างๆ ไม่ใช่รหัสผ่าน เมื่อผู้ให้บริการใช้ ID รายการต่าง ๆ คู่รายการเหล่านี้จากหน้าจอรายละเอียดของพวกเขา';
+	@override String get sharedLibraryInvalid => 'ใช้ 8 ถึง 100 หมายเลขจุด subscores หรือ hyphens';
+	@override String get generateSharedLibraryId => 'สร้าง ID ห้องสมุดที่แบ่งปัน';
+	@override String get nfsReadAhead => 'NFS read-ahead คําขอ';
+	@override String get nfsReadAheadHelp => 'อ่านแบบคล้ายมากขึ้นสามารถปรับปรุงการผ่านทางบน NAS หรือเครือข่ายที่รวดเร็ว ใช้ 1 หากเซิร์ฟเวอร์ จํากัด คําขอในปัจจุบัน';
+	@override String get nfsReadTest => 'การวัดประสิทธิภาพการอ่าน NFS';
+	@override String get nfsReadTestHelp => 'อ่านได้ถึง 64 MiB จากไฟล์ที่ใหญ่ที่สุดเพื่อวัดการเชื่อมต่อ NAS นี้ใช้แบนด์วิดท์เครือข่าย';
+	@override String get nfsQualificationResult => 'NFS อ่านการวัด';
+	@override String get nfsReadBytes => 'ข้อมูลอ่าน';
+	@override String get nfsReadSpeed => 'ความเร็วที่วัด';
+	@override String get nfsReadRequests => 'อ่านคําขอ';
+	@override String get sharedEntryConflict => 'หมายเลขรายการที่แบ่งปันนี้ได้รับการจับคู่กับรายการอื่น ๆ ในห้องสมุดนี้ เลือก ID ที่แตกต่างกัน';
 }
 
 // Path: comics
@@ -3367,6 +3558,15 @@ class _Translations$games$th extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3447,6 +3647,19 @@ class _Translations$common$mediaKind$th extends Translations$common$mediaKind$en
 	@override String get clip => 'คลิก';
 	@override String get photo => 'ภาพถ่าย';
 	@override String get folder => 'แผง';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$th extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'เปิดคําแนะนําและรายการจากแหล่งการค้นพบที่เชื่อมต่อ';
+	@override String get libraries => 'เปิดห้องสมุดสื่อที่เชื่อมต่อของคุณ';
+	@override String get liveTv => 'เปิดทีวีสดเมื่อเซิร์ฟเวอร์ให้มันหรือไม่ startup จะตกกลับไปยัง Home';
+	@override String get search => 'ค้นหาสื่อเปิด';
 }
 
 // Path: themeEditor.slots
@@ -3535,6 +3748,35 @@ class _Translations$videoControls$pipErrors$th extends Translations$videoControl
 	@override String unknown({required Object error}) => 'ข้อผิดพลาดเกิดขึ้น: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$th extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'เก็บอักษรสีขนาดและตําแหน่งที่เขียนไว้ในไฟล์หัวข้อ';
+	@override String get yes => 'อนุญาตให้ตั้งค่าสไตล์ subtitle ของผู้เล่นปรับ ASS subtitles';
+	@override String get scale => 'ใช้รูปแบบผู้เล่นและขนาดที่รวมเพื่อตอบสนองความแตกต่างของวิดีโอ';
+	@override String get force => 'เปลี่ยนรูปแบบ ASS ที่รวมด้วยสไตล์ subtitle ของผู้เล่น';
+	@override String get strip => 'ลบรูปแบบ ASS ที่รวมและให้ข้อความหัวข้อได้ชัดเจน';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$th extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render ที่ความละเอียดพื้นผิวหน้าจอเต็มเพื่อผลลัพธ์ที่ชัดเจนที่สุด';
+	@override String get video => 'Render ใช้ความละเอียดวิดีโอเป็นคําแนะนําซึ่งสามารถลดการทํางานบนจอแสดงผลที่มีความละเอียดสูง';
+	@override String get threeQuarter => 'ลดความละเอียดพื้นผิวของจอแสดงผล 75% สําหรับการประหยัดประสิทธิภาพที่เรียบง่าย';
+	@override String get half => 'ลด 50% ของความละเอียดพื้นผิวของจอแสดงผลเพื่อลดการทํางานด้วยขอบอ่อน';
+	@override String get third => 'Render ที่หนึ่งในสามของความละเอียดพื้นผิวจอแสดงผลเพื่อลดการทํางานด้วยขอบอ่อน';
+	@override String get quarter => 'Render ที่ 1/4 ของความละเอียดพื้นผิวของจอแสดงผลเพื่อลดการทํางานด้วยผลที่อ่อนโยนที่สุด';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$th extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$th._(TranslationsTh root) : this._root = root, super.internal(root);
@@ -3577,6 +3819,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$th extends T
 	@override String get preferSdh => 'ดีกว่า SDH subtitles';
 	@override String get onlySdh => 'เท่านั้น SDH subtitles';
 	@override String get onlyNonSdh => 'เท่านั้น Subtitles ไม่ใช่ SDH';
+	@override String get preferNonSdhDescription => 'เสนอหัวข้อมาตรฐานเมื่อทั้งรุ่นมาตรฐานและ SDH มีอยู่';
+	@override String get preferSdhDescription => 'เสนอหัวข้อ SDH เมื่อมี แต่อนุญาตให้หัวข้อมาตรฐานเป็น Fallback';
+	@override String get onlySdhDescription => 'ใช้หัวข้อ SDH เท่านั้น อย่ากลับมาไปที่หัวข้อมาตรฐาน';
+	@override String get onlyNonSdhDescription => 'ใช้หัวข้อมาตรฐานเท่านั้น ยกเว้นหัวข้อ SDH';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3590,6 +3836,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$th extends Translat
 	@override String get preferForced => 'มากกว่าหัวข้อบังคับ';
 	@override String get onlyForced => 'เท่านั้น Subtitles';
 	@override String get onlyNonForced => 'เท่านั้น Subtitles ไม่บังคับ';
+	@override String get preferNonForcedDescription => 'มักจะชอบหัวข้อปกติ แต่อนุญาตให้ติดตามที่บังคับเป็นการลดลง';
+	@override String get preferForcedDescription => 'มักจะแนะนําเส้นทางที่บังคับเมื่อมีอยู่ แต่อนุญาตให้หัวข้อปกติเป็นการลดลง';
+	@override String get onlyForcedDescription => 'ใช้เส้นทางที่ระบุไว้เป็นบังคับเท่านั้น';
+	@override String get onlyNonForcedDescription => 'การยกเว้นเส้นทางที่ระบุไว้เป็นบังคับ';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3603,6 +3853,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$th extends Transl
 	@override String get moviesAndShows => 'ภาพยนตร์และการแสดงทีวี';
 	@override String get movies => 'ภาพยนตร์เท่านั้น';
 	@override String get shows => 'แสดงทีวีเท่านั้น';
+	@override String get noneDescription => 'อย่าแสดงเครื่องหมายตรวจสอบที่สังเกต';
+	@override String get moviesAndShowsDescription => 'แสดงการตรวจสอบสําหรับภาพยนตร์และแสดงทีวี';
+	@override String get moviesDescription => 'แสดงการตรวจสอบสําหรับภาพยนตร์เท่านั้น';
+	@override String get showsDescription => 'แสดงการตรวจสอบเพื่อแสดงทีวีเท่านั้น';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3616,6 +3870,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$th extends Translatio
 	@override String get usersOnly => 'ผู้ใช้เท่านั้น';
 	@override String get criticsOnly => 'การวิจารณ์เท่านั้น';
 	@override String get nobody => 'ซ่อนอยู่';
+	@override String get usersAndCriticsDescription => 'แสดงทั้งคะแนนของผู้ใช้และคะแนนที่สําคัญ';
+	@override String get usersOnlyDescription => 'แสดงคะแนนและความคิดเห็นที่ส่งโดยผู้ใช้';
+	@override String get criticsOnlyDescription => 'แสดงคะแนนและรีวิวที่สําคัญ';
+	@override String get nobodyDescription => 'ลบคะแนนและรีวิว';
 }
 
 // Path: discover.findNext
@@ -4402,6 +4660,21 @@ class _Translations$services$libraryFilter$th extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Sync เท่านั้นห้องสมุดที่ตรวจสอบด้านล่าง';
 	@override String get libraries => 'ห้องสมุด';
 	@override String get noLibraries => 'ไม่มีห้องสมุด';
+	@override String get modeDescription => 'เลือกว่าห้องสมุดที่ผ่านการตรวจสอบจะถูกบล็อกจากการซิงค์หรือเป็นห้องสมุทรเดียวที่ซิงก์';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$th extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'การซิงค์บทความและภาพยนตร์ที่เห็นด้วยบัญชีของคุณ';
+	@override String get mal => 'ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ MyAnimeList';
+	@override String get anilist => 'ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ AniList';
+	@override String get simkl => 'Sync ดูภาพยนตร์, แสดงทีวีและ anime กับ Simkl.';
+	@override String get mdblist => 'แสดงคะแนน MDBList และรายการในคําแนะนําและสํารวจ';
 }
 
 /// The flat map containing all translations for locale <th>.
@@ -4459,6 +4732,7 @@ extension on TranslationsTh {
 			'appIcon.names.strata' => 'แพทย์',
 			'appIcon.names.facet' => 'หน้า',
 			'appIcon.names.tilde' => 'ตุ๊กตา',
+			'appIcon.description' => 'เลือกไอคอนที่แสดงโดยผู้เริ่มต้นอุปกรณ์ของคุณ แสดงให้เห็นว่าตัวเลือกแต่ละตัวจะดูอย่างไร',
 			'auth.signInWithPlex' => 'ลงทะเบียนกับ Plex',
 			'auth.showQRCode' => 'แสดงรหัส QR',
 			'auth.authenticate' => 'การรับรอง',
@@ -4480,6 +4754,32 @@ extension on TranslationsTh {
 			'common.cancel' => 'ยกเลิก',
 			'common.save' => 'บันทึก',
 			'common.close' => 'ปิด',
+			'common.closeMiniPlayer' => 'มินิผู้เล่น',
+			'common.closeWorkspaceWindow' => 'หน้าต่างใกล้',
+			'common.returnToFullView' => 'กลับไปดูเต็มรูปแบบ',
+			'common.manageMediaSessions' => 'การจัดการการประชุมสื่อ',
+			'common.hideMediaSessions' => 'การประชุมสื่อที่ซ่อนอยู่',
+			'common.mediaSessions' => 'การประชุมสื่อ',
+			'common.mediaSessionsHint' => 'เลือกเพื่อนําเซสชั่นไปข้างหน้า พาร์คซ่อนหน้าต่างของเขา แต่ยังคงเปิด Return เปิดมันในมุมมองเต็ม; close ends it.',
+			'common.sessionInWorkspace' => 'ในพื้นที่งาน',
+			'common.sessionParked' => 'ที่จอดรถ',
+			'common.sessionFullscreen' => 'หน้าจอเต็มรูปแบบ',
+			'common.switchToNextWindow' => 'สวิทช์กับหน้าต่างต่อไป',
+			'common.moveWindow' => 'ปิดหน้าต่าง',
+			'common.finishMovingWindow' => 'เสร็จสิ้นหน้าต่างย้าย',
+			'common.moveWindowHint' => 'ยาวกดและดึงหน้าต่างเพื่อย้ายมัน การควบคุมนี้ยังช่วยให้การเคลื่อนไหวของปุ่ม',
+			'common.movingWindowHelp' => 'การเคลื่อนไหว · ปรับปุ่มปืน · Enter Saves · Escape Cancels',
+			'common.resizeWindow' => 'ตู้คืนหน้าต่าง',
+			'common.resizeWindowHint' => 'ลวดมือนี้หรือใช้คีย์ปืนเพื่อรีไซเคิลหน้าต่าง',
+			'common.workspaceWindowHint' => 'ใช้การควบคุมการเคลื่อนไหวหรือกดยาวและดึงเพื่อย้าย ใช้มือ resize เพื่อ resize',
+			'common.workspacePaneHint' => 'เลือกแผงนี้เพื่อมุ่งเน้นมัน ใช้การควบคุมหน้าจอเต็มเพื่อขยาย',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'หน้าต่างการประชุม: ${title}',
+			'common.workspaceTitleHint' => 'เลือกเพื่อมุ่งเน้น แดร์แถบหัวเพื่อย้าย ใช้ปุ่มหน้าจอเต็มเพื่อขยาย',
+			'common.moveToSessionTray' => 'การเคลื่อนย้ายไปยังเซสชั่นสาม',
+			'common.moveToSessionTrayHint' => 'Keeps การประชุมนี้พร้อมใช้งานโดยไม่ต้องแสดงหน้าต่างของมัน',
+			'common.closeSessionHint' => 'ปิดหน้าต่างนี้และเสร็จสิ้นการประชุม',
+			'common.sideBySideLayout' => 'สวิตช์ไปยัง layout side-by-side',
+			'common.floatingWindows' => 'สวิทช์เพื่อลอยหน้าต่าง',
 			'common.clear' => 'หมายเหตุ',
 			'common.reset' => 'รีเซ็ต',
 			'common.later' => 'ต่อไป',
@@ -4897,6 +5197,8 @@ extension on TranslationsTh {
 			'settings.audioPassthrough' => 'เสียงที่กําหนดเอง',
 			'settings.audioPassthroughDescription' => 'ส่งเสียง Dolby / DTS ไปยังรับหรือทีวีของคุณโดยไม่ต้องเข้ารหัสใหม่และยังคงเสียงรอบ ปิดถ้าคุณไม่มีเสียง',
 			'settings.audioPassthroughDescriptionApple' => 'ใช้ decoder Dolby ที่เกิดจาก Apple สําหรับ Dolby Digital Plus รวมถึง Atmos DTS และ TrueHD ยังคงเล่นเป็น PCM มัลติช่อง ปิดถ้าคุณไม่มีเสียง',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'ใช้ decoder Dolby ที่เกิดจาก Apple สําหรับ Dolby Digital Plus รวมถึง Atmos. บน iOS, iPadOS และ tvOS 26 หรือภายหลัง, TrueHD Atmos และ DTS:X เล่นเป็นเสียงพื้นที่. ระยะทาง DTS และ TrueHD อื่น ๆ เล่นเป็น PCM มัลติช่อง. ปิดถ้าคุณไม่มีเสียง.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'ปิดขณะที่เสียง normalization เป็น',
 			'settings.audioChannelLimit' => 'ช่องเสียง',
@@ -4923,9 +5225,14 @@ extension on TranslationsTh {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 และยับยั้งการแปลง DV Retry',
 			'settings.dvConversionDv81Description' => 'แปลง RPU ในร่องรัดไป Dolby Vision โปรไฟล์ 8.1',
 			'settings.dvConversionHevcStripDescription' => 'เกรด Dolby Vision ชั้น RPU/EL และแบนปัจจุบัน HEVC',
+			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
+			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
+			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
+			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
+			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
+			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
+			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
 			'settings.disableDolbyVision' => 'ไม่สามารถใช้งานได้ Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'เล่นไฟล์ HDR10 หรือชั้น HLG แทน Dolby Vision เมื่อมี',
 			'settings.hdrSdrConversion' => 'การแปลง HDR ไปยัง SDR',
 			'settings.hdrSdrConversionDescription' => 'เลือกสิ่งที่แปลงวิดีโอ HDR เมื่อหน้าจอไม่สามารถแสดง HDR',
@@ -5011,13 +5318,84 @@ extension on TranslationsTh {
 			'settings.regionFormatDescription' => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด',
 			'settings.metadataLanguage' => 'ภาษาข้อมูลสื่อ',
 			'settings.metadataLanguageDescription' => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน',
-			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
-			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
-			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
-			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
-			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
-			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
-			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
+			'settings.enterFullscreenOnPlaybackStart' => 'เข้าสู่หน้าจอเต็มเมื่อ playback เริ่มต้น',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'เปิดวิดีโอเดสก์ท็อปในหน้าจอเต็มเมื่อเริ่มเล่น',
+			'settings.extendVideoIntoDisplayCutout' => 'วิดีโอขยายไปยัง Display Cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'ให้วิดีโอเต็มหน้าจอใช้กล้องตัดบนโทรศัพท์ Android',
+			'settings.languageDescription' => 'เลือกภาษาที่ใช้สําหรับการควบคุม PlezyNG และข้อความ ติดตามระบบติดตามภาษาอุปกรณ์ของคุณ',
+			'settings.themeDescription' => 'เลือกสีและ contrast ที่ใช้ตลอด app',
+			'settings.libraryDensityDescription' => 'เปลี่ยนจํานวนบัตรห้องสมุดที่เหมาะสมในแต่ละแถว',
+			'settings.displayScaleDescription' => 'รีไซเคิลอินเตอร์เฟซบนจอแสดงผลรถยนต์นี้โดยไม่ต้องเปลี่ยนขนาดข้อความในอุปกรณ์ของคุณ',
+			'settings.themeSongVolumeDescription' => 'กําหนดปริมาณของเพลงธีมในความสัมพันธ์กับเสียงอื่น ๆ',
+			'settings.viewModeDescription' => 'เลือกว่ารายการห้องสมุดจะปรากฏเป็นโพสต์ในเครือข่ายหรือเป็นรายการขนาดกะทัดรัด',
+			'settings.gridViewDescription' => 'จัดรายการห้องสมุดในแถวและคอลัมน์ของโพสต์',
+			'settings.listViewDescription' => 'แสดงรายการห้องสมุดในรายชื่อแนวตั้งที่มีข้อความเพิ่มเติมต่อรายการ',
+			'settings.gridSpacingDescription' => 'กําหนดความแตกต่างระหว่างโพสต์ในเครือข่ายห้องสมุด',
+			'settings.gridSpacingTightDescription' => 'เหมาะกับโพสต์เพิ่มเติมทั่วหน้าจอด้วยช่องว่างขนาดเล็ก',
+			'settings.gridSpacingNormalDescription' => 'ใช้ช่องว่างมาตรฐานระหว่างโพสต์',
+			'settings.gridSpacingSpaciousDescription' => 'เพิ่มช่องว่างที่ใหญ่กว่าระหว่างโพสต์เพื่อแยกมากขึ้น',
+			'settings.episodePosterModeDescription' => 'เลือกงานศิลปะใดที่ปรากฏบนการ์ด episode',
+			'settings.seriesPosterDescription' => 'ใช้โพสต์ชุดของงานแสดงสําหรับแต่ละส่วน',
+			'settings.seasonPosterDescription' => 'ใช้โพสต์ฤดูกาลสําหรับแต่ละ episode เมื่อมี',
+			'settings.episodeThumbnailDescription' => 'ใช้กรอบจาก epizode เมื่อมี',
+			'settings.continueWatchingActionDescription' => 'เลือกสิ่งที่เกิดขึ้นเมื่อคุณเปิดใช้งานบัตรตรวจสอบต่อเนื่อง',
+			'settings.continueWatchingPlayDescription' => 'เริ่มต้นฟิล์มหรือ epizode ได้ทันที',
+			'settings.continueWatchingDetailsDescription' => 'เปิดหน้าหัวแรกเพื่อให้คุณสามารถตรวจสอบรายละเอียดและเลือกการดําเนินการ',
+			'settings.episodeActionDescription' => 'เลือกสิ่งที่เกิดขึ้นเมื่อคุณเปิดใช้งานการ์ด epizode',
+			'settings.episodePlayDescription' => 'เริ่มต้นฉบับทันที',
+			'settings.episodeDetailsDescription' => 'เปิดหน้าส่วนก่อน playback',
+			'settings.contentScreensaverDelayDescription' => 'เลือกระยะเวลาที่ PlezyNG รอโดยไม่มีการเข้าถึงก่อนที่จะแสดงงานศิลปะ',
+			'settings.continueWatchingRowSizeDescription' => 'เลือกขนาดของบัตรในสายการตรวจสอบต่อเนื่อง',
+			'settings.rowSizeCompactDescription' => 'แสดงการ์ดขนาดเล็กเพื่อให้รายการมากขึ้นเหมาะกับเส้น',
+			'settings.rowSizeStandardDescription' => 'ใช้ขนาดบัตรมาตรฐาน',
+			'settings.rowSizeLargeDescription' => 'แสดงการ์ดขนาดใหญ่พร้อมรายละเอียดงานศิลปะมากขึ้น',
+			'settings.visualEffectsDescription' => 'เลือกการเคลื่อนไหวและผลลัพธ์ศิลปะสําหรับอุปกรณ์นี้',
+			'settings.visualEffectsFullDescription' => 'ใช้ผลการเคลื่อนไหวและงานศิลปะเต็มรูปแบบบนอุปกรณ์ใด ๆ',
+			'settings.startupSectionDescription' => 'เลือกส่วนที่เปิดเมื่อ PlezyNG เริ่มต้น',
+			'settings.startupSectionOptions.discover' => 'เปิดคําแนะนําและรายการจากแหล่งการค้นพบที่เชื่อมต่อ',
+			'settings.startupSectionOptions.libraries' => 'เปิดห้องสมุดสื่อที่เชื่อมต่อของคุณ',
+			'settings.startupSectionOptions.liveTv' => 'เปิดทีวีสดเมื่อเซิร์ฟเวอร์ให้มันหรือไม่ startup จะตกกลับไปยัง Home',
+			'settings.startupSectionOptions.search' => 'ค้นหาสื่อเปิด',
+			'settings.smallSkipDurationDescription' => 'กําหนดระยะทางที่เคลื่อนย้ายโดยสั้นด้านหลังและไปข้างหน้าค้นหาการควบคุม',
+			'settings.largeSkipDurationDescription' => 'กําหนดระยะทางที่เคลื่อนย้ายโดยหลังยาวและไปข้างหน้าค้นหาการควบคุม',
+			'settings.rewindOnResumeDescription' => 'การเคลื่อนย้ายการเล่นกลับด้วยจํานวนนี้เมื่อรีไซเคิลวิดีโอ',
+			'settings.defaultSleepTimerDescription' => 'กําหนดระยะเวลาเริ่มต้นที่ใช้เมื่อคุณเริ่มชั่วโมงนอน',
+			'settings.playNextCountdownDescription' => 'รอเวลานานนี้ก่อนที่จะเริ่มต้นส่วนต่อไป การตั้งค่าที่ 0 เพื่อเริ่มทันที',
+			'settings.autoSkipDelaySettingDescription' => 'ใช้เมื่อ intro, credits หรือโฆษณาตั้งค่าเพื่อลบโดยอัตโนมัติ',
+			'settings.downmixCenterBoostDescription' => 'เพิ่มการสนทนาในช่องกลางเมื่อเสียงรอบผสมลงไปสเตอริโอ',
+			'settings.displaySwitchDelayDescription' => 'รอก่อนที่จะเปลี่ยนโหมดจอแสดงผลเพื่อให้ทีวีหรือผู้รับสามารถเสร็จสิ้นการสลับก่อนหน้านี้',
+			'settings.playerBackendDescription' => 'เลือกเครื่องเล่นที่ decodes และ renders วีดีโอ บนอุปกรณ์นี้',
+			'settings.exoPlayerDescription' => 'ใช้ผู้เล่น Media3 ที่มาของ Android และวิธีการฮาร์ดแวร์ที่ได้รับการสนับสนุน',
+			'settings.mpvDescription' => 'ใช้ mpv ซึ่งแสดงให้เห็นการเล่นเพิ่มเติมหัวข้อและควบคุมการประมวลผลวิดีโอ',
+			'settings.scopeOffDescription' => 'เก็บการเปลี่ยนแปลงสําหรับเซสชั่น playback ปัจจุบันเท่านั้น',
+			'settings.scopeGlobalDescription' => 'ใช้ใหม่ค่าเดียวกันสําหรับแต่ละห้องสมุดและชื่อ',
+			'settings.scopeLibraryDescription' => 'โปรดจําไว้ค่าที่แยกต่างหากสําหรับแต่ละห้องสมุด',
+			'settings.scopeTitleDescription' => 'โปรดจําค่าที่แยกต่างหากสําหรับแต่ละแสดงหรือภาพยนตร์',
+			'settings.specialsOrderingServerDescription' => 'เก็บคําสั่งซื้อส่วนที่จัดหาโดยเซิร์ฟเวอร์สื่อ',
+			'settings.specialsOrderingAirDateDescription' => 'โพสต์พิเศษในส่วนที่ปกติตามวันที่อากาศของพวกเขา',
+			'settings.specialsOrderingLastDescription' => 'โพสต์แต่ละพิเศษหลังจากฤดูกาลปกติ',
+			'settings.skipIntroModeDescription' => 'เลือกว่าเครื่องหมายการเข้าเล่นตามปกติแสดงปุ่มสกีหรือสกีโดยอัตโนมัติ',
+			'settings.skipCreditsModeDescription' => 'เลือกว่าเครดิตเล่นตามปกติแสดงปุ่มสกีหรือสกีโดยอัตโนมัติ',
+			'settings.skipAdsModeDescription' => 'เลือกว่าโฆษณาที่พบจะเล่นตามปกติแสดงปุ่มสไลด์หรือสไลท์โดยอัตโนมัติ',
+			'settings.playbackBufferAutoDescription' => 'ปล่อยให้ผู้เล่นที่ใช้งานเลือกขนาดบูเฟอร์ปกติ',
+			'settings.playbackBufferLargeDescription' => 'รักษาสื่อมากขึ้นพร้อมก่อนการเล่น; นี้ใช้หน่วยความจํามากขึ้น',
+			'settings.playbackBufferExtraLargeDescription' => 'เก็บรูฟเฟอร์ Read-ahead ที่ใหญ่ที่สุด ซึ่งใช้หน่วยความจํามากที่สุด',
+			'settings.defaultQualityDescription' => 'กําหนดความละเอียดวิดีโอแบบกําหนดเองและบิตเพดานสําหรับกระแสที่เซิร์ฟเวอร์รหัส',
+			'settings.cellularQualityDescription' => 'Override คุณภาพเริ่มต้นเมื่ออุปกรณ์ใช้การเชื่อมต่อเซลล์เท่านั้น',
+			'settings.remoteQualityDescription' => 'Override คุณภาพเริ่มต้นเมื่อเชื่อมต่อกับเซิร์ฟเวอร์ผ่านการเชื่อมโยงระยะไกล',
+			'settings.qualityPresetOriginalDescription' => 'เล่นแหล่งที่มาในคุณภาพที่มีอยู่โดยไม่ต้องขอให้เซิร์ฟเวอร์โอนรหัส',
+			'settings.qualityPresetTranscodeOptionDescription' => 'คําถามจากเซิร์ฟเวอร์สําหรับกระแสแปลงโดยใช้ความละเอียดและอัตราบิตที่แสดงไว้ข้างต้น',
+			'settings.qualityPresetSameAsDefaultDescription' => 'ใช้คุณภาพที่เลือกใน คุณภาพเริ่มต้น',
+			'settings.musicQualityDescription' => 'การตั้งค่าอัตราบิตเสียงสูงสุดที่ต้องการจากเซิร์ฟเวอร์ หลักยังคงไหลแหล่งข้อมูล',
+			'settings.musicQualityOriginalDescription' => 'Play the source audio without a bitrate-capped transcode',
+			'settings.musicQualityTranscodeOptionDescription' => 'ต้องการ transcode เซิร์ฟเวอร์ capped ใกล้กับอัตราบิตที่แสดงไว้ข้างต้น; ผลออกจริงสามารถเปลี่ยนแปลงได้',
+			'settings.maxVolumeInputLabel' => 'จํานวนสูงสุด (%)',
+			'settings.checkForUpdatesDescription' => 'ตรวจสอบตอนนี้ว่ารุ่นใหม่ของ PlezyNG มีอยู่หรือไม่',
+			'settings.appearanceDescription' => 'เลือกธีมแอปและปรับการ์ดห้องสมุดสายบ้านและการนําทาง',
+			'settings.prerollLibraryDescription' => 'เลือกห้องสมุดซึ่งมีคลิปที่มีอยู่ในรูปแบบของ pre-rolls ภาพยนตร์',
+			'settings.prerollSelectionDescription' => 'เลือกคลิปจากห้องสมุดที่เลือกที่จะเล่นก่อนภาพยนตร์',
+			'settings.contentScreensaverDelayOptionDescription' => 'รอนี้หลายนาทีโดยไม่มีการเข้าสู่ระบบก่อนที่จะแสดงงานศิลปะ screensaver',
+			'settings.videoCodecOptionDescription' => 'ให้การเล่นโดยตรงสําหรับโค้ดนี้เมื่อได้รับการสนับสนุน การเข้ารหัสที่ไม่ได้ตรวจสอบจะถูกรหัสผ่านจากเซิร์ฟเวอร์สื่อ',
 			'themeEditor.builtIn' => 'โครงสร้าง',
 			'themeEditor.presets' => 'โพสต์',
 			'themeEditor.custom' => 'คู่มือ',
@@ -5056,6 +5434,17 @@ extension on TranslationsTh {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} นาที left',
 			'themeEditor.previewSwitch' => 'รถยนต์',
 			'themeEditor.previewMutedText' => 'ภาษาไทยอ่านเช่นนี้',
+			'themeEditor.themeSystemDescription' => 'ตรวจสอบการปรากฏของอุปกรณ์ของคุณและเปลี่ยนระหว่างแสงและสีดําโดยอัตโนมัติ',
+			'themeEditor.themeLightDescription' => 'ใช้พื้นหลังที่สดใสกับข้อความเข้ม',
+			'themeEditor.themeDarkDescription' => 'ใช้พื้นหลังที่เข้มพร้อมข้อความสดใส',
+			'themeEditor.themeOledDescription' => 'ใช้พื้นผิวสีดําใกล้ซึ่งลดแสงบนหน้าจอ OLED',
+			'themeEditor.themeEmberDescription' => 'ใช้สีแดงร้อนและ accent amber',
+			'themeEditor.themeGlacierDescription' => 'ใช้สี accent สีฟ้าเย็น',
+			'themeEditor.themeForestDescription' => 'ใช้สีเขียวและธรรมชาติ accent',
+			'themeEditor.themePlumDescription' => 'ใช้สีม่วงและ accent plum',
+			'themeEditor.themePaperDescription' => 'ใช้พื้นผิวที่อบอุ่นเช่นกระดาษและสีที่ได้รับแรงบันดาลใจจากหมึก',
+			'themeEditor.themeCustomDescription' => 'ใช้แพลตฟอร์มสีที่คุณสร้างขึ้นในตัวแก้ไขธีมที่กําหนดเอง',
+			'themeEditor.editorDescription' => 'เลือกสีพลาสติกปรับความชื้น saturation, brightness หรือ opacity ของมันและดูการอัพเกรด Preview ก่อนที่จะบันทึก คุณยังสามารถใส่สี hex',
 			'search.hint' => 'ค้นหา ภาพยนตร์, แสดง, เพลง...',
 			'search.tryDifferentTerm' => 'ลองคําค้นหาที่แตกต่างกัน',
 			'search.searchYourMedia' => 'ค้นหาสื่อของคุณ',
@@ -5301,6 +5690,8 @@ extension on TranslationsTh {
 			'accessibility.largeTargets' => 'เป้าหมายสัมผัสขนาดใหญ่',
 			'accessibility.largeTargetsHint' => 'ให้การควบคุมร่วมกันพื้นที่มากขึ้นสําหรับสัมผัสและนิวเวชั่นช่วย',
 			'accessibility.navigationHint' => 'ใช้ Tab และ Shift+Tab เพื่อย้ายระหว่างควบคุม Enter หรือ Space เพื่อเปิดใช้งาน และ Escape หรือ Back เพื่อปิด โปรแกรมอ่าน zoom และเลือกอ่านพร้อมใช้งานในขณะที่หนังสือเปิด',
+			'accessibility.textSizeDescription' => 'หมายเลขอินเตอร์เฟซขนาดใน PlezyNG นอกจากการตั้งค่าขนาดข้อความระบบของอุปกรณ์ของคุณ',
+			'accessibility.boldTextHint' => 'ใช้น้ําหนักที่หนักขึ้นสําหรับแท็กอินเตอร์เฟซและข้อความเพื่อให้ง่ายต่อการแยกต่างหาก',
 			'tooltips.shufflePlay' => 'เล่น Shuffle',
 			'tooltips.playTrailer' => 'เล่น Trailer',
 			'tooltips.markAsWatched' => 'Mark ตามที่มองเห็น',
@@ -5320,6 +5711,8 @@ extension on TranslationsTh {
 			'videoControls.sleepTimerEndOfVideo' => 'วีดีโอปัจจุบัน',
 			'videoControls.sleepTimerStopAtHeader' => 'หยุด',
 			'videoControls.sleepTimerDurationHeader' => 'เวลา',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback จะหยุดในตอนท้ายของวิดีโอนี้',
 			'videoControls.stillWatching' => 'ยังคงดู?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'การพักผ่อนใน ${seconds}s',
@@ -5354,6 +5747,8 @@ extension on TranslationsTh {
 			'videoControls.transcodeUnavailableFallback' => 'การเข้ารหัสผ่านไม่สามารถใช้ได้ - เล่นคุณภาพเดิม',
 			'videoControls.subtitleUnavailableFallback' => 'หัวฉบับที่เลือกไม่สามารถโหลดได้ - ต่อเนื่องโดยไม่มีหัวฉบับ',
 			'videoControls.pipButton' => 'รูปภาพในโหมด',
+			'videoControls.openMiniPlayer' => 'ผู้เล่นขนาดเล็กเปิด',
+			'videoControls.returnToFullPlayer' => 'กลับผู้เล่นเต็มรูปแบบ',
 			'videoControls.aspectRatioButton' => 'อัตราส่วน',
 			'videoControls.ambientLighting' => 'แสงสภาพแวดล้อม',
 			'videoControls.fullscreenButton' => 'หน้าจอเต็มรูปแบบ',
@@ -5438,8 +5833,6 @@ extension on TranslationsTh {
 			'messages.libraryScanStarted' => ({required Object title}) => 'การสแกนห้องสมุดเริ่มสําหรับ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ไม่สามารถสแกนห้องสมุดได้: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'ข้อมูลจําเพาะสําหรับ "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'การฟื้นฟู Metadata เริ่มต้นสําหรับ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ไม่สามารถปรับปรุงข้อมูลโลหะได้: ${error}',
 			'messages.logoutConfirm' => 'คุณแน่ใจว่าคุณต้องการที่จะลงทะเบียนออกหรือไม่',
@@ -5499,6 +5892,28 @@ extension on TranslationsTh {
 			'subtitlingStyling.renderResolution' => 'โซลูชั่น Render',
 			'subtitlingStyling.renderResolutionScreen' => 'ความละเอียดจอ',
 			'subtitlingStyling.renderResolutionVideo' => 'วีดีโอ Resolution',
+			'subtitlingStyling.fontSizeDescription' => 'ปรับขนาดข้อความหัวข้อในอุปกรณ์นี้',
+			'subtitlingStyling.textColorDescription' => 'เลือกสีที่ใช้สําหรับหัวข้อข้อความ',
+			'subtitlingStyling.borderSizeDescription' => 'กําหนดความหนาของต้นฉบับรอบหัวข้อข้อความ',
+			'subtitlingStyling.borderColorDescription' => 'เลือกสีที่ใช้สําหรับหัวฉบับ',
+			'subtitlingStyling.backgroundColorDescription' => 'เลือกสีด้านหลังของหัวข้อข้อความ',
+			'subtitlingStyling.backgroundOpacityDescription' => 'กําหนดความโปร่งใสของพื้นหลังหัวข้อ: 0% เป็นที่ชัดเจนและ 100% เป็นที่แข็งแกร่ง',
+			'subtitlingStyling.positionDescription' => 'เปลี่ยนหัวข้อแนวตั้ง 0% เป็นด้านบนของวิดีโอและ 100% เป็นด้านล่าง',
+			'subtitlingStyling.assOverrideDescription' => 'เลือกว่าผู้เล่นจะติดตามการปรับเปลี่ยนหรือลบรูปแบบที่รวมอยู่ในหัวข้อ ASS',
+			'subtitlingStyling.assOverrideOptions.no' => 'เก็บอักษรสีขนาดและตําแหน่งที่เขียนไว้ในไฟล์หัวข้อ',
+			'subtitlingStyling.assOverrideOptions.yes' => 'อนุญาตให้ตั้งค่าสไตล์ subtitle ของผู้เล่นปรับ ASS subtitles',
+			'subtitlingStyling.assOverrideOptions.scale' => 'ใช้รูปแบบผู้เล่นและขนาดที่รวมเพื่อตอบสนองความแตกต่างของวิดีโอ',
+			'subtitlingStyling.assOverrideOptions.force' => 'เปลี่ยนรูปแบบ ASS ที่รวมด้วยสไตล์ subtitle ของผู้เล่น',
+			'subtitlingStyling.assOverrideOptions.strip' => 'ลบรูปแบบ ASS ที่รวมและให้ข้อความหัวข้อได้ชัดเจน',
+			'subtitlingStyling.renderResolutionDescription' => 'เลือกความละเอียดที่ใช้ในการ rasterize ภาพและ ASS subtitles ขนาด Android ที่ต่ํากว่าสามารถลดการทํางาน rendering แต่ดูอ่อนโยนมากขึ้น',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render ที่ความละเอียดพื้นผิวหน้าจอเต็มเพื่อผลลัพธ์ที่ชัดเจนที่สุด',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render ใช้ความละเอียดวิดีโอเป็นคําแนะนําซึ่งสามารถลดการทํางานบนจอแสดงผลที่มีความละเอียดสูง',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'ลดความละเอียดพื้นผิวของจอแสดงผล 75% สําหรับการประหยัดประสิทธิภาพที่เรียบง่าย',
+			'subtitlingStyling.renderResolutionOptions.half' => 'ลด 50% ของความละเอียดพื้นผิวของจอแสดงผลเพื่อลดการทํางานด้วยขอบอ่อน',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render ที่หนึ่งในสามของความละเอียดพื้นผิวจอแสดงผลเพื่อลดการทํางานด้วยขอบอ่อน',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render ที่ 1/4 ของความละเอียดพื้นผิวของจอแสดงผลเพื่อลดการทํางานด้วยผลที่อ่อนโยนที่สุด',
+			'subtitlingStyling.boldDescription' => 'เลือกข้อความ subtitle ในน้ําหนักที่หนักขึ้น',
+			'subtitlingStyling.italicDescription' => 'เลือกหัวข้อในอิตาลี',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'การตั้งค่าของวิดีโอเล่นขั้นสูง',
 			'mpvConfig.presets' => 'โพสต์',
@@ -5635,11 +6050,19 @@ extension on TranslationsTh {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'ดีกว่า SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'เท่านั้น SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'เท่านั้น Subtitles ไม่ใช่ SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'เสนอหัวข้อมาตรฐานเมื่อทั้งรุ่นมาตรฐานและ SDH มีอยู่',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'เสนอหัวข้อ SDH เมื่อมี แต่อนุญาตให้หัวข้อมาตรฐานเป็น Fallback',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'ใช้หัวข้อ SDH เท่านั้น อย่ากลับมาไปที่หัวข้อมาตรฐาน',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'ใช้หัวข้อมาตรฐานเท่านั้น ยกเว้นหัวข้อ SDH',
 			'accountPreferences.forcedSubtitles' => 'หัวข้อบังคับ',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'มากกว่าหัวข้อที่ไม่บังคับ',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'มากกว่าหัวข้อบังคับ',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'เท่านั้น Subtitles',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'เท่านั้น Subtitles ไม่บังคับ',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'มักจะชอบหัวข้อปกติ แต่อนุญาตให้ติดตามที่บังคับเป็นการลดลง',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'มักจะแนะนําเส้นทางที่บังคับเมื่อมีอยู่ แต่อนุญาตให้หัวข้อปกติเป็นการลดลง',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'ใช้เส้นทางที่ระบุไว้เป็นบังคับเท่านั้น',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'การยกเว้นเส้นทางที่ระบุไว้เป็นบังคับ',
 			'accountPreferences.displayMissingEpisodes' => 'แสดงเหตุการณ์ที่หายไป',
 			'accountPreferences.displayMissingEpisodesDescription' => 'รายการ episodes ที่เซิร์ฟเวอร์รู้เกี่ยวกับ แต่ไม่มีไฟล์สําหรับ',
 			'accountPreferences.hidePlayedInLatest' => 'ลองดูรายการในล่าสุด',
@@ -5653,11 +6076,27 @@ extension on TranslationsTh {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'ภาพยนตร์และการแสดงทีวี',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'ภาพยนตร์เท่านั้น',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'แสดงทีวีเท่านั้น',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'อย่าแสดงเครื่องหมายตรวจสอบที่สังเกต',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'แสดงการตรวจสอบสําหรับภาพยนตร์และแสดงทีวี',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'แสดงการตรวจสอบสําหรับภาพยนตร์เท่านั้น',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'แสดงการตรวจสอบเพื่อแสดงทีวีเท่านั้น',
 			'accountPreferences.mediaReviewsVisibility' => 'การประเมิน & รีวิว',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'ผู้ใช้และนักวิจารณ์',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'ผู้ใช้เท่านั้น',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'การวิจารณ์เท่านั้น',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'ซ่อนอยู่',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'แสดงทั้งคะแนนของผู้ใช้และคะแนนที่สําคัญ',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'แสดงคะแนนและความคิดเห็นที่ส่งโดยผู้ใช้',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'แสดงคะแนนและรีวิวที่สําคัญ',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'ลบคะแนนและรีวิว',
+			'accountPreferences.preferredAudioLanguageDescription' => 'มักจะติดตามเสียงในภาษานี้เมื่อเซิร์ฟเวอร์หรือผู้เล่นเลือกติดตามโดยอัตโนมัติ',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'มักจะติดตามหัวข้อในภาษานี้เมื่อหัวข้อถูกเลือกโดยอัตโนมัติ',
+			'accountPreferences.subtitleAccessibilityDescription' => 'เลือกว่าแคปชัน SDH เป็นที่ต้องการหรือจําเป็นในระหว่างการเลือกหัวข้ออัตโนมัติ',
+			'accountPreferences.forcedSubtitleDescription' => 'เลือกว่าติดตามหัวข้อบังคับจะได้รับความต้องการหรือจําเป็นในระหว่างการเลือกอัตโนมัติ',
+			'accountPreferences.watchedIndicatorDescription' => 'เลือกประเภทสื่อที่ได้รับการตรวจสอบในอินเตอร์เฟซเซิร์ฟเวอร์',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'เลือกผู้ชมและคะแนนวิจารณ์ที่เซิร์ฟเวอร์แสดงบนหน้าสื่อ',
+			'accountPreferences.subtitleModeDescription' => 'เลือกเมื่อ subtitles เปิดใช้งานโดยอัตโนมัติสําหรับบัญชีเซิร์ฟเวอร์นี้',
+			'accountPreferences.hubDescription' => 'ข้อกําหนดเหล่านี้จะถูกเก็บไว้ในบัญชี Media-server ของคุณและอาจใช้กับลูกค้าอื่น ๆ',
 			'discover.title' => 'ค้นหา',
 			'discover.noContentAvailable' => 'ไม่มีเนื้อหาที่มีอยู่',
 			'discover.addMediaToLibraries' => 'เพิ่มสื่อบางอย่างไปยังห้องสมุดของคุณ',
@@ -5786,6 +6225,8 @@ extension on TranslationsTh {
 			'libraries.all' => 'ทั้งหมด',
 			'libraries.clearAll' => 'แสดงทั้งหมด',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการสแกน "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการวิเคราะห์ "${title}"',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการอัปเดตข้อมูล metadata สําหรับ "${title}"',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการที่จะทําให้เสียเปล่าสําหรับ "${title}"',
@@ -5952,8 +6393,6 @@ extension on TranslationsTh {
 			'explore.mdblistShelves.nameHint' => 'ปล่อยให้เปิดเพื่อใช้ชื่อรายการแหล่งข้อมูล',
 			'explore.mdblistShelves.add' => 'เพิ่ม Shelf',
 			'explore.mdblistShelves.save' => 'เก็บเตียง',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'การเคลื่อนไหว ${title} ขึ้น',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'การเคลื่อนไหว ${title} ลง',
 			'explore.mdblistShelves.unavailable' => 'รายการนี้ไม่สามารถใช้ได้ ลบหรือลบตู้ของมันในตั้งค่า',
@@ -6300,6 +6739,8 @@ extension on TranslationsTh {
 			'watchTogether.connecting' => 'การเชื่อมต่อ...',
 			'watchTogether.relayPublic' => 'ห้องพักใช้การสื่อสารสาธารณะ Open Watch Party',
 			'watchTogether.relayCustom' => ({required Object url}) => 'ห้องพักใช้โทรศัพท์ของคุณที่ ${url}',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'ห้องพักล่าสุด',
 			'watchTogether.roomActions' => 'การกระทําห้อง',
 			'watchTogether.renameRoom' => 'ห้องพัก',
@@ -6466,8 +6907,6 @@ extension on TranslationsTh {
 			'downloads.resumeDownload' => 'ดาวน์โหลด',
 			'downloads.cancelledDownload' => 'ดาวน์โหลดยกเลิก',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (ซิงค์ ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'ดาวน์โหลด ${file} - คลิกเพื่อเสร็จสิ้น',
 			'downloads.partialDownloadClickToComplete' => 'ดาวน์โหลดส่วน - คลิกเพื่อเสร็จสิ้น',
 			'downloads.deleting' => 'การลบ...',
@@ -6726,6 +7165,7 @@ extension on TranslationsTh {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG ฐานชั้น',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR ฐานชั้น',
 			'performanceOverlay.dvRouteReshaped' => 'RPU แก้ไข (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'การทดลอง P7 เฟลกราฟ (ไม่รับรอง)',
 			'performanceOverlay.p7Conversion' => 'การแปลง P7',
 			'performanceOverlay.sampleRate' => 'ตัวอย่างอัตรา',
 			'performanceOverlay.pixelFormat' => 'พิกเซล Fmt',
@@ -6777,6 +7217,13 @@ extension on TranslationsTh {
 			'externalPlayer.launchFailed' => 'ไม่สามารถเปิดผู้เล่นภายนอกได้',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ไม่ติดตั้ง',
 			'externalPlayer.playInExternalPlayer' => 'เล่นในผู้เล่นภายนอก',
+			'externalPlayer.description' => 'เลือกแอปอื่นเพื่อเปิดวิดีโอใน ผู้เล่นที่มีอยู่ขึ้นอยู่กับอุปกรณ์ของคุณและแอปที่ติดตั้ง',
+			'externalPlayer.systemDefaultDescription' => 'ให้ระบบปฏิบัติการเปิดวิดีโอด้วยแอปพลิเคชันที่กําหนดเอง',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'เปิดวิดีโอด้วย ${player}',
+			'externalPlayer.playerNameDescription' => 'แท็กที่แสดงในรายการผู้เล่น',
+			'externalPlayer.playerPackageDescription' => 'ป้อนชื่อแพคเกจ Android ของแอปพลิเคชันผู้เล่นเช่น com.example.player',
+			'externalPlayer.playerCommandDescription' => 'ป้อนคําสั่งผู้เล่นที่ติดตั้งหรือเส้นทางที่สามารถดําเนินการได้สําหรับอุปกรณ์นี้',
+			'externalPlayer.playerUrlSchemeDescription' => 'ใส่แผนที่ URL และรูปแบบ URL ที่เลือกที่ใช้ในการเปิดตัวผู้เล่น',
 			'metadataEdit.editMetadata' => 'แก้ไข',
 			'metadataEdit.screenTitle' => 'การแก้ไข Metadata',
 			'metadataEdit.basicInfo' => 'ข้อมูลพื้นฐาน',
@@ -6806,6 +7253,8 @@ extension on TranslationsTh {
 			'metadataEdit.metadataUpdateFailed' => 'ไม่สามารถปรับปรุงข้อมูล metadata',
 			'metadataEdit.artworkUpdated' => 'อัพเดทศิลปะ',
 			'metadataEdit.artworkUpdateFailed' => 'ไม่สามารถปรับปรุงงานศิลปะได้',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'ไม่มีงานศิลปะ',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}, เลือก',
@@ -6966,6 +7415,13 @@ extension on TranslationsTh {
 			'services.libraryFilter.modeHintWhitelist' => 'Sync เท่านั้นห้องสมุดที่ตรวจสอบด้านล่าง',
 			'services.libraryFilter.libraries' => 'ห้องสมุด',
 			'services.libraryFilter.noLibraries' => 'ไม่มีห้องสมุด',
+			'services.libraryFilter.modeDescription' => 'เลือกว่าห้องสมุดที่ผ่านการตรวจสอบจะถูกบล็อกจากการซิงค์หรือเป็นห้องสมุทรเดียวที่ซิงก์',
+			'services.seerrDescription' => 'เชื่อมต่อกับ Seerr หรือ Overseerr เพื่อค้นหาชื่อและส่งคําขอสื่อ',
+			'services.trackerDescriptions.trakt' => 'การซิงค์บทความและภาพยนตร์ที่เห็นด้วยบัญชีของคุณ',
+			'services.trackerDescriptions.mal' => 'ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ MyAnimeList',
+			'services.trackerDescriptions.anilist' => 'ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ AniList',
+			'services.trackerDescriptions.simkl' => 'Sync ดูภาพยนตร์, แสดงทีวีและ anime กับ Simkl.',
+			'services.trackerDescriptions.mdblist' => 'แสดงคะแนน MDBList และรายการในคําแนะนําและสํารวจ',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'เพิ่มเซิร์ฟเวอร์ ${product}',
 			'addServer.serverUrls' => 'URL ของเซิร์ฟเวอร์',
 			'addServer.serverUrlsHelper' => 'URL จํานวนมากที่ได้รับอนุญาตแยกโดย commas',
@@ -6980,8 +7436,6 @@ extension on TranslationsTh {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'ไม่สามารถเข้าถึงเซิร์ฟเวอร์: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'การลงทะเบียนที่ผิดพลาด: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect ความล้มเหลว: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'ลงทะเบียนกับ Plex',
 			'addServer.pinExpired' => 'PIN หมดอายุก่อนลงชื่อเข้าสู่ระบบ โปรดลองอีกครั้ง',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'บัญชีที่ไม่ได้ลงทะเบียน: ${error}',
@@ -7135,6 +7589,9 @@ extension on TranslationsTh {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'ใน',
 			'homeLayout.resetHeroButtonDescription' => 'ปิดการตั้งค่าฮีโร่ของแต่ละแถวและนําแบรนด์หมุนเดียวกลับไปด้านบนเช่นเดียวกับก่อนที่แถวฮีโร่มีอยู่ แถวจะถูกเก็บไว้',
+			'homeLayout.tapHeroCardDescription' => 'เลือกว่าการแท็บหรือเลือกบัตรฮีโร่จะเริ่มเล่นหรือเปิดรายละเอียดของมัน',
+			'homeLayout.heroTapPlayDescription' => 'เริ่มต้นรายการที่เลือกทันที',
+			'homeLayout.heroTapDetailsDescription' => 'เปิดรายละเอียดของรายการที่เลือกก่อนที่จะเลือกการดําเนินการ',
 			'platform.localNetworkPermission' => 'PlezyNG เชื่อมต่อกับเซิร์ฟเวอร์สื่อและอุปกรณ์การเล่นบนเครือข่ายท้องถิ่นของคุณ',
 			'platform.locationPermission' => 'PlezyNG ใช้การเข้าถึงตําแหน่งเมื่อ iOS ต้องการการตรวจจับเครือข่ายท้องถิ่นของคุณและเชื่อมต่อกับเซิร์ฟเวอร์สื่อของคุณ',
 			'platform.photoLibraryPermission' => 'เลือกภาพจากห้องสมุดภาพของคุณเพื่อใช้เป็นงานศิลปะสื่อ',
@@ -7147,8 +7604,12 @@ extension on TranslationsTh {
 			'fileSources.source' => 'หลักสูตร',
 			'fileSources.name' => 'ชื่อ',
 			'fileSources.endpoint' => 'URL ของเซิร์ฟเวอร์',
+			'fileSources.smbEndpointHint' => 'ตัวอย่าง: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์',
 			'fileSources.root' => 'โฟลเดอร์หรือคำนำหน้า',
+			'fileSources.smbFolderHelp' => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น',
 			'fileSources.username' => 'ชื่อผู้ใช้',
+			'fileSources.smbDomain' => 'โดเมน (ไม่บังคับ)',
 			'fileSources.password' => 'คู่มือ',
 			'fileSources.token' => 'API โค้น',
 			'fileSources.accessKey' => 'การเข้าถึง ID Key',
@@ -7158,6 +7619,8 @@ extension on TranslationsTh {
 			'fileSources.clientId' => 'OAuth ID ลูกค้า',
 			'fileSources.clientSecret' => 'OAuth คีย์ความลับ (เดสก์ท็อป Google เท่านั้น)',
 			'fileSources.allowHttp' => 'อนุญาต HTTP ที่ไม่เข้ารหัสบนเครือข่ายที่เชื่อถือได้',
+			'fileSources.smbEncryption' => 'เข้ารหัสการเชื่อมต่อ SMB3',
+			'fileSources.smbEncryptionHint' => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ',
 			'fileSources.connect' => 'เชื่อมต่อ',
 			'fileSources.cancel' => 'ยกเลิก',
 			'fileSources.save' => 'บันทึก',
@@ -7300,12 +7763,25 @@ extension on TranslationsTh {
 			'fileSources.useFiles' => 'ใช้ไฟล์และหนังสือ',
 			'fileSources.cancelScan' => 'สแกนลบ',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'ตัวอย่าง: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์',
-			'fileSources.smbFolderHelp' => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น',
-			'fileSources.smbDomain' => 'โดเมน (ไม่บังคับ)',
-			'fileSources.smbEncryption' => 'เข้ารหัสการเชื่อมต่อ SMB3',
-			'fileSources.smbEncryptionHint' => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ',
+			'fileSources.offlineQuota' => 'ออฟไลน์ดาวน์โหลด จํากัด',
+			'fileSources.offlineQuotaHelp' => 'การตั้งค่าพื้นที่สูงสุดที่ใช้โดยการคัดลอกแบบออฟไลน์ไฟล์ที่นําเข้าและดาวน์โหลดสั้น การลดข้อ จํากัด ไม่จะถอดรหัสที่มีอยู่',
+			'fileSources.offlineStorageUsage' => 'ออฟไลน์จัดเก็บ',
+			'fileSources.reservedStorage' => 'เก็บ',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'ดาวน์โหลด Queue',
+			'fileSources.downloadRunning' => 'ดาวน์โหลด',
+			'fileSources.downloadQueued' => 'รอ',
+			'fileSources.downloadPaused' => 'การพักผ่อน',
+			'fileSources.downloadFailed' => 'ต้องการรีด',
+			'fileSources.importing' => 'การนําเข้า',
+			'fileSources.importInterrupted' => 'ปิดการนําเข้า · ลบเพื่อทําความสะอาด',
+			'fileSources.errorQuotaExceeded' => 'จํากัด การจัดเก็บข้อมูลแบบออฟไลน์ได้รับการบรรลุ ขึ้นขีด จํากัด หรือลบสําเนาที่ดาวน์โหลด',
+			'fileSources.errorStorageLow' => 'ไม่มีการจัดเก็บอุปกรณ์ฟรีเพียงพอเพื่อรักษาความปลอดภัย',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG ไม่สามารถตรวจสอบการจัดเก็บอุปกรณ์ฟรีดังนั้นการเขียนถูกหยุด',
+			'fileSources.removeDownloadJob' => 'ดาวน์โหลด',
+			'fileSources.downloadAlreadyComplete' => 'ดาวน์โหลดนี้เสร็จสิ้นก่อนที่จะสามารถลบได้ รายการนี้จะพร้อมใช้งาน offline',
+			'fileSources.confirmRemoveDownloadJob' => 'ดาวน์โหลดนี้และลบข้อมูลที่ดาวน์โหลดบางส่วนหรือไม่? ตําแหน่งและบันทึกของคุณจะยังคงอยู่',
 			'lending.title' => 'สวนสาธารณะ',
 			'lending.add' => 'เพิ่มห้องสมุด',
 			'lending.other' => 'อื่น ๆ บิสตจักร',
@@ -7407,6 +7883,12 @@ extension on TranslationsTh {
 			'audiobook.statusFinished' => 'เสร็จ',
 			'audiobook.goToTime' => 'ไปยัง เวลา',
 			'audiobook.timeHelp' => 'ชั่วโมง:นาที:วินาทีหรือนาที:วินาที',
+			'audiobook.recoveryHelp' => 'Export a recent encrypted copy before moving or repairing sync data. นําเข้ามาพร้อมกับสถานะปัจจุบัน พวกเขาไม่เคยแทนที่ประวัติการซิงค์ในท้องถิ่น ให้รหัสซิงโครแยกกัน',
+			'audiobook.recoveryExport' => 'การส่งออกไฟล์การกู้คืนที่เข้ารหัส',
+			'audiobook.recoveryImport' => 'นําเข้าไฟล์การกู้คืนที่เข้ารหัส',
+			'audiobook.recoveryImportConfirm' => 'ผสมไฟล์การกู้คืนที่เข้ารหัสนี้กับตําแหน่งอ่านปัจจุบันและบันทึก? ประวัติศาสตร์ที่มีอยู่จะถูกเก็บไว้. หมายเลขห้องสมุดร่วมกันและรายการไม่รวม; การตั้งค่าหมายเลขที่เกี่ยวข้องในแต่ละอุปกรณ์ก่อนที่จะนําเข้า',
+			'audiobook.recoveryExported' => 'ไฟล์การกู้คืนที่เข้ารหัสถูกบันทึก',
+			'audiobook.recoveryImported' => 'ข้อมูลการกู้คืนรวม',
 			'sourceSetup.savedCertificate' => 'ใบรับรองเซิร์ฟเวอร์ที่บันทึกไว้',
 			'sourceSetup.nfsEndpointInvalid' => 'ป้อน URL ของ NFS เช่น nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'ไม่พบเซิร์ฟเวอร์ DLNA ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง',
@@ -7494,8 +7976,6 @@ extension on TranslationsTh {
 			'sourceSetup.smbEncrypted' => 'เปิดการเข้ารหัส SMB3',
 			'sourceSetup.smbUnencrypted' => 'ปิดการเข้ารหัส SMB3',
 			'sourceSetup.httpUnencrypted' => 'HTTP ที่ไม่มีการเข้ารหัสการรับส่งข้อมูล',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'ตรวจสอบความปลอดภัยของปลายทาง',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'ต้องระบุ ${label}',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'ป้อน ${label} ตั้งแต่ ${min} ถึง ${max}',
@@ -7503,6 +7983,23 @@ extension on TranslationsTh {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'คะแนน ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}',
+			'sourceSetup.sharedEntryPair' => 'คู่รายการนี้',
+			'sourceSetup.sharedEntryPairHelp' => 'ป้อน ID ที่เดียวกันสําหรับรายการนี้บนอุปกรณ์แต่ละเครื่อง ใช้ตัวระบุร่วมกันที่มั่นคงหรือสร้างหนึ่งและคัดลอกมันไปยังรายการที่เกี่ยวข้อง Progress คู่เฉพาะเมื่อไฟล์รุ่นประเภทขนาดและคําสั่งตรง Blank จะกําจัดแผนที่นี้',
+			'sourceSetup.sharedEntryId' => 'แบ่งปันรายการ ID',
+			'sourceSetup.generateSharedEntryId' => 'สร้างรายการที่แบ่งปัน ID',
+			'sourceSetup.sharedLibraryId' => 'แบ่งปันห้องสมุด ID (ตัวเลือก)',
+			'sourceSetup.sharedLibraryHelp' => 'ใช้ ID ที่เหมือนกันบนอุปกรณ์ที่เปิดห้องสมุดเดียวกัน ID สาธารณะนี้ช่วยให้มีการอ่านขั้นตอนและบันทึกผ่านการเชื่อมต่อแหล่งข้อมูลต่างๆ ไม่ใช่รหัสผ่าน เมื่อผู้ให้บริการใช้ ID รายการต่าง ๆ คู่รายการเหล่านี้จากหน้าจอรายละเอียดของพวกเขา',
+			'sourceSetup.sharedLibraryInvalid' => 'ใช้ 8 ถึง 100 หมายเลขจุด subscores หรือ hyphens',
+			'sourceSetup.generateSharedLibraryId' => 'สร้าง ID ห้องสมุดที่แบ่งปัน',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead คําขอ',
+			'sourceSetup.nfsReadAheadHelp' => 'อ่านแบบคล้ายมากขึ้นสามารถปรับปรุงการผ่านทางบน NAS หรือเครือข่ายที่รวดเร็ว ใช้ 1 หากเซิร์ฟเวอร์ จํากัด คําขอในปัจจุบัน',
+			'sourceSetup.nfsReadTest' => 'การวัดประสิทธิภาพการอ่าน NFS',
+			'sourceSetup.nfsReadTestHelp' => 'อ่านได้ถึง 64 MiB จากไฟล์ที่ใหญ่ที่สุดเพื่อวัดการเชื่อมต่อ NAS นี้ใช้แบนด์วิดท์เครือข่าย',
+			'sourceSetup.nfsQualificationResult' => 'NFS อ่านการวัด',
+			'sourceSetup.nfsReadBytes' => 'ข้อมูลอ่าน',
+			'sourceSetup.nfsReadSpeed' => 'ความเร็วที่วัด',
+			'sourceSetup.nfsReadRequests' => 'อ่านคําขอ',
+			'sourceSetup.sharedEntryConflict' => 'หมายเลขรายการที่แบ่งปันนี้ได้รับการจับคู่กับรายการอื่น ๆ ในห้องสมุดนี้ เลือก ID ที่แตกต่างกัน',
 			'comics.fitHeight' => 'พอดีความสูง',
 			'comics.readingMode' => 'โหมดการอ่าน',
 			'comics.paged' => 'หน้า',
@@ -7577,6 +8074,15 @@ extension on TranslationsTh {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

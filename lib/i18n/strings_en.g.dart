@@ -9119,6 +9119,33 @@ class Translations$games$en {
 	/// en: 'Steam library'
 	String get steamLibrary => 'Steam library';
 
+	/// en: 'Link Steam account'
+	String get linkSteamAccount => 'Link Steam account';
+
+	/// en: 'Refresh Steam account'
+	String get refreshSteamAccount => 'Refresh Steam account';
+
+	/// en: 'Unlink Steam account'
+	String get unlinkSteamAccount => 'Unlink Steam account';
+
+	/// en: 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.'
+	String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+
+	/// en: 'Steam account linked. Games imported.'
+	String get steamAccountLinked => 'Steam account linked. Games imported.';
+
+	/// en: 'Steam account linked. Its library is private or unavailable, so no games were imported.'
+	String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+
+	/// en: 'Steam App ID'
+	String get steamAppId => 'Steam App ID';
+
+	/// en: 'Steam could not refresh the library. Showing the last available catalog.'
+	String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+
+	/// en: 'Showing up to 2,000 games. The Steam catalog was truncated.'
+	String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
+
 	/// en: 'Connecting…'
 	String get connecting => 'Connecting…';
 
@@ -14881,6 +14908,15 @@ extension on Translations {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

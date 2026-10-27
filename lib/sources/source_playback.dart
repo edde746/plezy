@@ -28,11 +28,10 @@ import 'source_models.dart';
 class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   SourcePlayback(
     this.sources, {
-    Player Function(bool video)? playerFactory,
+    this._playerFactory,
     MediaControlsManager Function()? controlsFactory,
     WakelockPlatformToggle? wakelockToggle,
-  }) : _playerFactory = playerFactory,
-       _wakelock = WakelockController(platformToggle: wakelockToggle),
+  }) : _wakelock = WakelockController(platformToggle: wakelockToggle),
        _controlsFactory = controlsFactory ?? MediaControlsManager.new {
     sources.stopPlayback = stop;
     PlaybackCoordinator.instance.registerFileSession(stop, isActive: () => active || opening);

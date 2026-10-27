@@ -27,6 +27,23 @@ Required PR merge-conflict resolution preserves the later main snapshot
   non-English pairs and finds no corruption, repeated words or checked opposite
   label collisions; the same 23 short CJK cases remain adequately translated.
 
+## PlezyNG 2.25.0 catalog update
+
+- The English catalog has 3,382 messages. Since the frozen October 26 QA snapshot,
+  main added 303 source messages. Seventy-nine already had retained translations;
+  this update fills the remaining 224 messages in each of the 32 base non-English
+  catalogs. Regional locales inherit from their existing language parents.
+- The M2M100 418M int8 batch and 95 targeted AI corrections are recorded per
+  message. This is draft coverage, not a claim of native-speaker fluency.
+- The [2.25.0 QA overlay](LANGUAGE_QA_2_25_0.md) locks all 37 current catalogs,
+  verifies provenance and corrections, and reconstructs the October 26 catalog
+  snapshot without changing its historical QA manifests. The candidate scan
+  found 17 concise Chinese descriptions; their complete meaning is recorded in
+  explicit dispositions. `language_qa_scan.py --check-reviewed-hashes
+  --check-findings-resolved` passes for the historical scan and this new overlay.
+- Strict translation hygiene, source coverage, placeholders and generated Slang
+  catalogs pass for all 37 locales.
+
 ## Initial follow-up verification
 
 - Full Flutter analysis: no issues.

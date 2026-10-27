@@ -177,6 +177,7 @@ class _Translations$appIcon$sv extends Translations$appIcon$en {
 	@override String get launcherHint => 'Den nya ikonen visas på hemskärmen när du lämnar PlezyNG.';
 	@override String get tvLauncherHint => 'Den nya bannern visas när du lämnar PlezyNG. Android TV kan fortsätta visa den gamla tills TV:n startas om.';
 	@override late final _Translations$appIcon$names$sv names = _Translations$appIcon$names$sv._(_root);
+	@override String get description => 'Välj ikonen som visas av din enhetsstartare. Förhandsvisningar visar hur varje alternativ ser ut.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$sv extends Translations$common$en {
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Spara';
 	@override String get close => 'Stäng';
+	@override String get closeMiniPlayer => 'Nära mini spelare';
+	@override String get closeWorkspaceWindow => 'Nära fönster';
+	@override String get returnToFullView => 'Tillbaka till Full View';
+	@override String get manageMediaSessions => 'Hantera media sessioner';
+	@override String get hideMediaSessions => 'Missa media sessioner';
+	@override String get mediaSessions => 'Media sessioner';
+	@override String get mediaSessionsHint => 'Välj för att föra en session framåt. Park döljer sitt fönster men håller det öppet. Return öppnar den i full syn; nära avslutar den.';
+	@override String get sessionInWorkspace => 'På arbetsplatsen';
+	@override String get sessionParked => 'Parkerade';
+	@override String get sessionFullscreen => 'Full skärm';
+	@override String get switchToNextWindow => 'Swap med nästa fönster';
+	@override String get moveWindow => 'Flytta fönstret';
+	@override String get finishMovingWindow => 'Avsluta flytande fönster';
+	@override String get moveWindowHint => 'Långt tryck och dra fönstret för att flytta det. Denna kontroll möjliggör också rörelse av pilnyckel.';
+	@override String get movingWindowHelp => 'Dra till rörelse · Ange nycklar justeras · Enter sparare · Escape cancels';
+	@override String get resizeWindow => 'återställ fönstret';
+	@override String get resizeWindowHint => 'Dra den här handtaget eller använd pilnycklarna för att återställa fönstret.';
+	@override String get workspaceWindowHint => 'Använd rörelsekontroll eller långtryck och drag för att flytta.';
+	@override String get workspacePaneHint => 'Välj den här panelen för att fokusera på den. Använd dess fullskärmkontroll för att expandera.';
+	@override String workspaceWindowLabel({required Object title}) => 'Session fönster: ${title}';
+	@override String get workspaceTitleHint => 'Välj att fokusera. Dra titelfältet för att flytta; Använd knappen fullskärm för att expandera.';
+	@override String get moveToSessionTray => 'Flytta till session tray';
+	@override String get moveToSessionTrayHint => 'Koppla den här sessionen tillgänglig utan att visa fönstret.';
+	@override String get closeSessionHint => 'Stäng det här fönstret och slutför sessionen.';
+	@override String get sideBySideLayout => 'Switch till side-by-side layout';
+	@override String get floatingWindows => 'Switch för att flytta fönster';
 	@override String get clear => 'Rensa';
 	@override String get reset => 'Återställ';
 	@override String get later => 'Senare';
@@ -678,6 +705,13 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering';
 	@override String get dvConversionDv81Description => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC';
+	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
+	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
+	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
+	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 	@override String get disableDolbyVision => 'Inaktivera Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Spela upp filens HDR10- eller HLG-lager i stället för Dolby Vision när det finns';
 	@override String get hdrSdrConversion => 'HDR till SDR-konvertering';
@@ -764,13 +798,81 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Välj hur datum, tal och måttenheter visas.';
 	@override String get metadataLanguage => 'Språk för metadata';
 	@override String get metadataLanguageDescription => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.';
-	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
-	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
-	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
-	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
+	@override String get enterFullscreenOnPlaybackStart => 'Skriv in fullskärmen när playback börjar';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Öppna skrivbordsvideo på fullskärm när playback startar';
+	@override String get extendVideoIntoDisplayCutout => 'Utvidga video till display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Låt fullskärmvideo använda kameran på Android-telefoner';
+	@override String get languageDescription => 'Välj det språk som används för PlezyNG-kontroller och meddelanden. Följ system spårar din enhetsspråk.';
+	@override String get themeDescription => 'Välj de färger och kontraster som används i hela appen.';
+	@override String get libraryDensityDescription => 'Ändra hur många bibliotekskort som passar i varje rad.';
+	@override String get displayScaleDescription => 'Återställ gränssnittet på den här bilskärmen utan att ändra enhetens textstorlek.';
+	@override String get themeSongVolumeDescription => 'Ange volymen av tema låtar i förhållande till andra ljud.';
+	@override String get viewModeDescription => 'Välj om bibliotek objekt visas som poster i ett nätverk eller som en kompakt lista.';
+	@override String get gridViewDescription => 'Ordna bibliotek objekt i rader och kolumner av poster.';
+	@override String get listViewDescription => 'Visa bibliotek objekt i en vertikal lista med mer text per objekt.';
+	@override String get gridSpacingDescription => 'Ange avståndet mellan poster i biblioteksnät.';
+	@override String get gridSpacingTightDescription => 'Anpassa fler poster över skärmen med mindre luckor.';
+	@override String get gridSpacingNormalDescription => 'Använd standardfrekvensen mellan poster.';
+	@override String get gridSpacingSpaciousDescription => 'Lägg till större luckor mellan poster för mer separation.';
+	@override String get episodePosterModeDescription => 'Välj vilket konstverk som visas på avsnittskort.';
+	@override String get seriesPosterDescription => 'Använd serien poster för varje avsnitt.';
+	@override String get seasonPosterDescription => 'Använd säsong poster för varje avsnitt när det är tillgängligt.';
+	@override String get episodeThumbnailDescription => 'Använd en ram från avsnittet när den är tillgänglig.';
+	@override String get continueWatchingActionDescription => 'Välj vad som händer när du aktiverar ett Kontinuerlig Visa-kort.';
+	@override String get continueWatchingPlayDescription => 'Börja filmen eller episoden omedelbart.';
+	@override String get continueWatchingDetailsDescription => 'Öppna rubriken först så att du kan granska detaljer och välja en åtgärd.';
+	@override String get episodeActionDescription => 'Välj vad som händer när du aktiverar ett episodkort.';
+	@override String get episodePlayDescription => 'Börja episoden omedelbart.';
+	@override String get episodeDetailsDescription => 'Öppna avsnittssidan före playback.';
+	@override String get contentScreensaverDelayDescription => 'Välj hur länge PlezyNG väntar utan inmatning innan du visar konstverk.';
+	@override String get continueWatchingRowSizeDescription => 'Välj hur stora korten är i Continue Watching-fältet.';
+	@override String get rowSizeCompactDescription => 'Visa mindre kort så att fler objekt passar över raden.';
+	@override String get rowSizeStandardDescription => 'Använd standardkortstorleken.';
+	@override String get rowSizeLargeDescription => 'Visa större kort med mer konstverk detalj.';
+	@override String get visualEffectsDescription => 'Välj animations- och konstverkseffekter budget för denna enhet.';
+	@override String get visualEffectsFullDescription => 'Använd de fullständiga animations- och konstverkseffekterna på varje enhet.';
+	@override String get startupSectionDescription => 'Välj vilken sektion som öppnas när PlezyNG startar.';
+	@override late final _Translations$settings$startupSectionOptions$sv startupSectionOptions = _Translations$settings$startupSectionOptions$sv._(_root);
+	@override String get smallSkipDurationDescription => 'Ställ in avståndet som flyttas av den korta bakåt och framåt söka kontroller.';
+	@override String get largeSkipDurationDescription => 'Ställ in avståndet som flyttas av den långa bakåt och framåt söka kontroller.';
+	@override String get rewindOnResumeDescription => 'Flytta spelet tillbaka med detta belopp när du återupptar en video.';
+	@override String get defaultSleepTimerDescription => 'Ange den ursprungliga varaktigheten som används när du startar sömntimmaren.';
+	@override String get playNextCountdownDescription => 'Vänta länge innan nästa avsnitt börjar. Set till 0 för att börja omedelbart.';
+	@override String get autoSkipDelaySettingDescription => 'Det gäller när en intro, kredit eller annons ställs in för att automatiskt hoppa.';
+	@override String get downmixCenterBoostDescription => 'Öka dialogen i den centrala kanalen när surroundljud blandas ned till stereo.';
+	@override String get displaySwitchDelayDescription => 'Vänta innan du ändrar skärmläget så att TV:n eller mottagaren kan avsluta sin föregående switch.';
+	@override String get playerBackendDescription => 'Välj vilken spelmotor som decoderar och renderar video på den här enheten.';
+	@override String get exoPlayerDescription => 'Använd Androids inhemska Media3-baserade spelare och stödda hårdvaruprocesser.';
+	@override String get mpvDescription => 'Använd mpv, som exponerar ytterligare playback, subtitle och video bearbetning kontroller.';
+	@override String get scopeOffDescription => 'Håll ändringar endast för den aktuella playback-sessionen.';
+	@override String get scopeGlobalDescription => 'Återanvända samma värde för varje bibliotek och titel.';
+	@override String get scopeLibraryDescription => 'Kom ihåg en separat värde för varje bibliotek.';
+	@override String get scopeTitleDescription => 'Kom ihåg en separat värde för varje show eller film.';
+	@override String get specialsOrderingServerDescription => 'Håll avsnitt order som levereras av media server.';
+	@override String get specialsOrderingAirDateDescription => 'Placera specialer bland vanliga episoder enligt deras flygdatum.';
+	@override String get specialsOrderingLastDescription => 'Placera varje speciell efter de vanliga säsongerna.';
+	@override String get skipIntroModeDescription => 'Välj om intro markörer spelar normalt, visar en hoppa-knappen eller hoppar automatiskt.';
+	@override String get skipCreditsModeDescription => 'Välj om krediterna spelar normalt, visar en hoppa-knappen eller hoppar automatiskt.';
+	@override String get skipAdsModeDescription => 'Välj om detekterade annonser spelas normalt, visar en hoppa-knappen eller hoppar automatiskt.';
+	@override String get playbackBufferAutoDescription => 'Låt den aktiva spelaren välja sin normala bufferstorlek.';
+	@override String get playbackBufferLargeDescription => 'Håll mer media redo före spelet; detta använder mer minne.';
+	@override String get playbackBufferExtraLargeDescription => 'Håll den största läs-huvud buffern; detta använder mest minne.';
+	@override String get defaultQualityDescription => 'Ställ in standard videoupplösningen och bitrat taket för strömmar som servern transkodar.';
+	@override String get cellularQualityDescription => 'Överrida standardkvalitet när enheten använder en cell-enbart anslutning.';
+	@override String get remoteQualityDescription => 'Överrida standardkvalitet när du ansluter till en server via en fjärranslutning.';
+	@override String get qualityPresetOriginalDescription => 'Spela källan i dess tillgängliga kvalitet utan att be servern omkodas.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Be servern om en konverterad ström med hjälp av upplösningen och bitrate som visas ovan.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Använd kvaliteten som valts i standardkvalitet.';
+	@override String get musicQualityDescription => 'Ställ in den maximala ljudbitratten som begärs från servern; Original håller källströmmen.';
+	@override String get musicQualityOriginalDescription => 'Spela källa ljudet utan en bitrate-capped transcode.';
+	@override String get musicQualityTranscodeOptionDescription => 'Be om en servertranskod kapad nära bitrate som visas ovan; den faktiska utgången kan variera.';
+	@override String get maxVolumeInputLabel => 'Högsta volymen (%)';
+	@override String get checkForUpdatesDescription => 'Kolla nu om en nyare version av PlezyNG är tillgänglig.';
+	@override String get appearanceDescription => 'Välj appen tema och justera bibliotekskort, hem rader och navigering.';
+	@override String get prerollLibraryDescription => 'Välj biblioteket som innehåller klipp tillgängliga som film pre-rolls.';
+	@override String get prerollSelectionDescription => 'Välj vilka klipp från det valda biblioteket som kan spelas före filmer.';
+	@override String get contentScreensaverDelayOptionDescription => 'Vänta på detta många minuter utan inmatning innan du visar skärmskydd konstverk.';
+	@override String get videoCodecOptionDescription => 'Tillåta direktspelning för denna codec när den stöds.Ocheckade codecs transcoderas av media-servern.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$sv extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} min kvar';
 	@override String get previewSwitch => 'Autouppspelning';
 	@override String get previewMutedText => 'Sekundär text ser ut så här';
+	@override String get themeSystemDescription => 'Följ apparaten och växla mellan ljus och mörk automatiskt.';
+	@override String get themeLightDescription => 'Använd en ljus bakgrund med mörk text.';
+	@override String get themeDarkDescription => 'Använd en mörk bakgrund med ljus text.';
+	@override String get themeOledDescription => 'Använd nära svarta ytor som minskar ljuset på OLED-skärmar.';
+	@override String get themeEmberDescription => 'Använd varma röda och amber accent färger.';
+	@override String get themeGlacierDescription => 'Använd cool blå accent färger.';
+	@override String get themeForestDescription => 'Använd mättade gröna och naturliga accentfärger.';
+	@override String get themePlumDescription => 'Använd violett och plum accent färger.';
+	@override String get themePaperDescription => 'Använd varma pappersliknande ytor och ink-inspirerade färger.';
+	@override String get themeCustomDescription => 'Använd färgpaletten du skapade i den anpassade tematredigeraren.';
+	@override String get editorDescription => 'Välj en palettfärg, justera dess färg, mättnad, ljusstyrka eller opacitet och se förhandsuppdateringen innan du sparar.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$sv extends Translations$accessibility$en {
 	@override String get largeTargets => 'Större touchmål';
 	@override String get largeTargetsHint => 'Ge delade kontroller mer utrymme för beröring och assistent navigering.';
 	@override String get navigationHint => 'Använd Tab och Shift+Tab för att flytta mellan kontroller, Enter eller mellanslag för att aktivera och Escape eller Tillbaka för att stänga. Zoom och läsinställningar är tillgängliga när en bok är öppen.';
+	@override String get textSizeDescription => 'Skala gränssnittet text i PlezyNG utöver enhetens systemtextstorlek inställning.';
+	@override String get boldTextHint => 'Använd en tyngre vikt för gränssnittets etiketter och meddelanden för att göra dem lättare att skilja.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transkodning otillgänglig — spelar upp i originalkvalitet';
 	@override String get subtitleUnavailableFallback => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter';
 	@override String get pipButton => 'Bild-i-bild-läge';
+	@override String get openMiniPlayer => 'Öppna mini spelare';
+	@override String get returnToFullPlayer => 'Tillbaka till fullspelare';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get ambientLighting => 'Ambientbelysning';
 	@override String get fullscreenButton => 'Aktivera helskärm';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$sv extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Renderingsupplösning';
 	@override String get renderResolutionScreen => 'Skärmupplösning';
 	@override String get renderResolutionVideo => 'Videoupplösning';
+	@override String get fontSizeDescription => 'Ställ in textstorleken på den här enheten.';
+	@override String get textColorDescription => 'Välj den färg som används för undertexten.';
+	@override String get borderSizeDescription => 'Sätt tjockleken på outline runt undertexten.';
+	@override String get borderColorDescription => 'Välj den färg som används för undertecknans outline.';
+	@override String get backgroundColorDescription => 'Välj färgen bakom undertexten.';
+	@override String get backgroundOpacityDescription => 'Ange hur transparent undertexten bakgrunden är: 0% är tydlig och 100% är solid.';
+	@override String get positionDescription => 'Flytta undertitlarna vertikalt. 0% är toppen av videon och 100% är botten.';
+	@override String get assOverrideDescription => 'Välj om spelaren följer, justerar, ersätter eller tar bort styling som är inbyggd i ASS-subtitlar.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$sv assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$sv._(_root);
+	@override String get renderResolutionDescription => 'Välj den upplösning som används för att rasterisera bild och ASS-subtitlar. Lägre Android-skala kan minska renderingsarbetet men ser mjukare ut.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$sv renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$sv._(_root);
+	@override String get boldDescription => 'Skär undertexten i en tyngre vikt.';
+	@override String get italicDescription => 'Skapa undertexten i italienska.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$sv extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$sv watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$sv._(_root);
 	@override String get mediaReviewsVisibility => 'Betyg och recensioner';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$sv mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$sv._(_root);
+	@override String get preferredAudioLanguageDescription => 'Föredrar ljudspår på det här språket när servern eller spelaren automatiskt väljer en spår.';
+	@override String get preferredSubtitleLanguageDescription => 'Föredrar undertitlar spår i det här språket när undertitlarna väljs automatiskt.';
+	@override String get subtitleAccessibilityDescription => 'Välj om SDH-kaptioner är föredragna eller krävs under automatisk subtitle-val.';
+	@override String get forcedSubtitleDescription => 'Välj om tvingade underrubriker är föredragna eller krävs under automatisk urval.';
+	@override String get watchedIndicatorDescription => 'Välj vilken typ av media som får en övervakad checkmark i servernätet.';
+	@override String get mediaReviewsVisibilityDescription => 'Välj vilken publik och kritiska betyg som servern visar på media sidor.';
+	@override String get subtitleModeDescription => 'Välj när undertitlar aktiveras automatiskt för detta serverkonto.';
+	@override String get hubDescription => 'Dessa preferenser lagras på ditt media-serverkonto och kan också gälla för andra kunder.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$sv extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-baslager';
 	@override String get dvRouteBaseLayerSdr => 'SDR-baslager';
 	@override String get dvRouteReshaped => 'RPU-omformad (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Experimentell P7 FEL-grafik (ukvalificerad)';
 	@override String get p7Conversion => 'P7-konv.';
 	@override String get sampleRate => 'Samplingsfrekvens';
 	@override String get pixelFormat => 'Pixelformat';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$sv extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Kunde inte öppna extern spelare';
 	@override String appNotInstalled({required Object name}) => '${name} är inte installerad';
 	@override String get playInExternalPlayer => 'Spela i extern spelare';
+	@override String get description => 'Välj en annan app för att öppna videor i. Tillgängliga spelare beror på din enhet och installerade appar.';
+	@override String get systemDefaultDescription => 'Låt operativsystemet öppna videon med dess standardapp.';
+	@override String playerOptionDescription({required Object player}) => 'Öppna videor med ${player}.';
+	@override String get playerNameDescription => 'Etiketten visas i spelarlistan.';
+	@override String get playerPackageDescription => 'Ange Android-paketnamnet för spelaren app, till exempel com.example.player.';
+	@override String get playerCommandDescription => 'Ange den installerade spelaren kommandot eller körbar väg för denna enhet.';
+	@override String get playerUrlSchemeDescription => 'Ange URL-schemat och det valfria URL-templet som används för att starta spelaren.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$sv extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$sv oauthProxy = _Translations$services$oauthProxy$sv._(_root);
 	@override late final _Translations$services$pendingAuth$sv pendingAuth = _Translations$services$pendingAuth$sv._(_root);
 	@override late final _Translations$services$libraryFilter$sv libraryFilter = _Translations$services$libraryFilter$sv._(_root);
+	@override String get seerrDescription => 'Anslut till Seerr eller Overseerr för att söka efter titlar och lämna in medieförfrågningar.';
+	@override late final _Translations$services$trackerDescriptions$sv trackerDescriptions = _Translations$services$trackerDescriptions$sv._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$sv extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'på';
 	@override String get resetHeroButtonDescription => 'Den avbryter varje rad hjälte inställning och återför den enda roterande banner till toppen, som innan hjälte rader fanns.';
+	@override String get tapHeroCardDescription => 'Välj om att trycka på eller välja ett Hero-kort börjar spela upp eller öppnar dess detaljer.';
+	@override String get heroTapPlayDescription => 'Starta det valda objektet omedelbart.';
+	@override String get heroTapDetailsDescription => 'Öppna detaljerna i det valda objektet innan du väljer en åtgärd.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get source => 'Källa';
 	@override String get name => 'Namn';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Exempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Ange en SMB-server och en delad mapp.';
 	@override String get root => 'Föregående Föregång eller Prefix';
+	@override String get smbFolderHelp => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.';
 	@override String get username => 'Användarnamn';
+	@override String get smbDomain => 'Domän (valfritt)';
 	@override String get password => 'Lösenord';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Tillgångsnyckel ID';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth kundID';
 	@override String get clientSecret => 'OAuth klienthemlighet (endast Google skrivbord)';
 	@override String get allowHttp => 'Tillåt okrypterad HTTP i ett betrott nätverk';
+	@override String get smbEncryption => 'Kryptera SMB3-anslutningen';
+	@override String get smbEncryptionHint => 'Använd SMB3-kryptering när NAS-enheten stöder det.';
 	@override String get connect => 'Anslut';
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Spara';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get useFiles => 'Använd filer och böcker';
 	@override String get cancelScan => 'Avbryt skanning';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Exempel: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Ange en SMB-server och en delad mapp.';
-	@override String get smbFolderHelp => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.';
-	@override String get smbDomain => 'Domän (valfritt)';
-	@override String get smbEncryption => 'Kryptera SMB3-anslutningen';
-	@override String get smbEncryptionHint => 'Använd SMB3-kryptering när NAS-enheten stöder det.';
+	@override String get offlineQuota => 'Offline nedladdningsgränsen';
+	@override String get offlineQuotaHelp => 'Ställ in det maximala utrymmet som används av offline kopior, importerade filer och nedladdningar. Att sänka gränsen tar inte bort befintliga kopior.';
+	@override String get offlineStorageUsage => 'Offline lagring';
+	@override String get reservedStorage => 'Reserverad';
+	@override String get downloadQueue => 'Ladda ner Queue';
+	@override String get downloadRunning => 'nedladdning';
+	@override String get downloadQueued => 'Väntar';
+	@override String get downloadPaused => 'Pauserade';
+	@override String get downloadFailed => 'Behöver återvända';
+	@override String get importing => 'Importera';
+	@override String get importInterrupted => 'Import avbruten · ta bort till tydlig';
+	@override String get errorQuotaExceeded => 'Gränsen för offline lagring uppnås. höja gränsen eller ta bort en nedladdad kopia.';
+	@override String get errorStorageLow => 'Det finns inte tillräckligt med gratis enhet lagring för att behålla skyddad reserv.';
+	@override String get errorStorageUnavailable => 'PlezyNG kunde inte kontrollera den fria enhetens lagring, så skrivandet stoppades.';
+	@override String get removeDownloadJob => 'Ta bort nedladdning';
+	@override String get downloadAlreadyComplete => 'Den här nedladdningen är klar innan den kunde tas bort. objektet är nu tillgängligt offline.';
+	@override String get confirmRemoveDownloadJob => 'Ta bort denna nedladdning och radera alla delvis nedladda data? din position och anteckningar kommer att stanna.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get statusFinished => 'Avslutad';
 	@override String get goToTime => 'Gå till tiden';
 	@override String get timeHelp => 'Klockor: minuter: sekunder eller minuter: sekunder';
+	@override String get recoveryHelp => 'Exportera en nyligen krypterad kopia innan du flyttar eller reparerar synkroniseringsdata. Importer går ihop med den aktuella tillståndet; de ersätter aldrig lokal synkroniseringshistoria. Håll synkronkoden separat.';
+	@override String get recoveryExport => 'Export krypterad återhämtningsfil';
+	@override String get recoveryImport => 'Import krypterad återhämtningsfil';
+	@override String get recoveryImportConfirm => 'Kombinera denna krypterade återställningsfil med aktuella läsplatser och anteckningar? befintlig historia kommer att behållas. Delade bibliotek och objekt ID ingår inte; ställa in matchande ID på varje enhet innan import.';
+	@override String get recoveryExported => 'Den krypterade återhämtningsfilen sparas.';
+	@override String get recoveryImported => 'Data återhämtning sammansatt.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$sv extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Vald klientidentitet: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Betyg ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Hämtar undertext: ${title}';
+	@override String get sharedEntryPair => 'Parera detta objekt';
+	@override String get sharedEntryPairHelp => 'Ange samma ID för detta objekt på varje enhet. Använd en stabil delad identifierare eller generera en och kopiera det till matchande objekt. Progress parar endast när utgåvan filtyper, storlekar och order matchar. Blank tar bort denna mappning.';
+	@override String get sharedEntryId => 'Delade objekt ID';
+	@override String get generateSharedEntryId => 'Generera delade objekt ID';
+	@override String get sharedLibraryId => 'Delad bibliotek ID (alternativt)';
+	@override String get sharedLibraryHelp => 'Använd samma ID på enheter som öppnar samma bibliotek. Denna offentliga ID hjälper till att föra läsning framsteg och anteckningar över olika källans anslutningar; det är inte ett lösenord. När leverantörer använder olika objekt-ID, koppla dessa objekt från sina detaljerade skärmar.';
+	@override String get sharedLibraryInvalid => 'Använd 8–100 bokstäver, siffror, punkter, underskor eller hyfen.';
+	@override String get generateSharedLibraryId => 'Skapa en delad bibliotek ID';
+	@override String get nfsReadAhead => 'NFS läs-hämta förfrågningar';
+	@override String get nfsReadAheadHelp => 'Mer parallella läsningar kan förbättra genomgången på en snabb NAS eller nätverk. Använd 1 om servern begränsar samtidiga förfrågningar.';
+	@override String get nfsReadTest => 'Mätare NFS Läs prestanda';
+	@override String get nfsReadTestHelp => 'Läser upp till 64 MiB från den största filen för att mäta denna NAS-anslutning.';
+	@override String get nfsQualificationResult => 'NFS Läs mätning';
+	@override String get nfsReadBytes => 'Data läsning';
+	@override String get nfsReadSpeed => 'mäts hastighet';
+	@override String get nfsReadRequests => 'Läs begäran';
+	@override String get sharedEntryConflict => 'Denna delade objekt-ID är redan parad med ett annat objekt i denna bibliotek. Välj en annan ID.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$sv extends Translations$common$mediaKind$en
 	@override String get clip => 'Klipp';
 	@override String get photo => 'Foto';
 	@override String get folder => 'Mapp';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$sv extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Öppna rekommendationer och artiklar från anslutna upptäckts källor.';
+	@override String get libraries => 'Öppna dina anslutna mediebibliotek.';
+	@override String get liveTv => 'Öppna Live TV när en server tillhandahåller den; annars faller startups tillbaka till Home.';
+	@override String get search => 'Öppen media sökning.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$sv extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$sv extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Håll tecknen, färgerna, storlekarna och placeringen skriven i underteckningsfilen.';
+	@override String get yes => 'Tillåta spelares undertitelsstilinställningar att justera ASS-subtitlar.';
+	@override String get scale => 'Applicera spelare styling och skala inbyggda storlekar för att matcha video dimensioner.';
+	@override String get force => 'Ersätt inbyggda ASS-stilar med spelarens subtitelstil.';
+	@override String get strip => 'Ta bort inbyggd ASS-formatering och gör undertexten tydlig.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$sv extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Renderar på den fullständiga ytaupplösningen för det mest skarpa resultatet.';
+	@override String get video => 'Render använder videoupplösningen som referens, vilket kan minska arbetet på högupplösta skärmar.';
+	@override String get threeQuarter => 'Renderar till 75% av displayens ytaupplösning för en måttlig prestationsbesparing.';
+	@override String get half => 'Renderar till 50% av displayens yttre upplösning för att minska arbetet, med mjukare ändar.';
+	@override String get third => 'Renderar på en tredjedel av displayens yttre upplösning för att minska arbetet, med mjukare ändar.';
+	@override String get quarter => 'Renderar på en fjärdedel av displayens yttre upplösning för att minska arbetet, med det mjukaste resultatet.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$sv extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$sv extends T
 	@override String get preferSdh => 'Föredra SDH-undertexter';
 	@override String get onlySdh => 'Endast SDH-undertexter';
 	@override String get onlyNonSdh => 'Endast icke-SDH-undertexter';
+	@override String get preferNonSdhDescription => 'Föredrar standardundertitlar när både standard- och SDH-versioner är tillgängliga.';
+	@override String get preferSdhDescription => 'Jag föredrar SDH-subtitlar när de är tillgängliga, men tillåter standard subtitlar som en fallback.';
+	@override String get onlySdhDescription => 'Använd endast SDH-subtitlar; fall inte tillbaka till standard subtitlar.';
+	@override String get onlyNonSdhDescription => 'Använd endast standardundertitlar; utesluta SDH-subtitlar.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$sv extends Translat
 	@override String get preferForced => 'Föredra forcerade undertexter';
 	@override String get onlyForced => 'Endast forcerade undertexter';
 	@override String get onlyNonForced => 'Endast icke-forcerade undertexter';
+	@override String get preferNonForcedDescription => 'Jag föredrar regelbundna undertitlar, men tillåter tvingade spår som en fallback.';
+	@override String get preferForcedDescription => 'Föredrar tvingade spår när de är tillgängliga, men tillåter regelbundna undertitlar som en fallback.';
+	@override String get onlyForcedDescription => 'Använd endast spår märkta som tvingade.';
+	@override String get onlyNonForcedDescription => 'Uteslutna spår markerade som tvingande.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$sv extends Transl
 	@override String get moviesAndShows => 'Filmer och TV-serier';
 	@override String get movies => 'Endast filmer';
 	@override String get shows => 'Endast TV-serier';
+	@override String get noneDescription => 'Visa inte observerade kontroller.';
+	@override String get moviesAndShowsDescription => 'Visa tittade checkmarker för filmer och TV-program.';
+	@override String get moviesDescription => 'Visa tittade checkmarker för filmer endast.';
+	@override String get showsDescription => 'Visa tittade checkmarker för TV-program endast.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$sv extends Translatio
 	@override String get usersOnly => 'Endast användare';
 	@override String get criticsOnly => 'Endast kritiker';
 	@override String get nobody => 'Dolda';
+	@override String get usersAndCriticsDescription => 'Visa både användarbetyg och kritiska betyg.';
+	@override String get usersOnlyDescription => 'Visa betyg och recensioner som lämnats in av användare.';
+	@override String get criticsOnlyDescription => 'Visa kritiska betyg och recensioner.';
+	@override String get nobodyDescription => 'Dölj utvärderingar och recensioner.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$sv extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Synkronisera endast de bibliotek som markeras nedan.';
 	@override String get libraries => 'Bibliotek';
 	@override String get noLibraries => 'Inga bibliotek tillgängliga';
+	@override String get modeDescription => 'Välj om de kontrollerade bibliotek blockeras från synkronisering eller är de enda biblioteken som synkroniserar.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$sv extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Synkronisera tittade episoder och filmer med ditt Trakt-konto.';
+	@override String get mal => 'Synkronisera anime listor och se framsteg med MyAnimeList.';
+	@override String get anilist => 'Synkronisera anime listor och se framsteg med AniList.';
+	@override String get simkl => 'Sync tittade på filmer, TV-program och anime med Simkl.';
+	@override String get mdblist => 'Visa MDBList betyg och listor i rekommendationer och Utforska.';
 }
 
 /// The flat map containing all translations for locale <sv>.
@@ -4481,6 +4754,7 @@ extension on TranslationsSv {
 			'appIcon.names.strata' => 'Skikt',
 			'appIcon.names.facet' => 'Fasett',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Välj ikonen som visas av din enhetsstartare. Förhandsvisningar visar hur varje alternativ ser ut.',
 			'auth.signInWithPlex' => 'Logga in med Plex',
 			'auth.showQRCode' => 'Visa QR-kod',
 			'auth.authenticate' => 'Verifiera',
@@ -4502,6 +4776,32 @@ extension on TranslationsSv {
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Spara',
 			'common.close' => 'Stäng',
+			'common.closeMiniPlayer' => 'Nära mini spelare',
+			'common.closeWorkspaceWindow' => 'Nära fönster',
+			'common.returnToFullView' => 'Tillbaka till Full View',
+			'common.manageMediaSessions' => 'Hantera media sessioner',
+			'common.hideMediaSessions' => 'Missa media sessioner',
+			'common.mediaSessions' => 'Media sessioner',
+			'common.mediaSessionsHint' => 'Välj för att föra en session framåt. Park döljer sitt fönster men håller det öppet. Return öppnar den i full syn; nära avslutar den.',
+			'common.sessionInWorkspace' => 'På arbetsplatsen',
+			'common.sessionParked' => 'Parkerade',
+			'common.sessionFullscreen' => 'Full skärm',
+			'common.switchToNextWindow' => 'Swap med nästa fönster',
+			'common.moveWindow' => 'Flytta fönstret',
+			'common.finishMovingWindow' => 'Avsluta flytande fönster',
+			'common.moveWindowHint' => 'Långt tryck och dra fönstret för att flytta det. Denna kontroll möjliggör också rörelse av pilnyckel.',
+			'common.movingWindowHelp' => 'Dra till rörelse · Ange nycklar justeras · Enter sparare · Escape cancels',
+			'common.resizeWindow' => 'återställ fönstret',
+			'common.resizeWindowHint' => 'Dra den här handtaget eller använd pilnycklarna för att återställa fönstret.',
+			'common.workspaceWindowHint' => 'Använd rörelsekontroll eller långtryck och drag för att flytta.',
+			'common.workspacePaneHint' => 'Välj den här panelen för att fokusera på den. Använd dess fullskärmkontroll för att expandera.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Session fönster: ${title}',
+			'common.workspaceTitleHint' => 'Välj att fokusera. Dra titelfältet för att flytta; Använd knappen fullskärm för att expandera.',
+			'common.moveToSessionTray' => 'Flytta till session tray',
+			'common.moveToSessionTrayHint' => 'Koppla den här sessionen tillgänglig utan att visa fönstret.',
+			'common.closeSessionHint' => 'Stäng det här fönstret och slutför sessionen.',
+			'common.sideBySideLayout' => 'Switch till side-by-side layout',
+			'common.floatingWindows' => 'Switch för att flytta fönster',
 			'common.clear' => 'Rensa',
 			'common.reset' => 'Återställ',
 			'common.later' => 'Senare',
@@ -4919,6 +5219,8 @@ extension on TranslationsSv {
 			'settings.audioPassthrough' => 'Ljudgenomströmning',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughDescriptionApple' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. På iOS, iPadOS och tvOS 26 eller senare spelas TrueHD Atmos och DTS:X upp som rumsligt ljud. Övriga DTS- och TrueHD-spår spelas upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Av medan ljudstyrkenormalisering är på',
 			'settings.audioChannelLimit' => 'Ljudkanaler',
@@ -4945,9 +5247,14 @@ extension on TranslationsSv {
 			'settings.dvConversionNativeDescription' => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering',
 			'settings.dvConversionDv81Description' => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC',
+			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
+			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
+			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
+			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
 			'settings.disableDolbyVision' => 'Inaktivera Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Spela upp filens HDR10- eller HLG-lager i stället för Dolby Vision när det finns',
 			'settings.hdrSdrConversion' => 'HDR till SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Välj vad som konverterar HDR-video när skärmen inte kan visa HDR.',
@@ -5033,13 +5340,84 @@ extension on TranslationsSv {
 			'settings.regionFormatDescription' => 'Välj hur datum, tal och måttenheter visas.',
 			'settings.metadataLanguage' => 'Språk för metadata',
 			'settings.metadataLanguageDescription' => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.',
-			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
-			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
-			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
-			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Skriv in fullskärmen när playback börjar',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Öppna skrivbordsvideo på fullskärm när playback startar',
+			'settings.extendVideoIntoDisplayCutout' => 'Utvidga video till display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Låt fullskärmvideo använda kameran på Android-telefoner',
+			'settings.languageDescription' => 'Välj det språk som används för PlezyNG-kontroller och meddelanden. Följ system spårar din enhetsspråk.',
+			'settings.themeDescription' => 'Välj de färger och kontraster som används i hela appen.',
+			'settings.libraryDensityDescription' => 'Ändra hur många bibliotekskort som passar i varje rad.',
+			'settings.displayScaleDescription' => 'Återställ gränssnittet på den här bilskärmen utan att ändra enhetens textstorlek.',
+			'settings.themeSongVolumeDescription' => 'Ange volymen av tema låtar i förhållande till andra ljud.',
+			'settings.viewModeDescription' => 'Välj om bibliotek objekt visas som poster i ett nätverk eller som en kompakt lista.',
+			'settings.gridViewDescription' => 'Ordna bibliotek objekt i rader och kolumner av poster.',
+			'settings.listViewDescription' => 'Visa bibliotek objekt i en vertikal lista med mer text per objekt.',
+			'settings.gridSpacingDescription' => 'Ange avståndet mellan poster i biblioteksnät.',
+			'settings.gridSpacingTightDescription' => 'Anpassa fler poster över skärmen med mindre luckor.',
+			'settings.gridSpacingNormalDescription' => 'Använd standardfrekvensen mellan poster.',
+			'settings.gridSpacingSpaciousDescription' => 'Lägg till större luckor mellan poster för mer separation.',
+			'settings.episodePosterModeDescription' => 'Välj vilket konstverk som visas på avsnittskort.',
+			'settings.seriesPosterDescription' => 'Använd serien poster för varje avsnitt.',
+			'settings.seasonPosterDescription' => 'Använd säsong poster för varje avsnitt när det är tillgängligt.',
+			'settings.episodeThumbnailDescription' => 'Använd en ram från avsnittet när den är tillgänglig.',
+			'settings.continueWatchingActionDescription' => 'Välj vad som händer när du aktiverar ett Kontinuerlig Visa-kort.',
+			'settings.continueWatchingPlayDescription' => 'Börja filmen eller episoden omedelbart.',
+			'settings.continueWatchingDetailsDescription' => 'Öppna rubriken först så att du kan granska detaljer och välja en åtgärd.',
+			'settings.episodeActionDescription' => 'Välj vad som händer när du aktiverar ett episodkort.',
+			'settings.episodePlayDescription' => 'Börja episoden omedelbart.',
+			'settings.episodeDetailsDescription' => 'Öppna avsnittssidan före playback.',
+			'settings.contentScreensaverDelayDescription' => 'Välj hur länge PlezyNG väntar utan inmatning innan du visar konstverk.',
+			'settings.continueWatchingRowSizeDescription' => 'Välj hur stora korten är i Continue Watching-fältet.',
+			'settings.rowSizeCompactDescription' => 'Visa mindre kort så att fler objekt passar över raden.',
+			'settings.rowSizeStandardDescription' => 'Använd standardkortstorleken.',
+			'settings.rowSizeLargeDescription' => 'Visa större kort med mer konstverk detalj.',
+			'settings.visualEffectsDescription' => 'Välj animations- och konstverkseffekter budget för denna enhet.',
+			'settings.visualEffectsFullDescription' => 'Använd de fullständiga animations- och konstverkseffekterna på varje enhet.',
+			'settings.startupSectionDescription' => 'Välj vilken sektion som öppnas när PlezyNG startar.',
+			'settings.startupSectionOptions.discover' => 'Öppna rekommendationer och artiklar från anslutna upptäckts källor.',
+			'settings.startupSectionOptions.libraries' => 'Öppna dina anslutna mediebibliotek.',
+			'settings.startupSectionOptions.liveTv' => 'Öppna Live TV när en server tillhandahåller den; annars faller startups tillbaka till Home.',
+			'settings.startupSectionOptions.search' => 'Öppen media sökning.',
+			'settings.smallSkipDurationDescription' => 'Ställ in avståndet som flyttas av den korta bakåt och framåt söka kontroller.',
+			'settings.largeSkipDurationDescription' => 'Ställ in avståndet som flyttas av den långa bakåt och framåt söka kontroller.',
+			'settings.rewindOnResumeDescription' => 'Flytta spelet tillbaka med detta belopp när du återupptar en video.',
+			'settings.defaultSleepTimerDescription' => 'Ange den ursprungliga varaktigheten som används när du startar sömntimmaren.',
+			'settings.playNextCountdownDescription' => 'Vänta länge innan nästa avsnitt börjar. Set till 0 för att börja omedelbart.',
+			'settings.autoSkipDelaySettingDescription' => 'Det gäller när en intro, kredit eller annons ställs in för att automatiskt hoppa.',
+			'settings.downmixCenterBoostDescription' => 'Öka dialogen i den centrala kanalen när surroundljud blandas ned till stereo.',
+			'settings.displaySwitchDelayDescription' => 'Vänta innan du ändrar skärmläget så att TV:n eller mottagaren kan avsluta sin föregående switch.',
+			'settings.playerBackendDescription' => 'Välj vilken spelmotor som decoderar och renderar video på den här enheten.',
+			'settings.exoPlayerDescription' => 'Använd Androids inhemska Media3-baserade spelare och stödda hårdvaruprocesser.',
+			'settings.mpvDescription' => 'Använd mpv, som exponerar ytterligare playback, subtitle och video bearbetning kontroller.',
+			'settings.scopeOffDescription' => 'Håll ändringar endast för den aktuella playback-sessionen.',
+			'settings.scopeGlobalDescription' => 'Återanvända samma värde för varje bibliotek och titel.',
+			'settings.scopeLibraryDescription' => 'Kom ihåg en separat värde för varje bibliotek.',
+			'settings.scopeTitleDescription' => 'Kom ihåg en separat värde för varje show eller film.',
+			'settings.specialsOrderingServerDescription' => 'Håll avsnitt order som levereras av media server.',
+			'settings.specialsOrderingAirDateDescription' => 'Placera specialer bland vanliga episoder enligt deras flygdatum.',
+			'settings.specialsOrderingLastDescription' => 'Placera varje speciell efter de vanliga säsongerna.',
+			'settings.skipIntroModeDescription' => 'Välj om intro markörer spelar normalt, visar en hoppa-knappen eller hoppar automatiskt.',
+			'settings.skipCreditsModeDescription' => 'Välj om krediterna spelar normalt, visar en hoppa-knappen eller hoppar automatiskt.',
+			'settings.skipAdsModeDescription' => 'Välj om detekterade annonser spelas normalt, visar en hoppa-knappen eller hoppar automatiskt.',
+			'settings.playbackBufferAutoDescription' => 'Låt den aktiva spelaren välja sin normala bufferstorlek.',
+			'settings.playbackBufferLargeDescription' => 'Håll mer media redo före spelet; detta använder mer minne.',
+			'settings.playbackBufferExtraLargeDescription' => 'Håll den största läs-huvud buffern; detta använder mest minne.',
+			'settings.defaultQualityDescription' => 'Ställ in standard videoupplösningen och bitrat taket för strömmar som servern transkodar.',
+			'settings.cellularQualityDescription' => 'Överrida standardkvalitet när enheten använder en cell-enbart anslutning.',
+			'settings.remoteQualityDescription' => 'Överrida standardkvalitet när du ansluter till en server via en fjärranslutning.',
+			'settings.qualityPresetOriginalDescription' => 'Spela källan i dess tillgängliga kvalitet utan att be servern omkodas.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Be servern om en konverterad ström med hjälp av upplösningen och bitrate som visas ovan.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Använd kvaliteten som valts i standardkvalitet.',
+			'settings.musicQualityDescription' => 'Ställ in den maximala ljudbitratten som begärs från servern; Original håller källströmmen.',
+			'settings.musicQualityOriginalDescription' => 'Spela källa ljudet utan en bitrate-capped transcode.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Be om en servertranskod kapad nära bitrate som visas ovan; den faktiska utgången kan variera.',
+			'settings.maxVolumeInputLabel' => 'Högsta volymen (%)',
+			'settings.checkForUpdatesDescription' => 'Kolla nu om en nyare version av PlezyNG är tillgänglig.',
+			'settings.appearanceDescription' => 'Välj appen tema och justera bibliotekskort, hem rader och navigering.',
+			'settings.prerollLibraryDescription' => 'Välj biblioteket som innehåller klipp tillgängliga som film pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Välj vilka klipp från det valda biblioteket som kan spelas före filmer.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Vänta på detta många minuter utan inmatning innan du visar skärmskydd konstverk.',
+			'settings.videoCodecOptionDescription' => 'Tillåta direktspelning för denna codec när den stöds.Ocheckade codecs transcoderas av media-servern.',
 			'themeEditor.builtIn' => 'Inbyggda',
 			'themeEditor.presets' => 'Förinställda',
 			'themeEditor.custom' => 'Anpassat',
@@ -5078,6 +5456,17 @@ extension on TranslationsSv {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min kvar',
 			'themeEditor.previewSwitch' => 'Autouppspelning',
 			'themeEditor.previewMutedText' => 'Sekundär text ser ut så här',
+			'themeEditor.themeSystemDescription' => 'Följ apparaten och växla mellan ljus och mörk automatiskt.',
+			'themeEditor.themeLightDescription' => 'Använd en ljus bakgrund med mörk text.',
+			'themeEditor.themeDarkDescription' => 'Använd en mörk bakgrund med ljus text.',
+			'themeEditor.themeOledDescription' => 'Använd nära svarta ytor som minskar ljuset på OLED-skärmar.',
+			'themeEditor.themeEmberDescription' => 'Använd varma röda och amber accent färger.',
+			'themeEditor.themeGlacierDescription' => 'Använd cool blå accent färger.',
+			'themeEditor.themeForestDescription' => 'Använd mättade gröna och naturliga accentfärger.',
+			'themeEditor.themePlumDescription' => 'Använd violett och plum accent färger.',
+			'themeEditor.themePaperDescription' => 'Använd varma pappersliknande ytor och ink-inspirerade färger.',
+			'themeEditor.themeCustomDescription' => 'Använd färgpaletten du skapade i den anpassade tematredigeraren.',
+			'themeEditor.editorDescription' => 'Välj en palettfärg, justera dess färg, mättnad, ljusstyrka eller opacitet och se förhandsuppdateringen innan du sparar.',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -5323,6 +5712,8 @@ extension on TranslationsSv {
 			'accessibility.largeTargets' => 'Större touchmål',
 			'accessibility.largeTargetsHint' => 'Ge delade kontroller mer utrymme för beröring och assistent navigering.',
 			'accessibility.navigationHint' => 'Använd Tab och Shift+Tab för att flytta mellan kontroller, Enter eller mellanslag för att aktivera och Escape eller Tillbaka för att stänga. Zoom och läsinställningar är tillgängliga när en bok är öppen.',
+			'accessibility.textSizeDescription' => 'Skala gränssnittet text i PlezyNG utöver enhetens systemtextstorlek inställning.',
+			'accessibility.boldTextHint' => 'Använd en tyngre vikt för gränssnittets etiketter och meddelanden för att göra dem lättare att skilja.',
 			'tooltips.shufflePlay' => 'Blanda uppspelning',
 			'tooltips.playTrailer' => 'Spela trailer',
 			'tooltips.markAsWatched' => 'Markera som sedd',
@@ -5342,6 +5733,8 @@ extension on TranslationsSv {
 			'videoControls.sleepTimerEndOfVideo' => 'Slutet av aktuell video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stoppa vid',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Uppspelningen pausas i slutet av denna video',
 			'videoControls.stillWatching' => 'Tittar du fortfarande?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
@@ -5376,6 +5769,8 @@ extension on TranslationsSv {
 			'videoControls.transcodeUnavailableFallback' => 'Transkodning otillgänglig — spelar upp i originalkvalitet',
 			'videoControls.subtitleUnavailableFallback' => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter',
 			'videoControls.pipButton' => 'Bild-i-bild-läge',
+			'videoControls.openMiniPlayer' => 'Öppna mini spelare',
+			'videoControls.returnToFullPlayer' => 'Tillbaka till fullspelare',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
 			'videoControls.ambientLighting' => 'Ambientbelysning',
 			'videoControls.fullscreenButton' => 'Aktivera helskärm',
@@ -5460,8 +5855,6 @@ extension on TranslationsSv {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanningen har startat för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Det gick inte att skanna biblioteket: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadatauppdateringen har startat för "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Det gick inte att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
@@ -5521,6 +5914,28 @@ extension on TranslationsSv {
 			'subtitlingStyling.renderResolution' => 'Renderingsupplösning',
 			'subtitlingStyling.renderResolutionScreen' => 'Skärmupplösning',
 			'subtitlingStyling.renderResolutionVideo' => 'Videoupplösning',
+			'subtitlingStyling.fontSizeDescription' => 'Ställ in textstorleken på den här enheten.',
+			'subtitlingStyling.textColorDescription' => 'Välj den färg som används för undertexten.',
+			'subtitlingStyling.borderSizeDescription' => 'Sätt tjockleken på outline runt undertexten.',
+			'subtitlingStyling.borderColorDescription' => 'Välj den färg som används för undertecknans outline.',
+			'subtitlingStyling.backgroundColorDescription' => 'Välj färgen bakom undertexten.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Ange hur transparent undertexten bakgrunden är: 0% är tydlig och 100% är solid.',
+			'subtitlingStyling.positionDescription' => 'Flytta undertitlarna vertikalt. 0% är toppen av videon och 100% är botten.',
+			'subtitlingStyling.assOverrideDescription' => 'Välj om spelaren följer, justerar, ersätter eller tar bort styling som är inbyggd i ASS-subtitlar.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Håll tecknen, färgerna, storlekarna och placeringen skriven i underteckningsfilen.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Tillåta spelares undertitelsstilinställningar att justera ASS-subtitlar.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Applicera spelare styling och skala inbyggda storlekar för att matcha video dimensioner.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Ersätt inbyggda ASS-stilar med spelarens subtitelstil.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Ta bort inbyggd ASS-formatering och gör undertexten tydlig.',
+			'subtitlingStyling.renderResolutionDescription' => 'Välj den upplösning som används för att rasterisera bild och ASS-subtitlar. Lägre Android-skala kan minska renderingsarbetet men ser mjukare ut.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Renderar på den fullständiga ytaupplösningen för det mest skarpa resultatet.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render använder videoupplösningen som referens, vilket kan minska arbetet på högupplösta skärmar.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Renderar till 75% av displayens ytaupplösning för en måttlig prestationsbesparing.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Renderar till 50% av displayens yttre upplösning för att minska arbetet, med mjukare ändar.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Renderar på en tredjedel av displayens yttre upplösning för att minska arbetet, med mjukare ändar.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Renderar på en fjärdedel av displayens yttre upplösning för att minska arbetet, med det mjukaste resultatet.',
+			'subtitlingStyling.boldDescription' => 'Skär undertexten i en tyngre vikt.',
+			'subtitlingStyling.italicDescription' => 'Skapa undertexten i italienska.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Avancerade inställningar för videospelaren',
 			'mpvConfig.presets' => 'Förval',
@@ -5657,11 +6072,19 @@ extension on TranslationsSv {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Föredra SDH-undertexter',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Endast SDH-undertexter',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Endast icke-SDH-undertexter',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Föredrar standardundertitlar när både standard- och SDH-versioner är tillgängliga.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Jag föredrar SDH-subtitlar när de är tillgängliga, men tillåter standard subtitlar som en fallback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Använd endast SDH-subtitlar; fall inte tillbaka till standard subtitlar.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Använd endast standardundertitlar; utesluta SDH-subtitlar.',
 			'accountPreferences.forcedSubtitles' => 'Forcerade undertexter',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Föredra icke-forcerade undertexter',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Föredra forcerade undertexter',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Endast forcerade undertexter',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Endast icke-forcerade undertexter',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Jag föredrar regelbundna undertitlar, men tillåter tvingade spår som en fallback.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Föredrar tvingade spår när de är tillgängliga, men tillåter regelbundna undertitlar som en fallback.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Använd endast spår märkta som tvingade.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Uteslutna spår markerade som tvingande.',
 			'accountPreferences.displayMissingEpisodes' => 'Visa saknade avsnitt',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Lista avsnitt som servern känner till men som saknar fil.',
 			'accountPreferences.hidePlayedInLatest' => 'Dölj sedda objekt i Senaste',
@@ -5675,11 +6098,27 @@ extension on TranslationsSv {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmer och TV-serier',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Endast filmer',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Endast TV-serier',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Visa inte observerade kontroller.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Visa tittade checkmarker för filmer och TV-program.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Visa tittade checkmarker för filmer endast.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Visa tittade checkmarker för TV-program endast.',
 			'accountPreferences.mediaReviewsVisibility' => 'Betyg och recensioner',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Användare och kritiker',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Endast användare',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Endast kritiker',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Dolda',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Visa både användarbetyg och kritiska betyg.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Visa betyg och recensioner som lämnats in av användare.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Visa kritiska betyg och recensioner.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Dölj utvärderingar och recensioner.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Föredrar ljudspår på det här språket när servern eller spelaren automatiskt väljer en spår.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Föredrar undertitlar spår i det här språket när undertitlarna väljs automatiskt.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Välj om SDH-kaptioner är föredragna eller krävs under automatisk subtitle-val.',
+			'accountPreferences.forcedSubtitleDescription' => 'Välj om tvingade underrubriker är föredragna eller krävs under automatisk urval.',
+			'accountPreferences.watchedIndicatorDescription' => 'Välj vilken typ av media som får en övervakad checkmark i servernätet.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Välj vilken publik och kritiska betyg som servern visar på media sidor.',
+			'accountPreferences.subtitleModeDescription' => 'Välj när undertitlar aktiveras automatiskt för detta serverkonto.',
+			'accountPreferences.hubDescription' => 'Dessa preferenser lagras på ditt media-serverkonto och kan också gälla för andra kunder.',
 			'discover.title' => 'Upptäck',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till medieinnehåll i dina bibliotek',
@@ -5808,6 +6247,8 @@ extension on TranslationsSv {
 			'libraries.all' => 'Alla',
 			'libraries.clearAll' => 'Rensa alla',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill skanna "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill analysera "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
@@ -5974,8 +6415,6 @@ extension on TranslationsSv {
 			'explore.mdblistShelves.nameHint' => 'Låt blank använda källlista namn.',
 			'explore.mdblistShelves.add' => 'Lägg till shelf',
 			'explore.mdblistShelves.save' => 'Rädda shelter',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytta ${title} upp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytta ${title} ner',
 			'explore.mdblistShelves.unavailable' => 'Denna lista är inte tillgänglig. ta bort eller ta bort dess sköld i inställningar.',
@@ -6322,6 +6761,8 @@ extension on TranslationsSv {
 			'watchTogether.connecting' => 'Ansluter...',
 			'watchTogether.relayPublic' => 'Rummen använder de offentliga Open Watch Party-reläservrarna.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rummen använder din reläserver på ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Senaste rummen',
 			'watchTogether.roomActions' => 'Rumsåtgärder',
 			'watchTogether.renameRoom' => 'Byt namn på rummet',
@@ -6488,8 +6929,6 @@ extension on TranslationsSv {
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} nedladdad – klicka för att slutföra',
 			'downloads.partialDownloadClickToComplete' => 'Delvis nedladdad – klicka för att slutföra',
 			'downloads.deleting' => 'Tar bort...',
@@ -6748,6 +7187,7 @@ extension on TranslationsSv {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-baslager',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-baslager',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-omformad (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Experimentell P7 FEL-grafik (ukvalificerad)',
 			'performanceOverlay.p7Conversion' => 'P7-konv.',
 			'performanceOverlay.sampleRate' => 'Samplingsfrekvens',
 			'performanceOverlay.pixelFormat' => 'Pixelformat',
@@ -6799,6 +7239,13 @@ extension on TranslationsSv {
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
+			'externalPlayer.description' => 'Välj en annan app för att öppna videor i. Tillgängliga spelare beror på din enhet och installerade appar.',
+			'externalPlayer.systemDefaultDescription' => 'Låt operativsystemet öppna videon med dess standardapp.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Öppna videor med ${player}.',
+			'externalPlayer.playerNameDescription' => 'Etiketten visas i spelarlistan.',
+			'externalPlayer.playerPackageDescription' => 'Ange Android-paketnamnet för spelaren app, till exempel com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Ange den installerade spelaren kommandot eller körbar väg för denna enhet.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Ange URL-schemat och det valfria URL-templet som används för att starta spelaren.',
 			'metadataEdit.editMetadata' => 'Redigera...',
 			'metadataEdit.screenTitle' => 'Redigera metadata',
 			'metadataEdit.basicInfo' => 'Grundläggande information',
@@ -6828,6 +7275,8 @@ extension on TranslationsSv {
 			'metadataEdit.metadataUpdateFailed' => 'Det gick inte att uppdatera metadata',
 			'metadataEdit.artworkUpdated' => 'Bildmaterialet har uppdaterats',
 			'metadataEdit.artworkUpdateFailed' => 'Det gick inte att uppdatera bildmaterialet',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Inget bildmaterial är tillgängligt',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Bildalternativ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Bildalternativ ${index}, valt',
@@ -6988,6 +7437,13 @@ extension on TranslationsSv {
 			'services.libraryFilter.modeHintWhitelist' => 'Synkronisera endast de bibliotek som markeras nedan.',
 			'services.libraryFilter.libraries' => 'Bibliotek',
 			'services.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
+			'services.libraryFilter.modeDescription' => 'Välj om de kontrollerade bibliotek blockeras från synkronisering eller är de enda biblioteken som synkroniserar.',
+			'services.seerrDescription' => 'Anslut till Seerr eller Overseerr för att söka efter titlar och lämna in medieförfrågningar.',
+			'services.trackerDescriptions.trakt' => 'Synkronisera tittade episoder och filmer med ditt Trakt-konto.',
+			'services.trackerDescriptions.mal' => 'Synkronisera anime listor och se framsteg med MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Synkronisera anime listor och se framsteg med AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync tittade på filmer, TV-program och anime med Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Visa MDBList betyg och listor i rekommendationer och Utforska.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Lägg till ${product}-server',
 			'addServer.serverUrls' => 'Server-URL:er',
 			'addServer.serverUrlsHelper' => 'Du kan ange flera URL:er avgränsade med kommatecken.',
@@ -7002,8 +7458,6 @@ extension on TranslationsSv {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Det gick inte att logga in: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logga in med Plex',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsSv {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'på',
 			'homeLayout.resetHeroButtonDescription' => 'Den avbryter varje rad hjälte inställning och återför den enda roterande banner till toppen, som innan hjälte rader fanns.',
+			'homeLayout.tapHeroCardDescription' => 'Välj om att trycka på eller välja ett Hero-kort börjar spela upp eller öppnar dess detaljer.',
+			'homeLayout.heroTapPlayDescription' => 'Starta det valda objektet omedelbart.',
+			'homeLayout.heroTapDetailsDescription' => 'Öppna detaljerna i det valda objektet innan du väljer en åtgärd.',
 			'platform.localNetworkPermission' => 'PlezyNG ansluter till dina medieservrar och uppspelningsenheter i ditt lokala nätverk.',
 			'platform.locationPermission' => 'PlezyNG använder platsåtkomst när iOS kräver det för att upptäcka ditt lokala nätverk och ansluta till dina media servrar.',
 			'platform.photoLibraryPermission' => 'Välj bilder från ditt bildbibliotek som omslag och illustrationer till medieinnehåll.',
@@ -7169,8 +7626,12 @@ extension on TranslationsSv {
 			'fileSources.source' => 'Källa',
 			'fileSources.name' => 'Namn',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Exempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Ange en SMB-server och en delad mapp.',
 			'fileSources.root' => 'Föregående Föregång eller Prefix',
+			'fileSources.smbFolderHelp' => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.',
 			'fileSources.username' => 'Användarnamn',
+			'fileSources.smbDomain' => 'Domän (valfritt)',
 			'fileSources.password' => 'Lösenord',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Tillgångsnyckel ID',
@@ -7180,6 +7641,8 @@ extension on TranslationsSv {
 			'fileSources.clientId' => 'OAuth kundID',
 			'fileSources.clientSecret' => 'OAuth klienthemlighet (endast Google skrivbord)',
 			'fileSources.allowHttp' => 'Tillåt okrypterad HTTP i ett betrott nätverk',
+			'fileSources.smbEncryption' => 'Kryptera SMB3-anslutningen',
+			'fileSources.smbEncryptionHint' => 'Använd SMB3-kryptering när NAS-enheten stöder det.',
 			'fileSources.connect' => 'Anslut',
 			'fileSources.cancel' => 'Avbryt',
 			'fileSources.save' => 'Spara',
@@ -7322,12 +7785,25 @@ extension on TranslationsSv {
 			'fileSources.useFiles' => 'Använd filer och böcker',
 			'fileSources.cancelScan' => 'Avbryt skanning',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Exempel: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Ange en SMB-server och en delad mapp.',
-			'fileSources.smbFolderHelp' => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.',
-			'fileSources.smbDomain' => 'Domän (valfritt)',
-			'fileSources.smbEncryption' => 'Kryptera SMB3-anslutningen',
-			'fileSources.smbEncryptionHint' => 'Använd SMB3-kryptering när NAS-enheten stöder det.',
+			'fileSources.offlineQuota' => 'Offline nedladdningsgränsen',
+			'fileSources.offlineQuotaHelp' => 'Ställ in det maximala utrymmet som används av offline kopior, importerade filer och nedladdningar. Att sänka gränsen tar inte bort befintliga kopior.',
+			'fileSources.offlineStorageUsage' => 'Offline lagring',
+			'fileSources.reservedStorage' => 'Reserverad',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Ladda ner Queue',
+			'fileSources.downloadRunning' => 'nedladdning',
+			'fileSources.downloadQueued' => 'Väntar',
+			'fileSources.downloadPaused' => 'Pauserade',
+			'fileSources.downloadFailed' => 'Behöver återvända',
+			'fileSources.importing' => 'Importera',
+			'fileSources.importInterrupted' => 'Import avbruten · ta bort till tydlig',
+			'fileSources.errorQuotaExceeded' => 'Gränsen för offline lagring uppnås. höja gränsen eller ta bort en nedladdad kopia.',
+			'fileSources.errorStorageLow' => 'Det finns inte tillräckligt med gratis enhet lagring för att behålla skyddad reserv.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG kunde inte kontrollera den fria enhetens lagring, så skrivandet stoppades.',
+			'fileSources.removeDownloadJob' => 'Ta bort nedladdning',
+			'fileSources.downloadAlreadyComplete' => 'Den här nedladdningen är klar innan den kunde tas bort. objektet är nu tillgängligt offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Ta bort denna nedladdning och radera alla delvis nedladda data? din position och anteckningar kommer att stanna.',
 			'lending.title' => 'Public bibliotek',
 			'lending.add' => 'Lägg till ett bibliotek',
 			'lending.other' => 'En annan bibliotek',
@@ -7429,6 +7905,12 @@ extension on TranslationsSv {
 			'audiobook.statusFinished' => 'Avslutad',
 			'audiobook.goToTime' => 'Gå till tiden',
 			'audiobook.timeHelp' => 'Klockor: minuter: sekunder eller minuter: sekunder',
+			'audiobook.recoveryHelp' => 'Exportera en nyligen krypterad kopia innan du flyttar eller reparerar synkroniseringsdata. Importer går ihop med den aktuella tillståndet; de ersätter aldrig lokal synkroniseringshistoria. Håll synkronkoden separat.',
+			'audiobook.recoveryExport' => 'Export krypterad återhämtningsfil',
+			'audiobook.recoveryImport' => 'Import krypterad återhämtningsfil',
+			'audiobook.recoveryImportConfirm' => 'Kombinera denna krypterade återställningsfil med aktuella läsplatser och anteckningar? befintlig historia kommer att behållas. Delade bibliotek och objekt ID ingår inte; ställa in matchande ID på varje enhet innan import.',
+			'audiobook.recoveryExported' => 'Den krypterade återhämtningsfilen sparas.',
+			'audiobook.recoveryImported' => 'Data återhämtning sammansatt.',
 			'sourceSetup.savedCertificate' => 'Sparat servercertifikat',
 			'sourceSetup.nfsEndpointInvalid' => 'Ange en NFS-URL, till exempel nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Inga DLNA-servrar hittades. Ange URL:en till enhetsbeskrivningen manuellt.',
@@ -7516,8 +7998,6 @@ extension on TranslationsSv {
 			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
 			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
 			'sourceSetup.httpUnencrypted' => 'HTTP utan transportkryptering',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kontrollera slutpunktens säkerhet',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} krävs.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Ange ${label} från ${min} till ${max}.',
@@ -7525,6 +8005,23 @@ extension on TranslationsSv {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Vald klientidentitet: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Betyg ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Hämtar undertext: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Parera detta objekt',
+			'sourceSetup.sharedEntryPairHelp' => 'Ange samma ID för detta objekt på varje enhet. Använd en stabil delad identifierare eller generera en och kopiera det till matchande objekt. Progress parar endast när utgåvan filtyper, storlekar och order matchar. Blank tar bort denna mappning.',
+			'sourceSetup.sharedEntryId' => 'Delade objekt ID',
+			'sourceSetup.generateSharedEntryId' => 'Generera delade objekt ID',
+			'sourceSetup.sharedLibraryId' => 'Delad bibliotek ID (alternativt)',
+			'sourceSetup.sharedLibraryHelp' => 'Använd samma ID på enheter som öppnar samma bibliotek. Denna offentliga ID hjälper till att föra läsning framsteg och anteckningar över olika källans anslutningar; det är inte ett lösenord. När leverantörer använder olika objekt-ID, koppla dessa objekt från sina detaljerade skärmar.',
+			'sourceSetup.sharedLibraryInvalid' => 'Använd 8–100 bokstäver, siffror, punkter, underskor eller hyfen.',
+			'sourceSetup.generateSharedLibraryId' => 'Skapa en delad bibliotek ID',
+			'sourceSetup.nfsReadAhead' => 'NFS läs-hämta förfrågningar',
+			'sourceSetup.nfsReadAheadHelp' => 'Mer parallella läsningar kan förbättra genomgången på en snabb NAS eller nätverk. Använd 1 om servern begränsar samtidiga förfrågningar.',
+			'sourceSetup.nfsReadTest' => 'Mätare NFS Läs prestanda',
+			'sourceSetup.nfsReadTestHelp' => 'Läser upp till 64 MiB från den största filen för att mäta denna NAS-anslutning.',
+			'sourceSetup.nfsQualificationResult' => 'NFS Läs mätning',
+			'sourceSetup.nfsReadBytes' => 'Data läsning',
+			'sourceSetup.nfsReadSpeed' => 'mäts hastighet',
+			'sourceSetup.nfsReadRequests' => 'Läs begäran',
+			'sourceSetup.sharedEntryConflict' => 'Denna delade objekt-ID är redan parad med ett annat objekt i denna bibliotek. Välj en annan ID.',
 			'comics.fitHeight' => 'Anpassa till höjden',
 			'comics.readingMode' => 'Läsläge',
 			'comics.paged' => 'Sidor',
@@ -7599,6 +8096,15 @@ extension on TranslationsSv {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

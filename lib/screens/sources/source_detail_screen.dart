@@ -485,7 +485,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       PageRouteBuilder<void>(
         settings: const RouteSettings(name: 'publication-reader'),
         opaque: false,
-        pageBuilder: (_, __, ___) => PublicationReaderScreen(entry: _entry, file: file),
+        pageBuilder: (_, _, _) => PublicationReaderScreen(entry: _entry, file: file),
       ),
     );
     if (mounted) await _load();

@@ -234,6 +234,29 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Configure Gradle to use the private JIT proxy
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os
+          from urllib.parse import urlsplit
+
+          proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+          if not proxy:
+              raise SystemExit("The private JIT HTTPS proxy is required for Gradle downloads.")
+          parsed = urlsplit(proxy if "://" in proxy else f"http://{proxy}")
+          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
+              raise SystemExit("The private JIT HTTPS proxy URL is invalid for Gradle.")
+          options = [
+              f"-Dhttp.proxyHost={parsed.hostname}",
+              f"-Dhttp.proxyPort={parsed.port}",
+              f"-Dhttps.proxyHost={parsed.hostname}",
+              f"-Dhttps.proxyPort={parsed.port}",
+          ]
+          existing = os.environ.get("GRADLE_OPTS", "").strip()
+          print("GRADLE_OPTS=" + " ".join(([existing] if existing else []) + options))
+          PY
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
 

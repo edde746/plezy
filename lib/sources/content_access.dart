@@ -115,7 +115,7 @@ Future<Map<String, dynamic>> _refreshProviderToken(Map<String, dynamic> descript
     'grant_type': 'refresh_token',
     'refresh_token': refreshToken,
     'client_id': clientId,
-    if (_renewalText(descriptor, 'clientSecret', maxLength: 4096) case final secret?) 'client_secret': secret,
+    'client_secret': ?_renewalText(descriptor, 'clientSecret', maxLength: 4096),
   };
   final result = await _renewalJson(endpoint, form: body);
   final accessToken = result['access_token'];
@@ -176,7 +176,7 @@ Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descr
         time: DateTime.now(),
         expires: 900,
       ),
-      {if (revision != null) 'If-Match': revision},
+      {'If-Match': ?revision},
     );
   }
   final token = await _refreshProviderToken(descriptor);
@@ -245,8 +245,9 @@ Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descr
           '1drv.ms',
           'onedrive.live.com',
           'livefilestore.com',
-        ]))
+        ])) {
       throw const SourceException(SourceFailure.permission);
+    }
     return _RenewedBackgroundLease(uri, const {}, refreshDescriptor: updatedDescriptor);
   }
   if (provider == 'dropbox') {
@@ -311,19 +312,22 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
               uri.hasFragment ||
               !uri.hasQuery ||
               headers.keys.any((key) => key.toLowerCase() != 'if-match') ||
-              headers.values.any((value) => value.length > 2048 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value))))
+              headers.values.any((value) => value.length > 2048 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)))) {
         return null;
+      }
       if (provider == 'googleDrive') {
         if (uri.scheme != 'https' ||
             uri.host != 'www.googleapis.com' ||
             uri.pathSegments.length < 4 ||
             headers.length > 2 ||
-            headers['Authorization']?.startsWith('Bearer ') != true)
+            headers['Authorization']?.startsWith('Bearer ') != true) {
           return null;
+        }
         const allowed = {'authorization', 'x-goog-drive-resource-keys'};
         if (headers.keys.any((key) => !allowed.contains(key.toLowerCase())) ||
-            headers.values.any((value) => value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)))
+            headers.values.any((value) => value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value))) {
           return null;
+        }
       } else if (provider != 's3' && headers.isNotEmpty) {
         return null;
       }
@@ -491,13 +495,15 @@ class PublicationDownloads {
           (saved['headers'] as Map).isNotEmpty ||
           (current['headers'] as Map).isNotEmpty ||
           saved['refresh'] is! Map ||
-          current['refresh'] is! Map)
+          current['refresh'] is! Map) {
         return false;
+      }
       final oldRefresh = Map<String, dynamic>.from(saved['refresh'] as Map);
       final newRefresh = Map<String, dynamic>.from(current['refresh'] as Map);
       if (oldRefresh['provider'] != newRefresh['provider'] ||
-          oldRefresh['credentialVersion'] != newRefresh['credentialVersion'])
+          oldRefresh['credentialVersion'] != newRefresh['credentialVersion']) {
         return false;
+      }
       oldRefresh.remove('refreshToken');
       newRefresh.remove('refreshToken');
       String canonical(Map<String, dynamic> map) =>
@@ -1520,8 +1526,9 @@ class PublicationDownloads {
       PublicationFile? descriptor;
       try {
         final candidate = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
-        if (key(sourceId, candidate) == downloadKey && candidate.fingerprint == row['fingerprint'])
+        if (key(sourceId, candidate) == downloadKey && candidate.fingerprint == row['fingerprint']) {
           descriptor = candidate;
+        }
       } on Object {
         // The row can be removed without touching a path from an invalid descriptor.
       }

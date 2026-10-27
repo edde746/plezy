@@ -1062,7 +1062,7 @@ interface class FileDownloader {
       await Future.delayed(interval);
     }
     for (final taskQueue in _downloader.taskQueues) {
-      taskQueue.resumeAll(tasks: nTasks, group: nGroup);
+      await taskQueue.resumeAll(tasks: nTasks, group: nGroup);
     }
     return results;
   }

@@ -148,7 +148,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                     pref: SettingsService.experimentalDolbyVision,
                     icon: Symbols.hdr_on_rounded,
                     title: t.settings.experimentalDolbyVision,
-                    subtitle: t.settings.experimentalDolbyVisionDescription,
+                    subtitle: Platform.isLinux
+                        ? t.settings.experimentalDolbyVisionDescription
+                        : t.settings.dvExperimentUnavailableDescription,
                   ),
                 if (Platform.isLinux &&
                     !PlatformDetector.usesNativeTvMedia() &&

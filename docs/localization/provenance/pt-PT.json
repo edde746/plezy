@@ -1,7 +1,7 @@
 {
   "locale": "pt-PT",
   "inherits": "pt",
-  "catalogSha256": "4c839d8fd629823d2d02626fda3b791ff264d62e01fa728b7d069c76ba9e6a2f",
+  "catalogSha256": "f5a268eb8094ca1a92ec48ef34c495a6a8a38af9b2c3a006f327e89e278e2e89",
   "nativeSpeakerReviewed": false,
   "messages": {
     "cast.subtitle": "jellyfin-web:Subtitles",
@@ -400,7 +400,10 @@
     "discover.findNext.savedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
     "discover.findNext.skippedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
     "discover.findNext.releaseToConfirm": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
-    "discover.findNext.remoteHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
+    "discover.findNext.remoteHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "sourceSetup.subtitleDownloading": "existing",
+    "sourceSetup.subtitleApplyFailed": "existing",
+    "sourceSetup.subtitleSearching": "existing"
   },
   "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md",
   "beforeMainMergeReview": {

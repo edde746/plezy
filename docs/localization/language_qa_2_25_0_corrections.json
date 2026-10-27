@@ -1,0 +1,497 @@
+{
+  "bn": {
+    "accessibility.textSizeDescription": {
+      "english": "Scale interface text in PlezyNG in addition to your device’s system text-size setting.",
+      "draft": "আপনার ডিভাইসের সিস্টেম টেক্সট-আকার সেটিং ছাড়াও PlezyNG মধ্যে স্ক্যান ইন্টারফেস টেক্ট।",
+      "corrected": "আপনার ডিভাইসের সিস্টেম টেক্সটের আকারের সেটিংয়ের পাশাপাশি PlezyNG ইন্টারফেসের লেখার আকারও পরিবর্তন করুন।"
+    },
+    "accountPreferences.forcedSubtitleDescription": {
+      "english": "Choose whether forced subtitle tracks are preferred or required during automatic selection.",
+      "draft": "স্বয়ংক্রিয় নির্বাচনের সময় জরুরি সাব্টাইট ট্র্যাকগুলি পছন্দ করা হয় বা প্রয়োজন হয় কিনা নির্বাচন করুন।",
+      "corrected": "স্বয়ংক্রিয়ভাবে ট্র্যাক বেছে নেওয়ার সময় ফোর্সড সাবটাইটেল পছন্দ হবে নাকি অবশ্যই ব্যবহার করতে হবে, তা বেছে নিন।"
+    },
+    "accountPreferences.hubDescription": {
+      "english": "These preferences are stored on your media-server account and may apply on other clients too.",
+      "draft": "এই পছন্দগুলি আপনার মিডিয়া সার্ভার অ্যাকাউন্টে সংরক্ষিত হয় এবং অন্যান্য গ্রাহকদের উপরও लागू হতে পারে।",
+      "corrected": "এই পছন্দগুলো আপনার মিডিয়া সার্ভার অ্যাকাউন্টে সংরক্ষিত থাকে এবং অন্যান্য ক্লায়েন্টেও প্রযোজ্য হতে পারে।"
+    },
+    "accountPreferences.preferredAudioLanguageDescription": {
+      "english": "Prefer audio tracks in this language when the server or player selects a track automatically.",
+      "draft": "এই ভাষায় অডিও ট্র্যাকগুলি পছন্দ করে যখন সার্ভার বা খেলোয়াড় স্বয়ংক্রিয়ভাবে একটি ট্র্যাক নির্বাচন করে।",
+      "corrected": "সার্ভার বা প্লেয়ার স্বয়ংক্রিয়ভাবে ট্র্যাক বেছে নিলে এই ভাষার অডিও ট্র্যাককে অগ্রাধিকার দিন।"
+    },
+    "appIcon.description": {
+      "english": "Choose the icon shown by your device launcher. The previews show how each option looks.",
+      "draft": "আপনার ডিভাইস लॉन्चার দ্বারা প্রদর্শিত ইকোনটি নির্বাচন করুন. পূর্বাভাসগুলি দেখতে পারে যে প্রতিটি পছন্দ কীভাবে দেখছে।",
+      "corrected": "আপনার ডিভাইসের লঞ্চারে কোন আইকন দেখানো হবে তা বেছে নিন। প্রিভিউতে প্রতিটি বিকল্প কেমন দেখায় তা দেখতে পারবেন।"
+    },
+    "audiobook.recoveryHelp": {
+      "english": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
+      "draft": "সিন্ক ডেটা স্থানান্তর বা পুনর্নির্ভুক্ত করার আগে একটি সম্প্রতি সংক্রিপ্ত কপি সরবরাহ করুন. অন্তর্ভূতগুলি বর্তমান অবস্থা সঙ্গে মিশন করে; তারা স্থানীয় সিনাক ইতিহাস পরিবর্তন করবেন না. সিনক কোডকে আলাদা রাখুন।",
+      "corrected": "সিঙ্ক ডেটা সরানোর বা মেরামত করার আগে সাম্প্রতিক এনক্রিপ্ট করা কপি রপ্তানি করুন। আমদানি করলে বর্তমান অবস্থার সঙ্গে ডেটা মিশে যাবে; স্থানীয় সিঙ্ক ইতিহাস কখনো প্রতিস্থাপিত হবে না। সিঙ্ক কোড আলাদা করে রাখুন।"
+    },
+    "audiobook.recoveryImportConfirm": {
+      "english": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.",
+      "draft": "বর্তমান পড়া অবস্থান এবং নোটগুলি সঙ্গে এই সক্রিপ্ট রেকর্ড ফাইলকে সংযুক্ত করুন? অস্তিত্বের ইতিহাস সংরক্ষণ করা হবে. শেয়ার লাইব্রিয়াম এবং পয়েন্ট আইডিগুলি যোগ করা হয় না; প্রত্যেক ডিভাইসে সামঞ্জস্যপূর্ণ আইডগুলি ইনস্টল করার আগে।",
+      "corrected": "এই এনক্রিপ্ট করা পুনরুদ্ধার ফাইলটি বর্তমান পড়ার অবস্থান ও নোটের সঙ্গে মেশাবেন? আগের ইতিহাস থাকবে। শেয়ার করা লাইব্রেরি ও আইটেম ID এতে নেই; আমদানির আগে প্রতিটি ডিভাইসে একই ID সেট করুন।"
+    },
+    "common.movingWindowHelp": {
+      "english": "Drag to move · Arrow keys adjust · Enter saves · Escape cancels",
+      "draft": "ড্রাইভ করুন · ফাঁস খেয়ালগুলি সংশোধন করুন · ইনস্টলেশন সার্ভিস করুন · অ্যাক্সেস বাতিল করুন",
+      "corrected": "সরাতে টেনে আনুন · তীর কীগুলো দিয়ে সামঞ্জস্য করুন · Enter সংরক্ষণ করে · Escape বাতিল করে"
+    },
+    "common.workspacePaneHint": {
+      "english": "Select this pane to focus it. Use its fullscreen control to expand.",
+      "draft": "এই প্যানেলটি খুঁজে বের করুন যাতে আপনি এটি ফোর্সিং করতে পারবেন. সম্পূর্ণ স্ক্রিন নিয়ন্ত্রণ ব্যবহার করে विस्तार করবেন।",
+      "corrected": "ফোকাস করতে এই প্যানেলটি নির্বাচন করুন। বড় করতে এর ফুলস্ক্রিন নিয়ন্ত্রণ ব্যবহার করুন।"
+    },
+    "common.workspaceTitleHint": {
+      "english": "Select to focus. Drag the title bar to move; use the fullscreen button to expand.",
+      "draft": "ফোর্স করার জন্য নির্বাচন করুন. টাইম প্যাকেট চালানোর জন্য চিহ্ন; সম্পূর্ণ স্ক্রিন বোতামটি ব্যবহার করে বিস্তারিত করতে।",
+      "corrected": "ফোকাস করতে নির্বাচন করুন। সরাতে শিরোনাম বার টেনে ধরুন; বড় করতে ফুলস্ক্রিন বোতাম ব্যবহার করুন।"
+    },
+    "services.libraryFilter.modeDescription": {
+      "english": "Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.",
+      "draft": "চেক করা লাইব্রেরি সমন্বয় থেকে অবরোধিত হয় কিংবা সিন্সিং করার একমাত্র লাইবেরি কিনা নির্বাচন করুন।",
+      "corrected": "চেক করা লাইব্রেরিগুলো সিঙ্ক হওয়া থেকে আটকানো হবে নাকি শুধু সেগুলোই সিঙ্ক হবে, তা বেছে নিন।"
+    },
+    "settings.displaySwitchDelayDescription": {
+      "english": "Wait before changing display mode so the TV or receiver can finish its previous switch.",
+      "draft": "প্রদর্শন পদ্ধতি পরিবর্তন করার আগে অপেক্ষা করুন, যাতে টেলিভিশন বা রেকর্ডার তার পূর্ববর্তী বিনিময়টি শেষ করতে পারে।",
+      "corrected": "ডিসপ্লে মোড বদলানোর আগে অপেক্ষা করুন, যাতে টিভি বা রিসিভার আগের সুইচটি শেষ করতে পারে।"
+    },
+    "settings.downmixCenterBoostDescription": {
+      "english": "Raise dialogue in the center channel when surround audio is mixed down to stereo.",
+      "draft": "কেন্দ্রীয় চ্যানেলে আলোচনার বৃদ্ধি করুন, যখন সার্ভার অডিও স্টেরিয়োতে মিশ্রিত হয়।",
+      "corrected": "সারাউন্ড অডিও স্টেরিওতে মিক্স ডাউন হলে সেন্টার চ্যানেলের সংলাপের মাত্রা বাড়ান।"
+    },
+    "settings.languageDescription": {
+      "english": "Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.",
+      "draft": "PlezyNG কন্ট্রোল এবং বার্তাগুলির জন্য ব্যবহৃত ভাষা নির্বাচন করুন. সিস্টেম অনুসরণ আপনার ডিভাইসের ভাষা।",
+      "corrected": "PlezyNG-এর নিয়ন্ত্রণ ও বার্তায় ব্যবহৃত ভাষা বেছে নিন। সিস্টেম অনুসরণ করলে ডিভাইসের ভাষা ব্যবহৃত হবে।"
+    },
+    "settings.musicQualityTranscodeOptionDescription": {
+      "english": "Request a server transcode capped near the bitrate shown above; the actual output can vary.",
+      "draft": "একটি সার্ভার ট্রান্সকোড চিহ্নিত উপরের বিট্রেটের কাছাকাছি; বাস্তব উত্পাদন ভিন্ন হতে পারে।",
+      "corrected": "উপরে দেখানো বিটরেটের কাছাকাছি সীমা রেখে সার্ভারকে ট্রান্সকোড করতে বলুন; প্রকৃত আউটপুট ভিন্ন হতে পারে।"
+    },
+    "settings.prerollSelectionDescription": {
+      "english": "Choose which clips from the selected library can play before movies.",
+      "draft": "নির্বাচিত লাইব্রেরি থেকে যে ক্লিপগুলি চলচ্চিত্র আগে খেলতে পারে তা নির্বাচন করুন।",
+      "corrected": "নির্বাচিত লাইব্রেরির কোন ক্লিপগুলো সিনেমার আগে চলতে পারবে তা বেছে নিন।"
+    },
+    "settings.qualityPresetTranscodeOptionDescription": {
+      "english": "Ask the server for a converted stream using the resolution and bitrate shown above.",
+      "draft": "সার্ভারকে উত্থান এবং বিট্রেট উপরে প্রদর্শন করা হয় ব্যবহার করে একটি রূপান্তরিত স্ট্রিমের জন্য অনুরোধ করুন।",
+      "corrected": "উপরে দেখানো রেজোলিউশন ও বিটরেট ব্যবহার করে রূপান্তরিত স্ট্রিম দিতে সার্ভারকে বলুন।"
+    },
+    "settings.remoteQualityDescription": {
+      "english": "Override Default Quality when connecting to a server over a remote connection.",
+      "draft": "দূরে সংযোগের মাধ্যমে একটি সার্ভারের সাথে সংযুক্ত করার সময় ডিফল্ট মান অর্জন করুন।",
+      "corrected": "রিমোট সংযোগে সার্ভারের সঙ্গে যুক্ত হলে ডিফল্ট কোয়ালিটির বদলে এই মান ব্যবহার করুন।"
+    },
+    "settings.skipAdsModeDescription": {
+      "english": "Choose whether detected ads play normally, show a skip button, or skip automatically.",
+      "draft": "আপনি স্বাভাবিকভাবে প্রদর্শিত বিজ্ঞাপনগুলি খেলতে চান কিনা, একটি স্কাইপ বোতাম দেখুন বা স্বয়ংক্রিয়ভাবে স্কাইप করুন।",
+      "corrected": "শনাক্ত করা বিজ্ঞাপন স্বাভাবিকভাবে চলবে, স্কিপ বোতাম দেখাবে, নাকি নিজে থেকেই এড়িয়ে যাবে তা বেছে নিন।"
+    },
+    "settings.videoCodecOptionDescription": {
+      "english": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.",
+      "draft": "সমর্থিত হওয়ার সময় এই কোডেকের জন্য সরাসরি খেলা করতে পারবেন. চিহ্নিত কোডকগুলি মিডিয়া সার্ভার দ্বারা ট্রান্কোড করা হয়।",
+      "corrected": "সমর্থিত হলে এই কোডেক সরাসরি চালাতে দিন। চেক না করা কোডেকগুলো মিডিয়া সার্ভার ট্রান্সকোড করবে।"
+    },
+    "sourceSetup.nfsReadAheadHelp": {
+      "english": "More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.",
+      "draft": "আরও প্যারেল লাইড একটি দ্রুত নাস বা নেটওয়ার্ক উপর প্রদর্শন উন্নত করতে পারে. সার্ভারগুলি একই সময়ে অনুরোধগুলি সীমাবদ্ধ করে 1 ব্যবহার করুন।",
+      "corrected": "দ্রুত NAS বা নেটওয়ার্কে আরও সমান্তরাল রিড থ্রুপুট বাড়াতে পারে। সার্ভার একসঙ্গে অনুরোধ সীমিত করলে 1 ব্যবহার করুন।"
+    },
+    "sourceSetup.sharedEntryConflict": {
+      "english": "This shared item ID is already paired with another item in this library. Choose a different ID.",
+      "draft": "এই শেয়ার আইটেম IDটি ইতিমধ্যে এই লাইব্রেরিতে অন্য আইটামের সাথে প্যারিস করা হয়. একটি আলাদা ID নির্বাচন করুন.",
+      "corrected": "এই শেয়ার করা আইটেম ID ইতিমধ্যে এই লাইব্রেরির অন্য আইটেমের সঙ্গে যুক্ত। অন্য ID বেছে নিন।"
+    },
+    "sourceSetup.sharedEntryPairHelp": {
+      "english": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
+      "draft": "প্রতিটি ডিভাইসে এই পণ্যের জন্য একই ID লিখুন. একটি স্থিতিশীল শেয়ার ID ব্যবহার করুন বা একটি তৈরি করুন এবং এটি সমন্বয় পণ্যের উপর কপি করুন. প্রদর্শন ফাইল টাইপগুলি, আকার এবং অর্ডার সমাধান হলে শুধুমাত্র প্যারিস।",
+      "corrected": "প্রতিটি ডিভাইসে এই আইটেমের জন্য একই ID লিখুন। স্থায়ী শেয়ার করা শনাক্তকারী ব্যবহার করুন অথবা একটি তৈরি করে সংশ্লিষ্ট আইটেমে কপি করুন। সংস্করণের ফাইলের ধরন, আকার ও ক্রম মিললেই অগ্রগতি যুক্ত হবে। ফাঁকা রাখলে এই ম্যাপিং মুছে যাবে।"
+    },
+    "sourceSetup.sharedLibraryHelp": {
+      "english": "Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.",
+      "draft": "একই লাইব্রেরি খোলা ডিভাইসগুলিতে একই ID ব্যবহার করুন. এই জনপ্রিয় IDটি বিভিন্ন সূত্র সংযোগে পড়ার উন্নতি এবং নোটগুলি নিয়ে আসতে সাহায্য করে; এটি একটি পাসওয়ার্ড নয়. সরবরাহকারীদের ভিন্ন আইটেম ID ব্যবহার করার সময়, তাদের বিস্তারিত স্ক্রিন থেকে সেই আইটামগুলি প্যারিস করে।",
+      "corrected": "একই লাইব্রেরি খোলা ডিভাইসগুলোতে একই ID ব্যবহার করুন। এই পাবলিক ID বিভিন্ন সোর্স সংযোগে পড়ার অগ্রগতি ও নোট বহন করতে সাহায্য করে; এটি পাসওয়ার্ড নয়। প্রোভাইডার ভিন্ন আইটেম ID ব্যবহার করলে, আইটেমের বিস্তারিত স্ক্রিনে সেগুলো জুড়ুন।"
+    },
+    "subtitlingStyling.renderResolutionDescription": {
+      "english": "Choose the resolution used to rasterize image and ASS subtitles. Lower Android scales can reduce rendering work but look softer.",
+      "draft": "চিত্র এবং ASS সাবটাইটিস রাস্টারি করার জন্য ব্যবহৃত ফলাফল নির্বাচন করুন. কম অ্যান্ড্রয়েড স্কুলগুলি rendering কাজকে কমাতে পারে, কিন্তু আরও নজর দেখতে পারে।",
+      "corrected": "চিত্র ও ASS সাবটাইটেলকে পিক্সেলে রূপান্তরের জন্য ব্যবহৃত রেজোলিউশন বেছে নিন। অ্যান্ড্রয়েডে কম স্কেল রেন্ডারিং কমাতে পারে, তবে ছবি কিছুটা নরম দেখাবে।"
+    },
+    "themeEditor.editorDescription": {
+      "english": "Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.",
+      "draft": "একটি প্যালেট রঙ নির্বাচন করুন, তার উজ্জ্বলতা, সন্তুষ্টি, আলো বা অবিশ্বাস্য পরিবর্তন করুন এবং সংরক্ষণ করার আগে পূর্ববর্তী আপডেট দেখুন. আপনি একটি হেক্স রঙও প্রদান করতে পারেন।",
+      "corrected": "একটি প্যালেটের রং বেছে নিয়ে তার hue, saturation, brightness বা opacity বদলান; সংরক্ষণের আগে প্রিভিউতে পরিবর্তন দেখুন। চাইলে একটি hex রংও লিখতে পারেন।"
+    }
+  },
+  "hi": {
+    "accessibility.textSizeDescription": {
+      "english": "Scale interface text in PlezyNG in addition to your device’s system text-size setting.",
+      "draft": "स्केल इंटरफ़ेस पाठ PlezyNG में आपके डिवाइस के सिस्टम टेक्स्ट-आकार सेटिंग के अलावा।",
+      "corrected": "अपने डिवाइस की सिस्टम टेक्स्ट आकार सेटिंग के अलावा PlezyNG इंटरफ़ेस का टेक्स्ट आकार बदलें।"
+    },
+    "audiobook.recoveryHelp": {
+      "english": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
+      "draft": "सिंक्रनाइज़ेशन डेटा को स्थानांतरित करने या मरम्मत करने से पहले एक हाल ही में एन्क्रिप्टेड कॉपी निर्यात करें. आयात वर्तमान स्थिति के साथ मिश्रण करते हैं; वे कभी भी स्थानीय सिंक्नाइजेशन इतिहास को प्रतिस्थापित नहीं करते हैं. सिंक्स कोड को अलग रखें.",
+      "corrected": "सिंक डेटा को स्थानांतरित या ठीक करने से पहले हाल की एन्क्रिप्टेड कॉपी निर्यात करें। आयात मौजूदा स्थिति के साथ मिलते हैं; वे स्थानीय सिंक इतिहास को कभी नहीं बदलते। सिंक कोड अलग से रखें।"
+    },
+    "common.resizeWindowHint": {
+      "english": "Drag this handle or use the arrow keys to resize the window.",
+      "draft": "इस मैनुअल को खींचें या खिड़की को पुनर्स्थापित करने के लिए बंदूक की कुंजी का उपयोग करें।",
+      "corrected": "विंडो का आकार बदलने के लिए इस हैंडल को खींचें या तीर कुंजियों का उपयोग करें।"
+    },
+    "common.workspacePaneHint": {
+      "english": "Select this pane to focus it. Use its fullscreen control to expand.",
+      "draft": "इसे ध्यान केंद्रित करने के लिए इस पैनल का चयन करें. इसके पूर्ण स्क्रीन नियंत्रण का उपयोग विस्तार के लिए करें.",
+      "corrected": "फ़ोकस करने के लिए इस पैन को चुनें। बड़ा करने के लिए इसका फ़ुलस्क्रीन नियंत्रण इस्तेमाल करें।"
+    },
+    "common.workspaceTitleHint": {
+      "english": "Select to focus. Drag the title bar to move; use the fullscreen button to expand.",
+      "draft": "ध्यान केंद्रित करने का चयन करें. शीर्षक पट्टी को स्थानांतरित करने के लिए खींचें; विस्तार के लिए पूर्ण स्क्रीन बटन का उपयोग करें.",
+      "corrected": "फ़ोकस करने के लिए चुनें। स्थानांतरित करने के लिए टाइटल बार खींचें; बड़ा करने के लिए फ़ुलस्क्रीन बटन इस्तेमाल करें।"
+    },
+    "services.libraryFilter.modeDescription": {
+      "english": "Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.",
+      "draft": "यह चुनें कि क्या चेक किए गए पुस्तकालयों को सिंक्रनाइज़ेशन से अवरुद्ध किया गया है या वे एकमात्र पुस्तकाला हैं जो सनस्क्रीन करते हैं।",
+      "corrected": "चुनें कि चेक की गई लाइब्रेरीज़ को सिंक होने से रोका जाए या केवल वही लाइब्रेरीज़ सिंक हों।"
+    },
+    "settings.continueWatchingDetailsDescription": {
+      "english": "Open the title page first so you can review details and choose an action.",
+      "draft": "शीर्षक पृष्ठ को पहले खोलें ताकि आप विवरणों की समीक्षा कर सकें और एक कार्रवाई का चयन कर सके।",
+      "corrected": "पहले शीर्षक का पेज खोलें, ताकि आप विवरण देख सकें और आगे की कार्रवाई चुन सकें।"
+    },
+    "settings.skipAdsModeDescription": {
+      "english": "Choose whether detected ads play normally, show a skip button, or skip automatically.",
+      "draft": "यह चुनें कि क्या पता लगाए गए विज्ञापन सामान्य रूप से खेलते हैं, स्काइप बटन दिखाते हैं या स्वचालित रूप से स्काई करते हैं।",
+      "corrected": "चुनें कि पहचाने गए विज्ञापन सामान्य रूप से चलें, स्किप बटन दिखे या अपने आप स्किप हों।"
+    },
+    "settings.skipCreditsModeDescription": {
+      "english": "Choose whether credits play normally, show a skip button, or skip automatically.",
+      "draft": "यह चुनें कि क्रेडिट सामान्य रूप से खेलते हैं, स्काइप बटन दिखाते हैं या स्वचालित रूप से स्काई करते हैं।",
+      "corrected": "चुनें कि अंतिम क्रेडिट सामान्य रूप से चलें, स्किप बटन दिखे या अपने आप स्किप हों।"
+    },
+    "settings.skipIntroModeDescription": {
+      "english": "Choose whether intro markers play normally, show a skip button, or skip automatically.",
+      "draft": "यह चुनें कि क्या इनट्रो मार्कर सामान्य रूप से खेलते हैं, एक स्काइप बटन दिखाते हैं या स्वचालित रूप से स्काई करते हैं।",
+      "corrected": "चुनें कि इंट्रो मार्कर सामान्य रूप से चलें, स्किप बटन दिखे या अपने आप स्किप हों।"
+    },
+    "settings.videoCodecOptionDescription": {
+      "english": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.",
+      "draft": "इस कोडेक के लिए सीधे प्लेबैक की अनुमति दें जब यह समर्थित होता है. अनचेक किए गए कोडेक्स मीडिया सर्वर द्वारा ट्रांसकोड किए जाते हैं.",
+      "corrected": "समर्थित होने पर इस कोडेक के लिए सीधे प्लेबैक की अनुमति दें। बिना चेक किए गए कोडेक मीडिया सर्वर द्वारा ट्रांसकोड किए जाते हैं।"
+    },
+    "settings.viewModeDescription": {
+      "english": "Choose whether library items appear as posters in a grid or as a compact list.",
+      "draft": "यह चुनें कि क्या पुस्तकालय आइटम एक नेटवर्क में पोस्टर के रूप में दिखाई देते हैं या एक कॉम्पैक्ट सूची के रूप से।",
+      "corrected": "चुनें कि लाइब्रेरी आइटम ग्रिड में पोस्टर के रूप में दिखें या संक्षिप्त सूची में।"
+    },
+    "sourceSetup.sharedEntryPairHelp": {
+      "english": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
+      "draft": "प्रत्येक डिवाइस पर इस आइटम के लिए एक ही आईडी दर्ज करें. एक स्थिर साझा पहचानकर्ता का उपयोग करें या एक उत्पन्न करें और इसे फिट करने वाले आइटमी में कॉपी करें. प्रगति जोड़े केवल तब होते हैं जब संस्करण फ़ाइल प्रकार, आकार और आदेश फिट होता है. Blank इस मैपिंग को हटा देता है.",
+      "corrected": "हर डिवाइस पर इस आइटम के लिए वही ID दर्ज करें। स्थिर साझा पहचानकर्ता का उपयोग करें या एक बनाकर संबंधित आइटम में कॉपी करें। प्रगति तभी जुड़ेगी जब संस्करणों के फ़ाइल प्रकार, आकार और क्रम मेल खाते हों। खाली छोड़ने पर यह मैपिंग हट जाएगी।"
+    },
+    "sourceSetup.sharedLibraryHelp": {
+      "english": "Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.",
+      "draft": "एक ही आईडी का उपयोग उन उपकरणों पर करें जो एक ही लाइब्रेरी खोलते हैं. यह सार्वजनिक आईडी विभिन्न स्रोत कनेक्शन के माध्यम से पढ़ने की प्रगति और नोट्स को ले जाने में मदद करता है; यह एक पासवर्ड नहीं है. जब आपूर्तिकर्ता अलग-अलग आइटम आईडी उपयोग करते हैं, तो इन आइटम्स को उनके विस्तृत स्क्रीन से जोड़ें.",
+      "corrected": "एक ही लाइब्रेरी खोलने वाले डिवाइसों पर एक ही ID इस्तेमाल करें। यह सार्वजनिक ID अलग-अलग स्रोत कनेक्शनों के बीच पढ़ने की प्रगति और नोट्स ले जाने में मदद करती है; यह पासवर्ड नहीं है। प्रदाता अलग-अलग आइटम ID इस्तेमाल करें तो उनके विवरण पेज से उन आइटमों को जोड़ें।"
+    },
+    "subtitlingStyling.renderResolutionOptions.quarter": {
+      "english": "Render at one-quarter of the display surface resolution to reduce work, with the softest result.",
+      "draft": "काम को कम करने के लिए डिस्प्ले की सतह संकल्प का एक तिहाई पर रेंडर, सबसे नरम परिणाम के साथ।",
+      "corrected": "कम काम और सबसे नरम परिणाम के लिए डिस्प्ले सतह के रिज़ॉल्यूशन के एक-चौथाई पर रेंडर करें।"
+    },
+    "subtitlingStyling.renderResolutionOptions.third": {
+      "english": "Render at one-third of the display surface resolution to reduce work, with softer edges.",
+      "draft": "काम को कम करने के लिए डिस्प्ले सतह संकल्प का एक तिहाई पर रेंडर करें, नरम किनारों के साथ।",
+      "corrected": "कम काम और नरम किनारों के लिए डिस्प्ले सतह के रिज़ॉल्यूशन के एक-तिहाई पर रेंडर करें।"
+    }
+  },
+  "uz": {
+    "audiobook.recoveryImportConfirm": {
+      "english": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.",
+      "draft": "Bu kriptoti qaytarga fili koʻshayni o'qizmi o’qizzi o'k qizzi? Tarih o‘qizdi o'cadi o’cadi. Shared library and item IDs are not included; set matching IDs on each device before importing.",
+      "corrected": "Ushbu shifrlangan tiklash faylini joriy o‘qish joylari va qaydlar bilan birlashtirasizmi? Mavjud tarix saqlanadi. Umumiy kutubxona va element IDlari kiritilmagan; importdan oldin har bir qurilmada mos IDlarni o‘rnating."
+    },
+    "fileSources.downloadRunning": {
+      "english": "Downloading",
+      "draft": "Downloading",
+      "corrected": "Yuklab olinmoqda"
+    },
+    "fileSources.errorQuotaExceeded": {
+      "english": "The offline storage limit was reached. Raise the limit or remove a downloaded copy.",
+      "draft": "Offline stocking limiti bo‘yadi. Limiti bo'yadi o’yadi bir download kopya.",
+      "corrected": "Oflayn xotira limiti tugadi. Limitni oshiring yoki yuklab olingan nusxani o‘chiring."
+    },
+    "settings.contentScreensaverDelayDescription": {
+      "english": "Choose how long PlezyNG waits without input before showing artwork.",
+      "draft": "U'qizga qizga o‘qizgan o’qizdan o'qızgan o‘zadan o`qizkan o'zdan o’zdan.",
+      "corrected": "PlezyNG foydalanuvchi faoliyati bo‘lmaganda tasvirni ko‘rsatishdan oldin qancha kutishini tanlang."
+    },
+    "settings.languageDescription": {
+      "english": "Choose the language used for PlezyNG controls and messages. Follow system tracks your device language.",
+      "draft": "U'qizga qizga o‘qizgga o’qizgi o'qozga o`qizgo o‘cogga o'coggo o’coggu o't.",
+      "corrected": "PlezyNG boshqaruvlari va xabarlari uchun tilni tanlang. Tizimga ergashish qurilmangiz tilidan foydalanadi."
+    },
+    "settings.playbackBufferExtraLargeDescription": {
+      "english": "Keep the largest read-ahead buffer; this uses the most memory.",
+      "draft": "Bu'z buffer o‘z o’z o'z o`z o ́z o‘Z o'Z o’Z o‘zi o'zi o’zi.",
+      "corrected": "Eng katta oldindan o‘qish buferini saqlang; u eng ko‘p xotiradan foydalanadi."
+    },
+    "settings.startupSectionOptions.search": {
+      "english": "Open media search.",
+      "draft": "Open media search.",
+      "corrected": "Media qidiruvini oching."
+    }
+  },
+  "cs": {
+    "fileSources.offlineQuota": {
+      "english": "Offline download limit",
+      "draft": "Offline download limit",
+      "corrected": "Limit pro offline stahování"
+    }
+  },
+  "de": {
+    "fileSources.offlineQuota": {
+      "english": "Offline download limit",
+      "draft": "Offline Download Limit",
+      "corrected": "Limit für Offline-Downloads"
+    }
+  },
+  "id": {
+    "fileSources.offlineQuota": {
+      "english": "Offline download limit",
+      "draft": "Offline download limit",
+      "corrected": "Batas unduhan offline"
+    }
+  },
+  "th": {
+    "services.trackerDescriptions.anilist": {
+      "english": "Sync anime lists and watch progress with AniList.",
+      "draft": "Sync anime lists and watch progress with AniList.",
+      "corrected": "ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ AniList"
+    },
+    "services.trackerDescriptions.mal": {
+      "english": "Sync anime lists and watch progress with MyAnimeList.",
+      "draft": "Sync anime lists and watch progress with MyAnimeList.",
+      "corrected": "ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ MyAnimeList"
+    }
+  },
+  "vi": {
+    "accountPreferences.watchedIndicatorOptions.showsDescription": {
+      "english": "Show watched checkmarks for TV shows only.",
+      "draft": "Show watched checkmarks for TV shows only.",
+      "corrected": "Chỉ hiển thị dấu đánh dấu đã xem cho các chương trình truyền hình."
+    }
+  },
+  "zh": {
+    "common.mediaSessionsHint": {
+      "english": "Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.",
+      "draft": "選擇將會議帶到前面. Park 隱藏了它的窗口,但保持它開放。",
+      "corrected": "选择会话可将其切换到前台。停放会隐藏窗口但保持会话运行。返回会在完整视图中打开会话；关闭则结束会话。"
+    },
+    "common.workspaceWindowHint": {
+      "english": "Use the move control or long-press and drag to move. Use the resize handle to resize.",
+      "draft": "使用移动控制或长压和拖动。",
+      "corrected": "使用移动控件，或长按并拖动窗口来移动。使用调整大小手柄来调整窗口大小。"
+    },
+    "common.workspaceTitleHint": {
+      "english": "Select to focus. Drag the title bar to move; use the fullscreen button to expand.",
+      "draft": "选择焦点 拖动标题栏移动;使用全屏按钮扩展。",
+      "corrected": "选择以聚焦窗口。拖动标题栏来移动；使用全屏按钮展开。"
+    },
+    "settings.defaultQualityDescription": {
+      "english": "Set the default video resolution and bitrate ceiling for streams that the server transcodes.",
+      "draft": "设置默认视频分辨率,并为服务器传输的流量设置天花板。",
+      "corrected": "设置服务器转码流的默认视频分辨率和最高码率。"
+    },
+    "settings.qualityPresetOriginalDescription": {
+      "english": "Play the source at its available quality without asking the server to transcode it.",
+      "draft": "以可用的质量播放源,而不要求服务器将其转码。",
+      "corrected": "以源文件可用的画质播放，不请求服务器转码。"
+    },
+    "settings.qualityPresetTranscodeOptionDescription": {
+      "english": "Ask the server for a converted stream using the resolution and bitrate shown above.",
+      "draft": "请求服务器使用上面的分辨率和比特速度进行转换流。",
+      "corrected": "请服务器使用上方显示的分辨率和码率进行转码。"
+    },
+    "settings.musicQualityDescription": {
+      "english": "Set the maximum audio bitrate requested from the server; Original keeps the source stream.",
+      "draft": "设置从服务器要求的最大音频比特率;原始保持源流。",
+      "corrected": "设置向服务器请求的最高音频码率；选择“原始”则保留源音频流。"
+    },
+    "themeEditor.editorDescription": {
+      "english": "Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.",
+      "draft": "选择一个色彩,调整它的颜色,饱和度,亮度或不透明度,并在保存之前查看预览更新。",
+      "corrected": "选择调色板颜色，调整色相、饱和度、亮度或不透明度，并在保存前预览效果。也可以输入十六进制颜色值。"
+    },
+    "accessibility.boldTextHint": {
+      "english": "Use a heavier weight for interface labels and messages to make them easier to distinguish.",
+      "draft": "使用更重的界面标签和消息,使它们更容易区分。",
+      "corrected": "加粗界面标签和消息的字重，让它们更容易辨认。"
+    },
+    "subtitlingStyling.renderResolutionOptions.video": {
+      "english": "Render using the video resolution as the reference, which can reduce work on high-resolution displays.",
+      "draft": "使用视频分辨率作为参考,这可以减少高解像度显示器的工作。",
+      "corrected": "以视频分辨率为基准进行渲染，这可以减少高分辨率显示器上的处理量。"
+    },
+    "subtitlingStyling.renderResolutionOptions.third": {
+      "english": "Render at one-third of the display surface resolution to reduce work, with softer edges.",
+      "draft": "放置显示表面分辨率的三分之一,以减少工作,与软边缘。",
+      "corrected": "以显示表面分辨率的三分之一进行渲染，以减少处理量并获得较柔和的边缘。"
+    },
+    "accountPreferences.preferredSubtitleLanguageDescription": {
+      "english": "Prefer subtitle tracks in this language when subtitles are selected automatically.",
+      "draft": "偏好在这个语言中的字幕跟踪,当字幕自动选择时。",
+      "corrected": "自动选择字幕时，优先选择此语言的字幕轨道。"
+    },
+    "accountPreferences.subtitleAccessibilityDescription": {
+      "english": "Choose whether SDH captions are preferred or required during automatic subtitle selection.",
+      "draft": "在自动子标题选项中选择是否优先或需要 SDH 封面。",
+      "corrected": "自动选择字幕时，设置听障字幕（SDH）为优先或必选。"
+    },
+    "accountPreferences.forcedSubtitleDescription": {
+      "english": "Choose whether forced subtitle tracks are preferred or required during automatic selection.",
+      "draft": "在自动选择时,选择强制子标题轨道是否被偏好或要求。",
+      "corrected": "自动选择字幕时，选择优先使用强制字幕轨道，或是必须使用强制字幕轨道。"
+    },
+    "services.libraryFilter.modeDescription": {
+      "english": "Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.",
+      "draft": "选择是否检查的图书馆被阻止同步,或者是唯一同步的图書馆。",
+      "corrected": "选择是阻止已勾选的媒体库同步，还是仅同步已勾选的媒体库。"
+    },
+    "fileSources.confirmRemoveDownloadJob": {
+      "english": "Remove this download and discard any partially downloaded data? Your position and notes will stay.",
+      "draft": "删除此下载并删除部分下载的数据?您的位置和笔记将保持。",
+      "corrected": "要移除此下载并丢弃已下载的部分数据吗？阅读位置和笔记会保留。"
+    },
+    "fileSources.offlineQuotaHelp": {
+      "english": "Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.",
+      "draft": "设置非线副本、进口文件和下载的最大空间,降低限制不会删除现有副本。",
+      "corrected": "设置离线副本、导入文件和排队中下载占用的最大空间。降低上限不会删除现有副本。"
+    },
+    "fileSources.errorQuotaExceeded": {
+      "english": "The offline storage limit was reached. Raise the limit or remove a downloaded copy.",
+      "draft": "离线存储限制已达到. 提高限制或删除下载副本。",
+      "corrected": "已达到离线存储上限。请提高上限或移除已下载的副本。"
+    },
+    "audiobook.recoveryHelp": {
+      "english": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
+      "draft": "在移动或修复同步数据之前出口最近加密的副本. 进口与当前状态合并; 它们永远不会取代本地同步历史。",
+      "corrected": "移动或修复同步数据前，请先导出近期的加密备份。导入内容会与当前状态合并，不会覆盖本地同步历史。请另行保存同步代码。"
+    },
+    "sourceSetup.sharedEntryPairHelp": {
+      "english": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
+      "draft": "在每个设备上输入此项目的相同 ID. 使用稳定的共享识别器或创建一个并将其复制到匹配项目。",
+      "corrected": "在每台设备上为此项目输入相同的 ID。使用稳定的共享标识符，或生成一个并复制到对应项目。只有版本的文件类型、大小和顺序都一致时，阅读进度才会关联。留空会移除此映射。"
+    }
+  },
+  "zh-Hant": {
+    "common.mediaSessionsHint": {
+      "english": "Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.",
+      "draft": "選擇將會議帶到前面. Park 隱藏了它的視窗,但保持它開放。",
+      "corrected": "選取工作階段可將它移到前景。停放會隱藏視窗，但讓工作階段保持開啟。返回會以完整檢視開啟工作階段；關閉則會結束工作階段。"
+    },
+    "common.workspaceWindowHint": {
+      "english": "Use the move control or long-press and drag to move. Use the resize handle to resize.",
+      "draft": "使用移動控制或長壓和拖動。",
+      "corrected": "使用移動控制項，或長按並拖曳視窗來移動。使用調整大小把手來調整視窗大小。"
+    },
+    "common.workspaceTitleHint": {
+      "english": "Select to focus. Drag the title bar to move; use the fullscreen button to expand.",
+      "draft": "選擇焦點 拖動標題欄移動;使用全屏按鈕擴充套件。",
+      "corrected": "選取以聚焦。拖曳標題列可移動視窗；使用全螢幕按鈕可展開。"
+    },
+    "settings.defaultQualityDescription": {
+      "english": "Set the default video resolution and bitrate ceiling for streams that the server transcodes.",
+      "draft": "設定預設影片解析度,併為伺服器傳輸的流量設定天花板。",
+      "corrected": "設定伺服器轉碼串流的預設影片解析度與最高位元率。"
+    },
+    "settings.qualityPresetOriginalDescription": {
+      "english": "Play the source at its available quality without asking the server to transcode it.",
+      "draft": "以可用的質量播放源,而不要求伺服器將其轉碼。",
+      "corrected": "以來源可用的畫質播放，不要求伺服器轉碼。"
+    },
+    "settings.qualityPresetTranscodeOptionDescription": {
+      "english": "Ask the server for a converted stream using the resolution and bitrate shown above.",
+      "draft": "請求伺服器使用上面的解析度和位元速度進行轉換流。",
+      "corrected": "請伺服器依照上方顯示的解析度與位元率轉碼串流。"
+    },
+    "settings.musicQualityDescription": {
+      "english": "Set the maximum audio bitrate requested from the server; Original keeps the source stream.",
+      "draft": "設定從伺服器要求的最大音訊位元率;原始保持源流。",
+      "corrected": "設定向伺服器要求的最高音訊位元率；選擇「原始」時會保留來源串流。"
+    },
+    "themeEditor.editorDescription": {
+      "english": "Choose a palette color, adjust its hue, saturation, brightness, or opacity, and see the preview update before saving. You can also enter a hex color.",
+      "draft": "選擇一個色彩,調整它的顏色,飽和度,亮度或不透明度,並在儲存之前檢視預覽更新。",
+      "corrected": "選取調色盤顏色，調整色相、飽和度、亮度或不透明度，並在儲存前查看預覽更新。也可以輸入十六進位顏色。"
+    },
+    "accessibility.boldTextHint": {
+      "english": "Use a heavier weight for interface labels and messages to make them easier to distinguish.",
+      "draft": "使用更重的介面標籤和訊息,使它們更容易區分。",
+      "corrected": "加粗介面標籤與訊息的字重，讓它們更容易辨識。"
+    },
+    "subtitlingStyling.renderResolutionOptions.video": {
+      "english": "Render using the video resolution as the reference, which can reduce work on high-resolution displays.",
+      "draft": "使用影片解析度作為參考,這可以減少高解像度顯示器的工作。",
+      "corrected": "以影片解析度為基準進行渲染，這可減少高解析度螢幕上的運算量。"
+    },
+    "subtitlingStyling.renderResolutionOptions.third": {
+      "english": "Render at one-third of the display surface resolution to reduce work, with softer edges.",
+      "draft": "放置顯示錶面解析度的三分之一,以減少工作,與軟邊緣。",
+      "corrected": "以顯示表面解析度的三分之一進行渲染，以減少運算量並讓邊緣更柔和。"
+    },
+    "accountPreferences.preferredSubtitleLanguageDescription": {
+      "english": "Prefer subtitle tracks in this language when subtitles are selected automatically.",
+      "draft": "偏好在這個語言中的字幕跟蹤,當字幕自動選擇時。",
+      "corrected": "自動選擇字幕時，優先選擇此語言的字幕軌。"
+    },
+    "accountPreferences.subtitleAccessibilityDescription": {
+      "english": "Choose whether SDH captions are preferred or required during automatic subtitle selection.",
+      "draft": "在自動子標題選項中選擇是否優先或需要 SDH 封面。",
+      "corrected": "自動選擇字幕時，設定聽障字幕（SDH）為優先或必選。"
+    },
+    "accountPreferences.forcedSubtitleDescription": {
+      "english": "Choose whether forced subtitle tracks are preferred or required during automatic selection.",
+      "draft": "在自動選擇時,選擇強制子標題軌道是否被偏好或要求。",
+      "corrected": "自動選擇字幕時，選擇優先使用強制字幕軌，或是必須使用強制字幕軌。"
+    },
+    "services.libraryFilter.modeDescription": {
+      "english": "Choose whether the checked libraries are blocked from syncing or are the only libraries that sync.",
+      "draft": "選擇是否檢查的圖書館被阻止同步,或者是唯一同步的圖書館。",
+      "corrected": "選擇要阻止已勾選的媒體庫同步，或只同步已勾選的媒體庫。"
+    },
+    "fileSources.confirmRemoveDownloadJob": {
+      "english": "Remove this download and discard any partially downloaded data? Your position and notes will stay.",
+      "draft": "刪除此下載並刪除部分下載的資料?您的位置和筆記將保持。",
+      "corrected": "要移除此下載並捨棄已下載的部分資料嗎？閱讀位置和筆記會保留。"
+    },
+    "fileSources.offlineQuotaHelp": {
+      "english": "Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.",
+      "draft": "設定非線副本、進口檔案和下載的最大空間,降低限制不會刪除現有副本。",
+      "corrected": "設定離線副本、匯入檔案及佇列中下載所使用的空間上限。降低上限不會移除現有副本。"
+    },
+    "fileSources.errorQuotaExceeded": {
+      "english": "The offline storage limit was reached. Raise the limit or remove a downloaded copy.",
+      "draft": "離線儲存限制已達到. 提高限制或刪除下載副本。",
+      "corrected": "已達離線儲存空間上限。請提高上限或移除已下載的副本。"
+    },
+    "audiobook.recoveryHelp": {
+      "english": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
+      "draft": "在移動或修復同步資料之前出口最近加密的副本. 進口與當前狀態合併; 它們永遠不會取代本地同步歷史。",
+      "corrected": "移動或修復同步資料前，請先匯出近期的加密備份。匯入資料會與目前狀態合併，不會取代本機同步記錄。請另外保存同步代碼。"
+    },
+    "sourceSetup.sharedEntryPairHelp": {
+      "english": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
+      "draft": "在每個裝置上輸入此專案的相同 ID. 使用穩定的共享識別器或建立一個並將其複製到匹配專案。",
+      "corrected": "在每部裝置上為此項目輸入相同的 ID。使用固定的共用識別碼，或產生一組並複製到對應項目。只有當版本的檔案類型、大小和順序相符時，閱讀進度才會配對。留白會移除此對應。"
+    }
+  }
+}

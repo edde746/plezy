@@ -177,6 +177,7 @@ class Translations$appIcon$zh extends Translations$appIcon$en {
 	@override String get launcherHint => '离开 PlezyNG 后，新图标将显示在主屏幕上。';
 	@override String get tvLauncherHint => '离开 PlezyNG 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。';
 	@override late final Translations$appIcon$names$zh names = Translations$appIcon$names$zh.internal(_root);
+	@override String get description => '选择由您的设备启动器显示的图标. 预览显示每个选项看起来如何。';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class Translations$common$zh extends Translations$common$en {
 	@override String get cancel => '取消';
 	@override String get save => '保存';
 	@override String get close => '关闭';
+	@override String get closeMiniPlayer => '附近小型玩家';
+	@override String get closeWorkspaceWindow => '附近窗口';
+	@override String get returnToFullView => '回到全景';
+	@override String get manageMediaSessions => '管理媒体会议';
+	@override String get hideMediaSessions => '隐藏媒体会议';
+	@override String get mediaSessions => '媒體會議';
+	@override String get mediaSessionsHint => '选择会话可将其切换到前台。停放会隐藏窗口但保持会话运行。返回会在完整视图中打开会话；关闭则结束会话。';
+	@override String get sessionInWorkspace => '在工作场所';
+	@override String get sessionParked => '停车';
+	@override String get sessionFullscreen => '全屏幕';
+	@override String get switchToNextWindow => '与下一个窗口交换';
+	@override String get moveWindow => '移动窗口';
+	@override String get finishMovingWindow => '结束移动窗口';
+	@override String get moveWindowHint => '长压和拖动窗口移动它. 这种控制也允许箭头密钥的运动。';
+	@override String get movingWindowHelp => '拖到移动 · 投键调整 · 输入存储器 · 逃避取消';
+	@override String get resizeWindow => '修复窗口';
+	@override String get resizeWindowHint => '拖这个手套或使用箭头键重新调整窗口。';
+	@override String get workspaceWindowHint => '使用移动控件，或长按并拖动窗口来移动。使用调整大小手柄来调整窗口大小。';
+	@override String get workspacePaneHint => '选择这个面板以集中它. 使用其全屏控制来扩展。';
+	@override String workspaceWindowLabel({required Object title}) => '會議窗口: ${title}';
+	@override String get workspaceTitleHint => '选择以聚焦窗口。拖动标题栏来移动；使用全屏按钮展开。';
+	@override String get moveToSessionTray => '转到Session Tray';
+	@override String get moveToSessionTrayHint => '打开此会议可用,而不显示其窗口。';
+	@override String get closeSessionHint => '关闭此窗口并结束会议。';
+	@override String get sideBySideLayout => '交换到侧面布局';
+	@override String get floatingWindows => '转换为浮动窗口';
 	@override String get clear => '清除';
 	@override String get reset => '重置';
 	@override String get later => '稍后';
@@ -676,6 +703,13 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '强制原生 DV7 并禁止重试 DV 转换';
 	@override String get dvConversionDv81Description => '强制内联 RPU 转换为 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC';
+	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
+	@override String get dvCompatibilityFallback => '兼容性回退';
+	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
+	@override String get dvExperimentDiagnostics => '视频实验日志';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 	@override String get disableDolbyVision => '禁用 Dolby Vision';
 	@override String get disableDolbyVisionDescription => '文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision';
 	@override String get hdrSdrConversion => 'HDR 转 SDR';
@@ -762,13 +796,81 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get regionFormatDescription => '选择日期、数字和计量单位的显示方式。';
 	@override String get metadataLanguage => '元数据语言';
 	@override String get metadataLanguageDescription => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。';
-	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
-	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
-	@override String get dvCompatibilityFallback => '兼容性回退';
-	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
-	@override String get dvExperimentDiagnostics => '视频实验日志';
-	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
+	@override String get enterFullscreenOnPlaybackStart => '在播放开始时输入全屏';
+	@override String get enterFullscreenOnPlaybackStartDescription => '打开桌面视频在播放开始时全屏';
+	@override String get extendVideoIntoDisplayCutout => '将视频扩展到显示器中';
+	@override String get extendVideoIntoDisplayCutoutDescription => '让全屏视频在Android手机上使用相机切割';
+	@override String get languageDescription => '选择用于 PlezyNG 控制和消息的语言. 跟踪系统跟踪您的设备语言。';
+	@override String get themeDescription => '选择应用程序中使用的颜色和对比。';
+	@override String get libraryDensityDescription => '改变每个行中的图书馆卡的数量。';
+	@override String get displayScaleDescription => '在此车屏幕上重新设置接口,而无需改变您的设备上的文本大小。';
+	@override String get themeSongVolumeDescription => '设置主题歌曲的数量与其他音频相比。';
+	@override String get viewModeDescription => '选择图书馆项目是否显示为网上的海报或作为一个小型列表。';
+	@override String get gridViewDescription => '安排图书馆项目在海报的行和列。';
+	@override String get listViewDescription => '在垂直列表中显示图书馆项目,每个项目有更多的文本。';
+	@override String get gridSpacingDescription => '在图书馆网中设置海报之间的差距。';
+	@override String get gridSpacingTightDescription => '在屏幕上插入更多的海报,有较小的差距。';
+	@override String get gridSpacingNormalDescription => '使用海报之间的标准差距。';
+	@override String get gridSpacingSpaciousDescription => '添加海报之间更大的差距,以获得更多的分离。';
+	@override String get episodePosterModeDescription => '选择哪个艺术作品出现在节目卡上。';
+	@override String get seriesPosterDescription => '使用节目系列的海报为每个集合。';
+	@override String get seasonPosterDescription => '使用每集的季节海报,随时可用。';
+	@override String get episodeThumbnailDescription => '在可用时使用集中的框架。';
+	@override String get continueWatchingActionDescription => '选择当您启动继续观看卡时会发生什么。';
+	@override String get continueWatchingPlayDescription => '立即启动电影或节目。';
+	@override String get continueWatchingDetailsDescription => '首先打开标题页面,以便您可以查看详细信息并选择一个行动。';
+	@override String get episodeActionDescription => '选择当您启动一个节目卡时会发生什么。';
+	@override String get episodePlayDescription => '立即开始事件。';
+	@override String get episodeDetailsDescription => '在播放之前打开集片页面。';
+	@override String get contentScreensaverDelayDescription => '在展示艺术作品之前,选择 PlezyNG 等待多久没有输入。';
+	@override String get continueWatchingRowSizeDescription => '在继续观看行中选择卡片的尺寸。';
+	@override String get rowSizeCompactDescription => '显示较小的卡片,以便在行列中添加更多的项目。';
+	@override String get rowSizeStandardDescription => '使用标准卡尺寸。';
+	@override String get rowSizeLargeDescription => '显示更大的卡片,更多艺术作品的细节。';
+	@override String get visualEffectsDescription => '选择该设备的动画和艺术作品效果预算。';
+	@override String get visualEffectsFullDescription => '在每个设备上使用完整的动画和艺术作品效果。';
+	@override String get startupSectionDescription => '在 PlezyNG 启动时选择哪个部分打开。';
+	@override late final Translations$settings$startupSectionOptions$zh startupSectionOptions = Translations$settings$startupSectionOptions$zh.internal(_root);
+	@override String get smallSkipDurationDescription => '设置由短后方向移动的距离,并向前寻找控制。';
+	@override String get largeSkipDurationDescription => '设置远程移动的长后方向和向前寻找控制。';
+	@override String get rewindOnResumeDescription => '在重新播放视频时,以此金额返回播放。';
+	@override String get defaultSleepTimerDescription => '设置睡眠时间开始时使用的初始时间。';
+	@override String get playNextCountdownDescription => '等待很久,直到下一集开始,设置到0即时开始。';
+	@override String get autoSkipDelaySettingDescription => '适用于当一个输入、信用或广告设置自动转换时。';
+	@override String get downmixCenterBoostDescription => '在周围的音频被混合到斯特里奥时,在中间频道上增加对话。';
+	@override String get displaySwitchDelayDescription => '在更改显示模式之前等待,以便电视或接收器可以完成其以前的交换。';
+	@override String get playerBackendDescription => '选择哪个播放引擎在该设备上扫描和播放视频。';
+	@override String get exoPlayerDescription => '使用 Android 的本地 Media3 基于播放器和支持的硬件路径。';
+	@override String get mpvDescription => '使用 mpv,它暴露了额外的播放、子标题和视频处理控制。';
+	@override String get scopeOffDescription => '只保留当前播放会的更改。';
+	@override String get scopeGlobalDescription => '重复使用每个图书馆和标题的相同值。';
+	@override String get scopeLibraryDescription => '记住每个图书馆的单独价值。';
+	@override String get scopeTitleDescription => '记住每个节目或电影的单独值。';
+	@override String get specialsOrderingServerDescription => '保持媒体服务器提供的集合订单。';
+	@override String get specialsOrderingAirDateDescription => '根据他们的空气日期,将特殊物品列入常规事件中。';
+	@override String get specialsOrderingLastDescription => '每個特別的位置,在定期季節後。';
+	@override String get skipIntroModeDescription => '选择输入标记器是否正常播放,显示滑动按钮或自动滑动。';
+	@override String get skipCreditsModeDescription => '选择信用是否正常播放,显示滑动按钮或自动滑动。';
+	@override String get skipAdsModeDescription => '选择是否被发现的广告正常播放,显示滑动按钮或自动滑动。';
+	@override String get playbackBufferAutoDescription => '让活跃的玩家选择其正常的泡沫大小。';
+	@override String get playbackBufferLargeDescription => '保持更多媒体在播放前准备;这使用更多的内存。';
+	@override String get playbackBufferExtraLargeDescription => '保持最大的阅读面板泡沫;这使用最多的记忆。';
+	@override String get defaultQualityDescription => '设置服务器转码流的默认视频分辨率和最高码率。';
+	@override String get cellularQualityDescription => '超越默认质量,当设备使用单细胞连接时。';
+	@override String get remoteQualityDescription => '通过远程连接连接到服务器时超越默认质量。';
+	@override String get qualityPresetOriginalDescription => '以源文件可用的画质播放，不请求服务器转码。';
+	@override String get qualityPresetTranscodeOptionDescription => '请服务器使用上方显示的分辨率和码率进行转码。';
+	@override String get qualityPresetSameAsDefaultDescription => '使用默认品质中选择的质量。';
+	@override String get musicQualityDescription => '设置向服务器请求的最高音频码率；选择“原始”则保留源音频流。';
+	@override String get musicQualityOriginalDescription => '播放源音频,无需Bitrate加密的Transcode。';
+	@override String get musicQualityTranscodeOptionDescription => '请求服务器转代码接近上面的比特率;实际输出可能有所不同。';
+	@override String get maxVolumeInputLabel => '最大容量(%)';
+	@override String get checkForUpdatesDescription => '现在检查是否有更新的PlezyNG版本。';
+	@override String get appearanceDescription => '选择应用程序主题,并调整图书馆卡、主行和导航。';
+	@override String get prerollLibraryDescription => '选择包含电影预角色可用的剪辑的图书馆。';
+	@override String get prerollSelectionDescription => '选择从所选图书馆播放的剪辑在电影之前。';
+	@override String get contentScreensaverDelayOptionDescription => '在显示屏保存艺术作品之前等待这些无输入的几分钟。';
+	@override String get videoCodecOptionDescription => '允许在支持时直接播放此代码器. 未经检查的代码被媒体服务器编码。';
 }
 
 // Path: themeEditor
@@ -805,6 +907,17 @@ class Translations$themeEditor$zh extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '剩余 ${minutes} 分钟';
 	@override String get previewSwitch => '自动播放';
 	@override String get previewMutedText => '次要文字看起来是这样的';
+	@override String get themeSystemDescription => '跟踪您的设备的外观,并自动在光和黑暗之间交换。';
+	@override String get themeLightDescription => '使用光明的背景与黑暗文本。';
+	@override String get themeDarkDescription => '使用黑暗背景与光明文本。';
+	@override String get themeOledDescription => '使用近黑的表面,减少OLED屏幕上的光。';
+	@override String get themeEmberDescription => '使用温暖的红色和<unk>色的重点颜色。';
+	@override String get themeGlacierDescription => '使用冷蓝色焦点颜色。';
+	@override String get themeForestDescription => '使用混合的绿色和天然焦点颜色。';
+	@override String get themePlumDescription => '使用紫色和<unk>色的重点颜色。';
+	@override String get themePaperDescription => '使用温暖的纸类表面和印刷灵感的颜色。';
+	@override String get themeCustomDescription => '使用您在自定义主题编辑器中创建的颜色板。';
+	@override String get editorDescription => '选择调色板颜色，调整色相、饱和度、亮度或不透明度，并在保存前预览效果。也可以输入十六进制颜色值。';
 }
 
 // Path: search
@@ -1085,6 +1198,8 @@ class Translations$accessibility$zh extends Translations$accessibility$en {
 	@override String get largeTargets => '触摸目标';
 	@override String get largeTargetsHint => '共享控制器提供更多触摸和辅助导航空间。';
 	@override String get navigationHint => '使用 Tab 和 Shift+Tab 在控件之间移动，按 Enter 或空格键激活，按 Escape 或返回按钮关闭。打开书籍后，可调整缩放比例和阅读偏好。';
+	@override String get textSizeDescription => '在 PlezyNG 中扩展接口文本,以及您的设备的系统文本大小设置。';
+	@override String get boldTextHint => '加粗界面标签和消息的字重，让它们更容易辨认。';
 }
 
 // Path: tooltips
@@ -1168,6 +1283,8 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => '转码不可用 — 以原始画质播放';
 	@override String get subtitleUnavailableFallback => '无法加载所选字幕 — 将继续无字幕播放';
 	@override String get pipButton => '画中画';
+	@override String get openMiniPlayer => '開放小型玩家';
+	@override String get returnToFullPlayer => '回到全玩家';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get ambientLighting => '氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
@@ -1325,6 +1442,19 @@ class Translations$subtitlingStyling$zh extends Translations$subtitlingStyling$e
 	@override String get renderResolution => '渲染分辨率';
 	@override String get renderResolutionScreen => '屏幕分辨率';
 	@override String get renderResolutionVideo => '视频分辨率';
+	@override String get fontSizeDescription => '在此设备上设置字幕文本大小。';
+	@override String get textColorDescription => '选择用于字幕文本的颜色。';
+	@override String get borderSizeDescription => '设置字幕厚度周围的字幕文本。';
+	@override String get borderColorDescription => '选择用于子标题输出的颜色。';
+	@override String get backgroundColorDescription => '选择字幕文本背后的颜色。';
+	@override String get backgroundOpacityDescription => '设置字幕背景透明度:0%是清晰的,100%是坚固的。';
+	@override String get positionDescription => '垂直移动字幕:0%是视频的顶部,100%是底部。';
+	@override String get assOverrideDescription => '选择玩家是否遵循、调整、更换或删除在 ASS 子标题中嵌入的风格。';
+	@override late final Translations$subtitlingStyling$assOverrideOptions$zh assOverrideOptions = Translations$subtitlingStyling$assOverrideOptions$zh.internal(_root);
+	@override String get renderResolutionDescription => '选择使用的分辨率来拉斯特化图像和ASS子标题. 较低的Android尺寸可以减少演示工作,但看起来更柔软。';
+	@override late final Translations$subtitlingStyling$renderResolutionOptions$zh renderResolutionOptions = Translations$subtitlingStyling$renderResolutionOptions$zh.internal(_root);
+	@override String get boldDescription => '以更重的重量绘制字体。';
+	@override String get italicDescription => '在意大利语中绘制字幕文本。';
 }
 
 // Path: mpvConfig
@@ -1506,6 +1636,14 @@ class Translations$accountPreferences$zh extends Translations$accountPreferences
 	@override late final Translations$accountPreferences$watchedIndicatorOptions$zh watchedIndicatorOptions = Translations$accountPreferences$watchedIndicatorOptions$zh.internal(_root);
 	@override String get mediaReviewsVisibility => '评分与评论';
 	@override late final Translations$accountPreferences$mediaReviewsOptions$zh mediaReviewsOptions = Translations$accountPreferences$mediaReviewsOptions$zh.internal(_root);
+	@override String get preferredAudioLanguageDescription => '在此语言中更喜欢音频轨道,当服务器或播放器自动选择轨道时。';
+	@override String get preferredSubtitleLanguageDescription => '自动选择字幕时，优先选择此语言的字幕轨道。';
+	@override String get subtitleAccessibilityDescription => '自动选择字幕时，设置听障字幕（SDH）为优先或必选。';
+	@override String get forcedSubtitleDescription => '自动选择字幕时，选择优先使用强制字幕轨道，或是必须使用强制字幕轨道。';
+	@override String get watchedIndicatorDescription => '选择哪个媒体类型在服务器界面中获得观看的检查标志。';
+	@override String get mediaReviewsVisibilityDescription => '选择哪个观众和批判评分服务器在媒体页面上显示。';
+	@override String get subtitleModeDescription => '在此服务器帐户中自动启动子标题时选择。';
+	@override String get hubDescription => '这些偏好存储在您的媒体服务器帐户上,并可能适用于其他客户。';
 }
 
 // Path: discover
@@ -2404,6 +2542,7 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get dvRouteBaseLayerHlg => 'HLG 基础层';
 	@override String get dvRouteBaseLayerSdr => 'SDR 基础层';
 	@override String get dvRouteReshaped => 'RPU 重塑（gpu-next）';
+	@override String get dvRouteFelGraphActive => '实验 P7 FEL 图表(未合格)';
 	@override String get p7Conversion => 'P7 转换';
 	@override String get sampleRate => '采样率';
 	@override String get pixelFormat => '像素格式';
@@ -2464,6 +2603,13 @@ class Translations$externalPlayer$zh extends Translations$externalPlayer$en {
 	@override String get launchFailed => '无法打开外部播放器';
 	@override String appNotInstalled({required Object name}) => '${name} 未安装';
 	@override String get playInExternalPlayer => '在外部播放器中播放';
+	@override String get description => '选择另一个应用程序打开视频,可用的玩家取决于您的设备和安装的应用程序。';
+	@override String get systemDefaultDescription => '让操作系统使用默认应用程序打开视频。';
+	@override String playerOptionDescription({required Object player}) => '使用 ${player} 打开视频。';
+	@override String get playerNameDescription => '标签显示在玩家列表中。';
+	@override String get playerPackageDescription => '输入玩家应用程序的Android包名称,如com.example.player。';
+	@override String get playerCommandDescription => '输入该设备安装的播放器命令或可执行路径。';
+	@override String get playerUrlSchemeDescription => '输入 URL 格式和可选的 URL 模板,用于启动播放器。';
 }
 
 // Path: metadataEdit
@@ -2683,6 +2829,8 @@ class Translations$services$zh extends Translations$services$en {
 	@override late final Translations$services$oauthProxy$zh oauthProxy = Translations$services$oauthProxy$zh.internal(_root);
 	@override late final Translations$services$pendingAuth$zh pendingAuth = Translations$services$pendingAuth$zh.internal(_root);
 	@override late final Translations$services$libraryFilter$zh libraryFilter = Translations$services$libraryFilter$zh.internal(_root);
+	@override String get seerrDescription => '连接到 Seerr 或 Overseerr 以搜索标题并提交媒体请求。';
+	@override late final Translations$services$trackerDescriptions$zh trackerDescriptions = Translations$services$trackerDescriptions$zh.internal(_root);
 }
 
 // Path: addServer
@@ -2877,6 +3025,9 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => '到';
 	@override String get resetHeroButtonDescription => '关闭所有内容行的焦点横幅设置，并恢复顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行顺序保持不变。';
+	@override String get tapHeroCardDescription => '选择打字或选择一个英雄卡是否开始播放,或者打开它的细节。';
+	@override String get heroTapPlayDescription => '立即启动所选择的项目。';
+	@override String get heroTapDetailsDescription => '在选择行动之前,打开所选项目的详细信息。';
 }
 
 // Path: platform
@@ -2907,8 +3058,12 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get source => '源';
 	@override String get name => '名称';
 	@override String get endpoint => '服务器 URL';
+	@override String get smbEndpointHint => '示例：smb://nas/Movies';
+	@override String get smbEndpointInvalid => '请输入 SMB 服务器和一个共享文件夹。';
 	@override String get root => '文件夹或前缀';
+	@override String get smbFolderHelp => '留空以使用整个共享文件夹，或输入其中的某个文件夹。';
 	@override String get username => '用户名';
+	@override String get smbDomain => '域（可选）';
 	@override String get password => '密码';
 	@override String get token => 'API 标志';
 	@override String get accessKey => '关键 ID 访问';
@@ -2918,6 +3073,8 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get clientId => '客戶 ID';
 	@override String get clientSecret => 'OAuth 客户端秘密(仅限 Google 桌面)';
 	@override String get allowHttp => '允许在可信网络上使用未加密的 HTTP';
+	@override String get smbEncryption => '加密 SMB3 连接';
+	@override String get smbEncryptionHint => '当 NAS 支持时，使用 SMB3 加密。';
 	@override String get connect => '连接';
 	@override String get cancel => '取消';
 	@override String get save => '保存';
@@ -3062,12 +3219,23 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get useFiles => '使用文件和书籍';
 	@override String get cancelScan => '取消扫描';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => '示例：smb://nas/Movies';
-	@override String get smbEndpointInvalid => '请输入 SMB 服务器和一个共享文件夹。';
-	@override String get smbFolderHelp => '留空以使用整个共享文件夹，或输入其中的某个文件夹。';
-	@override String get smbDomain => '域（可选）';
-	@override String get smbEncryption => '加密 SMB3 连接';
-	@override String get smbEncryptionHint => '当 NAS 支持时，使用 SMB3 加密。';
+	@override String get offlineQuota => '离线下载限制';
+	@override String get offlineQuotaHelp => '设置离线副本、导入文件和排队中下载占用的最大空间。降低上限不会删除现有副本。';
+	@override String get offlineStorageUsage => '非线存储';
+	@override String get reservedStorage => '保留';
+	@override String get downloadQueue => '下载Queue';
+	@override String get downloadRunning => '下载';
+	@override String get downloadQueued => '等待';
+	@override String get downloadPaused => '休息';
+	@override String get downloadFailed => '需要退休';
+	@override String get importing => '进口';
+	@override String get importInterrupted => '进口中断 · 删除清理';
+	@override String get errorQuotaExceeded => '已达到离线存储上限。请提高上限或移除已下载的副本。';
+	@override String get errorStorageLow => '没有足够的免费设备存储,以保留保护备份。';
+	@override String get errorStorageUnavailable => 'PlezyNG无法检查免费设备存储,所以写作停止了。';
+	@override String get removeDownloadJob => '删除下载';
+	@override String get downloadAlreadyComplete => '此下载完成之前,它可以被删除. 该项目现在可用于离线。';
+	@override String get confirmRemoveDownloadJob => '要移除此下载并丢弃已下载的部分数据吗？阅读位置和笔记会保留。';
 }
 
 // Path: lending
@@ -3187,6 +3355,12 @@ class Translations$audiobook$zh extends Translations$audiobook$en {
 	@override String get statusFinished => '结束';
 	@override String get goToTime => '走到时间';
 	@override String get timeHelp => '时间: 分钟: 秒或 分钟: 秒';
+	@override String get recoveryHelp => '移动或修复同步数据前，请先导出近期的加密备份。导入内容会与当前状态合并，不会覆盖本地同步历史。请另行保存同步代码。';
+	@override String get recoveryExport => '输出加密恢复文件';
+	@override String get recoveryImport => '输入加密恢复文件';
+	@override String get recoveryImportConfirm => '将此加密恢复文件与当前阅读位置和笔记相结合吗?现有历史记录将被保留. 共享图书馆和项目 ID 不包含; 在进口之前,在每个设备上设置匹配 ID。';
+	@override String get recoveryExported => '加密恢复文件保存。';
+	@override String get recoveryImported => '恢复数据合并。';
 }
 
 // Path: sourceSetup
@@ -3290,6 +3464,23 @@ class Translations$sourceSetup$zh extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '已选客户端身份凭据：${name}';
 	@override String subtitleRating({required Object rating}) => '评分 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '正在下载字幕：${title}';
+	@override String get sharedEntryPair => '将此项目配对';
+	@override String get sharedEntryPairHelp => '在每台设备上为此项目输入相同的 ID。使用稳定的共享标识符，或生成一个并复制到对应项目。只有版本的文件类型、大小和顺序都一致时，阅读进度才会关联。留空会移除此映射。';
+	@override String get sharedEntryId => '共享项目 ID';
+	@override String get generateSharedEntryId => '创建共享项目 ID';
+	@override String get sharedLibraryId => '共享图书馆 ID(可选)';
+	@override String get sharedLibraryHelp => '使用相同 ID 在開啟相同圖書館的裝置上. 這個公共 ID 有助於在不同的來源連接中進行閱讀進步和筆記; 它不是密碼. 当提供商使用不同的項目 ID 時,將這些項目從其細節屏幕組合。';
+	@override String get sharedLibraryInvalid => '使用 8 至 100 个字母、数字、点、字幕或字符。';
+	@override String get generateSharedLibraryId => '创建共享图书馆 ID';
+	@override String get nfsReadAhead => 'NFS Read-ahead 请求';
+	@override String get nfsReadAheadHelp => '更多的平行阅读可以改善快速NAS或网络的通道。使用1如果服务器限制当前请求。';
+	@override String get nfsReadTest => '测量NFS阅读性能';
+	@override String get nfsReadTestHelp => '从最大的文件中读到64 MiB,以测量这个NAS连接,这使用网络带宽。';
+	@override String get nfsQualificationResult => 'NFS 阅读测量';
+	@override String get nfsReadBytes => '数据阅读';
+	@override String get nfsReadSpeed => '测量速度';
+	@override String get nfsReadRequests => '阅读请求';
+	@override String get sharedEntryConflict => '此共享项目 ID 已与本图书馆中的另一个项目相匹配. 选择不同的 ID。';
 }
 
 // Path: comics
@@ -3382,6 +3573,15 @@ class Translations$games$zh extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3462,6 +3662,19 @@ class Translations$common$mediaKind$zh extends Translations$common$mediaKind$en 
 	@override String get clip => '短片';
 	@override String get photo => '照片';
 	@override String get folder => '文件夹';
+}
+
+// Path: settings.startupSectionOptions
+class Translations$settings$startupSectionOptions$zh extends Translations$settings$startupSectionOptions$en {
+	Translations$settings$startupSectionOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => '从连接的发现来源打开建议和项目。';
+	@override String get libraries => '打开您的连接媒体图书馆。';
+	@override String get liveTv => '在服务器提供时打开直播电视;否则,初创公司将返回家庭。';
+	@override String get search => '开放媒体搜索';
 }
 
 // Path: themeEditor.slots
@@ -3550,6 +3763,35 @@ class Translations$videoControls$pipErrors$zh extends Translations$videoControls
 	@override String unknown({required Object error}) => '发生错误：${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class Translations$subtitlingStyling$assOverrideOptions$zh extends Translations$subtitlingStyling$assOverrideOptions$en {
+	Translations$subtitlingStyling$assOverrideOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => '保持字体、颜色、尺寸和位置写在子标题文件中。';
+	@override String get yes => '允许玩家的字幕风格设置调整 ASS 字幕。';
+	@override String get scale => '应用播放器风格和规模嵌入式尺寸,以匹配视频尺寸。';
+	@override String get force => '取代嵌入式 ASS 风格与玩家的字幕风格。';
+	@override String get strip => '删除嵌入式 ASS 格式化,并清晰地显示字幕文本。';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class Translations$subtitlingStyling$renderResolutionOptions$zh extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	Translations$subtitlingStyling$renderResolutionOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => '以全显示表面分辨率为最清晰的结果。';
+	@override String get video => '以视频分辨率为基准进行渲染，这可以减少高分辨率显示器上的处理量。';
+	@override String get threeQuarter => '以75%的显示表面分辨率为低效节约。';
+	@override String get half => '放入 50% 的显示表面分辨率,以减少工作,与软的边缘。';
+	@override String get third => '以显示表面分辨率的三分之一进行渲染，以减少处理量并获得较柔和的边缘。';
+	@override String get quarter => '在显示表面分辨率的四分之一下降,以减少工作,最柔软的结果。';
+}
+
 // Path: accountPreferences.groups
 class Translations$accountPreferences$groups$zh extends Translations$accountPreferences$groups$en {
 	Translations$accountPreferences$groups$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -3592,6 +3834,10 @@ class Translations$accountPreferences$subtitleAccessibilityOptions$zh extends Tr
 	@override String get preferSdh => '优先 SDH 字幕';
 	@override String get onlySdh => '仅 SDH 字幕';
 	@override String get onlyNonSdh => '仅非 SDH 字幕';
+	@override String get preferNonSdhDescription => '偏好标准字幕,当既有标准和SDH版本时。';
+	@override String get preferSdhDescription => '偏好在可用时使用 SDH 字幕,但允许标准字幕作为落后。';
+	@override String get onlySdhDescription => '只使用 SDH 字幕;不要返回标准字幕。';
+	@override String get onlyNonSdhDescription => '只使用标准字幕;排除 SDH 字幕。';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3605,6 +3851,10 @@ class Translations$accountPreferences$forcedSubtitleOptions$zh extends Translati
 	@override String get preferForced => '优先强制字幕';
 	@override String get onlyForced => '仅强制字幕';
 	@override String get onlyNonForced => '仅非强制字幕';
+	@override String get preferNonForcedDescription => '更喜欢定期的字幕,但允许强迫轨道作为落后。';
+	@override String get preferForcedDescription => '偏好在可用时强迫行列,但允许定期字幕作为落后。';
+	@override String get onlyForcedDescription => '只使用被强制标记的轨道。';
+	@override String get onlyNonForcedDescription => '排除被强制标记的轨道。';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3618,6 +3868,10 @@ class Translations$accountPreferences$watchedIndicatorOptions$zh extends Transla
 	@override String get moviesAndShows => '电影和电视剧';
 	@override String get movies => '仅电影';
 	@override String get shows => '仅电视剧';
+	@override String get noneDescription => '不要显示已观看的检查标志。';
+	@override String get moviesAndShowsDescription => '显示观看的电影和电视节目检查标志。';
+	@override String get moviesDescription => '只为电影显示观看标签。';
+	@override String get showsDescription => '只为电视节目显示观看的检查标志。';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3631,6 +3885,10 @@ class Translations$accountPreferences$mediaReviewsOptions$zh extends Translation
 	@override String get usersOnly => '仅用户';
 	@override String get criticsOnly => '仅影评人';
 	@override String get nobody => '隐藏';
+	@override String get usersAndCriticsDescription => '显示用户评分和批判性评分。';
+	@override String get usersOnlyDescription => '显示用户提交的评分和评论。';
+	@override String get criticsOnlyDescription => '显示批判性评分和评论。';
+	@override String get nobodyDescription => '隐藏评分和评论。';
 }
 
 // Path: discover.findNext
@@ -4419,6 +4677,21 @@ class Translations$services$libraryFilter$zh extends Translations$services$libra
 	@override String get modeHintWhitelist => '仅同步下方勾选的媒体库。';
 	@override String get libraries => '媒体库';
 	@override String get noLibraries => '没有可用的媒体库';
+	@override String get modeDescription => '选择是阻止已勾选的媒体库同步，还是仅同步已勾选的媒体库。';
+}
+
+// Path: services.trackerDescriptions
+class Translations$services$trackerDescriptions$zh extends Translations$services$trackerDescriptions$en {
+	Translations$services$trackerDescriptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => '与您的 Trakt 帐户同步观看的节目和电影。';
+	@override String get mal => '同步动画列表,并通过 MyAnimeList 观看进展。';
+	@override String get anilist => '同步动画列表,并与 AniList 观看进展。';
+	@override String get simkl => '同步观看电影,电视节目和动画与Simkl。';
+	@override String get mdblist => '在推荐和探索中显示 MDBList 评分和列表。';
 }
 
 /// The flat map containing all translations for locale <zh>.
@@ -4476,6 +4749,7 @@ extension on TranslationsZh {
 			'appIcon.names.strata' => '地层',
 			'appIcon.names.facet' => '切面',
 			'appIcon.names.tilde' => '波浪号',
+			'appIcon.description' => '选择由您的设备启动器显示的图标. 预览显示每个选项看起来如何。',
 			'auth.signInWithPlex' => '使用 Plex 登录',
 			'auth.showQRCode' => '显示二维码',
 			'auth.authenticate' => '验证',
@@ -4497,6 +4771,32 @@ extension on TranslationsZh {
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
+			'common.closeMiniPlayer' => '附近小型玩家',
+			'common.closeWorkspaceWindow' => '附近窗口',
+			'common.returnToFullView' => '回到全景',
+			'common.manageMediaSessions' => '管理媒体会议',
+			'common.hideMediaSessions' => '隐藏媒体会议',
+			'common.mediaSessions' => '媒體會議',
+			'common.mediaSessionsHint' => '选择会话可将其切换到前台。停放会隐藏窗口但保持会话运行。返回会在完整视图中打开会话；关闭则结束会话。',
+			'common.sessionInWorkspace' => '在工作场所',
+			'common.sessionParked' => '停车',
+			'common.sessionFullscreen' => '全屏幕',
+			'common.switchToNextWindow' => '与下一个窗口交换',
+			'common.moveWindow' => '移动窗口',
+			'common.finishMovingWindow' => '结束移动窗口',
+			'common.moveWindowHint' => '长压和拖动窗口移动它. 这种控制也允许箭头密钥的运动。',
+			'common.movingWindowHelp' => '拖到移动 · 投键调整 · 输入存储器 · 逃避取消',
+			'common.resizeWindow' => '修复窗口',
+			'common.resizeWindowHint' => '拖这个手套或使用箭头键重新调整窗口。',
+			'common.workspaceWindowHint' => '使用移动控件，或长按并拖动窗口来移动。使用调整大小手柄来调整窗口大小。',
+			'common.workspacePaneHint' => '选择这个面板以集中它. 使用其全屏控制来扩展。',
+			'common.workspaceWindowLabel' => ({required Object title}) => '會議窗口: ${title}',
+			'common.workspaceTitleHint' => '选择以聚焦窗口。拖动标题栏来移动；使用全屏按钮展开。',
+			'common.moveToSessionTray' => '转到Session Tray',
+			'common.moveToSessionTrayHint' => '打开此会议可用,而不显示其窗口。',
+			'common.closeSessionHint' => '关闭此窗口并结束会议。',
+			'common.sideBySideLayout' => '交换到侧面布局',
+			'common.floatingWindows' => '转换为浮动窗口',
 			'common.clear' => '清除',
 			'common.reset' => '重置',
 			'common.later' => '稍后',
@@ -4914,6 +5214,8 @@ extension on TranslationsZh {
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
 			'settings.audioPassthroughDescriptionApple' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。在 iOS、iPadOS 和 tvOS 26 或更高版本上，TrueHD Atmos 和 DTS:X 以空间音频播放。其他 DTS 和 TrueHD 音轨以多声道 PCM 播放。如果没有声音，请关闭。',
 			'settings.audioPassthroughOverriddenByNormalization' => '响度标准化开启时停用',
 			'settings.audioChannelLimit' => '音频声道',
@@ -4940,9 +5242,14 @@ extension on TranslationsZh {
 			'settings.dvConversionNativeDescription' => '强制原生 DV7 并禁止重试 DV 转换',
 			'settings.dvConversionDv81Description' => '强制内联 RPU 转换为 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC',
+			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
+			'settings.dvCompatibilityFallback' => '兼容性回退',
+			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
+			'settings.dvExperimentDiagnostics' => '视频实验日志',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
 			'settings.disableDolbyVision' => '禁用 Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => '文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision',
 			'settings.hdrSdrConversion' => 'HDR 转 SDR',
 			'settings.hdrSdrConversionDescription' => '选择在显示器无法显示 HDR 时由谁转换 HDR 视频。',
@@ -5028,13 +5335,84 @@ extension on TranslationsZh {
 			'settings.regionFormatDescription' => '选择日期、数字和计量单位的显示方式。',
 			'settings.metadataLanguage' => '元数据语言',
 			'settings.metadataLanguageDescription' => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。',
-			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
-			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
-			'settings.dvCompatibilityFallback' => '兼容性回退',
-			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
-			'settings.dvExperimentDiagnostics' => '视频实验日志',
-			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
+			'settings.enterFullscreenOnPlaybackStart' => '在播放开始时输入全屏',
+			'settings.enterFullscreenOnPlaybackStartDescription' => '打开桌面视频在播放开始时全屏',
+			'settings.extendVideoIntoDisplayCutout' => '将视频扩展到显示器中',
+			'settings.extendVideoIntoDisplayCutoutDescription' => '让全屏视频在Android手机上使用相机切割',
+			'settings.languageDescription' => '选择用于 PlezyNG 控制和消息的语言. 跟踪系统跟踪您的设备语言。',
+			'settings.themeDescription' => '选择应用程序中使用的颜色和对比。',
+			'settings.libraryDensityDescription' => '改变每个行中的图书馆卡的数量。',
+			'settings.displayScaleDescription' => '在此车屏幕上重新设置接口,而无需改变您的设备上的文本大小。',
+			'settings.themeSongVolumeDescription' => '设置主题歌曲的数量与其他音频相比。',
+			'settings.viewModeDescription' => '选择图书馆项目是否显示为网上的海报或作为一个小型列表。',
+			'settings.gridViewDescription' => '安排图书馆项目在海报的行和列。',
+			'settings.listViewDescription' => '在垂直列表中显示图书馆项目,每个项目有更多的文本。',
+			'settings.gridSpacingDescription' => '在图书馆网中设置海报之间的差距。',
+			'settings.gridSpacingTightDescription' => '在屏幕上插入更多的海报,有较小的差距。',
+			'settings.gridSpacingNormalDescription' => '使用海报之间的标准差距。',
+			'settings.gridSpacingSpaciousDescription' => '添加海报之间更大的差距,以获得更多的分离。',
+			'settings.episodePosterModeDescription' => '选择哪个艺术作品出现在节目卡上。',
+			'settings.seriesPosterDescription' => '使用节目系列的海报为每个集合。',
+			'settings.seasonPosterDescription' => '使用每集的季节海报,随时可用。',
+			'settings.episodeThumbnailDescription' => '在可用时使用集中的框架。',
+			'settings.continueWatchingActionDescription' => '选择当您启动继续观看卡时会发生什么。',
+			'settings.continueWatchingPlayDescription' => '立即启动电影或节目。',
+			'settings.continueWatchingDetailsDescription' => '首先打开标题页面,以便您可以查看详细信息并选择一个行动。',
+			'settings.episodeActionDescription' => '选择当您启动一个节目卡时会发生什么。',
+			'settings.episodePlayDescription' => '立即开始事件。',
+			'settings.episodeDetailsDescription' => '在播放之前打开集片页面。',
+			'settings.contentScreensaverDelayDescription' => '在展示艺术作品之前,选择 PlezyNG 等待多久没有输入。',
+			'settings.continueWatchingRowSizeDescription' => '在继续观看行中选择卡片的尺寸。',
+			'settings.rowSizeCompactDescription' => '显示较小的卡片,以便在行列中添加更多的项目。',
+			'settings.rowSizeStandardDescription' => '使用标准卡尺寸。',
+			'settings.rowSizeLargeDescription' => '显示更大的卡片,更多艺术作品的细节。',
+			'settings.visualEffectsDescription' => '选择该设备的动画和艺术作品效果预算。',
+			'settings.visualEffectsFullDescription' => '在每个设备上使用完整的动画和艺术作品效果。',
+			'settings.startupSectionDescription' => '在 PlezyNG 启动时选择哪个部分打开。',
+			'settings.startupSectionOptions.discover' => '从连接的发现来源打开建议和项目。',
+			'settings.startupSectionOptions.libraries' => '打开您的连接媒体图书馆。',
+			'settings.startupSectionOptions.liveTv' => '在服务器提供时打开直播电视;否则,初创公司将返回家庭。',
+			'settings.startupSectionOptions.search' => '开放媒体搜索',
+			'settings.smallSkipDurationDescription' => '设置由短后方向移动的距离,并向前寻找控制。',
+			'settings.largeSkipDurationDescription' => '设置远程移动的长后方向和向前寻找控制。',
+			'settings.rewindOnResumeDescription' => '在重新播放视频时,以此金额返回播放。',
+			'settings.defaultSleepTimerDescription' => '设置睡眠时间开始时使用的初始时间。',
+			'settings.playNextCountdownDescription' => '等待很久,直到下一集开始,设置到0即时开始。',
+			'settings.autoSkipDelaySettingDescription' => '适用于当一个输入、信用或广告设置自动转换时。',
+			'settings.downmixCenterBoostDescription' => '在周围的音频被混合到斯特里奥时,在中间频道上增加对话。',
+			'settings.displaySwitchDelayDescription' => '在更改显示模式之前等待,以便电视或接收器可以完成其以前的交换。',
+			'settings.playerBackendDescription' => '选择哪个播放引擎在该设备上扫描和播放视频。',
+			'settings.exoPlayerDescription' => '使用 Android 的本地 Media3 基于播放器和支持的硬件路径。',
+			'settings.mpvDescription' => '使用 mpv,它暴露了额外的播放、子标题和视频处理控制。',
+			'settings.scopeOffDescription' => '只保留当前播放会的更改。',
+			'settings.scopeGlobalDescription' => '重复使用每个图书馆和标题的相同值。',
+			'settings.scopeLibraryDescription' => '记住每个图书馆的单独价值。',
+			'settings.scopeTitleDescription' => '记住每个节目或电影的单独值。',
+			'settings.specialsOrderingServerDescription' => '保持媒体服务器提供的集合订单。',
+			'settings.specialsOrderingAirDateDescription' => '根据他们的空气日期,将特殊物品列入常规事件中。',
+			'settings.specialsOrderingLastDescription' => '每個特別的位置,在定期季節後。',
+			'settings.skipIntroModeDescription' => '选择输入标记器是否正常播放,显示滑动按钮或自动滑动。',
+			'settings.skipCreditsModeDescription' => '选择信用是否正常播放,显示滑动按钮或自动滑动。',
+			'settings.skipAdsModeDescription' => '选择是否被发现的广告正常播放,显示滑动按钮或自动滑动。',
+			'settings.playbackBufferAutoDescription' => '让活跃的玩家选择其正常的泡沫大小。',
+			'settings.playbackBufferLargeDescription' => '保持更多媒体在播放前准备;这使用更多的内存。',
+			'settings.playbackBufferExtraLargeDescription' => '保持最大的阅读面板泡沫;这使用最多的记忆。',
+			'settings.defaultQualityDescription' => '设置服务器转码流的默认视频分辨率和最高码率。',
+			'settings.cellularQualityDescription' => '超越默认质量,当设备使用单细胞连接时。',
+			'settings.remoteQualityDescription' => '通过远程连接连接到服务器时超越默认质量。',
+			'settings.qualityPresetOriginalDescription' => '以源文件可用的画质播放，不请求服务器转码。',
+			'settings.qualityPresetTranscodeOptionDescription' => '请服务器使用上方显示的分辨率和码率进行转码。',
+			'settings.qualityPresetSameAsDefaultDescription' => '使用默认品质中选择的质量。',
+			'settings.musicQualityDescription' => '设置向服务器请求的最高音频码率；选择“原始”则保留源音频流。',
+			'settings.musicQualityOriginalDescription' => '播放源音频,无需Bitrate加密的Transcode。',
+			'settings.musicQualityTranscodeOptionDescription' => '请求服务器转代码接近上面的比特率;实际输出可能有所不同。',
+			'settings.maxVolumeInputLabel' => '最大容量(%)',
+			'settings.checkForUpdatesDescription' => '现在检查是否有更新的PlezyNG版本。',
+			'settings.appearanceDescription' => '选择应用程序主题,并调整图书馆卡、主行和导航。',
+			'settings.prerollLibraryDescription' => '选择包含电影预角色可用的剪辑的图书馆。',
+			'settings.prerollSelectionDescription' => '选择从所选图书馆播放的剪辑在电影之前。',
+			'settings.contentScreensaverDelayOptionDescription' => '在显示屏保存艺术作品之前等待这些无输入的几分钟。',
+			'settings.videoCodecOptionDescription' => '允许在支持时直接播放此代码器. 未经检查的代码被媒体服务器编码。',
 			'themeEditor.builtIn' => '内置',
 			'themeEditor.presets' => '预设',
 			'themeEditor.custom' => '自定义',
@@ -5073,6 +5451,17 @@ extension on TranslationsZh {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '剩余 ${minutes} 分钟',
 			'themeEditor.previewSwitch' => '自动播放',
 			'themeEditor.previewMutedText' => '次要文字看起来是这样的',
+			'themeEditor.themeSystemDescription' => '跟踪您的设备的外观,并自动在光和黑暗之间交换。',
+			'themeEditor.themeLightDescription' => '使用光明的背景与黑暗文本。',
+			'themeEditor.themeDarkDescription' => '使用黑暗背景与光明文本。',
+			'themeEditor.themeOledDescription' => '使用近黑的表面,减少OLED屏幕上的光。',
+			'themeEditor.themeEmberDescription' => '使用温暖的红色和<unk>色的重点颜色。',
+			'themeEditor.themeGlacierDescription' => '使用冷蓝色焦点颜色。',
+			'themeEditor.themeForestDescription' => '使用混合的绿色和天然焦点颜色。',
+			'themeEditor.themePlumDescription' => '使用紫色和<unk>色的重点颜色。',
+			'themeEditor.themePaperDescription' => '使用温暖的纸类表面和印刷灵感的颜色。',
+			'themeEditor.themeCustomDescription' => '使用您在自定义主题编辑器中创建的颜色板。',
+			'themeEditor.editorDescription' => '选择调色板颜色，调整色相、饱和度、亮度或不透明度，并在保存前预览效果。也可以输入十六进制颜色值。',
 			'search.hint' => '搜索电影、剧集、音乐…',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -5318,6 +5707,8 @@ extension on TranslationsZh {
 			'accessibility.largeTargets' => '触摸目标',
 			'accessibility.largeTargetsHint' => '共享控制器提供更多触摸和辅助导航空间。',
 			'accessibility.navigationHint' => '使用 Tab 和 Shift+Tab 在控件之间移动，按 Enter 或空格键激活，按 Escape 或返回按钮关闭。打开书籍后，可调整缩放比例和阅读偏好。',
+			'accessibility.textSizeDescription' => '在 PlezyNG 中扩展接口文本,以及您的设备的系统文本大小设置。',
+			'accessibility.boldTextHint' => '加粗界面标签和消息的字重，让它们更容易辨认。',
 			'tooltips.shufflePlay' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
@@ -5337,6 +5728,8 @@ extension on TranslationsZh {
 			'videoControls.sleepTimerEndOfVideo' => '当前视频结束时',
 			'videoControls.sleepTimerStopAtHeader' => '停止于',
 			'videoControls.sleepTimerDurationHeader' => '定时器',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => '播放将在此视频结束时暂停',
 			'videoControls.stillWatching' => '还在看吗？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds} 秒后暂停',
@@ -5371,6 +5764,8 @@ extension on TranslationsZh {
 			'videoControls.transcodeUnavailableFallback' => '转码不可用 — 以原始画质播放',
 			'videoControls.subtitleUnavailableFallback' => '无法加载所选字幕 — 将继续无字幕播放',
 			'videoControls.pipButton' => '画中画',
+			'videoControls.openMiniPlayer' => '開放小型玩家',
+			'videoControls.returnToFullPlayer' => '回到全玩家',
 			'videoControls.aspectRatioButton' => '宽高比',
 			'videoControls.ambientLighting' => '氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
@@ -5455,8 +5850,6 @@ extension on TranslationsZh {
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描“${title}”媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新“${title}”的元数据…',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新“${title}”的元数据',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据：${error}',
 			'messages.logoutConfirm' => '确定要退出登录吗？',
@@ -5516,6 +5909,28 @@ extension on TranslationsZh {
 			'subtitlingStyling.renderResolution' => '渲染分辨率',
 			'subtitlingStyling.renderResolutionScreen' => '屏幕分辨率',
 			'subtitlingStyling.renderResolutionVideo' => '视频分辨率',
+			'subtitlingStyling.fontSizeDescription' => '在此设备上设置字幕文本大小。',
+			'subtitlingStyling.textColorDescription' => '选择用于字幕文本的颜色。',
+			'subtitlingStyling.borderSizeDescription' => '设置字幕厚度周围的字幕文本。',
+			'subtitlingStyling.borderColorDescription' => '选择用于子标题输出的颜色。',
+			'subtitlingStyling.backgroundColorDescription' => '选择字幕文本背后的颜色。',
+			'subtitlingStyling.backgroundOpacityDescription' => '设置字幕背景透明度:0%是清晰的,100%是坚固的。',
+			'subtitlingStyling.positionDescription' => '垂直移动字幕:0%是视频的顶部,100%是底部。',
+			'subtitlingStyling.assOverrideDescription' => '选择玩家是否遵循、调整、更换或删除在 ASS 子标题中嵌入的风格。',
+			'subtitlingStyling.assOverrideOptions.no' => '保持字体、颜色、尺寸和位置写在子标题文件中。',
+			'subtitlingStyling.assOverrideOptions.yes' => '允许玩家的字幕风格设置调整 ASS 字幕。',
+			'subtitlingStyling.assOverrideOptions.scale' => '应用播放器风格和规模嵌入式尺寸,以匹配视频尺寸。',
+			'subtitlingStyling.assOverrideOptions.force' => '取代嵌入式 ASS 风格与玩家的字幕风格。',
+			'subtitlingStyling.assOverrideOptions.strip' => '删除嵌入式 ASS 格式化,并清晰地显示字幕文本。',
+			'subtitlingStyling.renderResolutionDescription' => '选择使用的分辨率来拉斯特化图像和ASS子标题. 较低的Android尺寸可以减少演示工作,但看起来更柔软。',
+			'subtitlingStyling.renderResolutionOptions.screen' => '以全显示表面分辨率为最清晰的结果。',
+			'subtitlingStyling.renderResolutionOptions.video' => '以视频分辨率为基准进行渲染，这可以减少高分辨率显示器上的处理量。',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => '以75%的显示表面分辨率为低效节约。',
+			'subtitlingStyling.renderResolutionOptions.half' => '放入 50% 的显示表面分辨率,以减少工作,与软的边缘。',
+			'subtitlingStyling.renderResolutionOptions.third' => '以显示表面分辨率的三分之一进行渲染，以减少处理量并获得较柔和的边缘。',
+			'subtitlingStyling.renderResolutionOptions.quarter' => '在显示表面分辨率的四分之一下降,以减少工作,最柔软的结果。',
+			'subtitlingStyling.boldDescription' => '以更重的重量绘制字体。',
+			'subtitlingStyling.italicDescription' => '在意大利语中绘制字幕文本。',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -5652,11 +6067,19 @@ extension on TranslationsZh {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => '优先 SDH 字幕',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => '仅 SDH 字幕',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => '仅非 SDH 字幕',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => '偏好标准字幕,当既有标准和SDH版本时。',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => '偏好在可用时使用 SDH 字幕,但允许标准字幕作为落后。',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => '只使用 SDH 字幕;不要返回标准字幕。',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => '只使用标准字幕;排除 SDH 字幕。',
 			'accountPreferences.forcedSubtitles' => '强制字幕',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => '优先非强制字幕',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => '优先强制字幕',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => '仅强制字幕',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => '仅非强制字幕',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => '更喜欢定期的字幕,但允许强迫轨道作为落后。',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => '偏好在可用时强迫行列,但允许定期字幕作为落后。',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => '只使用被强制标记的轨道。',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => '排除被强制标记的轨道。',
 			'accountPreferences.displayMissingEpisodes' => '显示缺失剧集',
 			'accountPreferences.displayMissingEpisodesDescription' => '列出服务器知道但没有对应文件的剧集。',
 			'accountPreferences.hidePlayedInLatest' => '在“最新”中隐藏已观看项目',
@@ -5670,11 +6093,27 @@ extension on TranslationsZh {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => '电影和电视剧',
 			'accountPreferences.watchedIndicatorOptions.movies' => '仅电影',
 			'accountPreferences.watchedIndicatorOptions.shows' => '仅电视剧',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => '不要显示已观看的检查标志。',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => '显示观看的电影和电视节目检查标志。',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => '只为电影显示观看标签。',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => '只为电视节目显示观看的检查标志。',
 			'accountPreferences.mediaReviewsVisibility' => '评分与评论',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => '用户和影评人',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => '仅用户',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => '仅影评人',
 			'accountPreferences.mediaReviewsOptions.nobody' => '隐藏',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => '显示用户评分和批判性评分。',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => '显示用户提交的评分和评论。',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => '显示批判性评分和评论。',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => '隐藏评分和评论。',
+			'accountPreferences.preferredAudioLanguageDescription' => '在此语言中更喜欢音频轨道,当服务器或播放器自动选择轨道时。',
+			'accountPreferences.preferredSubtitleLanguageDescription' => '自动选择字幕时，优先选择此语言的字幕轨道。',
+			'accountPreferences.subtitleAccessibilityDescription' => '自动选择字幕时，设置听障字幕（SDH）为优先或必选。',
+			'accountPreferences.forcedSubtitleDescription' => '自动选择字幕时，选择优先使用强制字幕轨道，或是必须使用强制字幕轨道。',
+			'accountPreferences.watchedIndicatorDescription' => '选择哪个媒体类型在服务器界面中获得观看的检查标志。',
+			'accountPreferences.mediaReviewsVisibilityDescription' => '选择哪个观众和批判评分服务器在媒体页面上显示。',
+			'accountPreferences.subtitleModeDescription' => '在此服务器帐户中自动启动子标题时选择。',
+			'accountPreferences.hubDescription' => '这些偏好存储在您的媒体服务器帐户上,并可能适用于其他客户。',
 			'discover.title' => '发现',
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
@@ -5803,6 +6242,8 @@ extension on TranslationsZh {
 			'libraries.all' => '全部',
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描“${title}”吗？',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析“${title}”吗？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新“${title}”的元数据吗？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空“${title}”的回收站吗？',
@@ -5969,8 +6410,6 @@ extension on TranslationsZh {
 			'explore.mdblistShelves.nameHint' => '请点击使用源名单名称。',
 			'explore.mdblistShelves.add' => '添加Shelf',
 			'explore.mdblistShelves.save' => '保存沙地',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移动 ${title} 升',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '移动 ${title} 下载',
 			'explore.mdblistShelves.unavailable' => '此列表不可用 退出或在设置中删除其架子。',
@@ -6317,6 +6756,8 @@ extension on TranslationsZh {
 			'watchTogether.connecting' => '正在连接…',
 			'watchTogether.relayPublic' => '房间使用公共 Open Watch Party 中继服务器。',
 			'watchTogether.relayCustom' => ({required Object url}) => '房间使用你位于 ${url} 的中继服务器。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => '最近的房间',
 			'watchTogether.roomActions' => '房间操作',
 			'watchTogether.renameRoom' => '重命名房间',
@@ -6483,8 +6924,6 @@ extension on TranslationsZh {
 			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下载 ${file} — 点击以完成',
 			'downloads.partialDownloadClickToComplete' => '已部分下载 — 点击以完成',
 			'downloads.deleting' => '正在删除…',
@@ -6743,6 +7182,7 @@ extension on TranslationsZh {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG 基础层',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR 基础层',
 			'performanceOverlay.dvRouteReshaped' => 'RPU 重塑（gpu-next）',
+			'performanceOverlay.dvRouteFelGraphActive' => '实验 P7 FEL 图表(未合格)',
 			'performanceOverlay.p7Conversion' => 'P7 转换',
 			'performanceOverlay.sampleRate' => '采样率',
 			'performanceOverlay.pixelFormat' => '像素格式',
@@ -6794,6 +7234,13 @@ extension on TranslationsZh {
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
+			'externalPlayer.description' => '选择另一个应用程序打开视频,可用的玩家取决于您的设备和安装的应用程序。',
+			'externalPlayer.systemDefaultDescription' => '让操作系统使用默认应用程序打开视频。',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => '使用 ${player} 打开视频。',
+			'externalPlayer.playerNameDescription' => '标签显示在玩家列表中。',
+			'externalPlayer.playerPackageDescription' => '输入玩家应用程序的Android包名称,如com.example.player。',
+			'externalPlayer.playerCommandDescription' => '输入该设备安装的播放器命令或可执行路径。',
+			'externalPlayer.playerUrlSchemeDescription' => '输入 URL 格式和可选的 URL 模板,用于启动播放器。',
 			'metadataEdit.editMetadata' => '编辑…',
 			'metadataEdit.screenTitle' => '编辑元数据',
 			'metadataEdit.basicInfo' => '基本信息',
@@ -6823,6 +7270,8 @@ extension on TranslationsZh {
 			'metadataEdit.metadataUpdateFailed' => '元数据更新失败',
 			'metadataEdit.artworkUpdated' => '封面图片已更新',
 			'metadataEdit.artworkUpdateFailed' => '封面图片更新失败',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => '没有可用的封面图片',
 			'metadataEdit.artworkOption' => ({required Object index}) => '封面图片选项 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '封面图片选项 ${index}，已选择',
@@ -6983,6 +7432,13 @@ extension on TranslationsZh {
 			'services.libraryFilter.modeHintWhitelist' => '仅同步下方勾选的媒体库。',
 			'services.libraryFilter.libraries' => '媒体库',
 			'services.libraryFilter.noLibraries' => '没有可用的媒体库',
+			'services.libraryFilter.modeDescription' => '选择是阻止已勾选的媒体库同步，还是仅同步已勾选的媒体库。',
+			'services.seerrDescription' => '连接到 Seerr 或 Overseerr 以搜索标题并提交媒体请求。',
+			'services.trackerDescriptions.trakt' => '与您的 Trakt 帐户同步观看的节目和电影。',
+			'services.trackerDescriptions.mal' => '同步动画列表,并通过 MyAnimeList 观看进展。',
+			'services.trackerDescriptions.anilist' => '同步动画列表,并与 AniList 观看进展。',
+			'services.trackerDescriptions.simkl' => '同步观看电影,电视节目和动画与Simkl。',
+			'services.trackerDescriptions.mdblist' => '在推荐和探索中显示 MDBList 评分和列表。',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '添加 ${product} 服务器',
 			'addServer.serverUrls' => '服务器 URL',
 			'addServer.serverUrlsHelper' => '可输入多个 URL，并用逗号分隔。',
@@ -6997,8 +7453,6 @@ extension on TranslationsZh {
 			'addServer.couldNotReachServer' => ({required Object error}) => '无法连接到服务器：${error}',
 			'addServer.signInFailed' => ({required Object error}) => '登录失败：${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 失败：${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => '使用 Plex 登录',
 			'addServer.pinExpired' => 'PIN 在登录前已过期。请重试。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '注册账户失败：${error}',
@@ -7152,6 +7606,9 @@ extension on TranslationsZh {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => '到',
 			'homeLayout.resetHeroButtonDescription' => '关闭所有内容行的焦点横幅设置，并恢复顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行顺序保持不变。',
+			'homeLayout.tapHeroCardDescription' => '选择打字或选择一个英雄卡是否开始播放,或者打开它的细节。',
+			'homeLayout.heroTapPlayDescription' => '立即启动所选择的项目。',
+			'homeLayout.heroTapDetailsDescription' => '在选择行动之前,打开所选项目的详细信息。',
 			'platform.localNetworkPermission' => 'PlezyNG 会连接到您本地网络中的媒体服务器和播放设备。',
 			'platform.locationPermission' => '当 iOS 要求提供位置权限才能检测本地网络并连接媒体服务器时，PlezyNG 会使用此权限。',
 			'platform.photoLibraryPermission' => '从照片图库中选择图片，用作媒体封面等图像。',
@@ -7164,8 +7621,12 @@ extension on TranslationsZh {
 			'fileSources.source' => '源',
 			'fileSources.name' => '名称',
 			'fileSources.endpoint' => '服务器 URL',
+			'fileSources.smbEndpointHint' => '示例：smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => '请输入 SMB 服务器和一个共享文件夹。',
 			'fileSources.root' => '文件夹或前缀',
+			'fileSources.smbFolderHelp' => '留空以使用整个共享文件夹，或输入其中的某个文件夹。',
 			'fileSources.username' => '用户名',
+			'fileSources.smbDomain' => '域（可选）',
 			'fileSources.password' => '密码',
 			'fileSources.token' => 'API 标志',
 			'fileSources.accessKey' => '关键 ID 访问',
@@ -7175,6 +7636,8 @@ extension on TranslationsZh {
 			'fileSources.clientId' => '客戶 ID',
 			'fileSources.clientSecret' => 'OAuth 客户端秘密(仅限 Google 桌面)',
 			'fileSources.allowHttp' => '允许在可信网络上使用未加密的 HTTP',
+			'fileSources.smbEncryption' => '加密 SMB3 连接',
+			'fileSources.smbEncryptionHint' => '当 NAS 支持时，使用 SMB3 加密。',
 			'fileSources.connect' => '连接',
 			'fileSources.cancel' => '取消',
 			'fileSources.save' => '保存',
@@ -7317,12 +7780,25 @@ extension on TranslationsZh {
 			'fileSources.useFiles' => '使用文件和书籍',
 			'fileSources.cancelScan' => '取消扫描',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => '示例：smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => '请输入 SMB 服务器和一个共享文件夹。',
-			'fileSources.smbFolderHelp' => '留空以使用整个共享文件夹，或输入其中的某个文件夹。',
-			'fileSources.smbDomain' => '域（可选）',
-			'fileSources.smbEncryption' => '加密 SMB3 连接',
-			'fileSources.smbEncryptionHint' => '当 NAS 支持时，使用 SMB3 加密。',
+			'fileSources.offlineQuota' => '离线下载限制',
+			'fileSources.offlineQuotaHelp' => '设置离线副本、导入文件和排队中下载占用的最大空间。降低上限不会删除现有副本。',
+			'fileSources.offlineStorageUsage' => '非线存储',
+			'fileSources.reservedStorage' => '保留',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => '下载Queue',
+			'fileSources.downloadRunning' => '下载',
+			'fileSources.downloadQueued' => '等待',
+			'fileSources.downloadPaused' => '休息',
+			'fileSources.downloadFailed' => '需要退休',
+			'fileSources.importing' => '进口',
+			'fileSources.importInterrupted' => '进口中断 · 删除清理',
+			'fileSources.errorQuotaExceeded' => '已达到离线存储上限。请提高上限或移除已下载的副本。',
+			'fileSources.errorStorageLow' => '没有足够的免费设备存储,以保留保护备份。',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG无法检查免费设备存储,所以写作停止了。',
+			'fileSources.removeDownloadJob' => '删除下载',
+			'fileSources.downloadAlreadyComplete' => '此下载完成之前,它可以被删除. 该项目现在可用于离线。',
+			'fileSources.confirmRemoveDownloadJob' => '要移除此下载并丢弃已下载的部分数据吗？阅读位置和笔记会保留。',
 			'lending.title' => '公共图书馆',
 			'lending.add' => '添加图书馆',
 			'lending.other' => '另一家图书馆',
@@ -7424,6 +7900,12 @@ extension on TranslationsZh {
 			'audiobook.statusFinished' => '结束',
 			'audiobook.goToTime' => '走到时间',
 			'audiobook.timeHelp' => '时间: 分钟: 秒或 分钟: 秒',
+			'audiobook.recoveryHelp' => '移动或修复同步数据前，请先导出近期的加密备份。导入内容会与当前状态合并，不会覆盖本地同步历史。请另行保存同步代码。',
+			'audiobook.recoveryExport' => '输出加密恢复文件',
+			'audiobook.recoveryImport' => '输入加密恢复文件',
+			'audiobook.recoveryImportConfirm' => '将此加密恢复文件与当前阅读位置和笔记相结合吗?现有历史记录将被保留. 共享图书馆和项目 ID 不包含; 在进口之前,在每个设备上设置匹配 ID。',
+			'audiobook.recoveryExported' => '加密恢复文件保存。',
+			'audiobook.recoveryImported' => '恢复数据合并。',
 			'sourceSetup.savedCertificate' => '已保存的服务器证书',
 			'sourceSetup.nfsEndpointInvalid' => '请输入 NFS 地址，例如 nfs://nas:2049/export。',
 			'sourceSetup.dlnaNone' => '未找到 DLNA 服务器。请手动输入设备描述文件的地址。',
@@ -7511,8 +7993,6 @@ extension on TranslationsZh {
 			'sourceSetup.smbEncrypted' => 'SMB3 加密已开启',
 			'sourceSetup.smbUnencrypted' => 'SMB3 加密已关闭',
 			'sourceSetup.httpUnencrypted' => 'HTTP 无传输加密',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => '请检查端点安全性',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '请填写${label}。',
 			'sourceSetup.integerRange' => ({required Object min, required Object max, required Object label}) => '请输入 ${min} 至 ${max} 之间的${label}。',
@@ -7520,6 +8000,23 @@ extension on TranslationsZh {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '已选客户端身份凭据：${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '评分 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '正在下载字幕：${title}',
+			'sourceSetup.sharedEntryPair' => '将此项目配对',
+			'sourceSetup.sharedEntryPairHelp' => '在每台设备上为此项目输入相同的 ID。使用稳定的共享标识符，或生成一个并复制到对应项目。只有版本的文件类型、大小和顺序都一致时，阅读进度才会关联。留空会移除此映射。',
+			'sourceSetup.sharedEntryId' => '共享项目 ID',
+			'sourceSetup.generateSharedEntryId' => '创建共享项目 ID',
+			'sourceSetup.sharedLibraryId' => '共享图书馆 ID(可选)',
+			'sourceSetup.sharedLibraryHelp' => '使用相同 ID 在開啟相同圖書館的裝置上. 這個公共 ID 有助於在不同的來源連接中進行閱讀進步和筆記; 它不是密碼. 当提供商使用不同的項目 ID 時,將這些項目從其細節屏幕組合。',
+			'sourceSetup.sharedLibraryInvalid' => '使用 8 至 100 个字母、数字、点、字幕或字符。',
+			'sourceSetup.generateSharedLibraryId' => '创建共享图书馆 ID',
+			'sourceSetup.nfsReadAhead' => 'NFS Read-ahead 请求',
+			'sourceSetup.nfsReadAheadHelp' => '更多的平行阅读可以改善快速NAS或网络的通道。使用1如果服务器限制当前请求。',
+			'sourceSetup.nfsReadTest' => '测量NFS阅读性能',
+			'sourceSetup.nfsReadTestHelp' => '从最大的文件中读到64 MiB,以测量这个NAS连接,这使用网络带宽。',
+			'sourceSetup.nfsQualificationResult' => 'NFS 阅读测量',
+			'sourceSetup.nfsReadBytes' => '数据阅读',
+			'sourceSetup.nfsReadSpeed' => '测量速度',
+			'sourceSetup.nfsReadRequests' => '阅读请求',
+			'sourceSetup.sharedEntryConflict' => '此共享项目 ID 已与本图书馆中的另一个项目相匹配. 选择不同的 ID。',
 			'comics.fitHeight' => '适合高度',
 			'comics.readingMode' => '阅读模式',
 			'comics.paged' => '分页',
@@ -7594,6 +8091,15 @@ extension on TranslationsZh {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

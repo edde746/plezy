@@ -12,10 +12,9 @@ import '../video_rect_support.dart';
 class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
   static const _channelBase = 'com.plezy/exo_player';
 
-  PlayerAndroid({bool companionSession = false, bool listenToNativeEvents = true})
+  PlayerAndroid({bool companionSession = false, super.listenToNativeEvents = true})
     : methodChannel = MethodChannel('$_channelBase${companionSession ? '/workspace' : ''}'),
-      eventChannel = EventChannel('$_channelBase${companionSession ? '/workspace' : ''}/events'),
-      super(listenToNativeEvents: listenToNativeEvents);
+      eventChannel = EventChannel('$_channelBase${companionSession ? '/workspace' : ''}/events');
 
   @override
   final MethodChannel methodChannel;

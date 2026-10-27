@@ -64,12 +64,11 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
   /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
   /// sessions, gpu-next for software ones (see
   /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
-  PlayerNative({this._hardwareDecoding = true, bool companionSession = false, bool listenToNativeEvents = true})
+  PlayerNative({this._hardwareDecoding = true, bool companionSession = false, super.listenToNativeEvents = true})
     : methodChannel = MethodChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}'),
       eventChannel = EventChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}/events'),
       audioOnly = false,
-      _exclusiveAudio = true,
-      super(listenToNativeEvents: listenToNativeEvents);
+      _exclusiveAudio = true;
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer

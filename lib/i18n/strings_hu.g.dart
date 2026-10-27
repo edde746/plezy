@@ -177,6 +177,7 @@ class _Translations$appIcon$hu extends Translations$appIcon$en {
 	@override String get launcherHint => 'Az új ikon azután jelenik meg a kezdőképernyőn, hogy kiléptél a Plezyből.';
 	@override String get tvLauncherHint => 'Az új banner azután jelenik meg, hogy kiléptél a Plezyből. Az Android TV a TV újraindításáig még a régit is mutathatja.';
 	@override late final _Translations$appIcon$names$hu names = _Translations$appIcon$names$hu._(_root);
+	@override String get description => 'Válassza ki az ikonot, amelyet a készülék indítója mutat. Az előrejelzések megmutatják, hogy hogyan néz ki minden lehetőség.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$hu extends Translations$common$en {
 	@override String get cancel => 'Mégse';
 	@override String get save => 'Mentés';
 	@override String get close => 'Bezárás';
+	@override String get closeMiniPlayer => 'Mini játékosok';
+	@override String get closeWorkspaceWindow => 'Közel ablak';
+	@override String get returnToFullView => 'Vissza a teljes nézőpontba';
+	@override String get manageMediaSessions => 'Média ülések kezelése';
+	@override String get hideMediaSessions => 'A médiaközlemények elrejtése';
+	@override String get mediaSessions => 'Média ülések';
+	@override String get mediaSessionsHint => 'Válassza ki, hogy egy ülést előre hozzon.A park elrejti ablakát, de nyitva tartja.A visszatérés teljes nézetben nyílik meg; a közel véget ér.';
+	@override String get sessionInWorkspace => 'A munkaterületben';
+	@override String get sessionParked => 'Parkolás';
+	@override String get sessionFullscreen => 'Teljes képernyő';
+	@override String get switchToNextWindow => 'Változás a következő ablakkal';
+	@override String get moveWindow => 'Mozgás ablak';
+	@override String get finishMovingWindow => 'Véget ér a mozgó ablak';
+	@override String get moveWindowHint => 'Hosszú nyomás és húzza az ablakot, hogy mozogjon. Ez a vezérlés lehetővé teszi a lövedék-kulcs mozgását is.';
+	@override String get movingWindowHelp => 'Kattintson a mozgáshoz · Nyomja meg a kulcsokat · Enter Saves · Escape cancels';
+	@override String get resizeWindow => 'Az ablak felújítása';
+	@override String get resizeWindowHint => 'Vágja ki ezt a kézikönyvt, vagy használja a lövedék kulcsát az ablak átalakításához.';
+	@override String get workspaceWindowHint => 'Használja a mozgásszabályozást vagy a hosszú nyomást és húzza, hogy mozogjon.';
+	@override String get workspacePaneHint => 'Válassza ki ezt a panelt, hogy összpontosítson rá. Használja a teljes képernyő vezérlőjét bővíteni.';
+	@override String workspaceWindowLabel({required Object title}) => 'Az ülés ablakai: ${title}';
+	@override String get workspaceTitleHint => 'Kattintson a címsorra, hogy mozogjon; használja a teljes képernyő gombot kiterjeszteni.';
+	@override String get moveToSessionTray => 'Helyezze be a Session Tray-t';
+	@override String get moveToSessionTrayHint => 'Ez az ülést jeleníti meg, anélkül, hogy ablakát mutatnánk.';
+	@override String get closeSessionHint => 'Zárja be az ablakot, és befejezi az ülését.';
+	@override String get sideBySideLayout => 'Töltse át a side-by-side layout';
+	@override String get floatingWindows => 'Switch az ablakok áramlásához';
 	@override String get clear => 'Törlés';
 	@override String get reset => 'Visszaállítás';
 	@override String get later => 'Később';
@@ -678,6 +705,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása';
 	@override String get dvConversionDv81Description => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re';
 	@override String get dvConversionHevcStripDescription => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés';
+	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
+	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
+	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
+	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
+	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 	@override String get disableDolbyVision => 'Dolby Vision letiltása';
 	@override String get disableDolbyVisionDescription => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen';
 	@override String get hdrSdrConversion => 'HDR–SDR átalakítás';
@@ -764,13 +798,81 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.';
 	@override String get metadataLanguage => 'Metaadatok nyelve';
 	@override String get metadataLanguageDescription => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.';
-	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
-	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
-	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
-	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
-	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
+	@override String get enterFullscreenOnPlaybackStart => 'Helyezze be a teljes képernyőt, amikor megkezdődik a playback';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Nyissa meg az asztali videót a teljes képernyőn, amikor elkezdődik a playback';
+	@override String get extendVideoIntoDisplayCutout => 'Videó bővítése a Display Cutout-ba';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Hagyja, hogy a teljes képernyős videó használja a fényképezőgép cutout az Android telefonok';
+	@override String get languageDescription => 'Válassza ki a használt nyelvet PlezyNG vezérlők és üzenetek. kövesse a rendszer nyomon követése a készülék nyelvét.';
+	@override String get themeDescription => 'Válassza ki az alkalmazás során használt színeket és kontrasztokat.';
+	@override String get libraryDensityDescription => 'Változtassa meg, hogy hány könyvtári kártyát alkalmaznak minden sorban.';
+	@override String get displayScaleDescription => 'Visszaállítsa a felületet ebben az autó képernyőjén anélkül, hogy megváltoztatná a készülék szerinti szöveges méretét.';
+	@override String get themeSongVolumeDescription => 'Állítsa be a tematikus dalok mennyiségét más audio-hoz képest.';
+	@override String get viewModeDescription => 'Válassza ki, hogy a könyvtár elemei plakátként jelennek meg egy hálózatban vagy kompakt listaként.';
+	@override String get gridViewDescription => 'Szervezze a könyvtári elemeket poszterek soraiban és oszlopaiban.';
+	@override String get listViewDescription => 'A könyvtár elemeinek megjelenítése egy függőleges listában, több szöveggel elemenként.';
+	@override String get gridSpacingDescription => 'Állítsa be a plakátok közötti távolságot a könyvtári hálózatokban.';
+	@override String get gridSpacingTightDescription => 'A képernyőn több plakátot illeszkedik kisebb távolságokkal.';
+	@override String get gridSpacingNormalDescription => 'Használja a plakátok közötti szabványos távolságot.';
+	@override String get gridSpacingSpaciousDescription => 'Hozzon nagyobb távolságokat a plakátok között, hogy több szétválasztást kapjon.';
+	@override String get episodePosterModeDescription => 'Válassza ki, melyik műalkotás jelenik meg az epizódkártyákon.';
+	@override String get seriesPosterDescription => 'Használja a show-sorozat plakátját minden epizódhoz.';
+	@override String get seasonPosterDescription => 'Használja a szezon plakátot minden epizódra, amikor elérhető.';
+	@override String get episodeThumbnailDescription => 'Használjon egy keretet az epizódból, amikor elérhető.';
+	@override String get continueWatchingActionDescription => 'Válassza ki, hogy mi történik, amikor aktiválja a Folyamatos megfigyelési kártyát.';
+	@override String get continueWatchingPlayDescription => 'Azonnal indítsa el a filmet vagy az epizódot.';
+	@override String get continueWatchingDetailsDescription => 'Nyissa meg először a címlapot, hogy áttekinthesse az adatokat és válasszon egy lépést.';
+	@override String get episodeActionDescription => 'Válassza ki, mi történik, amikor egy epizódkártya aktiválódik.';
+	@override String get episodePlayDescription => 'Az epizód azonnal megkezdődik.';
+	@override String get episodeDetailsDescription => 'Nyissa meg az epizód oldalt a playback előtt.';
+	@override String get contentScreensaverDelayDescription => 'Válassza ki, hogy mennyi időt vár a PlezyNG bevitele nélkül, mielőtt műalkotást mutatna.';
+	@override String get continueWatchingRowSizeDescription => 'Válassza ki, hogy a kártyák hány méretűek a Folyamatos megfigyelési sorban.';
+	@override String get rowSizeCompactDescription => 'Nézze meg a kisebb kártyákat, hogy több elem megfeleljen a soron.';
+	@override String get rowSizeStandardDescription => 'Használja a kártya méretét.';
+	@override String get rowSizeLargeDescription => 'Nézze meg a nagyobb kártyákat több műalkotási részletekkel.';
+	@override String get visualEffectsDescription => 'Válassza ki az animációs és művészeti hatások költségvetését erre a készülékre.';
+	@override String get visualEffectsFullDescription => 'Használja a teljes animációs és műalkotási hatásokat minden eszközön.';
+	@override String get startupSectionDescription => 'Válassza ki, melyik szakasz megnyílik, amikor a PlezyNG elindul.';
+	@override late final _Translations$settings$startupSectionOptions$hu startupSectionOptions = _Translations$settings$startupSectionOptions$hu._(_root);
+	@override String get smallSkipDurationDescription => 'Állítsa be a távolságot, amelyet a rövid hátsó és előre irányításokat keres.';
+	@override String get largeSkipDurationDescription => 'Állítsa be a távolságot, amelyet a hosszú hátsó és előre irányításokat keres.';
+	@override String get rewindOnResumeDescription => 'Ezzel az összeggel mozgatja a lejátszást, amikor egy videót újra készítenek.';
+	@override String get defaultSleepTimerDescription => 'Állítsa be a használt kezdeti időtartamot, amikor elkezdi az alvási időszámítást.';
+	@override String get playNextCountdownDescription => 'Várjon sokáig, mielőtt elkezdené a következő epizódot. 0-ra állítsa be, hogy azonnal kezdődjön.';
+	@override String get autoSkipDelaySettingDescription => 'Alkalmazható, amikor egy intro, kredit vagy hirdetés beállítva automatikusan elhagyja.';
+	@override String get downmixCenterBoostDescription => 'Emelje fel a párbeszédet a központi csatornában, amikor a környező hangot sztereóba keverjük össze.';
+	@override String get displaySwitchDelayDescription => 'Várjon, mielőtt megváltoztatná a kijelző üzemmódját, hogy a TV vagy a fogadó befejezheti az előző váltót.';
+	@override String get playerBackendDescription => 'Válassza ki, melyik lejátszó motor dekódolja és visszahívja a videót ezen az eszközön.';
+	@override String get exoPlayerDescription => 'Használja az Android indiai Media3 alapú lejátszóját és a támogatott hardverpályait.';
+	@override String get mpvDescription => 'Használja az MPV-t, amely további lejátszásokat, alfejezeteket és videó feldolgozási ellenőrzéseket mutat be.';
+	@override String get scopeOffDescription => 'Csak a jelenlegi lejátszásra vonatkozó módosításokat tartsa fenn.';
+	@override String get scopeGlobalDescription => 'Ismét használja ugyanazt az értéket minden könyvtár és cím.';
+	@override String get scopeLibraryDescription => 'Emlékezzünk egy külön értékre minden könyvtár számára.';
+	@override String get scopeTitleDescription => 'Emlékezzünk egy külön értékre minden előadásra vagy filmre.';
+	@override String get specialsOrderingServerDescription => 'Tartsa meg a média szerver által biztosított epizódrendet.';
+	@override String get specialsOrderingAirDateDescription => 'Helyezze a különlegeseket a rendszeres epizódok között a levegő dátumánál.';
+	@override String get specialsOrderingLastDescription => 'Minden különleges helyet a rendszeres szezonok után.';
+	@override String get skipIntroModeDescription => 'Válassza ki, hogy az intro markerek normálisan játszanak-e, mutatnak egy ugrás gombot vagy automatikusan ugrálnak.';
+	@override String get skipCreditsModeDescription => 'Válassza ki, hogy a hitelek normálisan játszanak-e, jelezzen egy ugrás gombot, vagy automatikusan ugrik.';
+	@override String get skipAdsModeDescription => 'Válassza ki, hogy a kimutatott hirdetések normálisan játszanak-e, mutatnak egy ugrás gombot, vagy automatikusan ugrálnak.';
+	@override String get playbackBufferAutoDescription => 'Hagyja, hogy az aktív játékos kiválassza a normális buffer méretét.';
+	@override String get playbackBufferLargeDescription => 'Tartsa több médiát készen a lejátszást megelőzően; ez több memóriát használ.';
+	@override String get playbackBufferExtraLargeDescription => 'Tartsa a legnagyobb olvasási-felület buffer; ez használja a legtöbb memóriát.';
+	@override String get defaultQualityDescription => 'Állítsa be az alapértelmezett videó felbontást és bitrat tetőt a szerver által transzkódolt áramlásokhoz.';
+	@override String get cellularQualityDescription => 'Az alapértelmezett minőség felülvizsgálata, amikor a készülék csak celluláris kapcsolatot használ.';
+	@override String get remoteQualityDescription => 'Az alapértelmezett minőség felülvizsgálata a szerverhez való csatlakozás során egy távoli kapcsolaton keresztül.';
+	@override String get qualityPresetOriginalDescription => 'Játssz a forrást a rendelkezésre álló minőségben anélkül, hogy kérné a kiszolgálót, hogy transzkódolja azt.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Kérje meg a szervert egy átalakított áram használatával a felbontás és bitrate látható fent.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Használja a kiválasztott minőséget az alapértelmezett minőségben.';
+	@override String get musicQualityDescription => 'Állítsa be a szervertől megkövetelt maximális hangbiterességet; Az eredeti tartja a forrásáramlást.';
+	@override String get musicQualityOriginalDescription => 'Játssz a forráskódot bitrate-capped transcode nélkül.';
+	@override String get musicQualityTranscodeOptionDescription => 'Kérjen egy szerver transzkódot, amely a fenti bitrate közelében van rögzítve; a tényleges kimenetel változhat.';
+	@override String get maxVolumeInputLabel => 'Maximális térfogat (%)';
+	@override String get checkForUpdatesDescription => 'Most ellenőrizze, hogy a PlezyNG újabb verziója elérhető-e.';
+	@override String get appearanceDescription => 'Válassza ki az alkalmazás témáját, és módosítsa a könyvtári kártyákat, az otthoni sorokat és a navigációt.';
+	@override String get prerollLibraryDescription => 'Válassza ki a könyvtárat, amely tartalmazza a klipek elérhető film pre-rolls.';
+	@override String get prerollSelectionDescription => 'Válassza ki, hogy mely klipek a kiválasztott könyvtár játszhat előtt filmek.';
+	@override String get contentScreensaverDelayOptionDescription => 'Várjon sok percet bejutás nélkül, mielőtt a screensaver műalkotást mutatja.';
+	@override String get videoCodecOptionDescription => 'Engedje meg a közvetlen lejátszást erre a kódolóra, amikor támogatásra kerül. A nem ellenőrzött kódokat a média szerver átruházza.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$hu extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} perc van hátra';
 	@override String get previewSwitch => 'Automatikus lejátszás';
 	@override String get previewMutedText => 'Így néz ki a másodlagos szöveg';
+	@override String get themeSystemDescription => 'Kövesse a készülék megjelenését, és automatikusan váltja át a fényt és a sötétet.';
+	@override String get themeLightDescription => 'Használjon fényes háttérrel sötét szöveggel.';
+	@override String get themeDarkDescription => 'Használjon sötét háttérrel fényes szöveggel.';
+	@override String get themeOledDescription => 'Használjon közel fekete felületeket, amelyek csökkentik a fényt az OLED képernyőn.';
+	@override String get themeEmberDescription => 'Használjon meleg vörös és amber hangsúlyos színeket.';
+	@override String get themeGlacierDescription => 'Használja a hideg kék színt.';
+	@override String get themeForestDescription => 'Használjon zöld és természetes hangsúlyos színeket.';
+	@override String get themePlumDescription => 'Használjon lila és plum hangsúlyos színeket.';
+	@override String get themePaperDescription => 'Használjon meleg papírszerű felületeket és tinta inspirált színeket.';
+	@override String get themeCustomDescription => 'Használja az általad létrehozott színpalettát a személyre szabott tematikus szerkesztőben.';
+	@override String get editorDescription => 'Válasszon egy palettás színt, módosítsa a hangját, telítettségét, fényességét vagy láthatatlanságát, és nézze meg az előzetes frissítést, mielőtt mentse.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$hu extends Translations$accessibility$en {
 	@override String get largeTargets => 'Nagyabb érintkezési célok';
 	@override String get largeTargetsHint => 'A megosztott vezérlők több helyet biztosítanak a hozzáféréshez és a segéd navigációhoz.';
 	@override String get navigationHint => 'A Tab és a Shift+Tab billentyűkkel léphetsz a vezérlők között, az Enter vagy a szóköz aktiválja őket, az Escape vagy a Vissza pedig bezár. Megnyitott könyvnél a nagyítás és az olvasási beállítások is elérhetők.';
+	@override String get textSizeDescription => 'Skála felület szöveg PlezyNG-ben a készülék rendszer szöveges méretének beállítása mellett.';
+	@override String get boldTextHint => 'Használjon súlyosabb felület címkéket és üzeneteket, hogy könnyebben megkülönböztessék őket.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'A transzkódolás nem érhető el — eredeti minőség lejátszása';
 	@override String get subtitleUnavailableFallback => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül';
 	@override String get pipButton => 'Kép a képben mód';
+	@override String get openMiniPlayer => 'Nyitott mini játékos';
+	@override String get returnToFullPlayer => 'Visszatérés a teljes játékoshoz';
 	@override String get aspectRatioButton => 'Méretarány';
 	@override String get ambientLighting => 'Környezeti megvilágítás';
 	@override String get fullscreenButton => 'Teljes képernyős mód bekapcsolása';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$hu extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Renderelési felbontás';
 	@override String get renderResolutionScreen => 'Képernyőfelbontás';
 	@override String get renderResolutionVideo => 'Videófelbontás';
+	@override String get fontSizeDescription => 'Állítsa be a szöveg méretét ezen az eszközön.';
+	@override String get textColorDescription => 'Válassza ki a szöveg színét.';
+	@override String get borderSizeDescription => 'Állítsa be a nyomtatvány vastagságát az alszöveg szövegének körül.';
+	@override String get borderColorDescription => 'Válassza ki a színét, amelyet az alfejezéshez használnak.';
+	@override String get backgroundColorDescription => 'Válassza ki a színét az alszöveg szövegének hátterében.';
+	@override String get backgroundOpacityDescription => 'Állítsa be, hogy a háttér mennyire átlátszó: 0% világos és 100% szilárd.';
+	@override String get positionDescription => '0 % a videó tetején, és 100% az alsó.';
+	@override String get assOverrideDescription => 'Válassza ki, hogy a játékos követi-e, módosítja, helyettesíti vagy eltávolítja az ASS altitkokba beépített stílust.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$hu assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$hu._(_root);
+	@override String get renderResolutionDescription => 'Válassza ki a felbontást, amelyet a kép és az ASS altitkok rasterizálására használnak. Alacsonyabb Android skálák csökkenthetik a rendering munkát, de látszólag vékonyabbak.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$hu renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$hu._(_root);
+	@override String get boldDescription => 'Írja le a szubtitkár szövegét súlyosabb súlyban.';
+	@override String get italicDescription => 'Írja le az olasz nyelvű szöveget.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$hu extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$hu watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$hu._(_root);
 	@override String get mediaReviewsVisibility => 'Értékelések és kritikák';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$hu mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$hu._(_root);
+	@override String get preferredAudioLanguageDescription => 'Előnyben részesíti az audio nyomtatásokat ebben a nyelven, amikor a szerver vagy a lejátszó automatikusan kiválasztja a nyomtatást.';
+	@override String get preferredSubtitleLanguageDescription => 'Előnyben részesíti a szubtitkák nyomon követését ebben a nyelven, amikor az altitkok automatikusan kiválasztódnak.';
+	@override String get subtitleAccessibilityDescription => 'Válassza ki, hogy az SDH kapciók előnyben részesülnek-e vagy szükségesek-e az automatikus alszámválasztás során.';
+	@override String get forcedSubtitleDescription => 'Válassza ki, hogy az automatikus kiválasztás során előnyben részesülnek-e vagy megkövetelik-e a kényszerítő alkategóriák.';
+	@override String get watchedIndicatorDescription => 'Válassza ki, hogy mely médiatípusok kapnak megfigyelhető ellenőrző jelet a szerver interfészben.';
+	@override String get mediaReviewsVisibilityDescription => 'Válassza ki, hogy mely közönség és kritikus értékelések a szerver megjeleníti a média oldalak.';
+	@override String get subtitleModeDescription => 'Válassza ki, amikor az altitkok automatikusan aktiválódnak ebben a szerverfiókban.';
+	@override String get hubDescription => 'Ezek a preferenciák tárolódnak a médiaszolgáltató fiókjában, és más ügyfelekre is alkalmazhatók.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-alapréteg';
 	@override String get dvRouteBaseLayerSdr => 'SDR-alapréteg';
 	@override String get dvRouteReshaped => 'RPU-átformálás (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Kísérleti P7 FEL grafika (nem minősített)';
 	@override String get p7Conversion => 'P7-átalakítás';
 	@override String get sampleRate => 'Mintavételezési frekvencia';
 	@override String get pixelFormat => 'Képpontformátum';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$hu extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Nem sikerült megnyitni a külső lejátszót';
 	@override String appNotInstalled({required Object name}) => 'A(z) ${name} nincs telepítve';
 	@override String get playInExternalPlayer => 'Lejátszás külső lejátszóban';
+	@override String get description => 'Válasszon egy másik alkalmazást, hogy nyissa meg a videókat. A rendelkezésre álló játékosok attól függnek, hogy a készülék és telepített alkalmazások.';
+	@override String get systemDefaultDescription => 'Hagyja, hogy az operációs rendszer nyissa meg a videót az alapértelmezett alkalmazással.';
+	@override String playerOptionDescription({required Object player}) => 'Nyissa meg a videókat a ${player} használatával.';
+	@override String get playerNameDescription => 'A címke a játékosok listáján látható.';
+	@override String get playerPackageDescription => 'Adja meg az Android csomag nevét a játékos alkalmazás, mint például com.example.player.';
+	@override String get playerCommandDescription => 'Írja be a telepített játékos parancsot vagy végrehajtható utat erre a készülékre.';
+	@override String get playerUrlSchemeDescription => 'Írja be az URL-t és az opcionális URL-típusot, amelyet a játékos indításához használnak.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$hu extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$hu oauthProxy = _Translations$services$oauthProxy$hu._(_root);
 	@override late final _Translations$services$pendingAuth$hu pendingAuth = _Translations$services$pendingAuth$hu._(_root);
 	@override late final _Translations$services$libraryFilter$hu libraryFilter = _Translations$services$libraryFilter$hu._(_root);
+	@override String get seerrDescription => 'Csatlakozzon a Seerr-hez vagy az Overseerr-hoz, hogy címeket keressen és médiakérdéseket küldjön.';
+	@override late final _Translations$services$trackerDescriptions$hu trackerDescriptions = _Translations$services$trackerDescriptions$hu._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$hu extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'A';
 	@override String get resetHeroButtonDescription => 'A hős állításait minden sorban törli le, és visszahozza az egyetlen forgó banneret a tetején, mint az előző sorban.';
+	@override String get tapHeroCardDescription => 'Válassza ki, hogy egy Hero kártyát nyomtatva vagy kiválasztva megkezdődik a lejátszás, vagy megnyitja annak részleteit.';
+	@override String get heroTapPlayDescription => 'Indítsa el a kiválasztott elemet azonnal.';
+	@override String get heroTapDetailsDescription => 'Nyissa meg a kiválasztott elem részleteit, mielőtt egy akciót választ.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get source => 'forrás';
 	@override String get name => 'nevét';
 	@override String get endpoint => 'Szerver URL-címe';
+	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
 	@override String get root => 'Folder vagy prefix';
+	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.';
 	@override String get username => 'Felhasználónév';
+	@override String get smbDomain => 'Tartomány (nem kötelező)';
 	@override String get password => 'Jelszó';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Access kulcs ID';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ügyfél ID';
 	@override String get clientSecret => 'OAuth ügyfél titka (csak a Google asztali)';
 	@override String get allowHttp => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton';
+	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
+	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
 	@override String get connect => 'Csatlakozás';
 	@override String get cancel => 'Mégse';
 	@override String get save => 'Mentés';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get useFiles => 'Fájlok és könyvek használata';
 	@override String get cancelScan => '- törlés scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
-	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.';
-	@override String get smbDomain => 'Tartomány (nem kötelező)';
-	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
-	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
+	@override String get offlineQuota => 'Offline letöltés limit';
+	@override String get offlineQuotaHelp => 'Állítsa be a maximális helyet használt offline másolatok, importált fájlok, és lejátszott letöltések. A határ csökkentése nem távolítja el a meglévő másolatokat.';
+	@override String get offlineStorageUsage => 'Offline tárolás';
+	@override String get reservedStorage => 'fenntartás';
+	@override String get downloadQueue => 'Letöltés Queue';
+	@override String get downloadRunning => 'Letöltés';
+	@override String get downloadQueued => 'Várakozás';
+	@override String get downloadPaused => 'pihenés';
+	@override String get downloadFailed => 'Visszavonulás szükséges';
+	@override String get importing => 'behozatal';
+	@override String get importInterrupted => 'Import megszakadt · eltávolítása tisztázni';
+	@override String get errorQuotaExceeded => 'Az offline tárolási korlátozás elérte. emelje fel a korlátot vagy távolítsa el a letöltött másolatot.';
+	@override String get errorStorageLow => 'Nincs elég ingyenes tárolási eszköz a védett tartalék fenntartásához.';
+	@override String get errorStorageUnavailable => 'A PlezyNG nem tudta ellenőrizni a szabad készülék tárolását, így az írás megszűnt.';
+	@override String get removeDownloadJob => 'Letöltés eltávolítása';
+	@override String get downloadAlreadyComplete => 'Ez a letöltés befejeződött, mielőtt eltávolítható. az elem most elérhető offline.';
+	@override String get confirmRemoveDownloadJob => 'Távolítsa el ezt a letöltést, és törölje a részben letöltött adatokat?';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get statusFinished => 'befejezett';
 	@override String get goToTime => 'Menj az időbe';
 	@override String get timeHelp => 'Idők: percek: másodpercek, vagy percek: másodpercek';
+	@override String get recoveryHelp => 'A szinkronizációs adatok áthelyezése vagy javítása előtt exportáljon egy nemrégiben titkosított másolatot. Az importok összeolvadnak a jelenlegi állapotgal; soha nem helyettesítik a helyi szinkrálás történetét.';
+	@override String get recoveryExport => 'Export titkosított helyreállítási fájl';
+	@override String get recoveryImport => 'Import titkosított helyreállítási fájl';
+	@override String get recoveryImportConfirm => 'Ez a titkosított helyreállítási fájl összekapcsolja az aktuális olvasási pozíciókkal és jegyzetekkel? A meglévő történelem megmarad. Megosztott könyvtár és elem azonosítók nem szerepelnek; beállítja az egyes eszközök megfelelő azonosítóját az import előtt.';
+	@override String get recoveryExported => 'A titkosított helyreállítási fájl mentett.';
+	@override String get recoveryImported => 'A helyreállítási adatok összegyűltek.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$hu extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Kiválasztott kliensazonosság: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Értékelés: ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Felirat letöltése: ${title}';
+	@override String get sharedEntryPair => 'Csatlakozzon ehhez az elemhez';
+	@override String get sharedEntryPairHelp => 'Írja be ugyanazt az azonosítót erre az elemre minden eszközön. Használjon stabil megosztott azonosítóját vagy hozzon létre egyet, és másolja azt a megfelelõ elemre. A progress párosul csak akkor, ha a kiadvány fájl típusa, mérete és rendje megfelel. Blank eltávolítja ezt a mappázást.';
+	@override String get sharedEntryId => 'Megosztott elem ID';
+	@override String get generateSharedEntryId => 'Megosztott elem ID generálása';
+	@override String get sharedLibraryId => 'Megosztott könyvtár azonosító (opcionális)';
+	@override String get sharedLibraryHelp => 'Használja ugyanazt az ID-t olyan eszközökön, amelyek ugyanezt a könyvtárat nyitják meg. Ez a nyilvános ID segít olvasási előrehaladást és jegyzeteket tartani különböző forráskódú kapcsolatokon keresztül; ez nem jelszó. Amikor a szolgáltatók különböző elemek azonosítóját használják, azokat a részletes képernyőktől párolják.';
+	@override String get sharedLibraryInvalid => 'Használjon 8–100 betűt, számot, pontokat, alszámokat vagy hyphenseket.';
+	@override String get generateSharedLibraryId => 'Egy megosztott könyvtár azonosító létrehozása';
+	@override String get nfsReadAhead => 'NFS olvasási kérelmek';
+	@override String get nfsReadAheadHelp => 'Több párhuzamos olvasás javíthatja a gyors NAS vagy hálózati átjárót. Használjon 1 ha a szerver korlátozza az egymást követő kéréseket.';
+	@override String get nfsReadTest => 'NFS olvasási teljesítmény mérése';
+	@override String get nfsReadTestHelp => 'A legnagyobb fájltól 64 MiB-ig olvasható, hogy mérje ezt a NAS kapcsolatot.';
+	@override String get nfsQualificationResult => 'NFS olvasás mérés';
+	@override String get nfsReadBytes => 'Az adatok olvasása';
+	@override String get nfsReadSpeed => 'Mérhető sebesség';
+	@override String get nfsReadRequests => 'Olvassa el a kéréseket';
+	@override String get sharedEntryConflict => 'Ez a megosztott elem azonosító már párosított egy másik elem ebben a könyvtárban.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$hu extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$hu extends Translations$common$mediaKind$en
 	@override String get clip => 'Klip';
 	@override String get photo => 'Fénykép';
 	@override String get folder => 'Mappa';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$hu extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Nyissa meg az ajánlásokat és a kapcsolódó felfedezési forrásokból származó elemeket.';
+	@override String get libraries => 'Nyissa meg a kapcsolódó média könyvtárakat.';
+	@override String get liveTv => 'Nyissa meg a Live TV-t, amikor egy szerver biztosítja azt; különben a startup visszatér a Házba.';
+	@override String get search => 'Nyílt média keresés.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$hu extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Hiba történt: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$hu extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Tartsa a betűtípusokat, színeket, méreteket és elhelyezkedést az alszámfájlban.';
+	@override String get yes => 'Engedje meg a játékos szubtitkár stílusának beállításait, hogy igazítsa az ASS szubtiteleket.';
+	@override String get scale => 'Alkalmazza a játékos stílusát és a beágyazott méreteket, hogy megfeleljen a videó dimenzióknak.';
+	@override String get force => 'A beágyazott ASS stílusok helyettesítése a játékos szubtitlap stílusával.';
+	@override String get strip => 'Távolítsa el a beágyazott ASS formázást, és egyértelművé tegye az alszöveg szöveget.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$hu extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render a teljes kijelző felületfelbontáson a legsűrűbb eredmény érdekében.';
+	@override String get video => 'A videó felbontását a referenciaként használja, ami csökkenti a nagy hatékonyságú kijelzők munkáját.';
+	@override String get threeQuarter => 'A képernyőfelület felbontásának 75% -a a mérsékelt teljesítménymegtakarítás érdekében.';
+	@override String get half => 'A képernyő felületfelbontásának 50% -ára csökkenti a munkát, vékonyabb szélességekkel.';
+	@override String get third => 'A kijelző felszíni felbontásának egyharmada a munka csökkentése érdekében, vékonyabb szélességekkel.';
+	@override String get quarter => 'A képernyő felszíni felbontásának egyharmada a munka csökkentése érdekében, a legszélesebb eredményt.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$hu extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$hu extends T
 	@override String get preferSdh => 'SDH-feliratok előnyben részesítése';
 	@override String get onlySdh => 'Csak SDH-feliratok';
 	@override String get onlyNonSdh => 'Csak nem SDH-feliratok';
+	@override String get preferNonSdhDescription => 'Előnyben részesíti a szabványos alfejezeteket, amikor mind a standard, mind az SDH verziók állnak rendelkezésre.';
+	@override String get preferSdhDescription => 'Előnyben részesíti az SDH altitkákat, amikor rendelkezésre állnak, de lehetővé teszi a szabványos altitkok visszavonulását.';
+	@override String get onlySdhDescription => 'Csak SDH altitkok használata; ne térjen vissza a szabványos altitkákhoz.';
+	@override String get onlyNonSdhDescription => 'Csak szabványos altitkok használata; kizárja az SDH altitkokat.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$hu extends Translat
 	@override String get preferForced => 'Kényszerített feliratok előnyben részesítése';
 	@override String get onlyForced => 'Csak kényszerített feliratok';
 	@override String get onlyNonForced => 'Csak nem kényszerített feliratok';
+	@override String get preferNonForcedDescription => 'Előnyben részesíti a rendszeres altitkok, de lehetővé teszi a kényszerített nyomokat, mint egy visszafelé.';
+	@override String get preferForcedDescription => 'Előnyben részesítik a kényszerített pályákat, amikor rendelkezésre állnak, de lehetővé teszik a rendszeres altitkok visszavonulását.';
+	@override String get onlyForcedDescription => 'Használjon csak nyomokat, amelyeket kényszerként jelöltek ki.';
+	@override String get onlyNonForcedDescription => 'Kizárják a nyomokat, amelyeket kényszerítőként jelölnek ki.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$hu extends Transl
 	@override String get moviesAndShows => 'Filmek és TV-sorozatok';
 	@override String get movies => 'Csak filmek';
 	@override String get shows => 'Csak TV-sorozatok';
+	@override String get noneDescription => 'Ne mutassa meg a megfigyelt ellenőrző jeleket.';
+	@override String get moviesAndShowsDescription => 'Megjeleníti a filmek és a televíziós műsorok ellenőrzési pontjait.';
+	@override String get moviesDescription => 'Csak a filmek tekintetében mutatja meg az ellenőrző jeleket.';
+	@override String get showsDescription => 'Show watched checkmarks for TV shows only. - Csak a tévéműsorok ellenőrizése.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$hu extends Translatio
 	@override String get usersOnly => 'Csak felhasználók';
 	@override String get criticsOnly => 'Csak kritikusok';
 	@override String get nobody => 'Rejtett';
+	@override String get usersAndCriticsDescription => 'Megmutatja mind a felhasználói minősítéseket, mind a kritikus értékeléseket.';
+	@override String get usersOnlyDescription => 'Tekintse meg a felhasználók által benyújtott értékeléseket és véleményeket.';
+	@override String get criticsOnlyDescription => 'Kritikus értékelések és vélemények megjelenítése.';
+	@override String get nobodyDescription => 'Elrejti a minősítéseket és az értékeléseket.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$hu extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Csak az alább bejelölt könyvtárak szinkronizálása.';
 	@override String get libraries => 'Könyvtárak';
 	@override String get noLibraries => 'Nincsenek elérhető könyvtárak';
+	@override String get modeDescription => 'Válassza ki, hogy a ellenőrzött könyvtárak nem szinkronizálódnak-e, vagy az egyetlen könyvtár, amely szinkráló.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$hu extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Szinkronizálja a megtekintett epizódokat és filmeket a Trakt fiókjával.';
+	@override String get mal => 'Szinkronizálja az anime listákat és nézze meg a fejlődést MyAnimeList segítségével.';
+	@override String get anilist => 'Szinkronizálja az anime listákat, és nézd meg a haladást az AniList segítségével.';
+	@override String get simkl => 'Sync filmeket, televíziós műsorokat és anime-t nézett a Simklrel.';
+	@override String get mdblist => 'MDBList minősítések és listák megjelenítése az ajánlásokban és a felfedezésben.';
 }
 
 /// The flat map containing all translations for locale <hu>.
@@ -4481,6 +4754,7 @@ extension on TranslationsHu {
 			'appIcon.names.strata' => 'Rétegek',
 			'appIcon.names.facet' => 'Fazetta',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Válassza ki az ikonot, amelyet a készülék indítója mutat. Az előrejelzések megmutatják, hogy hogyan néz ki minden lehetőség.',
 			'auth.signInWithPlex' => 'Bejelentkezés Plexszel',
 			'auth.showQRCode' => 'QR-kód megjelenítése',
 			'auth.authenticate' => 'Hitelesítés',
@@ -4502,6 +4776,32 @@ extension on TranslationsHu {
 			'common.cancel' => 'Mégse',
 			'common.save' => 'Mentés',
 			'common.close' => 'Bezárás',
+			'common.closeMiniPlayer' => 'Mini játékosok',
+			'common.closeWorkspaceWindow' => 'Közel ablak',
+			'common.returnToFullView' => 'Vissza a teljes nézőpontba',
+			'common.manageMediaSessions' => 'Média ülések kezelése',
+			'common.hideMediaSessions' => 'A médiaközlemények elrejtése',
+			'common.mediaSessions' => 'Média ülések',
+			'common.mediaSessionsHint' => 'Válassza ki, hogy egy ülést előre hozzon.A park elrejti ablakát, de nyitva tartja.A visszatérés teljes nézetben nyílik meg; a közel véget ér.',
+			'common.sessionInWorkspace' => 'A munkaterületben',
+			'common.sessionParked' => 'Parkolás',
+			'common.sessionFullscreen' => 'Teljes képernyő',
+			'common.switchToNextWindow' => 'Változás a következő ablakkal',
+			'common.moveWindow' => 'Mozgás ablak',
+			'common.finishMovingWindow' => 'Véget ér a mozgó ablak',
+			'common.moveWindowHint' => 'Hosszú nyomás és húzza az ablakot, hogy mozogjon. Ez a vezérlés lehetővé teszi a lövedék-kulcs mozgását is.',
+			'common.movingWindowHelp' => 'Kattintson a mozgáshoz · Nyomja meg a kulcsokat · Enter Saves · Escape cancels',
+			'common.resizeWindow' => 'Az ablak felújítása',
+			'common.resizeWindowHint' => 'Vágja ki ezt a kézikönyvt, vagy használja a lövedék kulcsát az ablak átalakításához.',
+			'common.workspaceWindowHint' => 'Használja a mozgásszabályozást vagy a hosszú nyomást és húzza, hogy mozogjon.',
+			'common.workspacePaneHint' => 'Válassza ki ezt a panelt, hogy összpontosítson rá. Használja a teljes képernyő vezérlőjét bővíteni.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Az ülés ablakai: ${title}',
+			'common.workspaceTitleHint' => 'Kattintson a címsorra, hogy mozogjon; használja a teljes képernyő gombot kiterjeszteni.',
+			'common.moveToSessionTray' => 'Helyezze be a Session Tray-t',
+			'common.moveToSessionTrayHint' => 'Ez az ülést jeleníti meg, anélkül, hogy ablakát mutatnánk.',
+			'common.closeSessionHint' => 'Zárja be az ablakot, és befejezi az ülését.',
+			'common.sideBySideLayout' => 'Töltse át a side-by-side layout',
+			'common.floatingWindows' => 'Switch az ablakok áramlásához',
 			'common.clear' => 'Törlés',
 			'common.reset' => 'Visszaállítás',
 			'common.later' => 'Később',
@@ -4919,6 +5219,8 @@ extension on TranslationsHu {
 			'settings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionApple' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. iOS, iPadOS és tvOS 26 vagy újabb rendszeren a TrueHD Atmos és a DTS:X térbeli hangzásként szól. A többi DTS- és TrueHD-sáv többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ki, amíg a hangerőnormalizálás be van kapcsolva',
 			'settings.audioChannelLimit' => 'Hangcsatornák',
@@ -4945,9 +5247,14 @@ extension on TranslationsHu {
 			'settings.dvConversionNativeDescription' => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása',
 			'settings.dvConversionDv81Description' => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re',
 			'settings.dvConversionHevcStripDescription' => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés',
+			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
+			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
+			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
+			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
+			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
 			'settings.disableDolbyVision' => 'Dolby Vision letiltása',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen',
 			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
 			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
@@ -5033,13 +5340,84 @@ extension on TranslationsHu {
 			'settings.regionFormatDescription' => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.',
 			'settings.metadataLanguage' => 'Metaadatok nyelve',
 			'settings.metadataLanguageDescription' => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.',
-			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
-			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
-			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
-			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
-			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Helyezze be a teljes képernyőt, amikor megkezdődik a playback',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Nyissa meg az asztali videót a teljes képernyőn, amikor elkezdődik a playback',
+			'settings.extendVideoIntoDisplayCutout' => 'Videó bővítése a Display Cutout-ba',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Hagyja, hogy a teljes képernyős videó használja a fényképezőgép cutout az Android telefonok',
+			'settings.languageDescription' => 'Válassza ki a használt nyelvet PlezyNG vezérlők és üzenetek. kövesse a rendszer nyomon követése a készülék nyelvét.',
+			'settings.themeDescription' => 'Válassza ki az alkalmazás során használt színeket és kontrasztokat.',
+			'settings.libraryDensityDescription' => 'Változtassa meg, hogy hány könyvtári kártyát alkalmaznak minden sorban.',
+			'settings.displayScaleDescription' => 'Visszaállítsa a felületet ebben az autó képernyőjén anélkül, hogy megváltoztatná a készülék szerinti szöveges méretét.',
+			'settings.themeSongVolumeDescription' => 'Állítsa be a tematikus dalok mennyiségét más audio-hoz képest.',
+			'settings.viewModeDescription' => 'Válassza ki, hogy a könyvtár elemei plakátként jelennek meg egy hálózatban vagy kompakt listaként.',
+			'settings.gridViewDescription' => 'Szervezze a könyvtári elemeket poszterek soraiban és oszlopaiban.',
+			'settings.listViewDescription' => 'A könyvtár elemeinek megjelenítése egy függőleges listában, több szöveggel elemenként.',
+			'settings.gridSpacingDescription' => 'Állítsa be a plakátok közötti távolságot a könyvtári hálózatokban.',
+			'settings.gridSpacingTightDescription' => 'A képernyőn több plakátot illeszkedik kisebb távolságokkal.',
+			'settings.gridSpacingNormalDescription' => 'Használja a plakátok közötti szabványos távolságot.',
+			'settings.gridSpacingSpaciousDescription' => 'Hozzon nagyobb távolságokat a plakátok között, hogy több szétválasztást kapjon.',
+			'settings.episodePosterModeDescription' => 'Válassza ki, melyik műalkotás jelenik meg az epizódkártyákon.',
+			'settings.seriesPosterDescription' => 'Használja a show-sorozat plakátját minden epizódhoz.',
+			'settings.seasonPosterDescription' => 'Használja a szezon plakátot minden epizódra, amikor elérhető.',
+			'settings.episodeThumbnailDescription' => 'Használjon egy keretet az epizódból, amikor elérhető.',
+			'settings.continueWatchingActionDescription' => 'Válassza ki, hogy mi történik, amikor aktiválja a Folyamatos megfigyelési kártyát.',
+			'settings.continueWatchingPlayDescription' => 'Azonnal indítsa el a filmet vagy az epizódot.',
+			'settings.continueWatchingDetailsDescription' => 'Nyissa meg először a címlapot, hogy áttekinthesse az adatokat és válasszon egy lépést.',
+			'settings.episodeActionDescription' => 'Válassza ki, mi történik, amikor egy epizódkártya aktiválódik.',
+			'settings.episodePlayDescription' => 'Az epizód azonnal megkezdődik.',
+			'settings.episodeDetailsDescription' => 'Nyissa meg az epizód oldalt a playback előtt.',
+			'settings.contentScreensaverDelayDescription' => 'Válassza ki, hogy mennyi időt vár a PlezyNG bevitele nélkül, mielőtt műalkotást mutatna.',
+			'settings.continueWatchingRowSizeDescription' => 'Válassza ki, hogy a kártyák hány méretűek a Folyamatos megfigyelési sorban.',
+			'settings.rowSizeCompactDescription' => 'Nézze meg a kisebb kártyákat, hogy több elem megfeleljen a soron.',
+			'settings.rowSizeStandardDescription' => 'Használja a kártya méretét.',
+			'settings.rowSizeLargeDescription' => 'Nézze meg a nagyobb kártyákat több műalkotási részletekkel.',
+			'settings.visualEffectsDescription' => 'Válassza ki az animációs és művészeti hatások költségvetését erre a készülékre.',
+			'settings.visualEffectsFullDescription' => 'Használja a teljes animációs és műalkotási hatásokat minden eszközön.',
+			'settings.startupSectionDescription' => 'Válassza ki, melyik szakasz megnyílik, amikor a PlezyNG elindul.',
+			'settings.startupSectionOptions.discover' => 'Nyissa meg az ajánlásokat és a kapcsolódó felfedezési forrásokból származó elemeket.',
+			'settings.startupSectionOptions.libraries' => 'Nyissa meg a kapcsolódó média könyvtárakat.',
+			'settings.startupSectionOptions.liveTv' => 'Nyissa meg a Live TV-t, amikor egy szerver biztosítja azt; különben a startup visszatér a Házba.',
+			'settings.startupSectionOptions.search' => 'Nyílt média keresés.',
+			'settings.smallSkipDurationDescription' => 'Állítsa be a távolságot, amelyet a rövid hátsó és előre irányításokat keres.',
+			'settings.largeSkipDurationDescription' => 'Állítsa be a távolságot, amelyet a hosszú hátsó és előre irányításokat keres.',
+			'settings.rewindOnResumeDescription' => 'Ezzel az összeggel mozgatja a lejátszást, amikor egy videót újra készítenek.',
+			'settings.defaultSleepTimerDescription' => 'Állítsa be a használt kezdeti időtartamot, amikor elkezdi az alvási időszámítást.',
+			'settings.playNextCountdownDescription' => 'Várjon sokáig, mielőtt elkezdené a következő epizódot. 0-ra állítsa be, hogy azonnal kezdődjön.',
+			'settings.autoSkipDelaySettingDescription' => 'Alkalmazható, amikor egy intro, kredit vagy hirdetés beállítva automatikusan elhagyja.',
+			'settings.downmixCenterBoostDescription' => 'Emelje fel a párbeszédet a központi csatornában, amikor a környező hangot sztereóba keverjük össze.',
+			'settings.displaySwitchDelayDescription' => 'Várjon, mielőtt megváltoztatná a kijelző üzemmódját, hogy a TV vagy a fogadó befejezheti az előző váltót.',
+			'settings.playerBackendDescription' => 'Válassza ki, melyik lejátszó motor dekódolja és visszahívja a videót ezen az eszközön.',
+			'settings.exoPlayerDescription' => 'Használja az Android indiai Media3 alapú lejátszóját és a támogatott hardverpályait.',
+			'settings.mpvDescription' => 'Használja az MPV-t, amely további lejátszásokat, alfejezeteket és videó feldolgozási ellenőrzéseket mutat be.',
+			'settings.scopeOffDescription' => 'Csak a jelenlegi lejátszásra vonatkozó módosításokat tartsa fenn.',
+			'settings.scopeGlobalDescription' => 'Ismét használja ugyanazt az értéket minden könyvtár és cím.',
+			'settings.scopeLibraryDescription' => 'Emlékezzünk egy külön értékre minden könyvtár számára.',
+			'settings.scopeTitleDescription' => 'Emlékezzünk egy külön értékre minden előadásra vagy filmre.',
+			'settings.specialsOrderingServerDescription' => 'Tartsa meg a média szerver által biztosított epizódrendet.',
+			'settings.specialsOrderingAirDateDescription' => 'Helyezze a különlegeseket a rendszeres epizódok között a levegő dátumánál.',
+			'settings.specialsOrderingLastDescription' => 'Minden különleges helyet a rendszeres szezonok után.',
+			'settings.skipIntroModeDescription' => 'Válassza ki, hogy az intro markerek normálisan játszanak-e, mutatnak egy ugrás gombot vagy automatikusan ugrálnak.',
+			'settings.skipCreditsModeDescription' => 'Válassza ki, hogy a hitelek normálisan játszanak-e, jelezzen egy ugrás gombot, vagy automatikusan ugrik.',
+			'settings.skipAdsModeDescription' => 'Válassza ki, hogy a kimutatott hirdetések normálisan játszanak-e, mutatnak egy ugrás gombot, vagy automatikusan ugrálnak.',
+			'settings.playbackBufferAutoDescription' => 'Hagyja, hogy az aktív játékos kiválassza a normális buffer méretét.',
+			'settings.playbackBufferLargeDescription' => 'Tartsa több médiát készen a lejátszást megelőzően; ez több memóriát használ.',
+			'settings.playbackBufferExtraLargeDescription' => 'Tartsa a legnagyobb olvasási-felület buffer; ez használja a legtöbb memóriát.',
+			'settings.defaultQualityDescription' => 'Állítsa be az alapértelmezett videó felbontást és bitrat tetőt a szerver által transzkódolt áramlásokhoz.',
+			'settings.cellularQualityDescription' => 'Az alapértelmezett minőség felülvizsgálata, amikor a készülék csak celluláris kapcsolatot használ.',
+			'settings.remoteQualityDescription' => 'Az alapértelmezett minőség felülvizsgálata a szerverhez való csatlakozás során egy távoli kapcsolaton keresztül.',
+			'settings.qualityPresetOriginalDescription' => 'Játssz a forrást a rendelkezésre álló minőségben anélkül, hogy kérné a kiszolgálót, hogy transzkódolja azt.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Kérje meg a szervert egy átalakított áram használatával a felbontás és bitrate látható fent.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Használja a kiválasztott minőséget az alapértelmezett minőségben.',
+			'settings.musicQualityDescription' => 'Állítsa be a szervertől megkövetelt maximális hangbiterességet; Az eredeti tartja a forrásáramlást.',
+			'settings.musicQualityOriginalDescription' => 'Játssz a forráskódot bitrate-capped transcode nélkül.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Kérjen egy szerver transzkódot, amely a fenti bitrate közelében van rögzítve; a tényleges kimenetel változhat.',
+			'settings.maxVolumeInputLabel' => 'Maximális térfogat (%)',
+			'settings.checkForUpdatesDescription' => 'Most ellenőrizze, hogy a PlezyNG újabb verziója elérhető-e.',
+			'settings.appearanceDescription' => 'Válassza ki az alkalmazás témáját, és módosítsa a könyvtári kártyákat, az otthoni sorokat és a navigációt.',
+			'settings.prerollLibraryDescription' => 'Válassza ki a könyvtárat, amely tartalmazza a klipek elérhető film pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Válassza ki, hogy mely klipek a kiválasztott könyvtár játszhat előtt filmek.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Várjon sok percet bejutás nélkül, mielőtt a screensaver műalkotást mutatja.',
+			'settings.videoCodecOptionDescription' => 'Engedje meg a közvetlen lejátszást erre a kódolóra, amikor támogatásra kerül. A nem ellenőrzött kódokat a média szerver átruházza.',
 			'themeEditor.builtIn' => 'Beépített',
 			'themeEditor.presets' => 'Előre beállított',
 			'themeEditor.custom' => 'Egyéni',
@@ -5078,6 +5456,17 @@ extension on TranslationsHu {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} perc van hátra',
 			'themeEditor.previewSwitch' => 'Automatikus lejátszás',
 			'themeEditor.previewMutedText' => 'Így néz ki a másodlagos szöveg',
+			'themeEditor.themeSystemDescription' => 'Kövesse a készülék megjelenését, és automatikusan váltja át a fényt és a sötétet.',
+			'themeEditor.themeLightDescription' => 'Használjon fényes háttérrel sötét szöveggel.',
+			'themeEditor.themeDarkDescription' => 'Használjon sötét háttérrel fényes szöveggel.',
+			'themeEditor.themeOledDescription' => 'Használjon közel fekete felületeket, amelyek csökkentik a fényt az OLED képernyőn.',
+			'themeEditor.themeEmberDescription' => 'Használjon meleg vörös és amber hangsúlyos színeket.',
+			'themeEditor.themeGlacierDescription' => 'Használja a hideg kék színt.',
+			'themeEditor.themeForestDescription' => 'Használjon zöld és természetes hangsúlyos színeket.',
+			'themeEditor.themePlumDescription' => 'Használjon lila és plum hangsúlyos színeket.',
+			'themeEditor.themePaperDescription' => 'Használjon meleg papírszerű felületeket és tinta inspirált színeket.',
+			'themeEditor.themeCustomDescription' => 'Használja az általad létrehozott színpalettát a személyre szabott tematikus szerkesztőben.',
+			'themeEditor.editorDescription' => 'Válasszon egy palettás színt, módosítsa a hangját, telítettségét, fényességét vagy láthatatlanságát, és nézze meg az előzetes frissítést, mielőtt mentse.',
 			'search.hint' => 'Keresés filmek, sorozatok és zenék között...',
 			'search.tryDifferentTerm' => 'Próbálj másik keresési kifejezést',
 			'search.searchYourMedia' => 'Keresés a saját médiatartalmak között',
@@ -5323,6 +5712,8 @@ extension on TranslationsHu {
 			'accessibility.largeTargets' => 'Nagyabb érintkezési célok',
 			'accessibility.largeTargetsHint' => 'A megosztott vezérlők több helyet biztosítanak a hozzáféréshez és a segéd navigációhoz.',
 			'accessibility.navigationHint' => 'A Tab és a Shift+Tab billentyűkkel léphetsz a vezérlők között, az Enter vagy a szóköz aktiválja őket, az Escape vagy a Vissza pedig bezár. Megnyitott könyvnél a nagyítás és az olvasási beállítások is elérhetők.',
+			'accessibility.textSizeDescription' => 'Skála felület szöveg PlezyNG-ben a készülék rendszer szöveges méretének beállítása mellett.',
+			'accessibility.boldTextHint' => 'Használjon súlyosabb felület címkéket és üzeneteket, hogy könnyebben megkülönböztessék őket.',
 			'tooltips.shufflePlay' => 'Véletlenszerű lejátszás',
 			'tooltips.playTrailer' => 'Előzetes lejátszása',
 			'tooltips.markAsWatched' => 'Megjelölés megtekintettként',
@@ -5342,6 +5733,8 @@ extension on TranslationsHu {
 			'videoControls.sleepTimerEndOfVideo' => 'Jelenlegi videó vége',
 			'videoControls.sleepTimerStopAtHeader' => 'Leállítás ekkor',
 			'videoControls.sleepTimerDurationHeader' => 'Időzítő',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'A lejátszás szünetel a videó végén',
 			'videoControls.stillWatching' => 'Még nézed?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Szüneteltetés ${seconds} mp múlva',
@@ -5376,6 +5769,8 @@ extension on TranslationsHu {
 			'videoControls.transcodeUnavailableFallback' => 'A transzkódolás nem érhető el — eredeti minőség lejátszása',
 			'videoControls.subtitleUnavailableFallback' => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül',
 			'videoControls.pipButton' => 'Kép a képben mód',
+			'videoControls.openMiniPlayer' => 'Nyitott mini játékos',
+			'videoControls.returnToFullPlayer' => 'Visszatérés a teljes játékoshoz',
 			'videoControls.aspectRatioButton' => 'Méretarány',
 			'videoControls.ambientLighting' => 'Környezeti megvilágítás',
 			'videoControls.fullscreenButton' => 'Teljes képernyős mód bekapcsolása',
@@ -5460,8 +5855,6 @@ extension on TranslationsHu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Könyvtár beolvasása elindítva a következőhöz: "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nem sikerült a könyvtár beolvasása: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metaadatok frissítése a következőhöz: "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metaadatok frissítése elindítva a következőhöz: "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nem sikerült a metaadatok frissítése: ${error}',
 			'messages.logoutConfirm' => 'Biztosan ki szeretnél jelentkezni?',
@@ -5521,6 +5914,28 @@ extension on TranslationsHu {
 			'subtitlingStyling.renderResolution' => 'Renderelési felbontás',
 			'subtitlingStyling.renderResolutionScreen' => 'Képernyőfelbontás',
 			'subtitlingStyling.renderResolutionVideo' => 'Videófelbontás',
+			'subtitlingStyling.fontSizeDescription' => 'Állítsa be a szöveg méretét ezen az eszközön.',
+			'subtitlingStyling.textColorDescription' => 'Válassza ki a szöveg színét.',
+			'subtitlingStyling.borderSizeDescription' => 'Állítsa be a nyomtatvány vastagságát az alszöveg szövegének körül.',
+			'subtitlingStyling.borderColorDescription' => 'Válassza ki a színét, amelyet az alfejezéshez használnak.',
+			'subtitlingStyling.backgroundColorDescription' => 'Válassza ki a színét az alszöveg szövegének hátterében.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Állítsa be, hogy a háttér mennyire átlátszó: 0% világos és 100% szilárd.',
+			'subtitlingStyling.positionDescription' => '0 % a videó tetején, és 100% az alsó.',
+			'subtitlingStyling.assOverrideDescription' => 'Válassza ki, hogy a játékos követi-e, módosítja, helyettesíti vagy eltávolítja az ASS altitkokba beépített stílust.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Tartsa a betűtípusokat, színeket, méreteket és elhelyezkedést az alszámfájlban.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Engedje meg a játékos szubtitkár stílusának beállításait, hogy igazítsa az ASS szubtiteleket.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Alkalmazza a játékos stílusát és a beágyazott méreteket, hogy megfeleljen a videó dimenzióknak.',
+			'subtitlingStyling.assOverrideOptions.force' => 'A beágyazott ASS stílusok helyettesítése a játékos szubtitlap stílusával.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Távolítsa el a beágyazott ASS formázást, és egyértelművé tegye az alszöveg szöveget.',
+			'subtitlingStyling.renderResolutionDescription' => 'Válassza ki a felbontást, amelyet a kép és az ASS altitkok rasterizálására használnak. Alacsonyabb Android skálák csökkenthetik a rendering munkát, de látszólag vékonyabbak.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render a teljes kijelző felületfelbontáson a legsűrűbb eredmény érdekében.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'A videó felbontását a referenciaként használja, ami csökkenti a nagy hatékonyságú kijelzők munkáját.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'A képernyőfelület felbontásának 75% -a a mérsékelt teljesítménymegtakarítás érdekében.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'A képernyő felületfelbontásának 50% -ára csökkenti a munkát, vékonyabb szélességekkel.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'A kijelző felszíni felbontásának egyharmada a munka csökkentése érdekében, vékonyabb szélességekkel.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'A képernyő felszíni felbontásának egyharmada a munka csökkentése érdekében, a legszélesebb eredményt.',
+			'subtitlingStyling.boldDescription' => 'Írja le a szubtitkár szövegét súlyosabb súlyban.',
+			'subtitlingStyling.italicDescription' => 'Írja le az olasz nyelvű szöveget.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Haladó videólejátszó beállítások',
 			'mpvConfig.presets' => 'Előbeállítások',
@@ -5657,11 +6072,19 @@ extension on TranslationsHu {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH-feliratok előnyben részesítése',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Csak SDH-feliratok',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Csak nem SDH-feliratok',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Előnyben részesíti a szabványos alfejezeteket, amikor mind a standard, mind az SDH verziók állnak rendelkezésre.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Előnyben részesíti az SDH altitkákat, amikor rendelkezésre állnak, de lehetővé teszi a szabványos altitkok visszavonulását.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Csak SDH altitkok használata; ne térjen vissza a szabványos altitkákhoz.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Csak szabványos altitkok használata; kizárja az SDH altitkokat.',
 			'accountPreferences.forcedSubtitles' => 'Kényszerített feliratok',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Nem kényszerített feliratok előnyben részesítése',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Kényszerített feliratok előnyben részesítése',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Csak kényszerített feliratok',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Csak nem kényszerített feliratok',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Előnyben részesíti a rendszeres altitkok, de lehetővé teszi a kényszerített nyomokat, mint egy visszafelé.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Előnyben részesítik a kényszerített pályákat, amikor rendelkezésre állnak, de lehetővé teszik a rendszeres altitkok visszavonulását.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Használjon csak nyomokat, amelyeket kényszerként jelöltek ki.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Kizárják a nyomokat, amelyeket kényszerítőként jelölnek ki.',
 			'accountPreferences.displayMissingEpisodes' => 'Hiányzó epizódok megjelenítése',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Azoknak az epizódoknak a listázása, amelyeket a szerver ismer, de nincs hozzájuk fájl.',
 			'accountPreferences.hidePlayedInLatest' => 'Megnézett elemek elrejtése a Legújabbak között',
@@ -5675,11 +6098,27 @@ extension on TranslationsHu {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmek és TV-sorozatok',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Csak filmek',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Csak TV-sorozatok',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Ne mutassa meg a megfigyelt ellenőrző jeleket.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Megjeleníti a filmek és a televíziós műsorok ellenőrzési pontjait.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Csak a filmek tekintetében mutatja meg az ellenőrző jeleket.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Show watched checkmarks for TV shows only. - Csak a tévéműsorok ellenőrizése.',
 			'accountPreferences.mediaReviewsVisibility' => 'Értékelések és kritikák',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Felhasználók és kritikusok',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Csak felhasználók',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Csak kritikusok',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Rejtett',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Megmutatja mind a felhasználói minősítéseket, mind a kritikus értékeléseket.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Tekintse meg a felhasználók által benyújtott értékeléseket és véleményeket.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Kritikus értékelések és vélemények megjelenítése.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Elrejti a minősítéseket és az értékeléseket.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Előnyben részesíti az audio nyomtatásokat ebben a nyelven, amikor a szerver vagy a lejátszó automatikusan kiválasztja a nyomtatást.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Előnyben részesíti a szubtitkák nyomon követését ebben a nyelven, amikor az altitkok automatikusan kiválasztódnak.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Válassza ki, hogy az SDH kapciók előnyben részesülnek-e vagy szükségesek-e az automatikus alszámválasztás során.',
+			'accountPreferences.forcedSubtitleDescription' => 'Válassza ki, hogy az automatikus kiválasztás során előnyben részesülnek-e vagy megkövetelik-e a kényszerítő alkategóriák.',
+			'accountPreferences.watchedIndicatorDescription' => 'Válassza ki, hogy mely médiatípusok kapnak megfigyelhető ellenőrző jelet a szerver interfészben.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Válassza ki, hogy mely közönség és kritikus értékelések a szerver megjeleníti a média oldalak.',
+			'accountPreferences.subtitleModeDescription' => 'Válassza ki, amikor az altitkok automatikusan aktiválódnak ebben a szerverfiókban.',
+			'accountPreferences.hubDescription' => 'Ezek a preferenciák tárolódnak a médiaszolgáltató fiókjában, és más ügyfelekre is alkalmazhatók.',
 			'discover.title' => 'Felfedezés',
 			'discover.noContentAvailable' => 'Nincs elérhető tartalom',
 			'discover.addMediaToLibraries' => 'Adj hozzá médiát a könyvtáraidhoz',
@@ -5808,6 +6247,8 @@ extension on TranslationsHu {
 			'libraries.all' => 'Összes',
 			'libraries.clearAll' => 'Összes törlése',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Biztosan be szeretnéd olvasni a következőt: "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Biztosan elemezni szeretnéd a következőt: "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Biztosan frissíteni szeretnéd a metaadatokat a következőhöz: "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Biztosan ki szeretnéd üríteni a lomtárat a következőnél: "${title}"?',
@@ -5974,8 +6415,6 @@ extension on TranslationsHu {
 			'explore.mdblistShelves.nameHint' => 'Hagyja a nyílt, hogy használja a forráslistát.',
 			'explore.mdblistShelves.add' => 'Add Shelf',
 			'explore.mdblistShelves.save' => 'mentse a tálcákat',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} felfelé',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} lefelé',
 			'explore.mdblistShelves.unavailable' => 'Ez a lista nem elérhető. visszavonja vagy távolítsa el a szekrényt a beállításokban.',
@@ -6322,6 +6761,8 @@ extension on TranslationsHu {
 			'watchTogether.connecting' => 'Csatlakozás...',
 			'watchTogether.relayPublic' => 'A szobák a nyilvános Open Watch Party-reléket használják.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'A szobák a saját relédet használják: ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Legutóbbi szobák',
 			'watchTogether.roomActions' => 'Szobaműveletek',
 			'watchTogether.renameRoom' => 'Szoba átnevezése',
@@ -6488,8 +6929,6 @@ extension on TranslationsHu {
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} szinkronizálása)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Letöltve: ${file} - Kattints a befejezéshez',
 			'downloads.partialDownloadClickToComplete' => 'Részben letöltve - Kattints a befejezéshez',
 			'downloads.deleting' => 'Törlés...',
@@ -6748,6 +7187,7 @@ extension on TranslationsHu {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-alapréteg',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-alapréteg',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-átformálás (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Kísérleti P7 FEL grafika (nem minősített)',
 			'performanceOverlay.p7Conversion' => 'P7-átalakítás',
 			'performanceOverlay.sampleRate' => 'Mintavételezési frekvencia',
 			'performanceOverlay.pixelFormat' => 'Képpontformátum',
@@ -6799,6 +7239,13 @@ extension on TranslationsHu {
 			'externalPlayer.launchFailed' => 'Nem sikerült megnyitni a külső lejátszót',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => 'A(z) ${name} nincs telepítve',
 			'externalPlayer.playInExternalPlayer' => 'Lejátszás külső lejátszóban',
+			'externalPlayer.description' => 'Válasszon egy másik alkalmazást, hogy nyissa meg a videókat. A rendelkezésre álló játékosok attól függnek, hogy a készülék és telepített alkalmazások.',
+			'externalPlayer.systemDefaultDescription' => 'Hagyja, hogy az operációs rendszer nyissa meg a videót az alapértelmezett alkalmazással.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Nyissa meg a videókat a ${player} használatával.',
+			'externalPlayer.playerNameDescription' => 'A címke a játékosok listáján látható.',
+			'externalPlayer.playerPackageDescription' => 'Adja meg az Android csomag nevét a játékos alkalmazás, mint például com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Írja be a telepített játékos parancsot vagy végrehajtható utat erre a készülékre.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Írja be az URL-t és az opcionális URL-típusot, amelyet a játékos indításához használnak.',
 			'metadataEdit.editMetadata' => 'Szerkesztés...',
 			'metadataEdit.screenTitle' => 'Metaadatok szerkesztése',
 			'metadataEdit.basicInfo' => 'Alapinformációk',
@@ -6828,6 +7275,8 @@ extension on TranslationsHu {
 			'metadataEdit.metadataUpdateFailed' => 'Nem sikerült a metaadatok frissítése',
 			'metadataEdit.artworkUpdated' => 'Képek frissítve',
 			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Nincsenek elérhető képek',
 			'metadataEdit.artworkOption' => ({required Object index}) => '${index}. képváltozat',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '${index}. képváltozat, kiválasztva',
@@ -6988,6 +7437,13 @@ extension on TranslationsHu {
 			'services.libraryFilter.modeHintWhitelist' => 'Csak az alább bejelölt könyvtárak szinkronizálása.',
 			'services.libraryFilter.libraries' => 'Könyvtárak',
 			'services.libraryFilter.noLibraries' => 'Nincsenek elérhető könyvtárak',
+			'services.libraryFilter.modeDescription' => 'Válassza ki, hogy a ellenőrzött könyvtárak nem szinkronizálódnak-e, vagy az egyetlen könyvtár, amely szinkráló.',
+			'services.seerrDescription' => 'Csatlakozzon a Seerr-hez vagy az Overseerr-hoz, hogy címeket keressen és médiakérdéseket küldjön.',
+			'services.trackerDescriptions.trakt' => 'Szinkronizálja a megtekintett epizódokat és filmeket a Trakt fiókjával.',
+			'services.trackerDescriptions.mal' => 'Szinkronizálja az anime listákat és nézze meg a fejlődést MyAnimeList segítségével.',
+			'services.trackerDescriptions.anilist' => 'Szinkronizálja az anime listákat, és nézd meg a haladást az AniList segítségével.',
+			'services.trackerDescriptions.simkl' => 'Sync filmeket, televíziós műsorokat és anime-t nézett a Simklrel.',
+			'services.trackerDescriptions.mdblist' => 'MDBList minősítések és listák megjelenítése az ajánlásokban és a felfedezésben.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} szerver hozzáadása',
 			'addServer.serverUrls' => 'Szerver URL-címei',
 			'addServer.serverUrlsHelper' => 'Több URL is megadható, vesszővel elválasztva.',
@@ -7002,8 +7458,6 @@ extension on TranslationsHu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'A bejelentkezés nem sikerült: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'A Quick Connect használata nem sikerült: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Bejelentkezés Plexszel',
 			'addServer.pinExpired' => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsHu {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'A',
 			'homeLayout.resetHeroButtonDescription' => 'A hős állításait minden sorban törli le, és visszahozza az egyetlen forgó banneret a tetején, mint az előző sorban.',
+			'homeLayout.tapHeroCardDescription' => 'Válassza ki, hogy egy Hero kártyát nyomtatva vagy kiválasztva megkezdődik a lejátszás, vagy megnyitja annak részleteit.',
+			'homeLayout.heroTapPlayDescription' => 'Indítsa el a kiválasztott elemet azonnal.',
+			'homeLayout.heroTapDetailsDescription' => 'Nyissa meg a kiválasztott elem részleteit, mielőtt egy akciót választ.',
 			'platform.localNetworkPermission' => 'A PlezyNG a helyi hálózaton keresztül csatlakozik a média szerverekhez és a lejátszó eszközökhöz.',
 			'platform.locationPermission' => 'A PlezyNG akkor használja a helyadatokhoz való hozzáférést, ha az iOS ezt megköveteli a helyi hálózat felismeréséhez és a médiaszerverekhez való csatlakozáshoz.',
 			'platform.photoLibraryPermission' => 'Válassz képeket a fotókönyvtáradból a médiatartalmak borítóképeihez és illusztrációihoz.',
@@ -7169,8 +7626,12 @@ extension on TranslationsHu {
 			'fileSources.source' => 'forrás',
 			'fileSources.name' => 'nevét',
 			'fileSources.endpoint' => 'Szerver URL-címe',
+			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
 			'fileSources.root' => 'Folder vagy prefix',
+			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.',
 			'fileSources.username' => 'Felhasználónév',
+			'fileSources.smbDomain' => 'Tartomány (nem kötelező)',
 			'fileSources.password' => 'Jelszó',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Access kulcs ID',
@@ -7180,6 +7641,8 @@ extension on TranslationsHu {
 			'fileSources.clientId' => 'OAuth ügyfél ID',
 			'fileSources.clientSecret' => 'OAuth ügyfél titka (csak a Google asztali)',
 			'fileSources.allowHttp' => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton',
+			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
+			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
 			'fileSources.connect' => 'Csatlakozás',
 			'fileSources.cancel' => 'Mégse',
 			'fileSources.save' => 'Mentés',
@@ -7322,12 +7785,25 @@ extension on TranslationsHu {
 			'fileSources.useFiles' => 'Fájlok és könyvek használata',
 			'fileSources.cancelScan' => '- törlés scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
-			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.',
-			'fileSources.smbDomain' => 'Tartomány (nem kötelező)',
-			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
-			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
+			'fileSources.offlineQuota' => 'Offline letöltés limit',
+			'fileSources.offlineQuotaHelp' => 'Állítsa be a maximális helyet használt offline másolatok, importált fájlok, és lejátszott letöltések. A határ csökkentése nem távolítja el a meglévő másolatokat.',
+			'fileSources.offlineStorageUsage' => 'Offline tárolás',
+			'fileSources.reservedStorage' => 'fenntartás',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Letöltés Queue',
+			'fileSources.downloadRunning' => 'Letöltés',
+			'fileSources.downloadQueued' => 'Várakozás',
+			'fileSources.downloadPaused' => 'pihenés',
+			'fileSources.downloadFailed' => 'Visszavonulás szükséges',
+			'fileSources.importing' => 'behozatal',
+			'fileSources.importInterrupted' => 'Import megszakadt · eltávolítása tisztázni',
+			'fileSources.errorQuotaExceeded' => 'Az offline tárolási korlátozás elérte. emelje fel a korlátot vagy távolítsa el a letöltött másolatot.',
+			'fileSources.errorStorageLow' => 'Nincs elég ingyenes tárolási eszköz a védett tartalék fenntartásához.',
+			'fileSources.errorStorageUnavailable' => 'A PlezyNG nem tudta ellenőrizni a szabad készülék tárolását, így az írás megszűnt.',
+			'fileSources.removeDownloadJob' => 'Letöltés eltávolítása',
+			'fileSources.downloadAlreadyComplete' => 'Ez a letöltés befejeződött, mielőtt eltávolítható. az elem most elérhető offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Távolítsa el ezt a letöltést, és törölje a részben letöltött adatokat?',
 			'lending.title' => 'Közös könyvtárak',
 			'lending.add' => 'Hozzáadjuk a könyvtárat',
 			'lending.other' => 'Egy másik könyvtár',
@@ -7429,6 +7905,12 @@ extension on TranslationsHu {
 			'audiobook.statusFinished' => 'befejezett',
 			'audiobook.goToTime' => 'Menj az időbe',
 			'audiobook.timeHelp' => 'Idők: percek: másodpercek, vagy percek: másodpercek',
+			'audiobook.recoveryHelp' => 'A szinkronizációs adatok áthelyezése vagy javítása előtt exportáljon egy nemrégiben titkosított másolatot. Az importok összeolvadnak a jelenlegi állapotgal; soha nem helyettesítik a helyi szinkrálás történetét.',
+			'audiobook.recoveryExport' => 'Export titkosított helyreállítási fájl',
+			'audiobook.recoveryImport' => 'Import titkosított helyreállítási fájl',
+			'audiobook.recoveryImportConfirm' => 'Ez a titkosított helyreállítási fájl összekapcsolja az aktuális olvasási pozíciókkal és jegyzetekkel? A meglévő történelem megmarad. Megosztott könyvtár és elem azonosítók nem szerepelnek; beállítja az egyes eszközök megfelelő azonosítóját az import előtt.',
+			'audiobook.recoveryExported' => 'A titkosított helyreállítási fájl mentett.',
+			'audiobook.recoveryImported' => 'A helyreállítási adatok összegyűltek.',
 			'sourceSetup.savedCertificate' => 'Mentett szervertanúsítvány',
 			'sourceSetup.nfsEndpointInvalid' => 'Adj meg egy NFS URL-t, például: nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Nem található DLNA-kiszolgáló. Add meg kézzel az eszközleírás URL-jét.',
@@ -7516,8 +7998,6 @@ extension on TranslationsHu {
 			'sourceSetup.smbEncrypted' => 'SMB3-titkosítás bekapcsolva',
 			'sourceSetup.smbUnencrypted' => 'SMB3-titkosítás kikapcsolva',
 			'sourceSetup.httpUnencrypted' => 'HTTP átviteli titkosítás nélkül',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Végpont biztonságának ellenőrzése',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Kötelező mező: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'A(z) ${label} értéke ${min} és ${max} között legyen.',
@@ -7525,6 +8005,23 @@ extension on TranslationsHu {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Kiválasztott kliensazonosság: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Értékelés: ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Felirat letöltése: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Csatlakozzon ehhez az elemhez',
+			'sourceSetup.sharedEntryPairHelp' => 'Írja be ugyanazt az azonosítót erre az elemre minden eszközön. Használjon stabil megosztott azonosítóját vagy hozzon létre egyet, és másolja azt a megfelelõ elemre. A progress párosul csak akkor, ha a kiadvány fájl típusa, mérete és rendje megfelel. Blank eltávolítja ezt a mappázást.',
+			'sourceSetup.sharedEntryId' => 'Megosztott elem ID',
+			'sourceSetup.generateSharedEntryId' => 'Megosztott elem ID generálása',
+			'sourceSetup.sharedLibraryId' => 'Megosztott könyvtár azonosító (opcionális)',
+			'sourceSetup.sharedLibraryHelp' => 'Használja ugyanazt az ID-t olyan eszközökön, amelyek ugyanezt a könyvtárat nyitják meg. Ez a nyilvános ID segít olvasási előrehaladást és jegyzeteket tartani különböző forráskódú kapcsolatokon keresztül; ez nem jelszó. Amikor a szolgáltatók különböző elemek azonosítóját használják, azokat a részletes képernyőktől párolják.',
+			'sourceSetup.sharedLibraryInvalid' => 'Használjon 8–100 betűt, számot, pontokat, alszámokat vagy hyphenseket.',
+			'sourceSetup.generateSharedLibraryId' => 'Egy megosztott könyvtár azonosító létrehozása',
+			'sourceSetup.nfsReadAhead' => 'NFS olvasási kérelmek',
+			'sourceSetup.nfsReadAheadHelp' => 'Több párhuzamos olvasás javíthatja a gyors NAS vagy hálózati átjárót. Használjon 1 ha a szerver korlátozza az egymást követő kéréseket.',
+			'sourceSetup.nfsReadTest' => 'NFS olvasási teljesítmény mérése',
+			'sourceSetup.nfsReadTestHelp' => 'A legnagyobb fájltól 64 MiB-ig olvasható, hogy mérje ezt a NAS kapcsolatot.',
+			'sourceSetup.nfsQualificationResult' => 'NFS olvasás mérés',
+			'sourceSetup.nfsReadBytes' => 'Az adatok olvasása',
+			'sourceSetup.nfsReadSpeed' => 'Mérhető sebesség',
+			'sourceSetup.nfsReadRequests' => 'Olvassa el a kéréseket',
+			'sourceSetup.sharedEntryConflict' => 'Ez a megosztott elem azonosító már párosított egy másik elem ebben a könyvtárban.',
 			'comics.fitHeight' => 'Magassághoz igazítás',
 			'comics.readingMode' => 'Olvasási mód',
 			'comics.paged' => 'Oldalak',
@@ -7599,6 +8096,15 @@ extension on TranslationsHu {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

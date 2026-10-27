@@ -286,7 +286,7 @@ interface class Database {
     if (_autoClean) {
       _updateCount++;
       if (_updateCount % 100 == 0) {
-        _cleanDatabase();
+        unawaited(_cleanDatabase());
       }
     }
     await _storage.storeTaskRecord(record);

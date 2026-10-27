@@ -1,189 +1,189 @@
 {
   "locales": {
     "ar": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 69
-    },
-    "az": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 101
-    },
-    "bg": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 71
-    },
-    "bn": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 68
-    },
-    "cs": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 112
-    },
-    "da": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 183
-    },
-    "de": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 201
-    },
-    "en": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 3190
-    },
-    "es": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 135
-    },
-    "es-419": {
-      "messages": 3190,
-      "inheritedFrom": "es",
-      "sameAsEnglish": 129
-    },
-    "fa": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 70
-    },
-    "fr": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 174
-    },
-    "fr-CA": {
-      "messages": 3190,
-      "inheritedFrom": "fr",
-      "sameAsEnglish": 167
-    },
-    "he": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 73
-    },
-    "hi": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 64
-    },
-    "hu": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 106
-    },
-    "id": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 111
-    },
-    "it": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 167
-    },
-    "ja": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 81
-    },
-    "kk": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 66
-    },
-    "ko": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 84
-    },
-    "ms": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 101
-    },
-    "nb": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 146
-    },
-    "nl": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 203
-    },
-    "pl": {
-      "messages": 3190,
-      "inheritedFrom": null,
-      "sameAsEnglish": 122
-    },
-    "pt": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
       "sameAsEnglish": 145
     },
+    "az": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 174
+    },
+    "bg": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 147
+    },
+    "bn": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 144
+    },
+    "cs": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 185
+    },
+    "da": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 256
+    },
+    "de": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 278
+    },
+    "en": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 3391
+    },
+    "es": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 210
+    },
+    "es-419": {
+      "messages": 3391,
+      "inheritedFrom": "es",
+      "sameAsEnglish": 204
+    },
+    "fa": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 146
+    },
+    "fr": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 246
+    },
+    "fr-CA": {
+      "messages": 3391,
+      "inheritedFrom": "fr",
+      "sameAsEnglish": 239
+    },
+    "he": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 149
+    },
+    "hi": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 140
+    },
+    "hu": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 182
+    },
+    "id": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 185
+    },
+    "it": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 243
+    },
+    "ja": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 157
+    },
+    "kk": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 142
+    },
+    "ko": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 160
+    },
+    "ms": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 177
+    },
+    "nb": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 219
+    },
+    "nl": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 278
+    },
+    "pl": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 195
+    },
+    "pt": {
+      "messages": 3391,
+      "inheritedFrom": null,
+      "sameAsEnglish": 220
+    },
     "pt-BR": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": "pt",
-      "sameAsEnglish": 133
+      "sameAsEnglish": 208
     },
     "pt-PT": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": "pt",
-      "sameAsEnglish": 134
+      "sameAsEnglish": 209
     },
     "ru": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 66
+      "sameAsEnglish": 142
     },
     "sv": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 159
+      "sameAsEnglish": 232
     },
     "th": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 73
+      "sameAsEnglish": 149
     },
     "tr": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 96
+      "sameAsEnglish": 172
     },
     "uk": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 60
+      "sameAsEnglish": 136
     },
     "uz": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 108
+      "sameAsEnglish": 180
     },
     "vi": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 88
+      "sameAsEnglish": 164
     },
     "zh": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 72
+      "sameAsEnglish": 148
     },
     "zh-Hant": {
-      "messages": 3190,
+      "messages": 3391,
       "inheritedFrom": null,
-      "sameAsEnglish": 68
+      "sameAsEnglish": 144
     }
   },
   "errors": []

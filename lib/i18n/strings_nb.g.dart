@@ -177,6 +177,7 @@ class _Translations$appIcon$nb extends Translations$appIcon$en {
 	@override String get launcherHint => 'Det nye ikonet vises på startskjermen når du forlater PlezyNG.';
 	@override String get tvLauncherHint => 'Det nye banneret vises når du forlater PlezyNG. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.';
 	@override late final _Translations$appIcon$names$nb names = _Translations$appIcon$names$nb._(_root);
+	@override String get description => 'Velg ikonet som vises av enhetslungeren din. Forhåndsvisningene viser hvordan hver alternativ ser ut.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$nb extends Translations$common$en {
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Lagre';
 	@override String get close => 'Lukk';
+	@override String get closeMiniPlayer => 'Nær Mini-spillere';
+	@override String get closeWorkspaceWindow => 'Nær vindu';
+	@override String get returnToFullView => 'Tilbake til Full View';
+	@override String get manageMediaSessions => 'Ledelse av media sesjoner';
+	@override String get hideMediaSessions => 'Skjære mediekonferanser';
+	@override String get mediaSessions => 'Media sesjoner';
+	@override String get mediaSessionsHint => 'Velg for å bringe en sesjon fremover. Park skjuler vinduet, men holder det åpent. Return åpner den i full visning; nær slutter den.';
+	@override String get sessionInWorkspace => 'På arbeidsplassen';
+	@override String get sessionParked => 'Parkert';
+	@override String get sessionFullscreen => 'Full skjerm';
+	@override String get switchToNextWindow => 'Swap med neste vindu';
+	@override String get moveWindow => 'Flytte vindu';
+	@override String get finishMovingWindow => 'Slutt å flytte vindu';
+	@override String get moveWindowHint => 'Lang press og trekk vinduet for å bevege det. Denne kontrollen tillater også armbånd-nøkkelbevegelse.';
+	@override String get movingWindowHelp => 'Dra til bevegelse · Slå nøkler justere · Enter sparer · Escape annullerer';
+	@override String get resizeWindow => 'Åpne vinduet';
+	@override String get resizeWindowHint => 'Dra denne håndboken eller bruk våpennøkler for å revidere vinduet.';
+	@override String get workspaceWindowHint => 'Bruk bevegelseskontroller eller langpress og trekk for å flytte.';
+	@override String get workspacePaneHint => 'Velg dette panelet for å fokusere på det. Bruk fullskjermkontrollen for å utvide den.';
+	@override String workspaceWindowLabel({required Object title}) => 'Sesjon vindu: ${title}';
+	@override String get workspaceTitleHint => 'Velg for å fokusere. Dra overskriftsfältet for å flytte; bruk fullskjermknappen for å utvide.';
+	@override String get moveToSessionTray => 'Flytt til sesjon trey';
+	@override String get moveToSessionTrayHint => 'Keeps denne sesjonen tilgjengelig uten å vise vinduet.';
+	@override String get closeSessionHint => 'Stenger dette vinduet og avsluttes sesjonen.';
+	@override String get sideBySideLayout => 'Switch til side-by-side layout';
+	@override String get floatingWindows => 'Switch til å flyte vinduene';
 	@override String get clear => 'Tøm';
 	@override String get reset => 'Tilbakestill';
 	@override String get later => 'Senere';
@@ -678,6 +705,13 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt';
 	@override String get dvConversionDv81Description => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC';
+	@override String get experimentalDolbyVision => 'Eksperimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.';
+	@override String get dvExperimentUnavailableDescription => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
+	@override String get dvCompatibilityFallbackDescription => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.';
+	@override String get dvExperimentDiagnostics => 'Logging av videoeksperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktiver detaljerte spillerlogger ved neste avspilling.';
 	@override String get disableDolbyVision => 'Deaktiver Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes';
 	@override String get hdrSdrConversion => 'HDR til SDR-konvertering';
@@ -764,13 +798,81 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Velg hvordan datoer, tall og måleenheter vises.';
 	@override String get metadataLanguage => 'Språk for metadata';
 	@override String get metadataLanguageDescription => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.';
-	@override String get experimentalDolbyVision => 'Eksperimentell Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.';
-	@override String get dvExperimentUnavailableDescription => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
-	@override String get dvCompatibilityFallbackDescription => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.';
-	@override String get dvExperimentDiagnostics => 'Logging av videoeksperiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Aktiver detaljerte spillerlogger ved neste avspilling.';
+	@override String get enterFullscreenOnPlaybackStart => 'Skriv inn fullskjermen når playback starter';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Åpne desktop-video på fullskjerm når playback starter';
+	@override String get extendVideoIntoDisplayCutout => 'Utvid video til display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'La fullskjermvideoen bruke kameraet på Android-telefoner';
+	@override String get languageDescription => 'Velg språket som brukes til PlezyNG-kontroller og meldinger. Følg systemet sporer enhetsspråket ditt.';
+	@override String get themeDescription => 'Velg fargene og kontrastene som brukes gjennom appen.';
+	@override String get libraryDensityDescription => 'Endre hvor mange bibliotekkort som passer i hver rad.';
+	@override String get displayScaleDescription => 'Gjenopprette grensesnittet på denne bilskjermen uten å endre tekststørrelsen på enheten din.';
+	@override String get themeSongVolumeDescription => 'Sett volumet av tema sanger i forhold til andre lyd.';
+	@override String get viewModeDescription => 'Velg om bibliotekselementer vises som plakater i et nettverk eller som en kompakt liste.';
+	@override String get gridViewDescription => 'Ordne bibliotekselementer i rader og kolumner av plakater.';
+	@override String get listViewDescription => 'Vis bibliotek elementer i en vertikal liste med mer tekst per element.';
+	@override String get gridSpacingDescription => 'Sett gapet mellom plakater i biblioteksnett.';
+	@override String get gridSpacingTightDescription => 'Fyll mer poster over skjermen med mindre gap.';
+	@override String get gridSpacingNormalDescription => 'Bruk standardfrekvensen mellom poster.';
+	@override String get gridSpacingSpaciousDescription => 'Legg til større gap mellom plakater for mer separasjon.';
+	@override String get episodePosterModeDescription => 'Velg hvilket kunstverk som vises på episode kort.';
+	@override String get seriesPosterDescription => 'Bruk showens serieposter for hver episode.';
+	@override String get seasonPosterDescription => 'Bruk sesongposter for hver episode når det er tilgjengelig.';
+	@override String get episodeThumbnailDescription => 'Bruk en ramme fra episoden når tilgjengelig.';
+	@override String get continueWatchingActionDescription => 'Velg hva som skjer når du aktiverer en Continuing Watching-kort.';
+	@override String get continueWatchingPlayDescription => 'Start filmen eller episoden umiddelbart.';
+	@override String get continueWatchingDetailsDescription => 'Åpne tittelen først slik at du kan se nærmere på detaljene og velge en handling.';
+	@override String get episodeActionDescription => 'Velg hva som skjer når du aktiverer et episode-kort.';
+	@override String get episodePlayDescription => 'Begynn episoden umiddelbart.';
+	@override String get episodeDetailsDescription => 'Åpne episode-siden før playback.';
+	@override String get contentScreensaverDelayDescription => 'Velg hvor lenge PlezyNG venter uten inngang før du viser kunstverk.';
+	@override String get continueWatchingRowSizeDescription => 'Velg hvor store kortene er i Continuing Watching-linjen.';
+	@override String get rowSizeCompactDescription => 'Vis mindre kort slik at flere elementer passer over raden.';
+	@override String get rowSizeStandardDescription => 'Bruk standard kortstørrelse.';
+	@override String get rowSizeLargeDescription => 'Vis større kort med mer kunstverk detalj.';
+	@override String get visualEffectsDescription => 'Velg animasjon og kunstverk effekter budsjett for denne enheten.';
+	@override String get visualEffectsFullDescription => 'Bruk den fullstendige animasjons- og kunstverkseffekten på hver enhet.';
+	@override String get startupSectionDescription => 'Velg hvilken del som åpner når PlezyNG starter.';
+	@override late final _Translations$settings$startupSectionOptions$nb startupSectionOptions = _Translations$settings$startupSectionOptions$nb._(_root);
+	@override String get smallSkipDurationDescription => 'Sett avstanden som flyttes av den korte bakover og fremfor søker kontroller.';
+	@override String get largeSkipDurationDescription => 'Sett avstanden som flyttes av den lange bakover og fremfor søker kontroller.';
+	@override String get rewindOnResumeDescription => 'Flytt playback tilbake med dette beløpet når du gjenoppretter en video.';
+	@override String get defaultSleepTimerDescription => 'Sett den opprinnelige varigheten som brukes når du starter søvn timer.';
+	@override String get playNextCountdownDescription => 'Vent dette lenge før du starter neste episode. Sett til 0 for å starte umiddelbart.';
+	@override String get autoSkipDelaySettingDescription => 'Det gjelder når en intro, kreditter eller annonsen er satt til å skille automatisk.';
+	@override String get downmixCenterBoostDescription => 'Øke dialogen i sentralkanalen når omgivende lyd blandes ned til stereo.';
+	@override String get displaySwitchDelayDescription => 'Vennligst vent før du endrer skjermmodus slik at TV-en eller mottakeren kan fullføre sin tidligere skift.';
+	@override String get playerBackendDescription => 'Velg hvilken spillmotor som dekoder og renderer video på denne enheten.';
+	@override String get exoPlayerDescription => 'Bruk Androids innfødte Media3-baserte spiller og støttet maskinvareveier.';
+	@override String get mpvDescription => 'Bruk mpv, som viser ytterligere playback, undertittel og videobehandling kontroller.';
+	@override String get scopeOffDescription => 'Lagre endringer for den nåværende playback-sesjonen bare.';
+	@override String get scopeGlobalDescription => 'Åpne samme verdi for hver bibliotek og tittel.';
+	@override String get scopeLibraryDescription => 'Husk en separat verdi for hver bibliotek.';
+	@override String get scopeTitleDescription => 'Husk en separat verdi for hver show eller film.';
+	@override String get specialsOrderingServerDescription => 'Oppbevar episoden ordre levert av media serveren.';
+	@override String get specialsOrderingAirDateDescription => 'Plasser spesialene blant vanlige episoder etter deres luftdato.';
+	@override String get specialsOrderingLastDescription => 'Plasser hver spesiell etter de vanlige sesongene.';
+	@override String get skipIntroModeDescription => 'Velg om intro markere spiller normalt, viser en skip-knappe eller skip automatisk.';
+	@override String get skipCreditsModeDescription => 'Velg om kreditter spiller normalt, viser en skip-knappe eller skip automatisk.';
+	@override String get skipAdsModeDescription => 'Velg om detekterte annonser spiller normalt, viser en skip-knappe eller skip automatisk.';
+	@override String get playbackBufferAutoDescription => 'La den aktive spilleren velge sin normale buffer størrelse.';
+	@override String get playbackBufferLargeDescription => 'Hold mer media klar før playback; dette bruker mer minne.';
+	@override String get playbackBufferExtraLargeDescription => 'Hold den største les-ahead bufferen; dette bruker mest minne.';
+	@override String get defaultQualityDescription => 'Sett standard videooppløsning og bitrate tak for strømmer som serveren transkoder.';
+	@override String get cellularQualityDescription => 'Override standardkvalitet når enheten bruker en cellulær-only forbindelse.';
+	@override String get remoteQualityDescription => 'Override Default Quality når du kobler til en server gjennom en fjerne tilkobling.';
+	@override String get qualityPresetOriginalDescription => 'Spill kilden på tilgjengelig kvalitet uten å be serveren om å transkode den.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Be serveren om en konvertert strøm ved hjelp av oppløsningen og bitrate som vises ovenfor.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Bruk kvaliteten valgt i standardkvalitet.';
+	@override String get musicQualityDescription => 'Sett den maksimale lydbitrate som kreves fra serveren; Original holder kildestrømmen.';
+	@override String get musicQualityOriginalDescription => 'Spille kildekode uten en bitrate-kapped transcode.';
+	@override String get musicQualityTranscodeOptionDescription => 'Be om en server transkode capped nær bitrate vist ovenfor; den virkelige utgangen kan variere.';
+	@override String get maxVolumeInputLabel => 'Maksimalt volum (%)';
+	@override String get checkForUpdatesDescription => 'Sjekk nå om en nyere versjon av PlezyNG er tilgjengelig.';
+	@override String get appearanceDescription => 'Velg app-temaet og juster bibliotekskort, Hjem rader og navigasjon.';
+	@override String get prerollLibraryDescription => 'Velg biblioteket som inneholder klippene tilgjengelig som film pre-rolls.';
+	@override String get prerollSelectionDescription => 'Velg hvilke klipp fra det valgte biblioteket kan spilles før filmer.';
+	@override String get contentScreensaverDelayOptionDescription => 'Vent dette mange minutter uten inngang før du viser skjermbeskyttelse kunstverk.';
+	@override String get videoCodecOptionDescription => 'Tillat direkte spill for denne kodeksen når den støttes. Unchecked codecs transcodes av media serveren.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$nb extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} min igjen';
 	@override String get previewSwitch => 'Autospill';
 	@override String get previewMutedText => 'Sekundærtekst ser slik ut';
+	@override String get themeSystemDescription => 'Følg utseendet på enheten og skift mellom lys og mørke automatisk.';
+	@override String get themeLightDescription => 'Bruk en lys bakgrunn med mørk tekst.';
+	@override String get themeDarkDescription => 'Bruk en mørk bakgrunn med lys tekst.';
+	@override String get themeOledDescription => 'Bruk nærmeste svarte overflater som reduserer lys på OLED-skjermer.';
+	@override String get themeEmberDescription => 'Bruk varme røde og amber accent farger.';
+	@override String get themeGlacierDescription => 'Bruk kalde blå aksentfarger.';
+	@override String get themeForestDescription => 'Bruk malt grønn og naturlig accent farger.';
+	@override String get themePlumDescription => 'Bruk violett og plum accent farger.';
+	@override String get themePaperDescription => 'Bruk varme papirlignende overflater og ink-inspirerte farger.';
+	@override String get themeCustomDescription => 'Bruk fargepaletten du opprettet i den tilpassede tema editoren.';
+	@override String get editorDescription => 'Velg en palettfarge, justere dens hue, mottakelse, lyshet eller opacity, og se forhåndsvisning oppdatering før du sparer.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$nb extends Translations$accessibility$en {
 	@override String get largeTargets => 'Større touch mål';
 	@override String get largeTargetsHint => 'Gi delte kontroller mer plass for berøring og assistent navigasjon.';
 	@override String get navigationHint => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller mellomrom for å aktivere og Escape eller Tilbake for å lukke. Zoom og leseinnstillinger er tilgjengelige når en bok er åpen.';
+	@override String get textSizeDescription => 'Skala grensesnitt tekst i PlezyNG i tillegg til enhetens system tekst-størrelse innstilling.';
+	@override String get boldTextHint => 'Bruk en tyngre vekt for grensesnitt etiketter og meldinger for å gjøre dem enklere å skille mellom.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$nb extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transkoding utilgjengelig — spiller av i original kvalitet';
 	@override String get subtitleUnavailableFallback => 'De valgte undertekstene kunne ikke lastes inn — avspillingen fortsetter uten undertekster';
 	@override String get pipButton => 'Bilde-i-bilde-modus';
+	@override String get openMiniPlayer => 'Åpne mini-spillere';
+	@override String get returnToFullPlayer => 'Tilbake til fullspiller';
 	@override String get aspectRatioButton => 'Sideforhold';
 	@override String get ambientLighting => 'Omgivelseslys';
 	@override String get fullscreenButton => 'Gå til fullskjerm';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$nb extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Gjengivelsesoppløsning';
 	@override String get renderResolutionScreen => 'Skjermoppløsning';
 	@override String get renderResolutionVideo => 'Videooppløsning';
+	@override String get fontSizeDescription => 'Sett tekststørrelsen på denne enheten.';
+	@override String get textColorDescription => 'Velg fargen som brukes til undertekst.';
+	@override String get borderSizeDescription => 'Sett tykkelsen av utlinjen rundt undertekst.';
+	@override String get borderColorDescription => 'Velg fargen som brukes for undertittelutløpet.';
+	@override String get backgroundColorDescription => 'Velg fargen bak undertekst.';
+	@override String get backgroundOpacityDescription => 'Sett hvor åpen undertittel bakgrunnen er: 0% er klart og 100% er solid.';
+	@override String get positionDescription => 'Beveg subtitlene vertikalt. 0% er toppen av videoen og 100% er bunnen.';
+	@override String get assOverrideDescription => 'Velg om spilleren følger, justerer, erstattes eller fjerner styling innebygd i ASS-subtitler.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$nb assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$nb._(_root);
+	@override String get renderResolutionDescription => 'Velg oppløsningen som brukes til å rasterisere bilde og ASS-subtitler. Lavere Android-skalaer kan redusere renderingsarbeidet, men ser smalere ut.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$nb renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$nb._(_root);
+	@override String get boldDescription => 'Skjær undertekst i en tyngre vekt.';
+	@override String get italicDescription => 'Skriv ut undertekst i italiensk.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$nb extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nb watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nb._(_root);
 	@override String get mediaReviewsVisibility => 'Vurderinger og anmeldelser';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$nb mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$nb._(_root);
+	@override String get preferredAudioLanguageDescription => 'Foretrakk lydspor på dette språket når serveren eller spilleren velger en spor automatisk.';
+	@override String get preferredSubtitleLanguageDescription => 'Foretrukker undertitler sporer i dette språket når undertitlene er valgt automatisk.';
+	@override String get subtitleAccessibilityDescription => 'Velg om SDH-kapsjoner er foretrukket eller kreves under automatisk undertittelutvalg.';
+	@override String get forcedSubtitleDescription => 'Velg om tvunget undertittelspor er foretrukket eller nødvendig i løpet av automatisk utvalg.';
+	@override String get watchedIndicatorDescription => 'Velg hvilke medietyper som mottar et sett sjekkmerke i servergrensesnittet.';
+	@override String get mediaReviewsVisibilityDescription => 'Velg hvilken publikum og kritiske vurderinger serveren viser på media sider.';
+	@override String get subtitleModeDescription => 'Velg når undertitlene åpnes automatisk for denne serverkontoen.';
+	@override String get hubDescription => 'Disse preferansene lagres på media-serverkontoen din og kan også gjelde for andre kunder.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$nb extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-basislag';
 	@override String get dvRouteBaseLayerSdr => 'SDR-basislag';
 	@override String get dvRouteReshaped => 'RPU-omformet (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Eksperimentell P7 FEL-grafikk (unkvalifisert)';
 	@override String get p7Conversion => 'P7-konv.';
 	@override String get sampleRate => 'Samplingsrate';
 	@override String get pixelFormat => 'Pikselformat';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$nb extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Kunne ikke åpne ekstern spiller';
 	@override String appNotInstalled({required Object name}) => '${name} er ikke installert';
 	@override String get playInExternalPlayer => 'Spill av i ekstern spiller';
+	@override String get description => 'Velg en annen app for å åpne videoer i. Tilgjengelige spillere avhenger av din enhet og installerte apper.';
+	@override String get systemDefaultDescription => 'La operativsystemet åpne videoen med sin standardapp.';
+	@override String playerOptionDescription({required Object player}) => 'Åpne videoer med ${player}.';
+	@override String get playerNameDescription => 'Etiketten som vises i spillelisten.';
+	@override String get playerPackageDescription => 'Skriv inn Android-pakkenavnet på spilleren app, for eksempel com.example.player.';
+	@override String get playerCommandDescription => 'Skriv inn den installerte spillerkommandoen eller utførbar rute for denne enheten.';
+	@override String get playerUrlSchemeDescription => 'Skriv inn URL-skjemaet og det valgfrie URL-templet som brukes til å starte spilleren.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$nb extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$nb oauthProxy = _Translations$services$oauthProxy$nb._(_root);
 	@override late final _Translations$services$pendingAuth$nb pendingAuth = _Translations$services$pendingAuth$nb._(_root);
 	@override late final _Translations$services$libraryFilter$nb libraryFilter = _Translations$services$libraryFilter$nb._(_root);
+	@override String get seerrDescription => 'Koble til Seerr eller Overseerr for å søke etter titler og sende medieforespørsler.';
+	@override late final _Translations$services$trackerDescriptions$nb trackerDescriptions = _Translations$services$trackerDescriptions$nb._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$nb extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'På';
 	@override String get resetHeroButtonDescription => 'Avbryter hver rad av hjertesetting og bringer tilbake den ene roterende banneret til toppen, som før hjerteserien eksisterte.';
+	@override String get tapHeroCardDescription => 'Velg om tapping eller valg av et Hero-kort starter playback eller åpner detaljene.';
+	@override String get heroTapPlayDescription => 'Start det valgte elementet umiddelbart.';
+	@override String get heroTapDetailsDescription => 'Åpne detaljer om det valgte elementet før du velger en handling.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get source => 'Kilde';
 	@override String get name => 'Navn';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Angi en SMB-server og én delt mappe.';
 	@override String get root => 'Fold eller forhåndsregister';
+	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.';
 	@override String get username => 'Brukernavn';
+	@override String get smbDomain => 'Domene (valgfritt)';
 	@override String get password => 'Passord';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Oppsummering av Key ID';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth-klienthemmelighet (desktop Google alene)';
 	@override String get allowHttp => 'Tillat ukryptert HTTP på et betrodd nettverk';
+	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
+	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering når NAS-en støtter det.';
 	@override String get connect => 'Koble til';
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Lagre';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get useFiles => 'Bruk filer og bøker';
 	@override String get cancelScan => 'Avbestill skanningen';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Angi en SMB-server og én delt mappe.';
-	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.';
-	@override String get smbDomain => 'Domene (valgfritt)';
-	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
-	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering når NAS-en støtter det.';
+	@override String get offlineQuota => 'Offline nedlasting begrenset';
+	@override String get offlineQuotaHelp => 'Sett maksimalt plass som brukes av offline kopier, importerte filer og nedlastinger. Senke grensen fjerner ikke eksisterende kopier.';
+	@override String get offlineStorageUsage => 'Offline lagring';
+	@override String get reservedStorage => 'Reserverte';
+	@override String get downloadQueue => 'Nedlasting av Queue';
+	@override String get downloadRunning => 'nedlasting';
+	@override String get downloadQueued => 'Venter på';
+	@override String get downloadPaused => 'pause';
+	@override String get downloadFailed => 'Trenger tilbakemelding';
+	@override String get importing => 'Importerer';
+	@override String get importInterrupted => 'Import avbrutt · fjerning til klart';
+	@override String get errorQuotaExceeded => 'Den offline lagringsgrensen ble oppnådd. Oppheve grensen eller fjerne en nedlastet kopi.';
+	@override String get errorStorageLow => 'Det er ikke tilstrekkelig gratis lagring av enheter for å opprettholde den beskyttede reserven.';
+	@override String get errorStorageUnavailable => 'PlezyNG kunne ikke sjekke gratis enhet lagring, så skrivingen ble stoppet.';
+	@override String get removeDownloadJob => 'Fjern nedlasting';
+	@override String get downloadAlreadyComplete => 'Denne nedlastingen er ferdig før den kan fjernes. elementet er nå tilgjengelig offline.';
+	@override String get confirmRemoveDownloadJob => 'Fjern denne nedlastingen og slett alle delvis nedlastede data? din posisjon og notater vil forbli.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$nb extends Translations$audiobook$en {
 	@override String get statusFinished => 'Avslutter';
 	@override String get goToTime => 'Gå til tid';
 	@override String get timeHelp => 'Tider: minutter: sekunder eller minutter: sekunder';
+	@override String get recoveryHelp => 'Eksport en nylig kryptert kopi før du flytter eller reparerer synkronisering data. Importerer fusjon med nåværende tilstand; de erstattes aldri lokal synkroniseringshistorie.';
+	@override String get recoveryExport => 'Eksport kryptert gjenoppretting filer';
+	@override String get recoveryImport => 'Import kryptert gjenoppretting filer';
+	@override String get recoveryImportConfirm => 'Kombiner denne krypterte gjenoppretting filen med aktuelle lesing posisjoner og notater? eksisterende historie vil bli bevaret. delt bibliotek og element IDs er ikke inkludert; sette matching IDs på hver enhet før import.';
+	@override String get recoveryExported => 'Kryptert gjenoppretting fil lagret.';
+	@override String get recoveryImported => 'Data om gjenoppretting sammensatt.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$nb extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Valgt klientidentitet: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Vurdering ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Laster ned undertekst: ${title}';
+	@override String get sharedEntryPair => 'Par dette elementet';
+	@override String get sharedEntryPairHelp => 'Skriv inn samme ID for dette elementet på hver enhet. Bruk en stabil delt identifikator eller generer en og kopier den til det matchende elementet. Progress parer bare når utgave filtyper, størrelser og bestillinger matcher. Blank fjerner denne kartleggingen.';
+	@override String get sharedEntryId => 'Delte elementer ID';
+	@override String get generateSharedEntryId => 'Generere delt element ID';
+	@override String get sharedLibraryId => 'Delte bibliotek ID (alternativt)';
+	@override String get sharedLibraryHelp => 'Bruk den samme ID på enheter som åpner samme bibliotek. Denne offentlige ID hjelper med å føre lesing fremskritt og notater gjennom ulike kildeforbindelser; det er ikke et passord. Når leverandører bruker forskjellige elementer ID, par disse elementene fra detaljskjermene sine.';
+	@override String get sharedLibraryInvalid => 'Bruk 8–100 bokstaver, tall, poeng, underscore eller hyphens.';
+	@override String get generateSharedLibraryId => 'Generere en delt bibliotek ID';
+	@override String get nfsReadAhead => 'NFS Les-ahead forespørsler';
+	@override String get nfsReadAheadHelp => 'Flere parallelle lesinger kan forbedre gjennomgangen på en rask NAS eller nettverk. Bruk 1 hvis serveren begrenser samtidige forespørsler.';
+	@override String get nfsReadTest => 'NFS leser ytelse';
+	@override String get nfsReadTestHelp => 'Leser opp til 64 MiB fra den største filen for å måle denne NAS-tilkoblingen.';
+	@override String get nfsQualificationResult => 'NFS leser måling';
+	@override String get nfsReadBytes => 'Data leses';
+	@override String get nfsReadSpeed => 'Målt hastighet';
+	@override String get nfsReadRequests => 'Les forespørsler';
+	@override String get sharedEntryConflict => 'Denne delte element ID er allerede parert med et annet element i denne biblioteket.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$nb extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$nb extends Translations$common$mediaKind$en
 	@override String get clip => 'Klipp';
 	@override String get photo => 'Bilde';
 	@override String get folder => 'Mappe';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$nb extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Åpne anbefalinger og elementer fra tilknyttede oppdagelseskilder.';
+	@override String get libraries => 'Åpne dine tilkoblede mediebiblioteker.';
+	@override String get liveTv => 'Åpne Live TV når en server gir den; ellers faller oppstart tilbake til hjemmet.';
+	@override String get search => 'Åpne medier søk.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$nb extends Translations$videoControl
 	@override String unknown({required Object error}) => 'En feil oppstod: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$nb extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Hold bokstaver, farger, størrelser og plassering skrevet i undertittelfilen.';
+	@override String get yes => 'Tillat spillernes undertittelstilinnstillinger til å justere ASS-subtitler.';
+	@override String get scale => 'Bruk spilleren styling og skala innebygde størrelser for å matche video dimensjonene.';
+	@override String get force => 'Endre innebygde ASS-stiler med spillerens undertittelstil.';
+	@override String get strip => 'Fjern innebygd ASS-formatering og gjengiv underteksten tydelig.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$nb extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render på den fullstendige overflateoppløsningen for det skarpeste resultatet.';
+	@override String get video => 'Render bruker videooppløsningen som referanse, noe som kan redusere arbeidet på høye oppløsningsskjermer.';
+	@override String get threeQuarter => 'Render på 75% av skjermoverflatesolusjonen for en modest ytelsesbesparelse.';
+	@override String get half => 'Render på 50% av skjermoverflateoppløsningen for å redusere arbeidet, med mykere edder.';
+	@override String get third => 'Render på en tredjedel av skjermoverflateoppløsningen for å redusere arbeid, med mykere edder.';
+	@override String get quarter => 'Render på en fjerdedel av display overflateoppløsningen for å redusere arbeid, med det mykeste resultatet.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$nb extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$nb._(TranslationsNb root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$nb extends T
 	@override String get preferSdh => 'Foretrekk SDH-undertekster';
 	@override String get onlySdh => 'Kun SDH-undertekster';
 	@override String get onlyNonSdh => 'Kun ikke-SDH-undertekster';
+	@override String get preferNonSdhDescription => 'Foretrukker standard undertittel når både standard og SDH versjoner er tilgjengelige.';
+	@override String get preferSdhDescription => 'De foretrekker SDH-subtitler når de er tilgjengelige, men tillater standard subtitler som en fallback.';
+	@override String get onlySdhDescription => 'Bruk bare SDH-subtitler; ikke fall tilbake til standard subtitler.';
+	@override String get onlyNonSdhDescription => 'Bruk bare standard undertitler; unngå SDH-subtitler.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$nb extends Translat
 	@override String get preferForced => 'Foretrekk tvungne undertekster';
 	@override String get onlyForced => 'Kun tvungne undertekster';
 	@override String get onlyNonForced => 'Kun ikke-tvungne undertekster';
+	@override String get preferNonForcedDescription => 'Foretrakk regelmessige undertitler, men tillater tvunget spor som en fallback.';
+	@override String get preferForcedDescription => 'De foretrekker tvungne spor når de er tilgjengelige, men tillater regelmessige undertitler som en fallback.';
+	@override String get onlyForcedDescription => 'Bruk bare spor markerte som tvunget.';
+	@override String get onlyNonForcedDescription => 'Utelukker spor markeret som tvunget.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$nb extends Transl
 	@override String get moviesAndShows => 'Filmer og TV-serier';
 	@override String get movies => 'Kun filmer';
 	@override String get shows => 'Kun TV-serier';
+	@override String get noneDescription => 'Ikke vise observerte sjekkmerker.';
+	@override String get moviesAndShowsDescription => 'Vis sett sjekkmerker for filmer og TV-programmer.';
+	@override String get moviesDescription => 'Se sjekkmerker for filmer bare.';
+	@override String get showsDescription => 'Se seerte sjekkmerker for TV-serier bare.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$nb extends Translatio
 	@override String get usersOnly => 'Kun brukere';
 	@override String get criticsOnly => 'Kun kritikere';
 	@override String get nobody => 'Skjult';
+	@override String get usersAndCriticsDescription => 'Vis både brukervurderinger og kritiske vurderinger.';
+	@override String get usersOnlyDescription => 'Vis vurderinger og anmeldelser som er lagt fram av brukerne.';
+	@override String get criticsOnlyDescription => 'Vis kritiske vurderinger og anmeldelser.';
+	@override String get nobodyDescription => 'Skjære vurderinger og anmeldelser.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$nb extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Synkroniser kun bibliotekene du markerer nedenfor.';
 	@override String get libraries => 'Biblioteker';
 	@override String get noLibraries => 'Ingen biblioteker tilgjengelige';
+	@override String get modeDescription => 'Velg om de sjekkede bibliotekene er blokkert fra synkronisering eller er det eneste biblioteket som synkroniserer.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$nb extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Synkroniserte sett episoder og filmer med din Trakt konto.';
+	@override String get mal => 'Synk anime-lister og se fremskritt med MyAnimeList.';
+	@override String get anilist => 'Synkronisere anime-lister og se fremskritt med AniList.';
+	@override String get simkl => 'Sync så filmer, TV-programmer og anime med Simkl.';
+	@override String get mdblist => 'Vis MDBList-vurderinger og lister i anbefalinger og Utforsk.';
 }
 
 /// The flat map containing all translations for locale <nb>.
@@ -4481,6 +4754,7 @@ extension on TranslationsNb {
 			'appIcon.names.strata' => 'Sjikt',
 			'appIcon.names.facet' => 'Fasett',
 			'appIcon.names.tilde' => 'Tilde',
+			'appIcon.description' => 'Velg ikonet som vises av enhetslungeren din. Forhåndsvisningene viser hvordan hver alternativ ser ut.',
 			'auth.signInWithPlex' => 'Logg inn med Plex',
 			'auth.showQRCode' => 'Vis QR-kode',
 			'auth.authenticate' => 'Autentiser',
@@ -4502,6 +4776,32 @@ extension on TranslationsNb {
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Lagre',
 			'common.close' => 'Lukk',
+			'common.closeMiniPlayer' => 'Nær Mini-spillere',
+			'common.closeWorkspaceWindow' => 'Nær vindu',
+			'common.returnToFullView' => 'Tilbake til Full View',
+			'common.manageMediaSessions' => 'Ledelse av media sesjoner',
+			'common.hideMediaSessions' => 'Skjære mediekonferanser',
+			'common.mediaSessions' => 'Media sesjoner',
+			'common.mediaSessionsHint' => 'Velg for å bringe en sesjon fremover. Park skjuler vinduet, men holder det åpent. Return åpner den i full visning; nær slutter den.',
+			'common.sessionInWorkspace' => 'På arbeidsplassen',
+			'common.sessionParked' => 'Parkert',
+			'common.sessionFullscreen' => 'Full skjerm',
+			'common.switchToNextWindow' => 'Swap med neste vindu',
+			'common.moveWindow' => 'Flytte vindu',
+			'common.finishMovingWindow' => 'Slutt å flytte vindu',
+			'common.moveWindowHint' => 'Lang press og trekk vinduet for å bevege det. Denne kontrollen tillater også armbånd-nøkkelbevegelse.',
+			'common.movingWindowHelp' => 'Dra til bevegelse · Slå nøkler justere · Enter sparer · Escape annullerer',
+			'common.resizeWindow' => 'Åpne vinduet',
+			'common.resizeWindowHint' => 'Dra denne håndboken eller bruk våpennøkler for å revidere vinduet.',
+			'common.workspaceWindowHint' => 'Bruk bevegelseskontroller eller langpress og trekk for å flytte.',
+			'common.workspacePaneHint' => 'Velg dette panelet for å fokusere på det. Bruk fullskjermkontrollen for å utvide den.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Sesjon vindu: ${title}',
+			'common.workspaceTitleHint' => 'Velg for å fokusere. Dra overskriftsfältet for å flytte; bruk fullskjermknappen for å utvide.',
+			'common.moveToSessionTray' => 'Flytt til sesjon trey',
+			'common.moveToSessionTrayHint' => 'Keeps denne sesjonen tilgjengelig uten å vise vinduet.',
+			'common.closeSessionHint' => 'Stenger dette vinduet og avsluttes sesjonen.',
+			'common.sideBySideLayout' => 'Switch til side-by-side layout',
+			'common.floatingWindows' => 'Switch til å flyte vinduene',
 			'common.clear' => 'Tøm',
 			'common.reset' => 'Tilbakestill',
 			'common.later' => 'Senere',
@@ -4919,6 +5219,8 @@ extension on TranslationsNb {
 			'settings.audioPassthrough' => 'Direkte lydutgang',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionApple' => 'Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Slå av hvis du ikke har lyd.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. På iOS, iPadOS og tvOS 26 eller nyere spilles TrueHD Atmos og DTS:X av som romlig lyd. Andre DTS- og TrueHD-spor spilles av som flerkanals PCM. Slå av hvis du ikke har lyd.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Av mens lydstyrkenormalisering er på',
 			'settings.audioChannelLimit' => 'Lydkanaler',
@@ -4945,9 +5247,14 @@ extension on TranslationsNb {
 			'settings.dvConversionNativeDescription' => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt',
 			'settings.dvConversionDv81Description' => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC',
+			'settings.experimentalDolbyVision' => 'Eksperimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.',
+			'settings.dvExperimentUnavailableDescription' => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
+			'settings.dvCompatibilityFallbackDescription' => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.',
+			'settings.dvExperimentDiagnostics' => 'Logging av videoeksperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktiver detaljerte spillerlogger ved neste avspilling.',
 			'settings.disableDolbyVision' => 'Deaktiver Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes',
 			'settings.hdrSdrConversion' => 'HDR til SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Velg hva som konverterer HDR-video når skjermen ikke kan vise HDR.',
@@ -5033,13 +5340,84 @@ extension on TranslationsNb {
 			'settings.regionFormatDescription' => 'Velg hvordan datoer, tall og måleenheter vises.',
 			'settings.metadataLanguage' => 'Språk for metadata',
 			'settings.metadataLanguageDescription' => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.',
-			'settings.experimentalDolbyVision' => 'Eksperimentell Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.',
-			'settings.dvExperimentUnavailableDescription' => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
-			'settings.dvCompatibilityFallbackDescription' => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.',
-			'settings.dvExperimentDiagnostics' => 'Logging av videoeksperiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Aktiver detaljerte spillerlogger ved neste avspilling.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Skriv inn fullskjermen når playback starter',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Åpne desktop-video på fullskjerm når playback starter',
+			'settings.extendVideoIntoDisplayCutout' => 'Utvid video til display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'La fullskjermvideoen bruke kameraet på Android-telefoner',
+			'settings.languageDescription' => 'Velg språket som brukes til PlezyNG-kontroller og meldinger. Følg systemet sporer enhetsspråket ditt.',
+			'settings.themeDescription' => 'Velg fargene og kontrastene som brukes gjennom appen.',
+			'settings.libraryDensityDescription' => 'Endre hvor mange bibliotekkort som passer i hver rad.',
+			'settings.displayScaleDescription' => 'Gjenopprette grensesnittet på denne bilskjermen uten å endre tekststørrelsen på enheten din.',
+			'settings.themeSongVolumeDescription' => 'Sett volumet av tema sanger i forhold til andre lyd.',
+			'settings.viewModeDescription' => 'Velg om bibliotekselementer vises som plakater i et nettverk eller som en kompakt liste.',
+			'settings.gridViewDescription' => 'Ordne bibliotekselementer i rader og kolumner av plakater.',
+			'settings.listViewDescription' => 'Vis bibliotek elementer i en vertikal liste med mer tekst per element.',
+			'settings.gridSpacingDescription' => 'Sett gapet mellom plakater i biblioteksnett.',
+			'settings.gridSpacingTightDescription' => 'Fyll mer poster over skjermen med mindre gap.',
+			'settings.gridSpacingNormalDescription' => 'Bruk standardfrekvensen mellom poster.',
+			'settings.gridSpacingSpaciousDescription' => 'Legg til større gap mellom plakater for mer separasjon.',
+			'settings.episodePosterModeDescription' => 'Velg hvilket kunstverk som vises på episode kort.',
+			'settings.seriesPosterDescription' => 'Bruk showens serieposter for hver episode.',
+			'settings.seasonPosterDescription' => 'Bruk sesongposter for hver episode når det er tilgjengelig.',
+			'settings.episodeThumbnailDescription' => 'Bruk en ramme fra episoden når tilgjengelig.',
+			'settings.continueWatchingActionDescription' => 'Velg hva som skjer når du aktiverer en Continuing Watching-kort.',
+			'settings.continueWatchingPlayDescription' => 'Start filmen eller episoden umiddelbart.',
+			'settings.continueWatchingDetailsDescription' => 'Åpne tittelen først slik at du kan se nærmere på detaljene og velge en handling.',
+			'settings.episodeActionDescription' => 'Velg hva som skjer når du aktiverer et episode-kort.',
+			'settings.episodePlayDescription' => 'Begynn episoden umiddelbart.',
+			'settings.episodeDetailsDescription' => 'Åpne episode-siden før playback.',
+			'settings.contentScreensaverDelayDescription' => 'Velg hvor lenge PlezyNG venter uten inngang før du viser kunstverk.',
+			'settings.continueWatchingRowSizeDescription' => 'Velg hvor store kortene er i Continuing Watching-linjen.',
+			'settings.rowSizeCompactDescription' => 'Vis mindre kort slik at flere elementer passer over raden.',
+			'settings.rowSizeStandardDescription' => 'Bruk standard kortstørrelse.',
+			'settings.rowSizeLargeDescription' => 'Vis større kort med mer kunstverk detalj.',
+			'settings.visualEffectsDescription' => 'Velg animasjon og kunstverk effekter budsjett for denne enheten.',
+			'settings.visualEffectsFullDescription' => 'Bruk den fullstendige animasjons- og kunstverkseffekten på hver enhet.',
+			'settings.startupSectionDescription' => 'Velg hvilken del som åpner når PlezyNG starter.',
+			'settings.startupSectionOptions.discover' => 'Åpne anbefalinger og elementer fra tilknyttede oppdagelseskilder.',
+			'settings.startupSectionOptions.libraries' => 'Åpne dine tilkoblede mediebiblioteker.',
+			'settings.startupSectionOptions.liveTv' => 'Åpne Live TV når en server gir den; ellers faller oppstart tilbake til hjemmet.',
+			'settings.startupSectionOptions.search' => 'Åpne medier søk.',
+			'settings.smallSkipDurationDescription' => 'Sett avstanden som flyttes av den korte bakover og fremfor søker kontroller.',
+			'settings.largeSkipDurationDescription' => 'Sett avstanden som flyttes av den lange bakover og fremfor søker kontroller.',
+			'settings.rewindOnResumeDescription' => 'Flytt playback tilbake med dette beløpet når du gjenoppretter en video.',
+			'settings.defaultSleepTimerDescription' => 'Sett den opprinnelige varigheten som brukes når du starter søvn timer.',
+			'settings.playNextCountdownDescription' => 'Vent dette lenge før du starter neste episode. Sett til 0 for å starte umiddelbart.',
+			'settings.autoSkipDelaySettingDescription' => 'Det gjelder når en intro, kreditter eller annonsen er satt til å skille automatisk.',
+			'settings.downmixCenterBoostDescription' => 'Øke dialogen i sentralkanalen når omgivende lyd blandes ned til stereo.',
+			'settings.displaySwitchDelayDescription' => 'Vennligst vent før du endrer skjermmodus slik at TV-en eller mottakeren kan fullføre sin tidligere skift.',
+			'settings.playerBackendDescription' => 'Velg hvilken spillmotor som dekoder og renderer video på denne enheten.',
+			'settings.exoPlayerDescription' => 'Bruk Androids innfødte Media3-baserte spiller og støttet maskinvareveier.',
+			'settings.mpvDescription' => 'Bruk mpv, som viser ytterligere playback, undertittel og videobehandling kontroller.',
+			'settings.scopeOffDescription' => 'Lagre endringer for den nåværende playback-sesjonen bare.',
+			'settings.scopeGlobalDescription' => 'Åpne samme verdi for hver bibliotek og tittel.',
+			'settings.scopeLibraryDescription' => 'Husk en separat verdi for hver bibliotek.',
+			'settings.scopeTitleDescription' => 'Husk en separat verdi for hver show eller film.',
+			'settings.specialsOrderingServerDescription' => 'Oppbevar episoden ordre levert av media serveren.',
+			'settings.specialsOrderingAirDateDescription' => 'Plasser spesialene blant vanlige episoder etter deres luftdato.',
+			'settings.specialsOrderingLastDescription' => 'Plasser hver spesiell etter de vanlige sesongene.',
+			'settings.skipIntroModeDescription' => 'Velg om intro markere spiller normalt, viser en skip-knappe eller skip automatisk.',
+			'settings.skipCreditsModeDescription' => 'Velg om kreditter spiller normalt, viser en skip-knappe eller skip automatisk.',
+			'settings.skipAdsModeDescription' => 'Velg om detekterte annonser spiller normalt, viser en skip-knappe eller skip automatisk.',
+			'settings.playbackBufferAutoDescription' => 'La den aktive spilleren velge sin normale buffer størrelse.',
+			'settings.playbackBufferLargeDescription' => 'Hold mer media klar før playback; dette bruker mer minne.',
+			'settings.playbackBufferExtraLargeDescription' => 'Hold den største les-ahead bufferen; dette bruker mest minne.',
+			'settings.defaultQualityDescription' => 'Sett standard videooppløsning og bitrate tak for strømmer som serveren transkoder.',
+			'settings.cellularQualityDescription' => 'Override standardkvalitet når enheten bruker en cellulær-only forbindelse.',
+			'settings.remoteQualityDescription' => 'Override Default Quality når du kobler til en server gjennom en fjerne tilkobling.',
+			'settings.qualityPresetOriginalDescription' => 'Spill kilden på tilgjengelig kvalitet uten å be serveren om å transkode den.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Be serveren om en konvertert strøm ved hjelp av oppløsningen og bitrate som vises ovenfor.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Bruk kvaliteten valgt i standardkvalitet.',
+			'settings.musicQualityDescription' => 'Sett den maksimale lydbitrate som kreves fra serveren; Original holder kildestrømmen.',
+			'settings.musicQualityOriginalDescription' => 'Spille kildekode uten en bitrate-kapped transcode.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Be om en server transkode capped nær bitrate vist ovenfor; den virkelige utgangen kan variere.',
+			'settings.maxVolumeInputLabel' => 'Maksimalt volum (%)',
+			'settings.checkForUpdatesDescription' => 'Sjekk nå om en nyere versjon av PlezyNG er tilgjengelig.',
+			'settings.appearanceDescription' => 'Velg app-temaet og juster bibliotekskort, Hjem rader og navigasjon.',
+			'settings.prerollLibraryDescription' => 'Velg biblioteket som inneholder klippene tilgjengelig som film pre-rolls.',
+			'settings.prerollSelectionDescription' => 'Velg hvilke klipp fra det valgte biblioteket kan spilles før filmer.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Vent dette mange minutter uten inngang før du viser skjermbeskyttelse kunstverk.',
+			'settings.videoCodecOptionDescription' => 'Tillat direkte spill for denne kodeksen når den støttes. Unchecked codecs transcodes av media serveren.',
 			'themeEditor.builtIn' => 'Innebygde',
 			'themeEditor.presets' => 'Forhåndsinnstillinger',
 			'themeEditor.custom' => 'Egendefinert',
@@ -5078,6 +5456,17 @@ extension on TranslationsNb {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min igjen',
 			'themeEditor.previewSwitch' => 'Autospill',
 			'themeEditor.previewMutedText' => 'Sekundærtekst ser slik ut',
+			'themeEditor.themeSystemDescription' => 'Følg utseendet på enheten og skift mellom lys og mørke automatisk.',
+			'themeEditor.themeLightDescription' => 'Bruk en lys bakgrunn med mørk tekst.',
+			'themeEditor.themeDarkDescription' => 'Bruk en mørk bakgrunn med lys tekst.',
+			'themeEditor.themeOledDescription' => 'Bruk nærmeste svarte overflater som reduserer lys på OLED-skjermer.',
+			'themeEditor.themeEmberDescription' => 'Bruk varme røde og amber accent farger.',
+			'themeEditor.themeGlacierDescription' => 'Bruk kalde blå aksentfarger.',
+			'themeEditor.themeForestDescription' => 'Bruk malt grønn og naturlig accent farger.',
+			'themeEditor.themePlumDescription' => 'Bruk violett og plum accent farger.',
+			'themeEditor.themePaperDescription' => 'Bruk varme papirlignende overflater og ink-inspirerte farger.',
+			'themeEditor.themeCustomDescription' => 'Bruk fargepaletten du opprettet i den tilpassede tema editoren.',
+			'themeEditor.editorDescription' => 'Velg en palettfarge, justere dens hue, mottakelse, lyshet eller opacity, og se forhåndsvisning oppdatering før du sparer.',
 			'search.hint' => 'Søk i filmer, serier, musikk...',
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
@@ -5323,6 +5712,8 @@ extension on TranslationsNb {
 			'accessibility.largeTargets' => 'Større touch mål',
 			'accessibility.largeTargetsHint' => 'Gi delte kontroller mer plass for berøring og assistent navigasjon.',
 			'accessibility.navigationHint' => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller mellomrom for å aktivere og Escape eller Tilbake for å lukke. Zoom og leseinnstillinger er tilgjengelige når en bok er åpen.',
+			'accessibility.textSizeDescription' => 'Skala grensesnitt tekst i PlezyNG i tillegg til enhetens system tekst-størrelse innstilling.',
+			'accessibility.boldTextHint' => 'Bruk en tyngre vekt for grensesnitt etiketter og meldinger for å gjøre dem enklere å skille mellom.',
 			'tooltips.shufflePlay' => 'Tilfeldig avspilling',
 			'tooltips.playTrailer' => 'Spill trailer',
 			'tooltips.markAsWatched' => 'Merk som sett',
@@ -5342,6 +5733,8 @@ extension on TranslationsNb {
 			'videoControls.sleepTimerEndOfVideo' => 'Slutten av gjeldende video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stopp ved',
 			'videoControls.sleepTimerDurationHeader' => 'Varighet',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Avspilling vil pause på slutten av denne videoen',
 			'videoControls.stillWatching' => 'Ser du fortsatt?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauser om ${seconds}s',
@@ -5376,6 +5769,8 @@ extension on TranslationsNb {
 			'videoControls.transcodeUnavailableFallback' => 'Transkoding utilgjengelig — spiller av i original kvalitet',
 			'videoControls.subtitleUnavailableFallback' => 'De valgte undertekstene kunne ikke lastes inn — avspillingen fortsetter uten undertekster',
 			'videoControls.pipButton' => 'Bilde-i-bilde-modus',
+			'videoControls.openMiniPlayer' => 'Åpne mini-spillere',
+			'videoControls.returnToFullPlayer' => 'Tilbake til fullspiller',
 			'videoControls.aspectRatioButton' => 'Sideforhold',
 			'videoControls.ambientLighting' => 'Omgivelseslys',
 			'videoControls.fullscreenButton' => 'Gå til fullskjerm',
@@ -5460,8 +5855,6 @@ extension on TranslationsNb {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotekkanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke skanne bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Oppdaterer metadata for "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadataoppdatering startet for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på at du vil logge ut?',
@@ -5521,6 +5914,28 @@ extension on TranslationsNb {
 			'subtitlingStyling.renderResolution' => 'Gjengivelsesoppløsning',
 			'subtitlingStyling.renderResolutionScreen' => 'Skjermoppløsning',
 			'subtitlingStyling.renderResolutionVideo' => 'Videooppløsning',
+			'subtitlingStyling.fontSizeDescription' => 'Sett tekststørrelsen på denne enheten.',
+			'subtitlingStyling.textColorDescription' => 'Velg fargen som brukes til undertekst.',
+			'subtitlingStyling.borderSizeDescription' => 'Sett tykkelsen av utlinjen rundt undertekst.',
+			'subtitlingStyling.borderColorDescription' => 'Velg fargen som brukes for undertittelutløpet.',
+			'subtitlingStyling.backgroundColorDescription' => 'Velg fargen bak undertekst.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Sett hvor åpen undertittel bakgrunnen er: 0% er klart og 100% er solid.',
+			'subtitlingStyling.positionDescription' => 'Beveg subtitlene vertikalt. 0% er toppen av videoen og 100% er bunnen.',
+			'subtitlingStyling.assOverrideDescription' => 'Velg om spilleren følger, justerer, erstattes eller fjerner styling innebygd i ASS-subtitler.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Hold bokstaver, farger, størrelser og plassering skrevet i undertittelfilen.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Tillat spillernes undertittelstilinnstillinger til å justere ASS-subtitler.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Bruk spilleren styling og skala innebygde størrelser for å matche video dimensjonene.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Endre innebygde ASS-stiler med spillerens undertittelstil.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Fjern innebygd ASS-formatering og gjengiv underteksten tydelig.',
+			'subtitlingStyling.renderResolutionDescription' => 'Velg oppløsningen som brukes til å rasterisere bilde og ASS-subtitler. Lavere Android-skalaer kan redusere renderingsarbeidet, men ser smalere ut.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render på den fullstendige overflateoppløsningen for det skarpeste resultatet.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render bruker videooppløsningen som referanse, noe som kan redusere arbeidet på høye oppløsningsskjermer.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render på 75% av skjermoverflatesolusjonen for en modest ytelsesbesparelse.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render på 50% av skjermoverflateoppløsningen for å redusere arbeidet, med mykere edder.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render på en tredjedel av skjermoverflateoppløsningen for å redusere arbeid, med mykere edder.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render på en fjerdedel av display overflateoppløsningen for å redusere arbeid, med det mykeste resultatet.',
+			'subtitlingStyling.boldDescription' => 'Skjær undertekst i en tyngre vekt.',
+			'subtitlingStyling.italicDescription' => 'Skriv ut undertekst i italiensk.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Avanserte videospillerinnstillinger',
 			'mpvConfig.presets' => 'Forhåndsinnstillinger',
@@ -5657,11 +6072,19 @@ extension on TranslationsNb {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Foretrekk SDH-undertekster',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Kun SDH-undertekster',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Kun ikke-SDH-undertekster',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Foretrukker standard undertittel når både standard og SDH versjoner er tilgjengelige.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'De foretrekker SDH-subtitler når de er tilgjengelige, men tillater standard subtitler som en fallback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Bruk bare SDH-subtitler; ikke fall tilbake til standard subtitler.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Bruk bare standard undertitler; unngå SDH-subtitler.',
 			'accountPreferences.forcedSubtitles' => 'Tvungne undertekster',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Foretrekk ikke-tvungne undertekster',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Foretrekk tvungne undertekster',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Kun tvungne undertekster',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Kun ikke-tvungne undertekster',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Foretrakk regelmessige undertitler, men tillater tvunget spor som en fallback.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'De foretrekker tvungne spor når de er tilgjengelige, men tillater regelmessige undertitler som en fallback.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Bruk bare spor markerte som tvunget.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Utelukker spor markeret som tvunget.',
 			'accountPreferences.displayMissingEpisodes' => 'Vis manglende episoder',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Vis episoder serveren kjenner til, men som ikke har noen fil.',
 			'accountPreferences.hidePlayedInLatest' => 'Skjul sette elementer i Siste',
@@ -5675,11 +6098,27 @@ extension on TranslationsNb {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmer og TV-serier',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Kun filmer',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Kun TV-serier',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Ikke vise observerte sjekkmerker.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Vis sett sjekkmerker for filmer og TV-programmer.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Se sjekkmerker for filmer bare.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Se seerte sjekkmerker for TV-serier bare.',
 			'accountPreferences.mediaReviewsVisibility' => 'Vurderinger og anmeldelser',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Brukere og kritikere',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Kun brukere',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Kun kritikere',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Skjult',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Vis både brukervurderinger og kritiske vurderinger.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Vis vurderinger og anmeldelser som er lagt fram av brukerne.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Vis kritiske vurderinger og anmeldelser.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Skjære vurderinger og anmeldelser.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Foretrakk lydspor på dette språket når serveren eller spilleren velger en spor automatisk.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Foretrukker undertitler sporer i dette språket når undertitlene er valgt automatisk.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Velg om SDH-kapsjoner er foretrukket eller kreves under automatisk undertittelutvalg.',
+			'accountPreferences.forcedSubtitleDescription' => 'Velg om tvunget undertittelspor er foretrukket eller nødvendig i løpet av automatisk utvalg.',
+			'accountPreferences.watchedIndicatorDescription' => 'Velg hvilke medietyper som mottar et sett sjekkmerke i servergrensesnittet.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Velg hvilken publikum og kritiske vurderinger serveren viser på media sider.',
+			'accountPreferences.subtitleModeDescription' => 'Velg når undertitlene åpnes automatisk for denne serverkontoen.',
+			'accountPreferences.hubDescription' => 'Disse preferansene lagres på media-serverkontoen din og kan også gjelde for andre kunder.',
 			'discover.title' => 'Oppdag',
 			'discover.noContentAvailable' => 'Ikke noe innhold tilgjengelig',
 			'discover.addMediaToLibraries' => 'Legg til medier i bibliotekene dine',
@@ -5808,6 +6247,8 @@ extension on TranslationsNb {
 			'libraries.all' => 'Alle',
 			'libraries.clearAll' => 'Tøm alle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil skanne "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil analysere "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på at du vil oppdatere metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på at du vil tømme papirkurven for "${title}"?',
@@ -5974,8 +6415,6 @@ extension on TranslationsNb {
 			'explore.mdblistShelves.nameHint' => 'La det være å bruke kildelistenavnet.',
 			'explore.mdblistShelves.add' => 'Legg til shelf',
 			'explore.mdblistShelves.save' => 'Sparer shelter',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytte ${title} opp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytte ${title} ned',
 			'explore.mdblistShelves.unavailable' => 'Denne listen er ikke tilgjengelig. Retur eller fjerne skjoldet i innstillinger.',
@@ -6322,6 +6761,8 @@ extension on TranslationsNb {
 			'watchTogether.connecting' => 'Kobler til...',
 			'watchTogether.relayPublic' => 'Rom bruker de offentlige Open Watch Party-reléserverne.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rom bruker reléserveren din på ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Nylige rom',
 			'watchTogether.roomActions' => 'Romhandlinger',
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
@@ -6488,8 +6929,6 @@ extension on TranslationsNb {
 			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			'downloads.cancelledDownload' => 'Avbrutt nedlasting',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} lastet ned – klikk for å fullføre',
 			'downloads.partialDownloadClickToComplete' => 'Delvis lastet ned – klikk for å fullføre',
 			'downloads.deleting' => 'Sletter...',
@@ -6748,6 +7187,7 @@ extension on TranslationsNb {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-basislag',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-basislag',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-omformet (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Eksperimentell P7 FEL-grafikk (unkvalifisert)',
 			'performanceOverlay.p7Conversion' => 'P7-konv.',
 			'performanceOverlay.sampleRate' => 'Samplingsrate',
 			'performanceOverlay.pixelFormat' => 'Pikselformat',
@@ -6799,6 +7239,13 @@ extension on TranslationsNb {
 			'externalPlayer.launchFailed' => 'Kunne ikke åpne ekstern spiller',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installert',
 			'externalPlayer.playInExternalPlayer' => 'Spill av i ekstern spiller',
+			'externalPlayer.description' => 'Velg en annen app for å åpne videoer i. Tilgjengelige spillere avhenger av din enhet og installerte apper.',
+			'externalPlayer.systemDefaultDescription' => 'La operativsystemet åpne videoen med sin standardapp.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Åpne videoer med ${player}.',
+			'externalPlayer.playerNameDescription' => 'Etiketten som vises i spillelisten.',
+			'externalPlayer.playerPackageDescription' => 'Skriv inn Android-pakkenavnet på spilleren app, for eksempel com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Skriv inn den installerte spillerkommandoen eller utførbar rute for denne enheten.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Skriv inn URL-skjemaet og det valgfrie URL-templet som brukes til å starte spilleren.',
 			'metadataEdit.editMetadata' => 'Rediger...',
 			'metadataEdit.screenTitle' => 'Rediger metadata',
 			'metadataEdit.basicInfo' => 'Grunnleggende informasjon',
@@ -6828,6 +7275,8 @@ extension on TranslationsNb {
 			'metadataEdit.metadataUpdateFailed' => 'Kunne ikke oppdatere metadata',
 			'metadataEdit.artworkUpdated' => 'Grafikk oppdatert',
 			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke oppdatere grafikken',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Ingen grafikk tilgjengelig',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Grafikkalternativ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Grafikkalternativ ${index}, valgt',
@@ -6988,6 +7437,13 @@ extension on TranslationsNb {
 			'services.libraryFilter.modeHintWhitelist' => 'Synkroniser kun bibliotekene du markerer nedenfor.',
 			'services.libraryFilter.libraries' => 'Biblioteker',
 			'services.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
+			'services.libraryFilter.modeDescription' => 'Velg om de sjekkede bibliotekene er blokkert fra synkronisering eller er det eneste biblioteket som synkroniserer.',
+			'services.seerrDescription' => 'Koble til Seerr eller Overseerr for å søke etter titler og sende medieforespørsler.',
+			'services.trackerDescriptions.trakt' => 'Synkroniserte sett episoder og filmer med din Trakt konto.',
+			'services.trackerDescriptions.mal' => 'Synk anime-lister og se fremskritt med MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Synkronisere anime-lister og se fremskritt med AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync så filmer, TV-programmer og anime med Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Vis MDBList-vurderinger og lister i anbefalinger og Utforsk.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Legg til ${product}-server',
 			'addServer.serverUrls' => 'Server-URL-er',
 			'addServer.serverUrlsHelper' => 'Flere URL-er er tillatt, atskilt med komma.',
@@ -7002,8 +7458,6 @@ extension on TranslationsNb {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Innlogging mislyktes: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislyktes: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logg inn med Plex',
 			'addServer.pinExpired' => 'PIN-koden utløp før innloggingen var fullført. Prøv igjen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsNb {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'På',
 			'homeLayout.resetHeroButtonDescription' => 'Avbryter hver rad av hjertesetting og bringer tilbake den ene roterende banneret til toppen, som før hjerteserien eksisterte.',
+			'homeLayout.tapHeroCardDescription' => 'Velg om tapping eller valg av et Hero-kort starter playback eller åpner detaljene.',
+			'homeLayout.heroTapPlayDescription' => 'Start det valgte elementet umiddelbart.',
+			'homeLayout.heroTapDetailsDescription' => 'Åpne detaljer om det valgte elementet før du velger en handling.',
 			'platform.localNetworkPermission' => 'PlezyNG kobler til medieserverne og avspillingsenhetene dine på det lokale nettverket.',
 			'platform.locationPermission' => 'PlezyNG bruker lokasjonstilgang når iOS krever det for å oppdage ditt lokale nettverk og koble til dine medie servere.',
 			'platform.photoLibraryPermission' => 'Velg bilder fra bildebiblioteket som omslag og illustrasjoner til medieinnhold.',
@@ -7169,8 +7626,12 @@ extension on TranslationsNb {
 			'fileSources.source' => 'Kilde',
 			'fileSources.name' => 'Navn',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Angi en SMB-server og én delt mappe.',
 			'fileSources.root' => 'Fold eller forhåndsregister',
+			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.',
 			'fileSources.username' => 'Brukernavn',
+			'fileSources.smbDomain' => 'Domene (valgfritt)',
 			'fileSources.password' => 'Passord',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Oppsummering av Key ID',
@@ -7180,6 +7641,8 @@ extension on TranslationsNb {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth-klienthemmelighet (desktop Google alene)',
 			'fileSources.allowHttp' => 'Tillat ukryptert HTTP på et betrodd nettverk',
+			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
+			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering når NAS-en støtter det.',
 			'fileSources.connect' => 'Koble til',
 			'fileSources.cancel' => 'Avbryt',
 			'fileSources.save' => 'Lagre',
@@ -7322,12 +7785,25 @@ extension on TranslationsNb {
 			'fileSources.useFiles' => 'Bruk filer og bøker',
 			'fileSources.cancelScan' => 'Avbestill skanningen',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Angi en SMB-server og én delt mappe.',
-			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.',
-			'fileSources.smbDomain' => 'Domene (valgfritt)',
-			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
-			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering når NAS-en støtter det.',
+			'fileSources.offlineQuota' => 'Offline nedlasting begrenset',
+			'fileSources.offlineQuotaHelp' => 'Sett maksimalt plass som brukes av offline kopier, importerte filer og nedlastinger. Senke grensen fjerner ikke eksisterende kopier.',
+			'fileSources.offlineStorageUsage' => 'Offline lagring',
+			'fileSources.reservedStorage' => 'Reserverte',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Nedlasting av Queue',
+			'fileSources.downloadRunning' => 'nedlasting',
+			'fileSources.downloadQueued' => 'Venter på',
+			'fileSources.downloadPaused' => 'pause',
+			'fileSources.downloadFailed' => 'Trenger tilbakemelding',
+			'fileSources.importing' => 'Importerer',
+			'fileSources.importInterrupted' => 'Import avbrutt · fjerning til klart',
+			'fileSources.errorQuotaExceeded' => 'Den offline lagringsgrensen ble oppnådd. Oppheve grensen eller fjerne en nedlastet kopi.',
+			'fileSources.errorStorageLow' => 'Det er ikke tilstrekkelig gratis lagring av enheter for å opprettholde den beskyttede reserven.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG kunne ikke sjekke gratis enhet lagring, så skrivingen ble stoppet.',
+			'fileSources.removeDownloadJob' => 'Fjern nedlasting',
+			'fileSources.downloadAlreadyComplete' => 'Denne nedlastingen er ferdig før den kan fjernes. elementet er nå tilgjengelig offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Fjern denne nedlastingen og slett alle delvis nedlastede data? din posisjon og notater vil forbli.',
 			'lending.title' => 'Offentlige bibliotek',
 			'lending.add' => 'Legg til biblioteket',
 			'lending.other' => 'En annen bibliotek',
@@ -7429,6 +7905,12 @@ extension on TranslationsNb {
 			'audiobook.statusFinished' => 'Avslutter',
 			'audiobook.goToTime' => 'Gå til tid',
 			'audiobook.timeHelp' => 'Tider: minutter: sekunder eller minutter: sekunder',
+			'audiobook.recoveryHelp' => 'Eksport en nylig kryptert kopi før du flytter eller reparerer synkronisering data. Importerer fusjon med nåværende tilstand; de erstattes aldri lokal synkroniseringshistorie.',
+			'audiobook.recoveryExport' => 'Eksport kryptert gjenoppretting filer',
+			'audiobook.recoveryImport' => 'Import kryptert gjenoppretting filer',
+			'audiobook.recoveryImportConfirm' => 'Kombiner denne krypterte gjenoppretting filen med aktuelle lesing posisjoner og notater? eksisterende historie vil bli bevaret. delt bibliotek og element IDs er ikke inkludert; sette matching IDs på hver enhet før import.',
+			'audiobook.recoveryExported' => 'Kryptert gjenoppretting fil lagret.',
+			'audiobook.recoveryImported' => 'Data om gjenoppretting sammensatt.',
 			'sourceSetup.savedCertificate' => 'Lagret serversertifikat',
 			'sourceSetup.nfsEndpointInvalid' => 'Angi en NFS-URL, for eksempel nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Ingen DLNA-servere funnet. Angi URL-en til enhetsbeskrivelsen manuelt.',
@@ -7516,8 +7998,6 @@ extension on TranslationsNb {
 			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
 			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
 			'sourceSetup.httpUnencrypted' => 'HTTP uten transportkryptering',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kontroller sikkerheten til endepunktet',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} er påkrevd.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Angi ${label} fra ${min} til ${max}.',
@@ -7525,6 +8005,23 @@ extension on TranslationsNb {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Valgt klientidentitet: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Vurdering ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Laster ned undertekst: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Par dette elementet',
+			'sourceSetup.sharedEntryPairHelp' => 'Skriv inn samme ID for dette elementet på hver enhet. Bruk en stabil delt identifikator eller generer en og kopier den til det matchende elementet. Progress parer bare når utgave filtyper, størrelser og bestillinger matcher. Blank fjerner denne kartleggingen.',
+			'sourceSetup.sharedEntryId' => 'Delte elementer ID',
+			'sourceSetup.generateSharedEntryId' => 'Generere delt element ID',
+			'sourceSetup.sharedLibraryId' => 'Delte bibliotek ID (alternativt)',
+			'sourceSetup.sharedLibraryHelp' => 'Bruk den samme ID på enheter som åpner samme bibliotek. Denne offentlige ID hjelper med å føre lesing fremskritt og notater gjennom ulike kildeforbindelser; det er ikke et passord. Når leverandører bruker forskjellige elementer ID, par disse elementene fra detaljskjermene sine.',
+			'sourceSetup.sharedLibraryInvalid' => 'Bruk 8–100 bokstaver, tall, poeng, underscore eller hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Generere en delt bibliotek ID',
+			'sourceSetup.nfsReadAhead' => 'NFS Les-ahead forespørsler',
+			'sourceSetup.nfsReadAheadHelp' => 'Flere parallelle lesinger kan forbedre gjennomgangen på en rask NAS eller nettverk. Bruk 1 hvis serveren begrenser samtidige forespørsler.',
+			'sourceSetup.nfsReadTest' => 'NFS leser ytelse',
+			'sourceSetup.nfsReadTestHelp' => 'Leser opp til 64 MiB fra den største filen for å måle denne NAS-tilkoblingen.',
+			'sourceSetup.nfsQualificationResult' => 'NFS leser måling',
+			'sourceSetup.nfsReadBytes' => 'Data leses',
+			'sourceSetup.nfsReadSpeed' => 'Målt hastighet',
+			'sourceSetup.nfsReadRequests' => 'Les forespørsler',
+			'sourceSetup.sharedEntryConflict' => 'Denne delte element ID er allerede parert med et annet element i denne biblioteket.',
 			'comics.fitHeight' => 'Tilpass høyden',
 			'comics.readingMode' => 'Lesemodus',
 			'comics.paged' => 'Sider',
@@ -7599,6 +8096,15 @@ extension on TranslationsNb {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

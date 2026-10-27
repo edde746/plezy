@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "upstream": {
     "repository": "jellyfin/jellyfin-web",
     "license": "GPL-2.0-or-later",
@@ -79,7 +79,32 @@
     "license": "MIT",
     "conversion": "jncraton/m2m100_418M-ct2-int8",
     "revision": "7c1b2620a4e58dacecbd8bf89cfd6da7eb9eb7b0",
-    "weightsIncluded": false
+    "weightsIncluded": false,
+    "latestBatch": {
+      "scope": "PlezyNG 2.25.0 catalog additions",
+      "messagesPerBaseLocale": 224,
+      "baseLocales": 32,
+      "decoding": {
+        "beamSize": 4,
+        "repetitionPenalty": 1.15,
+        "noRepeatNgramSize": 3,
+        "maxDecodingLength": 160
+      },
+      "targetedCorrectionCount": 95,
+      "targetedCorrectionLocales": [
+        "bn",
+        "cs",
+        "de",
+        "hi",
+        "id",
+        "th",
+        "uz",
+        "vi",
+        "zh",
+        "zh-Hant"
+      ],
+      "corrections": "language_qa_2_25_0_corrections.json"
+    }
   },
   "reviewStatus": "Structural validation and targeted AI review only; no native-speaker approval is implied.",
   "scriptConversion": {
@@ -88,5 +113,22 @@
     "configuration": "s2twp",
     "appliedTo": "New Traditional Chinese drafts only; existing translations retained",
     "toolingIncluded": false
+  },
+  "intentionalEnglishFallbacks": {
+    "release": "PlezyNG 2.25.0",
+    "messagesPerBaseLocale": 9,
+    "baseLocales": 32,
+    "keys": [
+      "games.linkSteamAccount",
+      "games.refreshSteamAccount",
+      "games.steamAccountLinked",
+      "games.steamAppId",
+      "games.steamLibraryPrivate",
+      "games.steamLibraryStale",
+      "games.steamLibraryTruncated",
+      "games.unlinkSteamAccount",
+      "games.unlinkSteamAccountConfirm"
+    ],
+    "reason": "Steam account-library UI copy remains readable English fallback until quality-reviewed translations are available; machine drafts were rejected for poor fluency."
   }
 }

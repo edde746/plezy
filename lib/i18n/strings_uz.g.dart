@@ -177,6 +177,7 @@ class _Translations$appIcon$uz extends Translations$appIcon$en {
 	@override String get launcherHint => 'Yangi belgi PlezyNG-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.';
 	@override String get tvLauncherHint => 'Yangi banner PlezyNG-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.';
 	@override late final _Translations$appIcon$names$uz names = _Translations$appIcon$names$uz._(_root);
+	@override String get description => 'Ikonini sizlik cihazın başlatıcısı tarafından gösterdi. Preview\'lar hər bir seçiminin nasıl göründiyi gösterir.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$uz extends Translations$common$en {
 	@override String get cancel => 'Bekor qilish';
 	@override String get save => 'Saqlash';
 	@override String get close => 'Yopish';
+	@override String get closeMiniPlayer => 'Mini oyuncaklar';
+	@override String get closeWorkspaceWindow => 'Okumadi';
+	@override String get returnToFullView => 'Full viewga qaytadi.';
+	@override String get manageMediaSessions => 'Media sesyonlar';
+	@override String get hideMediaSessions => 'Media sesyonlar';
+	@override String get mediaSessions => 'Media sesyonlar';
+	@override String get mediaSessionsHint => 'Parks o\'qizga boʻyadi. Park o\'yadi boʻya boʻyo. Return o\'yu full view o\'yi açlar; close it ends.';
+	@override String get sessionInWorkspace => 'O‘zadi';
+	@override String get sessionParked => 'Parkadi';
+	@override String get sessionFullscreen => 'Full ekran';
+	@override String get switchToNextWindow => 'Bir sonraki windowga swap.';
+	@override String get moveWindow => 'Okumadi';
+	@override String get finishMovingWindow => 'U\'qizga qaytadi.';
+	@override String get moveWindowHint => 'Long-press and drag the window to move it. This control also allows arrow-key movement. Bu kontrol o‘zadi.';
+	@override String get movingWindowHelp => 'Ta\'yadi · Ta\'ya ko‘yadlar · Enter salves · Escape cancels';
+	@override String get resizeWindow => 'Okni qaytadi';
+	@override String get resizeWindowHint => 'Bu manni ko‘zadi o‘zari klavirini qaytarga.';
+	@override String get workspaceWindowHint => 'U\'yadi koʻi koʻyadi o‘yadi long-press and drag to move.';
+	@override String get workspacePaneHint => 'Bu panni ko‘zadi. bütün ekran kontrolini bo‘zani.';
+	@override String workspaceWindowLabel({required Object title}) => '${title} xqqq qxz';
+	@override String get workspaceTitleHint => 'U\'yadiq. titil barni qaytadiq; full screen buttonni bo‘yadix.';
+	@override String get moveToSessionTray => 'Session Tray’i qaytadi';
+	@override String get moveToSessionTrayHint => 'Bu sessiya bu penni o‘zilmaydi.';
+	@override String get closeSessionHint => 'Bu okni kaplar, bu sezyon o‘yadi.';
+	@override String get sideBySideLayout => 'Layout-i sid-by-side koʻyadi.';
+	@override String get floatingWindows => 'Switch o\'zlarga boʻyadi';
 	@override String get clear => 'Tozalash';
 	@override String get reset => 'Qayta oʻrnatish';
 	@override String get later => 'Keyinroq';
@@ -678,6 +705,13 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ichki DV7 rejimini majburlash';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 formatiga oʻtkazish';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish';
+	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
+	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
+	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
+	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
+	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 	@override String get disableDolbyVision => 'Dolby Vision\'ni oʻchirish';
 	@override String get disableDolbyVisionDescription => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish';
 	@override String get hdrSdrConversion => 'HDR\'ni SDR\'ga aylantirish';
@@ -764,13 +798,81 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.';
 	@override String get metadataLanguage => 'Metamaʼlumotlar tili';
 	@override String get metadataLanguageDescription => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.';
-	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
-	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
-	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
-	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
-	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
-	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
+	@override String get enterFullscreenOnPlaybackStart => 'Fullscreen ko‘zga playback başlar.';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Full screen-da video o‘yadi, playback başlarsa.';
+	@override String get extendVideoIntoDisplayCutout => 'Video\'yi display cutout\'a qaytadi';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Full-screen videoga Android telefonlarda kamera cutout\'u kullanmayalım.';
+	@override String get languageDescription => 'PlezyNG boshqaruvlari va xabarlari uchun tilni tanlang. Tizimga ergashish qurilmangiz tilidan foydalanadi.';
+	@override String get themeDescription => 'U‘ziz, kontrast o‘ziyadi bütün aplikasyonda.';
+	@override String get libraryDensityDescription => 'Bu aylarda librarik kartlar saymi dəyişdi.';
+	@override String get displayScaleDescription => 'Bu otomobil ekranda interfesi qaytadi, cihazda-gizlik texti sizini dəyişmadan.';
+	@override String get themeSongVolumeDescription => 'Thema lagu bilan bilan bilan o‘yadi.';
+	@override String get viewModeDescription => 'Librarian elementlar bir ağda plaklar olarak ya da kompak list olarak görünmaydi seçin.';
+	@override String get gridViewDescription => 'Librariyik objeklar birdanlar ve plaklar kolumni bilan.';
+	@override String get listViewDescription => 'Librarian elementlar bir vertikal listda daha fazla text per item-ga görünür.';
+	@override String get gridSpacingDescription => 'U library grids\'da plaklar arasında gap qoʻyadi.';
+	@override String get gridSpacingTightDescription => 'Ekranda daha fazla plaklar ko‘zadi.';
+	@override String get gridSpacingNormalDescription => 'Standart plaklar arasında gap qoʻyadi.';
+	@override String get gridSpacingSpaciousDescription => 'Daha fazla separasyon için plaklar arasında daha büyük gaplar qo‘yar.';
+	@override String get episodePosterModeDescription => 'U\'ziz, o‘ziz o’ziz kartlarda görünür.';
+	@override String get seriesPosterDescription => 'Show seriya poster o‘shayni.';
+	@override String get seasonPosterDescription => 'Sezon plakari bo\'qimiz o‘qimiyiz o’qimisi.';
+	@override String get episodeThumbnailDescription => 'Siz o‘zizdan bir çermi qoʻyadi.';
+	@override String get continueWatchingActionDescription => 'Siz o‘yadi, bir Continuing Watching card aktivizir.';
+	@override String get continueWatchingPlayDescription => 'Filmi o epizodni qaytadi.';
+	@override String get continueWatchingDetailsDescription => 'Birincisi başlık sayasini açın, bu yüzden ayrıntılar bilan bilan qaytadi ve bir eylem seçin.';
+	@override String get episodeActionDescription => 'Siz bir epizod kartlar aktivizdi o‘yadi.';
+	@override String get episodePlayDescription => 'Bu epizod o‘zadi.';
+	@override String get episodeDetailsDescription => 'Playback-dan əvvəl epizod sayadi açılır.';
+	@override String get contentScreensaverDelayDescription => 'PlezyNG foydalanuvchi faoliyati bo‘lmaganda tasvirni ko‘rsatishdan oldin qancha kutishini tanlang.';
+	@override String get continueWatchingRowSizeDescription => 'Siz o‘qotlar bilan qotlar ko‘yadi.';
+	@override String get rowSizeCompactDescription => 'U\'zlar kartlar daha küçir, daha fazla item qaytadi.';
+	@override String get rowSizeStandardDescription => 'Standart kartat sizni qaytadi.';
+	@override String get rowSizeLargeDescription => 'Karlar daha fazla artwork detaljga qo‘yadi.';
+	@override String get visualEffectsDescription => 'Animation and artwork effects budget bu cihaz için seçin.';
+	@override String get visualEffectsFullDescription => 'Animation və artwork efekti bütün cihazlarda kullanın.';
+	@override String get startupSectionDescription => 'U\'qizga qizga qaytadi ko‘zib.';
+	@override late final _Translations$settings$startupSectionOptions$uz startupSectionOptions = _Translations$settings$startupSectionOptions$uz._(_root);
+	@override String get smallSkipDurationDescription => 'U\'yadi bilan bilan bilan qaytdan, bilan bilan kontrollar koʻi.';
+	@override String get largeSkipDurationDescription => 'U\'yadi longga qaytdan o‘yadi ko‘yadlar kontrollar.';
+	@override String get rewindOnResumeDescription => 'Playback bilan qaytadi, bir video replaying.';
+	@override String get defaultSleepTimerDescription => 'U\'ziz, siz uyku timer başlarsan o‘ziz qoʻyadi.';
+	@override String get playNextCountdownDescription => 'Bir sonraki epizod başlardan o‘zadi. 0\'a ko‘zadan başlar.';
+	@override String get autoSkipDelaySettingDescription => 'U‘z, credit, o‘z reklamlar automatik olarak kaygaqdan qoʻyadi.';
+	@override String get downmixCenterBoostDescription => 'Dialogu qentri kanalda qoʻyadi koʻyada stereo-ga yoʻyad.';
+	@override String get displaySwitchDelayDescription => 'Televizor o‘zayni bilan qaytadi, televizor o’zaydi bilan bilan qaytar.';
+	@override String get playerBackendDescription => 'Bu cihazda video\'yi decoding və rendering üçün bir playback motor seçin.';
+	@override String get exoPlayerDescription => 'Android\'nin nadi Media3 bazlı oynatıclar ve supported hardware yollar kullan.';
+	@override String get mpvDescription => 'Mpv, o‘yadi ek playback, subtitle, video processing kontrollar.';
+	@override String get scopeOffDescription => 'U‘zizga xiyimadi bilan bilan bilan qaytadi.';
+	@override String get scopeGlobalDescription => 'O‘qizda librarik o‘qızlar o’qizdan o\'qizlar o‘cizlar.';
+	@override String get scopeLibraryDescription => 'Bu librariyalar için ayrı bir değerdir.';
+	@override String get scopeTitleDescription => 'Bu film o\'qizga o‘qizgi o’qizmi o‘cizdi o’cizmi.';
+	@override String get specialsOrderingServerDescription => 'Madiya server\'dan sağlanan epizod o‘zadi.';
+	@override String get specialsOrderingAirDateDescription => 'Speciallar regular epizodlar arasında onların hava date\'i qoʻyadi.';
+	@override String get specialsOrderingLastDescription => 'All speciallar regular sezonlardan sonra ko‘zadi.';
+	@override String get skipIntroModeDescription => 'Intro markers normalga oynaysa, bir skip buton o‘shayni, o‘si automatik o‘skayni.';
+	@override String get skipCreditsModeDescription => 'U\'yadi kreditlar normalga oynay, bir skip buton o‘yadi automatikga.';
+	@override String get skipAdsModeDescription => 'Adlar normalga oynaysa, bir skip buton o‘shake, o’shake automatik.';
+	@override String get playbackBufferAutoDescription => 'Aktif oyungan normal buffer sizni seçilmaydi.';
+	@override String get playbackBufferLargeDescription => 'Playback-dan əvvəl daha fazla medya hazır olun; bu, daha fazla memori yaratlar.';
+	@override String get playbackBufferExtraLargeDescription => 'Eng katta oldindan o‘qish buferini saqlang; u eng ko‘p xotiradan foydalanadi.';
+	@override String get defaultQualityDescription => 'Default video resolusyonini ayatlar ve server\'dan transcoding streams için bitrate tahtadi.';
+	@override String get cellularQualityDescription => 'Default Quality ko‘zlar, bir cihaz bu-cellular-on-conneccion kullanır.';
+	@override String get remoteQualityDescription => 'Default Quality ko\'t bir serverga bağlantı qoʻyilgan.';
+	@override String get qualityPresetOriginalDescription => 'U\'qizga kaynağımızda oynaylar, serverini transcode ko‘dilmaydi.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Servirga konvertiq o‘yadi, bo\'yadi bu resolusi ve bitrate-i yadi.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Default Quality-da seçkin kaliteyi kullan.';
+	@override String get musicQualityDescription => 'Servardan maksimum audio bitrate ko‘zadi; Original kaynaq aklamini tutlar.';
+	@override String get musicQualityOriginalDescription => 'O\'ziz o‘ziz, bitrate-capped transcode olmadan oynay.';
+	@override String get musicQualityTranscodeOptionDescription => 'Bir server transcode qapid o‘shayni bitsaradi; real output may variy.';
+	@override String get maxVolumeInputLabel => 'Maksimum bilan (%)';
+	@override String get checkForUpdatesDescription => 'U\'qizga qizga‘dan daha yeni bir versiyat var.';
+	@override String get appearanceDescription => 'Uygulama tema seçin, librarik kartlar, Home ruzlar, ve navigation.';
+	@override String get prerollLibraryDescription => 'Filmi pre-rolls olarak kullanılabilni kliplar olan bir kütüphan seçin.';
+	@override String get prerollSelectionDescription => 'Siz seçin, seçkin librariyadan hangi kliplar filmlardan əvvəl oynayabildi.';
+	@override String get contentScreensaverDelayOptionDescription => 'U\'qizga bu mullayni o‘zizga, ekrensaver artwork ko‘shish.';
+	@override String get videoCodecOptionDescription => 'Bu codec\'nin doğrudan playback ko‘dadi. Unchecked codeclar media server tarafından transcodir.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$uz extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} daq qoldi';
 	@override String get previewSwitch => 'Avtomatik ijro';
 	@override String get previewMutedText => 'Ikkilamchi matn shunday koʻrinadi';
+	@override String get themeSystemDescription => 'Siz cihazın görünüşünü takip edim, automatik o‘z-light-to-dark arasında qaytadi.';
+	@override String get themeLightDescription => 'U\'qizga texta boʻshayni qoʻyadi.';
+	@override String get themeDarkDescription => 'U\'qizga texta qizga qoʻyadi.';
+	@override String get themeOledDescription => 'U\'qotni-mashga suriyadlar, OLED ekranlarda lumtadi boʻyadi.';
+	@override String get themeEmberDescription => 'So‘z, so‘z o‘z qurtlar.';
+	@override String get themeGlacierDescription => 'Mavi aksent bo‘lar qo‘yadi.';
+	@override String get themeForestDescription => 'Müthi yeşil və natüral accent farlar kullan.';
+	@override String get themePlumDescription => 'U violet və plum accent farlar.';
+	@override String get themePaperDescription => 'U\'qotni papir-like suriyatlar və ink-inspirated farlar kullan.';
+	@override String get themeCustomDescription => 'U‘ziyiz, sizmi custom tema editori‘da yaradan renk paletini.';
+	@override String get editorDescription => 'Bir palet farni seçin, o‘zadi, nasotation, lumaylik, o’opacity, and see the preview update before saving. You can also enter a hex color.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$uz extends Translations$accessibility$en {
 	@override String get largeTargets => 'Tadiqni sasni';
 	@override String get largeTargetsHint => 'U\'zizga qo‘zlar, touch-i-asistivi navigation üçün daha fazla yer qo‘z.';
 	@override String get navigationHint => 'Boshqaruv elementlari orasida yurish uchun Tab va Shift+Tab, ishga tushirish uchun Enter yoki Bo‘sh joy, yopish uchun Escape yoki Orqaga tugmasidan foydalaning. Kitob ochiq bo‘lsa, masshtab va o‘qish sozlamalarini o‘zgartirish mumkin.';
+	@override String get textSizeDescription => 'Tekstil-Skala interfacing-i PlezyNG-da sistem-size-situasyonun yanı sıra cihazın texta-sized-settings.';
+	@override String get boldTextHint => 'Interface etiketleri ve mesajlar için daha ağır bir ağır kullanın, onları ayırt etmek daha kolaydır.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Qayta kodlash mavjud emas — asl sifatda ijro etiladi';
 	@override String get subtitleUnavailableFallback => 'Tanlangan subtitr yuklanmadi';
 	@override String get pipButton => 'Rasm ichida rasm rejimi';
+	@override String get openMiniPlayer => 'Mini oyunlar';
+	@override String get returnToFullPlayer => 'Full gamerga qaytadi.';
 	@override String get aspectRatioButton => 'Tomonlar nisbati';
 	@override String get ambientLighting => 'Atrof-muhit yoritilishi';
 	@override String get fullscreenButton => 'Toʻliq ekranga oʻtish';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$uz extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Renderlash oʻlchamlari';
 	@override String get renderResolutionScreen => 'Ekran oʻlchamlari';
 	@override String get renderResolutionVideo => 'Video oʻlchamlari';
+	@override String get fontSizeDescription => 'Subtitle texti sizni bu cihazda ayatlar.';
+	@override String get textColorDescription => 'Subtitle texti için kullanılan renk seçin.';
+	@override String get borderSizeDescription => 'Subtitle texti\'nin yuʻtadi\'ni ko‘tadi.';
+	@override String get borderColorDescription => 'Subtitiya\'da kullanılan renk seçin.';
+	@override String get backgroundColorDescription => 'Subtitle texti\'nin arganda renk seçin.';
+	@override String get backgroundOpacityDescription => 'Subtitle-i bilan qadi: 0% qadi, 100% qadi.';
+	@override String get positionDescription => 'Subtitles vertikaldi. 0 % video\'nun topni, 100 % is basni.';
+	@override String get assOverrideDescription => 'O\'qiz o’qizga, ayadi, qaytadi, o‘qizgi qoʻyingizda ASS subtitles.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$uz assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$uz._(_root);
+	@override String get renderResolutionDescription => 'Resolucsiya rasterize image and ASS subtitles. Android scales ko‘lar rendering work ko‘dadi, ama daha yuxari görünür.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$uz renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$uz._(_root);
+	@override String get boldDescription => 'Subtitle texti daha ağır bir qolga.';
+	@override String get italicDescription => 'İtaliqda subtitle textir.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$uz extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$uz watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$uz._(_root);
 	@override String get mediaReviewsVisibility => 'Baholar va sharhlar';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$uz mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$uz._(_root);
+	@override String get preferredAudioLanguageDescription => 'Bu dilda audio-tracks ko‘ziz, server o player automatik olarak bir track seçib.';
+	@override String get preferredSubtitleLanguageDescription => 'Subtitles\'lar automatik olarak seçilmaydi, bu dilda subtitles koʻyadi.';
+	@override String get subtitleAccessibilityDescription => 'SDH kapsiyatlar automatik subtitle seçtimda preferlik o\'zadi.';
+	@override String get forcedSubtitleDescription => 'U\'ziz, automatik selektsiya ko‘ziz o’ziz preferlikdi o‘zizi seçin.';
+	@override String get watchedIndicatorDescription => 'U\'ziz, hangi medya tiyiflar server interfacingda bir gözlik o‘zizdir.';
+	@override String get mediaReviewsVisibilityDescription => 'Siz o\'qizmi və kritik ratings qizmi server media saytlarda görünür.';
+	@override String get subtitleModeDescription => 'Subtitles bu server hesabda automatik olarak aktivizdir.';
+	@override String get hubDescription => 'Bu preferanslar sizin medya-server hesabinizda kaydedilir, o‘zari kliyentler üçün da valib.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG asosiy qatlami';
 	@override String get dvRouteBaseLayerSdr => 'SDR asosiy qatlami';
 	@override String get dvRouteReshaped => 'RPU orqali qayta shakllantirilgan (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Eksperimental P7 FEL grafik (kalifikatiz)';
 	@override String get p7Conversion => 'P7 oʻtkazmasi';
 	@override String get sampleRate => 'Diskretlash chastotasi';
 	@override String get pixelFormat => 'Piksel formati';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$uz extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Tashqi pleyerni ishga tushirib boʻlmadi';
 	@override String appNotInstalled({required Object name}) => '${name} oʻrnatilmagan';
 	@override String get playInExternalPlayer => 'Tashqi pleyerda ijro etish';
+	@override String get description => 'Video\'yu açmak için başka bir app seçin. Available players depend on your device and installed apps.';
+	@override String get systemDefaultDescription => 'Operasyon sistemini video\'yu default app-ga açın.';
+	@override String playerOptionDescription({required Object player}) => '${player} ile video\'lar açılır.';
+	@override String get playerNameDescription => 'O\'qiz o’qiz listingda o‘qiz.';
+	@override String get playerPackageDescription => 'Android paketin adı oynatma app, sh.com.example.player girdi.';
+	@override String get playerCommandDescription => 'Bu cihaz için yüklü oynatıcı komando o‘yadi.';
+	@override String get playerUrlSchemeDescription => 'URL shemini və oynatıcı başlatmak için kullanılan seçkin URL şablonu girdi.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$uz extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$uz oauthProxy = _Translations$services$oauthProxy$uz._(_root);
 	@override late final _Translations$services$pendingAuth$uz pendingAuth = _Translations$services$pendingAuth$uz._(_root);
 	@override late final _Translations$services$libraryFilter$uz libraryFilter = _Translations$services$libraryFilter$uz._(_root);
+	@override String get seerrDescription => 'Seerr o Overseerr-i koʻshayni, titlar ko‘shaydi və medya isiladi.';
+	@override late final _Translations$services$trackerDescriptions$uz trackerDescriptions = _Translations$services$trackerDescriptions$uz._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'On';
 	@override String get resetHeroButtonDescription => 'Herroni ayatlar bo\'yadi, yandan yandan yadan yandan yandadi yandan yanda yandan yanan yandan yalan yandan yansat.';
+	@override String get tapHeroCardDescription => 'Bir Hero card\'u tapat o‘t seçib, playback başlar ya da detaylar qotʻi.';
+	@override String get heroTapPlayDescription => 'Siz seçiliyiz o‘zadan başlar.';
+	@override String get heroTapDetailsDescription => 'Siz seçkin elementin detayları seçilmizdan əvvəl bir aktivasyon seçtimiz.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get source => 'Kaynak';
 	@override String get name => 'Namo';
 	@override String get endpoint => 'Server URL-i';
+	@override String get smbEndpointHint => 'Misol: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB serveri va bitta umumiy jildni kiriting.';
 	@override String get root => 'Bir prefix o prefix';
+	@override String get smbFolderHelp => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.';
 	@override String get username => 'Foydalanuvchi nomi';
+	@override String get smbDomain => 'Domen (ixtiyoriy)';
 	@override String get password => 'Parol';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Key ID qozga';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth Client ID';
 	@override String get clientSecret => 'OAuth client secret (so‘z Google desktop)';
 	@override String get allowHttp => 'Ishonchli tarmoqda shifrlanmagan HTTP ulanishiga ruxsat berish';
+	@override String get smbEncryption => 'SMB3 ulanishini shifrlash';
+	@override String get smbEncryptionHint => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.';
 	@override String get connect => 'Ulanish';
 	@override String get cancel => 'Bekor qilish';
 	@override String get save => 'Saqlash';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get useFiles => 'Fillar və kitablar kullanır.';
 	@override String get cancelScan => 'Sankcion';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Misol: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB serveri va bitta umumiy jildni kiriting.';
-	@override String get smbFolderHelp => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.';
-	@override String get smbDomain => 'Domen (ixtiyoriy)';
-	@override String get smbEncryption => 'SMB3 ulanishini shifrlash';
-	@override String get smbEncryptionHint => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.';
+	@override String get offlineQuota => 'Offline download limiti';
+	@override String get offlineQuotaHelp => 'Offline kopyalar, impordi fillar, koud downloadlar üçün maksimum spasi ayat. Limiti boʻshayni isikadi kopyaları qaytmaymaz.';
+	@override String get offlineStorageUsage => 'Offline kaymazlar';
+	@override String get reservedStorage => 'Rashida';
+	@override String get downloadQueue => 'Download koʻi';
+	@override String get downloadRunning => 'Yuklab olinmoqda';
+	@override String get downloadQueued => 'Tadiq';
+	@override String get downloadPaused => 'Pausadi';
+	@override String get downloadFailed => 'Retriya’da qaytadi';
+	@override String get importing => 'Importi';
+	@override String get importInterrupted => 'Importi boʻyadi · qaytadi boʻya';
+	@override String get errorQuotaExceeded => 'Oflayn xotira limiti tugadi. Limitni oshiring yoki yuklab olingan nusxani o‘chiring.';
+	@override String get errorStorageLow => 'U\'qotlar bo‘yadi bu koroza korozyon bo’yadi.';
+	@override String get errorStorageUnavailable => 'PlezyNG free device storage koʻshaydi, bu yüzden yazma bo‘zadi.';
+	@override String get removeDownloadJob => 'Download bilan';
+	@override String get downloadAlreadyComplete => 'This download is finished before it could be removed. Item kini offline o‘yadi.';
+	@override String get confirmRemoveDownloadJob => 'Bu download o‘yadi ko’yadi, bu download o\'yadi yadi. – Siz o‘ya ko‘yad, siz o’yad ko‘ya.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$uz extends Translations$audiobook$en {
 	@override String get statusFinished => 'Konni';
 	@override String get goToTime => 'O‘zadi.';
 	@override String get timeHelp => 'Hours:minuts:seconds, o minutlar:seconds';
+	@override String get recoveryHelp => 'Sinklik data\'ni transfer o‘yadi.Sinkliklar ko‘yad qo‘yingiz, lokal sinklik tarihini qaytarmaymazlar.Sinqlik kodini separata tutan.';
+	@override String get recoveryExport => 'Filiya qaytarga xifratsiya';
+	@override String get recoveryImport => 'İthalat xifratni qaytarga faili';
+	@override String get recoveryImportConfirm => 'Ushbu shifrlangan tiklash faylini joriy o‘qish joylari va qaydlar bilan birlashtirasizmi? Mavjud tarix saqlanadi. Umumiy kutubxona va element IDlari kiritilmagan; importdan oldin har bir qurilmada mos IDlarni o‘rnating.';
+	@override String get recoveryExported => 'Filiya qaytarga saladi.';
+	@override String get recoveryImported => 'Recovery data qaytadi.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$uz extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Baho ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Subtitr yuklanmoqda: ${title}';
+	@override String get sharedEntryPair => 'Bu bilan pari.';
+	@override String get sharedEntryPairHelp => 'Bu element için aynı ID ko‘z. Bir stabil shared identifier qo‘z, o‘si generat qiling ko’z. Progress pars only when the edition file types, sizes, and order match. Blank bu mapping\'i qaytadi.';
+	@override String get sharedEntryId => 'ID-dan qoʻyadi';
+	@override String get generateSharedEntryId => 'U\'yadi xifida ID';
+	@override String get sharedLibraryId => 'Shared library ID (zizimlik)';
+	@override String get sharedLibraryHelp => 'Bu publish ID\'si o‘yani bir kütüphanini açan cihazlarda aynı ID\'dir. Bu public ID\'di farklı kaynaq bağlantıları aracılığıyla okuma and notings progression ko‘yadi; bu bir şifradir. Providerlar farklı item ID\'ler kullanırsa, detay ekranlardan bu items yoʻyadi.';
+	@override String get sharedLibraryInvalid => '8–100 korni, numrarlar, bodlar, subscores o hyphens.';
+	@override String get generateSharedLibraryId => 'Bir librarya ID\'dir.';
+	@override String get nfsReadAhead => 'NFS read-ahead o‘zadi.';
+	@override String get nfsReadAheadHelp => 'Paralel o‘zlar bir NAS-i ya network-i qaytarga boʻyadi.Servers 1\'i koʻyadlar koʻyorga koʻyarlar.';
+	@override String get nfsReadTest => 'NFS read performans qadi.';
+	@override String get nfsReadTestHelp => 'Bu NAS bağlantıyu ölçmək üçün maksimum 64 MiB\'dir. Bu network bandwidth kullanır.';
+	@override String get nfsQualificationResult => 'NFS o‘zadiqlar.';
+	@override String get nfsReadBytes => 'Data lugay';
+	@override String get nfsReadSpeed => 'Tadiqni ritmi';
+	@override String get nfsReadRequests => 'Requirements koʻyadi';
+	@override String get sharedEntryConflict => 'This shared item ID is already paired with another item in this library. Bu paylaşt element ID\'dir.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$uz extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$uz extends Translations$common$mediaKind$en
 	@override String get clip => 'Klip';
 	@override String get photo => 'Foto';
 	@override String get folder => 'Papka';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$uz extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'U\'qimliklar, qaytarlardan i‘qimiliklar ve-qimiklar.';
+	@override String get libraries => 'Bağlanmış medya librariyizini açın.';
+	@override String get liveTv => 'Live TV\'yi bir server o‘yadi; aksi takdirda start-up qaytadi Home.';
+	@override String get search => 'Media qidiruvini oching.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$uz extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Xatolik yuz berdi: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$uz extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Fontanlar, renkler, sizler, və subtitle dosayda yazan.';
+	@override String get yes => 'Subtitle style ayatlar qo‘yagan ASS subtitles.';
+	@override String get scale => 'Player styling and scale embedded sizler ko‘zadi video dimensijlar.';
+	@override String get force => 'U\'qizli ASS stili yo‘zingizga subtitle stili qo‘zilgan.';
+	@override String get strip => 'U\'qimlik ASS formata‘dan qaytadi, subtitle texta’yı düzgün bir şekilde qaytar.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$uz extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render full display surfacing resolusyonda o‘shahim rezultat.';
+	@override String get video => 'Render video resolucsiya\'ni referans olarak kullanır, bu da high-resolution ekranlarda çalışmı azaltmaz.';
+	@override String get threeQuarter => 'Render 75 %\'dan ekran yüzey rezolusi, moday performans bilan bilan.';
+	@override String get half => 'Render 50 %\'dan ekran yüzey rezolusi bo‘yadi, laklar bo`yadi.';
+	@override String get third => 'Render ekranda suriyizasyondan bir-treyidini o‘zayni, qoyni boqlarga çalışmı azaltmaq üçün.';
+	@override String get quarter => 'Render ekranda suriyolizasyondan bir çeyrekni, labad yo‘qadi, maksimum result.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$uz extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$uz._(TranslationsUz root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$uz extends T
 	@override String get preferSdh => 'SDH subtitrlarga ustunlik berish';
 	@override String get onlySdh => 'Faqat SDH subtitrlar';
 	@override String get onlyNonSdh => 'Faqat SDH boʻlmagan subtitrlar';
+	@override String get preferNonSdhDescription => 'Standart subtitlar, standart və SDH versiyalar o‘yadi.';
+	@override String get preferSdhDescription => 'SDH subtitllar ko‘yadi, ama standart subtitles\'i bir fallback qo‘yad.';
+	@override String get onlySdhDescription => 'SDH subtitllar qadi; standart subtitlesga qaytmay.';
+	@override String get onlyNonSdhDescription => 'Standard subtitllar qo‘tadi; SDH subtitles ko‘tani.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$uz extends Translat
 	@override String get preferForced => 'Majburiy subtitrlarga ustunlik berish';
 	@override String get onlyForced => 'Faqat majburiy subtitrlar';
 	@override String get onlyNonForced => 'Faqat majburiy boʻlmagan subtitrlar';
+	@override String get preferNonForcedDescription => 'U\'yadi regular subtitles, ama bir fallback olarak forced tracks qoʻlu.';
+	@override String get preferForcedDescription => 'U\'qotlar ko‘zlar, men regular subtitles o‘shallbacks.';
+	@override String get onlyForcedDescription => 'U‘zizga qo‘yadi.';
+	@override String get onlyNonForcedDescription => 'U\'qotlar ko‘zadi, o’qotlari koʻzadi.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$uz extends Transl
 	@override String get moviesAndShows => 'Filmlar va seriallar';
 	@override String get movies => 'Faqat filmlar';
 	@override String get shows => 'Faqat seriallar';
+	@override String get noneDescription => 'U\'qizga bilan kontrollar ko‘zadi.';
+	@override String get moviesAndShowsDescription => 'Show watched checkmarks for filmlar və TV show.';
+	@override String get moviesDescription => 'Show watched checkmarks for film only.';
+	@override String get showsDescription => 'Show watched checkmarks for TV show only.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$uz extends Translatio
 	@override String get usersOnly => 'Faqat foydalanuvchilar';
 	@override String get criticsOnly => 'Faqat tanqidchilar';
 	@override String get nobody => 'Yashirilgan';
+	@override String get usersAndCriticsDescription => 'U‘citalizmi və critical ratings.';
+	@override String get usersOnlyDescription => 'U‘qotlar bilan bilan bilan o‘yadi.';
+	@override String get criticsOnlyDescription => 'Critical ratings and review ko‘zadi.';
+	@override String get nobodyDescription => 'Riyadhlar bilan bilan bilan o‘zadi.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$uz extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Faqat quyida tanlangan kutubxonalarni sinxronlash.';
 	@override String get libraries => 'Kutubxonalar';
 	@override String get noLibraries => 'Kutubxonalar yoʻq';
+	@override String get modeDescription => 'Siz o\'qizibliklar synchronizmdan blokadi, ya da sinchronize olan tek librikalardir.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$uz extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Filmi və filmlar sizlik hesabınızla synchronizir.';
+	@override String get mal => 'Anime listlar synchronizir, MyAnimeList-ga progresi ko‘zingizib.';
+	@override String get anilist => 'Anime listlar ko‘yingiz, AniList ile progresi ko\'yingiz.';
+	@override String get simkl => 'Sync filmlar, televiziyalar ve anime simkl.';
+	@override String get mdblist => 'MDBList ratings and lists we\'ll show in recommendations and Explore.';
 }
 
 /// The flat map containing all translations for locale <uz>.
@@ -4481,6 +4754,7 @@ extension on TranslationsUz {
 			'appIcon.names.strata' => 'Qatlamlar',
 			'appIcon.names.facet' => 'Qirra',
 			'appIcon.names.tilde' => 'Tilda',
+			'appIcon.description' => 'Ikonini sizlik cihazın başlatıcısı tarafından gösterdi. Preview\'lar hər bir seçiminin nasıl göründiyi gösterir.',
 			'auth.signInWithPlex' => 'Plex orqali kirish',
 			'auth.showQRCode' => 'QR kodni koʻrsatish',
 			'auth.authenticate' => 'Tasdiqlash',
@@ -4502,6 +4776,32 @@ extension on TranslationsUz {
 			'common.cancel' => 'Bekor qilish',
 			'common.save' => 'Saqlash',
 			'common.close' => 'Yopish',
+			'common.closeMiniPlayer' => 'Mini oyuncaklar',
+			'common.closeWorkspaceWindow' => 'Okumadi',
+			'common.returnToFullView' => 'Full viewga qaytadi.',
+			'common.manageMediaSessions' => 'Media sesyonlar',
+			'common.hideMediaSessions' => 'Media sesyonlar',
+			'common.mediaSessions' => 'Media sesyonlar',
+			'common.mediaSessionsHint' => 'Parks o\'qizga boʻyadi. Park o\'yadi boʻya boʻyo. Return o\'yu full view o\'yi açlar; close it ends.',
+			'common.sessionInWorkspace' => 'O‘zadi',
+			'common.sessionParked' => 'Parkadi',
+			'common.sessionFullscreen' => 'Full ekran',
+			'common.switchToNextWindow' => 'Bir sonraki windowga swap.',
+			'common.moveWindow' => 'Okumadi',
+			'common.finishMovingWindow' => 'U\'qizga qaytadi.',
+			'common.moveWindowHint' => 'Long-press and drag the window to move it. This control also allows arrow-key movement. Bu kontrol o‘zadi.',
+			'common.movingWindowHelp' => 'Ta\'yadi · Ta\'ya ko‘yadlar · Enter salves · Escape cancels',
+			'common.resizeWindow' => 'Okni qaytadi',
+			'common.resizeWindowHint' => 'Bu manni ko‘zadi o‘zari klavirini qaytarga.',
+			'common.workspaceWindowHint' => 'U\'yadi koʻi koʻyadi o‘yadi long-press and drag to move.',
+			'common.workspacePaneHint' => 'Bu panni ko‘zadi. bütün ekran kontrolini bo‘zani.',
+			'common.workspaceWindowLabel' => ({required Object title}) => '${title} xqqq qxz',
+			'common.workspaceTitleHint' => 'U\'yadiq. titil barni qaytadiq; full screen buttonni bo‘yadix.',
+			'common.moveToSessionTray' => 'Session Tray’i qaytadi',
+			'common.moveToSessionTrayHint' => 'Bu sessiya bu penni o‘zilmaydi.',
+			'common.closeSessionHint' => 'Bu okni kaplar, bu sezyon o‘yadi.',
+			'common.sideBySideLayout' => 'Layout-i sid-by-side koʻyadi.',
+			'common.floatingWindows' => 'Switch o\'zlarga boʻyadi',
 			'common.clear' => 'Tozalash',
 			'common.reset' => 'Qayta oʻrnatish',
 			'common.later' => 'Keyinroq',
@@ -4919,6 +5219,8 @@ extension on TranslationsUz {
 			'settings.audioPassthrough' => 'Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. iOS, iPadOS va tvOS 26 yoki undan yangi versiyalarda TrueHD Atmos va DTS:X fazoviy audio sifatida ijro etiladi. Boshqa DTS va TrueHD treklari koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan',
 			'settings.audioChannelLimit' => 'Audio kanallari',
@@ -4945,9 +5247,14 @@ extension on TranslationsUz {
 			'settings.dvConversionNativeDescription' => 'Ichki DV7 rejimini majburlash',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 formatiga oʻtkazish',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish',
+			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
+			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
+			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
+			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
 			'settings.disableDolbyVision' => 'Dolby Vision\'ni oʻchirish',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish',
 			'settings.hdrSdrConversion' => 'HDR\'ni SDR\'ga aylantirish',
 			'settings.hdrSdrConversionDescription' => 'Displey HDR\'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.',
@@ -5033,13 +5340,84 @@ extension on TranslationsUz {
 			'settings.regionFormatDescription' => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.',
 			'settings.metadataLanguage' => 'Metamaʼlumotlar tili',
 			'settings.metadataLanguageDescription' => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.',
-			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
-			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
-			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
-			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
-			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
-			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Fullscreen ko‘zga playback başlar.',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Full screen-da video o‘yadi, playback başlarsa.',
+			'settings.extendVideoIntoDisplayCutout' => 'Video\'yi display cutout\'a qaytadi',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Full-screen videoga Android telefonlarda kamera cutout\'u kullanmayalım.',
+			'settings.languageDescription' => 'PlezyNG boshqaruvlari va xabarlari uchun tilni tanlang. Tizimga ergashish qurilmangiz tilidan foydalanadi.',
+			'settings.themeDescription' => 'U‘ziz, kontrast o‘ziyadi bütün aplikasyonda.',
+			'settings.libraryDensityDescription' => 'Bu aylarda librarik kartlar saymi dəyişdi.',
+			'settings.displayScaleDescription' => 'Bu otomobil ekranda interfesi qaytadi, cihazda-gizlik texti sizini dəyişmadan.',
+			'settings.themeSongVolumeDescription' => 'Thema lagu bilan bilan bilan o‘yadi.',
+			'settings.viewModeDescription' => 'Librarian elementlar bir ağda plaklar olarak ya da kompak list olarak görünmaydi seçin.',
+			'settings.gridViewDescription' => 'Librariyik objeklar birdanlar ve plaklar kolumni bilan.',
+			'settings.listViewDescription' => 'Librarian elementlar bir vertikal listda daha fazla text per item-ga görünür.',
+			'settings.gridSpacingDescription' => 'U library grids\'da plaklar arasında gap qoʻyadi.',
+			'settings.gridSpacingTightDescription' => 'Ekranda daha fazla plaklar ko‘zadi.',
+			'settings.gridSpacingNormalDescription' => 'Standart plaklar arasında gap qoʻyadi.',
+			'settings.gridSpacingSpaciousDescription' => 'Daha fazla separasyon için plaklar arasında daha büyük gaplar qo‘yar.',
+			'settings.episodePosterModeDescription' => 'U\'ziz, o‘ziz o’ziz kartlarda görünür.',
+			'settings.seriesPosterDescription' => 'Show seriya poster o‘shayni.',
+			'settings.seasonPosterDescription' => 'Sezon plakari bo\'qimiz o‘qimiyiz o’qimisi.',
+			'settings.episodeThumbnailDescription' => 'Siz o‘zizdan bir çermi qoʻyadi.',
+			'settings.continueWatchingActionDescription' => 'Siz o‘yadi, bir Continuing Watching card aktivizir.',
+			'settings.continueWatchingPlayDescription' => 'Filmi o epizodni qaytadi.',
+			'settings.continueWatchingDetailsDescription' => 'Birincisi başlık sayasini açın, bu yüzden ayrıntılar bilan bilan qaytadi ve bir eylem seçin.',
+			'settings.episodeActionDescription' => 'Siz bir epizod kartlar aktivizdi o‘yadi.',
+			'settings.episodePlayDescription' => 'Bu epizod o‘zadi.',
+			'settings.episodeDetailsDescription' => 'Playback-dan əvvəl epizod sayadi açılır.',
+			'settings.contentScreensaverDelayDescription' => 'PlezyNG foydalanuvchi faoliyati bo‘lmaganda tasvirni ko‘rsatishdan oldin qancha kutishini tanlang.',
+			'settings.continueWatchingRowSizeDescription' => 'Siz o‘qotlar bilan qotlar ko‘yadi.',
+			'settings.rowSizeCompactDescription' => 'U\'zlar kartlar daha küçir, daha fazla item qaytadi.',
+			'settings.rowSizeStandardDescription' => 'Standart kartat sizni qaytadi.',
+			'settings.rowSizeLargeDescription' => 'Karlar daha fazla artwork detaljga qo‘yadi.',
+			'settings.visualEffectsDescription' => 'Animation and artwork effects budget bu cihaz için seçin.',
+			'settings.visualEffectsFullDescription' => 'Animation və artwork efekti bütün cihazlarda kullanın.',
+			'settings.startupSectionDescription' => 'U\'qizga qizga qaytadi ko‘zib.',
+			'settings.startupSectionOptions.discover' => 'U\'qimliklar, qaytarlardan i‘qimiliklar ve-qimiklar.',
+			'settings.startupSectionOptions.libraries' => 'Bağlanmış medya librariyizini açın.',
+			'settings.startupSectionOptions.liveTv' => 'Live TV\'yi bir server o‘yadi; aksi takdirda start-up qaytadi Home.',
+			'settings.startupSectionOptions.search' => 'Media qidiruvini oching.',
+			'settings.smallSkipDurationDescription' => 'U\'yadi bilan bilan bilan qaytdan, bilan bilan kontrollar koʻi.',
+			'settings.largeSkipDurationDescription' => 'U\'yadi longga qaytdan o‘yadi ko‘yadlar kontrollar.',
+			'settings.rewindOnResumeDescription' => 'Playback bilan qaytadi, bir video replaying.',
+			'settings.defaultSleepTimerDescription' => 'U\'ziz, siz uyku timer başlarsan o‘ziz qoʻyadi.',
+			'settings.playNextCountdownDescription' => 'Bir sonraki epizod başlardan o‘zadi. 0\'a ko‘zadan başlar.',
+			'settings.autoSkipDelaySettingDescription' => 'U‘z, credit, o‘z reklamlar automatik olarak kaygaqdan qoʻyadi.',
+			'settings.downmixCenterBoostDescription' => 'Dialogu qentri kanalda qoʻyadi koʻyada stereo-ga yoʻyad.',
+			'settings.displaySwitchDelayDescription' => 'Televizor o‘zayni bilan qaytadi, televizor o’zaydi bilan bilan qaytar.',
+			'settings.playerBackendDescription' => 'Bu cihazda video\'yi decoding və rendering üçün bir playback motor seçin.',
+			'settings.exoPlayerDescription' => 'Android\'nin nadi Media3 bazlı oynatıclar ve supported hardware yollar kullan.',
+			'settings.mpvDescription' => 'Mpv, o‘yadi ek playback, subtitle, video processing kontrollar.',
+			'settings.scopeOffDescription' => 'U‘zizga xiyimadi bilan bilan bilan qaytadi.',
+			'settings.scopeGlobalDescription' => 'O‘qizda librarik o‘qızlar o’qizdan o\'qizlar o‘cizlar.',
+			'settings.scopeLibraryDescription' => 'Bu librariyalar için ayrı bir değerdir.',
+			'settings.scopeTitleDescription' => 'Bu film o\'qizga o‘qizgi o’qizmi o‘cizdi o’cizmi.',
+			'settings.specialsOrderingServerDescription' => 'Madiya server\'dan sağlanan epizod o‘zadi.',
+			'settings.specialsOrderingAirDateDescription' => 'Speciallar regular epizodlar arasında onların hava date\'i qoʻyadi.',
+			'settings.specialsOrderingLastDescription' => 'All speciallar regular sezonlardan sonra ko‘zadi.',
+			'settings.skipIntroModeDescription' => 'Intro markers normalga oynaysa, bir skip buton o‘shayni, o‘si automatik o‘skayni.',
+			'settings.skipCreditsModeDescription' => 'U\'yadi kreditlar normalga oynay, bir skip buton o‘yadi automatikga.',
+			'settings.skipAdsModeDescription' => 'Adlar normalga oynaysa, bir skip buton o‘shake, o’shake automatik.',
+			'settings.playbackBufferAutoDescription' => 'Aktif oyungan normal buffer sizni seçilmaydi.',
+			'settings.playbackBufferLargeDescription' => 'Playback-dan əvvəl daha fazla medya hazır olun; bu, daha fazla memori yaratlar.',
+			'settings.playbackBufferExtraLargeDescription' => 'Eng katta oldindan o‘qish buferini saqlang; u eng ko‘p xotiradan foydalanadi.',
+			'settings.defaultQualityDescription' => 'Default video resolusyonini ayatlar ve server\'dan transcoding streams için bitrate tahtadi.',
+			'settings.cellularQualityDescription' => 'Default Quality ko‘zlar, bir cihaz bu-cellular-on-conneccion kullanır.',
+			'settings.remoteQualityDescription' => 'Default Quality ko\'t bir serverga bağlantı qoʻyilgan.',
+			'settings.qualityPresetOriginalDescription' => 'U\'qizga kaynağımızda oynaylar, serverini transcode ko‘dilmaydi.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Servirga konvertiq o‘yadi, bo\'yadi bu resolusi ve bitrate-i yadi.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Default Quality-da seçkin kaliteyi kullan.',
+			'settings.musicQualityDescription' => 'Servardan maksimum audio bitrate ko‘zadi; Original kaynaq aklamini tutlar.',
+			'settings.musicQualityOriginalDescription' => 'O\'ziz o‘ziz, bitrate-capped transcode olmadan oynay.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Bir server transcode qapid o‘shayni bitsaradi; real output may variy.',
+			'settings.maxVolumeInputLabel' => 'Maksimum bilan (%)',
+			'settings.checkForUpdatesDescription' => 'U\'qizga qizga‘dan daha yeni bir versiyat var.',
+			'settings.appearanceDescription' => 'Uygulama tema seçin, librarik kartlar, Home ruzlar, ve navigation.',
+			'settings.prerollLibraryDescription' => 'Filmi pre-rolls olarak kullanılabilni kliplar olan bir kütüphan seçin.',
+			'settings.prerollSelectionDescription' => 'Siz seçin, seçkin librariyadan hangi kliplar filmlardan əvvəl oynayabildi.',
+			'settings.contentScreensaverDelayOptionDescription' => 'U\'qizga bu mullayni o‘zizga, ekrensaver artwork ko‘shish.',
+			'settings.videoCodecOptionDescription' => 'Bu codec\'nin doğrudan playback ko‘dadi. Unchecked codeclar media server tarafından transcodir.',
 			'themeEditor.builtIn' => 'Oʻrnatilgan',
 			'themeEditor.presets' => 'Tayyor mavzular',
 			'themeEditor.custom' => 'Shaxsiy',
@@ -5078,6 +5456,17 @@ extension on TranslationsUz {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} daq qoldi',
 			'themeEditor.previewSwitch' => 'Avtomatik ijro',
 			'themeEditor.previewMutedText' => 'Ikkilamchi matn shunday koʻrinadi',
+			'themeEditor.themeSystemDescription' => 'Siz cihazın görünüşünü takip edim, automatik o‘z-light-to-dark arasında qaytadi.',
+			'themeEditor.themeLightDescription' => 'U\'qizga texta boʻshayni qoʻyadi.',
+			'themeEditor.themeDarkDescription' => 'U\'qizga texta qizga qoʻyadi.',
+			'themeEditor.themeOledDescription' => 'U\'qotni-mashga suriyadlar, OLED ekranlarda lumtadi boʻyadi.',
+			'themeEditor.themeEmberDescription' => 'So‘z, so‘z o‘z qurtlar.',
+			'themeEditor.themeGlacierDescription' => 'Mavi aksent bo‘lar qo‘yadi.',
+			'themeEditor.themeForestDescription' => 'Müthi yeşil və natüral accent farlar kullan.',
+			'themeEditor.themePlumDescription' => 'U violet və plum accent farlar.',
+			'themeEditor.themePaperDescription' => 'U\'qotni papir-like suriyatlar və ink-inspirated farlar kullan.',
+			'themeEditor.themeCustomDescription' => 'U‘ziyiz, sizmi custom tema editori‘da yaradan renk paletini.',
+			'themeEditor.editorDescription' => 'Bir palet farni seçin, o‘zadi, nasotation, lumaylik, o’opacity, and see the preview update before saving. You can also enter a hex color.',
 			'search.hint' => 'Filmlar, seriallar, musiqa qidirish...',
 			'search.tryDifferentTerm' => 'Boshqa qidiruv soʻzini kiriting',
 			'search.searchYourMedia' => 'Medialaringizdan qidiring',
@@ -5323,6 +5712,8 @@ extension on TranslationsUz {
 			'accessibility.largeTargets' => 'Tadiqni sasni',
 			'accessibility.largeTargetsHint' => 'U\'zizga qo‘zlar, touch-i-asistivi navigation üçün daha fazla yer qo‘z.',
 			'accessibility.navigationHint' => 'Boshqaruv elementlari orasida yurish uchun Tab va Shift+Tab, ishga tushirish uchun Enter yoki Bo‘sh joy, yopish uchun Escape yoki Orqaga tugmasidan foydalaning. Kitob ochiq bo‘lsa, masshtab va o‘qish sozlamalarini o‘zgartirish mumkin.',
+			'accessibility.textSizeDescription' => 'Tekstil-Skala interfacing-i PlezyNG-da sistem-size-situasyonun yanı sıra cihazın texta-sized-settings.',
+			'accessibility.boldTextHint' => 'Interface etiketleri ve mesajlar için daha ağır bir ağır kullanın, onları ayırt etmek daha kolaydır.',
 			'tooltips.shufflePlay' => 'Aralashtirib ijro etish',
 			'tooltips.playTrailer' => 'Treylerni koʻrish',
 			'tooltips.markAsWatched' => 'Koʻrilgan deb belgilash',
@@ -5342,6 +5733,8 @@ extension on TranslationsUz {
 			'videoControls.sleepTimerEndOfVideo' => 'Joriy videoning oxiri',
 			'videoControls.sleepTimerStopAtHeader' => 'Toʻxtash vaqti',
 			'videoControls.sleepTimerDurationHeader' => 'Taymer',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Ijro ushbu videoning oxirida toʻxtatiladi',
 			'videoControls.stillWatching' => 'Hali ham tomosha qilyapsizmi?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}son-dan keyin toʻxtatiladi',
@@ -5376,6 +5769,8 @@ extension on TranslationsUz {
 			'videoControls.transcodeUnavailableFallback' => 'Qayta kodlash mavjud emas — asl sifatda ijro etiladi',
 			'videoControls.subtitleUnavailableFallback' => 'Tanlangan subtitr yuklanmadi',
 			'videoControls.pipButton' => 'Rasm ichida rasm rejimi',
+			'videoControls.openMiniPlayer' => 'Mini oyunlar',
+			'videoControls.returnToFullPlayer' => 'Full gamerga qaytadi.',
 			'videoControls.aspectRatioButton' => 'Tomonlar nisbati',
 			'videoControls.ambientLighting' => 'Atrof-muhit yoritilishi',
 			'videoControls.fullscreenButton' => 'Toʻliq ekranga oʻtish',
@@ -5460,8 +5855,6 @@ extension on TranslationsUz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" uchun skanerlash boshlandi',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kutubxonani skanerlab boʻlmadi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" uchun metamaʼlumotlar yangilanmoqda...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" uchun metamaʼlumotlarni yangilash boshlandi',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metamaʼlumotlarni yangilab boʻlmadi: ${error}',
 			'messages.logoutConfirm' => 'Haqiqatan ham chiqmoqchimisiz?',
@@ -5521,6 +5914,28 @@ extension on TranslationsUz {
 			'subtitlingStyling.renderResolution' => 'Renderlash oʻlchamlari',
 			'subtitlingStyling.renderResolutionScreen' => 'Ekran oʻlchamlari',
 			'subtitlingStyling.renderResolutionVideo' => 'Video oʻlchamlari',
+			'subtitlingStyling.fontSizeDescription' => 'Subtitle texti sizni bu cihazda ayatlar.',
+			'subtitlingStyling.textColorDescription' => 'Subtitle texti için kullanılan renk seçin.',
+			'subtitlingStyling.borderSizeDescription' => 'Subtitle texti\'nin yuʻtadi\'ni ko‘tadi.',
+			'subtitlingStyling.borderColorDescription' => 'Subtitiya\'da kullanılan renk seçin.',
+			'subtitlingStyling.backgroundColorDescription' => 'Subtitle texti\'nin arganda renk seçin.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Subtitle-i bilan qadi: 0% qadi, 100% qadi.',
+			'subtitlingStyling.positionDescription' => 'Subtitles vertikaldi. 0 % video\'nun topni, 100 % is basni.',
+			'subtitlingStyling.assOverrideDescription' => 'O\'qiz o’qizga, ayadi, qaytadi, o‘qizgi qoʻyingizda ASS subtitles.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Fontanlar, renkler, sizler, və subtitle dosayda yazan.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Subtitle style ayatlar qo‘yagan ASS subtitles.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Player styling and scale embedded sizler ko‘zadi video dimensijlar.',
+			'subtitlingStyling.assOverrideOptions.force' => 'U\'qizli ASS stili yo‘zingizga subtitle stili qo‘zilgan.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'U\'qimlik ASS formata‘dan qaytadi, subtitle texta’yı düzgün bir şekilde qaytar.',
+			'subtitlingStyling.renderResolutionDescription' => 'Resolucsiya rasterize image and ASS subtitles. Android scales ko‘lar rendering work ko‘dadi, ama daha yuxari görünür.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render full display surfacing resolusyonda o‘shahim rezultat.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render video resolucsiya\'ni referans olarak kullanır, bu da high-resolution ekranlarda çalışmı azaltmaz.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Render 75 %\'dan ekran yüzey rezolusi, moday performans bilan bilan.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render 50 %\'dan ekran yüzey rezolusi bo‘yadi, laklar bo`yadi.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render ekranda suriyizasyondan bir-treyidini o‘zayni, qoyni boqlarga çalışmı azaltmaq üçün.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render ekranda suriyolizasyondan bir çeyrekni, labad yo‘qadi, maksimum result.',
+			'subtitlingStyling.boldDescription' => 'Subtitle texti daha ağır bir qolga.',
+			'subtitlingStyling.italicDescription' => 'İtaliqda subtitle textir.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Kengaytirilgan video pleyer sozlamalari',
 			'mpvConfig.presets' => 'Tayyor sozlamalar',
@@ -5657,11 +6072,19 @@ extension on TranslationsUz {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH subtitrlarga ustunlik berish',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Faqat SDH subtitrlar',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Faqat SDH boʻlmagan subtitrlar',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Standart subtitlar, standart və SDH versiyalar o‘yadi.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'SDH subtitllar ko‘yadi, ama standart subtitles\'i bir fallback qo‘yad.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'SDH subtitllar qadi; standart subtitlesga qaytmay.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Standard subtitllar qo‘tadi; SDH subtitles ko‘tani.',
 			'accountPreferences.forcedSubtitles' => 'Majburiy subtitrlar',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Majburiy boʻlmagan subtitrlarga ustunlik berish',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Majburiy subtitrlarga ustunlik berish',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Faqat majburiy subtitrlar',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Faqat majburiy boʻlmagan subtitrlar',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'U\'yadi regular subtitles, ama bir fallback olarak forced tracks qoʻlu.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'U\'qotlar ko‘zlar, men regular subtitles o‘shallbacks.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'U‘zizga qo‘yadi.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'U\'qotlar ko‘zadi, o’qotlari koʻzadi.',
 			'accountPreferences.displayMissingEpisodes' => 'Yoʻqolgan qismlarni koʻrsatish',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Server biladigan, lekin fayli boʻlmagan qismlarni roʻyxatlaydi.',
 			'accountPreferences.hidePlayedInLatest' => '"Soʻnggi" boʻlimida koʻrilganlarni yashirish',
@@ -5675,11 +6098,27 @@ extension on TranslationsUz {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmlar va seriallar',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Faqat filmlar',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Faqat seriallar',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'U\'qizga bilan kontrollar ko‘zadi.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Show watched checkmarks for filmlar və TV show.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Show watched checkmarks for film only.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Show watched checkmarks for TV show only.',
 			'accountPreferences.mediaReviewsVisibility' => 'Baholar va sharhlar',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Foydalanuvchilar va tanqidchilar',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Faqat foydalanuvchilar',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Faqat tanqidchilar',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Yashirilgan',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'U‘citalizmi və critical ratings.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'U‘qotlar bilan bilan bilan o‘yadi.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Critical ratings and review ko‘zadi.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Riyadhlar bilan bilan bilan o‘zadi.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Bu dilda audio-tracks ko‘ziz, server o player automatik olarak bir track seçib.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Subtitles\'lar automatik olarak seçilmaydi, bu dilda subtitles koʻyadi.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'SDH kapsiyatlar automatik subtitle seçtimda preferlik o\'zadi.',
+			'accountPreferences.forcedSubtitleDescription' => 'U\'ziz, automatik selektsiya ko‘ziz o’ziz preferlikdi o‘zizi seçin.',
+			'accountPreferences.watchedIndicatorDescription' => 'U\'ziz, hangi medya tiyiflar server interfacingda bir gözlik o‘zizdir.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Siz o\'qizmi və kritik ratings qizmi server media saytlarda görünür.',
+			'accountPreferences.subtitleModeDescription' => 'Subtitles bu server hesabda automatik olarak aktivizdir.',
+			'accountPreferences.hubDescription' => 'Bu preferanslar sizin medya-server hesabinizda kaydedilir, o‘zari kliyentler üçün da valib.',
 			'discover.title' => 'Kashf qilish',
 			'discover.noContentAvailable' => 'Kontent mavjud emas',
 			'discover.addMediaToLibraries' => 'Kutubxonalaringizga media qoʻshing',
@@ -5808,6 +6247,8 @@ extension on TranslationsUz {
 			'libraries.all' => 'Barchasi',
 			'libraries.clearAll' => 'Barchasini tozalash',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kutubxonasini skanerlamoqchimisiz?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kutubxonasini tahlil qilmoqchimisiz?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" metamaʼlumotlarini yangilaysizmi?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" savatini tozalaysizmi?',
@@ -5974,8 +6415,6 @@ extension on TranslationsUz {
 			'explore.mdblistShelves.nameHint' => 'U\'zayda kaynlar listni ismi kullanmaqdan qurt.',
 			'explore.mdblistShelves.add' => 'Shell ko‘z',
 			'explore.mdblistShelves.save' => 'Tadiqlarga saladi',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title}ni yuqoriga ko‘chirish',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} qaytadi',
 			'explore.mdblistShelves.unavailable' => 'Bu list ishat. Bu listini qaytadi o\'zingiz.',
@@ -6322,6 +6761,8 @@ extension on TranslationsUz {
 			'watchTogether.connecting' => 'Ulanmoqda...',
 			'watchTogether.relayPublic' => 'Xonalar ommaviy Open Watch Party relelaridan foydalanadi.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Xonalar ${url} manzilidagi relengizdan foydalanadi.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Yaqindagi xonalar',
 			'watchTogether.roomActions' => 'Xona amallari',
 			'watchTogether.renameRoom' => 'Xona nomini oʻzgartirish',
@@ -6488,8 +6929,6 @@ extension on TranslationsUz {
 			'downloads.resumeDownload' => 'Yuklashni davom ettirish',
 			'downloads.cancelledDownload' => 'Toʻxtatilgan yuklama',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} sinxronlanmoqda)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yuklab olindi ${file} - Yakunlash uchun bosing',
 			'downloads.partialDownloadClickToComplete' => 'Qisman yuklandi - Yakunlash uchun bosing',
 			'downloads.deleting' => 'Oʻchirilmoqda...',
@@ -6748,6 +7187,7 @@ extension on TranslationsUz {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG asosiy qatlami',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR asosiy qatlami',
 			'performanceOverlay.dvRouteReshaped' => 'RPU orqali qayta shakllantirilgan (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Eksperimental P7 FEL grafik (kalifikatiz)',
 			'performanceOverlay.p7Conversion' => 'P7 oʻtkazmasi',
 			'performanceOverlay.sampleRate' => 'Diskretlash chastotasi',
 			'performanceOverlay.pixelFormat' => 'Piksel formati',
@@ -6799,6 +7239,13 @@ extension on TranslationsUz {
 			'externalPlayer.launchFailed' => 'Tashqi pleyerni ishga tushirib boʻlmadi',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} oʻrnatilmagan',
 			'externalPlayer.playInExternalPlayer' => 'Tashqi pleyerda ijro etish',
+			'externalPlayer.description' => 'Video\'yu açmak için başka bir app seçin. Available players depend on your device and installed apps.',
+			'externalPlayer.systemDefaultDescription' => 'Operasyon sistemini video\'yu default app-ga açın.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => '${player} ile video\'lar açılır.',
+			'externalPlayer.playerNameDescription' => 'O\'qiz o’qiz listingda o‘qiz.',
+			'externalPlayer.playerPackageDescription' => 'Android paketin adı oynatma app, sh.com.example.player girdi.',
+			'externalPlayer.playerCommandDescription' => 'Bu cihaz için yüklü oynatıcı komando o‘yadi.',
+			'externalPlayer.playerUrlSchemeDescription' => 'URL shemini və oynatıcı başlatmak için kullanılan seçkin URL şablonu girdi.',
 			'metadataEdit.editMetadata' => 'Tahrirlash...',
 			'metadataEdit.screenTitle' => 'Metamaʼlumotlarni tahrirlash',
 			'metadataEdit.basicInfo' => 'Asosiy maʼlumotlar',
@@ -6828,6 +7275,8 @@ extension on TranslationsUz {
 			'metadataEdit.metadataUpdateFailed' => 'Metamaʼlumotlarni yangilab boʻlmadi',
 			'metadataEdit.artworkUpdated' => 'Rasmlar yangilandi',
 			'metadataEdit.artworkUpdateFailed' => 'Rasmlarni yangilab boʻlmadi',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Rasm mavjud emas',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Rasm opsiyasi ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Rasm opsiyasi ${index}, tanlandi',
@@ -6988,6 +7437,13 @@ extension on TranslationsUz {
 			'services.libraryFilter.modeHintWhitelist' => 'Faqat quyida tanlangan kutubxonalarni sinxronlash.',
 			'services.libraryFilter.libraries' => 'Kutubxonalar',
 			'services.libraryFilter.noLibraries' => 'Kutubxonalar yoʻq',
+			'services.libraryFilter.modeDescription' => 'Siz o\'qizibliklar synchronizmdan blokadi, ya da sinchronize olan tek librikalardir.',
+			'services.seerrDescription' => 'Seerr o Overseerr-i koʻshayni, titlar ko‘shaydi və medya isiladi.',
+			'services.trackerDescriptions.trakt' => 'Filmi və filmlar sizlik hesabınızla synchronizir.',
+			'services.trackerDescriptions.mal' => 'Anime listlar synchronizir, MyAnimeList-ga progresi ko‘zingizib.',
+			'services.trackerDescriptions.anilist' => 'Anime listlar ko‘yingiz, AniList ile progresi ko\'yingiz.',
+			'services.trackerDescriptions.simkl' => 'Sync filmlar, televiziyalar ve anime simkl.',
+			'services.trackerDescriptions.mdblist' => 'MDBList ratings and lists we\'ll show in recommendations and Explore.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} serverini qoʻshish',
 			'addServer.serverUrls' => 'Server URL-lari',
 			'addServer.serverUrlsHelper' => 'Vergul bilan ajratilgan bir nechta URL manziliga ruxsat beriladi.',
@@ -7002,8 +7458,6 @@ extension on TranslationsUz {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Kirish xatoligi: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Tezkor ulanish xatoligi: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex orqali kirish',
 			'addServer.pinExpired' => 'PIN kod vaqti tugadi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsUz {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Herroni ayatlar bo\'yadi, yandan yandan yadan yandan yandadi yandan yanda yandan yanan yandan yalan yandan yansat.',
+			'homeLayout.tapHeroCardDescription' => 'Bir Hero card\'u tapat o‘t seçib, playback başlar ya da detaylar qotʻi.',
+			'homeLayout.heroTapPlayDescription' => 'Siz seçiliyiz o‘zadan başlar.',
+			'homeLayout.heroTapDetailsDescription' => 'Siz seçkin elementin detayları seçilmizdan əvvəl bir aktivasyon seçtimiz.',
 			'platform.localNetworkPermission' => 'PlezyNG sizga lokal network sizga media serveri və playback cihazlara bağlanır.',
 			'platform.locationPermission' => 'Mahalliy tarmoqni aniqlash va media serverlaringizga ulanish uchun iOS talab qilganida, PlezyNG joylashuv ma’lumotlaridan foydalanish ruxsatidan foydalanadi.',
 			'platform.photoLibraryPermission' => 'Media muqovasi sifatida ishlatish uchun foto kutubxonangizdan rasmlarni tanlang.',
@@ -7169,8 +7626,12 @@ extension on TranslationsUz {
 			'fileSources.source' => 'Kaynak',
 			'fileSources.name' => 'Namo',
 			'fileSources.endpoint' => 'Server URL-i',
+			'fileSources.smbEndpointHint' => 'Misol: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB serveri va bitta umumiy jildni kiriting.',
 			'fileSources.root' => 'Bir prefix o prefix',
+			'fileSources.smbFolderHelp' => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.',
 			'fileSources.username' => 'Foydalanuvchi nomi',
+			'fileSources.smbDomain' => 'Domen (ixtiyoriy)',
 			'fileSources.password' => 'Parol',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Key ID qozga',
@@ -7180,6 +7641,8 @@ extension on TranslationsUz {
 			'fileSources.clientId' => 'OAuth Client ID',
 			'fileSources.clientSecret' => 'OAuth client secret (so‘z Google desktop)',
 			'fileSources.allowHttp' => 'Ishonchli tarmoqda shifrlanmagan HTTP ulanishiga ruxsat berish',
+			'fileSources.smbEncryption' => 'SMB3 ulanishini shifrlash',
+			'fileSources.smbEncryptionHint' => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.',
 			'fileSources.connect' => 'Ulanish',
 			'fileSources.cancel' => 'Bekor qilish',
 			'fileSources.save' => 'Saqlash',
@@ -7322,12 +7785,25 @@ extension on TranslationsUz {
 			'fileSources.useFiles' => 'Fillar və kitablar kullanır.',
 			'fileSources.cancelScan' => 'Sankcion',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Misol: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB serveri va bitta umumiy jildni kiriting.',
-			'fileSources.smbFolderHelp' => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.',
-			'fileSources.smbDomain' => 'Domen (ixtiyoriy)',
-			'fileSources.smbEncryption' => 'SMB3 ulanishini shifrlash',
-			'fileSources.smbEncryptionHint' => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.',
+			'fileSources.offlineQuota' => 'Offline download limiti',
+			'fileSources.offlineQuotaHelp' => 'Offline kopyalar, impordi fillar, koud downloadlar üçün maksimum spasi ayat. Limiti boʻshayni isikadi kopyaları qaytmaymaz.',
+			'fileSources.offlineStorageUsage' => 'Offline kaymazlar',
+			'fileSources.reservedStorage' => 'Rashida',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Download koʻi',
+			'fileSources.downloadRunning' => 'Yuklab olinmoqda',
+			'fileSources.downloadQueued' => 'Tadiq',
+			'fileSources.downloadPaused' => 'Pausadi',
+			'fileSources.downloadFailed' => 'Retriya’da qaytadi',
+			'fileSources.importing' => 'Importi',
+			'fileSources.importInterrupted' => 'Importi boʻyadi · qaytadi boʻya',
+			'fileSources.errorQuotaExceeded' => 'Oflayn xotira limiti tugadi. Limitni oshiring yoki yuklab olingan nusxani o‘chiring.',
+			'fileSources.errorStorageLow' => 'U\'qotlar bo‘yadi bu koroza korozyon bo’yadi.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG free device storage koʻshaydi, bu yüzden yazma bo‘zadi.',
+			'fileSources.removeDownloadJob' => 'Download bilan',
+			'fileSources.downloadAlreadyComplete' => 'This download is finished before it could be removed. Item kini offline o‘yadi.',
+			'fileSources.confirmRemoveDownloadJob' => 'Bu download o‘yadi ko’yadi, bu download o\'yadi yadi. – Siz o‘ya ko‘yad, siz o’yad ko‘ya.',
 			'lending.title' => 'Public librarlar',
 			'lending.add' => 'Bir kütüphan qo‘yadi',
 			'lending.other' => 'Bir librariyada',
@@ -7429,6 +7905,12 @@ extension on TranslationsUz {
 			'audiobook.statusFinished' => 'Konni',
 			'audiobook.goToTime' => 'O‘zadi.',
 			'audiobook.timeHelp' => 'Hours:minuts:seconds, o minutlar:seconds',
+			'audiobook.recoveryHelp' => 'Sinklik data\'ni transfer o‘yadi.Sinkliklar ko‘yad qo‘yingiz, lokal sinklik tarihini qaytarmaymazlar.Sinqlik kodini separata tutan.',
+			'audiobook.recoveryExport' => 'Filiya qaytarga xifratsiya',
+			'audiobook.recoveryImport' => 'İthalat xifratni qaytarga faili',
+			'audiobook.recoveryImportConfirm' => 'Ushbu shifrlangan tiklash faylini joriy o‘qish joylari va qaydlar bilan birlashtirasizmi? Mavjud tarix saqlanadi. Umumiy kutubxona va element IDlari kiritilmagan; importdan oldin har bir qurilmada mos IDlarni o‘rnating.',
+			'audiobook.recoveryExported' => 'Filiya qaytarga saladi.',
+			'audiobook.recoveryImported' => 'Recovery data qaytadi.',
 			'sourceSetup.savedCertificate' => 'Saqlangan server sertifikati',
 			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export kabi NFS URL manzilini kiriting.',
 			'sourceSetup.dlnaNone' => 'DLNA serverlari topilmadi. Qurilma tavsifining URL manzilini qo‘lda kiriting.',
@@ -7516,8 +7998,6 @@ extension on TranslationsUz {
 			'sourceSetup.smbEncrypted' => 'SMB3 shifrlashi yoqilgan',
 			'sourceSetup.smbUnencrypted' => 'SMB3 shifrlashi o‘chirilgan',
 			'sourceSetup.httpUnencrypted' => 'Transport shifrlashisiz HTTP',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Ulanish manzili xavfsizligini tekshirish',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Majburiy maydon: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} uchun ${min} dan ${max} gacha qiymat kiriting.',
@@ -7525,6 +8005,23 @@ extension on TranslationsUz {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Baho ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Subtitr yuklanmoqda: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Bu bilan pari.',
+			'sourceSetup.sharedEntryPairHelp' => 'Bu element için aynı ID ko‘z. Bir stabil shared identifier qo‘z, o‘si generat qiling ko’z. Progress pars only when the edition file types, sizes, and order match. Blank bu mapping\'i qaytadi.',
+			'sourceSetup.sharedEntryId' => 'ID-dan qoʻyadi',
+			'sourceSetup.generateSharedEntryId' => 'U\'yadi xifida ID',
+			'sourceSetup.sharedLibraryId' => 'Shared library ID (zizimlik)',
+			'sourceSetup.sharedLibraryHelp' => 'Bu publish ID\'si o‘yani bir kütüphanini açan cihazlarda aynı ID\'dir. Bu public ID\'di farklı kaynaq bağlantıları aracılığıyla okuma and notings progression ko‘yadi; bu bir şifradir. Providerlar farklı item ID\'ler kullanırsa, detay ekranlardan bu items yoʻyadi.',
+			'sourceSetup.sharedLibraryInvalid' => '8–100 korni, numrarlar, bodlar, subscores o hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Bir librarya ID\'dir.',
+			'sourceSetup.nfsReadAhead' => 'NFS read-ahead o‘zadi.',
+			'sourceSetup.nfsReadAheadHelp' => 'Paralel o‘zlar bir NAS-i ya network-i qaytarga boʻyadi.Servers 1\'i koʻyadlar koʻyorga koʻyarlar.',
+			'sourceSetup.nfsReadTest' => 'NFS read performans qadi.',
+			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantıyu ölçmək üçün maksimum 64 MiB\'dir. Bu network bandwidth kullanır.',
+			'sourceSetup.nfsQualificationResult' => 'NFS o‘zadiqlar.',
+			'sourceSetup.nfsReadBytes' => 'Data lugay',
+			'sourceSetup.nfsReadSpeed' => 'Tadiqni ritmi',
+			'sourceSetup.nfsReadRequests' => 'Requirements koʻyadi',
+			'sourceSetup.sharedEntryConflict' => 'This shared item ID is already paired with another item in this library. Bu paylaşt element ID\'dir.',
 			'comics.fitHeight' => 'Balandlikka moslash',
 			'comics.readingMode' => 'O‘qish rejimi',
 			'comics.paged' => 'Sahifalar',
@@ -7599,6 +8096,15 @@ extension on TranslationsUz {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

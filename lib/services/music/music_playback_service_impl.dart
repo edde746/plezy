@@ -16,7 +16,6 @@ import '../../media/media_source_info.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/models.dart';
 import '../../mpv/player/player.dart';
-import '../../mpv/player/player_base.dart' show PlayerAudioFocusOwnership;
 import '../../mpv/player/player_native.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';

@@ -177,6 +177,7 @@ class _Translations$appIcon$kk extends Translations$appIcon$en {
 	@override String get launcherHint => 'PlezyNG-ден шыққаннан кейін жаңа белгіше басты экранда пайда болады.';
 	@override String get tvLauncherHint => 'PlezyNG-ден шыққаннан кейін жаңа баннер пайда болады. Android TV теледидар қайта іске қосылғанша ескісін көрсете беруі мүмкін.';
 	@override late final _Translations$appIcon$names$kk names = _Translations$appIcon$names$kk._(_root);
+	@override String get description => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$kk extends Translations$common$en {
 	@override String get cancel => 'Бас тарту';
 	@override String get save => 'Сақтау';
 	@override String get close => 'Жабу';
+	@override String get closeMiniPlayer => 'Өйткені Mini Player';
+	@override String get closeWorkspaceWindow => 'Ауыз шырышты';
+	@override String get returnToFullView => 'Ауыз іші шырышты қабығы';
+	@override String get manageMediaSessions => 'медиа сессиялары';
+	@override String get hideMediaSessions => 'Медикалық сессиясы';
+	@override String get mediaSessions => 'медиа сессиясы';
+	@override String get mediaSessionsHint => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
+	@override String get sessionInWorkspace => 'Ауызды';
+	@override String get sessionParked => 'Паркинг';
+	@override String get sessionFullscreen => 'Үздік экран';
+	@override String get switchToNextWindow => 'Ауыз ішінен қайта';
+	@override String get moveWindow => 'Жұлдыз окнасы';
+	@override String get finishMovingWindow => 'Ауыз ішінен қайта';
+	@override String get moveWindowHint => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
+	@override String get movingWindowHelp => 'Қандай-қатты өңдеуге қарастырады · Қайдай-шұқсат етіп келді';
+	@override String get resizeWindow => 'Жұлдыз окнасы';
+	@override String get resizeWindowHint => 'Өзі сүйікті жарысы, кеңінен танымал. — Менің білуімше, қазір Геннадий Пак мені сотқа көздеп отыр.';
+	@override String get workspaceWindowHint => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 2 адамды ұсынады.';
+	@override String get workspacePaneHint => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String workspaceWindowLabel({required Object title}) => 'Өнімдер қауымда: ${title}';
+	@override String get workspaceTitleHint => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.';
+	@override String get moveToSessionTray => 'Терідегі сессиясы';
+	@override String get moveToSessionTrayHint => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get closeSessionHint => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get sideBySideLayout => 'Қаланың тұрақты тұрғындарының саны';
+	@override String get floatingWindows => 'Ауыз ішінен шығарылады';
 	@override String get clear => 'Тазалау';
 	@override String get reset => 'Қалпына келтіру';
 	@override String get later => 'Кейінірек';
@@ -678,6 +705,13 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ішкі DV7 режимін мәжбүрлеу';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 форматына түрлендіру';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету';
+	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
+	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
+	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
+	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
+	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
+	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
 	@override String get disableDolbyVision => 'Dolby Vision-ды өшіру';
 	@override String get disableDolbyVisionDescription => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату';
 	@override String get hdrSdrConversion => 'HDR-ды SDR-ға түрлендіру';
@@ -764,13 +798,81 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.';
 	@override String get metadataLanguage => 'Метадеректер тілі';
 	@override String get metadataLanguageDescription => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.';
-	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
-	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
-	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
-	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
-	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
-	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
+	@override String get enterFullscreenOnPlaybackStart => 'Серіктің ең айқын көрнісі ержеткен балаларынан тұрады.';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Аустрияның ірі қалаларыӨңдеу: Playback';
+	@override String get extendVideoIntoDisplayCutout => 'Ауызды көшіру үшін видео';
+	@override String get extendVideoIntoDisplayCutoutDescription => '«Андроид телефоны үшін фотографиялық қосылды»';
+	@override String get languageDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды ұсынады.';
+	@override String get themeDescription => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналары.';
+	@override String get libraryDensityDescription => 'Бібліотекалық картасы бір-бірімен қандай да бар?';
+	@override String get displayScaleDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get themeSongVolumeDescription => 'Өзі сүйікті пікірлер мен пейзаждық қағидалардан тұрады.';
+	@override String get viewModeDescription => 'Библиографиялық элементтерінің бір-бірімен плакаты немесе компактлік спиртке көшіруге болады.';
+	@override String get gridViewDescription => 'Библиографиялық элементтерінің бір-бірімен және пластмассалық колоны бар.';
+	@override String get listViewDescription => 'Библиографиялық элементтерінің бір-бірімен вертикальдық спиртке көшіру керек.';
+	@override String get gridSpacingDescription => 'Библиографиялық сеттер мен пластмасы бар.';
+	@override String get gridSpacingTightDescription => 'Қандай-ақ экранда бірқатар шығарылады.';
+	@override String get gridSpacingNormalDescription => 'Қазіргі таңда стандартдық тазалары бар.';
+	@override String get gridSpacingSpaciousDescription => 'Көңілді сергітерлік әндер шырқалып, биленді.';
+	@override String get episodePosterModeDescription => 'Қазіргі таңда бүкіл әлемнің бір-бірімен таныстырып келді.';
+	@override String get seriesPosterDescription => 'Бүгінгі таңдағы сериалдық постерге көшірмеді.';
+	@override String get seasonPosterDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get episodeThumbnailDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get continueWatchingActionDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get continueWatchingPlayDescription => 'Фильмдер немесе эпизодтер қосылды.';
+	@override String get continueWatchingDetailsDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 2 адамды қауымдастырды.';
+	@override String get episodeActionDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get episodePlayDescription => 'Серіктің епізодiң көшiр.';
+	@override String get episodeDetailsDescription => 'Қазіргі таңда бүкіл әлемде актрисасы бар.';
+	@override String get contentScreensaverDelayDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.';
+	@override String get continueWatchingRowSizeDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get rowSizeCompactDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.';
+	@override String get rowSizeStandardDescription => 'Стандарттық карталық мөлшері бар.';
+	@override String get rowSizeLargeDescription => 'Көңілді сергітерлік әндер шыққан.';
+	@override String get visualEffectsDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get visualEffectsFullDescription => 'Өмірінің соңына дейін анимациялық және художествендық эффекттер бар.';
+	@override String get startupSectionDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override late final _Translations$settings$startupSectionOptions$kk startupSectionOptions = _Translations$settings$startupSectionOptions$kk._(_root);
+	@override String get smallSkipDurationDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get largeSkipDurationDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get rewindOnResumeDescription => 'Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
+	@override String get defaultSleepTimerDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get playNextCountdownDescription => 'Қаланың тұрақты тұрғындарының саны 0 адамды құрайды.';
+	@override String get autoSkipDelaySettingDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get downmixCenterBoostDescription => 'Содан соң, облыс әкімі мердігер ұйымдардың басшыларымен кеңес өткізді.';
+	@override String get displaySwitchDelayDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.';
+	@override String get playerBackendDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get exoPlayerDescription => 'Содан соң, Android Media3 бастыратын жүктеулер мен жабдықтарлық трассы бар.';
+	@override String get mpvDescription => 'Қандай mpv, бұл жүктеу аудармасын, субтитри және видео процессинг контрольдер.';
+	@override String get scopeOffDescription => 'Ауызды іске қосып, жүктеу сезімдер.';
+	@override String get scopeGlobalDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get scopeLibraryDescription => 'Өмірінің соңына дейін библиотекасы бар.';
+	@override String get scopeTitleDescription => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.';
+	@override String get specialsOrderingServerDescription => 'Қаланың ең айқын қағидалар мен медиа сервердермен таныстырылған.';
+	@override String get specialsOrderingAirDateDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get specialsOrderingLastDescription => 'Олардың ішіндегі ең көне апеллятив – үңгір.';
+	@override String get skipIntroModeDescription => 'Қандай-ақ, қанақтар мен қанағылар мен жабдықтармен таныстырып келдім.';
+	@override String get skipCreditsModeDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды ұсынады.';
+	@override String get skipAdsModeDescription => 'Қазіргі таңда бүкіл әлемдегі ең айқын көрмесі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.';
+	@override String get playbackBufferAutoDescription => 'Қазіргі уақытта активациясының өңдеуге ұсынады.';
+	@override String get playbackBufferLargeDescription => 'Қаншалықты қағидалар мен идеялардан тұрады; бұл қағидаталары мен идеяларынан тұрады.';
+	@override String get playbackBufferExtraLargeDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get defaultQualityDescription => 'Өзі сүйікті жабдықтау үшін видео-резолюциясы және сервердің транскрипттер бар.';
+	@override String get cellularQualityDescription => 'Қандай-қатты жабдықтардан тұрады, онда бұл қосылалардан тұруға болады.';
+	@override String get remoteQualityDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get qualityPresetOriginalDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Қаланың тұрақты тұрғындарының саны 2 адамды құрайды және 1 адамды қауымдастырады.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Өнімдер мен сапасы өтінеміз.';
+	@override String get musicQualityDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.';
+	@override String get musicQualityOriginalDescription => 'Қандай-ақ аудіолық, бітрат-капдық транскод болып табылады.';
+	@override String get musicQualityTranscodeOptionDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
+	@override String get maxVolumeInputLabel => 'Максималды құндылықты (%)';
+	@override String get checkForUpdatesDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get appearanceDescription => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.';
+	@override String get prerollLibraryDescription => 'Өзі сүйікті жабдықтар, серігінің ең айқын көрнісі ержеткен балаларынан тұрады.';
+	@override String get prerollSelectionDescription => 'Осылайша «Жеңізде» киносы көреп отырды.';
+	@override String get contentScreensaverDelayOptionDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get videoCodecOptionDescription => 'Қазіргі уақытта бұл кодектеріне жүктеуге болады.Некеккен кодектер мен медиа сервердер арқылы транскриптуды.';
 }
 
 // Path: themeEditor
@@ -807,6 +909,17 @@ class _Translations$themeEditor$kk extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} мин қалды';
 	@override String get previewSwitch => 'Автоойнату';
 	@override String get previewMutedText => 'Қосалқы мәтін осылай көрінеді';
+	@override String get themeSystemDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get themeLightDescription => 'Көңілді сергітерлік әндер шырқалып, биленді.';
+	@override String get themeDarkDescription => 'Көңілді сергітерлік әндер шыққан.';
+	@override String get themeOledDescription => 'Қаланың ең айқын көрмесі ержеткен балаларынан тұрады.';
+	@override String get themeEmberDescription => 'Өткен кереметті және акценттер бар.';
+	@override String get themeGlacierDescription => 'Өнімдер мен акценттер бар.';
+	@override String get themeForestDescription => 'Өткен керемет және натуральный акцент бар.';
+	@override String get themePlumDescription => 'Жүктеу және акценттер бар.';
+	@override String get themePaperDescription => 'Қаншалықты жабдықтар мен қабырғалардан тұрады.';
+	@override String get themeCustomDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get editorDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 3 адамды қауымдастырды және 4 адамды ұсынады.';
 }
 
 // Path: search
@@ -1087,6 +1200,8 @@ class _Translations$accessibility$kk extends Translations$accessibility$en {
 	@override String get largeTargets => 'Өнімдер сенімді';
 	@override String get largeTargetsHint => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.';
 	@override String get navigationHint => 'Басқару элементтері арасында ауысу үшін Tab және Shift+Tab, іске қосу үшін Enter немесе Бос орын, жабу үшін Escape немесе Артқа түймесін пайдаланыңыз. Кітап ашық кезде масштаб пен оқу параметрлерін өзгертуге болады.';
+	@override String get textSizeDescription => 'Осылайша «Барселона» АҚ-ның «Атлантикалық» және «Текст-Системалық» АҚ қағидаларынан тұрады.';
+	@override String get boldTextHint => 'Қандай-ақ интерфейс етикетке және мақалалар үшін көптеген жылдардан тұрады.';
 }
 
 // Path: tooltips
@@ -1170,6 +1285,8 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Түрлендіру қолжетімсіз — түпнұсқа сапада ойнатылады';
 	@override String get subtitleUnavailableFallback => 'Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады';
 	@override String get pipButton => 'Суреттегі сурет режимі';
+	@override String get openMiniPlayer => 'Өткен Mini Player';
+	@override String get returnToFullPlayer => 'Ауыз іші шырышты қабығы';
 	@override String get aspectRatioButton => 'Тараптар қатынасы';
 	@override String get ambientLighting => 'Фондық жарықтандыру';
 	@override String get fullscreenButton => 'Толық экранға өту';
@@ -1327,6 +1444,19 @@ class _Translations$subtitlingStyling$kk extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Рендеринг ажыратымдылығы';
 	@override String get renderResolutionScreen => 'Экран ажыратымдылығы';
 	@override String get renderResolutionVideo => 'Видео ажыратымдылығы';
+	@override String get fontSizeDescription => 'Қазіргі уақытта текстілік қағидалардан тұрады.';
+	@override String get textColorDescription => 'Қазіргі таңда бүкіл әлемдік текстір бар.';
+	@override String get borderSizeDescription => 'Қазіргі уақытта текшінің суреттерлік қағидалар бар.';
+	@override String get borderColorDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get backgroundColorDescription => 'Қазіргі таңда бүкіл әлемдік текстір бар.';
+	@override String get backgroundOpacityDescription => 'Қаншама қауымдасы бар: 0% және 100% түсті.';
+	@override String get positionDescription => '0% видеоның ең көне және 100% видеоның төменде.';
+	@override String get assOverrideDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және құрайтын саны 2 адамды ұсынады.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$kk assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$kk._(_root);
+	@override String get renderResolutionDescription => 'Өзі сүйікті жабдықтар мен өңдеуге ұсынады.Андроид шынысы төмендету үшін рендерингші бар, бірақ танымал қабырға айналады.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$kk renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$kk._(_root);
+	@override String get boldDescription => 'Өзiрiң тек қанақтықты жасайды.';
+	@override String get italicDescription => 'Итальяндық текстінің субтитриі.';
 }
 
 // Path: mpvConfig
@@ -1508,6 +1638,14 @@ class _Translations$accountPreferences$kk extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$kk watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$kk._(_root);
 	@override String get mediaReviewsVisibility => 'Бағалар мен пікірлер';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$kk mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$kk._(_root);
+	@override String get preferredAudioLanguageDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get preferredSubtitleLanguageDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get subtitleAccessibilityDescription => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.';
+	@override String get forcedSubtitleDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.';
+	@override String get watchedIndicatorDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get mediaReviewsVisibilityDescription => 'Қатысушылардың көптеген жылдар бойы Құныскерей ретінде таныстырып келді.';
+	@override String get subtitleModeDescription => 'Қаланың ең айқын көрмесі ержеткен балалардың денесінің өздерінің ата-аналары.';
+	@override String get hubDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
 }
 
 // Path: discover
@@ -2408,6 +2546,7 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG негізгі қабаты';
 	@override String get dvRouteBaseLayerSdr => 'SDR негізгі қабаты';
 	@override String get dvRouteReshaped => 'RPU арқылы қайта пішінделген (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'П7 ФЕЛ графикасы (неквалифицированды)';
 	@override String get p7Conversion => 'P7 түрлендіруі';
 	@override String get sampleRate => 'Дискретизация жиілігі';
 	@override String get pixelFormat => 'Пиксель форматы';
@@ -2468,6 +2607,13 @@ class _Translations$externalPlayer$kk extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'Сыртқы ойнатқышты іске қосу мүмкін болмады';
 	@override String appNotInstalled({required Object name}) => '${name} орнатылмаған';
 	@override String get playInExternalPlayer => 'Сыртқы ойнатқышта ойнату';
+	@override String get description => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырады.';
+	@override String get systemDefaultDescription => 'Операционная системасы видеодан жүктеу үшін алдыңғы аппаратды көшіру.';
+	@override String playerOptionDescription({required Object player}) => 'Қазіргі уақытта көкiнiң әсiлiкiгiздiз ${player}.';
+	@override String get playerNameDescription => '«Жеңізде» бағдарламасының қағидалардан тұрады.';
+	@override String get playerPackageDescription => '«Андроид-пакеттау» және «com.example.player» бағдарламасы бар.';
+	@override String get playerCommandDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get playerUrlSchemeDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
 }
 
 // Path: metadataEdit
@@ -2687,6 +2833,8 @@ class _Translations$services$kk extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$kk oauthProxy = _Translations$services$oauthProxy$kk._(_root);
 	@override late final _Translations$services$pendingAuth$kk pendingAuth = _Translations$services$pendingAuth$kk._(_root);
 	@override late final _Translations$services$libraryFilter$kk libraryFilter = _Translations$services$libraryFilter$kk._(_root);
+	@override String get seerrDescription => 'Серер немесе Оверсеерлер қосылды және медиа жабдықтауға болады.';
+	@override late final _Translations$services$trackerDescriptions$kk trackerDescriptions = _Translations$services$trackerDescriptions$kk._(_root);
 }
 
 // Path: addServer
@@ -2881,6 +3029,9 @@ class _Translations$homeLayout$kk extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'Қазір';
 	@override String get resetHeroButtonDescription => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-басқа, бір-бысқа, бір, бірақ, бір-бесімен, бір және бір-бірек, бір-бенді, бір-бір, бір-байға, бір-бей, бір-ақ, бір-қой, бір-қатынас, бір-әрекет, бір-шой, бір, қағал, бір-шара, бір-шаң, бір-шікүй, бір-сің, бір, қараша, бір-шың, бір.';
+	@override String get tapHeroCardDescription => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get heroTapPlayDescription => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.';
+	@override String get heroTapDetailsDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
 }
 
 // Path: platform
@@ -2911,8 +3062,12 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get source => 'Қайтаны';
 	@override String get name => 'Әйтсе де';
 	@override String get endpoint => 'Сервер URL-і';
+	@override String get smbEndpointHint => 'Мысалы: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ қалтаны енгізіңіз.';
 	@override String get root => 'Олардың дағдырысы және';
+	@override String get smbFolderHelp => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
 	@override String get username => 'Пайдаланушы аты';
+	@override String get smbDomain => 'Домен (міндетті емес)';
 	@override String get password => 'Құпия сөз';
 	@override String get token => 'API қақтар';
 	@override String get accessKey => 'Керіктің қабығы';
@@ -2922,6 +3077,8 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get clientId => 'ОАО «Клиент ID»';
 	@override String get clientSecret => 'ОАУТ клиенттік тайна (десктоп Google үшін)';
 	@override String get allowHttp => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру';
+	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
+	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
 	@override String get connect => 'Қосылу';
 	@override String get cancel => 'Бас тарту';
 	@override String get save => 'Сақтау';
@@ -3067,12 +3224,23 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get useFiles => 'Бірінші мезгіл файлы және книги';
 	@override String get cancelScan => 'Сұрақтық Сұрағы';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Мысалы: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ қалтаны енгізіңіз.';
-	@override String get smbFolderHelp => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
-	@override String get smbDomain => 'Домен (міндетті емес)';
-	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
-	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
+	@override String get offlineQuota => 'Offline Download ұзақтығы';
+	@override String get offlineQuotaHelp => 'Қандай-ақ, қаңтарда жабдықтауды және ұзақ уақыт бойы жабырға айналады.Жеңінен танымал.';
+	@override String get offlineStorageUsage => 'Оңтүстік кооперациясы';
+	@override String get reservedStorage => 'Жарықтың';
+	@override String get downloadQueue => 'Өткен керемет';
+	@override String get downloadRunning => 'жүктеу';
+	@override String get downloadQueued => 'Жүктесі';
+	@override String get downloadPaused => 'Ауызды';
+	@override String get downloadFailed => 'Қандай ретри';
+	@override String get importing => 'Өнімдер';
+	@override String get importInterrupted => 'Өзі сүйікті айтылады;';
+	@override String get errorQuotaExceeded => 'Қандай-ақ, қабырға айналады.Сұқсат етілген копиясы көздеп отырды.';
+	@override String get errorStorageLow => 'Қандай-ақ, қабықтардан баспасөз тағайындалды.';
+	@override String get errorStorageUnavailable => '«Жеңізде» АҚШ-қаның ең айқын көргенде, бір жылдық қағидалардан тұрады.';
+	@override String get removeDownloadJob => 'жүктеу үшін';
+	@override String get downloadAlreadyComplete => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды (2008).';
+	@override String get confirmRemoveDownloadJob => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
 }
 
 // Path: lending
@@ -3192,6 +3360,12 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get statusFinished => 'Өткен';
 	@override String get goToTime => 'Қазіргі уақытта';
 	@override String get timeHelp => 'Өнімдер: 1 минут, 1 минут, 1 секунды';
+	@override String get recoveryHelp => 'Қаланың тұрақты тұрғындарының саны 10 адамды құрайды және 1 адамды қағидалардан тұрады.';
+	@override String get recoveryExport => 'Експортдық криптовалюттік файл';
+	@override String get recoveryImport => 'Қандай-ақ криптовалюталық дағдарыс';
+	@override String get recoveryImportConfirm => 'Бұл криптовалюталық дағдарыстағы қанағаттанды және жабдықтармен көруге болады? іс-әрекеттің историю бар. Жабдықтау библиотекасы және элементтік ID-дер не пайдаланылады; екеуінде импортируға дейін әртүрлі айналысатын идентификатордан қабылдайды.';
+	@override String get recoveryExported => 'Қазіргі уақытта өңдеуге кеңінен танымал.';
+	@override String get recoveryImported => 'Ауыздан дағдарыста.';
 }
 
 // Path: sourceSetup
@@ -3295,6 +3469,23 @@ class _Translations$sourceSetup$kk extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Бағасы: ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Субтитр жүктелуде: ${title}';
+	@override String get sharedEntryPair => 'Қазіргі таңда бүкіл әлемде';
+	@override String get sharedEntryPairHelp => 'Өмірінің соңына дейін қабырға айтып келдім.Сұқсат етіп, қарапайым етіп алыңыз.Жеңінен танымал, бірақ жыл сайын өздерінің ата-аналардан тұрады.';
+	@override String get sharedEntryId => 'Қатысушылардың ID';
+	@override String get generateSharedEntryId => 'Ауыз ішінен ID';
+	@override String get sharedLibraryId => 'Библиографиялық картасы (i)';
+	@override String get sharedLibraryHelp => 'Біздің өнімдер мен электрондық пошталар мен электронды және электронды немесе электронды қабырға айналады.You can use the same ID on devices that open the same library.This public ID helps carry reading progress and notes across different source connections; it is not a password.When providers use different item IDs, pair those items from their detail screens.';
+	@override String get sharedLibraryInvalid => '8–100 букмекер, цифры, тоты, подсказы және хифендер.';
+	@override String get generateSharedLibraryId => 'Бібліотекадан шығарылған ID';
+	@override String get nfsReadAhead => 'НФС жабдықтардан тұрады';
+	@override String get nfsReadAheadHelp => 'Қандай-қатты жабдықтар мен қабаттарды біріктірді.Ауыз іші шығарыштық ғылыми сессиялармен таныстырып келді.';
+	@override String get nfsReadTest => 'Қандай-ақ НФС қабығы';
+	@override String get nfsReadTestHelp => 'Қаланың тұрақты тұрғындарының саны 64 адамды құрайды.';
+	@override String get nfsQualificationResult => 'НФС қанақтықты';
+	@override String get nfsReadBytes => 'Өнімдер мен материалдар';
+	@override String get nfsReadSpeed => 'Өнімдер';
+	@override String get nfsReadRequests => 'Жақсы туралы';
+	@override String get sharedEntryConflict => 'Біздің өнімдер мен электрондық пошталар мен электрондылық пошталары бар, бізге сіздің электронды және электронды қамтамасыз етеді.';
 }
 
 // Path: comics
@@ -3387,6 +3578,15 @@ class _Translations$games$kk extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3467,6 +3667,19 @@ class _Translations$common$mediaKind$kk extends Translations$common$mediaKind$en
 	@override String get clip => 'Клип';
 	@override String get photo => 'Фото';
 	@override String get folder => 'Қалта';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$kk extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get libraries => 'Содан соң облыстық медиа библиографиясы көшіру.';
+	@override String get liveTv => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.';
+	@override String get search => 'Открыты медиа құбырды.';
 }
 
 // Path: themeEditor.slots
@@ -3555,6 +3768,35 @@ class _Translations$videoControls$pipErrors$kk extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Қате орын алды: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$kk extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Қаншама, қаңтар, жабдықтар және құттықты көтеріңіз.';
+	@override String get yes => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.';
+	@override String get scale => 'Содан соң облыстық әкімдікте Павлодар облысының әкімі мен митрополиттің жеке кездесуі өтті.';
+	@override String get force => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.';
+	@override String get strip => 'Қандай-қатты өңдеуге қарастыратын және субтитрикалық текстірде көшіру керек.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$kk extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.';
+	@override String get video => 'Өзі сүйікті жабдықтау үшін видео-резолюциялары бар, бұл жоғары резолюциялар дисплеевді жұмыс істейді.';
+	@override String get threeQuarter => 'Қазіргі уақытта 75 %-ға дейін дисплей-поверхнену резолюциясы бар, соның ішінде жоғары мамандықтардан тұрады.';
+	@override String get half => 'Қаланың тұрақты тұрғындарының саны 50 адамды құрайды.';
+	@override String get third => 'Қаланың тұрақты тұрғындарының саны 3 - 4 адамды құрайды.';
+	@override String get quarter => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қағидалар бар.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$kk extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -3597,6 +3839,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$kk extends T
 	@override String get preferSdh => 'SDH субтитрлерін артық көру';
 	@override String get onlySdh => 'Тек SDH субтитрлері';
 	@override String get onlyNonSdh => 'Тек SDH емес субтитрлер';
+	@override String get preferNonSdhDescription => 'Қазіргі таңда стандартдық және SDH версиялары бар.';
+	@override String get preferSdhDescription => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.';
+	@override String get onlySdhDescription => 'Тәттілерді жылына бір рет жесек жейміз, әйтпесе дәмі қандай екенін де ұмытылады.';
+	@override String get onlyNonSdhDescription => 'Қандай стандартдық субтитри; SDH субтитры бар.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3610,6 +3856,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$kk extends Translat
 	@override String get preferForced => 'Мәжбүрлі субтитрлерді артық көру';
 	@override String get onlyForced => 'Тек мәжбүрлі субтитрлер';
 	@override String get onlyNonForced => 'Тек мәжбүрлі емес субтитрлер';
+	@override String get preferNonForcedDescription => 'Өзі сүйікті жарысы бар, бірақ жыл сайын шығарылады.';
+	@override String get preferForcedDescription => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.';
+	@override String get onlyForcedDescription => 'Қазіргі уақытта бір-қатынас құттықты бар.';
+	@override String get onlyNonForcedDescription => 'Жүктесі бір-бірімен ұзақтығы ескерту.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3623,6 +3873,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$kk extends Transl
 	@override String get moviesAndShows => 'Фильмдер және сериалдар';
 	@override String get movies => 'Тек фильмдер';
 	@override String get shows => 'Тек сериалдар';
+	@override String get noneDescription => 'Не күлеріңді көреп отырды.';
+	@override String get moviesAndShowsDescription => 'Теңіздің киносы және телешоу үшін үздік контролер.';
+	@override String get moviesDescription => 'Қазіргі уақытта, киноның ең айқын көргенде.';
+	@override String get showsDescription => 'Телевизиондық шоу үшін көшірмеуге қарастырылған.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3636,6 +3890,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$kk extends Translatio
 	@override String get usersOnly => 'Тек пайдаланушылар';
 	@override String get criticsOnly => 'Тек сыншылар';
 	@override String get nobody => 'Жасырылған';
+	@override String get usersAndCriticsDescription => 'Ауыз ішінен және критикалық рейтингдер.';
+	@override String get usersOnlyDescription => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.';
+	@override String get criticsOnlyDescription => 'Көңілді сергітерлік әндер шыққан.';
+	@override String get nobodyDescription => 'Көңілді рейтингтер және рецензиялар.';
 }
 
 // Path: discover.findNext
@@ -4424,6 +4682,21 @@ class _Translations$services$libraryFilter$kk extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Тек төменде таңдалған кітапханаларды синхрондау.';
 	@override String get libraries => 'Кітапханалар';
 	@override String get noLibraries => 'Кітапханалар жоқ';
+	@override String get modeDescription => 'Осылайша «Жеңізде» АҚШ-ның ең айқын көргенде, «Барселона» АҚш-ның ірі қалаларыӨңдеуге көшіру керек.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$kk extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Өзі сүйікті актрисасы, серіктесі және фильмінің бір-бірімен көшіру.';
+	@override String get mal => 'Өзі сүйікті анимациясы және MyAnimeList-ге қараңыз.';
+	@override String get anilist => 'Өзінің аниме списы бар, және AniList-ге прогрес қараңыз.';
+	@override String get simkl => 'Өзі сүйікті жарық, телешоу және анимациясы Simkl.';
+	@override String get mdblist => 'Өзі сүйікті жабдықтар мен ұлтқыштық ғылыми сессиялармен таныстырылған.';
 }
 
 /// The flat map containing all translations for locale <kk>.
@@ -4481,6 +4754,7 @@ extension on TranslationsKk {
 			'appIcon.names.strata' => 'Қабаттар',
 			'appIcon.names.facet' => 'Қырлы',
 			'appIcon.names.tilde' => 'Тильда',
+			'appIcon.description' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
 			'auth.signInWithPlex' => 'Plex арқылы кіру',
 			'auth.showQRCode' => 'QR кодты көрсету',
 			'auth.authenticate' => 'Растау',
@@ -4502,6 +4776,32 @@ extension on TranslationsKk {
 			'common.cancel' => 'Бас тарту',
 			'common.save' => 'Сақтау',
 			'common.close' => 'Жабу',
+			'common.closeMiniPlayer' => 'Өйткені Mini Player',
+			'common.closeWorkspaceWindow' => 'Ауыз шырышты',
+			'common.returnToFullView' => 'Ауыз іші шырышты қабығы',
+			'common.manageMediaSessions' => 'медиа сессиялары',
+			'common.hideMediaSessions' => 'Медикалық сессиясы',
+			'common.mediaSessions' => 'медиа сессиясы',
+			'common.mediaSessionsHint' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
+			'common.sessionInWorkspace' => 'Ауызды',
+			'common.sessionParked' => 'Паркинг',
+			'common.sessionFullscreen' => 'Үздік экран',
+			'common.switchToNextWindow' => 'Ауыз ішінен қайта',
+			'common.moveWindow' => 'Жұлдыз окнасы',
+			'common.finishMovingWindow' => 'Ауыз ішінен қайта',
+			'common.moveWindowHint' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
+			'common.movingWindowHelp' => 'Қандай-қатты өңдеуге қарастырады · Қайдай-шұқсат етіп келді',
+			'common.resizeWindow' => 'Жұлдыз окнасы',
+			'common.resizeWindowHint' => 'Өзі сүйікті жарысы, кеңінен танымал. — Менің білуімше, қазір Геннадий Пак мені сотқа көздеп отыр.',
+			'common.workspaceWindowHint' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 2 адамды ұсынады.',
+			'common.workspacePaneHint' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Өнімдер қауымда: ${title}',
+			'common.workspaceTitleHint' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.',
+			'common.moveToSessionTray' => 'Терідегі сессиясы',
+			'common.moveToSessionTrayHint' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'common.closeSessionHint' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'common.sideBySideLayout' => 'Қаланың тұрақты тұрғындарының саны',
+			'common.floatingWindows' => 'Ауыз ішінен шығарылады',
 			'common.clear' => 'Тазалау',
 			'common.reset' => 'Қалпына келтіру',
 			'common.later' => 'Кейінірек',
@@ -4919,6 +5219,8 @@ extension on TranslationsKk {
 			'settings.audioPassthrough' => 'Дыбысты тікелей өткізу (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. iOS, iPadOS және tvOS 26 немесе жаңарақ нұсқаларында TrueHD Atmos пен DTS:X кеңістіктік дыбыс ретінде ойнатылады. Басқа DTS және TrueHD жолдары көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Дыбыс деңгейін нормалау қосулы кезде өшірулі',
 			'settings.audioChannelLimit' => 'Аудио арналары',
@@ -4945,9 +5247,14 @@ extension on TranslationsKk {
 			'settings.dvConversionNativeDescription' => 'Ішкі DV7 режимін мәжбүрлеу',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
+			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
+			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
+			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
+			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
+			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
+			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
 			'settings.disableDolbyVision' => 'Dolby Vision-ды өшіру',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату',
 			'settings.hdrSdrConversion' => 'HDR-ды SDR-ға түрлендіру',
 			'settings.hdrSdrConversionDescription' => 'Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.',
@@ -5033,13 +5340,84 @@ extension on TranslationsKk {
 			'settings.regionFormatDescription' => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.',
 			'settings.metadataLanguage' => 'Метадеректер тілі',
 			'settings.metadataLanguageDescription' => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.',
-			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
-			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
-			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
-			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
-			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
-			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Серіктің ең айқын көрнісі ержеткен балаларынан тұрады.',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Аустрияның ірі қалаларыӨңдеу: Playback',
+			'settings.extendVideoIntoDisplayCutout' => 'Ауызды көшіру үшін видео',
+			'settings.extendVideoIntoDisplayCutoutDescription' => '«Андроид телефоны үшін фотографиялық қосылды»',
+			'settings.languageDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды ұсынады.',
+			'settings.themeDescription' => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналары.',
+			'settings.libraryDensityDescription' => 'Бібліотекалық картасы бір-бірімен қандай да бар?',
+			'settings.displayScaleDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'settings.themeSongVolumeDescription' => 'Өзі сүйікті пікірлер мен пейзаждық қағидалардан тұрады.',
+			'settings.viewModeDescription' => 'Библиографиялық элементтерінің бір-бірімен плакаты немесе компактлік спиртке көшіруге болады.',
+			'settings.gridViewDescription' => 'Библиографиялық элементтерінің бір-бірімен және пластмассалық колоны бар.',
+			'settings.listViewDescription' => 'Библиографиялық элементтерінің бір-бірімен вертикальдық спиртке көшіру керек.',
+			'settings.gridSpacingDescription' => 'Библиографиялық сеттер мен пластмасы бар.',
+			'settings.gridSpacingTightDescription' => 'Қандай-ақ экранда бірқатар шығарылады.',
+			'settings.gridSpacingNormalDescription' => 'Қазіргі таңда стандартдық тазалары бар.',
+			'settings.gridSpacingSpaciousDescription' => 'Көңілді сергітерлік әндер шырқалып, биленді.',
+			'settings.episodePosterModeDescription' => 'Қазіргі таңда бүкіл әлемнің бір-бірімен таныстырып келді.',
+			'settings.seriesPosterDescription' => 'Бүгінгі таңдағы сериалдық постерге көшірмеді.',
+			'settings.seasonPosterDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.episodeThumbnailDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.continueWatchingActionDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.continueWatchingPlayDescription' => 'Фильмдер немесе эпизодтер қосылды.',
+			'settings.continueWatchingDetailsDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 2 адамды қауымдастырды.',
+			'settings.episodeActionDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.episodePlayDescription' => 'Серіктің епізодiң көшiр.',
+			'settings.episodeDetailsDescription' => 'Қазіргі таңда бүкіл әлемде актрисасы бар.',
+			'settings.contentScreensaverDelayDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.',
+			'settings.continueWatchingRowSizeDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'settings.rowSizeCompactDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.',
+			'settings.rowSizeStandardDescription' => 'Стандарттық карталық мөлшері бар.',
+			'settings.rowSizeLargeDescription' => 'Көңілді сергітерлік әндер шыққан.',
+			'settings.visualEffectsDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'settings.visualEffectsFullDescription' => 'Өмірінің соңына дейін анимациялық және художествендық эффекттер бар.',
+			'settings.startupSectionDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.startupSectionOptions.discover' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.startupSectionOptions.libraries' => 'Содан соң облыстық медиа библиографиясы көшіру.',
+			'settings.startupSectionOptions.liveTv' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'settings.startupSectionOptions.search' => 'Открыты медиа құбырды.',
+			'settings.smallSkipDurationDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.largeSkipDurationDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.rewindOnResumeDescription' => 'Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
+			'settings.defaultSleepTimerDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.playNextCountdownDescription' => 'Қаланың тұрақты тұрғындарының саны 0 адамды құрайды.',
+			'settings.autoSkipDelaySettingDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'settings.downmixCenterBoostDescription' => 'Содан соң, облыс әкімі мердігер ұйымдардың басшыларымен кеңес өткізді.',
+			'settings.displaySwitchDelayDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.',
+			'settings.playerBackendDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.exoPlayerDescription' => 'Содан соң, Android Media3 бастыратын жүктеулер мен жабдықтарлық трассы бар.',
+			'settings.mpvDescription' => 'Қандай mpv, бұл жүктеу аудармасын, субтитри және видео процессинг контрольдер.',
+			'settings.scopeOffDescription' => 'Ауызды іске қосып, жүктеу сезімдер.',
+			'settings.scopeGlobalDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'settings.scopeLibraryDescription' => 'Өмірінің соңына дейін библиотекасы бар.',
+			'settings.scopeTitleDescription' => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.',
+			'settings.specialsOrderingServerDescription' => 'Қаланың ең айқын қағидалар мен медиа сервердермен таныстырылған.',
+			'settings.specialsOrderingAirDateDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.specialsOrderingLastDescription' => 'Олардың ішіндегі ең көне апеллятив – үңгір.',
+			'settings.skipIntroModeDescription' => 'Қандай-ақ, қанақтар мен қанағылар мен жабдықтармен таныстырып келдім.',
+			'settings.skipCreditsModeDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды ұсынады.',
+			'settings.skipAdsModeDescription' => 'Қазіргі таңда бүкіл әлемдегі ең айқын көрмесі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.',
+			'settings.playbackBufferAutoDescription' => 'Қазіргі уақытта активациясының өңдеуге ұсынады.',
+			'settings.playbackBufferLargeDescription' => 'Қаншалықты қағидалар мен идеялардан тұрады; бұл қағидаталары мен идеяларынан тұрады.',
+			'settings.playbackBufferExtraLargeDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.defaultQualityDescription' => 'Өзі сүйікті жабдықтау үшін видео-резолюциясы және сервердің транскрипттер бар.',
+			'settings.cellularQualityDescription' => 'Қандай-қатты жабдықтардан тұрады, онда бұл қосылалардан тұруға болады.',
+			'settings.remoteQualityDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'settings.qualityPresetOriginalDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Қаланың тұрақты тұрғындарының саны 2 адамды құрайды және 1 адамды қауымдастырады.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Өнімдер мен сапасы өтінеміз.',
+			'settings.musicQualityDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.',
+			'settings.musicQualityOriginalDescription' => 'Қандай-ақ аудіолық, бітрат-капдық транскод болып табылады.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
+			'settings.maxVolumeInputLabel' => 'Максималды құндылықты (%)',
+			'settings.checkForUpdatesDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.appearanceDescription' => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.',
+			'settings.prerollLibraryDescription' => 'Өзі сүйікті жабдықтар, серігінің ең айқын көрнісі ержеткен балаларынан тұрады.',
+			'settings.prerollSelectionDescription' => 'Осылайша «Жеңізде» киносы көреп отырды.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'settings.videoCodecOptionDescription' => 'Қазіргі уақытта бұл кодектеріне жүктеуге болады.Некеккен кодектер мен медиа сервердер арқылы транскриптуды.',
 			'themeEditor.builtIn' => 'Кірістірілген',
 			'themeEditor.presets' => 'Дайын тақырыптар',
 			'themeEditor.custom' => 'Жеке',
@@ -5078,6 +5456,17 @@ extension on TranslationsKk {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} мин қалды',
 			'themeEditor.previewSwitch' => 'Автоойнату',
 			'themeEditor.previewMutedText' => 'Қосалқы мәтін осылай көрінеді',
+			'themeEditor.themeSystemDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'themeEditor.themeLightDescription' => 'Көңілді сергітерлік әндер шырқалып, биленді.',
+			'themeEditor.themeDarkDescription' => 'Көңілді сергітерлік әндер шыққан.',
+			'themeEditor.themeOledDescription' => 'Қаланың ең айқын көрмесі ержеткен балаларынан тұрады.',
+			'themeEditor.themeEmberDescription' => 'Өткен кереметті және акценттер бар.',
+			'themeEditor.themeGlacierDescription' => 'Өнімдер мен акценттер бар.',
+			'themeEditor.themeForestDescription' => 'Өткен керемет және натуральный акцент бар.',
+			'themeEditor.themePlumDescription' => 'Жүктеу және акценттер бар.',
+			'themeEditor.themePaperDescription' => 'Қаншалықты жабдықтар мен қабырғалардан тұрады.',
+			'themeEditor.themeCustomDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'themeEditor.editorDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 3 адамды қауымдастырды және 4 адамды ұсынады.',
 			'search.hint' => 'Фильмдер, сериалдар, музыка іздеу...',
 			'search.tryDifferentTerm' => 'Басқа іздеу сөзін байқап көріңіз',
 			'search.searchYourMedia' => 'Медиафайлдардан іздеу',
@@ -5323,6 +5712,8 @@ extension on TranslationsKk {
 			'accessibility.largeTargets' => 'Өнімдер сенімді',
 			'accessibility.largeTargetsHint' => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.',
 			'accessibility.navigationHint' => 'Басқару элементтері арасында ауысу үшін Tab және Shift+Tab, іске қосу үшін Enter немесе Бос орын, жабу үшін Escape немесе Артқа түймесін пайдаланыңыз. Кітап ашық кезде масштаб пен оқу параметрлерін өзгертуге болады.',
+			'accessibility.textSizeDescription' => 'Осылайша «Барселона» АҚ-ның «Атлантикалық» және «Текст-Системалық» АҚ қағидаларынан тұрады.',
+			'accessibility.boldTextHint' => 'Қандай-ақ интерфейс етикетке және мақалалар үшін көптеген жылдардан тұрады.',
 			'tooltips.shufflePlay' => 'Араластырып ойнату',
 			'tooltips.playTrailer' => 'Трейлерді ойнату',
 			'tooltips.markAsWatched' => 'Көрілді деп белгілеу',
@@ -5342,6 +5733,8 @@ extension on TranslationsKk {
 			'videoControls.sleepTimerEndOfVideo' => 'Ағымдағы видеоның соңы',
 			'videoControls.sleepTimerStopAtHeader' => 'Тоқтату уақыты',
 			'videoControls.sleepTimerDurationHeader' => 'Таймер',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Ойнату осы видеоның соңында кідіртіледі',
 			'videoControls.stillWatching' => 'Әлі де көріп отырсыз ба?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}сек кейін кідіртіледі',
@@ -5376,6 +5769,8 @@ extension on TranslationsKk {
 			'videoControls.transcodeUnavailableFallback' => 'Түрлендіру қолжетімсіз — түпнұсқа сапада ойнатылады',
 			'videoControls.subtitleUnavailableFallback' => 'Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады',
 			'videoControls.pipButton' => 'Суреттегі сурет режимі',
+			'videoControls.openMiniPlayer' => 'Өткен Mini Player',
+			'videoControls.returnToFullPlayer' => 'Ауыз іші шырышты қабығы',
 			'videoControls.aspectRatioButton' => 'Тараптар қатынасы',
 			'videoControls.ambientLighting' => 'Фондық жарықтандыру',
 			'videoControls.fullscreenButton' => 'Толық экранға өту',
@@ -5460,8 +5855,6 @@ extension on TranslationsKk {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" үшін сканерлеу басталды',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Кітапхананы сканерлеу мүмкін болмады: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" үшін метадеректер жаңартылуда...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" үшін метадеректерді жаңарту басталды',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Метадеректерді жаңарту мүмкін болмады: ${error}',
 			'messages.logoutConfirm' => 'Шынымен шыққыңыз келе ме?',
@@ -5521,6 +5914,28 @@ extension on TranslationsKk {
 			'subtitlingStyling.renderResolution' => 'Рендеринг ажыратымдылығы',
 			'subtitlingStyling.renderResolutionScreen' => 'Экран ажыратымдылығы',
 			'subtitlingStyling.renderResolutionVideo' => 'Видео ажыратымдылығы',
+			'subtitlingStyling.fontSizeDescription' => 'Қазіргі уақытта текстілік қағидалардан тұрады.',
+			'subtitlingStyling.textColorDescription' => 'Қазіргі таңда бүкіл әлемдік текстір бар.',
+			'subtitlingStyling.borderSizeDescription' => 'Қазіргі уақытта текшінің суреттерлік қағидалар бар.',
+			'subtitlingStyling.borderColorDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'subtitlingStyling.backgroundColorDescription' => 'Қазіргі таңда бүкіл әлемдік текстір бар.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Қаншама қауымдасы бар: 0% және 100% түсті.',
+			'subtitlingStyling.positionDescription' => '0% видеоның ең көне және 100% видеоның төменде.',
+			'subtitlingStyling.assOverrideDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және құрайтын саны 2 адамды ұсынады.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Қаншама, қаңтар, жабдықтар және құттықты көтеріңіз.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Содан соң облыстық әкімдікте Павлодар облысының әкімі мен митрополиттің жеке кездесуі өтті.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Қандай-қатты өңдеуге қарастыратын және субтитрикалық текстірде көшіру керек.',
+			'subtitlingStyling.renderResolutionDescription' => 'Өзі сүйікті жабдықтар мен өңдеуге ұсынады.Андроид шынысы төмендету үшін рендерингші бар, бірақ танымал қабырға айналады.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Өзі сүйікті жабдықтау үшін видео-резолюциялары бар, бұл жоғары резолюциялар дисплеевді жұмыс істейді.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Қазіргі уақытта 75 %-ға дейін дисплей-поверхнену резолюциясы бар, соның ішінде жоғары мамандықтардан тұрады.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Қаланың тұрақты тұрғындарының саны 50 адамды құрайды.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Қаланың тұрақты тұрғындарының саны 3 - 4 адамды құрайды.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қағидалар бар.',
+			'subtitlingStyling.boldDescription' => 'Өзiрiң тек қанақтықты жасайды.',
+			'subtitlingStyling.italicDescription' => 'Итальяндық текстінің субтитриі.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Кеңейтілген видео ойнатқыш баптаулары',
 			'mpvConfig.presets' => 'Дайын баптаулар',
@@ -5657,11 +6072,19 @@ extension on TranslationsKk {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH субтитрлерін артық көру',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Тек SDH субтитрлері',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Тек SDH емес субтитрлер',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Қазіргі таңда стандартдық және SDH версиялары бар.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды және 1 адамды қауымдастырды.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Тәттілерді жылына бір рет жесек жейміз, әйтпесе дәмі қандай екенін де ұмытылады.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Қандай стандартдық субтитри; SDH субтитры бар.',
 			'accountPreferences.forcedSubtitles' => 'Мәжбүрлі субтитрлер',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Мәжбүрлі емес субтитрлерді артық көру',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Мәжбүрлі субтитрлерді артық көру',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Тек мәжбүрлі субтитрлер',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Тек мәжбүрлі емес субтитрлер',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Өзі сүйікті жарысы бар, бірақ жыл сайын шығарылады.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Қазіргі уақытта бір-қатынас құттықты бар.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Жүктесі бір-бірімен ұзақтығы ескерту.',
 			'accountPreferences.displayMissingEpisodes' => 'Жоқ бөлімдерді көрсету',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Сервер білетін, бірақ файлы жоқ бөлімдерді тізімдеу.',
 			'accountPreferences.hidePlayedInLatest' => '«Latest» айдарында көрілген элементтерді жасыру',
@@ -5675,11 +6098,27 @@ extension on TranslationsKk {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Фильмдер және сериалдар',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Тек фильмдер',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'Тек сериалдар',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Не күлеріңді көреп отырды.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Теңіздің киносы және телешоу үшін үздік контролер.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Қазіргі уақытта, киноның ең айқын көргенде.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Телевизиондық шоу үшін көшірмеуге қарастырылған.',
 			'accountPreferences.mediaReviewsVisibility' => 'Бағалар мен пікірлер',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Пайдаланушылар және сыншылар',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Тек пайдаланушылар',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Тек сыншылар',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Жасырылған',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Ауыз ішінен және критикалық рейтингдер.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Көңілді сергітерлік әндер шыққан.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Көңілді рейтингтер және рецензиялар.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Қаланың ең айқын көрнісі ержеткен балалардың денесінің өздерінің ата-аналарының денесімен салыстырылған.',
+			'accountPreferences.forcedSubtitleDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қағидалар бар.',
+			'accountPreferences.watchedIndicatorDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Қатысушылардың көптеген жылдар бойы Құныскерей ретінде таныстырып келді.',
+			'accountPreferences.subtitleModeDescription' => 'Қаланың ең айқын көрмесі ержеткен балалардың денесінің өздерінің ата-аналары.',
+			'accountPreferences.hubDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
 			'discover.title' => 'Шолу',
 			'discover.noContentAvailable' => 'Мазмұн қолжетімсіз',
 			'discover.addMediaToLibraries' => 'Кітапханаларыңызға медиа қосыңыз',
@@ -5808,6 +6247,8 @@ extension on TranslationsKk {
 			'libraries.all' => 'Барлығы',
 			'libraries.clearAll' => 'Барлығын тазалау',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасын сканерлегіңіз келе ме?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасына талдау жасағыңыз келе ме?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" метадеректерін жаңартасыз ба?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" себетін тазалайсыз ба?',
@@ -5974,8 +6415,6 @@ extension on TranslationsKk {
 			'explore.mdblistShelves.nameHint' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір.',
 			'explore.mdblistShelves.add' => 'Шелгі',
 			'explore.mdblistShelves.save' => 'Қайталылық',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.unavailable' => 'Бұл спиртқа не қосқан.Серіктің шағын немесе жүктеу.',
@@ -6322,6 +6761,8 @@ extension on TranslationsKk {
 			'watchTogether.connecting' => 'Қосылуда...',
 			'watchTogether.relayPublic' => 'Бөлмелер жалпыға ортақ Open Watch Party релелерін пайдаланады.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Бөлмелер ${url} мекенжайындағы релеңізді пайдаланады.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
 			'watchTogether.roomActions' => 'Бөлме әрекеттері',
 			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
@@ -6488,8 +6929,6 @@ extension on TranslationsKk {
 			'downloads.resumeDownload' => 'Жүктеуді жалғастыру',
 			'downloads.cancelledDownload' => 'Тоқтатылған жүктеу',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} синхрондалуда)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Жүктелді ${file} - Аяқтау үшін түртіңіз',
 			'downloads.partialDownloadClickToComplete' => 'Жартылай жүктелді - Аяқтау үшін түртіңіз',
 			'downloads.deleting' => 'Өшірілуде...',
@@ -6748,6 +7187,7 @@ extension on TranslationsKk {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG негізгі қабаты',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR негізгі қабаты',
 			'performanceOverlay.dvRouteReshaped' => 'RPU арқылы қайта пішінделген (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'П7 ФЕЛ графикасы (неквалифицированды)',
 			'performanceOverlay.p7Conversion' => 'P7 түрлендіруі',
 			'performanceOverlay.sampleRate' => 'Дискретизация жиілігі',
 			'performanceOverlay.pixelFormat' => 'Пиксель форматы',
@@ -6799,6 +7239,13 @@ extension on TranslationsKk {
 			'externalPlayer.launchFailed' => 'Сыртқы ойнатқышты іске қосу мүмкін болмады',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} орнатылмаған',
 			'externalPlayer.playInExternalPlayer' => 'Сыртқы ойнатқышта ойнату',
+			'externalPlayer.description' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырады.',
+			'externalPlayer.systemDefaultDescription' => 'Операционная системасы видеодан жүктеу үшін алдыңғы аппаратды көшіру.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Қазіргі уақытта көкiнiң әсiлiкiгiздiз ${player}.',
+			'externalPlayer.playerNameDescription' => '«Жеңізде» бағдарламасының қағидалардан тұрады.',
+			'externalPlayer.playerPackageDescription' => '«Андроид-пакеттау» және «com.example.player» бағдарламасы бар.',
+			'externalPlayer.playerCommandDescription' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
 			'metadataEdit.editMetadata' => 'Өңдеу...',
 			'metadataEdit.screenTitle' => 'Метадеректерді өңдеу',
 			'metadataEdit.basicInfo' => 'Негізгі ақпарат',
@@ -6828,6 +7275,8 @@ extension on TranslationsKk {
 			'metadataEdit.metadataUpdateFailed' => 'Метадеректерді жаңарту мүмкін болмады',
 			'metadataEdit.artworkUpdated' => 'Суреттер жаңартылды',
 			'metadataEdit.artworkUpdateFailed' => 'Суреттерді жаңарту мүмкін болмады',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Сурет қолжетімсіз',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Сурет опциясы ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Сурет опциясы ${index}, таңдалды',
@@ -6988,6 +7437,13 @@ extension on TranslationsKk {
 			'services.libraryFilter.modeHintWhitelist' => 'Тек төменде таңдалған кітапханаларды синхрондау.',
 			'services.libraryFilter.libraries' => 'Кітапханалар',
 			'services.libraryFilter.noLibraries' => 'Кітапханалар жоқ',
+			'services.libraryFilter.modeDescription' => 'Осылайша «Жеңізде» АҚШ-ның ең айқын көргенде, «Барселона» АҚш-ның ірі қалаларыӨңдеуге көшіру керек.',
+			'services.seerrDescription' => 'Серер немесе Оверсеерлер қосылды және медиа жабдықтауға болады.',
+			'services.trackerDescriptions.trakt' => 'Өзі сүйікті актрисасы, серіктесі және фильмінің бір-бірімен көшіру.',
+			'services.trackerDescriptions.mal' => 'Өзі сүйікті анимациясы және MyAnimeList-ге қараңыз.',
+			'services.trackerDescriptions.anilist' => 'Өзінің аниме списы бар, және AniList-ге прогрес қараңыз.',
+			'services.trackerDescriptions.simkl' => 'Өзі сүйікті жарық, телешоу және анимациясы Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Өзі сүйікті жабдықтар мен ұлтқыштық ғылыми сессиялармен таныстырылған.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} серверін қосу',
 			'addServer.serverUrls' => 'Сервер URL-дері',
 			'addServer.serverUrlsHelper' => 'Үтірмен бөлінген бірнеше URL мекенжайына рұқсат етіледі.',
@@ -7002,8 +7458,6 @@ extension on TranslationsKk {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Кіру қатесі: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Жылдам қосылу қатесі: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex арқылы кіру',
 			'addServer.pinExpired' => 'PIN код мерзімі өтті.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Тіркелгіні тіркеу қатесі: ${error}',
@@ -7157,6 +7611,9 @@ extension on TranslationsKk {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'Қазір',
 			'homeLayout.resetHeroButtonDescription' => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-басқа, бір-бысқа, бір, бірақ, бір-бесімен, бір және бір-бірек, бір-бенді, бір-бір, бір-байға, бір-бей, бір-ақ, бір-қой, бір-қатынас, бір-әрекет, бір-шой, бір, қағал, бір-шара, бір-шаң, бір-шікүй, бір-сің, бір, қараша, бір-шың, бір.',
+			'homeLayout.tapHeroCardDescription' => 'Өмірінің соңына дейін осында тұрып қара сөздерін, аудармаларын жазды.',
+			'homeLayout.heroTapPlayDescription' => 'Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.',
+			'homeLayout.heroTapDetailsDescription' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
 			'platform.localNetworkPermission' => 'PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.',
 			'platform.locationPermission' => 'Жергілікті желіні анықтап, медиа серверлерге қосылу үшін iOS талап еткенде, PlezyNG орналасқан жер туралы деректерге қол жеткізу рұқсатын пайдаланады.',
 			'platform.photoLibraryPermission' => 'Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.',
@@ -7169,8 +7626,12 @@ extension on TranslationsKk {
 			'fileSources.source' => 'Қайтаны',
 			'fileSources.name' => 'Әйтсе де',
 			'fileSources.endpoint' => 'Сервер URL-і',
+			'fileSources.smbEndpointHint' => 'Мысалы: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ қалтаны енгізіңіз.',
 			'fileSources.root' => 'Олардың дағдырысы және',
+			'fileSources.smbFolderHelp' => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
 			'fileSources.username' => 'Пайдаланушы аты',
+			'fileSources.smbDomain' => 'Домен (міндетті емес)',
 			'fileSources.password' => 'Құпия сөз',
 			'fileSources.token' => 'API қақтар',
 			'fileSources.accessKey' => 'Керіктің қабығы',
@@ -7180,6 +7641,8 @@ extension on TranslationsKk {
 			'fileSources.clientId' => 'ОАО «Клиент ID»',
 			'fileSources.clientSecret' => 'ОАУТ клиенттік тайна (десктоп Google үшін)',
 			'fileSources.allowHttp' => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру',
+			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
+			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
 			'fileSources.connect' => 'Қосылу',
 			'fileSources.cancel' => 'Бас тарту',
 			'fileSources.save' => 'Сақтау',
@@ -7322,12 +7785,25 @@ extension on TranslationsKk {
 			'fileSources.useFiles' => 'Бірінші мезгіл файлы және книги',
 			'fileSources.cancelScan' => 'Сұрақтық Сұрағы',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Мысалы: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ қалтаны енгізіңіз.',
-			'fileSources.smbFolderHelp' => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
-			'fileSources.smbDomain' => 'Домен (міндетті емес)',
-			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
-			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
+			'fileSources.offlineQuota' => 'Offline Download ұзақтығы',
+			'fileSources.offlineQuotaHelp' => 'Қандай-ақ, қаңтарда жабдықтауды және ұзақ уақыт бойы жабырға айналады.Жеңінен танымал.',
+			'fileSources.offlineStorageUsage' => 'Оңтүстік кооперациясы',
+			'fileSources.reservedStorage' => 'Жарықтың',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Өткен керемет',
+			'fileSources.downloadRunning' => 'жүктеу',
+			'fileSources.downloadQueued' => 'Жүктесі',
+			'fileSources.downloadPaused' => 'Ауызды',
+			'fileSources.downloadFailed' => 'Қандай ретри',
+			'fileSources.importing' => 'Өнімдер',
+			'fileSources.importInterrupted' => 'Өзі сүйікті айтылады;',
+			'fileSources.errorQuotaExceeded' => 'Қандай-ақ, қабырға айналады.Сұқсат етілген копиясы көздеп отырды.',
+			'fileSources.errorStorageLow' => 'Қандай-ақ, қабықтардан баспасөз тағайындалды.',
+			'fileSources.errorStorageUnavailable' => '«Жеңізде» АҚШ-қаның ең айқын көргенде, бір жылдық қағидалардан тұрады.',
+			'fileSources.removeDownloadJob' => 'жүктеу үшін',
+			'fileSources.downloadAlreadyComplete' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды (2008).',
+			'fileSources.confirmRemoveDownloadJob' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 3 адамды қауымдастырды.',
 			'lending.title' => 'Публикалық библиотекасы',
 			'lending.add' => 'Бібліотекасы көшіру',
 			'lending.other' => 'Бібліотеканың басқа',
@@ -7429,6 +7905,12 @@ extension on TranslationsKk {
 			'audiobook.statusFinished' => 'Өткен',
 			'audiobook.goToTime' => 'Қазіргі уақытта',
 			'audiobook.timeHelp' => 'Өнімдер: 1 минут, 1 минут, 1 секунды',
+			'audiobook.recoveryHelp' => 'Қаланың тұрақты тұрғындарының саны 10 адамды құрайды және 1 адамды қағидалардан тұрады.',
+			'audiobook.recoveryExport' => 'Експортдық криптовалюттік файл',
+			'audiobook.recoveryImport' => 'Қандай-ақ криптовалюталық дағдарыс',
+			'audiobook.recoveryImportConfirm' => 'Бұл криптовалюталық дағдарыстағы қанағаттанды және жабдықтармен көруге болады? іс-әрекеттің историю бар. Жабдықтау библиотекасы және элементтік ID-дер не пайдаланылады; екеуінде импортируға дейін әртүрлі айналысатын идентификатордан қабылдайды.',
+			'audiobook.recoveryExported' => 'Қазіргі уақытта өңдеуге кеңінен танымал.',
+			'audiobook.recoveryImported' => 'Ауыздан дағдарыста.',
 			'sourceSetup.savedCertificate' => 'Сақталған сервер сертификаты',
 			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export сияқты NFS URL мекенжайын енгізіңіз.',
 			'sourceSetup.dlnaNone' => 'DLNA серверлері табылмады. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.',
@@ -7516,8 +7998,6 @@ extension on TranslationsKk {
 			'sourceSetup.smbEncrypted' => 'SMB3 шифрлауы қосулы',
 			'sourceSetup.smbUnencrypted' => 'SMB3 шифрлауы өшірулі',
 			'sourceSetup.httpUnencrypted' => 'Тасымалдау шифрлауы жоқ HTTP',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Қосылу нүктесінің қауіпсіздігін тексеру',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Міндетті өріс: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} үшін ${min} мен ${max} арасындағы мәнді енгізіңіз.',
@@ -7525,6 +8005,23 @@ extension on TranslationsKk {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Бағасы: ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Субтитр жүктелуде: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Қазіргі таңда бүкіл әлемде',
+			'sourceSetup.sharedEntryPairHelp' => 'Өмірінің соңына дейін қабырға айтып келдім.Сұқсат етіп, қарапайым етіп алыңыз.Жеңінен танымал, бірақ жыл сайын өздерінің ата-аналардан тұрады.',
+			'sourceSetup.sharedEntryId' => 'Қатысушылардың ID',
+			'sourceSetup.generateSharedEntryId' => 'Ауыз ішінен ID',
+			'sourceSetup.sharedLibraryId' => 'Библиографиялық картасы (i)',
+			'sourceSetup.sharedLibraryHelp' => 'Біздің өнімдер мен электрондық пошталар мен электронды және электронды немесе электронды қабырға айналады.You can use the same ID on devices that open the same library.This public ID helps carry reading progress and notes across different source connections; it is not a password.When providers use different item IDs, pair those items from their detail screens.',
+			'sourceSetup.sharedLibraryInvalid' => '8–100 букмекер, цифры, тоты, подсказы және хифендер.',
+			'sourceSetup.generateSharedLibraryId' => 'Бібліотекадан шығарылған ID',
+			'sourceSetup.nfsReadAhead' => 'НФС жабдықтардан тұрады',
+			'sourceSetup.nfsReadAheadHelp' => 'Қандай-қатты жабдықтар мен қабаттарды біріктірді.Ауыз іші шығарыштық ғылыми сессиялармен таныстырып келді.',
+			'sourceSetup.nfsReadTest' => 'Қандай-ақ НФС қабығы',
+			'sourceSetup.nfsReadTestHelp' => 'Қаланың тұрақты тұрғындарының саны 64 адамды құрайды.',
+			'sourceSetup.nfsQualificationResult' => 'НФС қанақтықты',
+			'sourceSetup.nfsReadBytes' => 'Өнімдер мен материалдар',
+			'sourceSetup.nfsReadSpeed' => 'Өнімдер',
+			'sourceSetup.nfsReadRequests' => 'Жақсы туралы',
+			'sourceSetup.sharedEntryConflict' => 'Біздің өнімдер мен электрондық пошталар мен электрондылық пошталары бар, бізге сіздің электронды және электронды қамтамасыз етеді.',
 			'comics.fitHeight' => 'Биіктікке сәйкестендіру',
 			'comics.readingMode' => 'Оқу режимі',
 			'comics.paged' => 'Беттер',
@@ -7599,6 +8096,15 @@ extension on TranslationsKk {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',

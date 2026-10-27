@@ -253,9 +253,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       if (mounted && c.current) {
         showSuccessSnackBar(
           context,
-          linked.steamLibraryAvailable
-              ? 'Steam account linked (${catalog.length} games imported)'
-              : 'Steam account linked; the game library is private or unavailable',
+          linked.steamLibraryAvailable ? t.games.steamAccountLinked : t.games.steamLibraryPrivate,
         );
       }
     } finally {
@@ -268,10 +266,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (c == null || !c.current || c.busy) return;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Unlink Steam account',
-      message:
-          'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
-      confirmText: 'Unlink',
+      title: t.games.unlinkSteamAccount,
+      message: t.games.unlinkSteamAccountConfirm,
+      confirmText: t.games.unlinkSteamAccount,
       isDestructive: true,
     );
     if (confirmed && mounted && c == _controller) {
@@ -391,7 +388,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   Future<void> _openInWorkspace(GameHost host, StreamGame game) => _run((c) async {
     final capability = await c.client.capabilities(host);
-    c.requireCurrent();
+    if (!mounted || !c.current) return;
     if (!capability.embeddedSurface || host.protocol != GameProtocol.steam || !Platform.isAndroid) {
       await _engineUnavailable(host);
       return;
@@ -683,13 +680,15 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                       OutlinedButton.icon(
                         onPressed: enabled ? _linkSteamAccount : null,
                         icon: const AppIcon(Symbols.link_rounded),
-                        label: Text(state.steamAccountId == null ? 'Link Steam account' : 'Refresh Steam account'),
+                        label: Text(
+                          state.steamAccountId == null ? t.games.linkSteamAccount : t.games.refreshSteamAccount,
+                        ),
                       ),
                       if (state.steamAccountId != null)
                         TextButton.icon(
                           onPressed: enabled ? _unlinkSteamAccount : null,
                           icon: const AppIcon(Symbols.link_off_rounded),
-                          label: const Text('Unlink Steam account'),
+                          label: Text(t.games.unlinkSteamAccount),
                         ),
                     ],
                   ),
@@ -746,29 +745,25 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             child: Padding(padding: const EdgeInsets.all(16), child: Text(t.games.noMatches)),
           ),
         if (state.steamAccountId != null) ...[
-          SliverToBoxAdapter(child: _heading('Steam account library')),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(child: _heading(t.games.steamLibrary)),
+          SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Choose an account game to play through a matching shortcut on a paired Steam computer.'),
+              child: Text(t.games.steamLibraryHint),
             ),
           ),
           if (!state.steamCatalogAvailable)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Steam account linked. Its library is private or unavailable, so no games were imported.'),
+                child: Text(t.games.steamLibraryPrivate),
               ),
             )
           else if (steamCatalog.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  state.steamCatalog.isEmpty
-                      ? 'No games are visible in this Steam account library.'
-                      : t.games.noMatches,
-                ),
+                child: Text(t.games.noMatches),
               ),
             )
           else
@@ -778,23 +773,23 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                 return ListTile(
                   leading: const AppIcon(Symbols.sports_esports_rounded),
                   title: Text(game.name),
-                  subtitle: Text('Steam App ID: ${game.appId}'),
+                  subtitle: Text('${t.games.steamAppId}: ${game.appId}'),
                   onTap: enabled ? () => _openCatalogGame(game) : null,
                 );
               }, childCount: steamCatalog.length),
             ),
           if (state.steamCatalogStale)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Steam could not refresh the library. Showing the last available catalog.'),
+                child: Text(t.games.steamLibraryStale),
               ),
             ),
           if (state.steamCatalogTruncated)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Showing up to 2,000 games. The Steam catalog was truncated.'),
+                child: Text(t.games.steamLibraryTruncated),
               ),
             ),
         ],

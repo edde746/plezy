@@ -108,7 +108,7 @@ Future<(Task, TaskStatus)> binaryUpload(
     // initiate the request and handle completion async
     final requestCompleter = Completer();
     var transferBytesResult = TaskStatus.failed;
-    client.send(request).then((response) async {
+    unawaited(client.send(request).then((response) async {
       // request completed, so send status update and finish
       resultStatus =
           transferBytesResult == TaskStatus.complete &&
@@ -128,7 +128,7 @@ Future<(Task, TaskStatus)> binaryUpload(
         resultStatus = TaskStatus.notFound;
       }
       requestCompleter.complete();
-    });
+    }));
     // send the bytes to the request sink
     final inStream = inFile.openRead(start, end + 1);
     transferBytesResult = await transferBytes(
@@ -138,7 +138,7 @@ Future<(Task, TaskStatus)> binaryUpload(
       task,
       sendPort,
     );
-    request.sink.close(); // triggers request completion, handled above
+    await request.sink.close(); // triggers request completion, handled above
     if (isCanceled) {
       // cancellation overrides other results
       resultStatus = TaskStatus.canceled;
@@ -252,7 +252,7 @@ Future<(Task, TaskStatus)> multipartUpload(
     // initiate the request and handle completion async
     final requestCompleter = Completer();
     var transferBytesResult = TaskStatus.failed;
-    client.send(request).then((response) async {
+    unawaited(client.send(request).then((response) async {
       // request completed, so send status update and finish
       resultStatus =
           transferBytesResult == TaskStatus.complete &&
@@ -272,7 +272,7 @@ Future<(Task, TaskStatus)> multipartUpload(
         resultStatus = TaskStatus.notFound;
       }
       requestCompleter.complete();
-    });
+    }));
 
     // write fields
     request.sink.add(utf8.encode('$fieldsString--$boundary$lineFeed'));
@@ -297,7 +297,7 @@ Future<(Task, TaskStatus)> multipartUpload(
         );
       }
     }
-    request.sink.close(); // triggers request completion, handled above
+    await request.sink.close(); // triggers request completion, handled above
     await requestCompleter.future; // wait for request to complete
   } catch (e) {
     resultStatus = TaskStatus.failed;

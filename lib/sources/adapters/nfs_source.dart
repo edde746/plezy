@@ -296,7 +296,9 @@ class NfsSourceAdapter extends SourceAdapter {
     try {
       return await opening;
     } finally {
-      if (identical(_rpcSessionOpenings[key], opening)) _rpcSessionOpenings.remove(key);
+      if (identical(_rpcSessionOpenings[key], opening)) {
+        unawaited(_rpcSessionOpenings.remove(key));
+      }
     }
   }
 
@@ -1094,7 +1096,7 @@ class _RpcSession {
       }
       return response;
     });
-    _tail = operation.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _tail = operation.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return operation;
   }
 

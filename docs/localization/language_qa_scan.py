@@ -3,10 +3,11 @@
 
 --baseline reconstructs original message values from the correction ledger.
 The manifest identifies the published input and reviewed output by SHA-256.
-An integration manifest verifies the complete current catalog separately. The
-historical projection reverses its separate correction ledger and retains the
-exact original key/order shape. All excluded additions are explicitly listed;
-automatic scanning of an addition does not imply semantic review.
+An integration manifest verifies the complete reviewed catalog; the 2.25.0
+overlay verifies later catalog additions without rewriting frozen audit records.
+The historical projection reverses its correction ledger and retains the exact
+original key/order shape. Machine-drafted additions are scanned separately, and
+automatic scanning does not imply native-speaker review.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -47,7 +49,191 @@ def catalog_hash(value):
     return hashlib.sha256(serialized.encode()).hexdigest()
 
 
-def verify_merge_overlay(raw, tags, overlay, integration):
+def _flat_message_changes(before, after):
+    old = messages(before)
+    new = messages(after)
+    return set(new) - set(old), {key for key in old.keys() & new.keys() if old[key] != new[key]}
+
+
+def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
+    """Validate current catalogs and recover the frozen QA snapshot from git."""
+    if overlay['schemaVersion'] != 1 or set(overlay['catalogs']) != set(tags):
+        raise SystemExit('Unexpected 2.25.0 catalog-overlay inventory')
+    if overlay['baseMergeOverlaySha256'] != hashlib.sha256((DOCS / 'language_qa_merge_overlay.json').read_bytes()).hexdigest():
+        raise SystemExit('The frozen merge-overlay audit changed')
+    if overlay['baseIntegrationManifestSha256'] != hashlib.sha256((DOCS / 'language_qa_integration.json').read_bytes()).hexdigest():
+        raise SystemExit('The frozen integration manifest changed')
+
+    base_raw = {}
+    base_hashes = {}
+    additions = {}
+    changes = {}
+    for tag in tags:
+        info = overlay['catalogs'][tag]
+        path = info['catalogPath']
+        expected_path = f'lib/i18n/{tag}.i18n.json'
+        if path != expected_path:
+            raise SystemExit(f'Unexpected 2.25.0 catalog path: {tag}')
+        current_path = ROOT / path
+        if hashlib.sha256(current_path.read_bytes()).hexdigest() != info['currentSha256']:
+            raise SystemExit(f'2.25.0 catalog hash changed: {path}')
+        try:
+            result = subprocess.run(
+                ['git', 'show', f"{overlay['baseCommit']}:{path}"],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as error:
+            raise SystemExit(f"QA base commit is unavailable: {overlay['baseCommit']}") from error
+        base_bytes = result.stdout
+        base_hash = hashlib.sha256(base_bytes).hexdigest()
+        if base_hash != info['preOverlaySha256'] or base_hash != merge_overlay['catalogs'][tag]['currentSha256']:
+            raise SystemExit(f'Frozen QA base hash differs: {path}')
+        base_raw[tag] = json.loads(base_bytes)
+        base_hashes[tag] = base_hash
+        added, changed = _flat_message_changes(base_raw[tag], raw[tag])
+        if (len(added) != info['addedMessageCount'] or
+                len(changed) != info['changedMessageCount']):
+            raise SystemExit(f'2.25.0 catalog delta count changed: {path}')
+        additions[tag] = added
+        changes[tag] = changed
+
+    source = messages(raw['en'])
+    new_keys = set(overlay['newDraftMessageKeys'])
+    fallback_keys = set(overlay.get('englishFallbackMessageKeys', []))
+    if len(new_keys) != overlay['newDraftMessagesPerBaseLocale']:
+        raise SystemExit('2.25.0 draft-message inventory count differs')
+    if len(fallback_keys) != overlay.get('englishFallbackMessagesPerBaseLocale', 0):
+        raise SystemExit('2.25.0 English-fallback inventory count differs')
+    if not (new_keys | fallback_keys) <= set(source):
+        raise SystemExit('A 2.25.0 translation has no English source message')
+    if len(additions['en']) != overlay['sourceMessagesAddedSinceReviewedSnapshot']:
+        raise SystemExit('English source addition count differs from the 2.25.0 overlay')
+
+    base_locales = set(overlay['baseLocales'])
+    if len(base_locales) != 32 or not base_locales <= set(tags):
+        raise SystemExit('Unexpected 2.25.0 base-locale inventory')
+    catalog_additions = new_keys | fallback_keys
+    for tag in base_locales:
+        if not catalog_additions <= additions[tag]:
+            raise SystemExit(f'New 2.25.0 messages are missing from {tag}')
+        if len(additions[tag] - catalog_additions) != overlay['retainedMainNewTranslationKeys']:
+            raise SystemExit(f'Retained main translation count differs: {tag}')
+
+    sources = json.loads((DOCS / 'sources.json').read_text())
+    batch = sources['draftModel']['latestBatch']
+    if (batch['messagesPerBaseLocale'] != overlay['newDraftMessagesPerBaseLocale'] or
+            batch['baseLocales'] != len(base_locales) or
+            batch['targetedCorrectionCount'] != overlay['targetedCorrectionCount'] or
+            sorted(batch['targetedCorrectionLocales']) != sorted(overlay['targetedCorrectionLocales'])):
+        raise SystemExit('2.25.0 source-batch metadata differs')
+    fallback_metadata = sources.get('intentionalEnglishFallbacks', {})
+    if (fallback_metadata.get('messagesPerBaseLocale') != len(fallback_keys) or
+            fallback_metadata.get('keys') != sorted(fallback_keys) or
+            fallback_metadata.get('release') != overlay['release']):
+        raise SystemExit('2.25.0 intentional English-fallback metadata differs')
+    if hashlib.sha256((DOCS / 'sources.json').read_bytes()).hexdigest() != overlay['sourcesSha256']:
+        raise SystemExit('2.25.0 source metadata hash changed')
+    if hashlib.sha256((DOCS / 'translation-provenance.json').read_bytes()).hexdigest() != overlay['translationProvenanceSha256']:
+        raise SystemExit('2.25.0 aggregate provenance hash changed')
+
+    provenance = json.loads((DOCS / 'translation-provenance.json').read_text())
+    if set(provenance['locales']) != set(tags):
+        raise SystemExit('Translation-provenance locale inventory differs')
+    per_locale = {}
+    for tag in tags:
+        entry = provenance['locales'][tag]
+        detail_path = DOCS / entry['detail']
+        detail = json.loads(detail_path.read_text())
+        flat = messages(raw[tag])
+        if (detail['catalogSha256'] != hashlib.sha256((ROOT / f'lib/i18n/{tag}.i18n.json').read_bytes()).hexdigest() or
+                set(detail['messages']) != set(flat) or entry['catalogSha256'] != detail['catalogSha256']):
+            raise SystemExit(f'Per-message provenance does not match {tag}')
+        per_locale[tag] = detail['messages']
+
+    correction_path = DOCS / overlay['correctionLedger']
+    if hashlib.sha256(correction_path.read_bytes()).hexdigest() != overlay['correctionLedgerSha256']:
+        raise SystemExit('2.25.0 correction ledger hash changed')
+    corrections = json.loads(correction_path.read_text())
+    correction_pairs = {(tag, key) for tag, values in corrections.items() for key in values}
+    if len(correction_pairs) != overlay['targetedCorrectionCount']:
+        raise SystemExit('2.25.0 correction count differs from the ledger')
+    for tag, values in corrections.items():
+        current = messages(raw[tag])
+        english = messages(raw['en'])
+        for key, item in values.items():
+            if (item['english'] != english.get(key) or item['corrected'] != current.get(key) or
+                    per_locale[tag].get(key) != 'targeted-ai-review'):
+                raise SystemExit(f'2.25.0 correction/provenance mismatch: {tag}.{key}')
+
+    for tag in base_locales:
+        origins = per_locale[tag]
+        for key in new_keys:
+            if origins.get(key) not in {'m2m100-draft', 'targeted-ai-review'}:
+                raise SystemExit(f'Unexpected draft provenance: {tag}.{key}')
+            if (tag, key) in correction_pairs and origins[key] != 'targeted-ai-review':
+                raise SystemExit(f'Correction provenance missing: {tag}.{key}')
+        for key in fallback_keys:
+            if origins.get(key) != 'english-fallback':
+                raise SystemExit(f'English-fallback provenance missing: {tag}.{key}')
+
+    regional = json.loads((ROOT / 'lib/i18n/locale_catalog.json').read_text()).get('regionalParents', {})
+    resolved = {}
+
+    def resolve(tag):
+        if tag not in resolved:
+            resolved[tag] = merge(resolve(regional[tag]), raw[tag]) if tag in regional else raw[tag]
+        return resolved[tag]
+
+    candidate_counts = Counter()
+    candidates = {}
+    english = messages(raw['en'])
+    for tag in tags:
+        if tag == 'en':
+            continue
+        flat = messages(resolve(tag))
+        for key in catalog_additions:
+            value = flat.get(key)
+            source_text = english[key]
+            if not isinstance(value, str) or not isinstance(source_text, str):
+                continue
+            kinds = []
+            if re.search('[\u2047\ufffd]', value):
+                kinds.append('corrupt_symbol')
+            if len(source_text) > 80 and len(value) < len(source_text) * 0.3:
+                kinds.append('short_translation')
+            if re.search(r'(\b\w+\b)(?:[ ,]+\1){3}', value, re.I):
+                kinds.append('repeated_word')
+            if value == source_text:
+                kinds.append('same_as_english')
+            if kinds:
+                candidates[(tag, key)] = kinds
+                candidate_counts.update(kinds)
+    actual_counts = dict(sorted((key, value) for key, value in candidate_counts.items() if value))
+    if actual_counts != overlay['additionCandidateCounts']:
+        raise SystemExit('2.25.0 draft candidate counts differ from the overlay')
+    if any(any(kind in {'corrupt_symbol', 'repeated_word'} for kind in kinds) for kinds in candidates.values()):
+        raise SystemExit('2.25.0 drafts contain unresolved corruption or repeated-word candidates')
+    declared = {(item['locale'], item['key']): item for item in overlay['candidateDispositions']}
+    actual_short = {pair for pair, kinds in candidates.items() if 'short_translation' in kinds}
+    if set(declared) != actual_short or len(declared) != len(overlay['candidateDispositions']):
+        raise SystemExit('2.25.0 short-translation dispositions differ from the scan')
+    for pair, disposition in declared.items():
+        if (disposition['status'] != 'verified-adequate' or
+                disposition['finalCandidateKinds'] != candidates[pair] or not disposition['reason']):
+            raise SystemExit(f'2.25.0 candidate lacks a specific disposition: {pair}')
+
+    return base_raw, base_hashes, {
+        'newDraftMessagesPerBaseLocale': len(new_keys),
+        'englishFallbackMessagesPerBaseLocale': len(fallback_keys),
+        'targetedCorrections': len(correction_pairs),
+        'candidateCounts': actual_counts,
+        'candidateDispositions': len(declared),
+    }
+
+
+def verify_merge_overlay(raw, tags, overlay, integration, current_hashes=None):
     """Verify the exact later merge and reconstruct the prior integration."""
     for filename, field in [('language_qa_integration.json', 'preMergeIntegrationManifestSha256'),
                             ('LANGUAGE_QA_INTEGRATION.md', 'preMergeIntegrationReportSha256')]:
@@ -79,7 +265,9 @@ def verify_merge_overlay(raw, tags, overlay, integration):
     for tag in tags:
         info = overlay['catalogs'][tag]
         path = f'lib/i18n/{tag}.i18n.json'
-        if info['catalogPath'] != path or hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != info['currentSha256']:
+        actual_hash = (current_hashes[tag] if current_hashes is not None else
+                       hashlib.sha256((ROOT / path).read_bytes()).hexdigest())
+        if info['catalogPath'] != path or actual_hash != info['currentSha256']:
             raise SystemExit(f'Merge-overlay catalog hash changed: {tag}')
         flat = messages(raw[tag])
         if tag != 'en' and flat.get(key) != overlay['reviewedTranslations'].get(tag):
@@ -290,7 +478,13 @@ def main():
     integration = json.loads(integration_path.read_text()) if integration_path.exists() else None
     overlay_path = DOCS / 'language_qa_merge_overlay.json'
     overlay = json.loads(overlay_path.read_text()) if overlay_path.exists() else None
-    integration_raw = verify_merge_overlay(raw, tags, overlay, integration) if overlay else raw
+    update_path = DOCS / 'language_qa_2_25_0_overlay.json'
+    update = json.loads(update_path.read_text()) if update_path.exists() else None
+    update_snapshot, update_hashes, update_result = (
+        verify_2_25_catalog_overlay(raw, tags, update, overlay) if update else (raw, None, None)
+    )
+    integration_raw = (verify_merge_overlay(update_snapshot, tags, overlay, integration, update_hashes)
+                       if overlay else update_snapshot)
     historical_raw = (verify_integration_and_project(integration_raw, tags, manifest, integration, bool(overlay))
                       if integration else raw)
     fix_by_key = {(fix['locale'], fix['key']): fix for fix in fixes}
@@ -299,18 +493,20 @@ def main():
     if args.check_reviewed_hashes:
         for tag, info in manifest['locales'].items():
             path = ROOT / info['catalogPath']
-            expected = (overlay['catalogs'][tag]['currentSha256'] if overlay else
+            expected = (update['catalogs'][tag]['currentSha256'] if update else
+                        overlay['catalogs'][tag]['currentSha256'] if overlay else
                         integration['catalogs'][tag]['currentSha256'] if integration else info['afterSha256'])
             if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
                 raise SystemExit(f'Reviewed output hash changed: {path.relative_to(ROOT)}')
         source = ROOT / 'lib/i18n/en.i18n.json'
-        expected = (overlay['catalogs']['en']['currentSha256'] if overlay else
+        expected = (update['catalogs']['en']['currentSha256'] if update else
+                    overlay['catalogs']['en']['currentSha256'] if overlay else
                     integration['catalogs']['en']['currentSha256'] if integration
                     else manifest['englishAfterSha256'])
         if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
             raise SystemExit('Reviewed English source hash changed')
         for fix in fixes:
-            if messages(raw[fix['locale']])[fix['key']] != fix['corrected']:
+            if messages(update_snapshot[fix['locale']])[fix['key']] != fix['corrected']:
                 raise SystemExit(f"Correction ledger mismatch: {fix['locale']}.{fix['key']}")
         print(f'Reviewed hashes and all {len(fixes)} correction records match.')
         if integration:
@@ -321,6 +517,11 @@ def main():
         if overlay:
             print('Merge overlay: 36 reviewed physical cover/arrow hints match; 19 new source paths '
                   'remain explicitly outside semantic review; all 37 pre-merge integration hashes reproduce.')
+        if update_result:
+            print(f"PlezyNG 2.25.0 catalog overlay: {update_result['newDraftMessagesPerBaseLocale']} "
+                  f"draft messages per base locale, {update_result['targetedCorrections']} targeted AI corrections; "
+                  f"candidate counts {update_result['candidateCounts']} with "
+                  f"{update_result['candidateDispositions']} concise-text dispositions.")
     if args.check_findings_resolved:
         if args.baseline:
             raise SystemExit('Check final findings separately from --baseline')
@@ -334,7 +535,7 @@ def main():
             if not fix or fix['correctionPass'] != 2 or fix['original'] == fix['corrected']:
                 raise SystemExit(f'Historical finding has no actual follow-up correction: {pair}')
         for fix in fixes:
-            if fix['original'] == fix['corrected'] or messages(raw[fix['locale']])[fix['key']] != fix['corrected']:
+            if fix['original'] == fix['corrected'] or messages(update_snapshot[fix['locale']])[fix['key']] != fix['corrected']:
                 raise SystemExit(f"Invalid correction: {fix['locale']}.{fix['key']}")
         dispositions = {(item['locale'], item['key']): item for item in manifest['candidateDispositions']}
         if len(dispositions) != len(manifest['candidateDispositions']):
@@ -370,24 +571,26 @@ def main():
                 dispositions[pair] = item
             print(f'All {len(additional_fixes)} additional corrections and {len(extra)} integration candidate dispositions match.')
     if args.baseline:
-        raw = deepcopy(historical_raw)
+        scan_raw = deepcopy(historical_raw)
         for fix in fixes:
-            restore_message(raw[fix['locale']], fix['key'], fix['original'])
-        for tag, value in raw.items():
+            restore_message(scan_raw[fix['locale']], fix['key'], fix['original'])
+        for tag, value in scan_raw.items():
             restored_hash = catalog_hash(value)
             expected_hash = (manifest['englishBeforeSha256'] if tag == 'en'
                              else manifest['locales'][tag]['beforeSha256'])
             if restored_hash != expected_hash:
                 raise SystemExit(f'Reconstructed published-input hash differs: {tag}')
+    else:
+        scan_raw = update_snapshot
     resolved = {}
 
     def resolve(tag):
         if tag not in resolved:
             parent = catalog.get('regionalParents', {}).get(tag)
-            resolved[tag] = merge(resolve(parent), raw[tag]) if parent else raw[tag]
+            resolved[tag] = merge(resolve(parent), scan_raw[tag]) if parent else scan_raw[tag]
         return resolved[tag]
 
-    english = messages(raw['en'])
+    english = messages(scan_raw['en'])
     summary = Counter()
     by_locale = {}
     for tag in tags:

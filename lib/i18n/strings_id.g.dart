@@ -177,6 +177,7 @@ class _Translations$appIcon$id extends Translations$appIcon$en {
 	@override String get launcherHint => 'Ikon baru muncul di layar rumah Anda setelah Anda meninggalkan PlezyNG.';
 	@override String get tvLauncherHint => 'Banner baru muncul setelah Anda meninggalkan PlezyNG. Android TV dapat terus menampilkan yang lama sampai TV kembali.';
 	@override late final _Translations$appIcon$names$id names = _Translations$appIcon$names$id._(_root);
+	@override String get description => 'Pilih ikon yang ditunjukkan oleh peluncuran perangkat Anda. previews menunjukkan bagaimana setiap opsi terlihat.';
 }
 
 // Path: auth
@@ -216,6 +217,32 @@ class _Translations$common$id extends Translations$common$en {
 	@override String get cancel => 'Batal';
 	@override String get save => 'Simpan';
 	@override String get close => 'Tutup';
+	@override String get closeMiniPlayer => 'Berdekatan dengan Mini Player';
+	@override String get closeWorkspaceWindow => 'Jendela yang dekat';
+	@override String get returnToFullView => 'Kembali ke Full View';
+	@override String get manageMediaSessions => 'Mengelola sesi media';
+	@override String get hideMediaSessions => 'Menyembunyikan sesi media';
+	@override String get mediaSessions => 'Sesi Media';
+	@override String get mediaSessionsHint => 'Pilih untuk membawa sesi ke depan.Park menyembunyikan jendela tetapi tetap terbuka.Kembali membuka dalam pandangan penuh; dekat menutupnya.';
+	@override String get sessionInWorkspace => 'Dalam ruang kerja';
+	@override String get sessionParked => 'parkir';
+	@override String get sessionFullscreen => 'layar penuh';
+	@override String get switchToNextWindow => 'Swap dengan jendela berikutnya';
+	@override String get moveWindow => 'Menggerakkan jendela';
+	@override String get finishMovingWindow => 'Menutup jendela bergerak';
+	@override String get moveWindowHint => 'Tekan panjang dan tarik jendela untuk memindahkannya. kontrol ini juga memungkinkan pergerakan kunci arrow.';
+	@override String get movingWindowHelp => 'Menarik untuk bergerak · Menarik kunci disesuaikan · Enter saves · Escape cancles';
+	@override String get resizeWindow => 'Menarik jendela';
+	@override String get resizeWindowHint => 'Tarik handuk ini atau gunakan kunci anak panah untuk memutar ulang jendela.';
+	@override String get workspaceWindowHint => 'Gunakan kontrol pergerakan atau tekanan panjang dan tarik untuk bergerak. gunakan handuk resize untuk resize.';
+	@override String get workspacePaneHint => 'Pilih panel ini untuk fokus. gunakan kontrol layar penuh untuk memperluasnya.';
+	@override String workspaceWindowLabel({required Object title}) => 'Jendela sesi: ${title}';
+	@override String get workspaceTitleHint => 'Pilih untuk fokus. tarik bar judul untuk bergerak; gunakan tombol layar penuh untuk memperluas.';
+	@override String get moveToSessionTray => 'Bergerak ke sesi tray';
+	@override String get moveToSessionTrayHint => 'Kees sesi ini tersedia tanpa menampilkan jendela.';
+	@override String get closeSessionHint => 'Menutup jendela ini dan mengakhiri sesi.';
+	@override String get sideBySideLayout => 'Beralih ke sisi-by-side layout';
+	@override String get floatingWindows => 'Switch untuk mengalir jendela';
 	@override String get clear => 'jelas';
 	@override String get reset => 'Atur Ulang';
 	@override String get later => 'Kemudian';
@@ -676,6 +703,13 @@ class _Translations$settings$id extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Kuasa asli DV7 dan penindasan DV konversi retry';
 	@override String get dvConversionDv81Description => 'Konversi RPU Inline Kekuatan ke Dolby Vision Profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Strip Dolby Vision lapisan RPU/EL dan rata saat ini HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision eksperimental';
+	@override String get experimentalDolbyVisionDescription => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.';
+	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini saat ini hanya tersedia di Linux.';
+	@override String get dvCompatibilityFallback => 'Cadangan kompatibilitas';
+	@override String get dvCompatibilityFallbackDescription => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.';
+	@override String get dvExperimentDiagnostics => 'Pencatatan eksperimen video';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.';
 	@override String get disableDolbyVision => 'Tidak dapat dibatasi Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Bermain file HDR10 atau lapisan HLG bukannya Dolby Vision, ketika itu memiliki satu';
 	@override String get hdrSdrConversion => 'Konversi HDR ke SDR';
@@ -762,13 +796,81 @@ class _Translations$settings$id extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Pilih cara menampilkan tanggal, angka, dan satuan ukuran.';
 	@override String get metadataLanguage => 'Bahasa metadata';
 	@override String get metadataLanguageDescription => 'Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah.';
-	@override String get experimentalDolbyVision => 'Dolby Vision eksperimental';
-	@override String get experimentalDolbyVisionDescription => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.';
-	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini saat ini hanya tersedia di Linux.';
-	@override String get dvCompatibilityFallback => 'Cadangan kompatibilitas';
-	@override String get dvCompatibilityFallbackDescription => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.';
-	@override String get dvExperimentDiagnostics => 'Pencatatan eksperimen video';
-	@override String get dvExperimentDiagnosticsDescription => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.';
+	@override String get enterFullscreenOnPlaybackStart => 'Masuk layar penuh saat playback dimulai';
+	@override String get enterFullscreenOnPlaybackStartDescription => 'Buka desktop video pada layar penuh ketika playback dimulai';
+	@override String get extendVideoIntoDisplayCutout => 'Mengembangkan video ke display cutout';
+	@override String get extendVideoIntoDisplayCutoutDescription => 'Biarkan video layar penuh menggunakan kamera cutout pada ponsel Android';
+	@override String get languageDescription => 'Pilih bahasa yang digunakan untuk kontrol dan pesan PlezyNG. sistem mengikuti bahasa perangkat Anda.';
+	@override String get themeDescription => 'Pilih warna dan kontras yang digunakan di seluruh aplikasi.';
+	@override String get libraryDensityDescription => 'Mengubah berapa banyak kartu perpustakaan yang cocok dalam setiap baris.';
+	@override String get displayScaleDescription => 'Memperbaiki antarmuka pada layar mobil ini tanpa mengubah ukuran teks seluruh perangkat Anda.';
+	@override String get themeSongVolumeDescription => 'Tetapkan volume lagu tema yang relatif dengan audio lainnya.';
+	@override String get viewModeDescription => 'Pilih apakah item perpustakaan muncul sebagai poster di jaringan atau sebagai daftar kompak.';
+	@override String get gridViewDescription => 'Mengatur item perpustakaan dalam baris dan kolom poster.';
+	@override String get listViewDescription => 'Tunjukkan item perpustakaan dalam daftar vertikal dengan lebih banyak teks per item.';
+	@override String get gridSpacingDescription => 'Tetapkan jurang antara poster di jaringan perpustakaan.';
+	@override String get gridSpacingTightDescription => 'Tetapkan lebih banyak poster di seluruh layar dengan jurang yang lebih kecil.';
+	@override String get gridSpacingNormalDescription => 'Gunakan jurang standar antara poster.';
+	@override String get gridSpacingSpaciousDescription => 'Tambahkan jurang yang lebih besar antara poster untuk pemisahan lebih banyak.';
+	@override String get episodePosterModeDescription => 'Pilih karya seni yang muncul pada kartu episode.';
+	@override String get seriesPosterDescription => 'Gunakan poster serial untuk setiap episode.';
+	@override String get seasonPosterDescription => 'Gunakan poster musim untuk setiap episode ketika tersedia.';
+	@override String get episodeThumbnailDescription => 'Gunakan bingkai dari episode ketika tersedia.';
+	@override String get continueWatchingActionDescription => 'Pilih apa yang terjadi saat Anda mengaktifkan kartu terus-menerus.';
+	@override String get continueWatchingPlayDescription => 'Mulai film atau episode dengan segera.';
+	@override String get continueWatchingDetailsDescription => 'Buka halaman judul terlebih dahulu sehingga Anda dapat meninjau rincian dan memilih tindakan.';
+	@override String get episodeActionDescription => 'Pilih apa yang terjadi saat Anda mengaktifkan kartu episode.';
+	@override String get episodePlayDescription => 'Mulailah episode ini dengan segera.';
+	@override String get episodeDetailsDescription => 'Buka halaman episode sebelum playback.';
+	@override String get contentScreensaverDelayDescription => 'Pilih berapa lama PlezyNG menunggu tanpa input sebelum menunjukkan karya seni.';
+	@override String get continueWatchingRowSizeDescription => 'Pilih seberapa besar kartu yang ada di baris terus-menerus.';
+	@override String get rowSizeCompactDescription => 'Tunjukkan kartu yang lebih kecil sehingga lebih banyak item cocok di sepanjang baris.';
+	@override String get rowSizeStandardDescription => 'Gunakan ukuran kartu standar.';
+	@override String get rowSizeLargeDescription => 'Tunjukkan kartu yang lebih besar dengan detail karya seni yang lebih banyak.';
+	@override String get visualEffectsDescription => 'Pilih anggaran animasi dan efek karya seni untuk perangkat ini.';
+	@override String get visualEffectsFullDescription => 'Gunakan efek animasi dan karya seni penuh pada setiap perangkat.';
+	@override String get startupSectionDescription => 'Pilih bagian mana yang dibuka saat PlezyNG dimulai.';
+	@override late final _Translations$settings$startupSectionOptions$id startupSectionOptions = _Translations$settings$startupSectionOptions$id._(_root);
+	@override String get smallSkipDurationDescription => 'Tetapkan jarak yang dipindahkan oleh belakang pendek dan ke depan mencari kontrol.';
+	@override String get largeSkipDurationDescription => 'Tetapkan jarak yang dipindahkan oleh belakang panjang dan ke depan mencari kontrol.';
+	@override String get rewindOnResumeDescription => 'Move playback kembali dengan jumlah ini ketika mengembalikan video.';
+	@override String get defaultSleepTimerDescription => 'Tetapkan durasi awal yang digunakan saat Anda memulai timer tidur.';
+	@override String get playNextCountdownDescription => 'Tunggu ini lama sebelum memulai episode berikutnya. set ke 0 untuk memulai dengan segera.';
+	@override String get autoSkipDelaySettingDescription => 'Ini berlaku ketika intro, kredit, atau iklan ditetapkan untuk meluncur secara otomatis.';
+	@override String get downmixCenterBoostDescription => 'Meningkatkan dialog di saluran pusat ketika audio sekitar dicampur ke bawah ke stereo.';
+	@override String get displaySwitchDelayDescription => 'Tunggu sebelum mengubah mode paparan sehingga TV atau penerima dapat menyelesaikan switch sebelumnya.';
+	@override String get playerBackendDescription => 'Pilih mesin playback mana yang mendekorasi dan menghasilkan video pada perangkat ini.';
+	@override String get exoPlayerDescription => 'Gunakan pemutar asli Android yang berbasis Media3 dan jalur perangkat keras yang didukung.';
+	@override String get mpvDescription => 'Gunakan mpv, yang mendedahkan pemutaran tambahan, subtitle, dan kontrol pemrosesan video.';
+	@override String get scopeOffDescription => 'Hanya menyimpan perubahan untuk sesi playback saat ini.';
+	@override String get scopeGlobalDescription => 'Gunakan kembali nilai yang sama untuk setiap perpustakaan dan judul.';
+	@override String get scopeLibraryDescription => 'Ingatlah nilai yang berbeda untuk setiap perpustakaan.';
+	@override String get scopeTitleDescription => 'Ingat nilai terpisah untuk setiap acara atau film.';
+	@override String get specialsOrderingServerDescription => 'Tinggalkan pesanan episode yang disediakan oleh server media.';
+	@override String get specialsOrderingAirDateDescription => 'Menempatkan spesial di antara episode biasa pada tanggal udara mereka.';
+	@override String get specialsOrderingLastDescription => 'Tempatkan masing-masing spesial setelah musim biasa.';
+	@override String get skipIntroModeDescription => 'Pilih apakah intro markers bermain normal, menunjukkan tombol skip, atau skip secara otomatis.';
+	@override String get skipCreditsModeDescription => 'Pilih apakah kredit bermain normal, menunjukkan tombol skip, atau skip secara otomatis.';
+	@override String get skipAdsModeDescription => 'Pilih apakah iklan yang dideteksi memainkan secara normal, menampilkan tombol skip, atau skip secara otomatis.';
+	@override String get playbackBufferAutoDescription => 'Biarkan pemain aktif memilih ukuran buffer normalnya.';
+	@override String get playbackBufferLargeDescription => 'Tetap lebih banyak media siap sebelum playback; ini menggunakan lebih banyak memori.';
+	@override String get playbackBufferExtraLargeDescription => 'Simpan buffer bacaan terbesar; ini menggunakan memori yang paling banyak.';
+	@override String get defaultQualityDescription => 'Tetapkan resolusi video default dan bitrate atap untuk aliran yang transcod server.';
+	@override String get cellularQualityDescription => 'Override Default Quality ketika perangkat menggunakan koneksi seluler saja.';
+	@override String get remoteQualityDescription => 'Override Default Quality ketika terhubung ke server melalui koneksi remote.';
+	@override String get qualityPresetOriginalDescription => 'Mainkan sumber pada kualitas yang tersedia tanpa meminta server untuk transcode.';
+	@override String get qualityPresetTranscodeOptionDescription => 'Tanya server untuk aliran terkonversi menggunakan resolusi dan bitrate yang ditunjukkan di atas.';
+	@override String get qualityPresetSameAsDefaultDescription => 'Gunakan kualitas yang dipilih dalam Default Quality.';
+	@override String get musicQualityDescription => 'Tetapkan bitrate audio maksimum yang diminta dari server; Original mempertahankan aliran sumber.';
+	@override String get musicQualityOriginalDescription => 'Mainkan audio sumber tanpa transcode bitrate.';
+	@override String get musicQualityTranscodeOptionDescription => 'Meminta transcode server yang dicap dekat bitrate yang ditunjukkan di atas; output sebenarnya dapat bervariasi.';
+	@override String get maxVolumeInputLabel => 'Jumlah maksimum (%)';
+	@override String get checkForUpdatesDescription => 'Periksa sekarang apakah versi PlezyNG yang lebih baru tersedia.';
+	@override String get appearanceDescription => 'Pilih tema aplikasi dan menyesuaikan kartu perpustakaan, baris rumah, dan navigasi.';
+	@override String get prerollLibraryDescription => 'Pilih perpustakaan yang berisi klip yang tersedia sebagai pre-roll film.';
+	@override String get prerollSelectionDescription => 'Pilih klip dari perpustakaan yang dipilih dapat dimainkan sebelum film.';
+	@override String get contentScreensaverDelayOptionDescription => 'Tunggu ini beberapa menit tanpa input sebelum menunjukkan karya seni screensaver.';
+	@override String get videoCodecOptionDescription => 'Memungkinkan playback langsung untuk codec ini ketika didukung. codec yang tidak disemak dikodifikasi oleh server media.';
 }
 
 // Path: themeEditor
@@ -805,6 +907,17 @@ class _Translations$themeEditor$id extends Translations$themeEditor$en {
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} min dibatasi';
 	@override String get previewSwitch => 'Putar otomatis';
 	@override String get previewMutedText => 'Artikel ini dibaca seperti ini';
+	@override String get themeSystemDescription => 'Ikuti penampilan perangkat Anda dan beralih antara cahaya dan kegelapan secara otomatis.';
+	@override String get themeLightDescription => 'Gunakan latar belakang yang terang dengan teks gelap.';
+	@override String get themeDarkDescription => 'Gunakan latar belakang gelap dengan teks terang.';
+	@override String get themeOledDescription => 'Gunakan permukaan berdekatan hitam yang mengurangi cahaya pada layar OLED.';
+	@override String get themeEmberDescription => 'Gunakan warna merah hangat dan aksen amber.';
+	@override String get themeGlacierDescription => 'Gunakan warna aksen biru yang sejuk.';
+	@override String get themeForestDescription => 'Gunakan warna hijau dan aksen alami.';
+	@override String get themePlumDescription => 'Gunakan warna aksen violet dan plum.';
+	@override String get themePaperDescription => 'Gunakan permukaan yang hangat seperti kertas dan warna terinspirasi tinta.';
+	@override String get themeCustomDescription => 'Gunakan palet warna yang Anda ciptakan dalam editor tema tersuai.';
+	@override String get editorDescription => 'Pilih warna palet, menyesuaikan kulitnya, kenyang, kecerahan, atau ketidakselesaan, dan lihat update preview sebelum menghemat.';
 }
 
 // Path: search
@@ -1082,6 +1195,8 @@ class _Translations$accessibility$id extends Translations$accessibility$en {
 	@override String get largeTargets => 'Target Touch yang lebih besar';
 	@override String get largeTargetsHint => 'Memberi kontrol yang dikongsi lebih banyak ruang untuk sentuhan dan navigasi asisten.';
 	@override String get navigationHint => 'Gunakan Tab dan Shift+Tab untuk berpindah antar kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau tombol Kembali untuk menutup. Zoom dan preferensi membaca tersedia saat buku terbuka.';
+	@override String get textSizeDescription => 'Skala antara muka teks dalam PlezyNG ditambah dengan pengaturan ukuran teks sistem perangkat Anda.';
+	@override String get boldTextHint => 'Gunakan berat yang lebih berat untuk label dan pesan antarmuka untuk membuat mereka lebih mudah dibedakan.';
 }
 
 // Path: tooltips
@@ -1164,6 +1279,8 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoding tidak tersedia – bermain kualitas asli';
 	@override String get subtitleUnavailableFallback => 'Subtitle yang dipilih tidak dapat dimuat — terus tanpa subtitle';
 	@override String get pipButton => 'Gambar dalam mode';
+	@override String get openMiniPlayer => 'Pemain mini terbuka';
+	@override String get returnToFullPlayer => 'Kembali ke Full Player';
 	@override String get aspectRatioButton => 'Rasio perbandingan';
 	@override String get ambientLighting => 'Lampu Lingkungan';
 	@override String get fullscreenButton => 'Masuk ke layar penuh';
@@ -1320,6 +1437,19 @@ class _Translations$subtitlingStyling$id extends Translations$subtitlingStyling$
 	@override String get renderResolution => 'Resolusi Render';
 	@override String get renderResolutionScreen => 'Resolusi Layar';
 	@override String get renderResolutionVideo => 'Resolusi Video';
+	@override String get fontSizeDescription => 'Tetapkan ukuran subtitle teks pada perangkat ini.';
+	@override String get textColorDescription => 'Pilih warna yang digunakan untuk subtitle teks.';
+	@override String get borderSizeDescription => 'Tetapkan ketebalan outline di sekitar subtitle teks.';
+	@override String get borderColorDescription => 'Pilih warna yang digunakan untuk subtitle outline.';
+	@override String get backgroundColorDescription => 'Pilih warna di belakang subtitle.';
+	@override String get backgroundOpacityDescription => 'Tetapkan betapa transparan latar belakang subtitle: 0% jelas dan 100% solid.';
+	@override String get positionDescription => 'Pergerakan subtitle secara vertikal. 0% adalah bagian atas video dan 100% adalah bagian bawah.';
+	@override String get assOverrideDescription => 'Pilih apakah pemain mengikuti, menyesuaikan, mengganti, atau menghapus gaya yang tertanam dalam subtitle ASS.';
+	@override late final _Translations$subtitlingStyling$assOverrideOptions$id assOverrideOptions = _Translations$subtitlingStyling$assOverrideOptions$id._(_root);
+	@override String get renderResolutionDescription => 'Pilih resolusi yang digunakan untuk rasterize gambar dan subtitle ASS. Skala Android yang lebih rendah dapat mengurangi kerja rendering tetapi terlihat lebih lembut.';
+	@override late final _Translations$subtitlingStyling$renderResolutionOptions$id renderResolutionOptions = _Translations$subtitlingStyling$renderResolutionOptions$id._(_root);
+	@override String get boldDescription => 'Cetak subtitle teks dalam berat yang lebih berat.';
+	@override String get italicDescription => 'Menarik subtitle teks dalam bahasa Italia.';
 }
 
 // Path: mpvConfig
@@ -1501,6 +1631,14 @@ class _Translations$accountPreferences$id extends Translations$accountPreference
 	@override late final _Translations$accountPreferences$watchedIndicatorOptions$id watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$id._(_root);
 	@override String get mediaReviewsVisibility => 'Rating & Ulasan';
 	@override late final _Translations$accountPreferences$mediaReviewsOptions$id mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$id._(_root);
+	@override String get preferredAudioLanguageDescription => 'Anda lebih suka track audio dalam bahasa ini ketika server atau pemain secara otomatis memilih track.';
+	@override String get preferredSubtitleLanguageDescription => 'Lebih baik mengikuti subtitle dalam bahasa ini ketika subtitle dipilih secara otomatis.';
+	@override String get subtitleAccessibilityDescription => 'Pilih apakah capsi SDH disukai atau diperlukan selama pemilihan subtitle otomatis.';
+	@override String get forcedSubtitleDescription => 'Pilih apakah jalur subtitle paksa disukai atau diperlukan selama pemilihan otomatis.';
+	@override String get watchedIndicatorDescription => 'Pilih jenis media yang menerima tanda kontrol yang ditonton di antara muka server.';
+	@override String get mediaReviewsVisibilityDescription => 'Pilih penonton dan kritikan mana yang ditampilkan oleh server di halaman media.';
+	@override String get subtitleModeDescription => 'Pilih kapan subtitle secara otomatis dimulai untuk akun server ini.';
+	@override String get hubDescription => 'Keutamaan ini disimpan di akun media-server Anda dan mungkin berlaku untuk klien lain juga.';
 }
 
 // Path: discover
@@ -2389,6 +2527,7 @@ class _Translations$performanceOverlay$id extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'Lantai dasar HLG';
 	@override String get dvRouteBaseLayerSdr => 'Lantai dasar SDR';
 	@override String get dvRouteReshaped => 'RPU yang dihapus kembali (gpu-next)';
+	@override String get dvRouteFelGraphActive => 'Grafik Eksperimen P7 FEL (tidak berkelayakan)';
 	@override String get p7Conversion => 'P7 dan Conv';
 	@override String get sampleRate => 'Nilai Sampel';
 	@override String get pixelFormat => 'Pengaturan Pixel Fmt';
@@ -2449,6 +2588,13 @@ class _Translations$externalPlayer$id extends Translations$externalPlayer$en {
 	@override String get launchFailed => 'gagal membuka pemain eksternal';
 	@override String appNotInstalled({required Object name}) => '${name} tidak diinstal';
 	@override String get playInExternalPlayer => 'Bermain dengan pemain luar';
+	@override String get description => 'Pilih aplikasi lain untuk membuka video di. pemain yang tersedia tergantung pada perangkat Anda dan aplikasi yang terinstal.';
+	@override String get systemDefaultDescription => 'Biarkan sistem operasi membuka video dengan aplikasi defaultnya.';
+	@override String playerOptionDescription({required Object player}) => 'Buka video dengan ${player}.';
+	@override String get playerNameDescription => 'Label yang ditunjukkan dalam daftar pemain.';
+	@override String get playerPackageDescription => 'Masukkan nama paket Android dari aplikasi pemain, seperti com.example.player.';
+	@override String get playerCommandDescription => 'Masukkan perintah pemain yang terinstal atau jalur eksekusi untuk perangkat ini.';
+	@override String get playerUrlSchemeDescription => 'Masukkan skema URL dan template URL pilihan yang digunakan untuk meluncurkan pemain.';
 }
 
 // Path: metadataEdit
@@ -2668,6 +2814,8 @@ class _Translations$services$id extends Translations$services$en {
 	@override late final _Translations$services$oauthProxy$id oauthProxy = _Translations$services$oauthProxy$id._(_root);
 	@override late final _Translations$services$pendingAuth$id pendingAuth = _Translations$services$pendingAuth$id._(_root);
 	@override late final _Translations$services$libraryFilter$id libraryFilter = _Translations$services$libraryFilter$id._(_root);
+	@override String get seerrDescription => 'Hubungi Seerr atau Overseerr untuk mencari judul dan mengajukan permintaan media.';
+	@override late final _Translations$services$trackerDescriptions$id trackerDescriptions = _Translations$services$trackerDescriptions$id._(_root);
 }
 
 // Path: addServer
@@ -2862,6 +3010,9 @@ class _Translations$homeLayout$id extends Translations$homeLayout$en {
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'pada';
 	@override String get resetHeroButtonDescription => 'Mengalih keluar setiap baris pengaturan pahlawan dan membawa kembali satu banner berputar di atas, seperti sebelum baris pahlawan ada.';
+	@override String get tapHeroCardDescription => 'Pilih apakah menekan atau memilih kartu Hero memulai playback atau membuka detailnya.';
+	@override String get heroTapPlayDescription => 'Mulai item yang dipilih segera.';
+	@override String get heroTapDetailsDescription => 'Buka detail item yang dipilih sebelum memilih tindakan.';
 }
 
 // Path: platform
@@ -2892,8 +3043,12 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get source => 'Sumber';
 	@override String get name => 'Nama';
 	@override String get endpoint => 'URL server';
+	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Masukkan server SMB dan satu folder bersama.';
 	@override String get root => 'Folder atau prefiks';
+	@override String get smbFolderHelp => 'Biarkan kosong untuk menggunakan seluruh folder bersama, atau masukkan folder di dalamnya.';
 	@override String get username => 'Nama Pengguna';
+	@override String get smbDomain => 'Domain (opsional)';
 	@override String get password => 'Kata sandi';
 	@override String get token => 'API Token';
 	@override String get accessKey => 'Akses ke kunci ID';
@@ -2903,6 +3058,8 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get clientId => 'ID pelanggan OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (hanya desktop Google)';
 	@override String get allowHttp => 'Izinkan HTTP tanpa enkripsi di jaringan tepercaya';
+	@override String get smbEncryption => 'Enkripsi koneksi SMB3';
+	@override String get smbEncryptionHint => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.';
 	@override String get connect => 'Sambung';
 	@override String get cancel => 'Batal';
 	@override String get save => 'Simpan';
@@ -3047,12 +3204,23 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get useFiles => 'Menggunakan file dan buku';
 	@override String get cancelScan => 'Batalkan scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Masukkan server SMB dan satu folder bersama.';
-	@override String get smbFolderHelp => 'Biarkan kosong untuk menggunakan seluruh folder bersama, atau masukkan folder di dalamnya.';
-	@override String get smbDomain => 'Domain (opsional)';
-	@override String get smbEncryption => 'Enkripsi koneksi SMB3';
-	@override String get smbEncryptionHint => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.';
+	@override String get offlineQuota => 'Batas unduhan offline';
+	@override String get offlineQuotaHelp => 'Tetapkan ruang maksimum yang digunakan oleh salinan offline, file terimpor, dan muat turun. Mengurangi batas tidak menghapus salinan sedia ada.';
+	@override String get offlineStorageUsage => 'Penyimpanan Offline';
+	@override String get reservedStorage => 'disimpan';
+	@override String get downloadQueue => 'Mengunduh Queue';
+	@override String get downloadRunning => 'Download';
+	@override String get downloadQueued => 'Menunggu';
+	@override String get downloadPaused => 'beristirahat';
+	@override String get downloadFailed => 'Keperluan Retri';
+	@override String get importing => 'Imporsi';
+	@override String get importInterrupted => 'Import terputus · menghapus untuk jelas';
+	@override String get errorQuotaExceeded => 'Meningkatkan batas atau menghapus salinan yang dimuat turun.';
+	@override String get errorStorageLow => 'Tidak ada penyimpanan perangkat gratis yang cukup untuk mempertahankan reserve yang dilindungi.';
+	@override String get errorStorageUnavailable => 'PlezyNG tidak dapat memeriksa penyimpanan perangkat gratis, jadi penulisan dihentikan.';
+	@override String get removeDownloadJob => 'Menghapus download';
+	@override String get downloadAlreadyComplete => 'Download ini selesai sebelum dapat dihapus. item sekarang tersedia offline.';
+	@override String get confirmRemoveDownloadJob => 'Menghapus download ini dan menyingkirkan data yang diunduh secara parsial? posisi dan catatan Anda akan tetap.';
 }
 
 // Path: lending
@@ -3172,6 +3340,12 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get statusFinished => 'selesai';
 	@override String get goToTime => 'Pergi ke Waktu';
 	@override String get timeHelp => 'Waktu: menit: detik, atau menit: detik';
+	@override String get recoveryHelp => 'Ekspor salinan yang disulitkan baru-baru ini sebelum memindahkan atau memperbaiki data sink. Import bergabung dengan keadaan saat ini; mereka tidak pernah mengganti sejarah sink lokal.';
+	@override String get recoveryExport => 'Mengekspor file pemulihan yang disulitkan';
+	@override String get recoveryImport => 'Mengimport file pemulihan yang disulitkan';
+	@override String get recoveryImportConfirm => 'Menggabungkan file pemulihan yang disulitkan ini dengan posisi bacaan dan catatan saat ini? sejarah yang ada akan disimpan. perpustakaan berbagi dan ID item tidak termasuk; menetapkan ID yang sepadan pada setiap perangkat sebelum mengimpor.';
+	@override String get recoveryExported => 'File pemulihan yang disulitkan disimpan.';
+	@override String get recoveryImported => 'Data pemulihan digabungkan.';
 }
 
 // Path: sourceSetup
@@ -3275,6 +3449,23 @@ class _Translations$sourceSetup$id extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Identitas klien terpilih: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Nilai ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Mengunduh subtitel: ${title}';
+	@override String get sharedEntryPair => 'Berpasangan item ini';
+	@override String get sharedEntryPairHelp => 'Masukkan ID yang sama untuk item ini pada setiap perangkat. Gunakan pengidentifikasi perkongsian stabil atau buat satu dan salin ke item yang sesuai. Kemajuan hanya berpasangan ketika jenis file edisi, ukuran, dan pesanan sepadan. Blank menghapus peta ini.';
+	@override String get sharedEntryId => 'Identifikasi item';
+	@override String get generateSharedEntryId => 'Identifikasi item yang dibagikan';
+	@override String get sharedLibraryId => 'ID Perpustakaan Berkongsi (optional)';
+	@override String get sharedLibraryHelp => 'Gunakan ID yang sama pada perangkat yang membuka perpustakaan yang sama.ID publik ini membantu membawa kemajuan membaca dan catatan melalui koneksi sumber yang berbeda; itu bukan kata sandi.';
+	@override String get sharedLibraryInvalid => 'Gunakan 8-100 huruf, angka, titik, subscores atau hyphens.';
+	@override String get generateSharedLibraryId => 'Menghasilkan ID perpustakaan yang dikongsi';
+	@override String get nfsReadAhead => 'NFS Read-ahead Permintaan';
+	@override String get nfsReadAheadHelp => 'Lebih banyak pembaca paralel dapat meningkatkan lalu lintas pada NAS atau jaringan yang cepat. gunakan 1 jika server membatasi permintaan serentak.';
+	@override String get nfsReadTest => 'Mengukur prestasi baca NFS';
+	@override String get nfsReadTestHelp => 'Membaca hingga 64 MiB dari file terbesar untuk mengukur koneksi NAS ini.';
+	@override String get nfsQualificationResult => 'NFS membaca pengukuran';
+	@override String get nfsReadBytes => 'Data yang dibaca';
+	@override String get nfsReadSpeed => 'Kecepatan yang diukur';
+	@override String get nfsReadRequests => 'Baca Permintaan';
+	@override String get sharedEntryConflict => 'ID item yang dikongsi ini sudah dibagi dengan item lain di perpustakaan ini. pilih ID berbeda.';
 }
 
 // Path: comics
@@ -3367,6 +3558,15 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
 	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
+	@override String get linkSteamAccount => 'Link Steam account';
+	@override String get refreshSteamAccount => 'Refresh Steam account';
+	@override String get unlinkSteamAccount => 'Unlink Steam account';
+	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
+	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
+	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+	@override String get steamAppId => 'Steam App ID';
+	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
+	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
@@ -3447,6 +3647,19 @@ class _Translations$common$mediaKind$id extends Translations$common$mediaKind$en
 	@override String get clip => 'Fitur';
 	@override String get photo => 'Foto';
 	@override String get folder => 'Map';
+}
+
+// Path: settings.startupSectionOptions
+class _Translations$settings$startupSectionOptions$id extends Translations$settings$startupSectionOptions$en {
+	_Translations$settings$startupSectionOptions$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get discover => 'Membuka rekomendasi dan item dari sumber penemuan yang terhubung.';
+	@override String get libraries => 'Buka perpustakaan media yang terhubung.';
+	@override String get liveTv => 'Buka Live TV ketika server menyediakan; jika tidak, startup jatuh kembali ke Home.';
+	@override String get search => 'pencarian media terbuka.';
 }
 
 // Path: themeEditor.slots
@@ -3535,6 +3748,35 @@ class _Translations$videoControls$pipErrors$id extends Translations$videoControl
 	@override String unknown({required Object error}) => 'Kesalahan yang terjadi: ${error}';
 }
 
+// Path: subtitlingStyling.assOverrideOptions
+class _Translations$subtitlingStyling$assOverrideOptions$id extends Translations$subtitlingStyling$assOverrideOptions$en {
+	_Translations$subtitlingStyling$assOverrideOptions$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get no => 'Simpan huruf, warna, ukuran, dan penempatan yang ditulis dalam subtitle file.';
+	@override String get yes => 'Memungkinkan pengaturan gaya subtitle pemain untuk menyesuaikan subtitle ASS.';
+	@override String get scale => 'Mengaplikasikan gaya pemain dan skala ukuran tertanam untuk memenuhi dimensi video.';
+	@override String get force => 'Mengganti gaya ASS yang tertanam dengan gaya subtitle pemain.';
+	@override String get strip => 'Menghapus format ASS tertanam dan membuat subtitle teks dengan jelas.';
+}
+
+// Path: subtitlingStyling.renderResolutionOptions
+class _Translations$subtitlingStyling$renderResolutionOptions$id extends Translations$subtitlingStyling$renderResolutionOptions$en {
+	_Translations$subtitlingStyling$renderResolutionOptions$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get screen => 'Render pada resolusi permukaan layar penuh untuk hasil yang paling tajam.';
+	@override String get video => 'Render menggunakan resolusi video sebagai referensi, yang dapat mengurangi pekerjaan pada paparan resolusi tinggi.';
+	@override String get threeQuarter => 'Rendah pada 75% resolusi permukaan paparan untuk penjimatan kinerja yang sederhana.';
+	@override String get half => 'Render pada 50% resolusi permukaan paparan untuk mengurangi kerja, dengan tepi yang lebih lembut.';
+	@override String get third => 'Render pada satu pertiga resolusi permukaan paparan untuk mengurangi pekerjaan, dengan tepi yang lebih lembut.';
+	@override String get quarter => 'Render pada satu perempat dari resolusi permukaan paparan untuk mengurangi kerja, dengan hasil yang paling lembut.';
+}
+
 // Path: accountPreferences.groups
 class _Translations$accountPreferences$groups$id extends Translations$accountPreferences$groups$en {
 	_Translations$accountPreferences$groups$id._(TranslationsId root) : this._root = root, super.internal(root);
@@ -3577,6 +3819,10 @@ class _Translations$accountPreferences$subtitleAccessibilityOptions$id extends T
 	@override String get preferSdh => 'Lebih suka subtitle SDH';
 	@override String get onlySdh => 'Hanya subtitle SDH';
 	@override String get onlyNonSdh => 'Hanya subtitle non-SDH';
+	@override String get preferNonSdhDescription => 'Anda lebih suka subtitle standar ketika kedua versi standar dan SDH tersedia.';
+	@override String get preferSdhDescription => 'Saya lebih suka subtitle SDH saat tersedia, tetapi memungkinkan subtitle standar sebagai downback.';
+	@override String get onlySdhDescription => 'Gunakan subtitle SDH saja; jangan jatuh kembali ke subtitle standar.';
+	@override String get onlyNonSdhDescription => 'Gunakan subtitle standar saja; mengecualikan subtitle SDH.';
 }
 
 // Path: accountPreferences.forcedSubtitleOptions
@@ -3590,6 +3836,10 @@ class _Translations$accountPreferences$forcedSubtitleOptions$id extends Translat
 	@override String get preferForced => 'Lebih suka subtitle';
 	@override String get onlyForced => 'Hanya subtitle yang dipaksakan';
 	@override String get onlyNonForced => 'Hanya subtitle yang tidak dipaksakan';
+	@override String get preferNonForcedDescription => 'Lebih suka subtitles biasa, tetapi memungkinkan trek paksa sebagai penurunan.';
+	@override String get preferForcedDescription => 'Mereka lebih suka trek paksa ketika tersedia, tetapi memungkinkan subtitle biasa sebagai downback.';
+	@override String get onlyForcedDescription => 'Gunakan hanya jalur yang ditandai sebagai paksa.';
+	@override String get onlyNonForcedDescription => 'Mengecualikan jalur yang ditandai sebagai paksa.';
 }
 
 // Path: accountPreferences.watchedIndicatorOptions
@@ -3603,6 +3853,10 @@ class _Translations$accountPreferences$watchedIndicatorOptions$id extends Transl
 	@override String get moviesAndShows => 'Film dan acara televisi';
 	@override String get movies => 'Hanya film';
 	@override String get shows => 'TV hanya menampilkan';
+	@override String get noneDescription => 'Jangan menampilkan tanda-tanda yang dipantau.';
+	@override String get moviesAndShowsDescription => 'Menampilkan tanda-tanda yang ditonton untuk film dan acara TV.';
+	@override String get moviesDescription => 'Tampilkan tanda-tanda yang ditonton untuk film saja.';
+	@override String get showsDescription => 'Menampilkan tanda-tanda yang ditonton untuk acara TV saja.';
 }
 
 // Path: accountPreferences.mediaReviewsOptions
@@ -3616,6 +3870,10 @@ class _Translations$accountPreferences$mediaReviewsOptions$id extends Translatio
 	@override String get usersOnly => 'Pengguna hanya';
 	@override String get criticsOnly => 'Hanya kritikan';
 	@override String get nobody => 'tersembunyi';
+	@override String get usersAndCriticsDescription => 'Tampilkan kedua penarafan pengguna dan penilaian kritis.';
+	@override String get usersOnlyDescription => 'Tunjukkan penilaian dan ulasan yang disampaikan oleh pengguna.';
+	@override String get criticsOnlyDescription => 'Tunjukkan penilaian kritis dan ulasan.';
+	@override String get nobodyDescription => 'Temukan rating dan ulasan.';
 }
 
 // Path: discover.findNext
@@ -4402,6 +4660,21 @@ class _Translations$services$libraryFilter$id extends Translations$services$libr
 	@override String get modeHintWhitelist => 'Simak hanya perpustakaan yang diperiksa di bawah ini.';
 	@override String get libraries => 'Pustaka';
 	@override String get noLibraries => 'Tidak ada perpustakaan yang tersedia';
+	@override String get modeDescription => 'Pilih apakah perpustakaan yang disemak diblokir dari sinergi atau adalah satu-satunya perpustakan yang bersinkron.';
+}
+
+// Path: services.trackerDescriptions
+class _Translations$services$trackerDescriptions$id extends Translations$services$trackerDescriptions$en {
+	_Translations$services$trackerDescriptions$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get trakt => 'Sinkronkan episode dan film yang ditonton dengan akun Trakt Anda.';
+	@override String get mal => 'Sinkronkan daftar anime dan perhatikan kemajuan dengan MyAnimeList.';
+	@override String get anilist => 'Sync anime daftar dan menonton kemajuan dengan AniList.';
+	@override String get simkl => 'Sync menonton film, acara TV, dan anime dengan Simkl.';
+	@override String get mdblist => 'Tunjukkan rating dan daftar MDBList dalam rekomendasi dan Temukan.';
 }
 
 /// The flat map containing all translations for locale <id>.
@@ -4459,6 +4732,7 @@ extension on TranslationsId {
 			'appIcon.names.strata' => 'jalan',
 			'appIcon.names.facet' => 'Wajah',
 			'appIcon.names.tilde' => 'Tilda',
+			'appIcon.description' => 'Pilih ikon yang ditunjukkan oleh peluncuran perangkat Anda. previews menunjukkan bagaimana setiap opsi terlihat.',
 			'auth.signInWithPlex' => 'Mendaftar dengan Plex',
 			'auth.showQRCode' => 'Menampilkan QR Code',
 			'auth.authenticate' => 'autentik',
@@ -4480,6 +4754,32 @@ extension on TranslationsId {
 			'common.cancel' => 'Batal',
 			'common.save' => 'Simpan',
 			'common.close' => 'Tutup',
+			'common.closeMiniPlayer' => 'Berdekatan dengan Mini Player',
+			'common.closeWorkspaceWindow' => 'Jendela yang dekat',
+			'common.returnToFullView' => 'Kembali ke Full View',
+			'common.manageMediaSessions' => 'Mengelola sesi media',
+			'common.hideMediaSessions' => 'Menyembunyikan sesi media',
+			'common.mediaSessions' => 'Sesi Media',
+			'common.mediaSessionsHint' => 'Pilih untuk membawa sesi ke depan.Park menyembunyikan jendela tetapi tetap terbuka.Kembali membuka dalam pandangan penuh; dekat menutupnya.',
+			'common.sessionInWorkspace' => 'Dalam ruang kerja',
+			'common.sessionParked' => 'parkir',
+			'common.sessionFullscreen' => 'layar penuh',
+			'common.switchToNextWindow' => 'Swap dengan jendela berikutnya',
+			'common.moveWindow' => 'Menggerakkan jendela',
+			'common.finishMovingWindow' => 'Menutup jendela bergerak',
+			'common.moveWindowHint' => 'Tekan panjang dan tarik jendela untuk memindahkannya. kontrol ini juga memungkinkan pergerakan kunci arrow.',
+			'common.movingWindowHelp' => 'Menarik untuk bergerak · Menarik kunci disesuaikan · Enter saves · Escape cancles',
+			'common.resizeWindow' => 'Menarik jendela',
+			'common.resizeWindowHint' => 'Tarik handuk ini atau gunakan kunci anak panah untuk memutar ulang jendela.',
+			'common.workspaceWindowHint' => 'Gunakan kontrol pergerakan atau tekanan panjang dan tarik untuk bergerak. gunakan handuk resize untuk resize.',
+			'common.workspacePaneHint' => 'Pilih panel ini untuk fokus. gunakan kontrol layar penuh untuk memperluasnya.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Jendela sesi: ${title}',
+			'common.workspaceTitleHint' => 'Pilih untuk fokus. tarik bar judul untuk bergerak; gunakan tombol layar penuh untuk memperluas.',
+			'common.moveToSessionTray' => 'Bergerak ke sesi tray',
+			'common.moveToSessionTrayHint' => 'Kees sesi ini tersedia tanpa menampilkan jendela.',
+			'common.closeSessionHint' => 'Menutup jendela ini dan mengakhiri sesi.',
+			'common.sideBySideLayout' => 'Beralih ke sisi-by-side layout',
+			'common.floatingWindows' => 'Switch untuk mengalir jendela',
 			'common.clear' => 'jelas',
 			'common.reset' => 'Atur Ulang',
 			'common.later' => 'Kemudian',
@@ -4897,6 +5197,8 @@ extension on TranslationsId {
 			'settings.audioPassthrough' => 'Audio yang berkelanjutan',
 			'settings.audioPassthroughDescription' => 'Kirim audio Dolby/DTS ke penerima atau TV Anda tanpa kode ulang, menyimpan suara sekitar.',
 			'settings.audioPassthroughDescriptionApple' => 'Gunakan decoder Dolby asli Apple untuk Dolby Digital Plus, termasuk Atmos. DTS dan TrueHD masih memainkan sebagai PCM multi-saluran.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Gunakan decoder Dolby asli Apple untuk Dolby Digital Plus, termasuk Atmos. Pada iOS, iPadOS dan tvOS 26 atau lebih, TrueHD Atmos dan DTS:X memainkan sebagai audio ruang.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Sementara suara normalisasi sedang',
 			'settings.audioChannelLimit' => 'Saluran audio',
@@ -4923,9 +5225,14 @@ extension on TranslationsId {
 			'settings.dvConversionNativeDescription' => 'Kuasa asli DV7 dan penindasan DV konversi retry',
 			'settings.dvConversionDv81Description' => 'Konversi RPU Inline Kekuatan ke Dolby Vision Profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision lapisan RPU/EL dan rata saat ini HEVC',
+			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimental',
+			'settings.experimentalDolbyVisionDescription' => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.',
+			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini saat ini hanya tersedia di Linux.',
+			'settings.dvCompatibilityFallback' => 'Cadangan kompatibilitas',
+			'settings.dvCompatibilityFallbackDescription' => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.',
+			'settings.dvExperimentDiagnostics' => 'Pencatatan eksperimen video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.',
 			'settings.disableDolbyVision' => 'Tidak dapat dibatasi Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.disableDolbyVisionDescription' => 'Bermain file HDR10 atau lapisan HLG bukannya Dolby Vision, ketika itu memiliki satu',
 			'settings.hdrSdrConversion' => 'Konversi HDR ke SDR',
 			'settings.hdrSdrConversionDescription' => 'Pilih apa yang mengubah video HDR ketika layar tidak dapat menampilkan HDR.',
@@ -5011,13 +5318,84 @@ extension on TranslationsId {
 			'settings.regionFormatDescription' => 'Pilih cara menampilkan tanggal, angka, dan satuan ukuran.',
 			'settings.metadataLanguage' => 'Bahasa metadata',
 			'settings.metadataLanguageDescription' => 'Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimental',
-			'settings.experimentalDolbyVisionDescription' => 'Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.',
-			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini saat ini hanya tersedia di Linux.',
-			'settings.dvCompatibilityFallback' => 'Cadangan kompatibilitas',
-			'settings.dvCompatibilityFallbackDescription' => 'Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.',
-			'settings.dvExperimentDiagnostics' => 'Pencatatan eksperimen video',
-			'settings.dvExperimentDiagnosticsDescription' => 'Aktifkan log pemutar terperinci pada pemutaran berikutnya.',
+			'settings.enterFullscreenOnPlaybackStart' => 'Masuk layar penuh saat playback dimulai',
+			'settings.enterFullscreenOnPlaybackStartDescription' => 'Buka desktop video pada layar penuh ketika playback dimulai',
+			'settings.extendVideoIntoDisplayCutout' => 'Mengembangkan video ke display cutout',
+			'settings.extendVideoIntoDisplayCutoutDescription' => 'Biarkan video layar penuh menggunakan kamera cutout pada ponsel Android',
+			'settings.languageDescription' => 'Pilih bahasa yang digunakan untuk kontrol dan pesan PlezyNG. sistem mengikuti bahasa perangkat Anda.',
+			'settings.themeDescription' => 'Pilih warna dan kontras yang digunakan di seluruh aplikasi.',
+			'settings.libraryDensityDescription' => 'Mengubah berapa banyak kartu perpustakaan yang cocok dalam setiap baris.',
+			'settings.displayScaleDescription' => 'Memperbaiki antarmuka pada layar mobil ini tanpa mengubah ukuran teks seluruh perangkat Anda.',
+			'settings.themeSongVolumeDescription' => 'Tetapkan volume lagu tema yang relatif dengan audio lainnya.',
+			'settings.viewModeDescription' => 'Pilih apakah item perpustakaan muncul sebagai poster di jaringan atau sebagai daftar kompak.',
+			'settings.gridViewDescription' => 'Mengatur item perpustakaan dalam baris dan kolom poster.',
+			'settings.listViewDescription' => 'Tunjukkan item perpustakaan dalam daftar vertikal dengan lebih banyak teks per item.',
+			'settings.gridSpacingDescription' => 'Tetapkan jurang antara poster di jaringan perpustakaan.',
+			'settings.gridSpacingTightDescription' => 'Tetapkan lebih banyak poster di seluruh layar dengan jurang yang lebih kecil.',
+			'settings.gridSpacingNormalDescription' => 'Gunakan jurang standar antara poster.',
+			'settings.gridSpacingSpaciousDescription' => 'Tambahkan jurang yang lebih besar antara poster untuk pemisahan lebih banyak.',
+			'settings.episodePosterModeDescription' => 'Pilih karya seni yang muncul pada kartu episode.',
+			'settings.seriesPosterDescription' => 'Gunakan poster serial untuk setiap episode.',
+			'settings.seasonPosterDescription' => 'Gunakan poster musim untuk setiap episode ketika tersedia.',
+			'settings.episodeThumbnailDescription' => 'Gunakan bingkai dari episode ketika tersedia.',
+			'settings.continueWatchingActionDescription' => 'Pilih apa yang terjadi saat Anda mengaktifkan kartu terus-menerus.',
+			'settings.continueWatchingPlayDescription' => 'Mulai film atau episode dengan segera.',
+			'settings.continueWatchingDetailsDescription' => 'Buka halaman judul terlebih dahulu sehingga Anda dapat meninjau rincian dan memilih tindakan.',
+			'settings.episodeActionDescription' => 'Pilih apa yang terjadi saat Anda mengaktifkan kartu episode.',
+			'settings.episodePlayDescription' => 'Mulailah episode ini dengan segera.',
+			'settings.episodeDetailsDescription' => 'Buka halaman episode sebelum playback.',
+			'settings.contentScreensaverDelayDescription' => 'Pilih berapa lama PlezyNG menunggu tanpa input sebelum menunjukkan karya seni.',
+			'settings.continueWatchingRowSizeDescription' => 'Pilih seberapa besar kartu yang ada di baris terus-menerus.',
+			'settings.rowSizeCompactDescription' => 'Tunjukkan kartu yang lebih kecil sehingga lebih banyak item cocok di sepanjang baris.',
+			'settings.rowSizeStandardDescription' => 'Gunakan ukuran kartu standar.',
+			'settings.rowSizeLargeDescription' => 'Tunjukkan kartu yang lebih besar dengan detail karya seni yang lebih banyak.',
+			'settings.visualEffectsDescription' => 'Pilih anggaran animasi dan efek karya seni untuk perangkat ini.',
+			'settings.visualEffectsFullDescription' => 'Gunakan efek animasi dan karya seni penuh pada setiap perangkat.',
+			'settings.startupSectionDescription' => 'Pilih bagian mana yang dibuka saat PlezyNG dimulai.',
+			'settings.startupSectionOptions.discover' => 'Membuka rekomendasi dan item dari sumber penemuan yang terhubung.',
+			'settings.startupSectionOptions.libraries' => 'Buka perpustakaan media yang terhubung.',
+			'settings.startupSectionOptions.liveTv' => 'Buka Live TV ketika server menyediakan; jika tidak, startup jatuh kembali ke Home.',
+			'settings.startupSectionOptions.search' => 'pencarian media terbuka.',
+			'settings.smallSkipDurationDescription' => 'Tetapkan jarak yang dipindahkan oleh belakang pendek dan ke depan mencari kontrol.',
+			'settings.largeSkipDurationDescription' => 'Tetapkan jarak yang dipindahkan oleh belakang panjang dan ke depan mencari kontrol.',
+			'settings.rewindOnResumeDescription' => 'Move playback kembali dengan jumlah ini ketika mengembalikan video.',
+			'settings.defaultSleepTimerDescription' => 'Tetapkan durasi awal yang digunakan saat Anda memulai timer tidur.',
+			'settings.playNextCountdownDescription' => 'Tunggu ini lama sebelum memulai episode berikutnya. set ke 0 untuk memulai dengan segera.',
+			'settings.autoSkipDelaySettingDescription' => 'Ini berlaku ketika intro, kredit, atau iklan ditetapkan untuk meluncur secara otomatis.',
+			'settings.downmixCenterBoostDescription' => 'Meningkatkan dialog di saluran pusat ketika audio sekitar dicampur ke bawah ke stereo.',
+			'settings.displaySwitchDelayDescription' => 'Tunggu sebelum mengubah mode paparan sehingga TV atau penerima dapat menyelesaikan switch sebelumnya.',
+			'settings.playerBackendDescription' => 'Pilih mesin playback mana yang mendekorasi dan menghasilkan video pada perangkat ini.',
+			'settings.exoPlayerDescription' => 'Gunakan pemutar asli Android yang berbasis Media3 dan jalur perangkat keras yang didukung.',
+			'settings.mpvDescription' => 'Gunakan mpv, yang mendedahkan pemutaran tambahan, subtitle, dan kontrol pemrosesan video.',
+			'settings.scopeOffDescription' => 'Hanya menyimpan perubahan untuk sesi playback saat ini.',
+			'settings.scopeGlobalDescription' => 'Gunakan kembali nilai yang sama untuk setiap perpustakaan dan judul.',
+			'settings.scopeLibraryDescription' => 'Ingatlah nilai yang berbeda untuk setiap perpustakaan.',
+			'settings.scopeTitleDescription' => 'Ingat nilai terpisah untuk setiap acara atau film.',
+			'settings.specialsOrderingServerDescription' => 'Tinggalkan pesanan episode yang disediakan oleh server media.',
+			'settings.specialsOrderingAirDateDescription' => 'Menempatkan spesial di antara episode biasa pada tanggal udara mereka.',
+			'settings.specialsOrderingLastDescription' => 'Tempatkan masing-masing spesial setelah musim biasa.',
+			'settings.skipIntroModeDescription' => 'Pilih apakah intro markers bermain normal, menunjukkan tombol skip, atau skip secara otomatis.',
+			'settings.skipCreditsModeDescription' => 'Pilih apakah kredit bermain normal, menunjukkan tombol skip, atau skip secara otomatis.',
+			'settings.skipAdsModeDescription' => 'Pilih apakah iklan yang dideteksi memainkan secara normal, menampilkan tombol skip, atau skip secara otomatis.',
+			'settings.playbackBufferAutoDescription' => 'Biarkan pemain aktif memilih ukuran buffer normalnya.',
+			'settings.playbackBufferLargeDescription' => 'Tetap lebih banyak media siap sebelum playback; ini menggunakan lebih banyak memori.',
+			'settings.playbackBufferExtraLargeDescription' => 'Simpan buffer bacaan terbesar; ini menggunakan memori yang paling banyak.',
+			'settings.defaultQualityDescription' => 'Tetapkan resolusi video default dan bitrate atap untuk aliran yang transcod server.',
+			'settings.cellularQualityDescription' => 'Override Default Quality ketika perangkat menggunakan koneksi seluler saja.',
+			'settings.remoteQualityDescription' => 'Override Default Quality ketika terhubung ke server melalui koneksi remote.',
+			'settings.qualityPresetOriginalDescription' => 'Mainkan sumber pada kualitas yang tersedia tanpa meminta server untuk transcode.',
+			'settings.qualityPresetTranscodeOptionDescription' => 'Tanya server untuk aliran terkonversi menggunakan resolusi dan bitrate yang ditunjukkan di atas.',
+			'settings.qualityPresetSameAsDefaultDescription' => 'Gunakan kualitas yang dipilih dalam Default Quality.',
+			'settings.musicQualityDescription' => 'Tetapkan bitrate audio maksimum yang diminta dari server; Original mempertahankan aliran sumber.',
+			'settings.musicQualityOriginalDescription' => 'Mainkan audio sumber tanpa transcode bitrate.',
+			'settings.musicQualityTranscodeOptionDescription' => 'Meminta transcode server yang dicap dekat bitrate yang ditunjukkan di atas; output sebenarnya dapat bervariasi.',
+			'settings.maxVolumeInputLabel' => 'Jumlah maksimum (%)',
+			'settings.checkForUpdatesDescription' => 'Periksa sekarang apakah versi PlezyNG yang lebih baru tersedia.',
+			'settings.appearanceDescription' => 'Pilih tema aplikasi dan menyesuaikan kartu perpustakaan, baris rumah, dan navigasi.',
+			'settings.prerollLibraryDescription' => 'Pilih perpustakaan yang berisi klip yang tersedia sebagai pre-roll film.',
+			'settings.prerollSelectionDescription' => 'Pilih klip dari perpustakaan yang dipilih dapat dimainkan sebelum film.',
+			'settings.contentScreensaverDelayOptionDescription' => 'Tunggu ini beberapa menit tanpa input sebelum menunjukkan karya seni screensaver.',
+			'settings.videoCodecOptionDescription' => 'Memungkinkan playback langsung untuk codec ini ketika didukung. codec yang tidak disemak dikodifikasi oleh server media.',
 			'themeEditor.builtIn' => 'dibangun',
 			'themeEditor.presets' => 'Preset',
 			'themeEditor.custom' => 'Kustom',
@@ -5056,6 +5434,17 @@ extension on TranslationsId {
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min dibatasi',
 			'themeEditor.previewSwitch' => 'Putar otomatis',
 			'themeEditor.previewMutedText' => 'Artikel ini dibaca seperti ini',
+			'themeEditor.themeSystemDescription' => 'Ikuti penampilan perangkat Anda dan beralih antara cahaya dan kegelapan secara otomatis.',
+			'themeEditor.themeLightDescription' => 'Gunakan latar belakang yang terang dengan teks gelap.',
+			'themeEditor.themeDarkDescription' => 'Gunakan latar belakang gelap dengan teks terang.',
+			'themeEditor.themeOledDescription' => 'Gunakan permukaan berdekatan hitam yang mengurangi cahaya pada layar OLED.',
+			'themeEditor.themeEmberDescription' => 'Gunakan warna merah hangat dan aksen amber.',
+			'themeEditor.themeGlacierDescription' => 'Gunakan warna aksen biru yang sejuk.',
+			'themeEditor.themeForestDescription' => 'Gunakan warna hijau dan aksen alami.',
+			'themeEditor.themePlumDescription' => 'Gunakan warna aksen violet dan plum.',
+			'themeEditor.themePaperDescription' => 'Gunakan permukaan yang hangat seperti kertas dan warna terinspirasi tinta.',
+			'themeEditor.themeCustomDescription' => 'Gunakan palet warna yang Anda ciptakan dalam editor tema tersuai.',
+			'themeEditor.editorDescription' => 'Pilih warna palet, menyesuaikan kulitnya, kenyang, kecerahan, atau ketidakselesaan, dan lihat update preview sebelum menghemat.',
 			'search.hint' => 'Mencari film, acara, musik...',
 			'search.tryDifferentTerm' => 'Cobalah istilah pencarian yang berbeda',
 			'search.searchYourMedia' => 'Temukan Media Anda',
@@ -5301,6 +5690,8 @@ extension on TranslationsId {
 			'accessibility.largeTargets' => 'Target Touch yang lebih besar',
 			'accessibility.largeTargetsHint' => 'Memberi kontrol yang dikongsi lebih banyak ruang untuk sentuhan dan navigasi asisten.',
 			'accessibility.navigationHint' => 'Gunakan Tab dan Shift+Tab untuk berpindah antar kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau tombol Kembali untuk menutup. Zoom dan preferensi membaca tersedia saat buku terbuka.',
+			'accessibility.textSizeDescription' => 'Skala antara muka teks dalam PlezyNG ditambah dengan pengaturan ukuran teks sistem perangkat Anda.',
+			'accessibility.boldTextHint' => 'Gunakan berat yang lebih berat untuk label dan pesan antarmuka untuk membuat mereka lebih mudah dibedakan.',
 			'tooltips.shufflePlay' => 'Permainan Shuffle',
 			'tooltips.playTrailer' => 'Bermain Trailer',
 			'tooltips.markAsWatched' => 'Mark yang ditonton',
@@ -5320,6 +5711,8 @@ extension on TranslationsId {
 			'videoControls.sleepTimerEndOfVideo' => 'Akhir dari video saat ini',
 			'videoControls.sleepTimerStopAtHeader' => 'Berhenti di',
 			'videoControls.sleepTimerDurationHeader' => 'Waktu',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback Akan Berhenti di Akhir Video Ini',
 			'videoControls.stillWatching' => 'Masih menonton?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Berhenti di ${seconds}s',
@@ -5354,6 +5747,8 @@ extension on TranslationsId {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding tidak tersedia – bermain kualitas asli',
 			'videoControls.subtitleUnavailableFallback' => 'Subtitle yang dipilih tidak dapat dimuat — terus tanpa subtitle',
 			'videoControls.pipButton' => 'Gambar dalam mode',
+			'videoControls.openMiniPlayer' => 'Pemain mini terbuka',
+			'videoControls.returnToFullPlayer' => 'Kembali ke Full Player',
 			'videoControls.aspectRatioButton' => 'Rasio perbandingan',
 			'videoControls.ambientLighting' => 'Lampu Lingkungan',
 			'videoControls.fullscreenButton' => 'Masuk ke layar penuh',
@@ -5438,8 +5833,6 @@ extension on TranslationsId {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scan perpustakaan dimulai untuk "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Tidak berhasil memindai perpustakaan: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata yang diperbaharui untuk "${title}..."',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata pembaharuan dimulai untuk "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Tidak dapat memperbarui metadata: ${error}',
 			'messages.logoutConfirm' => 'Apakah Anda yakin Anda ingin keluar?',
@@ -5499,6 +5892,28 @@ extension on TranslationsId {
 			'subtitlingStyling.renderResolution' => 'Resolusi Render',
 			'subtitlingStyling.renderResolutionScreen' => 'Resolusi Layar',
 			'subtitlingStyling.renderResolutionVideo' => 'Resolusi Video',
+			'subtitlingStyling.fontSizeDescription' => 'Tetapkan ukuran subtitle teks pada perangkat ini.',
+			'subtitlingStyling.textColorDescription' => 'Pilih warna yang digunakan untuk subtitle teks.',
+			'subtitlingStyling.borderSizeDescription' => 'Tetapkan ketebalan outline di sekitar subtitle teks.',
+			'subtitlingStyling.borderColorDescription' => 'Pilih warna yang digunakan untuk subtitle outline.',
+			'subtitlingStyling.backgroundColorDescription' => 'Pilih warna di belakang subtitle.',
+			'subtitlingStyling.backgroundOpacityDescription' => 'Tetapkan betapa transparan latar belakang subtitle: 0% jelas dan 100% solid.',
+			'subtitlingStyling.positionDescription' => 'Pergerakan subtitle secara vertikal. 0% adalah bagian atas video dan 100% adalah bagian bawah.',
+			'subtitlingStyling.assOverrideDescription' => 'Pilih apakah pemain mengikuti, menyesuaikan, mengganti, atau menghapus gaya yang tertanam dalam subtitle ASS.',
+			'subtitlingStyling.assOverrideOptions.no' => 'Simpan huruf, warna, ukuran, dan penempatan yang ditulis dalam subtitle file.',
+			'subtitlingStyling.assOverrideOptions.yes' => 'Memungkinkan pengaturan gaya subtitle pemain untuk menyesuaikan subtitle ASS.',
+			'subtitlingStyling.assOverrideOptions.scale' => 'Mengaplikasikan gaya pemain dan skala ukuran tertanam untuk memenuhi dimensi video.',
+			'subtitlingStyling.assOverrideOptions.force' => 'Mengganti gaya ASS yang tertanam dengan gaya subtitle pemain.',
+			'subtitlingStyling.assOverrideOptions.strip' => 'Menghapus format ASS tertanam dan membuat subtitle teks dengan jelas.',
+			'subtitlingStyling.renderResolutionDescription' => 'Pilih resolusi yang digunakan untuk rasterize gambar dan subtitle ASS. Skala Android yang lebih rendah dapat mengurangi kerja rendering tetapi terlihat lebih lembut.',
+			'subtitlingStyling.renderResolutionOptions.screen' => 'Render pada resolusi permukaan layar penuh untuk hasil yang paling tajam.',
+			'subtitlingStyling.renderResolutionOptions.video' => 'Render menggunakan resolusi video sebagai referensi, yang dapat mengurangi pekerjaan pada paparan resolusi tinggi.',
+			'subtitlingStyling.renderResolutionOptions.threeQuarter' => 'Rendah pada 75% resolusi permukaan paparan untuk penjimatan kinerja yang sederhana.',
+			'subtitlingStyling.renderResolutionOptions.half' => 'Render pada 50% resolusi permukaan paparan untuk mengurangi kerja, dengan tepi yang lebih lembut.',
+			'subtitlingStyling.renderResolutionOptions.third' => 'Render pada satu pertiga resolusi permukaan paparan untuk mengurangi pekerjaan, dengan tepi yang lebih lembut.',
+			'subtitlingStyling.renderResolutionOptions.quarter' => 'Render pada satu perempat dari resolusi permukaan paparan untuk mengurangi kerja, dengan hasil yang paling lembut.',
+			'subtitlingStyling.boldDescription' => 'Cetak subtitle teks dalam berat yang lebih berat.',
+			'subtitlingStyling.italicDescription' => 'Menarik subtitle teks dalam bahasa Italia.',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Pengaturan pemutar video lanjutan',
 			'mpvConfig.presets' => 'Preset',
@@ -5635,11 +6050,19 @@ extension on TranslationsId {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Lebih suka subtitle SDH',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Hanya subtitle SDH',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Hanya subtitle non-SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdhDescription' => 'Anda lebih suka subtitle standar ketika kedua versi standar dan SDH tersedia.',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdhDescription' => 'Saya lebih suka subtitle SDH saat tersedia, tetapi memungkinkan subtitle standar sebagai downback.',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdhDescription' => 'Gunakan subtitle SDH saja; jangan jatuh kembali ke subtitle standar.',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdhDescription' => 'Gunakan subtitle standar saja; mengecualikan subtitle SDH.',
 			'accountPreferences.forcedSubtitles' => 'Subtitle yang dipaksa',
 			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Lebih suka subtitle yang tidak terikat',
 			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Lebih suka subtitle',
 			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Hanya subtitle yang dipaksakan',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Hanya subtitle yang tidak dipaksakan',
+			'accountPreferences.forcedSubtitleOptions.preferNonForcedDescription' => 'Lebih suka subtitles biasa, tetapi memungkinkan trek paksa sebagai penurunan.',
+			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Mereka lebih suka trek paksa ketika tersedia, tetapi memungkinkan subtitle biasa sebagai downback.',
+			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Gunakan hanya jalur yang ditandai sebagai paksa.',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Mengecualikan jalur yang ditandai sebagai paksa.',
 			'accountPreferences.displayMissingEpisodes' => 'Menampilkan episode yang hilang',
 			'accountPreferences.displayMissingEpisodesDescription' => 'Daftar episode yang server tahu tentang tetapi tidak memiliki file untuk.',
 			'accountPreferences.hidePlayedInLatest' => 'Temukan item yang ditonton di terbaru',
@@ -5653,11 +6076,27 @@ extension on TranslationsId {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Film dan acara televisi',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Hanya film',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV hanya menampilkan',
+			'accountPreferences.watchedIndicatorOptions.noneDescription' => 'Jangan menampilkan tanda-tanda yang dipantau.',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShowsDescription' => 'Menampilkan tanda-tanda yang ditonton untuk film dan acara TV.',
+			'accountPreferences.watchedIndicatorOptions.moviesDescription' => 'Tampilkan tanda-tanda yang ditonton untuk film saja.',
+			'accountPreferences.watchedIndicatorOptions.showsDescription' => 'Menampilkan tanda-tanda yang ditonton untuk acara TV saja.',
 			'accountPreferences.mediaReviewsVisibility' => 'Rating & Ulasan',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Pengguna dan kritikus',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Pengguna hanya',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Hanya kritikan',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'tersembunyi',
+			'accountPreferences.mediaReviewsOptions.usersAndCriticsDescription' => 'Tampilkan kedua penarafan pengguna dan penilaian kritis.',
+			'accountPreferences.mediaReviewsOptions.usersOnlyDescription' => 'Tunjukkan penilaian dan ulasan yang disampaikan oleh pengguna.',
+			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Tunjukkan penilaian kritis dan ulasan.',
+			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Temukan rating dan ulasan.',
+			'accountPreferences.preferredAudioLanguageDescription' => 'Anda lebih suka track audio dalam bahasa ini ketika server atau pemain secara otomatis memilih track.',
+			'accountPreferences.preferredSubtitleLanguageDescription' => 'Lebih baik mengikuti subtitle dalam bahasa ini ketika subtitle dipilih secara otomatis.',
+			'accountPreferences.subtitleAccessibilityDescription' => 'Pilih apakah capsi SDH disukai atau diperlukan selama pemilihan subtitle otomatis.',
+			'accountPreferences.forcedSubtitleDescription' => 'Pilih apakah jalur subtitle paksa disukai atau diperlukan selama pemilihan otomatis.',
+			'accountPreferences.watchedIndicatorDescription' => 'Pilih jenis media yang menerima tanda kontrol yang ditonton di antara muka server.',
+			'accountPreferences.mediaReviewsVisibilityDescription' => 'Pilih penonton dan kritikan mana yang ditampilkan oleh server di halaman media.',
+			'accountPreferences.subtitleModeDescription' => 'Pilih kapan subtitle secara otomatis dimulai untuk akun server ini.',
+			'accountPreferences.hubDescription' => 'Keutamaan ini disimpan di akun media-server Anda dan mungkin berlaku untuk klien lain juga.',
 			'discover.title' => 'Temukan',
 			'discover.noContentAvailable' => 'Tidak ada konten yang tersedia',
 			'discover.addMediaToLibraries' => 'Tambahkan beberapa media ke perpustakaan Anda',
@@ -5786,6 +6225,8 @@ extension on TranslationsId {
 			'libraries.all' => 'Semua',
 			'libraries.clearAll' => 'jelas semua',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin memindai "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin menganalisis "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Apakah Anda yakin ingin memperbarui metadata untuk "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin mengosongkan sampah untuk "${title}"?',
@@ -5952,8 +6393,6 @@ extension on TranslationsId {
 			'explore.mdblistShelves.nameHint' => 'Tinggalkan kosong untuk menggunakan nama daftar sumber.',
 			'explore.mdblistShelves.add' => 'Tambahkan shelf',
 			'explore.mdblistShelves.save' => 'Menyelamatkan shelter',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} ke atas',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} ke bawah',
 			'explore.mdblistShelves.unavailable' => 'Daftar ini tidak tersedia.Tarik balik atau menghapus shell dalam pengaturan.',
@@ -6300,6 +6739,8 @@ extension on TranslationsId {
 			'watchTogether.connecting' => 'Menghubungkan...',
 			'watchTogether.relayPublic' => 'Ruang-ruang yang digunakan oleh publik Open Watch Party.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Kamar menggunakan relay Anda di ${url}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Ruang Baru',
 			'watchTogether.roomActions' => 'Ruang Aksi',
 			'watchTogether.renameRoom' => 'Ruang Rename',
@@ -6466,8 +6907,6 @@ extension on TranslationsId {
 			'downloads.resumeDownload' => 'Lanjutkan unduhan',
 			'downloads.cancelledDownload' => 'Pembatalan download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sinkronisasi ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Dimuat turun ${file} - Klik untuk menyelesaikan',
 			'downloads.partialDownloadClickToComplete' => 'Dilancarkan secara parsial - Klik untuk menyelesaikan',
 			'downloads.deleting' => 'Menghapus...',
@@ -6726,6 +7165,7 @@ extension on TranslationsId {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'Lantai dasar HLG',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'Lantai dasar SDR',
 			'performanceOverlay.dvRouteReshaped' => 'RPU yang dihapus kembali (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Grafik Eksperimen P7 FEL (tidak berkelayakan)',
 			'performanceOverlay.p7Conversion' => 'P7 dan Conv',
 			'performanceOverlay.sampleRate' => 'Nilai Sampel',
 			'performanceOverlay.pixelFormat' => 'Pengaturan Pixel Fmt',
@@ -6777,6 +7217,13 @@ extension on TranslationsId {
 			'externalPlayer.launchFailed' => 'gagal membuka pemain eksternal',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} tidak diinstal',
 			'externalPlayer.playInExternalPlayer' => 'Bermain dengan pemain luar',
+			'externalPlayer.description' => 'Pilih aplikasi lain untuk membuka video di. pemain yang tersedia tergantung pada perangkat Anda dan aplikasi yang terinstal.',
+			'externalPlayer.systemDefaultDescription' => 'Biarkan sistem operasi membuka video dengan aplikasi defaultnya.',
+			'externalPlayer.playerOptionDescription' => ({required Object player}) => 'Buka video dengan ${player}.',
+			'externalPlayer.playerNameDescription' => 'Label yang ditunjukkan dalam daftar pemain.',
+			'externalPlayer.playerPackageDescription' => 'Masukkan nama paket Android dari aplikasi pemain, seperti com.example.player.',
+			'externalPlayer.playerCommandDescription' => 'Masukkan perintah pemain yang terinstal atau jalur eksekusi untuk perangkat ini.',
+			'externalPlayer.playerUrlSchemeDescription' => 'Masukkan skema URL dan template URL pilihan yang digunakan untuk meluncurkan pemain.',
 			'metadataEdit.editMetadata' => 'Sunting',
 			'metadataEdit.screenTitle' => 'Sunting metadata',
 			'metadataEdit.basicInfo' => 'Informasi dasar',
@@ -6806,6 +7253,8 @@ extension on TranslationsId {
 			'metadataEdit.metadataUpdateFailed' => 'Tidak dapat mengemas kini metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork dikemas kini',
 			'metadataEdit.artworkUpdateFailed' => 'gagal memperbarui karya seni',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Tidak ada seni yang tersedia',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opsi seni ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opsi seni ${index}, dipilih',
@@ -6966,6 +7415,13 @@ extension on TranslationsId {
 			'services.libraryFilter.modeHintWhitelist' => 'Simak hanya perpustakaan yang diperiksa di bawah ini.',
 			'services.libraryFilter.libraries' => 'Pustaka',
 			'services.libraryFilter.noLibraries' => 'Tidak ada perpustakaan yang tersedia',
+			'services.libraryFilter.modeDescription' => 'Pilih apakah perpustakaan yang disemak diblokir dari sinergi atau adalah satu-satunya perpustakan yang bersinkron.',
+			'services.seerrDescription' => 'Hubungi Seerr atau Overseerr untuk mencari judul dan mengajukan permintaan media.',
+			'services.trackerDescriptions.trakt' => 'Sinkronkan episode dan film yang ditonton dengan akun Trakt Anda.',
+			'services.trackerDescriptions.mal' => 'Sinkronkan daftar anime dan perhatikan kemajuan dengan MyAnimeList.',
+			'services.trackerDescriptions.anilist' => 'Sync anime daftar dan menonton kemajuan dengan AniList.',
+			'services.trackerDescriptions.simkl' => 'Sync menonton film, acara TV, dan anime dengan Simkl.',
+			'services.trackerDescriptions.mdblist' => 'Tunjukkan rating dan daftar MDBList dalam rekomendasi dan Temukan.',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Tambahkan server ${product}',
 			'addServer.serverUrls' => 'URL server yang',
 			'addServer.serverUrlsHelper' => 'Banyak URL yang diizinkan, dipisahkan oleh commas.',
@@ -6980,8 +7436,6 @@ extension on TranslationsId {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Tidak dapat mencapai server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Daftar yang gagal: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect gagal: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Mendaftar dengan Plex',
 			'addServer.pinExpired' => 'PIN sudah habis sebelum masuk.Sila coba lagi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kegagalan mendaftarkan akun: ${error}',
@@ -7135,6 +7589,9 @@ extension on TranslationsId {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'pada',
 			'homeLayout.resetHeroButtonDescription' => 'Mengalih keluar setiap baris pengaturan pahlawan dan membawa kembali satu banner berputar di atas, seperti sebelum baris pahlawan ada.',
+			'homeLayout.tapHeroCardDescription' => 'Pilih apakah menekan atau memilih kartu Hero memulai playback atau membuka detailnya.',
+			'homeLayout.heroTapPlayDescription' => 'Mulai item yang dipilih segera.',
+			'homeLayout.heroTapDetailsDescription' => 'Buka detail item yang dipilih sebelum memilih tindakan.',
 			'platform.localNetworkPermission' => 'PlezyNG terhubung ke server media dan perangkat playback Anda di jaringan lokal Anda.',
 			'platform.locationPermission' => 'PlezyNG menggunakan akses lokasi ketika iOS membutuhkan untuk mengidentifikasi jaringan lokal Anda dan menghubungkannya ke server media Anda.',
 			'platform.photoLibraryPermission' => 'Pilih gambar dari perpustakaan foto Anda untuk digunakan sebagai karya seni media.',
@@ -7147,8 +7604,12 @@ extension on TranslationsId {
 			'fileSources.source' => 'Sumber',
 			'fileSources.name' => 'Nama',
 			'fileSources.endpoint' => 'URL server',
+			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Masukkan server SMB dan satu folder bersama.',
 			'fileSources.root' => 'Folder atau prefiks',
+			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk menggunakan seluruh folder bersama, atau masukkan folder di dalamnya.',
 			'fileSources.username' => 'Nama Pengguna',
+			'fileSources.smbDomain' => 'Domain (opsional)',
 			'fileSources.password' => 'Kata sandi',
 			'fileSources.token' => 'API Token',
 			'fileSources.accessKey' => 'Akses ke kunci ID',
@@ -7158,6 +7619,8 @@ extension on TranslationsId {
 			'fileSources.clientId' => 'ID pelanggan OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (hanya desktop Google)',
 			'fileSources.allowHttp' => 'Izinkan HTTP tanpa enkripsi di jaringan tepercaya',
+			'fileSources.smbEncryption' => 'Enkripsi koneksi SMB3',
+			'fileSources.smbEncryptionHint' => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.',
 			'fileSources.connect' => 'Sambung',
 			'fileSources.cancel' => 'Batal',
 			'fileSources.save' => 'Simpan',
@@ -7300,12 +7763,25 @@ extension on TranslationsId {
 			'fileSources.useFiles' => 'Menggunakan file dan buku',
 			'fileSources.cancelScan' => 'Batalkan scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Masukkan server SMB dan satu folder bersama.',
-			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk menggunakan seluruh folder bersama, atau masukkan folder di dalamnya.',
-			'fileSources.smbDomain' => 'Domain (opsional)',
-			'fileSources.smbEncryption' => 'Enkripsi koneksi SMB3',
-			'fileSources.smbEncryptionHint' => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.',
+			'fileSources.offlineQuota' => 'Batas unduhan offline',
+			'fileSources.offlineQuotaHelp' => 'Tetapkan ruang maksimum yang digunakan oleh salinan offline, file terimpor, dan muat turun. Mengurangi batas tidak menghapus salinan sedia ada.',
+			'fileSources.offlineStorageUsage' => 'Penyimpanan Offline',
+			'fileSources.reservedStorage' => 'disimpan',
+			_ => null,
+		} ?? switch (path) {
+			'fileSources.downloadQueue' => 'Mengunduh Queue',
+			'fileSources.downloadRunning' => 'Download',
+			'fileSources.downloadQueued' => 'Menunggu',
+			'fileSources.downloadPaused' => 'beristirahat',
+			'fileSources.downloadFailed' => 'Keperluan Retri',
+			'fileSources.importing' => 'Imporsi',
+			'fileSources.importInterrupted' => 'Import terputus · menghapus untuk jelas',
+			'fileSources.errorQuotaExceeded' => 'Meningkatkan batas atau menghapus salinan yang dimuat turun.',
+			'fileSources.errorStorageLow' => 'Tidak ada penyimpanan perangkat gratis yang cukup untuk mempertahankan reserve yang dilindungi.',
+			'fileSources.errorStorageUnavailable' => 'PlezyNG tidak dapat memeriksa penyimpanan perangkat gratis, jadi penulisan dihentikan.',
+			'fileSources.removeDownloadJob' => 'Menghapus download',
+			'fileSources.downloadAlreadyComplete' => 'Download ini selesai sebelum dapat dihapus. item sekarang tersedia offline.',
+			'fileSources.confirmRemoveDownloadJob' => 'Menghapus download ini dan menyingkirkan data yang diunduh secara parsial? posisi dan catatan Anda akan tetap.',
 			'lending.title' => 'Perpustakaan Publik',
 			'lending.add' => 'Tambahkan perpustakaan',
 			'lending.other' => 'Perpustakaan lain',
@@ -7407,6 +7883,12 @@ extension on TranslationsId {
 			'audiobook.statusFinished' => 'selesai',
 			'audiobook.goToTime' => 'Pergi ke Waktu',
 			'audiobook.timeHelp' => 'Waktu: menit: detik, atau menit: detik',
+			'audiobook.recoveryHelp' => 'Ekspor salinan yang disulitkan baru-baru ini sebelum memindahkan atau memperbaiki data sink. Import bergabung dengan keadaan saat ini; mereka tidak pernah mengganti sejarah sink lokal.',
+			'audiobook.recoveryExport' => 'Mengekspor file pemulihan yang disulitkan',
+			'audiobook.recoveryImport' => 'Mengimport file pemulihan yang disulitkan',
+			'audiobook.recoveryImportConfirm' => 'Menggabungkan file pemulihan yang disulitkan ini dengan posisi bacaan dan catatan saat ini? sejarah yang ada akan disimpan. perpustakaan berbagi dan ID item tidak termasuk; menetapkan ID yang sepadan pada setiap perangkat sebelum mengimpor.',
+			'audiobook.recoveryExported' => 'File pemulihan yang disulitkan disimpan.',
+			'audiobook.recoveryImported' => 'Data pemulihan digabungkan.',
 			'sourceSetup.savedCertificate' => 'Sertifikat server tersimpan',
 			'sourceSetup.nfsEndpointInvalid' => 'Masukkan URL NFS, misalnya nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'Tidak ada server DLNA yang ditemukan. Masukkan URL deskripsi perangkat secara manual.',
@@ -7494,8 +7976,6 @@ extension on TranslationsId {
 			'sourceSetup.smbEncrypted' => 'Enkripsi SMB3 aktif',
 			'sourceSetup.smbUnencrypted' => 'Enkripsi SMB3 nonaktif',
 			'sourceSetup.httpUnencrypted' => 'HTTP tanpa enkripsi transport',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Periksa keamanan titik akhir',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} wajib diisi.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Masukkan ${label} dari ${min} hingga ${max}.',
@@ -7503,6 +7983,23 @@ extension on TranslationsId {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identitas klien terpilih: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Nilai ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Mengunduh subtitel: ${title}',
+			'sourceSetup.sharedEntryPair' => 'Berpasangan item ini',
+			'sourceSetup.sharedEntryPairHelp' => 'Masukkan ID yang sama untuk item ini pada setiap perangkat. Gunakan pengidentifikasi perkongsian stabil atau buat satu dan salin ke item yang sesuai. Kemajuan hanya berpasangan ketika jenis file edisi, ukuran, dan pesanan sepadan. Blank menghapus peta ini.',
+			'sourceSetup.sharedEntryId' => 'Identifikasi item',
+			'sourceSetup.generateSharedEntryId' => 'Identifikasi item yang dibagikan',
+			'sourceSetup.sharedLibraryId' => 'ID Perpustakaan Berkongsi (optional)',
+			'sourceSetup.sharedLibraryHelp' => 'Gunakan ID yang sama pada perangkat yang membuka perpustakaan yang sama.ID publik ini membantu membawa kemajuan membaca dan catatan melalui koneksi sumber yang berbeda; itu bukan kata sandi.',
+			'sourceSetup.sharedLibraryInvalid' => 'Gunakan 8-100 huruf, angka, titik, subscores atau hyphens.',
+			'sourceSetup.generateSharedLibraryId' => 'Menghasilkan ID perpustakaan yang dikongsi',
+			'sourceSetup.nfsReadAhead' => 'NFS Read-ahead Permintaan',
+			'sourceSetup.nfsReadAheadHelp' => 'Lebih banyak pembaca paralel dapat meningkatkan lalu lintas pada NAS atau jaringan yang cepat. gunakan 1 jika server membatasi permintaan serentak.',
+			'sourceSetup.nfsReadTest' => 'Mengukur prestasi baca NFS',
+			'sourceSetup.nfsReadTestHelp' => 'Membaca hingga 64 MiB dari file terbesar untuk mengukur koneksi NAS ini.',
+			'sourceSetup.nfsQualificationResult' => 'NFS membaca pengukuran',
+			'sourceSetup.nfsReadBytes' => 'Data yang dibaca',
+			'sourceSetup.nfsReadSpeed' => 'Kecepatan yang diukur',
+			'sourceSetup.nfsReadRequests' => 'Baca Permintaan',
+			'sourceSetup.sharedEntryConflict' => 'ID item yang dikongsi ini sudah dibagi dengan item lain di perpustakaan ini. pilih ID berbeda.',
 			'comics.fitHeight' => 'Sesuaikan tinggi',
 			'comics.readingMode' => 'Mode baca',
 			'comics.paged' => 'Halaman',
@@ -7577,6 +8074,15 @@ extension on TranslationsId {
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
 			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
+			'games.linkSteamAccount' => 'Link Steam account',
+			'games.refreshSteamAccount' => 'Refresh Steam account',
+			'games.unlinkSteamAccount' => 'Unlink Steam account',
+			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
+			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
+			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
+			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
