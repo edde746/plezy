@@ -1,10 +1,21 @@
 # ng-runner-policy: private-jit-only-v1
 name: Samsung Tizen TV
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 # Private ARM tester builds for versioned releases; manual Seller Office handoff remains opt-in.
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: Tizen build and validation action
+        required: true
+        type: choice
+        options: [tizen]
+      runner_pool:
+        description: Runner pool for this workflow
+        required: true
+        type: choice
+        options: [private]
       build_package:
         description: Build an experimental ARM tester TPK after validation
         type: boolean

@@ -1,16 +1,31 @@
 # ng-runner-policy: private-jit-only-v1
 name: Discord Release Announcement
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Release action authorized by private JIT routing
+        required: true
+        type: choice
+        options: [announce-release]
+      runner_pool:
+        description: Runner pool for this announcement
+        required: true
+        type: choice
+        options: [private]
+      release_tag:
+        description: Published stable release tag to announce
+        required: true
+        type: string
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   announce-discord:
     name: Announce published release to Discord
-    if: github.event.release.prerelease == false
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-announce-discord"]}}', github.run_id)) }}
     timeout-minutes: 5
     permissions:
@@ -24,4 +39,9 @@ jobs:
       - name: Send Discord announcement
         env:
           DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-        run: python3 scripts/announce_discord.py
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_JSON_PATH: ${{ runner.temp }}/plezyng-release.json
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RELEASE_JSON_PATH"
+          python3 scripts/announce_discord.py

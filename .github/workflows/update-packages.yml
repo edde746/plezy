@@ -1,11 +1,20 @@
 # ng-runner-policy: private-jit-only-v1
 name: Update Packages
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
+      action:
+        description: Package update action authorized by private JIT routing
+        required: true
+        type: choice
+        options: [update-packages]
+      runner_pool:
+        description: Runner pool for this update
+        required: true
+        type: choice
+        options: [private]
       release_tag:
         description: Published release tag to update packages for
         required: true

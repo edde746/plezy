@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Make scans, platform builds, package uploads, and release announcements manual-only; require each dispatch to name an action and private pool, with no release-event publisher fan-out.
 - Require manual build dispatches to select an action and private pool; release dispatches use an exact version tag, and ordinary tag pushes no longer start builds.
 - Prepare the versioned 2.25.0 main-tag release with private JIT builds across the supported platforms, including ARM webOS and Tizen candidates.
 - Fix private release builds by provisioning a webOS test temp directory and pinned CocoaPods for the Apple targets.

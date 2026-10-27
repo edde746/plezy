@@ -1,8 +1,20 @@
 # ng-runner-policy: private-jit-only-v1
 name: PlezyNG CodeQL
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: CodeQL scan action authorized by private JIT routing
+        required: true
+        type: choice
+        options: [codeql]
+      runner_pool:
+        description: Runner pool for this scan
+        required: true
+        type: choice
+        options: [private]
 
 concurrency:
   group: codeql-main-${{ github.ref }}

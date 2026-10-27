@@ -1,9 +1,21 @@
 # ng-runner-policy: private-jit-only-v1
 name: Dolby Vision fork validation
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 # Runs only when selected from Actions.
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: Isolated validation action
+        required: true
+        type: choice
+        options: [dv-validation]
+      runner_pool:
+        description: Runner pool for this validation
+        required: true
+        type: choice
+        options: [private]
 
 permissions:
   contents: read

@@ -1,9 +1,21 @@
 # ng-runner-policy: private-jit-only-v1
 name: Dolby Vision platform experiments
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 # Runs only when selected from Actions.
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: Platform experiment action
+        required: true
+        type: choice
+        options: [dv-platforms]
+      runner_pool:
+        description: Runner pool for these experiments
+        required: true
+        type: choice
+        options: [private]
 
 permissions:
   contents: read

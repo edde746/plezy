@@ -99,14 +99,14 @@ def main() -> int:
     if not webhook_value:
         print("DISCORD_RELEASE_WEBHOOK is required to announce a release.", file=sys.stderr)
         return 1
-    event_path = os.environ.get("GITHUB_EVENT_PATH", "")
-    if not event_path:
-        print("GITHUB_EVENT_PATH is required.", file=sys.stderr)
+    release_path = os.environ.get("RELEASE_JSON_PATH") or os.environ.get("GITHUB_EVENT_PATH", "")
+    if not release_path:
+        print("RELEASE_JSON_PATH or GITHUB_EVENT_PATH is required.", file=sys.stderr)
         return 1
 
     try:
-        event = json.loads(Path(event_path).read_text(encoding="utf-8"))
-        release = event["release"]
+        event = json.loads(Path(release_path).read_text(encoding="utf-8"))
+        release = event.get("release", event)
         if not isinstance(release, dict):
             raise ValueError("release event data is invalid")
         if release.get("draft") or release.get("prerelease"):

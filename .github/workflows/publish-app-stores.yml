@@ -1,10 +1,20 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish PlezyNG store builds
-run-name: ${{ format('Publish {0} to {1}', inputs.release_tag, inputs.channel) }}
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: Store publication action authorized by private JIT routing
+        required: true
+        type: choice
+        options: [publish-app-stores]
+      runner_pool:
+        description: Runner pool for this publication
+        required: true
+        type: choice
+        options: [private]
       release_tag:
         description: Published GitHub release tag whose signed store build should be submitted
         required: true

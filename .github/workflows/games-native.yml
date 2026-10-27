@@ -1,9 +1,21 @@
 # ng-runner-policy: private-jit-only-v1
 name: Games embedded engine
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 # Runs only when selected from Actions.
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: Embedded engine build and test action
+        required: true
+        type: choice
+        options: [games]
+      runner_pool:
+        description: Runner pool for this build
+        required: true
+        type: choice
+        options: [private]
 
 permissions:
   contents: read

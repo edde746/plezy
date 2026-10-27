@@ -1,11 +1,20 @@
 # ng-runner-policy: private-jit-only-v1
 name: Update AUR package
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
+      action:
+        description: Publication action authorized by private JIT routing
+        required: true
+        type: choice
+        options: [publish-aur]
+      runner_pool:
+        description: Runner pool for this publication
+        required: true
+        type: choice
+        options: [private]
       release_tag:
         description: Published PlezyNG release tag
         required: true
@@ -18,7 +27,6 @@ jobs:
   update-aur:
     name: Update plezyng-bin on AUR
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-update-aur"]}}', github.run_id)) }}
-    if: github.event_name != 'release' || github.event.release.prerelease == false
     steps:
       - name: Require main for manual updates
         if: github.event_name == 'workflow_dispatch'
