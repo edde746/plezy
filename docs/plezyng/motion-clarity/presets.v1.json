@@ -85,6 +85,18 @@
       "artifactProtection": "standard",
       "maxAddedLookaheadMs": 80,
       "bypassHighRateSources": false
+    },
+    {
+      "id": "oled",
+      "look": "continuous",
+      "smoothness": 100,
+      "smoothnessCap": 100,
+      "targetRate": "renderer_reported_display",
+      "artifactProtection": "standard",
+      "maxAddedLookaheadMs": 150,
+      "bypassHighRateSources": false,
+      "requiresMotionCompensatedEngine": true,
+      "qualification": "unqualified-user-selected-not-panel-calibrated"
     }
   ]
 }
