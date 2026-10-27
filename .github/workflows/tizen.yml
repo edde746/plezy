@@ -1,0 +1,79 @@
+# ng-runner-policy: private-jit-only-v1
+name: Samsung Tizen TV
+
+# No push/PR/tag triggers and no publication side effects.
+on:
+  workflow_dispatch:
+    inputs:
+      build_package:
+        description: Build a signed experimental TPK after validation
+        type: boolean
+        default: false
+      architecture:
+        description: ARM TV or x64 emulator (emulator is never a catalogue asset)
+        type: choice
+        options: [arm, x64]
+        default: arm
+      security_profile:
+        description: Existing Samsung signing profile on the provisioned ephemeral runner
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate"]}}', github.run_id)) }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.47.1'
+          cache: true
+          pub-cache: false
+      - name: Verify host validation compiler
+        run: command -v clang
+      - run: flutter pub get --enforce-lockfile
+      - run: python3 -m unittest discover -s scripts/tizen -p 'test_*.py' -v
+      - run: flutter test test/mpv/player_tizen_test.dart test/mpv/webos_media_proxy_test.dart test/media/tizen_playback_profile_test.dart
+      - run: flutter test --dart-define=PLEZY_TIZEN=true test/utils/tizen_platform_test.dart test/services/tizen_plex_playback_test.dart
+
+  package:
+    needs: validate
+    if: inputs.build_package && github.ref == 'refs/heads/main'
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package"]}}', github.run_id)) }}
+    timeout-minutes: 60
+    env:
+      PLEZY_FLUTTER_TIZEN_ROOT: ${{ vars.PLEZYNG_FLUTTER_TIZEN_ROOT }}
+      TIZEN_CMAKE_TOOLCHAIN_ARM: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_ARM }}
+      TIZEN_CMAKE_TOOLCHAIN_X64: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_X64 }}
+      PACKAGE_ARCH: ${{ inputs.architecture }}
+      SIGNING_PROFILE: ${{ inputs.security_profile }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify provisioned SDK and build native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SIGNING_PROFILE" || { echo 'A Samsung signing profile is required.'; exit 1; }
+          test -x "$PLEZY_FLUTTER_TIZEN_ROOT/bin/flutter-tizen" || { echo 'Provision the pinned 2026 Samsung SDK on this private JIT image.'; exit 1; }
+          if [[ "$PACKAGE_ARCH" == arm ]]; then toolchain="$TIZEN_CMAKE_TOOLCHAIN_ARM"; else toolchain="$TIZEN_CMAKE_TOOLCHAIN_X64"; fi
+          test -f "$toolchain" || { echo 'A Samsung compiler/sysroot CMake toolchain is required.'; exit 1; }
+          python3 scripts/tizen/package.py native --arch "$PACKAGE_ARCH" --toolchain "$toolchain" --output build/tizen-native
+      - name: Build and inspect signed TV package
+        run: >-
+          python3 scripts/tizen/package.py build
+          --sdk "$PLEZY_FLUTTER_TIZEN_ROOT" --arch "$PACKAGE_ARCH"
+          --native build/tizen-native --security-profile "$SIGNING_PROFILE"
+          --output build/tizen-release
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: plezyng-tizen-${{ inputs.architecture }}-experimental
+          path: build/tizen-release/
+          if-no-files-found: error
+          retention-days: 14

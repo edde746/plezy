@@ -1057,6 +1057,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
               {'Format': 'vtt', 'Method': 'External'},
             ],
           ],
+          if (PlatformDetector.isTizenBuild())
+            ...tizenPlaybackProfile(audio: audioProfile, burnSubtitles: burnSubtitles),
         },
       },
     );

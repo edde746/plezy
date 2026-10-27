@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'models.dart';
 import 'player/player.dart';
 import 'player/platform/player_webos.dart';
+import 'player/platform/player_tizen.dart';
 import 'player/video_rect_support.dart';
 
 /// Video widget for displaying player output.
@@ -132,6 +133,13 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
+    if (widget.player is PlayerTizen) {
+      final player = widget.player as PlayerTizen;
+      return ValueListenableBuilder<int>(
+        valueListenable: player.surfaceRevision,
+        builder: (context, _, child) => player.videoSurface(),
+      );
+    }
     if (widget.player is PlayerWebOS) {
       final player = widget.player as PlayerWebOS;
       return ValueListenableBuilder<int>(

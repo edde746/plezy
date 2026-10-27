@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../utils/async_singleton.dart';
 import '../utils/device_channel.dart';
+import '../utils/platform_detector.dart';
 import 'settings_service.dart';
 
 /// The video codecs Plezy negotiates with a media server, most efficient
@@ -85,6 +86,10 @@ class VideoDecodeCapabilities {
   /// Whether [codec] should be advertised to a media server. Safe before init.
   static bool accepts(RankedVideoCodec codec) {
     if (isRefusedByUser(codec)) return false;
+    // Samsung's native player has no software decoder fallback. Until a
+    // device probe is implemented/qualified, negotiate the common H.264
+    // baseline instead of inheriting desktop's optimistic HEVC/AV1 default.
+    if (PlatformDetector.isTizenBuild() && codec != RankedVideoCodec.h264) return false;
     final instance = _singleton.instance;
     return switch (codec) {
       RankedVideoCodec.av1 => instance?._hardwareAv1 ?? true,

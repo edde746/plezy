@@ -89,6 +89,8 @@ import 'track_selection_service.dart';
 import 'video_decode_capabilities.dart';
 import '../mpv/mpv.dart';
 import '../utils/codec_utils.dart';
+import '../utils/platform_detector.dart';
+import '../media/tizen_playback_profile.dart';
 
 part 'jellyfin_client/parts/account_preferences.dart';
 part 'jellyfin_client/parts/browse.dart';

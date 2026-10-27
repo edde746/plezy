@@ -79,6 +79,19 @@ dependencies:
   # from the native device log.
   video_player_drm:
     path: packages/webos_plugins/video_player_drm
+  # Samsung's federated implementations. Older package-info/wakelock adapters
+  # intentionally match the platform interfaces pinned by our desktop plugins.
+  shared_preferences_tizen: 2.3.5
+  path_provider_tizen: 2.3.3
+  package_info_plus_tizen: 1.1.2
+  device_info_plus_tizen: 1.4.3
+  connectivity_plus_tizen: 1.3.3
+  url_launcher_tizen: 2.1.7
+  flutter_secure_storage_tizen: 0.1.6
+  wakelock_plus_tizen:
+    path: packages/tizen_plugins/wakelock_plus_tizen
+  video_player_videohole:
+    path: packages/tizen_plugins/video_player_videohole
   path: ^1.9.0
   universal_gamepad: ^1.5.7
   drift: ^2.31.0

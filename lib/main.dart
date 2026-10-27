@@ -345,7 +345,7 @@ String _sentryRelease() {
 }
 
 Future<String?> _sentryNativeDatabasePath() async {
-  if (kIsWeb || !(Platform.isWindows || Platform.isLinux)) return null;
+  if (kIsWeb || !PlatformDetector.isDesktopOS() || !(Platform.isWindows || Platform.isLinux)) return null;
   try {
     final directory = await getApplicationSupportDirectory();
     return p.join(directory.path, 'sentry-native');
@@ -1058,6 +1058,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   });
 
   bestEffort('Fullscreen monitor', () async {
+    if (PlatformDetector.isTizenBuild()) return;
     FullscreenStateManager().startMonitoring();
     if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
       await FullscreenStateManager().enterFullscreen();
@@ -1065,7 +1066,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   });
 
   bestEffort('Gamepad', () {
-    GamepadService.instance.start();
+    if (!PlatformDetector.isTizenBuild()) GamepadService.instance.start();
     if (PlatformDetector.isAppleTV()) AppleTvRemoteTouchService.instance.start();
   });
 

@@ -743,7 +743,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         // (`directStream=1`), not direct play — the Generic profile has no
         // direct-play entry for hls/mpegts and the server says so in its MDE.
         'directPlay': '0',
-        'directStream': directStream ? '1' : '0',
+        'directStream': !PlatformDetector.isTizenBuild() && directStream ? '1' : '0',
         'subtitleSize': '100',
         'audioBoost': '100',
         'location': 'lan',
@@ -751,10 +751,13 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'autoAdjustQuality': '0',
         // Resolution/quality caps ride as plain query params alongside the
         // bitrate limitation clause, as on the library path (issue #1859).
-        // Null exactly for the original preset.
-        if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+        // Null for Original except on the conservative Samsung TV profile.
+        if (PlatformDetector.isTizenBuild())
+          'videoResolution': tizenVideoResolution(preset.videoResolution)
+        else if (preset.videoResolution != null)
+          'videoResolution': preset.videoResolution!,
         if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
-        'directStreamAudio': directStreamAudio ? '1' : '0',
+        'directStreamAudio': !PlatformDetector.isTizenBuild() && directStreamAudio ? '1' : '0',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
         // `none` (the default) prevents Plex from auto-selecting and burning

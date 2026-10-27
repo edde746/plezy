@@ -50,6 +50,10 @@ class DeviceIdentityService {
     final deviceInfo = DeviceInfoPlugin();
     final isTv = PlatformDetector.isTV();
 
+    if (PlatformDetector.isTizenBuild()) {
+      return const DeviceIdentity(platform: 'Tizen', deviceModel: 'Samsung TV', deviceName: 'PlezyNG TV', isTv: true);
+    }
+
     try {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;

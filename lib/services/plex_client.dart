@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../media/tizen_playback_profile.dart';
+import '../utils/platform_detector.dart';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -152,7 +154,7 @@ const _plexHlsSubtitleTranscodeTarget =
 
 /// Containers the VOD decision must echo back before a start path is handed
 /// to the player (see `requiredContainer` on [_runTranscodeDecision]).
-const _plexHlsVodContainer = 'mp4';
+String get _plexHlsVodContainer => PlatformDetector.isTizenBuild() ? 'mpegts' : 'mp4';
 const _plexHlsVodTsContainer = 'mpegts';
 
 /// Converted-download target: one progressive MKV file with H.264 video,
@@ -173,7 +175,16 @@ String _plexConvertedDownloadProfileExtra(int maxVideoBitrateKbps) => [
 ].join('+');
 
 String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, int? maxVideoBitrateKbps}) {
-  final clauses = <String>['add-settings(DirectPlayStreamSelection=true)'];
+  if (PlatformDetector.isTizenBuild()) {
+    videoTranscodeTarget =
+        'add-transcode-target(type=videoProfile&context=streaming'
+        '&protocol=hls&container=mpegts&videoCodec=h264&audioCodec=aac)';
+  }
+  final clauses = <String>[
+    'add-settings(DirectPlayStreamSelection=true)',
+    if (PlatformDetector.isTizenBuild())
+      'add-limitation(scope=videoAudioCodec&scopeName=*&type=upperBound&name=audio.channels&value=2&replace=true)',
+  ];
   if (maxVideoBitrateKbps != null) {
     clauses.add(
       'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
@@ -3297,8 +3308,11 @@ class PlexClient
       // `directStream=1` it copies the audio and encodes the video to the
       // first target codec it can produce, at source resolution and 20 Mbps
       // when no preset caps it.
-      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused ? '1' : '0',
-      'directStream': isOriginal ? '1' : '0',
+      'directPlay':
+          !PlatformDetector.isTizenBuild() && selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused
+          ? '1'
+          : '0',
+      'directStream': !PlatformDetector.isTizenBuild() && isOriginal ? '1' : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
       'location': 'lan',
@@ -3308,10 +3322,13 @@ class PlexClient
       // bitrate limitation clause alone leaves a 4K source at 2160p, starving
       // the encode and breaking the picker's "1080p" promise (issue #1859).
       // Both are honoured by the decision and start endpoints on a real PMS.
-      // Null exactly for the original preset.
-      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      // Null for Original except on the conservative Samsung TV profile.
+      if (PlatformDetector.isTizenBuild())
+        'videoResolution': tizenVideoResolution(preset.videoResolution)
+      else if (preset.videoResolution != null)
+        'videoResolution': preset.videoResolution!,
       if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
-      'directStreamAudio': '1',
+      'directStreamAudio': PlatformDetector.isTizenBuild() ? '0' : '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
       // `subtitles` is the only subtitle knob this endpoint honours. Which
@@ -3933,11 +3950,22 @@ class PlexClient
       // Tracks consult the music preset — [qualityPreset] is video-shaped
       // (resolution/videoQuality) and is ignored for audio.
       final isTrack = options.metadata.kind == MediaKind.track;
-      final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
+      final requestedAudioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
+      final audioPreset = PlatformDetector.isTizenBuild() && requestedAudioPreset.isOriginal
+          ? AudioQualityPreset.high
+          : requestedAudioPreset;
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
           : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
+      if (PlatformDetector.isTizenBuild() &&
+          wantTranscode &&
+          (options.sessionIdentifier == null || options.transcodeSessionId == null)) {
+        throw PlaybackException(
+          'Samsung TV playback requires a server playback session.',
+          reason: PlaybackFailureReason.noPlayableSource,
+        );
+      }
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -4061,6 +4089,9 @@ class PlexClient
   /// hardware probe reports without a decoder still direct-plays, as it
   /// always has on Plex.
   bool _sourceCodecRefused(PlexVideoPlaybackData data) {
+    // The initial Samsung port uses server-normalized video until direct-play
+    // containers, codecs and audio routes have been qualified on hardware.
+    if (PlatformDetector.isTizenBuild()) return true;
     final codec = RankedVideoCodec.fromServerCodec(_selectedVersion(data)?.videoCodec);
     if (codec == null || !VideoDecodeCapabilities.isRefusedByUser(codec)) return false;
     appLogger.i('Source codec ${codec.id} is refused in settings; transcoding');
@@ -4080,6 +4111,12 @@ class PlexClient
     PlaybackInitializationOptions options, {
     int? activeAudioStreamId,
   }) {
+    if (PlatformDetector.isTizenBuild()) {
+      throw PlaybackException(
+        'Samsung TV requires a compatible server transcode for this media.',
+        reason: PlaybackFailureReason.noPlayableSource,
+      );
+    }
     final fallbackReason = outcome == TranscodeDecisionOutcome.directPlayOnly
         ? TranscodeFallbackReason.directPlayOnly
         : TranscodeFallbackReason.decisionFailed;

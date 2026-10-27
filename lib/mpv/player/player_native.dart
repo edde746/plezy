@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
@@ -85,11 +86,12 @@ class PlayerNative extends PlayerBase {
   static bool? debugUseLinuxVideoPlane;
 
   /// Whether this process drives video through the Linux Wayland plane, which
-  /// is `Platform.isLinux` and nothing finer — Linux has no other render path.
+  /// excludes native TV ports that report Linux but use their own media plane.
   ///
   /// The one place the test override is resolved, so production code and host
   /// tests agree on which path is live without reading a test-only field.
-  static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
+  static bool get usesLinuxVideoPlane =>
+      debugUseLinuxVideoPlane ?? (Platform.isLinux && !PlatformDetector.usesNativeTvMedia());
 
   /// Overrides the Apple audio-output detection in host tests.
   @visibleForTesting

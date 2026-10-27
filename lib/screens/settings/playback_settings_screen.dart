@@ -109,10 +109,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               children: [
                 if (Platform.isAndroid) _playerBackendSelector(),
                 if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
-                if (!exoActive) _mpvConfigTile(),
-                _hardwareDecodingTile(),
+                if (!exoActive && !PlatformDetector.isTizenBuild()) _mpvConfigTile(),
+                if (!PlatformDetector.isTizenBuild()) _hardwareDecodingTile(),
                 if (exoActive) _playbackBufferTile(),
-                _streamBufferSizeTile(exoActive: exoActive),
+                if (!PlatformDetector.isTizenBuild()) _streamBufferSizeTile(exoActive: exoActive),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
                 if (isMobile && !PlatformDetector.isTV() && !PlatformDetector.isAutomotive())
@@ -139,13 +139,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   pref: SettingsService.experimentalDolbyVision,
                   icon: Symbols.hdr_on_rounded,
                   title: t.settings.experimentalDolbyVision,
-                  subtitle: Platform.isLinux && !PlatformDetector.isWebOSBuild()
+                  subtitle: Platform.isLinux && !PlatformDetector.usesNativeTvMedia()
                       ? t.settings.experimentalDolbyVisionDescription
                       : t.settings.dvExperimentUnavailableDescription,
-                  enabled: Platform.isLinux && !PlatformDetector.isWebOSBuild(),
+                  enabled: Platform.isLinux && !PlatformDetector.usesNativeTvMedia(),
                 ),
                 if (Platform.isLinux &&
-                    !PlatformDetector.isWebOSBuild() &&
+                    !PlatformDetector.usesNativeTvMedia() &&
                     svc.read(SettingsService.experimentalDolbyVision))
                   SettingSwitchTile(
                     pref: SettingsService.dvCompatibilityFallback,
@@ -158,29 +158,30 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   icon: Symbols.info_rounded,
                   title: t.settings.dvExperimentDiagnostics,
                   subtitle: t.settings.dvExperimentDiagnosticsDescription,
-                  enabled: !PlatformDetector.isWebOSBuild(),
+                  enabled: !PlatformDetector.usesNativeTvMedia(),
                 ),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.
                 if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
                 // tile disappears while the ExoPlayer backend is active.
-                if (!exoActive) _deinterlaceTile(),
+                if (!exoActive && !PlatformDetector.isTizenBuild()) _deinterlaceTile(),
                 // TODO: "Extend video into display cutout" toggle (#1769)
                 // goes here, Android-only.
               ],
             ),
 
-            SettingsGroup(
-              title: t.settings.audio,
-              children: [
-                if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
-                _audioChannelLimitTile(exoActive: exoActive),
-                // Only a stereo fold mixes the center away; any fold can clip.
-                if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
-                if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
-                _maxVolumeTile(),
-              ],
-            ),
+            if (!PlatformDetector.isTizenBuild())
+              SettingsGroup(
+                title: t.settings.audio,
+                children: [
+                  if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
+                  _audioChannelLimitTile(exoActive: exoActive),
+                  // Only a stereo fold mixes the center away; any fold can clip.
+                  if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
+                  if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
+                  _maxVolumeTile(),
+                ],
+              ),
 
             SettingsGroup(
               title: t.settings.quality,
@@ -190,7 +191,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 // Only a phone/tablet has a cellular radio; desktop and TV
                 // never report a cellular-only connection.
                 if (isMobile) _cellularQualityTile(),
-                _directPlayCoveredQualityTile(),
+                if (!PlatformDetector.isTizenBuild()) _directPlayCoveredQualityTile(),
                 // Desktop has no hardware-decode probe, so this is where a
                 // machine too weak for a codec says so (#2443).
                 if (PlatformDetector.isDesktopOS()) _videoCodecsTile(),
@@ -213,18 +214,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   title: t.settings.autoDownloadPreferredSubtitle,
                   subtitle: t.settings.autoDownloadPreferredSubtitleDescription,
                 ),
-                SettingNavigationTile(
-                  icon: Symbols.subtitles_rounded,
-                  title: t.settings.subtitleStyling,
-                  subtitle: t.settings.subtitleStylingDescription,
-                  destinationBuilder: (_) => const SubtitleStylingScreen(),
-                ),
+                if (!PlatformDetector.isTizenBuild())
+                  SettingNavigationTile(
+                    icon: Symbols.subtitles_rounded,
+                    title: t.settings.subtitleStyling,
+                    subtitle: t.settings.subtitleStylingDescription,
+                    destinationBuilder: (_) => const SubtitleStylingScreen(),
+                  ),
               ],
             ),
 
             _seekAndTimingGroup(),
             _autoPlayAndSkipGroup(),
-            _musicPlaybackGroup(),
+            if (!PlatformDetector.isTizenBuild()) _musicPlaybackGroup(),
             _behaviorGroup(context, isMobile),
             if (isMobile) _gesturesGroup(),
             _rememberPlayerChangesGroup(),
