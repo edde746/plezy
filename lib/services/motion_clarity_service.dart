@@ -471,7 +471,10 @@ class MotionClarityService {
     _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
     _comparisonBypass = false;
     _requiresSourceReload = beforeSourceOpen ? false : needsReload;
-    if (!beforeSourceOpen) _startHealthMonitor();
+    if (!beforeSourceOpen) {
+      _stopHealthMonitor();
+      _startHealthMonitor();
+    }
     return MotionClarityApplyResult(
       isSupported: true,
       isConfigured: true,
@@ -553,6 +556,10 @@ class MotionClarityService {
     _samplingHealth = true;
     try {
       final rawCount = await _readProperty('frame-drop-count');
+      if (_currentEngine != MotionClarityEngine.motionCompensated || !_currentPreset.interpolationEnabled) {
+        _stopHealthMonitor();
+        return;
+      }
       final count = int.tryParse((rawCount ?? '').trim());
       if (count == null) {
         _healthReadFailures++;
