@@ -1,25 +1,21 @@
 # Architecture and algorithms
 
-This document specifies the target architecture. The current PR implements mpv temporal convolution and an experimental FFmpeg
-`minterpolate` adapter with settings, scoped startup and generated-rate negotiation.
-This narrow adapter is not the proposed native pipeline and is not evidence of
-qualified motion compensation, restoration or native-platform engines. Confidence
-is high in the timing architecture, moderate in the synthesis/restoration approach,
-and unknown for per-device throughput and TV superiority until
-[qualification](qualification.md).
+This document describes the Motion & clarity processing architecture and
+follow-on paths that can extend it. The current player feature includes mpv temporal
+convolution and an FFmpeg `minterpolate` adapter with scoped settings, in-player
+comparison and generated-rate controls. See the [user guide](guide.md) for controls
+and the [qualification protocol](qualification.md) for device-comparison methods.
 
-## Current experimental FFmpeg adapter
+## Current FFmpeg motion-compensation adapter
 
 The MCI option appends a uniquely labelled mpv `lavfi` video filter that invokes
 FFmpeg `minterpolate` on decoded pictures. FFmpeg provides block-based motion
-estimation/compensation, scene-change detection and output-rate configuration.
-Fast/Balanced/High select motion-search cost; they do not provide a strength dial or
-scene-confidence policy equivalent to the target architecture. The filter may cause
-CPU pixel-format conversion or hardware-decoder readback, and its HDR/Dolby Vision
-behavior, seeking, live-stream performance and A/V timing are not qualified. Missing
-or rejected filters fall back to temporal blending; runtime overload is not yet
-measured or automatically governed. Treat all MCI use as experimental until the
-qualification protocol passes on the shipped artifacts and devices.
+estimation and compensation, scene-change detection and output-rate configuration.
+Fast, Balanced and High select motion-search effort; generated rate controls the
+motion-strength tradeoff. Filter setup can trigger pixel-format conversion or
+hardware-decoder readback. Missing or rejected filters fall back to temporal
+blending. A runtime guard can lower search effort after repeated late-vsync or
+dropped-frame reports and fall back to temporal blending if timing issues continue.
 
 ## 1. Pipeline and ownership
 

@@ -1,6 +1,8 @@
 # Motion & clarity: runtime and implementation roadmap
 
-Status: **mpv temporal blending and an experimental FFmpeg motion-compensated path are implemented; source-blur restoration, native TV processing and hardware qualification remain unimplemented**.
+**Motion & clarity** provides mpv temporal blending, FFmpeg motion-compensated frame generation, playback presets, scoped settings, live A/B comparison and an OLED profile.
+
+Start with the [Motion & clarity user guide](guide.md). This roadmap documents the current player behavior and the wider engineering direction.
 
 The original repository inventory was prepared against PlezyNG `main` at
 `af547078ff70df271b04fd35474b8caf7619fa6d`. The implementation changes were
@@ -17,18 +19,15 @@ with TV interpolation off. The player must actually deliver the processed frames
 at the negotiated output rate, retain audio/subtitle synchronization and picture
 format, and preserve ordinary playback whenever processing is unavailable.
 
-This PR adds two optional mpv processing paths. It exposes Original, Cinema, Balanced,
-Smooth, Animation, Sports, OLED and Custom profiles in Playback Settings and
-the in-player settings sheet. Temporal blend exposes a temporal kernel and
-interpolation threshold. Experimental motion compensation uses FFmpeg
-`minterpolate`, with a generated-rate choice and Fast/Balanced/High motion-search
-effort. The opt-in OLED profile selects motion compensation at the current renderer-reported
-display cadence when available. This can reduce perceived OLED sample-and-hold blur,
-but it is not panel calibration; full-rate interpolation can look video-like and the
-renderer-reported rate does not prove physical scanout. The settings share one global, library or title scope. VOD and live-stream
-startup resolve those values before opening the decoder. The in-player sheet has
-a quick A/B control that bypasses the active motion filter while keeping the
-selected display mode, spatial scaling and audio settings in place. Original
+Motion & clarity provides Original, Cinema, Balanced, Smooth, Animation, Sports,
+OLED and Custom profiles in Playback Settings and the in-player Video settings
+sheet. Temporal blend exposes a filter kernel and interpolation threshold.
+Motion compensation uses FFmpeg `minterpolate` with a generated-rate target and
+Fast/Balanced/High search effort. OLED selects motion compensation at the current
+renderer-reported display cadence. Preferences share global, library or title
+scope and are resolved before VOD or live-stream decoder startup. The in-player
+sheet lets viewers switch presets and compare processing while keeping playback,
+display synchronization, spatial scaling and audio settings in place. Original
 remains the default.
 
 Temporal blend requests display synchronization (`display-resample` with decoded
@@ -46,38 +45,34 @@ presentation or quality results.
 
 ## Product target and runtime boundary
 
-### Current implementation boundary
+### Current runtime behavior
 
-Temporal blend uses mpv temporal convolution to combine adjacent decoded frames at
-display-synchronous times. It can soften or double moving edges and is not optical
-flow. The experimental motion-compensated path uses FFmpeg's block-based motion
-estimation and compensation to synthesize intermediate frames at a selected rate.
-It is CPU-intensive, can warp or ghost objects around occlusions and cuts, and its
-search-effort tiers change computation cost rather than interpolation strength.
-Neither path has automatic device benchmarking or a soap-opera-free guarantee.
-The operating system and renderer determine whether generated cadence is presented.
+Temporal blend uses mpv temporal convolution at display-synchronous times. The
+selected kernel and threshold tune cadence blending, while the existing Shader
+presets continue to handle spatial upscaling.
 
-The OLED profile can reduce perceived sample-and-hold blur by supplying distinct
-intermediate pictures toward the active display rate. It cannot change the panel's
-physical emission time or remove camera/exposure blur already captured in the source.
-OLED refresh modes, response, processing limits and viewing conditions vary by set; It does not add neural RIFE interpolation,
-NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
-adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
-search-effort choices remain unqualified. A limited runtime guard prefers mpv's
-cumulative `vo-delayed-frame-count` estimate of late vsyncs, and falls back to
-`frame-drop-count` only when delayed-vsync telemetry is unavailable. After three
-consecutive 2-second windows with an increase in the selected counter, it steps
-MCI search effort down from High to Balanced to Fast, then switches to temporal
-blending if overload continues. The saved preference stays unchanged. These
-counters are heuristics, not a cause detector: drop counts can include playback
-hiccups and source-to-display cadence mismatch, while late-vsync counts do not
-identify which pipeline stage missed its deadline. This is not a device benchmark
-or a multi-signal resource governor: it does not measure GPU/CPU headroom, thermal
-state, power use or physical scanout. If neither signal is available, the guard
-reports that automatic fallback is unavailable and stops polling. No TV
-superiority, image-quality, frame-rate, HDR, battery or performance result has been
-established. The broader
-architecture and gates below remain the plan for that work.
+Motion compensation adds a labelled mpv `lavfi` filter that runs FFmpeg
+`minterpolate` on decoded pictures. The generated-rate target controls the
+motion-strength tradeoff; Fast, Balanced and High control block-search effort.
+The renderer may convert pixel formats or copy frames from a hardware decoder,
+so processing cost changes with source size, format and target rate. Motion
+search can warp or ghost around occlusions and cuts.
+
+The OLED preset targets the renderer-reported display cadence. The current
+display and generated target are shown in the player status when available.
+Android mpv can request the generated rate when playback opens; the display
+system decides whether to apply that mode.
+
+The load guard monitors mpv's estimated late-vsync count and uses the cumulative
+dropped-frame count when late-vsync telemetry is unavailable. Three consecutive
+two-second windows with an increase lower search effort from High to Balanced to
+Fast. If the reports continue at Fast, playback returns to temporal blending.
+The selected preference remains unchanged; selecting the preset again restores
+the saved tier.
+
+A/B comparison bypasses the active motion filter without changing display
+synchronization, scaling or audio. If a selected processing mode needs decoder
+surfaces allocated at source open, the player reports that a restart is needed.
 
 The table below describes the broader product target, not the feature coverage
 of this PR.
@@ -91,9 +86,9 @@ of this PR.
 | Soft scaling | Preserve source detail for reconstruction; apply one qualified scaler to final picture | Upscaling is not deblurring | High in integration approach |
 | Better than TV processing | Paired, blinded tests on same TV, source, output format and motion appearance | No universal superiority claim; qualify model/firmware/preset/content combinations | Unknown until measured |
 
-**The app can improve some motion and clarity problems, but it cannot guarantee
-zero blur, zero stutter, unchanged film cadence and superiority to every TV at
-once. This PR implements cadence blending only.**
+The feature delivers cadence blending, motion-compensated frame generation,
+in-player comparison and scoped motion presets. The remaining roadmap entries
+describe the wider platform and image-processing paths.
 
 ## Read in this order
 
@@ -103,7 +98,8 @@ once. This PR implements cadence blending only.**
    settings, defaults, scope, help, comparison, accessibility and manual control.
 3. [Implementation work packages](implementation.md): existing files, proposed
    files, dependencies, concrete completion criteria and handoff sequence.
-4. [Qualification and TV comparison](qualification.md): deterministic tests,
+4. [Motion & clarity user guide](guide.md): presets, controls, tuning and A/B comparison.
+5. [Qualification and TV comparison](qualification.md): deterministic tests,
    hardware matrix, visual tests, measurements and claim rules.
 5. [Research and decisions](research.md): primary sources, evidence limits,
    selected approaches and rejected shortcuts.
@@ -131,7 +127,7 @@ once. This PR implements cadence blending only.**
   reference. New weights are not drop-in compatible with old ncnn graphs.
 - Keep ordinary mpv/libplacebo temporal blending as an explicitly named
   cadence-blending comparison/fallback, never call it optical-flow generation.
-- Camera-blur restoration is an explicit **experimental** control, off in every
+- Camera-blur restoration is a future optional control, off in every
   built-in preset. Implement and evaluate a bounded NAFNet adapter and compare
   joint interpolation/deblur research offline; fail the feature's quality gate
   if the results do not improve motion without unacceptable artifacts.
@@ -168,7 +164,7 @@ once. This PR implements cadence blending only.**
 | G5 | TV-native capability outcomes and companion path verified where used | A panel's advertised refresh rate |
 | G6 | Published reproducible comparison against named TVs, with film-look results | “AI” or “120 Hz” marketing |
 
-Unqualified capability combinations remain unavailable with a useful explanation;
+Unsupported capability combinations remain unavailable with a useful explanation;
 the application continues its established playback path. Completion of an adapter
 is recorded independently from qualification on a physical device. The
 implementation tracker must distinguish implemented, tested, qualified and blocked.

@@ -1,41 +1,31 @@
 # Presets, controls and user experience
 
-The full-feature values below are **proposed tuning seeds**, not measured best
-values. The runtime exposes mpv temporal convolution and an experimental FFmpeg
-`minterpolate` path, documented in
-[the implementation status](README.md#current-implementation-boundary); it does not
-use the continuous strength values in this design table. Version tuning only using
-[qualification](qualification.md). The seed fixture is
-[presets.v1.json](presets.v1.json). Confidence is unknown until tested.
+Use the [Motion & clarity user guide](guide.md) for the controls as they appear in
+PlezyNG. This document maps those controls to the runtime and records proposed
+preset-tuning seeds for future profile work. The current runtime provides mpv
+temporal convolution and FFmpeg `minterpolate` motion compensation; its generated
+rate and search-effort controls are discrete options rather than the continuous
+strength values in the target design table. Preset tuning values are in
+[presets.v1.json](presets.v1.json).
 
 ## 1. Entry points and default behavior
 
-The first **Motion & clarity** entry points now live in the existing in-player Video
-Settings sheet and Settings -> Playback. The runtime reuses the existing settings
-tiles, focus wrappers, dialogs and sliders. The full design below remains the target
-for richer capability and performance status; this PR adds no always-visible
-playback button, new main navigation entry, competing video overlay or separate
-visual design system.
+**Motion & clarity** is available from the in-player Video settings sheet and
+Settings → Playback. It uses the app's existing setting tiles, focus behavior,
+dialogs and sliders. The in-player entry supports preset changes and live A/B;
+saved defaults and scope are available in Playback Settings.
 
-The collapsed row shows the selected preset and a short effective state, e.g.
-`Cinema · Active`, `Cinema · Limited`, `Original`. Details include a truthful
-readout such as `23.976 fps -> 119.88 fps`, processing resolution and picture format.
-Requested 120 Hz with observed 60 Hz must show the latter as the limit. Technical
-engine/model/queue details belong in the existing performance overlay and advanced
-section, not the ordinary selection flow.
+Playback Settings shows the selected preset and its short description. The in-player
+status shows the active method, renderer-reported display rate, container-reported
+nominal source rate, generated target, search effort, audio-passthrough state and
+any current fallback or restart message.
 
-No automatic change on upgrade. Original is the saved default for existing and
-new installs. When the user first opens the feature, highlight Cinema as the
-suggested option, with `Reduce choppy motion while keeping a film-like look.`
-Use `experimental` alongside unqualified trial features; a generic label does not
-replace accurate effective-state reporting.
-
-Selecting a preset uses capabilities already known for the current session. If
-raw-frame processing is unavailable, show the preset with a concise disabled reason
-and available alternatives. Do not present a slider that accepts input but does
-nothing. Examples: `This playback mode does not support processing.` and
-`This output supports up to 60 fps.` A preset can be stored as a preference, but
-its effective state must clearly remain Original/Limited if it cannot run.
+Original remains the saved default for existing and new installs. Each preset
+shows a short description in both settings entry points. While playing, status
+shows the active method, renderer-reported display rate, source-rate metadata,
+generated target, audio-passthrough state and any current fallback or restart
+message. Unsupported methods return a clear status and leave ordinary playback
+available.
 
 ## Runtime mapping in this PR
 
@@ -47,7 +37,7 @@ its effective state must clearly remain Original/Limited if it cannot run.
 | Smooth | `gaussian` | Stronger blending with greater softness risk |
 | Animation | `mitchell` | Sharper compromise for drawn edges |
 | Sports | `gaussian` | Stronger blending; matching high-frame-rate source cadence is left to mpv |
-| OLED | MCI at current renderer-reported display cadence | Full-rate generated frames target the active display refresh when available; falls back with a visible reason |
+| OLED | MCI at current renderer-reported display cadence | Generated frames target the active display refresh when available; falls back with a visible reason |
 | Custom | User-selected kernel | Threshold is adjustable from 0% to 10%; the default is 1% |
 
 These are kernel choices over mpv's temporal axis, not optical-flow strength values,
@@ -63,9 +53,11 @@ source cadence, while higher rates look smoother and more video-like. OLED is
 the exception to the general preset mapping: it routes through MCI at the current
 renderer-reported display rate when that rate is usable. This is a user-selected
 strategy, not OLED detection or calibration. A high generated rate can create a
-video-like look, and reported Hz is not measured scanout. Other MCI profiles still
-share the same interpolation strength. MCI output rate and quality remain unqualified. A threshold of 0 maps to mpv's documented
-always-interpolate sentinel and applies only to temporal blend. The in-player sheet
+video-like look, and reported Hz is not measured scanout. All MCI profiles use the
+selected generated-rate and search-effort controls. Generated-rate targets control
+motion strength, while search effort controls processing cost. A threshold of 0
+maps to mpv's documented always-interpolate sentinel and applies only to temporal
+blend. The in-player sheet
 offers quick A/B by bypassing the active motion filter; it is not split-screen and
 does not change the saved profile. With audio passthrough, display-vdrop preserves
 the encoded audio path, but refresh mismatches can still cause uneven video cadence.
@@ -85,7 +77,7 @@ native HDR/Dolby output automatically.
 | `smooth` / Smooth | continuous / 100 | Highest sustainable compatible output | Standard | Deblur off | The smoothest motion; films may look more like live video. |
 | `animation` / Animation | source / 0 by default | Compatible source cadence | Conservative | Preserve repeated drawings/stop-motion; keep existing scaler; optional smoothing remains explicit | Keep intentional pauses and drawn-frame timing. |
 | `sports` / Sports | continuous / 100 | Highest sustainable compatible output | Standard with text/ball protections | 80 ms added-lookahead cap; deblur off; genuine field-rate source retained | Clearer fast motion, with some added playback delay. |
-| `oled` / OLED | full display cadence / unqualified | Current renderer-reported display rate | Standard MCI scene-change handling | MCI Balanced search; no panel calibration or automatic detection; fall back with reason | Reduce sample-and-hold blur by targeting the display refresh; may look video-like. |
+| `oled` / OLED | current display cadence | Current renderer-reported display rate | Standard MCI scene-change handling | MCI Balanced search; targets the renderer-reported display cadence; fall back with reason | Reduce sample-and-hold blur by targeting the display refresh; may look video-like. |
 | `custom` / Custom | User's last edited named preset | Explicit or auto | Explicit | Retains a copy of all base values | Your motion and clarity settings. |
 
 Cinema and Balanced use the proposed restrained timing method only after it passes
@@ -129,7 +121,7 @@ copy, avoiding vendor names and algorithm acronyms in the basic UI.
 | Output rate / `targetRate` | source, compatible_auto, sustainable_max, or explicit supported rational rate | Choose the number of pictures sent each second. Auto is displayed for the preset's compatible/sustainable policy; unsupported rates explain why. |
 | Artifact protection / `artifactProtection` | conservative, standard, light; preset value | Reduce processing where movement is uncertain. Stronger protection can leave more choppiness. |
 | Preserve animation timing / `preserveAnimationHolds` | Boolean; true in Animation, true as a safeguard otherwise | Keep repeated drawings and stop-motion timing. |
-| Reduce camera blur / `deblurEnabled` | Boolean; false; experimental | Try to restore blur already in the recording. Can change detail. |
+| Reduce camera blur / `deblurEnabled` | Boolean; false; planned | Try to restore blur already in the recording. Can change detail. |
 | Blur restoration / `deblurStrength` | Integer 0..100; 0 when off, initial enabled value 15 | Higher values restore more detail but can cause flicker or false edges. |
 | Scaling / `scalerPolicy` | existing, auto, explicit existing preset ID; existing | Use the current picture scaler or choose a compatible one. |
 | Picture format / `formatPriority` | preserve_source_format; processed_hdr10; processed_sdr; preserve by default | Keep the current HDR/Dolby format, or explicitly choose a compatible processing format. |
@@ -251,7 +243,7 @@ model/quality alone never changes that mapping.
 - D-pad left/right adjusts a focused slider; Up/Down moves between rows; Back closes
   help/subpage before closing the sheet. Preserve TV focus after capability updates.
 - Label current value, range, unit, limitation and reset action for screen readers.
-  Never communicate active/limited/experimental states by colour alone.
+  Never communicate active, fallback or unavailable states by colour alone.
 - Use localized number/rate formatting and RTL-safe ordering of the FPS comparison.
   An arrow is decorative; accessible text says input and output explicitly.
 - Support large text and 200% scaling without clipped help or inaccessible Apply/

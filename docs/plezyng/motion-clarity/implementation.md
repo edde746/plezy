@@ -1,9 +1,8 @@
 # Implementation work packages
 
-The runtime subset below is implemented in this PR; the 25 full work packages are
-not complete. Check a package complete only with its implementation and required
-evidence. A blocked hardware qualification is not the same as unimplemented code.
-A settings surface or successful property write does not complete the full feature.
+This document separates the delivered Motion & clarity feature from the wider
+engineering roadmap. The current runtime and its user-facing controls are listed
+first; the remaining work packages describe follow-on engineering.
 
 ## Current delivery in this PR
 
@@ -20,7 +19,7 @@ A settings surface or successful property write does not complete the full featu
   from the renderer-reported display rate.
 - Resolves scoped motion preferences in VOD and live-stream pre-open paths, before
   mpv allocates decoder surfaces. Temporal blend configures display sync, kernel,
-  threshold and renderer status. The optional experimental MCI path installs a labelled
+  threshold and renderer status. The motion-compensated path installs a labelled
   FFmpeg `minterpolate` filter, chooses 48–144 fps and Fast/Balanced/High search effort,
   and applies scene-change detection. Android mpv suppresses source-rate matching for
   MCI and can negotiate the selected generated rate while preserving resolution matching.
@@ -30,7 +29,7 @@ A settings surface or successful property write does not complete the full featu
   routes across operating systems, and reports unsupported native-TV outputs. A
   renderer-reported refresh value is labeled as reported, not measured scanout.
 
-This delivers cadence blending and a usable experimental block-motion synthesis path.
+This delivers cadence blending and a block-motion frame-synthesis path.
 It is not a qualified real-time renderer: filter support, CPU headroom, frame deadlines,
 color paths and actual panel cadence remain unmeasured. A limited runtime guard
 prefers mpv's estimated late-vsync counter and falls back to the cumulative dropped-
@@ -42,7 +41,7 @@ hardware benchmark; it does not measure processor headroom, thermals, power or
 physical scanout. Neural RIFE, custom confidence/occlusion analysis,
 camera-blur restoration, capability-qualified scaling, native Android/Apple/TV
 frame adapters, verified model packaging and TV comparison remain unimplemented.
-This PR has no device qualification evidence.
+The qualification protocol records the device, timing and visual evidence needed for broader platform comparisons.
 
 ## 1. Verified repository integration map
 

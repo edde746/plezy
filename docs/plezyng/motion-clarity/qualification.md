@@ -104,7 +104,7 @@ deterministic scheduling and no unexplained quality regressions.
 
 At each advertised resolution/format/output/engine tuple:
 
-For the currently implemented experimental FFmpeg path, record the exact mpv and
+For the current FFmpeg motion-compensated path, record the exact mpv and
 FFmpeg build hashes and prove `lavfi`/`minterpolate` availability on every shipped
 artifact. Characterize 23.976/24, 25, 29.97/30, 50, 59.94/60 source rates against
 each selectable 48–144 fps target the device can actually request. Exercise hard
