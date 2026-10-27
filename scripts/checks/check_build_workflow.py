@@ -112,7 +112,14 @@ for legacy_job in (
     require(f"  {legacy_job}:\n" not in text, f"legacy job {legacy_job} must stay removed")
 
 windows = job("build-windows")
-require("runs-on: ${{ matrix.runner }}" in windows, "Windows must use its matrix runner")
+require(
+    '"group":"packer-windows"' in windows
+    and "ng-main-run-{0}" in windows
+    and "gha-{0}-{1}-build-windows" in windows
+    and "runs-on: windows-latest" not in windows
+    and "runs-on: windows-11-arm" not in windows,
+    "Windows matrix must use the private Packer JIT route",
+)
 require("fail-fast: false" in windows, "Windows matrix must not cancel its other architecture")
 require(
     re.search(
@@ -201,7 +208,14 @@ for expected in (
     )
 
 linux = job("build-linux")
-require("runs-on: ${{ matrix.runner }}" in linux, "Linux must use its matrix runner")
+require(
+    '"group":"ng-shared-main-jit"' in linux
+    and "ng-main-run-{0}" in linux
+    and "gha-{0}-{1}-build-linux" in linux
+    and "runs-on: ubuntu-24.04" not in linux
+    and "runs-on: ubuntu-24.04-arm" not in linux,
+    "Linux matrix must use the private shared JIT route",
+)
 require("fail-fast: false" in linux, "Linux matrix must not cancel its other architecture")
 require(
     re.search(
@@ -272,14 +286,33 @@ for artifact in (
 ):
     require(f"name: {artifact}" in package_windows, f"Windows packaging lost {artifact}")
 
+release_tag_input = re.search(
+    r"(?ms)^      release_tag:\n(?P<body>.*?)(?=^      [A-Za-z0-9_-]+:\n|^env:\n)",
+    text,
+)
+require(
+    release_tag_input is not None
+    and re.search(r"(?m)^        required: true$", release_tag_input.group("body")) is not None
+    and re.search(r"(?m)^        type: string$", release_tag_input.group("body")) is not None,
+    "release workflow must require a release_tag input",
+)
 require(
     re.search(
-        r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
-        r".*?        required: true\n        type: string\n",
+        r"(?ms)^      action:\n.*?^        required: true\n        type: choice\n"
+        r".*?^        options:\n          - build\n          - release$",
         text,
     )
     is not None,
-    "release workflow must require a release_tag input",
+    "platform workflow must require an explicit build or release action",
+)
+require(
+    re.search(
+        r"(?ms)^      runner_pool:\n.*?^        required: true\n        type: choice\n"
+        r".*?^        options:\n          - private$",
+        text,
+    )
+    is not None,
+    "platform workflow must require its supported private runner pool",
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
@@ -293,9 +326,14 @@ require(
 )
 
 
+run_name = re.search(r"(?m)^run-name: (.*)$", text)
+run_name_expression = run_name.group(1) if run_name else ""
 require(
-    "run-name: ${{ format('Release {0}', inputs.release_tag) }}" in text,
-    "release workflow runs must expose their release tag in the run name",
+    all(
+        field in run_name_expression
+        for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag")
+    ),
+    "release workflow runs must expose their action, pool, and release tag in the run name",
 )
 
 release = job("create-release")
@@ -323,6 +361,7 @@ require(release_if is not None, "release job must have an explicit condition")
 release_condition = release_if.group(1) if release_if else ""
 require(
     "needs.validate-trusted-ref.result == 'success'" in release_condition
+    and "inputs.action == 'release'" in release_condition
     and "contains(needs.*.result, 'failure')" in release_condition
     and "contains(needs.*.result, 'cancelled')" in release_condition,
     "draft release creation must require a successful complete build",
@@ -356,8 +395,10 @@ require(
 )
 require(
     "Validate release tag before building" in trusted_ref
-    and '"$RELEASE_TAG" != "$VERSION"' in trusted_ref,
-    "release tags must be checked against pubspec before any platform builds start",
+    and '"$RELEASE_TAG" != "$VERSION"' in trusted_ref
+    and '"$RUNNER_POOL" != "private"' in trusted_ref
+    and '"$ACTION" != "build"' in trusted_ref,
+    "action, runner pool, and release tag must be validated before platform builds start",
 )
 for protected_job in (
     "build-android",

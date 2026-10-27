@@ -1,12 +1,25 @@
 # ng-runner-policy: private-jit-only-v1
 name: PlezyNG Release
-run-name: ${{ format('Release {0}', inputs.release_tag) }}
+run-name: ${{ format('{0} / {1} / {2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
 
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: Build artifacts without changing a release, or create/update the draft release
+        required: true
+        type: choice
+        options:
+          - build
+          - release
+      runner_pool:
+        description: Runner pool for this build
+        required: true
+        type: choice
+        options:
+          - private
       release_tag:
-        description: Semantic version tag for the draft GitHub release
+        description: Semantic version used for artifact names and, for release actions, the draft release
         required: true
         type: string
 
@@ -46,9 +59,19 @@ jobs:
 
       - name: Validate release tag before building
         env:
+          ACTION: ${{ inputs.action }}
+          RUNNER_POOL: ${{ inputs.runner_pool }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
+          if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
+            echo "Unsupported action: $ACTION" >&2
+            exit 1
+          fi
+          if [[ "$RUNNER_POOL" != "private" ]]; then
+            echo "This workflow currently supports only the private runner pool." >&2
+            exit 1
+          fi
           VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
           VERSION=${VERSION%%+*}
           if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -1472,7 +1495,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ always() && inputs.action == 'release' && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write

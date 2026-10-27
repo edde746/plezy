@@ -202,7 +202,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "run-name: ${{ format('Release {0}', inputs.release_tag) }}\n",
+            "run-name: ${{ format('{0} / {1} / {2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}\n",
             "",
             1,
         )
@@ -211,7 +211,16 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must expose their release tag in the run name", result.stderr)
+        self.assertIn("must expose their action, pool, and release tag in the run name", result.stderr)
+
+    def test_build_only_mode_cannot_create_a_draft_release(self) -> None:
+        workflow = self._workflow().replace("inputs.action == 'release' && ", "", 1)
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches release guard")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("draft release creation must require a successful complete build", result.stderr)
 
     def test_release_tag_without_exact_target_is_rejected(self) -> None:
         workflow = self._workflow().replace(
