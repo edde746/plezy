@@ -555,7 +555,11 @@ class MotionClarityService {
       final count = int.tryParse((rawCount ?? '').trim());
       if (count == null) {
         _healthReadFailures++;
-        if (_healthReadFailures >= 3) _stopHealthMonitor();
+        if (_healthReadFailures >= 3) {
+          _stopHealthMonitor();
+          _statusReason =
+              'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.';
+        }
         return;
       }
       _healthReadFailures = 0;
