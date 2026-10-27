@@ -6414,16 +6414,16 @@ class Translations$videoSettings$en {
 	String get motionClarityMciProfileDescription => 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.';
 	/// en: 'Motion search effort'
 	String get motionClarityMciQuality => 'Motion search effort';
-	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware.'
-	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware.';
+	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.'
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.';
 	/// en: 'Low search effort'
 	String get motionClarityMciFast => 'Low search effort';
 	/// en: 'Balanced search effort'
 	String get motionClarityMciBalanced => 'Balanced search effort';
 	/// en: 'High search effort'
 	String get motionClarityMciHigh => 'High search effort';
-	/// en: 'Experimental motion compensation is configured. Check performance and moving-edge artifacts; no automatic quality or hardware qualification is available.'
-	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts; no automatic quality or hardware qualification is available.';
+	/// en: 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.'
+	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.';
 	/// en: 'Compare without motion processing'
 	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
 	/// en: 'Return to motion processing'
