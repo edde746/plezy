@@ -9,7 +9,7 @@ See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sou
 
 ## Dolby Vision experiments
 
-PlezyNG is developing genuine Profile 7 FEL reconstruction alongside native and
+PlezyNG has developed genuine Profile 7 FEL reconstruction alongside native and
 compatibility playback. The isolated Linux engine has rendered the FEL mark in a
 real P7 sample through standalone mpv and embedded libmpv; full app playback and
 independent reference-pixel accuracy still need qualification. Linux users can
