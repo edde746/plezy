@@ -13,6 +13,7 @@ import '../system_shelf_service.dart';
 ///
 /// ```text
 /// plezy://open
+/// plezy://open-media?url=<credential-free HTTPS media address>
 /// plezy://play?server=<serverId>&id=<itemId>[&mode=next|shuffle]
 /// plezy://play?type=movie|show&tmdb=<n>|tvdb=<n>|imdb=tt<n>|plex=<hash>[&mode=next|shuffle]
 /// plezy://play?content_id=plezy_<serverId>_<itemId>      (launcher shelf rows)
@@ -51,6 +52,7 @@ sealed class DeepLink {
     final profile = _param(params, 'profile');
     return switch (uri.host.toLowerCase()) {
       OpenLink.host => OpenLink(profile: profile),
+      OpenMediaLink.host => OpenMediaLink._parse(params, profile),
       PlayLink.host => PlayLink._parse(params, profile),
       LiveLink.host => LiveLink._parse(params, profile),
       'profile' => _legacyProfileLink(uri, params),
@@ -77,6 +79,39 @@ final class OpenLink extends DeepLink {
 
   @override
   Uri toUri() => DeepLink._uri(host, _profileParam);
+}
+
+/// `plezy://open-media`: open a validated URL in the existing Open media form.
+/// It never starts playback automatically and deliberately rejects credentialed
+/// URLs because app links can be retained by the operating system.
+final class OpenMediaLink extends DeepLink {
+  const OpenMediaLink({required this.address, super.profile});
+
+  static const host = 'open-media';
+  static final _sensitiveParameter = RegExp(
+    r'(token|password|signature|credential|authorization|secret|api[_-]?key|^auth$|^key$|^code$|x-amz-|x-goog-|^(expires|expiry|expiration|policy|key-pair-id|sig|se|sp|sv|sr|st|skoid|sktid|skt|ske|sks|skv|rscc|rscd|rsct)$)',
+    caseSensitive: false,
+  );
+
+  final String address;
+
+  static OpenMediaLink? _parse(Map<String, String> params, String? profile) {
+    final address = _param(params, 'url');
+    if (address == null || address.length > 4096) return null;
+    final uri = Uri.tryParse(address);
+    if (uri == null ||
+        uri.scheme.toLowerCase() != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        uri.queryParameters.keys.any(_sensitiveParameter.hasMatch)) {
+      return null;
+    }
+    return OpenMediaLink(address: uri.toString(), profile: profile);
+  }
+
+  @override
+  Uri toUri() => DeepLink._uri(host, {'url': address, ..._profileParam});
 }
 
 /// Compatibility wrapper for the fork's original `watch` and `control` URLs.
@@ -347,7 +382,8 @@ final _imdbId = RegExp(r'^tt\d+$', caseSensitive: false);
 final _plexHash = RegExp(r'^[0-9a-zA-Z]+$');
 
 DeepLink? _legacyProfileLink(Uri uri, Map<String, String> params) {
-  final ref = _param(params, 'id') ??
+  final ref =
+      _param(params, 'id') ??
       _param(params, 'profileId') ??
       _param(params, 'profile') ??
       (uri.pathSegments.isEmpty ? null : uri.pathSegments.first.trim());

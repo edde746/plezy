@@ -24,6 +24,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_player_screen.dart';
 import 'local_media_converter_screen.dart';
+import 'capture_share_screen.dart';
 import 'source_widgets.dart';
 import 'wifi_transfer_screen.dart';
 
@@ -77,7 +78,9 @@ class _StreamFavorite {
 }
 
 class OpenMediaScreen extends StatefulWidget {
-  const OpenMediaScreen({super.key});
+  const OpenMediaScreen({super.key, this.initialAddress});
+
+  final String? initialAddress;
 
   @override
   State<OpenMediaScreen> createState() => _OpenMediaScreenState();
@@ -111,6 +114,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
   @override
   void initState() {
     super.initState();
+    _url.text = widget.initialAddress ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _sources = context.read<SourceController>()..addListener(_onSessionChanged);
@@ -212,6 +216,18 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _openMediaTools() async {
+    final selected = await Navigator.push<Uri>(context, MaterialPageRoute(builder: (_) => const MediaToolsScreen()));
+    if (!mounted || selected == null) return;
+    setState(() {
+      _choice = _OpenChoice.stream;
+      _url.text = selected.toString();
+      _name.clear();
+      _audio = false;
+      _live = true;
+    });
   }
 
   Future<void> _openAddress({String? value, String? title, bool? audio, bool? allowHttp, bool? live}) async {
@@ -730,6 +746,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
                   const SizedBox(height: 20),
                   DropdownButtonFormField<_OpenChoice>(
                     initialValue: _choice,
+                    isExpanded: true,
                     decoration: InputDecoration(labelText: t.universalMedia.openWhat),
                     items: [
                       DropdownMenuItem(value: _OpenChoice.stream, child: Text(t.universalMedia.stream)),
@@ -785,6 +802,13 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
                         child: Text(t.universalMedia.discAvailability, style: Theme.of(context).textTheme.bodySmall),
                       ),
                   ],
+                  if (MediaToolsScreen.isSupported)
+                    SourceTile(
+                      title: t.universalMedia.mediaToolsTitle,
+                      subtitle: t.universalMedia.mediaToolsShortcut,
+                      icon: Symbols.tune_rounded,
+                      onTap: _busy ? null : _openMediaTools,
+                    ),
                 ],
               ),
             ),

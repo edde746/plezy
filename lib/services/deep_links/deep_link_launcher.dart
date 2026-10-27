@@ -23,6 +23,7 @@ import '../../utils/watch_link.dart';
 import '../catalog/plex_catalog_source.dart';
 import '../data_aggregation_service.dart';
 import '../media_list_playback_launcher.dart';
+import '../../screens/sources/open_media_screen.dart';
 import 'deep_link.dart';
 
 /// How long a link waits for the server it needs to come online, e.g. while
@@ -35,6 +36,14 @@ Future<void> launchDeepLink(BuildContext context, DeepLink link, {required bool 
   switch (link) {
     case OpenLink() || ExternalPlayerReturnLink():
       return;
+    case OpenMediaLink():
+      await Navigator.of(context, rootNavigator: true).push(
+        PageRouteBuilder<void>(
+          settings: const RouteSettings(name: 'universal-media-cli'),
+          pageBuilder: (_, animation, secondaryAnimation) => OpenMediaScreen(initialAddress: link.address),
+          transitionsBuilder: (_, animation, secondaryAnimation, child) => child,
+        ),
+      );
     case LegacyAutomationLink():
       await _launchLegacyAutomationLink(context, link);
     case PlayLink():

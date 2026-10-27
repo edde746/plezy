@@ -3176,8 +3176,80 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।';
 	@override String get converterDesktopOnly => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।';
 	@override String get converterStart => 'ফাইল পরিবর্তন';
+	@override String get mediaToolsTitle => 'মিডিয়া সরঞ্জাম';
+	@override String get mediaToolsShortcut => 'ফ্যাক্ট বা মিডিয়া শেয়ার করুন, অনুসন্ধান প্রদর্শনগুলি যোগ করুন, অথবা কমান্ড লাইন ব্যবহার করুন।';
+	@override String get mediaToolsIntro => 'একটি কেন্দ্রীয় সরঞ্জাম নির্বাচন করুন. ফ্যাক্টর এবং স্ট্রিম-উট ব্যবহার করুন FFmpeg এই ডেভিসপে ইনস্টল করা হয়. Extensions এবং CLI অর্ডারগুলি সীমাবদ্ধ HTTPS অনুরোধগুলি এবং বর্তমান Open media অর্ডারগুলি ব্যবহার করে।';
+	@override String get mediaToolsAccessibility => 'সরঞ্জাম নির্বাচন এবং নিয়ন্ত্রনগুলি ট্যাক্স, পয়েন্টার, ট্যাবলেট এবং D-pad ফোকসের সাথে কাজ করে। রেকর্ডিং, শেয়ার এবং অনুসন্ধান অবস্থা পরিবর্তন ঘোষণা করা হয়।';
+	@override String get mediaTool => 'মিডিয়া টুল';
+	@override String get captureIntro => 'আপনার স্ক্রিন বা ক্যামেরাটি এই কম্পিউটারে একটি MP4 ফাইলে রেকর্ড করুন. FFmpeg ইনস্টল করা উচিত এবং H.264 কোডার অন্তর্ভুক্ত করা উচিত।';
+	@override String get captureNoDevices => 'কোন স্ক্রিন বা ক্যামেরা পাওয়া যায়নি. FFmpeg ফ্যাক্টর সাপোর্ট এবং অপারেটিং সিস্টেম গোপনীয়তা অনুমতিগুলি চেক করুন.';
+	@override String get captureSource => 'স্ক্রিন বা ক্যামেরা';
+	@override String get captureAudioSource => 'অডিও ইনপোর্ট (অন্যাশনাল)';
+	@override String get captureAudioHelp => 'একটি মাইক্রোফোন থেকে অডিও অন্তর্ভুক্ত করুন. ডিভাইস নির্বাচন FFmpeg এবং সিস্টেম অনুমতিগুলি উপর নির্ভর করে।';
+	@override String get captureAudioNone => 'অডিও নেই';
+	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+	@override String get captureFrameRate => 'রেকর্ড ফ্রেম ফ্রেম';
+	@override String get capturePrivacy => 'রেকর্ডিংটি শুধুমাত্র আপনার বেছে নেওয়া ফাইলের জন্য সংরক্ষণ করা হয়. মাইক্রোফোন ফ্যাক্টরি অপশনীয়. PlezyNG রেকর্ডিংটি আপলোড করে না।';
+	@override String get captureSaveAs => 'স্ক্রিন রেকর্ডিং রেকর্ডিং';
+	@override String get captureExtensionMismatch => '.mp4 এর মধ্যে শেষ একটি ফাইল নাম নির্বাচন করুন।';
+	@override String get captureFfmpegMissing => 'FFmpeg বা H.264 ভিডিও কোডার পাওয়া যায় না. একটি সমর্থিত FFmpeg নির্মাণ ইনস্টল করুন, তারপর আবার চেষ্টা করুন.';
+	@override String get captureFailed => 'ডিভাইস লাইসেন্স চেক করুন, उपलब्ध স্টোরেজ, এবং FFmpeg সমর্থন।';
+	@override String get captureSaved => 'স্ক্রিন রেকর্ড সংরক্ষিত।';
+	@override String get captureElapsedLabel => 'রেকর্ড সময়';
+	@override String get captureStart => 'রেকর্ডিং শুরু';
+	@override String get captureStop => 'বন্ধ এবং বাঁচান';
+	@override String get captureMode => 'আঘাত';
+	@override String get shareMode => 'শেয়ার করুন';
+	@override String get shareIntro => 'আপনার ব্যক্তিগত নেটওয়ার্কের অন্য ডিভাইসে একটি স্থানীয় মিডিয়া ফাইল পাঠান. PlezyNG একটি temporary HLS স্ট্রিম তৈরি করে।';
+	@override String get sharePrivacy => 'আপনার স্থানীয় নেটওয়ার্কের কেউ যারা ব্যক্তিগত লিঙ্ক পেয়েছেন, সেটি সক্রিয় থাকলেও দেখতে পারেন. লিঙ্ক 60 মিনিটের পর শেষ হয়. সার্ভার বন্ধ করতে এবং লিঙ্কটি অ্যাক্টল করতে শেয়ারিং বন্ধ করুন.';
+	@override String get shareChooseFile => 'মিডিয়া ফাইল নির্বাচন';
+	@override String get shareChooseHelp => 'একটি স্থানীয় অডিও বা ভিডিও ফাইল নির্বাচন করুন. ফাইলটি এই কম্পিউটারে থাকবে।';
+	@override String get shareFfmpegMissing => 'FFmpeg বা H.264/AAC কোডার পাওয়া যায় না. FFmpeg ইনস্টল করুন H.264 এবং AAC কোডার সমর্থন সঙ্গে।';
+	@override String get shareFailed => 'প্রদর্শন অপ্রত্যাশিতভাবে শুরু বা বন্ধ হতে পারে না. FFmpeg এবং নেটওয়ার্ক অ্যাক্সেস চেক করুন.';
+	@override String get shareActive => 'আপনার ব্যক্তিগত নেটওয়ার্ক থেকে সঠিক প্রদর্শন করা হয়েছে।';
+	@override String get shareEnded => 'মিডিয়া শেষ পর্যন্ত পৌঁছায় এবং এখন আর শেয়ার করা হয় না।';
+	@override String get shareStopped => 'বিতর্ক বন্ধ হয়ে গেছে. সময়সীমা লিঙ্ক এখন আর সঠিক নয়।';
+	@override String get shareUrlCopied => 'পুনরায় পুনরায় পুনরায় পুনরায় পুনরায় পুনরায় পুনরায়';
+	@override String get shareOpenUrl => 'অন্য ডিভাইসের একটি খেলোয়াড়ে এই ঠিকানা খোলা';
+	@override String get shareCopyUrl => 'প্রদর্শন ঠিকানা কপি';
+	@override String get shareExpiresLabel => 'লিঙ্ক শেষ হয়';
+	@override String get shareStarting => 'প্রদর্শনের প্রস্তুতি...';
+	@override String get shareStart => 'শেয়ার শুরু';
+	@override String get shareStop => 'বিতরণ বন্ধ করুন';
+	@override String get extensionsMode => 'বিতর্ক এবং CLI';
+	@override String get extensionsIntro => 'মিডিয়া খুঁজে পেতে একটি ডাটা-একটি অনুসন্ধান প্রদর্শন যোগ করুন. একটি ফলাফল নির্বাচন করুন এবং এটি পরিচিত Open media ফর্মে লোড করুন.';
+	@override String get extensionsPrivacy => 'একটি ম্যানজিন একটি HTTPS অনুসন্ধান শেষ পয়েন্ট এবং ম্যাপ উত্তর পৃষ্ঠাগুলি নির্ধারণ করতে পারে. এটি কোড চালান, অনুরোধ হেডার যোগ করতে পারে, ফাইলগুলি পড়তে পারে, অথবা চালু শেল নির্দেশনা.';
+	@override String get extensionImport => 'বিতর্ক ম্যানেজমেন্ট যোগ';
+	@override String get extensionEmpty => 'এখনো কোন অনুসন্ধান পরিষেবা নেই. একটি যোগ করার জন্য একটি নির্ভরযোগ্য প্রদর্শন JSON ফাইল নির্বাচন করুন.';
+	@override String get extensionChoose => 'অনুসন্ধান সেবা';
+	@override String get extensionSearchConsent => 'প্রতিটি অনুসন্ধান এই HTTPS পরিষেবাতে আপনার শব্দগুলি পাঠিয়ে দেয়. ফলাফলগুলি শুধুমাত্র একটি নির্বাচন করার পর খোলা হয়।';
+	@override String get extensionSearchLabel => 'মিডিয়া অনুসন্ধান';
+	@override String get extensionSearch => 'অনুসন্ধান';
+	@override String get extensionSearching => 'খুঁজে...';
+	@override String get extensionNoResults => 'কোন নিরাপদ মিডিয়া ফলাফল ফিরে আসেনি. আরও একটি অনুসন্ধান চেষ্টা করুন.';
+	@override String get extensionInstallTitle => 'এই অনুসন্ধান পরিষেবা যোগ করুন?';
+	@override String get extensionReplaceTitle => 'এই অনুসন্ধান পরিষেবা আপডেট?';
+	@override String get extensionService => 'পরিষেবা';
+	@override String get extensionEndpoint => 'HTTPS endpoint';
+	@override String get extensionConsent => 'আপনার অনুসন্ধান টেক্সটটি এই পরিষেবাকে পাঠানো হয়. ম্যানেজিনটি কোন executable কোড নেই. Continue only if you trust this endpoint.';
+	@override String get extensionInstall => 'পরিষেবা যোগ করুন';
+	@override String get extensionReplace => 'আপডেট পরিষেবা';
+	@override String get extensionRemoveTitle => 'এই অনুসন্ধান পরিষেবাটি মুছে ফেলুন?';
+	@override String get extensionRemoveHelp => 'এতে এই প্রোফাইল থেকে পরিষেবাを取り除きます. PlezyNG তার শেষ পয়েন্টের সাথে যোগাযোগ করে না।';
+	@override String get extensionRemove => 'সরবরাহ';
+	@override String get extensionInvalidManifest => 'এই ফাইলটি একটি সমর্থিত প্রদর্শন ম্যানেজমেন্ট নয়. ফরম্যাটের জন্য Open media গাইড দেখুন.';
+	@override String get extensionSaveFailed => 'অ্যাক্টিভ প্রোফাইলের জন্য এই প্রদর্শন সংরক্ষণ করা যায়নি।';
+	@override String get extensionSearchFailed => 'অনুসন্ধান পরিষেবা একটি সঠিক উত্তর ফেরত দেয় না. শেষ পয়েন্টটি চেক করুন এবং আবার চেষ্টা করুন.';
+	@override String get cliTitle => 'কমান্ড লাইন';
+	@override String get cliHelp => 'plezyctl গাইড ব্যবহার করুন একটি ম্যানেজি সনাক্ত করার জন্য বা একই প্রদর্শন অনুসন্ধান করুন. প্রতিটি অনুসন্ধানের আগে তার HTTPS পরিষেবাটি দেখুন. ফলাফল বর্তমান মিডিয়া ফর্মে খোলা; শুরু করার জন্য পুনরাবৃত্তি बटन নির্বাচন করুন.';
+	@override String get cliCopyExample => 'কপি কমান্ড উদাহরণ';
+	@override String get cliCopied => 'উদাহরণ কপি করা হয়েছে।';
+	@override String get captureScreen => 'স্ক্রিন';
+	@override String get captureDefaultAudio => 'অডিও ইনপোর্ট';
+	@override String get shareQrLabel => 'QR কোড temporary stream ঠিকানা';
+	@override String get shareQrHelp => 'একই ব্যক্তিগত নেটওয়ার্কের সাথে সংযোগিত একটি সহযোগী খেলোয়াড়ের সাথে স্ক্যান করুন।';
+	@override String get shareHttpHint => 'এই প্রদর্শনটি অক্রিপ্ট HTTP ব্যবহার করে. PlezyNGতে, HTTP খুলে যাওয়ার আগে অনুমতি দেয়।';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$bn extends Translations$fileSources$en {
@@ -7771,7 +7843,7 @@ extension on TranslationsBn {
 			'universalMedia.saveFavorite' => 'পছন্দ সংরক্ষণ',
 			'universalMedia.playNow' => 'এখন খেলুন',
 			'universalMedia.favoriteSaved' => 'এই প্রোফাইলে সুরক্ষিত পছন্দ স্ট্রিম',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} অসহায় বা নিরাপদ Playlist প্রবেশ।', other: '${count} সমর্থিত বা নিরাপদ Playlist অন্তর্ভুক্ত।', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} অসহায় বা নিরাপদ Playlist প্রবেশ।', other: '${count} সমর্থিত বা নিরাপদ Playlist অন্তর্ভুক্ত।', ), 
 			'universalMedia.playlistAddress' => 'Playlist ঠিকানা',
 			'universalMedia.playlistAddressHelp' => 'একটি ওয়েব ঠিকানা থেকে একটি M3U, M3u8, বা PLS প্লেলিস্ট খোঁজ করুন. সরাসরি প্রদর্শন লিঙ্কগুলি প্লেলেস্ট সংরক্ষণ করে না।',
 			'universalMedia.choosePlaylist' => 'Playlist ফাইল নির্বাচন করুন',
@@ -7781,7 +7853,7 @@ extension on TranslationsBn {
 			'universalMedia.removeFavorite' => 'প্রিয় স্ট্রিম মুছে ফেলুন',
 			'universalMedia.filesHelp' => 'অডিও, ভিডিও বা আইএসও ফাইলগুলি একটি temporary quue জন্য নির্বাচন করুন. ফাইল এবং URLs লাইব্রেরির ইতিহাসে যোগ করা হয় না।',
 			'universalMedia.chooseFiles' => 'ফাইল নির্বাচন',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '1 নির্বাচিত ফাইল', other: '${count} নির্বাচিত ফাইল', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '1 নির্বাচিত ফাইল', other: '${count} নির্বাচিত ফাইল', ), 
 			'universalMedia.wifiTransfer' => 'Wi-Fi এর মাধ্যমে ফাইল পাঠান',
 			'universalMedia.wifiTransferHelp' => 'সমর্থিত ফাইলগুলি এক ব্রাউজার থেকে একই বিশ্বাসযোগ্য নেটওয়ার্কে স্থানান্তর করুন।',
 			'universalMedia.wifiTransferIntro' => 'অন্য ডিভাইসের একটি ব্রাউজারে এই ঠিকানা খোঁজ করুন. ফাইলগুলি নির্বাচন করে এই ডিভিশনের ফাইল এবং বই লাইব্রিয়ামে যোগ করুন.',
@@ -7792,7 +7864,7 @@ extension on TranslationsBn {
 			'universalMedia.copyAddress' => 'কপি Transfer Address',
 			'universalMedia.addressCopied' => 'প্রদর্শন ঠিকানা কপি',
 			'universalMedia.transferExpires' => ({required Object time}) => 'এই ঠিকানাটি ${time} এর মধ্যে শেষ হয়।',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} ফাইল গ্রহণ', other: '${count} ফাইল গ্রহণ', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bn'))(n, one: '${count} ফাইল গ্রহণ', other: '${count} ফাইল গ্রহণ', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => '${size} পেয়েছেন',
 			'universalMedia.stopTransfer' => 'স্থানান্তর বন্ধ করুন এবং ঠিকানা বাতিল করুন',
 			'universalMedia.startTransfer' => 'ট্রেডিং শুরু',
@@ -7862,6 +7934,81 @@ extension on TranslationsBn {
 			'universalMedia.converterCancelled' => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।',
 			'universalMedia.converterDesktopOnly' => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।',
 			'universalMedia.converterStart' => 'ফাইল পরিবর্তন',
+			'universalMedia.mediaToolsTitle' => 'মিডিয়া সরঞ্জাম',
+			'universalMedia.mediaToolsShortcut' => 'ফ্যাক্ট বা মিডিয়া শেয়ার করুন, অনুসন্ধান প্রদর্শনগুলি যোগ করুন, অথবা কমান্ড লাইন ব্যবহার করুন।',
+			'universalMedia.mediaToolsIntro' => 'একটি কেন্দ্রীয় সরঞ্জাম নির্বাচন করুন. ফ্যাক্টর এবং স্ট্রিম-উট ব্যবহার করুন FFmpeg এই ডেভিসপে ইনস্টল করা হয়. Extensions এবং CLI অর্ডারগুলি সীমাবদ্ধ HTTPS অনুরোধগুলি এবং বর্তমান Open media অর্ডারগুলি ব্যবহার করে।',
+			'universalMedia.mediaToolsAccessibility' => 'সরঞ্জাম নির্বাচন এবং নিয়ন্ত্রনগুলি ট্যাক্স, পয়েন্টার, ট্যাবলেট এবং D-pad ফোকসের সাথে কাজ করে। রেকর্ডিং, শেয়ার এবং অনুসন্ধান অবস্থা পরিবর্তন ঘোষণা করা হয়।',
+			'universalMedia.mediaTool' => 'মিডিয়া টুল',
+			'universalMedia.captureIntro' => 'আপনার স্ক্রিন বা ক্যামেরাটি এই কম্পিউটারে একটি MP4 ফাইলে রেকর্ড করুন. FFmpeg ইনস্টল করা উচিত এবং H.264 কোডার অন্তর্ভুক্ত করা উচিত।',
+			'universalMedia.captureNoDevices' => 'কোন স্ক্রিন বা ক্যামেরা পাওয়া যায়নি. FFmpeg ফ্যাক্টর সাপোর্ট এবং অপারেটিং সিস্টেম গোপনীয়তা অনুমতিগুলি চেক করুন.',
+			'universalMedia.captureSource' => 'স্ক্রিন বা ক্যামেরা',
+			'universalMedia.captureAudioSource' => 'অডিও ইনপোর্ট (অন্যাশনাল)',
+			'universalMedia.captureAudioHelp' => 'একটি মাইক্রোফোন থেকে অডিও অন্তর্ভুক্ত করুন. ডিভাইস নির্বাচন FFmpeg এবং সিস্টেম অনুমতিগুলি উপর নির্ভর করে।',
+			'universalMedia.captureAudioNone' => 'অডিও নেই',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			'universalMedia.captureFrameRate' => 'রেকর্ড ফ্রেম ফ্রেম',
+			'universalMedia.capturePrivacy' => 'রেকর্ডিংটি শুধুমাত্র আপনার বেছে নেওয়া ফাইলের জন্য সংরক্ষণ করা হয়. মাইক্রোফোন ফ্যাক্টরি অপশনীয়. PlezyNG রেকর্ডিংটি আপলোড করে না।',
+			'universalMedia.captureSaveAs' => 'স্ক্রিন রেকর্ডিং রেকর্ডিং',
+			'universalMedia.captureExtensionMismatch' => '.mp4 এর মধ্যে শেষ একটি ফাইল নাম নির্বাচন করুন।',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg বা H.264 ভিডিও কোডার পাওয়া যায় না. একটি সমর্থিত FFmpeg নির্মাণ ইনস্টল করুন, তারপর আবার চেষ্টা করুন.',
+			'universalMedia.captureFailed' => 'ডিভাইস লাইসেন্স চেক করুন, उपलब्ध স্টোরেজ, এবং FFmpeg সমর্থন।',
+			'universalMedia.captureSaved' => 'স্ক্রিন রেকর্ড সংরক্ষিত।',
+			'universalMedia.captureElapsedLabel' => 'রেকর্ড সময়',
+			'universalMedia.captureStart' => 'রেকর্ডিং শুরু',
+			'universalMedia.captureStop' => 'বন্ধ এবং বাঁচান',
+			'universalMedia.captureMode' => 'আঘাত',
+			'universalMedia.shareMode' => 'শেয়ার করুন',
+			'universalMedia.shareIntro' => 'আপনার ব্যক্তিগত নেটওয়ার্কের অন্য ডিভাইসে একটি স্থানীয় মিডিয়া ফাইল পাঠান. PlezyNG একটি temporary HLS স্ট্রিম তৈরি করে।',
+			'universalMedia.sharePrivacy' => 'আপনার স্থানীয় নেটওয়ার্কের কেউ যারা ব্যক্তিগত লিঙ্ক পেয়েছেন, সেটি সক্রিয় থাকলেও দেখতে পারেন. লিঙ্ক 60 মিনিটের পর শেষ হয়. সার্ভার বন্ধ করতে এবং লিঙ্কটি অ্যাক্টল করতে শেয়ারিং বন্ধ করুন.',
+			'universalMedia.shareChooseFile' => 'মিডিয়া ফাইল নির্বাচন',
+			'universalMedia.shareChooseHelp' => 'একটি স্থানীয় অডিও বা ভিডিও ফাইল নির্বাচন করুন. ফাইলটি এই কম্পিউটারে থাকবে।',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg বা H.264/AAC কোডার পাওয়া যায় না. FFmpeg ইনস্টল করুন H.264 এবং AAC কোডার সমর্থন সঙ্গে।',
+			'universalMedia.shareFailed' => 'প্রদর্শন অপ্রত্যাশিতভাবে শুরু বা বন্ধ হতে পারে না. FFmpeg এবং নেটওয়ার্ক অ্যাক্সেস চেক করুন.',
+			'universalMedia.shareActive' => 'আপনার ব্যক্তিগত নেটওয়ার্ক থেকে সঠিক প্রদর্শন করা হয়েছে।',
+			'universalMedia.shareEnded' => 'মিডিয়া শেষ পর্যন্ত পৌঁছায় এবং এখন আর শেয়ার করা হয় না।',
+			'universalMedia.shareStopped' => 'বিতর্ক বন্ধ হয়ে গেছে. সময়সীমা লিঙ্ক এখন আর সঠিক নয়।',
+			'universalMedia.shareUrlCopied' => 'পুনরায় পুনরায় পুনরায় পুনরায় পুনরায় পুনরায় পুনরায়',
+			'universalMedia.shareOpenUrl' => 'অন্য ডিভাইসের একটি খেলোয়াড়ে এই ঠিকানা খোলা',
+			'universalMedia.shareCopyUrl' => 'প্রদর্শন ঠিকানা কপি',
+			'universalMedia.shareExpiresLabel' => 'লিঙ্ক শেষ হয়',
+			'universalMedia.shareStarting' => 'প্রদর্শনের প্রস্তুতি...',
+			'universalMedia.shareStart' => 'শেয়ার শুরু',
+			'universalMedia.shareStop' => 'বিতরণ বন্ধ করুন',
+			'universalMedia.extensionsMode' => 'বিতর্ক এবং CLI',
+			'universalMedia.extensionsIntro' => 'মিডিয়া খুঁজে পেতে একটি ডাটা-একটি অনুসন্ধান প্রদর্শন যোগ করুন. একটি ফলাফল নির্বাচন করুন এবং এটি পরিচিত Open media ফর্মে লোড করুন.',
+			'universalMedia.extensionsPrivacy' => 'একটি ম্যানজিন একটি HTTPS অনুসন্ধান শেষ পয়েন্ট এবং ম্যাপ উত্তর পৃষ্ঠাগুলি নির্ধারণ করতে পারে. এটি কোড চালান, অনুরোধ হেডার যোগ করতে পারে, ফাইলগুলি পড়তে পারে, অথবা চালু শেল নির্দেশনা.',
+			'universalMedia.extensionImport' => 'বিতর্ক ম্যানেজমেন্ট যোগ',
+			'universalMedia.extensionEmpty' => 'এখনো কোন অনুসন্ধান পরিষেবা নেই. একটি যোগ করার জন্য একটি নির্ভরযোগ্য প্রদর্শন JSON ফাইল নির্বাচন করুন.',
+			'universalMedia.extensionChoose' => 'অনুসন্ধান সেবা',
+			'universalMedia.extensionSearchConsent' => 'প্রতিটি অনুসন্ধান এই HTTPS পরিষেবাতে আপনার শব্দগুলি পাঠিয়ে দেয়. ফলাফলগুলি শুধুমাত্র একটি নির্বাচন করার পর খোলা হয়।',
+			'universalMedia.extensionSearchLabel' => 'মিডিয়া অনুসন্ধান',
+			'universalMedia.extensionSearch' => 'অনুসন্ধান',
+			'universalMedia.extensionSearching' => 'খুঁজে...',
+			'universalMedia.extensionNoResults' => 'কোন নিরাপদ মিডিয়া ফলাফল ফিরে আসেনি. আরও একটি অনুসন্ধান চেষ্টা করুন.',
+			'universalMedia.extensionInstallTitle' => 'এই অনুসন্ধান পরিষেবা যোগ করুন?',
+			'universalMedia.extensionReplaceTitle' => 'এই অনুসন্ধান পরিষেবা আপডেট?',
+			'universalMedia.extensionService' => 'পরিষেবা',
+			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
+			'universalMedia.extensionConsent' => 'আপনার অনুসন্ধান টেক্সটটি এই পরিষেবাকে পাঠানো হয়. ম্যানেজিনটি কোন executable কোড নেই. Continue only if you trust this endpoint.',
+			'universalMedia.extensionInstall' => 'পরিষেবা যোগ করুন',
+			'universalMedia.extensionReplace' => 'আপডেট পরিষেবা',
+			'universalMedia.extensionRemoveTitle' => 'এই অনুসন্ধান পরিষেবাটি মুছে ফেলুন?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'এতে এই প্রোফাইল থেকে পরিষেবাを取り除きます. PlezyNG তার শেষ পয়েন্টের সাথে যোগাযোগ করে না।',
+			'universalMedia.extensionRemove' => 'সরবরাহ',
+			'universalMedia.extensionInvalidManifest' => 'এই ফাইলটি একটি সমর্থিত প্রদর্শন ম্যানেজমেন্ট নয়. ফরম্যাটের জন্য Open media গাইড দেখুন.',
+			'universalMedia.extensionSaveFailed' => 'অ্যাক্টিভ প্রোফাইলের জন্য এই প্রদর্শন সংরক্ষণ করা যায়নি।',
+			'universalMedia.extensionSearchFailed' => 'অনুসন্ধান পরিষেবা একটি সঠিক উত্তর ফেরত দেয় না. শেষ পয়েন্টটি চেক করুন এবং আবার চেষ্টা করুন.',
+			'universalMedia.cliTitle' => 'কমান্ড লাইন',
+			'universalMedia.cliHelp' => 'plezyctl গাইড ব্যবহার করুন একটি ম্যানেজি সনাক্ত করার জন্য বা একই প্রদর্শন অনুসন্ধান করুন. প্রতিটি অনুসন্ধানের আগে তার HTTPS পরিষেবাটি দেখুন. ফলাফল বর্তমান মিডিয়া ফর্মে খোলা; শুরু করার জন্য পুনরাবৃত্তি बटन নির্বাচন করুন.',
+			'universalMedia.cliCopyExample' => 'কপি কমান্ড উদাহরণ',
+			'universalMedia.cliCopied' => 'উদাহরণ কপি করা হয়েছে।',
+			'universalMedia.captureScreen' => 'স্ক্রিন',
+			'universalMedia.captureDefaultAudio' => 'অডিও ইনপোর্ট',
+			'universalMedia.shareQrLabel' => 'QR কোড temporary stream ঠিকানা',
+			'universalMedia.shareQrHelp' => 'একই ব্যক্তিগত নেটওয়ার্কের সাথে সংযোগিত একটি সহযোগী খেলোয়াড়ের সাথে স্ক্যান করুন।',
+			'universalMedia.shareHttpHint' => 'এই প্রদর্শনটি অক্রিপ্ট HTTP ব্যবহার করে. PlezyNGতে, HTTP খুলে যাওয়ার আগে অনুমতি দেয়।',
 			'fileSources.title' => 'ফাইল ও বই',
 			'fileSources.subtitle' => 'পড়ুন, শুনুন এবং নিজের ফাইল থেকে দেখুন।',
 			'fileSources.add' => 'উৎস যোগ করুন',
@@ -8033,8 +8180,6 @@ extension on TranslationsBn {
 			'fileSources.offlineQuotaHelp' => 'অoffline কপি, imported ফাইল এবং quued ডাউনলোড দ্বারা ব্যবহৃত সর্বোচ্চ স্থান নির্ধারণ করুন. সীমাবদ্ধতা কমাতে বর্তমান কপিগুলি মুছে দেয় না।',
 			'fileSources.offlineStorageUsage' => 'অফলিন স্টোরেজ',
 			'fileSources.reservedStorage' => 'সংরক্ষিত',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'ডাউনলোড করুন Queue',
 			'fileSources.downloadRunning' => 'ডাউনলোড',
 			'fileSources.downloadQueued' => 'অপেক্ষা',

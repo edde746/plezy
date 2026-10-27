@@ -154,8 +154,15 @@ void _registerTvosPlatformPlugins() {
   // Store-backed access and lifetime purchases reach only in SUPPORTER_MODE=iap builds.
 }
 
-void main() {
+void main(List<String> args) {
   final binding = PlezyWidgetsBinding.ensureInitialized();
+  for (final argument in args) {
+    final normalized = argument.toLowerCase();
+    if (normalized.startsWith('plezy://') || normalized.startsWith('plezxyng://')) {
+      DeepLinkService.instance.receive(argument);
+      break;
+    }
+  }
   if (agentControlEnabled) AgentControlService.instance.register();
   AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.dartMain);
   // Keep the accessibility tree available to Maestro and other UI automation

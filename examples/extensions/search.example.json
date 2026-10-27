@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "community-search-example",
+  "name": "Community search example",
+  "description": "Replace this endpoint with a public HTTPS media search API.",
+  "endpoint": "https://catalog.example.invalid/api/search",
+  "query_parameter": "q",
+  "results_path": ["results"],
+  "title_field": "title",
+  "url_field": "url",
+  "subtitle_field": "subtitle"
+}

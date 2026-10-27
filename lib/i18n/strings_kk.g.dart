@@ -41,15 +41,11 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$kk app = _Translations$app$kk._(_root);
-	@override late final _Translations$cast$kk cast = _Translations$cast$kk._(_root);
-	@override late final _Translations$automation$kk automation = _Translations$automation$kk._(_root);
-	@override late final _Translations$notifications$kk notifications = _Translations$notifications$kk._(_root);
 	@override late final _Translations$appIcon$kk appIcon = _Translations$appIcon$kk._(_root);
 	@override late final _Translations$auth$kk auth = _Translations$auth$kk._(_root);
 	@override late final _Translations$common$kk common = _Translations$common$kk._(_root);
 	@override late final _Translations$screens$kk screens = _Translations$screens$kk._(_root);
 	@override late final _Translations$update$kk update = _Translations$update$kk._(_root);
-	@override late final _Translations$appAccess$kk appAccess = _Translations$appAccess$kk._(_root);
 	@override late final _Translations$settings$kk settings = _Translations$settings$kk._(_root);
 	@override late final _Translations$themeEditor$kk themeEditor = _Translations$themeEditor$kk._(_root);
 	@override late final _Translations$search$kk search = _Translations$search$kk._(_root);
@@ -75,7 +71,6 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$kk serverSelection = _Translations$serverSelection$kk._(_root);
 	@override late final _Translations$hubDetail$kk hubDetail = _Translations$hubDetail$kk._(_root);
 	@override late final _Translations$logs$kk logs = _Translations$logs$kk._(_root);
-	@override late final _Translations$detail$kk detail = _Translations$detail$kk._(_root);
 	@override late final _Translations$startup$kk startup = _Translations$startup$kk._(_root);
 	@override late final _Translations$licenses$kk licenses = _Translations$licenses$kk._(_root);
 	@override late final _Translations$navigation$kk navigation = _Translations$navigation$kk._(_root);
@@ -98,6 +93,11 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$kk seerr = _Translations$seerr$kk._(_root);
 	@override late final _Translations$services$kk services = _Translations$services$kk._(_root);
 	@override late final _Translations$addServer$kk addServer = _Translations$addServer$kk._(_root);
+	@override late final _Translations$cast$kk cast = _Translations$cast$kk._(_root);
+	@override late final _Translations$automation$kk automation = _Translations$automation$kk._(_root);
+	@override late final _Translations$notifications$kk notifications = _Translations$notifications$kk._(_root);
+	@override late final _Translations$appAccess$kk appAccess = _Translations$appAccess$kk._(_root);
+	@override late final _Translations$detail$kk detail = _Translations$detail$kk._(_root);
 	@override late final _Translations$watchLink$kk watchLink = _Translations$watchLink$kk._(_root);
 	@override late final _Translations$homeLayout$kk homeLayout = _Translations$homeLayout$kk._(_root);
 	@override late final _Translations$platform$kk platform = _Translations$platform$kk._(_root);
@@ -118,48 +118,6 @@ class _Translations$app$kk extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$kk extends Translations$cast$en {
-	_Translations$cast$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Ауыз ішінен';
-	@override String get searching => 'Қазіргі таңда қабырғалар үшін...';
-	@override String connectedTo({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}';
-	@override String get device => 'Ауызды';
-	@override String get readyToCast => 'Қатысуға арналған';
-	@override String get subtitle => 'Субтитрлер';
-	@override String get serverNotAvailable => 'Медыя сервері не қосқан.';
-	@override String get stopCasting => 'Оданды';
-	@override String get castToDevice => 'Ауыздылықтық';
-	@override String get noEpisodeAvailable => 'Бұл үшін не ескеп келді.';
-	@override String get startFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір';
-}
-
-// Path: automation
-class _Translations$automation$kk extends Translations$automation$en {
-	_Translations$automation$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Ауызды видео сессиясы бар.';
-	@override String get profileNotFound => 'Бұл Plezy профильде қарағанда ол не қарағанда.';
-}
-
-// Path: notifications
-class _Translations$notifications$kk extends Translations$notifications$en {
-	_Translations$notifications$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Епізод';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +280,6 @@ class _Translations$update$kk extends Translations$update$en {
 	@override String get viewRelease => 'Релизді көру';
 	@override String get latestVersion => 'Сізде ең соңғы нұсқа орнатылған';
 	@override String get checkFailed => 'Жаңартуларды тексеру мүмкін болмады';
-}
-
-// Path: appAccess
-class _Translations$appAccess$kk extends Translations$appAccess$en {
-	_Translations$appAccess$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '7 күннен кейін бір-бірінен ұзақтығы';
-	@override String get description => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.';
-	@override String get trialEndedDescription => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.';
-	@override String get startTrial => '7 жылдан кейінгі ұзақ уақытқа дейін';
-	@override String get trialActive => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.';
-	@override String get trialEnded => '7 жылдан кейінгі қазір қарап отыр.';
-	@override String get trialStartFailed => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.';
-	@override String get lifetimeTitle => 'PlezyNG-ге өмірлік қолжетімділік ашылды';
-	@override String get lifetimeBody => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.';
-	@override String get manageTitle => 'PlezyNG жылдық қабығы';
-	@override String get manageDescription => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.';
-	@override String buy({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу';
-	@override String get loadingPrice => 'Өнімдер мен жарықтық бағасы...';
-	@override String get retryPrice => 'Өткен қағазды';
-	@override String get restore => 'Өткен келдім келдім';
-	@override String get pending => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
-	@override String get storeUnavailable => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
-	@override String get productNotFound => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.';
-	@override String get productQueryFailed => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.';
-	@override String get purchaseFailed => 'Қаншама жылы қазір, қайтып келді.';
-	@override String get restoreFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.';
-	@override String get nothingToRestore => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.';
 }
 
 // Path: settings
@@ -1235,10 +1162,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар',
-	);
 	@override String get audioLabel => 'Дыбыс';
 	@override String get subtitlesLabel => 'Субтитр';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1275,8 +1198,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Дыбысты қосу';
 	@override String get settingsButton => 'Ойнату баптаулары';
 	@override String get tracksButton => 'Дыбыс және субтитрлер';
-	@override String get trackSelectionTitle => 'Жарықтың да көптеген жылдар бойы жарықтың';
-	@override String get trackSelectionAuto => 'Автоматдық селекциясы';
 	@override String get chaptersButton => 'Бөлімдер';
 	@override String get versionQualityButton => 'Нұсқа және сапа';
 	@override String get versionColumnHeader => 'Нұсқа';
@@ -1286,8 +1207,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Түрлендіру қолжетімсіз — түпнұсқа сапада ойнатылады';
 	@override String get subtitleUnavailableFallback => 'Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады';
 	@override String get pipButton => 'Суреттегі сурет режимі';
-	@override String get openMiniPlayer => 'Өткен Mini Player';
-	@override String get returnToFullPlayer => 'Ауыз іші шырышты қабығы';
 	@override String get aspectRatioButton => 'Тараптар қатынасы';
 	@override String get ambientLighting => 'Фондық жарықтандыру';
 	@override String get fullscreenButton => 'Толық экранға өту';
@@ -1296,7 +1215,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Бұрылыс бұғаттауы';
 	@override String get lockScreen => 'Экранды бұғаттау';
 	@override String get screenLockButton => 'Экран бұғаттауы';
-	@override String get longPressToUnlock => 'Бұғаттаудан шығару үшін ұзақ басыңыз';
 	@override String get timelineSlider => 'Видео уақыт шкаласы';
 	@override String get volumeSlider => 'Дыбыс деңгейі';
 	@override String endsAt({required Object time}) => 'Аяқталу уақыты: ${time}';
@@ -1313,8 +1231,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Кезекте элементтер жоқ';
 	@override String get noAudioDevicesAvailable => 'Қолжетімді аудио құрылғылар жоқ';
 	@override String get searchSubtitles => 'Субтитр іздеу';
-	@override String get loadSubtitleFile => 'Басқа да салыстырды,';
-	@override String get subtitleLoadFailed => 'Басқа да салыстырдан да салыстатын';
 	@override String get language => 'Тіл';
 	@override String get noSubtitlesFound => 'Субтитр табылмады';
 	@override String get subtitleDownloaded => 'Субтитр жүктелді';
@@ -1323,7 +1239,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Тілдерден іздеу...';
 	@override String get skipIntro => 'Кіріспені өткізу';
 	@override String get skipCredits => 'Титрлерді өткізу';
-	@override String get skipAds => 'Ауызды';
 	@override String get nextEpisode => 'Келесі бөлім';
 	@override String subtitleTrack({required Object n}) => 'Жол ${n}';
 	@override String subtitleFile({required Object name}) => 'Субтитр ${name}';
@@ -1331,6 +1246,17 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Субтитр: өшірулі';
 	@override String osdSubtitles({required Object track}) => 'Субтитр: ${track}';
 	@override String osdAudio({required Object track}) => 'Дыбыс: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар',
+	);
+	@override String get trackSelectionTitle => 'Жарықтың да көптеген жылдар бойы жарықтың';
+	@override String get trackSelectionAuto => 'Автоматдық селекциясы';
+	@override String get openMiniPlayer => 'Өткен Mini Player';
+	@override String get returnToFullPlayer => 'Ауыз іші шырышты қабығы';
+	@override String get loadSubtitleFile => 'Басқа да салыстырды,';
+	@override String get subtitleLoadFailed => 'Басқа да салыстырдан да салыстатын';
+	@override String get skipAds => 'Ауызды';
 }
 
 // Path: messages
@@ -1828,16 +1754,6 @@ class _Translations$logs$kk extends Translations$logs$en {
 	@override String get saveLogs => 'Ауызды да салықты';
 	@override String logsSaved({required Object path}) => 'Журналдар ${path} жолына сақталды';
 	@override String get saveLogsFailed => 'Бұл да да салық файлға болады.';
-}
-
-// Path: detail
-class _Translations$detail$kk extends Translations$detail$en {
-	_Translations$detail$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Аяқталу уақыты: ${time}';
 }
 
 // Path: startup
@@ -2907,6 +2823,89 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	@override String get httpsRequired => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.';
 }
 
+// Path: cast
+class _Translations$cast$kk extends Translations$cast$en {
+	_Translations$cast$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Ауыз ішінен';
+	@override String get searching => 'Қазіргі таңда қабырғалар үшін...';
+	@override String connectedTo({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}';
+	@override String get device => 'Ауызды';
+	@override String get readyToCast => 'Қатысуға арналған';
+	@override String get subtitle => 'Субтитрлер';
+	@override String get serverNotAvailable => 'Медыя сервері не қосқан.';
+	@override String get stopCasting => 'Оданды';
+	@override String get castToDevice => 'Ауыздылықтық';
+	@override String get noEpisodeAvailable => 'Бұл үшін не ескеп келді.';
+	@override String get startFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір';
+}
+
+// Path: automation
+class _Translations$automation$kk extends Translations$automation$en {
+	_Translations$automation$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Ауызды видео сессиясы бар.';
+	@override String get profileNotFound => 'Бұл Plezy профильде қарағанда ол не қарағанда.';
+}
+
+// Path: notifications
+class _Translations$notifications$kk extends Translations$notifications$en {
+	_Translations$notifications$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Епізод';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$kk extends Translations$appAccess$en {
+	_Translations$appAccess$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '7 күннен кейін бір-бірінен ұзақтығы';
+	@override String get description => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.';
+	@override String get trialEndedDescription => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.';
+	@override String get startTrial => '7 жылдан кейінгі ұзақ уақытқа дейін';
+	@override String get trialActive => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.';
+	@override String get trialEnded => '7 жылдан кейінгі қазір қарап отыр.';
+	@override String get trialStartFailed => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.';
+	@override String get lifetimeTitle => 'PlezyNG-ге өмірлік қолжетімділік ашылды';
+	@override String get lifetimeBody => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.';
+	@override String get manageTitle => 'PlezyNG жылдық қабығы';
+	@override String get manageDescription => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.';
+	@override String buy({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу';
+	@override String get loadingPrice => 'Өнімдер мен жарықтық бағасы...';
+	@override String get retryPrice => 'Өткен қағазды';
+	@override String get restore => 'Өткен келдім келдім';
+	@override String get pending => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
+	@override String get storeUnavailable => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.';
+	@override String get productNotFound => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.';
+	@override String get productQueryFailed => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.';
+	@override String get purchaseFailed => 'Қаншама жылы қазір, қайтып келді.';
+	@override String get restoreFailed => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.';
+	@override String get nothingToRestore => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.';
+}
+
+// Path: detail
+class _Translations$detail$kk extends Translations$detail$en {
+	_Translations$detail$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Аяқталу уақыты: ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$kk extends Translations$watchLink$en {
 	_Translations$watchLink$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -3176,8 +3175,80 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.';
 	@override String get converterDesktopOnly => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.';
 	@override String get converterStart => 'Серіктің файлы';
+	@override String get mediaToolsTitle => 'Медіа алатын';
+	@override String get mediaToolsShortcut => 'Қаншалықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты';
+	@override String get mediaToolsIntro => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.';
+	@override String get mediaToolsAccessibility => 'Қатысушы және контролер сенімді, сенімді, тастатуралық және D-pad фокусімен жұмыс істейді. Рекордиция, спонсорлық, және пошук статтау менмен таныстыралады.';
+	@override String get mediaTool => 'Медіа алатын';
+	@override String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
+	@override String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
+	@override String get captureSource => 'Камера мен экран';
+	@override String get captureAudioSource => 'Аудиолық аудит (апциялық)';
+	@override String get captureAudioHelp => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.';
+	@override String get captureAudioNone => 'Аудиолық';
+	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+	@override String get captureFrameRate => 'Серіктің қабығы';
+	@override String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
+	@override String get captureSaveAs => 'Серіктің қабырға айналады.';
+	@override String get captureExtensionMismatch => 'Choose a filename ending in .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.';
+	@override String get captureFailed => 'Олардың дағдырығы, қанағаттанды және FFmpeg қызмет көрсету.';
+	@override String get captureSaved => 'Серіктің көтеріп көтеріп көтеріп көтеріп.';
+	@override String get captureElapsedLabel => 'Серіктің жары';
+	@override String get captureStart => 'Серіктің записы';
+	@override String get captureStop => 'Қайталы және Спас';
+	@override String get captureMode => 'Абайдың';
+	@override String get shareMode => 'Ақыттық';
+	@override String get shareIntro => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.';
+	@override String get sharePrivacy => 'Қаланың тұрақты тұрғындарының тұрақты тұрғындарының саны 60 адамды құрайды және адамды құрайды және адамды құрайды.';
+	@override String get shareChooseFile => 'Медыяфайлы';
+	@override String get shareChooseHelp => 'Аудио және видео файлы бар. Файлтің қабығы бұл компьютере бар.';
+	@override String get shareFfmpegMissing => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.';
+	@override String get shareFailed => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.';
+	@override String get shareActive => 'Ауызды және басқа да оның сетінің сезімдер.';
+	@override String get shareEnded => 'Менеджменттер өздерінің ата-аналардан тұрады, және оның ата-аналардан тұрады.';
+	@override String get shareStopped => 'Өзі сүйікті жарысы: «Жеңірмен танымал» деп ойлаймын.';
+	@override String get shareUrlCopied => 'Қолдақтарлық адресы бар.';
+	@override String get shareOpenUrl => '«Жеңіске үлес қосқандар», «Жеңіске үлес қосқандар»';
+	@override String get shareCopyUrl => 'Қайталы қабырғасы';
+	@override String get shareExpiresLabel => 'Қаншалықты ұзақтығы';
+	@override String get shareStarting => 'Қандайды құбырды...';
+	@override String get shareStart => 'Өткен қабығы';
+	@override String get shareStop => 'Ауызды қабығы';
+	@override String get extensionsMode => 'Өнімдермен және CLI';
+	@override String get extensionsIntro => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.';
+	@override String get extensionsPrivacy => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.';
+	@override String get extensionImport => 'Өнімдер мен мақалалар';
+	@override String get extensionEmpty => 'No search services yet. Choose a trusted manifest JSON file to add one.';
+	@override String get extensionChoose => 'Жүзілік қызмет көрсету';
+	@override String get extensionSearchConsent => 'Each search sends your words to this HTTPS service. Results open only after you select one.';
+	@override String get extensionSearchLabel => 'Медіасы';
+	@override String get extensionSearch => 'Жүктесі';
+	@override String get extensionSearching => 'Жүктеу...';
+	@override String get extensionNoResults => 'Жүктесі, қанақтардан тұрады, қанақтардан тұрады, қанақтардан тұрады.';
+	@override String get extensionInstallTitle => 'Қаланың ең айқын көргенде?';
+	@override String get extensionReplaceTitle => 'Қаланың ең айқын көргенде?';
+	@override String get extensionService => 'Ақыттық';
+	@override String get extensionEndpoint => 'HTTPS endpoint';
+	@override String get extensionConsent => 'Сіздің текстіңізді бұл қызмет көрсетуге ескерту.Манифесттің жоқты коды бар.Серіңізді сіздің контенттермен танысуға болады.';
+	@override String get extensionInstall => 'Үлдік қызмет';
+	@override String get extensionReplace => 'Адаптациялық қызмет';
+	@override String get extensionRemoveTitle => 'Қаланың ең айқын көргенде?';
+	@override String get extensionRemoveHelp => 'This removes the service from this profile. PlezyNG does not contact its endpoint.';
+	@override String get extensionRemove => 'Ақыттық қызмет';
+	@override String get extensionInvalidManifest => 'This file is not a supported extension manifest. See the Open media guide for the format.';
+	@override String get extensionSaveFailed => 'Ауыздан шығарылған профильде қарастырып қараңыз.';
+	@override String get extensionSearchFailed => 'Қаншама жылы қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар.';
+	@override String get cliTitle => 'Команды';
+	@override String get cliHelp => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.';
+	@override String get cliCopyExample => 'Команданың қосылы';
+	@override String get cliCopied => 'Қазіргі уақытта командасы копиялы.';
+	@override String get captureScreen => 'Серіктің';
+	@override String get captureDefaultAudio => 'Аудиолық аудіолық';
+	@override String get shareQrLabel => 'КР-кодтің қағидалар мен қағидалар';
+	@override String get shareQrHelp => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».';
+	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$kk extends Translations$fileSources$en {
@@ -4840,21 +4911,6 @@ extension on TranslationsKk {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Ауыз ішінен',
-			'cast.searching' => 'Қазіргі таңда қабырғалар үшін...',
-			'cast.connectedTo' => ({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}',
-			'cast.device' => 'Ауызды',
-			'cast.readyToCast' => 'Қатысуға арналған',
-			'cast.subtitle' => 'Субтитрлер',
-			'cast.serverNotAvailable' => 'Медыя сервері не қосқан.',
-			'cast.stopCasting' => 'Оданды',
-			'cast.castToDevice' => 'Ауыздылықтық',
-			'cast.noEpisodeAvailable' => 'Бұл үшін не ескеп келді.',
-			'cast.startFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір',
-			'automation.noActivePlayback' => 'Ауызды видео сессиясы бар.',
-			'automation.profileNotFound' => 'Бұл Plezy профильде қарағанда ол не қарағанда.',
-			'notifications.newEpisodeTitle' => 'Епізод',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Қолданба белгішесі',
 			'appIcon.defaultIcon' => 'Әдепкі',
 			'appIcon.current' => 'Ағымдағы белгіше',
@@ -5017,28 +5073,6 @@ extension on TranslationsKk {
 			'update.viewRelease' => 'Релизді көру',
 			'update.latestVersion' => 'Сізде ең соңғы нұсқа орнатылған',
 			'update.checkFailed' => 'Жаңартуларды тексеру мүмкін болмады',
-			'appAccess.title' => '7 күннен кейін бір-бірінен ұзақтығы',
-			'appAccess.description' => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.',
-			'appAccess.trialEndedDescription' => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.',
-			'appAccess.startTrial' => '7 жылдан кейінгі ұзақ уақытқа дейін',
-			'appAccess.trialActive' => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.',
-			'appAccess.trialEnded' => '7 жылдан кейінгі қазір қарап отыр.',
-			'appAccess.trialStartFailed' => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.',
-			'appAccess.lifetimeTitle' => 'PlezyNG-ге өмірлік қолжетімділік ашылды',
-			'appAccess.lifetimeBody' => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.',
-			'appAccess.manageTitle' => 'PlezyNG жылдық қабығы',
-			'appAccess.manageDescription' => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.',
-			'appAccess.buy' => ({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу',
-			'appAccess.loadingPrice' => 'Өнімдер мен жарықтық бағасы...',
-			'appAccess.retryPrice' => 'Өткен қағазды',
-			'appAccess.restore' => 'Өткен келдім келдім',
-			'appAccess.pending' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
-			'appAccess.storeUnavailable' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
-			'appAccess.productNotFound' => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.',
-			'appAccess.productQueryFailed' => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.',
-			'appAccess.purchaseFailed' => 'Қаншама жылы қазір, қайтып келді.',
-			'appAccess.restoreFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.',
-			'appAccess.nothingToRestore' => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.',
 			'settings.title' => 'Баптаулар',
 			'settings.supportDeveloper' => 'PlezyNG жобасын қолдау',
 			'settings.supportDeveloperDescription' => 'Әзірлеуді қолдау үшін қайырымдылық жасаңыз',
@@ -5351,8 +5385,6 @@ extension on TranslationsKk {
 			'settings.audioPassthrough' => 'Дыбысты тікелей өткізу (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. iOS, iPadOS және tvOS 26 немесе жаңарақ нұсқаларында TrueHD Atmos пен DTS:X кеңістіктік дыбыс ретінде ойнатылады. Басқа DTS және TrueHD жолдары көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Дыбыс деңгейін нормалау қосулы кезде өшірулі',
 			'settings.audioChannelLimit' => 'Аудио арналары',
@@ -5390,6 +5422,8 @@ extension on TranslationsKk {
 			'settings.disableDolbyVisionDescription' => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату',
 			'settings.hdrSdrConversion' => 'HDR-ды SDR-ға түрлендіру',
 			'settings.hdrSdrConversionDescription' => 'Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Автоматты',
 			'settings.hdrSdrConversionAutoDescription' => 'Android 9 және жаңарақ нұсқаларда құрылғы, ескі нұсқаларда ойнатқыш',
 			'settings.hdrSdrConversionDevice' => 'Құрылғы',
@@ -5851,7 +5885,6 @@ extension on TranslationsKk {
 			'tooltips.markAsWatched' => 'Көрілді деп белгілеу',
 			'tooltips.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'audioTracks.track' => ({required Object n}) => 'Аудиожол ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар', ), 
 			'videoControls.audioLabel' => 'Дыбыс',
 			'videoControls.subtitlesLabel' => 'Субтитр',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5865,8 +5898,6 @@ extension on TranslationsKk {
 			'videoControls.sleepTimerEndOfVideo' => 'Ағымдағы видеоның соңы',
 			'videoControls.sleepTimerStopAtHeader' => 'Тоқтату уақыты',
 			'videoControls.sleepTimerDurationHeader' => 'Таймер',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Ойнату осы видеоның соңында кідіртіледі',
 			'videoControls.stillWatching' => 'Әлі де көріп отырсыз ба?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}сек кейін кідіртіледі',
@@ -5890,8 +5921,6 @@ extension on TranslationsKk {
 			'videoControls.unmuteButton' => 'Дыбысты қосу',
 			'videoControls.settingsButton' => 'Ойнату баптаулары',
 			'videoControls.tracksButton' => 'Дыбыс және субтитрлер',
-			'videoControls.trackSelectionTitle' => 'Жарықтың да көптеген жылдар бойы жарықтың',
-			'videoControls.trackSelectionAuto' => 'Автоматдық селекциясы',
 			'videoControls.chaptersButton' => 'Бөлімдер',
 			'videoControls.versionQualityButton' => 'Нұсқа және сапа',
 			'videoControls.versionColumnHeader' => 'Нұсқа',
@@ -5901,17 +5930,16 @@ extension on TranslationsKk {
 			'videoControls.transcodeUnavailableFallback' => 'Түрлендіру қолжетімсіз — түпнұсқа сапада ойнатылады',
 			'videoControls.subtitleUnavailableFallback' => 'Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады',
 			'videoControls.pipButton' => 'Суреттегі сурет режимі',
-			'videoControls.openMiniPlayer' => 'Өткен Mini Player',
-			'videoControls.returnToFullPlayer' => 'Ауыз іші шырышты қабығы',
 			'videoControls.aspectRatioButton' => 'Тараптар қатынасы',
 			'videoControls.ambientLighting' => 'Фондық жарықтандыру',
 			'videoControls.fullscreenButton' => 'Толық экранға өту',
 			'videoControls.exitFullscreenButton' => 'Толық экраннан шығу',
 			'videoControls.alwaysOnTopButton' => 'Әрдайым үстінде',
 			'videoControls.rotationLockButton' => 'Бұрылыс бұғаттауы',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Экранды бұғаттау',
 			'videoControls.screenLockButton' => 'Экран бұғаттауы',
-			'videoControls.longPressToUnlock' => 'Бұғаттаудан шығару үшін ұзақ басыңыз',
 			'videoControls.timelineSlider' => 'Видео уақыт шкаласы',
 			'videoControls.volumeSlider' => 'Дыбыс деңгейі',
 			'videoControls.endsAt' => ({required Object time}) => 'Аяқталу уақыты: ${time}',
@@ -5935,8 +5963,6 @@ extension on TranslationsKk {
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
 			'videoControls.noAudioDevicesAvailable' => 'Қолжетімді аудио құрылғылар жоқ',
 			'videoControls.searchSubtitles' => 'Субтитр іздеу',
-			'videoControls.loadSubtitleFile' => 'Басқа да салыстырды,',
-			'videoControls.subtitleLoadFailed' => 'Басқа да салыстырдан да салыстатын',
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
@@ -5945,7 +5971,6 @@ extension on TranslationsKk {
 			'videoControls.searchLanguages' => 'Тілдерден іздеу...',
 			'videoControls.skipIntro' => 'Кіріспені өткізу',
 			'videoControls.skipCredits' => 'Титрлерді өткізу',
-			'videoControls.skipAds' => 'Ауызды',
 			'videoControls.nextEpisode' => 'Келесі бөлім',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Жол ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Субтитр ${name}',
@@ -5953,6 +5978,14 @@ extension on TranslationsKk {
 			'videoControls.osdSubtitlesOff' => 'Субтитр: өшірулі',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Субтитр: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Дыбыс: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} кадр', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} қақтар', ), 
+			'videoControls.trackSelectionTitle' => 'Жарықтың да көптеген жылдар бойы жарықтың',
+			'videoControls.trackSelectionAuto' => 'Автоматдық селекциясы',
+			'videoControls.openMiniPlayer' => 'Өткен Mini Player',
+			'videoControls.returnToFullPlayer' => 'Ауыз іші шырышты қабығы',
+			'videoControls.loadSubtitleFile' => 'Басқа да салыстырды,',
+			'videoControls.subtitleLoadFailed' => 'Басқа да салыстырдан да салыстатын',
+			'videoControls.skipAds' => 'Ауызды',
 			'messages.markedAsWatched' => 'Көрілді деп белгіленді',
 			'messages.markedAsUnwatched' => 'Көрілмеді деп белгіленді',
 			'messages.markedAsWatchedOffline' => 'Көрілді деп белгіленді (онлайн болғанда синхрондалады)',
@@ -6379,8 +6412,6 @@ extension on TranslationsKk {
 			'libraries.all' => 'Барлығы',
 			'libraries.clearAll' => 'Барлығын тазалау',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасын сканерлегіңіз келе ме?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасына талдау жасағыңыз келе ме?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" метадеректерін жаңартасыз ба?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" себетін тазалайсыз ба?',
@@ -6419,6 +6450,8 @@ extension on TranslationsKk {
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
 			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.favorites' => 'Таңдаулылар',
 			'libraries.filterCategories.filePath' => 'Файл жолы',
 			'libraries.sortLabels.title' => 'Атауы',
@@ -6498,7 +6531,6 @@ extension on TranslationsKk {
 			'logs.saveLogs' => 'Ауызды да салықты',
 			'logs.logsSaved' => ({required Object path}) => 'Журналдар ${path} жолына сақталды',
 			'logs.saveLogsFailed' => 'Бұл да да салық файлға болады.',
-			'detail.endsAt' => ({required Object time}) => 'Аяқталу уақыты: ${time}',
 			'startup.failedTitle' => 'PlezyNG іске қосылмады',
 			'startup.failedBody' => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.',
 			'startup.failedBodyRepairable' => 'PlezyNG сақталған баптаулар файлы зақымдалған және PlezyNG іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.',
@@ -6893,8 +6925,6 @@ extension on TranslationsKk {
 			'watchTogether.connecting' => 'Қосылуда...',
 			'watchTogether.relayPublic' => 'Бөлмелер жалпыға ортақ Open Watch Party релелерін пайдаланады.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Бөлмелер ${url} мекенжайындағы релеңізді пайдаланады.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
 			'watchTogether.roomActions' => 'Бөлме әрекеттері',
 			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
@@ -6934,6 +6964,8 @@ extension on TranslationsKk {
 			'watchTogether.dontPlay' => 'Ойнатпау',
 			'watchTogether.unavailableTitle' => 'Сізде бұл видео жоқ',
 			'watchTogether.unavailableDescription' => 'PlezyNG оны кітапханаларыңыздан таба алмады. Көшірмені өзіңіз таңдаңыз немесе қайта іздеңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.chooseCopy' => 'Көшірмені таңдау',
 			'watchTogether.searchAgain' => 'Қайта іздеу',
 			'watchTogether.noCandidates' => 'Кітапханаларыңыздан көшірмелер табылмады.',
@@ -7407,8 +7439,6 @@ extension on TranslationsKk {
 			'metadataEdit.metadataUpdateFailed' => 'Метадеректерді жаңарту мүмкін болмады',
 			'metadataEdit.artworkUpdated' => 'Суреттер жаңартылды',
 			'metadataEdit.artworkUpdateFailed' => 'Суреттерді жаңарту мүмкін болмады',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Сурет қолжетімсіз',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Сурет опциясы ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Сурет опциясы ${index}, таңдалды',
@@ -7448,6 +7478,8 @@ extension on TranslationsKk {
 			'metadataEdit.tags' => 'Тегтер',
 			'metadataEdit.addTag' => 'Тег қосу',
 			'metadataEdit.genre' => 'Жанр',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.director' => 'Режиссер',
 			'metadataEdit.writer' => 'Сценарист',
 			'metadataEdit.producer' => 'Продюсер',
@@ -7636,6 +7668,44 @@ extension on TranslationsKk {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP пайдаланады. Желідегі басқа адамдар құпиясөзіңізді, токендеріңізді және медиаңызды оқуы немесе өзгертуі мүмкін. Мүмкін болса, HTTPS пайдаланыңыз. Осы желіге сенсеңіз және тәуекелді қабылдасаңыз ғана жалғастырыңыз.',
 			'addServer.allowHttp' => 'HTTP-ге рұқсат беру',
 			'addServer.httpsRequired' => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.',
+			'cast.chooseDevice' => 'Ауыз ішінен',
+			'cast.searching' => 'Қазіргі таңда қабырғалар үшін...',
+			'cast.connectedTo' => ({required Object device}) => 'Қаланың тұрақты тұрғындарының саны ${device}',
+			'cast.device' => 'Ауызды',
+			'cast.readyToCast' => 'Қатысуға арналған',
+			'cast.subtitle' => 'Субтитрлер',
+			'cast.serverNotAvailable' => 'Медыя сервері не қосқан.',
+			'cast.stopCasting' => 'Оданды',
+			'cast.castToDevice' => 'Ауыздылықтық',
+			'cast.noEpisodeAvailable' => 'Бұл үшін не ескеп келді.',
+			'cast.startFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір',
+			'automation.noActivePlayback' => 'Ауызды видео сессиясы бар.',
+			'automation.profileNotFound' => 'Бұл Plezy профильде қарағанда ол не қарағанда.',
+			'notifications.newEpisodeTitle' => 'Епізод',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => '7 күннен кейін бір-бірінен ұзақтығы',
+			'appAccess.description' => 'PlezyNG-нің барлық функцияларына толық қолжетімділік беретін жеті күндік сынақ мерзімін бастаңыз. Сынақ мерзімі тегін, жазылым жоқ. Одан кейін дүкендегі баға бойынша бір рет сатып алып, PlezyNG-ні шектеусіз пайдалана аласыз.',
+			'appAccess.trialEndedDescription' => 'Дүкендегі баға бойынша бір рет сатып алып, PlezyNG-нің барлық функцияларына өмірлік қолжетімділік алыңыз. Жазылым жоқ.',
+			'appAccess.startTrial' => '7 жылдан кейінгі ұзақ уақытқа дейін',
+			'appAccess.trialActive' => '7 жылдан кейінгі тестігінің өтірінің өтірін көтеріңіз.',
+			'appAccess.trialEnded' => '7 жылдан кейінгі қазір қарап отыр.',
+			'appAccess.trialStartFailed' => 'Бұл үшін бір-бірімен танымал, бірақ, бір-бірін бір-бірин бір-бірек келді.',
+			'appAccess.lifetimeTitle' => 'PlezyNG-ге өмірлік қолжетімділік ашылды',
+			'appAccess.lifetimeBody' => 'Рақмет! Енді PlezyNG-нің барлық функцияларын шектеусіз пайдалана аласыз.',
+			'appAccess.manageTitle' => 'PlezyNG жылдық қабығы',
+			'appAccess.manageDescription' => 'Бұл үшін бір-бірімен, бір-бірін, бір-бирімен, басқа бір-бірин, бір-бетімен, бір -бірімен және бір-бірумен, бір –бірімен бір-бірымен, бір —бірімен.',
+			'appAccess.buy' => ({required Object price}) => 'Барлық функцияларды ${price} бағасына ашу',
+			'appAccess.loadingPrice' => 'Өнімдер мен жарықтық бағасы...',
+			'appAccess.retryPrice' => 'Өткен қағазды',
+			'appAccess.restore' => 'Өткен келдім келдім',
+			'appAccess.pending' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
+			'appAccess.storeUnavailable' => 'Өзі сүйікті жарысы, балаларынан тұрады.Ауыз іші шырышты қабығы мен жақ сүйектердің рагы.',
+			'appAccess.productNotFound' => 'PlezyNG-ге өмірлік қолжетімділік бұл дүкенде әлі сатылмайды.',
+			'appAccess.productQueryFailed' => 'Бұл үшін бір-бірімен танымал, бірақ танымал, таңтардан танымал, оныншы және оныншы.',
+			'appAccess.purchaseFailed' => 'Қаншама жылы қазір, қайтып келді.',
+			'appAccess.restoreFailed' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректік қайраңды.',
+			'appAccess.nothingToRestore' => 'Қаланың тұрақты тұрғындарының саны PlezyNG адамды құрайды.',
+			'detail.endsAt' => ({required Object time}) => 'Аяқталу уақыты: ${time}',
 			'watchLink.serverUnavailable' => 'Бұл қағидалар үшін Plex сервері не айтасыз.',
 			'watchLink.notFound' => 'Бұл сериал немесе фильм Plex серверлеріңізден табылмады.',
 			'watchLink.ambiguous' => 'Бұл қабығы мен қабығы бар, бұл қабығы бір сервері.',
@@ -7771,7 +7841,7 @@ extension on TranslationsKk {
 			'universalMedia.saveFavorite' => 'Алдыңғы фаворит',
 			'universalMedia.playNow' => 'Қазіргі уақытта',
 			'universalMedia.favoriteSaved' => 'Бұл профильде көшіру керек.',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ), 
 			'universalMedia.playlistAddress' => 'Жабдықтау адресы',
 			'universalMedia.playlistAddressHelp' => 'Қаланың тұрақты тұрғындарының саны 3 адамды құрайды, 1 адамды қағидасы, 2 адамды жабдықтар, 4 адамды салыстырды.',
 			'universalMedia.choosePlaylist' => 'Серіктің қағидалары',
@@ -7781,7 +7851,7 @@ extension on TranslationsKk {
 			'universalMedia.removeFavorite' => 'Өткен қабырғасы',
 			'universalMedia.filesHelp' => 'Аудио, видео, немесе ISO файлы бар. Файлы және URL-дер библиографияның аяқталуы мүмкін емес.',
 			'universalMedia.chooseFiles' => 'Серіктің файл',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '1 Жылдық артықшылығы', other: '${count} жабдықтау файлы', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '1 Жылдық артықшылығы', other: '${count} жабдықтау файлы', ), 
 			'universalMedia.wifiTransfer' => 'Wi-Fi қосылу үшін дағдарысты',
 			'universalMedia.wifiTransferHelp' => 'Біздің веб-сайты мен электрондық пошталардан басқа да сіздің сайын өздерінің бір-бірімен танымал.',
 			'universalMedia.wifiTransferIntro' => 'Осылайша «Барселона» АҚ-ның «Аль-Каида» бағдарламасын көшіруге, «Файлы» және «Книги» библиотекасы бар.',
@@ -7792,7 +7862,7 @@ extension on TranslationsKk {
 			'universalMedia.copyAddress' => 'Трансфер адресы',
 			'universalMedia.addressCopied' => 'Ауызды және копиясы',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Қазіргі уақытта қаңтарда ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${count} файлды қарастырылған', other: '${count} файлы бар.', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${count} файлды қарастырылған', other: '${count} файлы бар.', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Қазіргі уақытта ${size}',
 			'universalMedia.stopTransfer' => 'Ауыз ішінен қайтадан қайтарып',
 			'universalMedia.startTransfer' => 'Трансферы',
@@ -7862,6 +7932,81 @@ extension on TranslationsKk {
 			'universalMedia.converterCancelled' => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.',
 			'universalMedia.converterDesktopOnly' => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.',
 			'universalMedia.converterStart' => 'Серіктің файлы',
+			'universalMedia.mediaToolsTitle' => 'Медіа алатын',
+			'universalMedia.mediaToolsShortcut' => 'Қаншалықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты, қанақтықты',
+			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
+			'universalMedia.mediaToolsAccessibility' => 'Қатысушы және контролер сенімді, сенімді, тастатуралық және D-pad фокусімен жұмыс істейді. Рекордиция, спонсорлық, және пошук статтау менмен таныстыралады.',
+			'universalMedia.mediaTool' => 'Медіа алатын',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
+			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
+			'universalMedia.captureSource' => 'Камера мен экран',
+			'universalMedia.captureAudioSource' => 'Аудиолық аудит (апциялық)',
+			'universalMedia.captureAudioHelp' => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.',
+			'universalMedia.captureAudioNone' => 'Аудиолық',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			'universalMedia.captureFrameRate' => 'Серіктің қабығы',
+			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
+			'universalMedia.captureSaveAs' => 'Серіктің қабырға айналады.',
+			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.',
+			'universalMedia.captureFailed' => 'Олардың дағдырығы, қанағаттанды және FFmpeg қызмет көрсету.',
+			'universalMedia.captureSaved' => 'Серіктің көтеріп көтеріп көтеріп көтеріп.',
+			'universalMedia.captureElapsedLabel' => 'Серіктің жары',
+			'universalMedia.captureStart' => 'Серіктің записы',
+			'universalMedia.captureStop' => 'Қайталы және Спас',
+			'universalMedia.captureMode' => 'Абайдың',
+			'universalMedia.shareMode' => 'Ақыттық',
+			'universalMedia.shareIntro' => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.',
+			'universalMedia.sharePrivacy' => 'Қаланың тұрақты тұрғындарының тұрақты тұрғындарының саны 60 адамды құрайды және адамды құрайды және адамды құрайды.',
+			'universalMedia.shareChooseFile' => 'Медыяфайлы',
+			'universalMedia.shareChooseHelp' => 'Аудио және видео файлы бар. Файлтің қабығы бұл компьютере бар.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.',
+			'universalMedia.shareFailed' => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.',
+			'universalMedia.shareActive' => 'Ауызды және басқа да оның сетінің сезімдер.',
+			'universalMedia.shareEnded' => 'Менеджменттер өздерінің ата-аналардан тұрады, және оның ата-аналардан тұрады.',
+			'universalMedia.shareStopped' => 'Өзі сүйікті жарысы: «Жеңірмен танымал» деп ойлаймын.',
+			'universalMedia.shareUrlCopied' => 'Қолдақтарлық адресы бар.',
+			'universalMedia.shareOpenUrl' => '«Жеңіске үлес қосқандар», «Жеңіске үлес қосқандар»',
+			'universalMedia.shareCopyUrl' => 'Қайталы қабырғасы',
+			'universalMedia.shareExpiresLabel' => 'Қаншалықты ұзақтығы',
+			'universalMedia.shareStarting' => 'Қандайды құбырды...',
+			'universalMedia.shareStart' => 'Өткен қабығы',
+			'universalMedia.shareStop' => 'Ауызды қабығы',
+			'universalMedia.extensionsMode' => 'Өнімдермен және CLI',
+			'universalMedia.extensionsIntro' => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.',
+			'universalMedia.extensionsPrivacy' => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.',
+			'universalMedia.extensionImport' => 'Өнімдер мен мақалалар',
+			'universalMedia.extensionEmpty' => 'No search services yet. Choose a trusted manifest JSON file to add one.',
+			'universalMedia.extensionChoose' => 'Жүзілік қызмет көрсету',
+			'universalMedia.extensionSearchConsent' => 'Each search sends your words to this HTTPS service. Results open only after you select one.',
+			'universalMedia.extensionSearchLabel' => 'Медіасы',
+			'universalMedia.extensionSearch' => 'Жүктесі',
+			'universalMedia.extensionSearching' => 'Жүктеу...',
+			'universalMedia.extensionNoResults' => 'Жүктесі, қанақтардан тұрады, қанақтардан тұрады, қанақтардан тұрады.',
+			'universalMedia.extensionInstallTitle' => 'Қаланың ең айқын көргенде?',
+			'universalMedia.extensionReplaceTitle' => 'Қаланың ең айқын көргенде?',
+			'universalMedia.extensionService' => 'Ақыттық',
+			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
+			'universalMedia.extensionConsent' => 'Сіздің текстіңізді бұл қызмет көрсетуге ескерту.Манифесттің жоқты коды бар.Серіңізді сіздің контенттермен танысуға болады.',
+			'universalMedia.extensionInstall' => 'Үлдік қызмет',
+			'universalMedia.extensionReplace' => 'Адаптациялық қызмет',
+			'universalMedia.extensionRemoveTitle' => 'Қаланың ең айқын көргенде?',
+			'universalMedia.extensionRemoveHelp' => 'This removes the service from this profile. PlezyNG does not contact its endpoint.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemove' => 'Ақыттық қызмет',
+			'universalMedia.extensionInvalidManifest' => 'This file is not a supported extension manifest. See the Open media guide for the format.',
+			'universalMedia.extensionSaveFailed' => 'Ауыздан шығарылған профильде қарастырып қараңыз.',
+			'universalMedia.extensionSearchFailed' => 'Қаншама жылы қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар мен қағидалар.',
+			'universalMedia.cliTitle' => 'Команды',
+			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
+			'universalMedia.cliCopyExample' => 'Команданың қосылы',
+			'universalMedia.cliCopied' => 'Қазіргі уақытта командасы копиялы.',
+			'universalMedia.captureScreen' => 'Серіктің',
+			'universalMedia.captureDefaultAudio' => 'Аудиолық аудіолық',
+			'universalMedia.shareQrLabel' => 'КР-кодтің қағидалар мен қағидалар',
+			'universalMedia.shareQrHelp' => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
 			'fileSources.title' => 'Бібліотекасы және файлы',
 			'fileSources.subtitle' => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.',
 			'fileSources.add' => 'Қайталық',
@@ -8033,8 +8178,6 @@ extension on TranslationsKk {
 			'fileSources.offlineQuotaHelp' => 'Қандай-ақ, қаңтарда жабдықтауды және ұзақ уақыт бойы жабырға айналады.Жеңінен танымал.',
 			'fileSources.offlineStorageUsage' => 'Оңтүстік кооперациясы',
 			'fileSources.reservedStorage' => 'Жарықтың',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Өткен керемет',
 			'fileSources.downloadRunning' => 'жүктеу',
 			'fileSources.downloadQueued' => 'Жүктесі',

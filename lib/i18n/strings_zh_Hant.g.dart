@@ -42,15 +42,11 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 
 	// Translations
 	@override late final _Translations$app$zh_Hant app = _Translations$app$zh_Hant._(_root);
-	@override late final _Translations$cast$zh_Hant cast = _Translations$cast$zh_Hant._(_root);
-	@override late final _Translations$automation$zh_Hant automation = _Translations$automation$zh_Hant._(_root);
-	@override late final _Translations$notifications$zh_Hant notifications = _Translations$notifications$zh_Hant._(_root);
 	@override late final _Translations$appIcon$zh_Hant appIcon = _Translations$appIcon$zh_Hant._(_root);
 	@override late final _Translations$auth$zh_Hant auth = _Translations$auth$zh_Hant._(_root);
 	@override late final _Translations$common$zh_Hant common = _Translations$common$zh_Hant._(_root);
 	@override late final _Translations$screens$zh_Hant screens = _Translations$screens$zh_Hant._(_root);
 	@override late final _Translations$update$zh_Hant update = _Translations$update$zh_Hant._(_root);
-	@override late final _Translations$appAccess$zh_Hant appAccess = _Translations$appAccess$zh_Hant._(_root);
 	@override late final _Translations$settings$zh_Hant settings = _Translations$settings$zh_Hant._(_root);
 	@override late final _Translations$themeEditor$zh_Hant themeEditor = _Translations$themeEditor$zh_Hant._(_root);
 	@override late final _Translations$search$zh_Hant search = _Translations$search$zh_Hant._(_root);
@@ -76,7 +72,6 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$serverSelection$zh_Hant serverSelection = _Translations$serverSelection$zh_Hant._(_root);
 	@override late final _Translations$hubDetail$zh_Hant hubDetail = _Translations$hubDetail$zh_Hant._(_root);
 	@override late final _Translations$logs$zh_Hant logs = _Translations$logs$zh_Hant._(_root);
-	@override late final _Translations$detail$zh_Hant detail = _Translations$detail$zh_Hant._(_root);
 	@override late final _Translations$startup$zh_Hant startup = _Translations$startup$zh_Hant._(_root);
 	@override late final _Translations$licenses$zh_Hant licenses = _Translations$licenses$zh_Hant._(_root);
 	@override late final _Translations$navigation$zh_Hant navigation = _Translations$navigation$zh_Hant._(_root);
@@ -99,6 +94,11 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$seerr$zh_Hant seerr = _Translations$seerr$zh_Hant._(_root);
 	@override late final _Translations$services$zh_Hant services = _Translations$services$zh_Hant._(_root);
 	@override late final _Translations$addServer$zh_Hant addServer = _Translations$addServer$zh_Hant._(_root);
+	@override late final _Translations$cast$zh_Hant cast = _Translations$cast$zh_Hant._(_root);
+	@override late final _Translations$automation$zh_Hant automation = _Translations$automation$zh_Hant._(_root);
+	@override late final _Translations$notifications$zh_Hant notifications = _Translations$notifications$zh_Hant._(_root);
+	@override late final _Translations$appAccess$zh_Hant appAccess = _Translations$appAccess$zh_Hant._(_root);
+	@override late final _Translations$detail$zh_Hant detail = _Translations$detail$zh_Hant._(_root);
 	@override late final _Translations$watchLink$zh_Hant watchLink = _Translations$watchLink$zh_Hant._(_root);
 	@override late final _Translations$homeLayout$zh_Hant homeLayout = _Translations$homeLayout$zh_Hant._(_root);
 	@override late final _Translations$platform$zh_Hant platform = _Translations$platform$zh_Hant._(_root);
@@ -119,48 +119,6 @@ class _Translations$app$zh_Hant extends Translations$app$zh {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$zh_Hant extends Translations$cast$zh {
-	_Translations$cast$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => '點選一個裝置';
-	@override String get searching => '尋找卡片裝置';
-	@override String connectedTo({required Object device}) => '連線到 ${device}';
-	@override String get device => '加密裝置';
-	@override String get readyToCast => '準備放';
-	@override String get subtitle => '字幕';
-	@override String get serverNotAvailable => '媒體伺服器不適用。';
-	@override String get stopCasting => '停止加密';
-	@override String get castToDevice => '點選裝置';
-	@override String get noEpisodeAvailable => '沒有任何節目可播放。';
-	@override String get startFailed => '無法開始投射,檢查伺服器並嘗試一次。';
-}
-
-// Path: automation
-class _Translations$automation$zh_Hant extends Translations$automation$zh {
-	_Translations$automation$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => '沒有活躍的影片會話可以控制。';
-	@override String get profileNotFound => '這個 Plezy 個人資料無法找到。';
-}
-
-// Path: notifications
-class _Translations$notifications$zh_Hant extends Translations$notifications$zh {
-	_Translations$notifications$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => '新集';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -323,37 +281,6 @@ class _Translations$update$zh_Hant extends Translations$update$zh {
 	@override String get viewRelease => '查看版本詳情';
 	@override String get latestVersion => '已安裝的版本為最新版本';
 	@override String get checkFailed => '無法檢查更新';
-}
-
-// Path: appAccess
-class _Translations$appAccess$zh_Hant extends Translations$appAccess$zh {
-	_Translations$appAccess$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '每個功能都免費嘗試7天';
-	@override String get description => '開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。';
-	@override String get trialEndedDescription => '依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。';
-	@override String get startTrial => '開始我的7天免費試驗';
-	@override String get trialActive => '您的7天全功能測試已活躍。';
-	@override String get trialEnded => '你的七天審判結束了';
-	@override String get trialStartFailed => '我無法在這個裝置上儲存測試,請再試一次。';
-	@override String get lifetimeTitle => 'PlezyNG 終身禁用';
-	@override String get lifetimeBody => '感謝!您終身訪問所有 PlezyNG 功能。';
-	@override String get manageTitle => 'PlezyNG 終身訪問';
-	@override String get manageDescription => '每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。';
-	@override String buy({required Object price}) => '解鎖所有功能為 ${price}';
-	@override String get loadingPrice => '貨物價格...';
-	@override String get retryPrice => '回報價格 檢視';
-	@override String get restore => '恢復終身購買';
-	@override String get pending => '您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。';
-	@override String get storeUnavailable => '目前無法購買。請確認您已登入商店，且此裝置允許購買。';
-	@override String get productNotFound => 'PlezyNG 終身解鎖 目前尚未在本商店提供。';
-	@override String get productQueryFailed => '無法收取商店價格,請檢查您的連線並嘗試一次。';
-	@override String get purchaseFailed => '購買不錯了,再試一次。';
-	@override String get restoreFailed => '無法到達商店恢復您的購買,再試一次。';
-	@override String get nothingToRestore => '已找到第 PlezyNG 終身購買號,用於此商店帳戶。';
 }
 
 // Path: settings
@@ -1234,10 +1161,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	final TranslationsZhHant _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
-	);
 	@override String get audioLabel => '音訊';
 	@override String get subtitlesLabel => '字幕';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount} ${unit}';
@@ -1274,8 +1197,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get unmuteButton => '取消靜音';
 	@override String get settingsButton => '播放設定';
 	@override String get tracksButton => '音訊與字幕';
-	@override String get trackSelectionTitle => '選擇遊戲前的遊戲';
-	@override String get trackSelectionAuto => '自動選擇';
 	@override String get chaptersButton => '章節';
 	@override String get versionQualityButton => '版本與畫質';
 	@override String get versionColumnHeader => '版本';
@@ -1285,8 +1206,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get transcodeUnavailableFallback => '無法使用轉碼 — 將以原始畫質播放';
 	@override String get subtitleUnavailableFallback => '無法載入所選字幕 — 將繼續無字幕播放';
 	@override String get pipButton => '子母畫面模式';
-	@override String get openMiniPlayer => '開放小型玩家';
-	@override String get returnToFullPlayer => '回到全玩家';
 	@override String get aspectRatioButton => '寬高比';
 	@override String get ambientLighting => '氛圍燈光';
 	@override String get fullscreenButton => '進入全螢幕';
@@ -1295,7 +1214,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get rotationLockButton => '旋轉鎖定';
 	@override String get lockScreen => '鎖定螢幕';
 	@override String get screenLockButton => '螢幕鎖定';
-	@override String get longPressToUnlock => '長按解鎖';
 	@override String get timelineSlider => '影片時間軸';
 	@override String get volumeSlider => '音量調整';
 	@override String endsAt({required Object time}) => '預計 ${time} 結束';
@@ -1312,8 +1230,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get noQueueItems => '佇列中沒有項目';
 	@override String get noAudioDevicesAvailable => '沒有可用的音訊裝置';
 	@override String get searchSubtitles => '搜尋字幕';
-	@override String get loadSubtitleFile => '查詢下載檔案...';
-	@override String get subtitleLoadFailed => '未能下載字幕檔案';
 	@override String get language => '語言';
 	@override String get noSubtitlesFound => '找不到字幕';
 	@override String get subtitleDownloaded => '字幕下載成功';
@@ -1322,7 +1238,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get searchLanguages => '搜尋語言…';
 	@override String get skipIntro => '略過片頭';
 	@override String get skipCredits => '略過片尾';
-	@override String get skipAds => '滑雪廣告';
 	@override String get nextEpisode => '下一集';
 	@override String subtitleTrack({required Object n}) => '字幕軌 ${n}';
 	@override String subtitleFile({required Object name}) => '字幕 ${name}';
@@ -1330,6 +1245,17 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get osdSubtitlesOff => '字幕：關閉';
 	@override String osdSubtitles({required Object track}) => '字幕：${track}';
 	@override String osdAudio({required Object track}) => '音訊：${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
+	);
+	@override String get trackSelectionTitle => '選擇遊戲前的遊戲';
+	@override String get trackSelectionAuto => '自動選擇';
+	@override String get openMiniPlayer => '開放小型玩家';
+	@override String get returnToFullPlayer => '回到全玩家';
+	@override String get loadSubtitleFile => '查詢下載檔案...';
+	@override String get subtitleLoadFailed => '未能下載字幕檔案';
+	@override String get skipAds => '滑雪廣告';
 }
 
 // Path: messages
@@ -1827,16 +1753,6 @@ class _Translations$logs$zh_Hant extends Translations$logs$zh {
 	@override String get saveLogs => '儲存存檔';
 	@override String logsSaved({required Object path}) => '儲存到 ${path} 的存檔';
 	@override String get saveLogsFailed => '無法儲存存檔。';
-}
-
-// Path: detail
-class _Translations$detail$zh_Hant extends Translations$detail$zh {
-	_Translations$detail$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => '預計 ${time} 結束';
 }
 
 // Path: startup
@@ -2904,6 +2820,89 @@ class _Translations$addServer$zh_Hant extends Translations$addServer$zh {
 	@override String get httpsRequired => '使用 HTTPS 或明確允許未加密的連線。';
 }
 
+// Path: cast
+class _Translations$cast$zh_Hant extends Translations$cast$zh {
+	_Translations$cast$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => '點選一個裝置';
+	@override String get searching => '尋找卡片裝置';
+	@override String connectedTo({required Object device}) => '連線到 ${device}';
+	@override String get device => '加密裝置';
+	@override String get readyToCast => '準備放';
+	@override String get subtitle => '字幕';
+	@override String get serverNotAvailable => '媒體伺服器不適用。';
+	@override String get stopCasting => '停止加密';
+	@override String get castToDevice => '點選裝置';
+	@override String get noEpisodeAvailable => '沒有任何節目可播放。';
+	@override String get startFailed => '無法開始投射,檢查伺服器並嘗試一次。';
+}
+
+// Path: automation
+class _Translations$automation$zh_Hant extends Translations$automation$zh {
+	_Translations$automation$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => '沒有活躍的影片會話可以控制。';
+	@override String get profileNotFound => '這個 Plezy 個人資料無法找到。';
+}
+
+// Path: notifications
+class _Translations$notifications$zh_Hant extends Translations$notifications$zh {
+	_Translations$notifications$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => '新集';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$zh_Hant extends Translations$appAccess$zh {
+	_Translations$appAccess$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '每個功能都免費嘗試7天';
+	@override String get description => '開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。';
+	@override String get trialEndedDescription => '依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。';
+	@override String get startTrial => '開始我的7天免費試驗';
+	@override String get trialActive => '您的7天全功能測試已活躍。';
+	@override String get trialEnded => '你的七天審判結束了';
+	@override String get trialStartFailed => '我無法在這個裝置上儲存測試,請再試一次。';
+	@override String get lifetimeTitle => 'PlezyNG 終身禁用';
+	@override String get lifetimeBody => '感謝!您終身訪問所有 PlezyNG 功能。';
+	@override String get manageTitle => 'PlezyNG 終身訪問';
+	@override String get manageDescription => '每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。';
+	@override String buy({required Object price}) => '解鎖所有功能為 ${price}';
+	@override String get loadingPrice => '貨物價格...';
+	@override String get retryPrice => '回報價格 檢視';
+	@override String get restore => '恢復終身購買';
+	@override String get pending => '您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。';
+	@override String get storeUnavailable => '目前無法購買。請確認您已登入商店，且此裝置允許購買。';
+	@override String get productNotFound => 'PlezyNG 終身解鎖 目前尚未在本商店提供。';
+	@override String get productQueryFailed => '無法收取商店價格,請檢查您的連線並嘗試一次。';
+	@override String get purchaseFailed => '購買不錯了,再試一次。';
+	@override String get restoreFailed => '無法到達商店恢復您的購買,再試一次。';
+	@override String get nothingToRestore => '已找到第 PlezyNG 終身購買號,用於此商店帳戶。';
+}
+
+// Path: detail
+class _Translations$detail$zh_Hant extends Translations$detail$zh {
+	_Translations$detail$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => '預計 ${time} 結束';
+}
+
 // Path: watchLink
 class _Translations$watchLink$zh_Hant extends Translations$watchLink$zh {
 	_Translations$watchLink$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
@@ -3173,8 +3172,80 @@ class _Translations$universalMedia$zh_Hant extends Translations$universalMedia$z
 	@override String get converterCancelled => '轉換取消了,不完整的輸出被刪除。';
 	@override String get converterDesktopOnly => '本地轉換可在桌面計算機上使用 FFmpeg 安裝。';
 	@override String get converterStart => '轉換檔案';
+	@override String get mediaToolsTitle => '媒體工具';
+	@override String get mediaToolsShortcut => '捕獲或共享媒體,新增搜尋擴充套件或使用命令列。';
+	@override String get mediaToolsIntro => '選擇一個專注的工具. 捕獲和流出使用 FFmpeg 安裝在這個桌面上. 擴充套件和 CLI 命令使用有限的 HTTPS 請求和現有 Open media 流。';
+	@override String get mediaToolsAccessibility => '工具選項和控制器與觸控、指標、鍵盤和D-pad焦點工作。 錄製、共享和搜尋狀態的變化被公佈。';
+	@override String get mediaTool => '媒體工具';
+	@override String get captureIntro => '在此計算機上記錄螢幕或相機到 MP4 檔案. FFmpeg 必須安裝幷包含 H.264 編碼器。';
+	@override String get captureNoDevices => '沒有螢幕或相機被發現 檢視 FFmpeg 捕捉支援和作業系統隱私許可證。';
+	@override String get captureSource => '螢幕或相機';
+	@override String get captureAudioSource => '音訊輸入(可選)';
+	@override String get captureAudioHelp => '新增來自微型或可用的輸入的音訊 裝置選項取決於 FFmpeg 和系統許可。';
+	@override String get captureAudioNone => '沒有音訊';
+	@override String get captureWaylandHelp => 'Wayland 限制此 XWayland 捕獲到 X display. XWayland 以外的 Windows 可能不會出現。';
+	@override String get captureFrameRate => '記錄框率';
+	@override String get capturePrivacy => '錄製僅儲存到您選擇的檔案。 微型錄制是可選的. PlezyNG 不會上傳錄製。';
+	@override String get captureSaveAs => '儲存螢幕錄製如';
+	@override String get captureExtensionMismatch => '在 .mp4 中選擇終端的檔名。';
+	@override String get captureFfmpegMissing => 'FFmpeg 或 H.264 影片編碼器不適用. 安裝支援的 FFmpeg 構建,然後再次嘗試。';
+	@override String get captureFailed => '記錄無法儲存 檢查裝置許可、可用的儲存和 FFmpeg 支援。';
+	@override String get captureSaved => '螢幕錄製儲存';
+	@override String get captureElapsedLabel => '錄製時間';
+	@override String get captureStart => '開始錄製';
+	@override String get captureStop => '停止和拯救';
+	@override String get captureMode => '捕捉';
+	@override String get shareMode => '分享';
+	@override String get shareIntro => '將本地媒體檔案傳送到您的私人網路上的另一個裝置. PlezyNG 建立一個暫時的 HLS 流。';
+	@override String get sharePrivacy => '您的本地網路的任何人,誰接收私人連結可以觀看,而它是活躍的. 連結結束後60分鐘. 停止共享,關閉伺服器並取消連結。';
+	@override String get shareChooseFile => '選擇媒體檔案';
+	@override String get shareChooseHelp => '選擇一個本地的音訊或影片檔案. 該檔案留在此計算機上。';
+	@override String get shareFfmpegMissing => 'FFmpeg 或 H.264/AAC 編碼器不適用. 安裝 FFmpeg 與 H.264 和 AAC 編碼支援。';
+	@override String get shareFailed => '流量無法意外地開始或停止。 檢視 FFmpeg 和網路訪問。';
+	@override String get shareActive => '流在您的私人網路上已經準備好了。';
+	@override String get shareEnded => '媒體已經到達了結局,並且不再被分享。';
+	@override String get shareStopped => '分享停止了,暫時連結不再有效。';
+	@override String get shareUrlCopied => '流地址複製。';
+	@override String get shareOpenUrl => '在另一臺裝置上的一個播放器中開啟此地址';
+	@override String get shareCopyUrl => '複製流地址';
+	@override String get shareExpiresLabel => '連結終止';
+	@override String get shareStarting => '準備流...';
+	@override String get shareStart => '開始分享';
+	@override String get shareStop => '停止分享';
+	@override String get extensionsMode => '擴充套件和CLI';
+	@override String get extensionsIntro => '新增一個資料僅搜尋擴充套件,以找到媒體. 選擇一個結果,將其載入到熟悉的 Open media 表格。';
+	@override String get extensionsPrivacy => '一個顯明可以定義一個 HTTPS 搜尋終點和地圖響應欄位. 它不能執行程式碼,新增請求標題,閱讀檔案,或啟動盾牌命令。';
+	@override String get extensionImport => '新增擴充套件顯明';
+	@override String get extensionEmpty => '尚未搜尋服務. 選擇一個可靠的顯明 JSON 檔案新增一個。';
+	@override String get extensionChoose => '搜尋服務';
+	@override String get extensionSearchConsent => '每個搜尋都會傳送您的單詞到這個 HTTPS 服務. 結果僅在您選擇一個後開啟。';
+	@override String get extensionSearchLabel => '搜尋媒體';
+	@override String get extensionSearch => '搜尋';
+	@override String get extensionSearching => '尋找...';
+	@override String get extensionNoResults => '沒有安全的媒體結果返回,請嘗試另一個搜尋。';
+	@override String get extensionInstallTitle => '新增此搜尋服務?';
+	@override String get extensionReplaceTitle => '更新此搜尋服務?';
+	@override String get extensionService => '服務';
+	@override String get extensionEndpoint => 'HTTPS 終點';
+	@override String get extensionConsent => '您的搜尋文字被髮送到此服務. 該示文稿不包含執行程式碼. 繼續只有如果你信任這個終點。';
+	@override String get extensionInstall => '新增服務';
+	@override String get extensionReplace => '更新服務';
+	@override String get extensionRemoveTitle => '刪除此搜尋服務?';
+	@override String get extensionRemoveHelp => '這將取消該服務從此個人資料中. PlezyNG 不聯絡其終點。';
+	@override String get extensionRemove => '取消服務';
+	@override String get extensionInvalidManifest => '此檔案不是一個支援的擴充套件顯而易見. 檢視 Open media 格式指南。';
+	@override String get extensionSaveFailed => '該擴充套件無法儲存到活躍的個人資料。';
+	@override String get extensionSearchFailed => '搜尋服務沒有返回有效的答案 檢查終點並嘗試一次。';
+	@override String get cliTitle => '命令線';
+	@override String get cliHelp => '使用 plezyctl 指南來驗證一個顯明或搜尋相同的擴充套件. 每次搜尋之前,檢視 HTTPS 服務. 結果在現有媒體格式中開啟; 選擇播放按鈕開始。';
+	@override String get cliCopyExample => '複製命令示例';
+	@override String get cliCopied => '命令例子複製';
+	@override String get captureScreen => '螢幕';
+	@override String get captureDefaultAudio => '預設音訊輸入';
+	@override String get shareQrLabel => '臨時流地址的QR程式碼';
+	@override String get shareQrHelp => '掃描與同一私人網路連線的相容播放器。';
+	@override String get shareHttpHint => '此流使用未加密的 HTTP. 在 PlezyNG 中,允許 HTTP 在開啟它之前。';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$zh_Hant extends Translations$fileSources$zh {
@@ -4836,21 +4907,6 @@ extension on TranslationsZhHant {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => '點選一個裝置',
-			'cast.searching' => '尋找卡片裝置',
-			'cast.connectedTo' => ({required Object device}) => '連線到 ${device}',
-			'cast.device' => '加密裝置',
-			'cast.readyToCast' => '準備放',
-			'cast.subtitle' => '字幕',
-			'cast.serverNotAvailable' => '媒體伺服器不適用。',
-			'cast.stopCasting' => '停止加密',
-			'cast.castToDevice' => '點選裝置',
-			'cast.noEpisodeAvailable' => '沒有任何節目可播放。',
-			'cast.startFailed' => '無法開始投射,檢查伺服器並嘗試一次。',
-			'automation.noActivePlayback' => '沒有活躍的影片會話可以控制。',
-			'automation.profileNotFound' => '這個 Plezy 個人資料無法找到。',
-			'notifications.newEpisodeTitle' => '新集',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => '應用程式圖示',
 			'appIcon.defaultIcon' => '預設',
 			'appIcon.current' => '目前圖示',
@@ -5013,28 +5069,6 @@ extension on TranslationsZhHant {
 			'update.viewRelease' => '查看版本詳情',
 			'update.latestVersion' => '已安裝的版本為最新版本',
 			'update.checkFailed' => '無法檢查更新',
-			'appAccess.title' => '每個功能都免費嘗試7天',
-			'appAccess.description' => '開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。',
-			'appAccess.trialEndedDescription' => '依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。',
-			'appAccess.startTrial' => '開始我的7天免費試驗',
-			'appAccess.trialActive' => '您的7天全功能測試已活躍。',
-			'appAccess.trialEnded' => '你的七天審判結束了',
-			'appAccess.trialStartFailed' => '我無法在這個裝置上儲存測試,請再試一次。',
-			'appAccess.lifetimeTitle' => 'PlezyNG 終身禁用',
-			'appAccess.lifetimeBody' => '感謝!您終身訪問所有 PlezyNG 功能。',
-			'appAccess.manageTitle' => 'PlezyNG 終身訪問',
-			'appAccess.manageDescription' => '每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。',
-			'appAccess.buy' => ({required Object price}) => '解鎖所有功能為 ${price}',
-			'appAccess.loadingPrice' => '貨物價格...',
-			'appAccess.retryPrice' => '回報價格 檢視',
-			'appAccess.restore' => '恢復終身購買',
-			'appAccess.pending' => '您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。',
-			'appAccess.storeUnavailable' => '目前無法購買。請確認您已登入商店，且此裝置允許購買。',
-			'appAccess.productNotFound' => 'PlezyNG 終身解鎖 目前尚未在本商店提供。',
-			'appAccess.productQueryFailed' => '無法收取商店價格,請檢查您的連線並嘗試一次。',
-			'appAccess.purchaseFailed' => '購買不錯了,再試一次。',
-			'appAccess.restoreFailed' => '無法到達商店恢復您的購買,再試一次。',
-			'appAccess.nothingToRestore' => '已找到第 PlezyNG 終身購買號,用於此商店帳戶。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => '贊助 PlezyNG',
 			'settings.supportDeveloperDescription' => '捐款支持開發',
@@ -5347,8 +5381,6 @@ extension on TranslationsZhHant {
 			'settings.audioPassthrough' => '音訊直通',
 			'settings.audioPassthroughDescription' => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。',
 			'settings.audioPassthroughDescriptionApple' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。在 iOS、iPadOS 與 tvOS 26 或更新版本上，TrueHD Atmos 與 DTS:X 會以空間音訊播放。其他 DTS 與 TrueHD 音軌則以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
 			'settings.audioPassthroughOverriddenByNormalization' => '音量標準化開啟時停用',
 			'settings.audioChannelLimit' => '音訊聲道',
@@ -5386,6 +5418,8 @@ extension on TranslationsZhHant {
 			'settings.disableDolbyVisionDescription' => '檔案包含 HDR10 或 HLG 層時，改為播放該層而非 Dolby Vision',
 			'settings.hdrSdrConversion' => 'HDR 轉 SDR',
 			'settings.hdrSdrConversionDescription' => '選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => '自動',
 			'settings.hdrSdrConversionAutoDescription' => 'Android 9 及更新版本使用裝置，較舊版本使用播放器',
 			'settings.hdrSdrConversionDevice' => '裝置',
@@ -5847,7 +5881,6 @@ extension on TranslationsZhHant {
 			'tooltips.markAsWatched' => '標記為已觀看',
 			'tooltips.markAsUnwatched' => '標記為未觀看',
 			'audioTracks.track' => ({required Object n}) => '音軌 ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', ), 
 			'videoControls.audioLabel' => '音訊',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount} ${unit}',
@@ -5861,8 +5894,6 @@ extension on TranslationsZhHant {
 			'videoControls.sleepTimerEndOfVideo' => '目前影片結束時',
 			'videoControls.sleepTimerStopAtHeader' => '停止於',
 			'videoControls.sleepTimerDurationHeader' => '計時器',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => '播放將在此影片結束時暫停',
 			'videoControls.stillWatching' => '您還在觀看嗎？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds} 秒後暫停',
@@ -5886,8 +5917,6 @@ extension on TranslationsZhHant {
 			'videoControls.unmuteButton' => '取消靜音',
 			'videoControls.settingsButton' => '播放設定',
 			'videoControls.tracksButton' => '音訊與字幕',
-			'videoControls.trackSelectionTitle' => '選擇遊戲前的遊戲',
-			'videoControls.trackSelectionAuto' => '自動選擇',
 			'videoControls.chaptersButton' => '章節',
 			'videoControls.versionQualityButton' => '版本與畫質',
 			'videoControls.versionColumnHeader' => '版本',
@@ -5897,17 +5926,16 @@ extension on TranslationsZhHant {
 			'videoControls.transcodeUnavailableFallback' => '無法使用轉碼 — 將以原始畫質播放',
 			'videoControls.subtitleUnavailableFallback' => '無法載入所選字幕 — 將繼續無字幕播放',
 			'videoControls.pipButton' => '子母畫面模式',
-			'videoControls.openMiniPlayer' => '開放小型玩家',
-			'videoControls.returnToFullPlayer' => '回到全玩家',
 			'videoControls.aspectRatioButton' => '寬高比',
 			'videoControls.ambientLighting' => '氛圍燈光',
 			'videoControls.fullscreenButton' => '進入全螢幕',
 			'videoControls.exitFullscreenButton' => '退出全螢幕',
 			'videoControls.alwaysOnTopButton' => '視窗置頂',
 			'videoControls.rotationLockButton' => '旋轉鎖定',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => '鎖定螢幕',
 			'videoControls.screenLockButton' => '螢幕鎖定',
-			'videoControls.longPressToUnlock' => '長按解鎖',
 			'videoControls.timelineSlider' => '影片時間軸',
 			'videoControls.volumeSlider' => '音量調整',
 			'videoControls.endsAt' => ({required Object time}) => '預計 ${time} 結束',
@@ -5931,8 +5959,6 @@ extension on TranslationsZhHant {
 			'videoControls.noQueueItems' => '佇列中沒有項目',
 			'videoControls.noAudioDevicesAvailable' => '沒有可用的音訊裝置',
 			'videoControls.searchSubtitles' => '搜尋字幕',
-			'videoControls.loadSubtitleFile' => '查詢下載檔案...',
-			'videoControls.subtitleLoadFailed' => '未能下載字幕檔案',
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
 			'videoControls.subtitleDownloaded' => '字幕下載成功',
@@ -5941,7 +5967,6 @@ extension on TranslationsZhHant {
 			'videoControls.searchLanguages' => '搜尋語言…',
 			'videoControls.skipIntro' => '略過片頭',
 			'videoControls.skipCredits' => '略過片尾',
-			'videoControls.skipAds' => '滑雪廣告',
 			'videoControls.nextEpisode' => '下一集',
 			'videoControls.subtitleTrack' => ({required Object n}) => '字幕軌 ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => '字幕 ${name}',
@@ -5949,6 +5974,14 @@ extension on TranslationsZhHant {
 			'videoControls.osdSubtitlesOff' => '字幕：關閉',
 			'videoControls.osdSubtitles' => ({required Object track}) => '字幕：${track}',
 			'videoControls.osdAudio' => ({required Object track}) => '音訊：${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', ), 
+			'videoControls.trackSelectionTitle' => '選擇遊戲前的遊戲',
+			'videoControls.trackSelectionAuto' => '自動選擇',
+			'videoControls.openMiniPlayer' => '開放小型玩家',
+			'videoControls.returnToFullPlayer' => '回到全玩家',
+			'videoControls.loadSubtitleFile' => '查詢下載檔案...',
+			'videoControls.subtitleLoadFailed' => '未能下載字幕檔案',
+			'videoControls.skipAds' => '滑雪廣告',
 			'messages.markedAsWatched' => '已標記為已觀看',
 			'messages.markedAsUnwatched' => '已標記為未觀看',
 			'messages.markedAsWatchedOffline' => '已標記為已觀看（將在連線時同步）',
@@ -6375,8 +6408,6 @@ extension on TranslationsZhHant {
 			'libraries.all' => '全部',
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '確定要掃描「${title}」嗎？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '確定要分析「${title}」嗎？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '確定要重新整理「${title}」的中繼資料嗎？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '確定要清空「${title}」的垃圾桶嗎？',
@@ -6415,6 +6446,8 @@ extension on TranslationsZhHant {
 			'libraries.filterCategories.tag' => '標籤',
 			'libraries.filterCategories.unwatched' => '未觀看',
 			'libraries.filterCategories.unplayed' => '未播放',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.favorites' => '我的最愛',
 			'libraries.filterCategories.filePath' => '檔案路徑',
 			'libraries.sortLabels.title' => '標題',
@@ -6494,7 +6527,6 @@ extension on TranslationsZhHant {
 			'logs.saveLogs' => '儲存存檔',
 			'logs.logsSaved' => ({required Object path}) => '儲存到 ${path} 的存檔',
 			'logs.saveLogsFailed' => '無法儲存存檔。',
-			'detail.endsAt' => ({required Object time}) => '預計 ${time} 結束',
 			'startup.failedTitle' => 'PlezyNG 無法啟動',
 			'startup.failedBody' => '啟動期間發生問題。下方詳細資料可識別失敗的原因。',
 			'startup.failedBodyRepairable' => 'PlezyNG 儲存的設定檔已損壞，必須先重建才能啟動。重試無法解決問題 — 請選擇「修復儲存空間」。',
@@ -6889,8 +6921,6 @@ extension on TranslationsZhHant {
 			'watchTogether.connecting' => '正在連線…',
 			'watchTogether.relayPublic' => '房間使用公開的 Open Watch Party 中繼伺服器。',
 			'watchTogether.relayCustom' => ({required Object url}) => '房間使用您位於 ${url} 的中繼伺服器。',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => '最近的房間',
 			'watchTogether.roomActions' => '房間操作',
 			'watchTogether.renameRoom' => '重新命名房間',
@@ -6930,6 +6960,8 @@ extension on TranslationsZhHant {
 			'watchTogether.dontPlay' => '不要播放',
 			'watchTogether.unavailableTitle' => '您沒有這部影片',
 			'watchTogether.unavailableDescription' => 'PlezyNG 無法在您的媒體庫中找到這部影片。請自行選擇副本，或重新搜尋。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.chooseCopy' => '選擇副本',
 			'watchTogether.searchAgain' => '重新搜尋',
 			'watchTogether.noCandidates' => '在您的媒體庫中找不到任何副本。',
@@ -7403,8 +7435,6 @@ extension on TranslationsZhHant {
 			'metadataEdit.metadataUpdateFailed' => '中繼資料更新失敗',
 			'metadataEdit.artworkUpdated' => '封面圖片已更新',
 			'metadataEdit.artworkUpdateFailed' => '封面圖片更新失敗',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => '沒有可用的封面圖片',
 			'metadataEdit.artworkOption' => ({required Object index}) => '封面圖片選項 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '封面圖片選項 ${index}，已選擇',
@@ -7444,6 +7474,8 @@ extension on TranslationsZhHant {
 			'metadataEdit.tags' => '標籤',
 			'metadataEdit.addTag' => '新增標籤',
 			'metadataEdit.genre' => '類型',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.director' => '導演',
 			'metadataEdit.writer' => '編劇',
 			'metadataEdit.producer' => '製片',
@@ -7632,6 +7664,44 @@ extension on TranslationsZhHant {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} 使用 HTTP。網路中的其他人可能讀取或竄改您的密碼、權杖和媒體內容。請盡可能使用 HTTPS。只有在您信任此網路並接受風險時才繼續。',
 			'addServer.allowHttp' => '允許 HTTP',
 			'addServer.httpsRequired' => '使用 HTTPS 或明確允許未加密的連線。',
+			'cast.chooseDevice' => '點選一個裝置',
+			'cast.searching' => '尋找卡片裝置',
+			'cast.connectedTo' => ({required Object device}) => '連線到 ${device}',
+			'cast.device' => '加密裝置',
+			'cast.readyToCast' => '準備放',
+			'cast.subtitle' => '字幕',
+			'cast.serverNotAvailable' => '媒體伺服器不適用。',
+			'cast.stopCasting' => '停止加密',
+			'cast.castToDevice' => '點選裝置',
+			'cast.noEpisodeAvailable' => '沒有任何節目可播放。',
+			'cast.startFailed' => '無法開始投射,檢查伺服器並嘗試一次。',
+			'automation.noActivePlayback' => '沒有活躍的影片會話可以控制。',
+			'automation.profileNotFound' => '這個 Plezy 個人資料無法找到。',
+			'notifications.newEpisodeTitle' => '新集',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => '每個功能都免費嘗試7天',
+			'appAccess.description' => '開始一個七天的試用,完全訪問每個PlezyNG功能,在試用期間沒有費用,沒有訂閱,試用後,在您的商店價格上一生購買,終身開鎖PlezyNG。',
+			'appAccess.trialEndedDescription' => '依商店顯示的價格一次性購買，即可終身解鎖 PlezyNG 的全部功能，無須訂閱。',
+			'appAccess.startTrial' => '開始我的7天免費試驗',
+			'appAccess.trialActive' => '您的7天全功能測試已活躍。',
+			'appAccess.trialEnded' => '你的七天審判結束了',
+			'appAccess.trialStartFailed' => '我無法在這個裝置上儲存測試,請再試一次。',
+			'appAccess.lifetimeTitle' => 'PlezyNG 終身禁用',
+			'appAccess.lifetimeBody' => '感謝!您終身訪問所有 PlezyNG 功能。',
+			'appAccess.manageTitle' => 'PlezyNG 終身訪問',
+			'appAccess.manageDescription' => '每個功能都免費嘗試7天,然後用一個付款解鎖一生的一切,以您的商店的價格。',
+			'appAccess.buy' => ({required Object price}) => '解鎖所有功能為 ${price}',
+			'appAccess.loadingPrice' => '貨物價格...',
+			'appAccess.retryPrice' => '回報價格 檢視',
+			'appAccess.restore' => '恢復終身購買',
+			'appAccess.pending' => '您的購買正在等待付款或核准。商店完成交易後，終身使用權限將立即解鎖。',
+			'appAccess.storeUnavailable' => '目前無法購買。請確認您已登入商店，且此裝置允許購買。',
+			'appAccess.productNotFound' => 'PlezyNG 終身解鎖 目前尚未在本商店提供。',
+			'appAccess.productQueryFailed' => '無法收取商店價格,請檢查您的連線並嘗試一次。',
+			'appAccess.purchaseFailed' => '購買不錯了,再試一次。',
+			'appAccess.restoreFailed' => '無法到達商店恢復您的購買,再試一次。',
+			'appAccess.nothingToRestore' => '已找到第 PlezyNG 終身購買號,用於此商店帳戶。',
+			'detail.endsAt' => ({required Object time}) => '預計 ${time} 結束',
 			'watchLink.serverUnavailable' => '無法訪問 Plex 伺服器此連結。',
 			'watchLink.notFound' => '我無法在您的伺服器上找到此節目或電影 Plex。',
 			'watchLink.ambiguous' => '此連結匹配多個伺服器上的專案,並將伺服器新增到連結中。',
@@ -7767,7 +7837,7 @@ extension on TranslationsZhHant {
 			'universalMedia.saveFavorite' => '儲存最喜歡',
 			'universalMedia.playNow' => '現在玩',
 			'universalMedia.favoriteSaved' => '流喜愛儲存到此個人資料',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 不受支援或不安全的播放列表輸入。', other: '${count} 不受支援或不安全的播放列表輸入。', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 不受支援或不安全的播放列表輸入。', other: '${count} 不受支援或不安全的播放列表輸入。', ), 
 			'universalMedia.playlistAddress' => 'Playlist 地址',
 			'universalMedia.playlistAddressHelp' => '從網頁地址開啟 M3U、M3U8 或 PLS 播放列表. Direct Stream 連結不會儲存播放名單。',
 			'universalMedia.choosePlaylist' => '選擇 Playlist 檔案',
@@ -7777,7 +7847,7 @@ extension on TranslationsZhHant {
 			'universalMedia.removeFavorite' => '刪除流喜愛',
 			'universalMedia.filesHelp' => '選擇音訊、影片或ISO檔案,以便進行臨時記錄. 檔案和URL不新增到圖書館歷史。',
 			'universalMedia.chooseFiles' => '選擇檔案',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '1 選擇的檔案', other: '${count} 已選擇的檔案', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '1 選擇的檔案', other: '${count} 已選擇的檔案', ), 
 			'universalMedia.wifiTransfer' => '透過 Wi-Fi 傳送檔案',
 			'universalMedia.wifiTransferHelp' => '從同一信任網路的瀏覽器傳輸支援的檔案。',
 			'universalMedia.wifiTransferIntro' => '在另一個裝置上的瀏覽器中開啟此地址. 選擇檔案以將其新增到該裝置的檔案和書籍圖書館。',
@@ -7788,7 +7858,7 @@ extension on TranslationsZhHant {
 			'universalMedia.copyAddress' => '傳輸地址複製',
 			'universalMedia.addressCopied' => '傳輸地址複製',
 			'universalMedia.transferExpires' => ({required Object time}) => '此地址在 ${time} 中終止。',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 獲取檔案', other: '${count} 收到的檔案', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 獲取檔案', other: '${count} 收到的檔案', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => '接收 ${size}',
 			'universalMedia.stopTransfer' => '停止轉讓和取消地址',
 			'universalMedia.startTransfer' => '轉移開始',
@@ -7858,6 +7928,81 @@ extension on TranslationsZhHant {
 			'universalMedia.converterCancelled' => '轉換取消了,不完整的輸出被刪除。',
 			'universalMedia.converterDesktopOnly' => '本地轉換可在桌面計算機上使用 FFmpeg 安裝。',
 			'universalMedia.converterStart' => '轉換檔案',
+			'universalMedia.mediaToolsTitle' => '媒體工具',
+			'universalMedia.mediaToolsShortcut' => '捕獲或共享媒體,新增搜尋擴充套件或使用命令列。',
+			'universalMedia.mediaToolsIntro' => '選擇一個專注的工具. 捕獲和流出使用 FFmpeg 安裝在這個桌面上. 擴充套件和 CLI 命令使用有限的 HTTPS 請求和現有 Open media 流。',
+			'universalMedia.mediaToolsAccessibility' => '工具選項和控制器與觸控、指標、鍵盤和D-pad焦點工作。 錄製、共享和搜尋狀態的變化被公佈。',
+			'universalMedia.mediaTool' => '媒體工具',
+			'universalMedia.captureIntro' => '在此計算機上記錄螢幕或相機到 MP4 檔案. FFmpeg 必須安裝幷包含 H.264 編碼器。',
+			'universalMedia.captureNoDevices' => '沒有螢幕或相機被發現 檢視 FFmpeg 捕捉支援和作業系統隱私許可證。',
+			'universalMedia.captureSource' => '螢幕或相機',
+			'universalMedia.captureAudioSource' => '音訊輸入(可選)',
+			'universalMedia.captureAudioHelp' => '新增來自微型或可用的輸入的音訊 裝置選項取決於 FFmpeg 和系統許可。',
+			'universalMedia.captureAudioNone' => '沒有音訊',
+			'universalMedia.captureWaylandHelp' => 'Wayland 限制此 XWayland 捕獲到 X display. XWayland 以外的 Windows 可能不會出現。',
+			'universalMedia.captureFrameRate' => '記錄框率',
+			'universalMedia.capturePrivacy' => '錄製僅儲存到您選擇的檔案。 微型錄制是可選的. PlezyNG 不會上傳錄製。',
+			'universalMedia.captureSaveAs' => '儲存螢幕錄製如',
+			'universalMedia.captureExtensionMismatch' => '在 .mp4 中選擇終端的檔名。',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg 或 H.264 影片編碼器不適用. 安裝支援的 FFmpeg 構建,然後再次嘗試。',
+			'universalMedia.captureFailed' => '記錄無法儲存 檢查裝置許可、可用的儲存和 FFmpeg 支援。',
+			'universalMedia.captureSaved' => '螢幕錄製儲存',
+			'universalMedia.captureElapsedLabel' => '錄製時間',
+			'universalMedia.captureStart' => '開始錄製',
+			'universalMedia.captureStop' => '停止和拯救',
+			'universalMedia.captureMode' => '捕捉',
+			'universalMedia.shareMode' => '分享',
+			'universalMedia.shareIntro' => '將本地媒體檔案傳送到您的私人網路上的另一個裝置. PlezyNG 建立一個暫時的 HLS 流。',
+			'universalMedia.sharePrivacy' => '您的本地網路的任何人,誰接收私人連結可以觀看,而它是活躍的. 連結結束後60分鐘. 停止共享,關閉伺服器並取消連結。',
+			'universalMedia.shareChooseFile' => '選擇媒體檔案',
+			'universalMedia.shareChooseHelp' => '選擇一個本地的音訊或影片檔案. 該檔案留在此計算機上。',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg 或 H.264/AAC 編碼器不適用. 安裝 FFmpeg 與 H.264 和 AAC 編碼支援。',
+			'universalMedia.shareFailed' => '流量無法意外地開始或停止。 檢視 FFmpeg 和網路訪問。',
+			'universalMedia.shareActive' => '流在您的私人網路上已經準備好了。',
+			'universalMedia.shareEnded' => '媒體已經到達了結局,並且不再被分享。',
+			'universalMedia.shareStopped' => '分享停止了,暫時連結不再有效。',
+			'universalMedia.shareUrlCopied' => '流地址複製。',
+			'universalMedia.shareOpenUrl' => '在另一臺裝置上的一個播放器中開啟此地址',
+			'universalMedia.shareCopyUrl' => '複製流地址',
+			'universalMedia.shareExpiresLabel' => '連結終止',
+			'universalMedia.shareStarting' => '準備流...',
+			'universalMedia.shareStart' => '開始分享',
+			'universalMedia.shareStop' => '停止分享',
+			'universalMedia.extensionsMode' => '擴充套件和CLI',
+			'universalMedia.extensionsIntro' => '新增一個資料僅搜尋擴充套件,以找到媒體. 選擇一個結果,將其載入到熟悉的 Open media 表格。',
+			'universalMedia.extensionsPrivacy' => '一個顯明可以定義一個 HTTPS 搜尋終點和地圖響應欄位. 它不能執行程式碼,新增請求標題,閱讀檔案,或啟動盾牌命令。',
+			'universalMedia.extensionImport' => '新增擴充套件顯明',
+			'universalMedia.extensionEmpty' => '尚未搜尋服務. 選擇一個可靠的顯明 JSON 檔案新增一個。',
+			'universalMedia.extensionChoose' => '搜尋服務',
+			'universalMedia.extensionSearchConsent' => '每個搜尋都會傳送您的單詞到這個 HTTPS 服務. 結果僅在您選擇一個後開啟。',
+			'universalMedia.extensionSearchLabel' => '搜尋媒體',
+			'universalMedia.extensionSearch' => '搜尋',
+			'universalMedia.extensionSearching' => '尋找...',
+			'universalMedia.extensionNoResults' => '沒有安全的媒體結果返回,請嘗試另一個搜尋。',
+			'universalMedia.extensionInstallTitle' => '新增此搜尋服務?',
+			'universalMedia.extensionReplaceTitle' => '更新此搜尋服務?',
+			'universalMedia.extensionService' => '服務',
+			'universalMedia.extensionEndpoint' => 'HTTPS 終點',
+			'universalMedia.extensionConsent' => '您的搜尋文字被髮送到此服務. 該示文稿不包含執行程式碼. 繼續只有如果你信任這個終點。',
+			'universalMedia.extensionInstall' => '新增服務',
+			'universalMedia.extensionReplace' => '更新服務',
+			'universalMedia.extensionRemoveTitle' => '刪除此搜尋服務?',
+			'universalMedia.extensionRemoveHelp' => '這將取消該服務從此個人資料中. PlezyNG 不聯絡其終點。',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemove' => '取消服務',
+			'universalMedia.extensionInvalidManifest' => '此檔案不是一個支援的擴充套件顯而易見. 檢視 Open media 格式指南。',
+			'universalMedia.extensionSaveFailed' => '該擴充套件無法儲存到活躍的個人資料。',
+			'universalMedia.extensionSearchFailed' => '搜尋服務沒有返回有效的答案 檢查終點並嘗試一次。',
+			'universalMedia.cliTitle' => '命令線',
+			'universalMedia.cliHelp' => '使用 plezyctl 指南來驗證一個顯明或搜尋相同的擴充套件. 每次搜尋之前,檢視 HTTPS 服務. 結果在現有媒體格式中開啟; 選擇播放按鈕開始。',
+			'universalMedia.cliCopyExample' => '複製命令示例',
+			'universalMedia.cliCopied' => '命令例子複製',
+			'universalMedia.captureScreen' => '螢幕',
+			'universalMedia.captureDefaultAudio' => '預設音訊輸入',
+			'universalMedia.shareQrLabel' => '臨時流地址的QR程式碼',
+			'universalMedia.shareQrHelp' => '掃描與同一私人網路連線的相容播放器。',
+			'universalMedia.shareHttpHint' => '此流使用未加密的 HTTP. 在 PlezyNG 中,允許 HTTP 在開啟它之前。',
 			'fileSources.title' => '檔案和書籍',
 			'fileSources.subtitle' => '閱讀、聽、從自己的檔案中觀看。',
 			'fileSources.add' => '新增源',
@@ -8029,8 +8174,6 @@ extension on TranslationsZhHant {
 			'fileSources.offlineQuotaHelp' => '設定離線副本、匯入檔案及佇列中下載所使用的空間上限。降低上限不會移除現有副本。',
 			'fileSources.offlineStorageUsage' => '非線儲存',
 			'fileSources.reservedStorage' => '保留',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => '下載Queue',
 			'fileSources.downloadRunning' => '下載',
 			'fileSources.downloadQueued' => '等待',

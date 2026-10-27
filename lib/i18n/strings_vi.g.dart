@@ -3154,8 +3154,80 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.';
 	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
 	@override String get converterStart => 'chuyển đổi file';
+	@override String get mediaToolsTitle => 'Công cụ Media';
+	@override String get mediaToolsShortcut => 'Ghi hoặc chia sẻ phương tiện truyền thông, thêm phần mở rộng tìm kiếm, hoặc sử dụng dòng lệnh.';
+	@override String get mediaToolsIntro => 'Chọn một công cụ tập trung. chụp và stream-out sử dụng FFmpeg được cài đặt trên máy tính để bàn này. Extensions và CLI lệnh sử dụng giới hạn yêu cầu HTTPS và dòng Open media hiện có.';
+	@override String get mediaToolsAccessibility => 'Các công cụ lựa chọn và điều khiển làm việc với touch, point, keyboard, và D-pad tập trung. ghi âm, chia sẻ, và các thay đổi trạng thái tìm kiếm được công bố.';
+	@override String get mediaTool => 'Công cụ Media';
+	@override String get captureIntro => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.';
+	@override String get captureNoDevices => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.';
+	@override String get captureSource => 'màn hình hoặc camera';
+	@override String get captureAudioSource => 'Audio input (tùy chọn)';
+	@override String get captureAudioHelp => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.';
+	@override String get captureAudioNone => 'Không có Audio';
+	@override String get captureWaylandHelp => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.';
+	@override String get captureFrameRate => 'Tỷ lệ ghi âm frame rate';
+	@override String get capturePrivacy => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.';
+	@override String get captureSaveAs => 'Lưu màn hình ghi âm như';
+	@override String get captureExtensionMismatch => 'Chọn tên file kết thúc trong .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg hoặc mã hóa video H.264 không sẵn dùng. cài đặt một xây dựng FFmpeg được hỗ trợ, sau đó thử lại.';
+	@override String get captureFailed => 'Kiểm tra giấy phép thiết bị, lưu trữ có sẵn, và hỗ trợ FFmpeg.';
+	@override String get captureSaved => 'Màn hình ghi âm được tiết kiệm';
+	@override String get captureElapsedLabel => 'Thời gian ghi âm';
+	@override String get captureStart => 'Bắt đầu ghi âm';
+	@override String get captureStop => 'Stop và Save';
+	@override String get captureMode => 'bắt giữ';
+	@override String get shareMode => 'chia sẻ';
+	@override String get shareIntro => 'Gửi một tệp phương tiện truyền thông địa phương đến một thiết bị khác trên mạng riêng của bạn. PlezyNG tạo ra một dòng HLS tạm thời.';
+	@override String get sharePrivacy => 'Bất cứ ai trên mạng địa phương của bạn nhận được liên kết tư nhân có thể xem trong khi nó hoạt động. liên kết hết hạn sau 60 phút. ngừng chia sẻ để đóng máy chủ và vô hiệu hóa liên kết.';
+	@override String get shareChooseFile => 'Chọn file media';
+	@override String get shareChooseHelp => 'Chọn một tệp âm thanh hoặc video địa phương. tệp vẫn ở trên máy tính này.';
+	@override String get shareFfmpegMissing => 'FFmpeg hoặc các mã hóa H.264/AAC không sẵn dùng. cài đặt FFmpeg với hỗ trợ mã hóa H.264 và AAC.';
+	@override String get shareFailed => 'Stream không thể bắt đầu hoặc dừng lại bất ngờ. kiểm tra FFmpeg và truy cập mạng.';
+	@override String get shareActive => 'Stream đã sẵn sàng trên mạng riêng của bạn.';
+	@override String get shareEnded => 'Truyền thông đã đạt đến kết thúc và không còn được chia sẻ nữa.';
+	@override String get shareStopped => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.';
+	@override String get shareUrlCopied => 'Địa chỉ dòng được sao chép.';
+	@override String get shareOpenUrl => 'Mở địa chỉ này trong một người chơi trên thiết bị khác';
+	@override String get shareCopyUrl => 'Bản sao Stream Address';
+	@override String get shareExpiresLabel => 'Link kết thúc tại';
+	@override String get shareStarting => 'Chuẩn bị dòng chảy...';
+	@override String get shareStart => 'Bắt đầu chia sẻ';
+	@override String get shareStop => 'Ngừng chia sẻ';
+	@override String get extensionsMode => 'Tăng cường và CLI';
+	@override String get extensionsIntro => 'Thêm một phần mở rộng chỉ tìm kiếm dữ liệu để tìm các phương tiện truyền thông. Chọn kết quả để tải nó vào biểu mẫu quen thuộc Open media.';
+	@override String get extensionsPrivacy => 'Một biểu hiện có thể xác định một HTTPS tìm kiếm kết thúc và các trường phản ứng bản đồ. nó không thể chạy mã, thêm tiêu đề yêu cầu, đọc các tệp, hoặc lệnh khởi động shell.';
+	@override String get extensionImport => 'Thêm Extension Manifest';
+	@override String get extensionEmpty => 'Chưa có dịch vụ tìm kiếm cho đến nay. chọn một tệp hiển thị đáng tin cậy JSON để thêm một.';
+	@override String get extensionChoose => 'Dịch vụ tìm kiếm';
+	@override String get extensionSearchConsent => 'Mỗi tìm kiếm gửi từ của bạn đến dịch vụ HTTPS này. kết quả chỉ mở sau khi bạn chọn một.';
+	@override String get extensionSearchLabel => 'Tìm kiếm Media';
+	@override String get extensionSearch => 'Tìm kiếm';
+	@override String get extensionSearching => 'Tìm kiếm...';
+	@override String get extensionNoResults => 'Không có kết quả truyền thông an toàn đã được trả về.Cần tìm kiếm thêm.';
+	@override String get extensionInstallTitle => 'Thêm dịch vụ tìm kiếm này?';
+	@override String get extensionReplaceTitle => 'Cập nhật dịch vụ tìm kiếm này?';
+	@override String get extensionService => 'Dịch vụ';
+	@override String get extensionEndpoint => 'HTTPS điểm cuối';
+	@override String get extensionConsent => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.';
+	@override String get extensionInstall => 'thêm dịch vụ';
+	@override String get extensionReplace => 'Update dịch vụ';
+	@override String get extensionRemoveTitle => 'Xóa dịch vụ tìm kiếm này?';
+	@override String get extensionRemoveHelp => 'Điều này loại bỏ dịch vụ khỏi hồ sơ này.PlezyNG không liên hệ với điểm kết thúc của nó.';
+	@override String get extensionRemove => 'Xóa dịch vụ';
+	@override String get extensionInvalidManifest => 'Tệp này không phải là một biểu hiện mở rộng được hỗ trợ. xem hướng dẫn Open media cho định dạng.';
+	@override String get extensionSaveFailed => 'Việc mở rộng không thể được lưu vào hồ sơ hoạt động.';
+	@override String get extensionSearchFailed => 'Dịch vụ tìm kiếm không trả lại câu trả lời đúng. kiểm tra điểm kết thúc và thử lại.';
+	@override String get cliTitle => 'Command dòng';
+	@override String get cliHelp => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.';
+	@override String get cliCopyExample => 'copy command ví dụ';
+	@override String get cliCopied => 'Lệnh ví dụ sao chép.';
+	@override String get captureScreen => 'màn hình';
+	@override String get captureDefaultAudio => 'Lập trình Audio Input';
+	@override String get shareQrLabel => 'Mã QR cho địa chỉ dòng tạm thời';
+	@override String get shareQrHelp => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.';
+	@override String get shareHttpHint => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$vi extends Translations$fileSources$en {
@@ -7746,7 +7818,7 @@ extension on TranslationsVi {
 			'universalMedia.saveFavorite' => 'Giữ yêu thích',
 			'universalMedia.playNow' => 'Chơi bây giờ',
 			'universalMedia.favoriteSaved' => 'Stream Favorite được tiết kiệm đến hồ sơ này',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ), 
 			'universalMedia.playlistAddress' => 'Địa chỉ Playlist',
 			'universalMedia.playlistAddressHelp' => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.',
 			'universalMedia.choosePlaylist' => 'Chọn playlist file',
@@ -7756,7 +7828,7 @@ extension on TranslationsVi {
 			'universalMedia.removeFavorite' => 'Xóa stream yêu thích',
 			'universalMedia.filesHelp' => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.',
 			'universalMedia.chooseFiles' => 'Chọn file',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ), 
 			'universalMedia.wifiTransfer' => 'Gửi file qua Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.',
 			'universalMedia.wifiTransferIntro' => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.',
@@ -7767,7 +7839,7 @@ extension on TranslationsVi {
 			'universalMedia.copyAddress' => 'Bản sao địa chỉ chuyển đổi',
 			'universalMedia.addressCopied' => 'Địa chỉ chuyển đổi sao chép',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Nhận ${size}',
 			'universalMedia.stopTransfer' => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ',
 			'universalMedia.startTransfer' => 'Bắt đầu chuyển giao',
@@ -7837,6 +7909,81 @@ extension on TranslationsVi {
 			'universalMedia.converterCancelled' => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.',
 			'universalMedia.converterDesktopOnly' => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.',
 			'universalMedia.converterStart' => 'chuyển đổi file',
+			'universalMedia.mediaToolsTitle' => 'Công cụ Media',
+			'universalMedia.mediaToolsShortcut' => 'Ghi hoặc chia sẻ phương tiện truyền thông, thêm phần mở rộng tìm kiếm, hoặc sử dụng dòng lệnh.',
+			'universalMedia.mediaToolsIntro' => 'Chọn một công cụ tập trung. chụp và stream-out sử dụng FFmpeg được cài đặt trên máy tính để bàn này. Extensions và CLI lệnh sử dụng giới hạn yêu cầu HTTPS và dòng Open media hiện có.',
+			'universalMedia.mediaToolsAccessibility' => 'Các công cụ lựa chọn và điều khiển làm việc với touch, point, keyboard, và D-pad tập trung. ghi âm, chia sẻ, và các thay đổi trạng thái tìm kiếm được công bố.',
+			'universalMedia.mediaTool' => 'Công cụ Media',
+			'universalMedia.captureIntro' => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.',
+			'universalMedia.captureNoDevices' => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.',
+			'universalMedia.captureSource' => 'màn hình hoặc camera',
+			'universalMedia.captureAudioSource' => 'Audio input (tùy chọn)',
+			'universalMedia.captureAudioHelp' => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.',
+			'universalMedia.captureAudioNone' => 'Không có Audio',
+			'universalMedia.captureWaylandHelp' => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.',
+			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
+			'universalMedia.capturePrivacy' => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.',
+			'universalMedia.captureSaveAs' => 'Lưu màn hình ghi âm như',
+			'universalMedia.captureExtensionMismatch' => 'Chọn tên file kết thúc trong .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg hoặc mã hóa video H.264 không sẵn dùng. cài đặt một xây dựng FFmpeg được hỗ trợ, sau đó thử lại.',
+			'universalMedia.captureFailed' => 'Kiểm tra giấy phép thiết bị, lưu trữ có sẵn, và hỗ trợ FFmpeg.',
+			'universalMedia.captureSaved' => 'Màn hình ghi âm được tiết kiệm',
+			'universalMedia.captureElapsedLabel' => 'Thời gian ghi âm',
+			'universalMedia.captureStart' => 'Bắt đầu ghi âm',
+			'universalMedia.captureStop' => 'Stop và Save',
+			'universalMedia.captureMode' => 'bắt giữ',
+			'universalMedia.shareMode' => 'chia sẻ',
+			'universalMedia.shareIntro' => 'Gửi một tệp phương tiện truyền thông địa phương đến một thiết bị khác trên mạng riêng của bạn. PlezyNG tạo ra một dòng HLS tạm thời.',
+			'universalMedia.sharePrivacy' => 'Bất cứ ai trên mạng địa phương của bạn nhận được liên kết tư nhân có thể xem trong khi nó hoạt động. liên kết hết hạn sau 60 phút. ngừng chia sẻ để đóng máy chủ và vô hiệu hóa liên kết.',
+			'universalMedia.shareChooseFile' => 'Chọn file media',
+			'universalMedia.shareChooseHelp' => 'Chọn một tệp âm thanh hoặc video địa phương. tệp vẫn ở trên máy tính này.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg hoặc các mã hóa H.264/AAC không sẵn dùng. cài đặt FFmpeg với hỗ trợ mã hóa H.264 và AAC.',
+			'universalMedia.shareFailed' => 'Stream không thể bắt đầu hoặc dừng lại bất ngờ. kiểm tra FFmpeg và truy cập mạng.',
+			'universalMedia.shareActive' => 'Stream đã sẵn sàng trên mạng riêng của bạn.',
+			'universalMedia.shareEnded' => 'Truyền thông đã đạt đến kết thúc và không còn được chia sẻ nữa.',
+			'universalMedia.shareStopped' => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.',
+			'universalMedia.shareUrlCopied' => 'Địa chỉ dòng được sao chép.',
+			'universalMedia.shareOpenUrl' => 'Mở địa chỉ này trong một người chơi trên thiết bị khác',
+			'universalMedia.shareCopyUrl' => 'Bản sao Stream Address',
+			'universalMedia.shareExpiresLabel' => 'Link kết thúc tại',
+			'universalMedia.shareStarting' => 'Chuẩn bị dòng chảy...',
+			'universalMedia.shareStart' => 'Bắt đầu chia sẻ',
+			'universalMedia.shareStop' => 'Ngừng chia sẻ',
+			'universalMedia.extensionsMode' => 'Tăng cường và CLI',
+			'universalMedia.extensionsIntro' => 'Thêm một phần mở rộng chỉ tìm kiếm dữ liệu để tìm các phương tiện truyền thông. Chọn kết quả để tải nó vào biểu mẫu quen thuộc Open media.',
+			'universalMedia.extensionsPrivacy' => 'Một biểu hiện có thể xác định một HTTPS tìm kiếm kết thúc và các trường phản ứng bản đồ. nó không thể chạy mã, thêm tiêu đề yêu cầu, đọc các tệp, hoặc lệnh khởi động shell.',
+			'universalMedia.extensionImport' => 'Thêm Extension Manifest',
+			'universalMedia.extensionEmpty' => 'Chưa có dịch vụ tìm kiếm cho đến nay. chọn một tệp hiển thị đáng tin cậy JSON để thêm một.',
+			'universalMedia.extensionChoose' => 'Dịch vụ tìm kiếm',
+			'universalMedia.extensionSearchConsent' => 'Mỗi tìm kiếm gửi từ của bạn đến dịch vụ HTTPS này. kết quả chỉ mở sau khi bạn chọn một.',
+			'universalMedia.extensionSearchLabel' => 'Tìm kiếm Media',
+			'universalMedia.extensionSearch' => 'Tìm kiếm',
+			'universalMedia.extensionSearching' => 'Tìm kiếm...',
+			'universalMedia.extensionNoResults' => 'Không có kết quả truyền thông an toàn đã được trả về.Cần tìm kiếm thêm.',
+			'universalMedia.extensionInstallTitle' => 'Thêm dịch vụ tìm kiếm này?',
+			'universalMedia.extensionReplaceTitle' => 'Cập nhật dịch vụ tìm kiếm này?',
+			'universalMedia.extensionService' => 'Dịch vụ',
+			'universalMedia.extensionEndpoint' => 'HTTPS điểm cuối',
+			'universalMedia.extensionConsent' => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.',
+			'universalMedia.extensionInstall' => 'thêm dịch vụ',
+			'universalMedia.extensionReplace' => 'Update dịch vụ',
+			'universalMedia.extensionRemoveTitle' => 'Xóa dịch vụ tìm kiếm này?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'Điều này loại bỏ dịch vụ khỏi hồ sơ này.PlezyNG không liên hệ với điểm kết thúc của nó.',
+			'universalMedia.extensionRemove' => 'Xóa dịch vụ',
+			'universalMedia.extensionInvalidManifest' => 'Tệp này không phải là một biểu hiện mở rộng được hỗ trợ. xem hướng dẫn Open media cho định dạng.',
+			'universalMedia.extensionSaveFailed' => 'Việc mở rộng không thể được lưu vào hồ sơ hoạt động.',
+			'universalMedia.extensionSearchFailed' => 'Dịch vụ tìm kiếm không trả lại câu trả lời đúng. kiểm tra điểm kết thúc và thử lại.',
+			'universalMedia.cliTitle' => 'Command dòng',
+			'universalMedia.cliHelp' => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.',
+			'universalMedia.cliCopyExample' => 'copy command ví dụ',
+			'universalMedia.cliCopied' => 'Lệnh ví dụ sao chép.',
+			'universalMedia.captureScreen' => 'màn hình',
+			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
+			'universalMedia.shareQrLabel' => 'Mã QR cho địa chỉ dòng tạm thời',
+			'universalMedia.shareQrHelp' => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.',
+			'universalMedia.shareHttpHint' => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.',
 			'fileSources.title' => 'File và sách',
 			'fileSources.subtitle' => 'Đọc, lắng nghe, và xem từ các tệp của riêng bạn.',
 			'fileSources.add' => 'thêm nguồn',
@@ -8008,8 +8155,6 @@ extension on TranslationsVi {
 			'fileSources.offlineQuotaHelp' => 'Thiết lập không gian tối đa được sử dụng bởi các bản sao ngoại tuyến, tệp nhập khẩu và tải xuống. Giảm giới hạn sẽ không loại bỏ các bản gốc hiện có.',
 			'fileSources.offlineStorageUsage' => 'Lưu trữ Offline',
 			'fileSources.reservedStorage' => 'Bảo Vệ',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Tải Queue',
 			'fileSources.downloadRunning' => 'tải xuống',
 			'fileSources.downloadQueued' => 'chờ đợi',

@@ -3264,8 +3264,80 @@ class _Translations$universalMedia$ar extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'تم إلغاء التحويل ، تم إزالة النتيجة غير الكاملة.';
 	@override String get converterDesktopOnly => 'تحويل محلي متاح على أجهزة الكمبيوتر المكتبية مع FFmpeg مثبتة.';
 	@override String get converterStart => 'تحويل الملفات';
+	@override String get mediaToolsTitle => 'أدوات وسائل الإعلام';
+	@override String get mediaToolsShortcut => 'التقاط أو مشاركة الوسائط، وإضافة إضافات البحث، أو استخدام خط الأوامر.';
+	@override String get mediaToolsIntro => 'اختيار أداة تركز. التقاط وتدفق-out استخدام FFmpeg المثبتة على هذا الكمبيوتر. التمديدات وأوامر CLI تستخدم طلبات HTTPS المحدودة وتدفق Open media الحالي.';
+	@override String get mediaToolsAccessibility => 'خيارات الأدوات والسيطرة تعمل مع اللمس، المؤشر، لوحة المفاتيح، و D-pad التركيز. يتم الإعلان عن تسجيل، وتبادل، وتغيير حالة البحث.';
+	@override String get mediaTool => 'أدوات وسائل الإعلام';
+	@override String get captureIntro => 'تسجيل الشاشة أو الكاميرا إلى ملف MP4 على هذا الكمبيوتر. يجب تثبيت FFmpeg وتشمل رمز H.264.';
+	@override String get captureNoDevices => 'لم يتم العثور على أي شاشة أو كاميرا.تحقق من دعم التصوير FFmpeg وإذنات الخصوصية في نظام التشغيل.';
+	@override String get captureSource => 'الشاشة أو الكاميرا';
+	@override String get captureAudioSource => 'إدخال الصوت (اختياري)';
+	@override String get captureAudioHelp => 'إضافة الصوت من الميكروفون أو الإدخال المتاح. تعتمد خيارات الأجهزة على FFmpeg وإذن النظام.';
+	@override String get captureAudioNone => 'لا صوت';
+	@override String get captureWaylandHelp => 'Wayland يحد من هذا التقاط XWayland إلى X display. قد لا تظهر النوافذ خارج XWayland.';
+	@override String get captureFrameRate => 'سعر الإطار التسجيل';
+	@override String get capturePrivacy => 'يتم تخزين التسجيل فقط إلى الملف الذي تختاره.التسجيل الميكروفون اختياري.PlezyNG لا يقوم بتحميل التسجيل.';
+	@override String get captureSaveAs => 'حفظ تسجيل الشاشة كما';
+	@override String get captureExtensionMismatch => 'اختر اسم ملف ينتهي في .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg أو رمز الفيديو H.264 غير متوفر. تثبيت بناء FFmpeg المدعومة، ثم حاول مرة أخرى.';
+	@override String get captureFailed => 'لا يمكن حفظ التسجيل.تحقق من إذن الجهاز، وتخزين متاح، ودعم FFmpeg.';
+	@override String get captureSaved => 'تسجيل الشاشة تم حفظها.';
+	@override String get captureElapsedLabel => 'وقت التسجيل';
+	@override String get captureStart => 'بدء التسجيل';
+	@override String get captureStop => 'توقف وتخلص';
+	@override String get captureMode => 'القبض';
+	@override String get shareMode => 'مشاركة';
+	@override String get shareIntro => 'إرسال ملف الوسائط المحلية إلى جهاز آخر على الشبكة الخاصة بك. PlezyNG يخلق تدفق مؤقت من HLS.';
+	@override String get sharePrivacy => 'يمكن لأي شخص على شبكتك المحلية الذي يتلقى الرابط الخاص مشاهدة أثناء نشاطه.يختفي الرابط بعد 60 دقيقة.وقف المشاركة لإغلاق الخادم وإلغاء الرابط.';
+	@override String get shareChooseFile => 'اختيار ملف الوسائط';
+	@override String get shareChooseHelp => 'حدد ملف الصوت أو الفيديو المحلي.يظل الملف على هذا الكمبيوتر.';
+	@override String get shareFfmpegMissing => 'FFmpeg أو رمز H.264/AAC غير متوفر. تثبيت FFmpeg مع دعم رمز H.264 و AAC.';
+	@override String get shareFailed => 'لم يتمكن البث من البدء أو التوقف بشكل غير متوقع.تحقق من FFmpeg والوصول إلى الشبكة.';
+	@override String get shareActive => 'البث جاهز على شبكتك الخاصة.';
+	@override String get shareEnded => 'لقد وصلت وسائل الإعلام إلى النهاية ولم تعد تشاركها.';
+	@override String get shareStopped => 'توقفت المشاركة.الروابط المؤقتة لم تعد صالحة.';
+	@override String get shareUrlCopied => 'إرسال رسالة نسخة.';
+	@override String get shareOpenUrl => 'افتح هذا العنوان في لاعب واحد على الجهاز الآخر';
+	@override String get shareCopyUrl => 'نسخة من عنوان Stream';
+	@override String get shareExpiresLabel => 'الرابط ينتهي في';
+	@override String get shareStarting => 'إعداد التدفق ...';
+	@override String get shareStart => 'بدء المشاركة';
+	@override String get shareStop => 'توقف عن المشاركة';
+	@override String get extensionsMode => 'التمديدات و CLI';
+	@override String get extensionsIntro => 'إضافة ملحق البحث البيانات فقط للعثور على وسائل الإعلام.اختر نتيجة تحميلها في نموذج Open media المألوف.';
+	@override String get extensionsPrivacy => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.';
+	@override String get extensionImport => 'إضافة التمديد المظاهر';
+	@override String get extensionEmpty => 'لا توجد خدمات البحث حتى الآن.اختر ملف JSON المعتمد لإضافة واحد.';
+	@override String get extensionChoose => 'خدمة البحث';
+	@override String get extensionSearchConsent => 'كل بحث يرسل الكلمات الخاصة بك إلى هذا الخدمة HTTPS. النتائج مفتوحة فقط بعد أن تختار واحد.';
+	@override String get extensionSearchLabel => 'البحث عن وسائل الإعلام';
+	@override String get extensionSearch => 'البحث';
+	@override String get extensionSearching => 'البحث...';
+	@override String get extensionNoResults => 'لم يتم إرجاع نتائج وسائل الإعلام الآمنة.حاول البحث آخر.';
+	@override String get extensionInstallTitle => 'أضف هذه الخدمة البحثية؟';
+	@override String get extensionReplaceTitle => 'تحديث هذه الخدمة البحثية؟';
+	@override String get extensionService => 'الخدمة';
+	@override String get extensionEndpoint => 'HTTPS نقطة النهاية';
+	@override String get extensionConsent => 'يتم إرسال نص البحث الخاص بك إلى هذه الخدمة.المظاهر لا تحتوي على رمز قابل للتنفيذ.استمر فقط إذا كنت تثق بهذا النقطة النهائية.';
+	@override String get extensionInstall => 'إضافة الخدمة';
+	@override String get extensionReplace => 'تحديث الخدمة';
+	@override String get extensionRemoveTitle => 'إزالة هذه الخدمة البحثية؟';
+	@override String get extensionRemoveHelp => 'هذا يزيل الخدمة من هذا الملف الشخصي.PlezyNG لا يتصل بوقتها النهائي.';
+	@override String get extensionRemove => 'إزالة الخدمة';
+	@override String get extensionInvalidManifest => 'هذا الملف ليس علامة التمديد المدعومة.انظر دليل Open media للتنسيق.';
+	@override String get extensionSaveFailed => 'لا يمكن حفظ التمديد إلى الملف النشط.';
+	@override String get extensionSearchFailed => 'لم تعيد خدمة البحث إجابة صالحة.تحقق من النقطة النهائية ومحاولة مرة أخرى.';
+	@override String get cliTitle => 'خط القيادة';
+	@override String get cliHelp => 'استخدم دليل plezyctl لتصديق علامة أو البحث عن نفس التمديد.مراجعة خدمة HTTPS قبل كل بحث.فتح النتائج في نموذج الوسائط الحالي؛ حدد زر التراجع للبدء.';
+	@override String get cliCopyExample => 'نسخة نموذج الأوامر';
+	@override String get cliCopied => 'نموذج الأوامر النسخ.';
+	@override String get captureScreen => 'شاشة';
+	@override String get captureDefaultAudio => 'إدخال الصوت الافتراضي';
+	@override String get shareQrLabel => 'رمز QR للعنوان التدفق المؤقت';
+	@override String get shareQrHelp => 'مسح باستخدام مشغل متوافق متصل بنفس الشبكة الخاصة.';
+	@override String get shareHttpHint => 'هذا البث يستخدم HTTP غير المشفرة. في PlezyNG، يسمح HTTP قبل فتحه.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$ar extends Translations$fileSources$en {
@@ -7871,7 +7943,7 @@ extension on TranslationsAr {
 			'universalMedia.saveFavorite' => 'حفظ المفضلة',
 			'universalMedia.playNow' => 'اللعب الآن',
 			'universalMedia.favoriteSaved' => 'Stream Favorite تم حفظه إلى هذا الملف الشخصي',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', one: 'إدخال ${count} غير مدعوم أو غير آمن.', two: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', few: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', many: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', other: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', one: 'إدخال ${count} غير مدعوم أو غير آمن.', two: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', few: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', many: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', other: 'إدخال ${count} غير مدعوم أو غير آمن في قائمة التشغيل.', ), 
 			'universalMedia.playlistAddress' => 'العنوان Playlist',
 			'universalMedia.playlistAddressHelp' => 'افتح قائمة تشغيل M3U أو M3 U8 أو PLS من عنوان ويب. لنقرات البث المباشر لا تخزن قائمة التشغيل.',
 			'universalMedia.choosePlaylist' => 'اختيار ملف Playlist',
@@ -7881,7 +7953,7 @@ extension on TranslationsAr {
 			'universalMedia.removeFavorite' => 'إزالة البث المفضل',
 			'universalMedia.filesHelp' => 'حدد الملفات الصوتية أو الفيديوية أو ملفات ISO لفترة مؤقتة.لا يتم إضافة الملفين أو عناوين URL إلى تاريخ المكتبة.',
 			'universalMedia.chooseFiles' => 'اختيار الملفات',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${count} الملفات المختارة', one: '1 الملفات المختارة', two: '${count} الملفات المختارة', few: '${count} الملفات المختارة', many: '${count} الملفات المختارة', other: '${count} الملفات المختارة', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${count} الملفات المختارة', one: '1 الملفات المختارة', two: '${count} الملفات المختارة', few: '${count} الملفات المختارة', many: '${count} الملفات المختارة', other: '${count} الملفات المختارة', ), 
 			'universalMedia.wifiTransfer' => 'إرسال الملفات عبر Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'نقل الملفات المدعومة من متصفح على نفس الشبكة الموثوقة.',
 			'universalMedia.wifiTransferIntro' => 'افتح هذا العنوان في متصفح على جهاز آخر.اختر الملفات لإضافتها إلى مكتبة الملفين والكتب لهذا الجهاز.',
@@ -7892,7 +7964,7 @@ extension on TranslationsAr {
 			'universalMedia.copyAddress' => 'نسخ عنوان التحويل',
 			'universalMedia.addressCopied' => 'عناوين النقل نسخة',
 			'universalMedia.transferExpires' => ({required Object time}) => 'هذا العنوان ينتهي في ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${count} الملفات التي تم استلامها', one: '${count} الملفات التي تم الحصول عليها', two: '${count} الملفات التي تم استلامها', few: '${count} الملفات التي تم استلامها', many: '${count} الملفات التي تم استلامها', other: '${count} الملفات التي تم استلامها', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ar'))(n, zero: '${count} الملفات التي تم استلامها', one: '${count} الملفات التي تم الحصول عليها', two: '${count} الملفات التي تم استلامها', few: '${count} الملفات التي تم استلامها', many: '${count} الملفات التي تم استلامها', other: '${count} الملفات التي تم استلامها', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'حصلت ${size}',
 			'universalMedia.stopTransfer' => 'إيقاف التحويل وإلغاء العنوان',
 			'universalMedia.startTransfer' => 'بدء التحويل',
@@ -7962,6 +8034,81 @@ extension on TranslationsAr {
 			'universalMedia.converterCancelled' => 'تم إلغاء التحويل ، تم إزالة النتيجة غير الكاملة.',
 			'universalMedia.converterDesktopOnly' => 'تحويل محلي متاح على أجهزة الكمبيوتر المكتبية مع FFmpeg مثبتة.',
 			'universalMedia.converterStart' => 'تحويل الملفات',
+			'universalMedia.mediaToolsTitle' => 'أدوات وسائل الإعلام',
+			'universalMedia.mediaToolsShortcut' => 'التقاط أو مشاركة الوسائط، وإضافة إضافات البحث، أو استخدام خط الأوامر.',
+			'universalMedia.mediaToolsIntro' => 'اختيار أداة تركز. التقاط وتدفق-out استخدام FFmpeg المثبتة على هذا الكمبيوتر. التمديدات وأوامر CLI تستخدم طلبات HTTPS المحدودة وتدفق Open media الحالي.',
+			'universalMedia.mediaToolsAccessibility' => 'خيارات الأدوات والسيطرة تعمل مع اللمس، المؤشر، لوحة المفاتيح، و D-pad التركيز. يتم الإعلان عن تسجيل، وتبادل، وتغيير حالة البحث.',
+			'universalMedia.mediaTool' => 'أدوات وسائل الإعلام',
+			'universalMedia.captureIntro' => 'تسجيل الشاشة أو الكاميرا إلى ملف MP4 على هذا الكمبيوتر. يجب تثبيت FFmpeg وتشمل رمز H.264.',
+			'universalMedia.captureNoDevices' => 'لم يتم العثور على أي شاشة أو كاميرا.تحقق من دعم التصوير FFmpeg وإذنات الخصوصية في نظام التشغيل.',
+			'universalMedia.captureSource' => 'الشاشة أو الكاميرا',
+			'universalMedia.captureAudioSource' => 'إدخال الصوت (اختياري)',
+			'universalMedia.captureAudioHelp' => 'إضافة الصوت من الميكروفون أو الإدخال المتاح. تعتمد خيارات الأجهزة على FFmpeg وإذن النظام.',
+			'universalMedia.captureAudioNone' => 'لا صوت',
+			'universalMedia.captureWaylandHelp' => 'Wayland يحد من هذا التقاط XWayland إلى X display. قد لا تظهر النوافذ خارج XWayland.',
+			'universalMedia.captureFrameRate' => 'سعر الإطار التسجيل',
+			'universalMedia.capturePrivacy' => 'يتم تخزين التسجيل فقط إلى الملف الذي تختاره.التسجيل الميكروفون اختياري.PlezyNG لا يقوم بتحميل التسجيل.',
+			'universalMedia.captureSaveAs' => 'حفظ تسجيل الشاشة كما',
+			'universalMedia.captureExtensionMismatch' => 'اختر اسم ملف ينتهي في .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg أو رمز الفيديو H.264 غير متوفر. تثبيت بناء FFmpeg المدعومة، ثم حاول مرة أخرى.',
+			'universalMedia.captureFailed' => 'لا يمكن حفظ التسجيل.تحقق من إذن الجهاز، وتخزين متاح، ودعم FFmpeg.',
+			'universalMedia.captureSaved' => 'تسجيل الشاشة تم حفظها.',
+			'universalMedia.captureElapsedLabel' => 'وقت التسجيل',
+			'universalMedia.captureStart' => 'بدء التسجيل',
+			'universalMedia.captureStop' => 'توقف وتخلص',
+			'universalMedia.captureMode' => 'القبض',
+			'universalMedia.shareMode' => 'مشاركة',
+			'universalMedia.shareIntro' => 'إرسال ملف الوسائط المحلية إلى جهاز آخر على الشبكة الخاصة بك. PlezyNG يخلق تدفق مؤقت من HLS.',
+			'universalMedia.sharePrivacy' => 'يمكن لأي شخص على شبكتك المحلية الذي يتلقى الرابط الخاص مشاهدة أثناء نشاطه.يختفي الرابط بعد 60 دقيقة.وقف المشاركة لإغلاق الخادم وإلغاء الرابط.',
+			'universalMedia.shareChooseFile' => 'اختيار ملف الوسائط',
+			'universalMedia.shareChooseHelp' => 'حدد ملف الصوت أو الفيديو المحلي.يظل الملف على هذا الكمبيوتر.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg أو رمز H.264/AAC غير متوفر. تثبيت FFmpeg مع دعم رمز H.264 و AAC.',
+			'universalMedia.shareFailed' => 'لم يتمكن البث من البدء أو التوقف بشكل غير متوقع.تحقق من FFmpeg والوصول إلى الشبكة.',
+			'universalMedia.shareActive' => 'البث جاهز على شبكتك الخاصة.',
+			'universalMedia.shareEnded' => 'لقد وصلت وسائل الإعلام إلى النهاية ولم تعد تشاركها.',
+			'universalMedia.shareStopped' => 'توقفت المشاركة.الروابط المؤقتة لم تعد صالحة.',
+			'universalMedia.shareUrlCopied' => 'إرسال رسالة نسخة.',
+			'universalMedia.shareOpenUrl' => 'افتح هذا العنوان في لاعب واحد على الجهاز الآخر',
+			'universalMedia.shareCopyUrl' => 'نسخة من عنوان Stream',
+			'universalMedia.shareExpiresLabel' => 'الرابط ينتهي في',
+			'universalMedia.shareStarting' => 'إعداد التدفق ...',
+			'universalMedia.shareStart' => 'بدء المشاركة',
+			'universalMedia.shareStop' => 'توقف عن المشاركة',
+			'universalMedia.extensionsMode' => 'التمديدات و CLI',
+			'universalMedia.extensionsIntro' => 'إضافة ملحق البحث البيانات فقط للعثور على وسائل الإعلام.اختر نتيجة تحميلها في نموذج Open media المألوف.',
+			'universalMedia.extensionsPrivacy' => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.',
+			'universalMedia.extensionImport' => 'إضافة التمديد المظاهر',
+			'universalMedia.extensionEmpty' => 'لا توجد خدمات البحث حتى الآن.اختر ملف JSON المعتمد لإضافة واحد.',
+			'universalMedia.extensionChoose' => 'خدمة البحث',
+			'universalMedia.extensionSearchConsent' => 'كل بحث يرسل الكلمات الخاصة بك إلى هذا الخدمة HTTPS. النتائج مفتوحة فقط بعد أن تختار واحد.',
+			'universalMedia.extensionSearchLabel' => 'البحث عن وسائل الإعلام',
+			'universalMedia.extensionSearch' => 'البحث',
+			'universalMedia.extensionSearching' => 'البحث...',
+			'universalMedia.extensionNoResults' => 'لم يتم إرجاع نتائج وسائل الإعلام الآمنة.حاول البحث آخر.',
+			'universalMedia.extensionInstallTitle' => 'أضف هذه الخدمة البحثية؟',
+			'universalMedia.extensionReplaceTitle' => 'تحديث هذه الخدمة البحثية؟',
+			'universalMedia.extensionService' => 'الخدمة',
+			'universalMedia.extensionEndpoint' => 'HTTPS نقطة النهاية',
+			'universalMedia.extensionConsent' => 'يتم إرسال نص البحث الخاص بك إلى هذه الخدمة.المظاهر لا تحتوي على رمز قابل للتنفيذ.استمر فقط إذا كنت تثق بهذا النقطة النهائية.',
+			'universalMedia.extensionInstall' => 'إضافة الخدمة',
+			'universalMedia.extensionReplace' => 'تحديث الخدمة',
+			'universalMedia.extensionRemoveTitle' => 'إزالة هذه الخدمة البحثية؟',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'هذا يزيل الخدمة من هذا الملف الشخصي.PlezyNG لا يتصل بوقتها النهائي.',
+			'universalMedia.extensionRemove' => 'إزالة الخدمة',
+			'universalMedia.extensionInvalidManifest' => 'هذا الملف ليس علامة التمديد المدعومة.انظر دليل Open media للتنسيق.',
+			'universalMedia.extensionSaveFailed' => 'لا يمكن حفظ التمديد إلى الملف النشط.',
+			'universalMedia.extensionSearchFailed' => 'لم تعيد خدمة البحث إجابة صالحة.تحقق من النقطة النهائية ومحاولة مرة أخرى.',
+			'universalMedia.cliTitle' => 'خط القيادة',
+			'universalMedia.cliHelp' => 'استخدم دليل plezyctl لتصديق علامة أو البحث عن نفس التمديد.مراجعة خدمة HTTPS قبل كل بحث.فتح النتائج في نموذج الوسائط الحالي؛ حدد زر التراجع للبدء.',
+			'universalMedia.cliCopyExample' => 'نسخة نموذج الأوامر',
+			'universalMedia.cliCopied' => 'نموذج الأوامر النسخ.',
+			'universalMedia.captureScreen' => 'شاشة',
+			'universalMedia.captureDefaultAudio' => 'إدخال الصوت الافتراضي',
+			'universalMedia.shareQrLabel' => 'رمز QR للعنوان التدفق المؤقت',
+			'universalMedia.shareQrHelp' => 'مسح باستخدام مشغل متوافق متصل بنفس الشبكة الخاصة.',
+			'universalMedia.shareHttpHint' => 'هذا البث يستخدم HTTP غير المشفرة. في PlezyNG، يسمح HTTP قبل فتحه.',
 			'fileSources.title' => 'الملفات والكتب',
 			'fileSources.subtitle' => 'اقرأ واستمع وشاهد من ملفاتك الخاصة.',
 			'fileSources.add' => 'إضافة مصدر',
@@ -8133,8 +8280,6 @@ extension on TranslationsAr {
 			'fileSources.offlineQuotaHelp' => 'حدد الحد الأقصى للمساحة المستخدمة من قبل النسخ غير المتصلة، والملفات المستوردة، والتنزيلات المضغوطة.',
 			'fileSources.offlineStorageUsage' => 'التخزين خارج الإنترنت',
 			'fileSources.reservedStorage' => 'الاحتياطي',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'تحميل Queue',
 			'fileSources.downloadRunning' => 'تحميل',
 			'fileSources.downloadQueued' => 'الانتظار',

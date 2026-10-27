@@ -140,7 +140,10 @@ void main() {
   }
   testWidgets('Open media uses one Files and books entry and focus-aware source rows for nested tools', (tester) async {
     await pump(tester, const SourcesScreen(), MonoPalette.dark, const Size(390, 844));
-    final openMediaEntry = find.descendant(of: find.byType(SourcesScreen), matching: find.text(t.universalMedia.title));
+    final openMediaEntry = find.descendant(
+      of: find.byType(SourcesScreen),
+      matching: find.text(isolateDisplayText(t.universalMedia.title)),
+    );
     expect(openMediaEntry, findsOneWidget);
 
     await tester.tap(openMediaEntry);
@@ -149,9 +152,19 @@ void main() {
     final openMedia = find.byType(OpenMediaScreen);
     expect(openMedia, findsOneWidget);
     expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.intro)), findsOneWidget);
-    expect(find.descendant(of: openMedia, matching: find.byType(SourceTile)), findsNWidgets(2));
-    expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.wifiTransfer)), findsOneWidget);
-    expect(find.descendant(of: openMedia, matching: find.text(t.universalMedia.converterTitle)), findsOneWidget);
+    expect(find.descendant(of: openMedia, matching: find.byType(SourceTile)), findsNWidgets(3));
+    expect(
+      find.descendant(of: openMedia, matching: find.text(isolateDisplayText(t.universalMedia.wifiTransfer))),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: openMedia, matching: find.text(isolateDisplayText(t.universalMedia.converterTitle))),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: openMedia, matching: find.text(isolateDisplayText(t.universalMedia.mediaToolsTitle))),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
   testWidgets('OverDrive is visibly coming soon without a patron credential form', (tester) async {

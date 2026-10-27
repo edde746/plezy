@@ -3216,8 +3216,80 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.';
 	@override String get converterDesktopOnly => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.';
 	@override String get converterStart => 'Převod souborů';
+	@override String get mediaToolsTitle => 'Média nástroje';
+	@override String get mediaToolsShortcut => 'Zachyťte nebo sdílejte média, přidejte vyhledávací rozšíření nebo použijte příkazovou řadu.';
+	@override String get mediaToolsIntro => 'Vyberte si zaměřený nástroj. zachytit a stream-out používat FFmpeg nainstalované na tomto desku. rozšíření a CLI příkazy používají omezené požadavky HTTPS a stávající Open media tok.';
+	@override String get mediaToolsAccessibility => 'Výběry nástrojů a kontroly pracují s dotykem, ukazatelem, klávesnicí a zaměřením D-pad. Změny v stavu nahrávání, sdílení a vyhledávání jsou oznámeny.';
+	@override String get mediaTool => 'Média nástroj';
+	@override String get captureIntro => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.';
+	@override String get captureNoDevices => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.';
+	@override String get captureSource => 'obrazovka nebo fotoaparát';
+	@override String get captureAudioSource => 'Audio vstup (volitelné)';
+	@override String get captureAudioHelp => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.';
+	@override String get captureAudioNone => 'Žádný audio';
+	@override String get captureWaylandHelp => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.';
+	@override String get captureFrameRate => 'Rekordní rámová sazba';
+	@override String get capturePrivacy => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.';
+	@override String get captureSaveAs => 'Shromažďujte záznam obrazovky jako';
+	@override String get captureExtensionMismatch => 'Vyberte název, který končí v .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg nebo kódování videa H.264 není k dispozici. nainstalovat podporované FFmpeg stavbu, pak zkuste znovu.';
+	@override String get captureFailed => 'Zkontrolujte oprávnění zařízení, dostupné ukládání a podporu FFmpeg.';
+	@override String get captureSaved => 'Scénární záznam byl zachráněn.';
+	@override String get captureElapsedLabel => 'Záznamový čas';
+	@override String get captureStart => 'Začíná nahrávání';
+	@override String get captureStop => 'Zastavte se a zachraňte';
+	@override String get captureMode => 'únos';
+	@override String get shareMode => 'Sdílejte';
+	@override String get shareIntro => 'Odeslat soubor místních médií do jiného zařízení na vaší soukromé síti. PlezyNG vytváří dočasný tok HLS.';
+	@override String get sharePrivacy => 'Kdokoliv na vaší místní síti, kdo dostává soukromý odkaz může sledovat, zatímco je aktivní. odkaz vyprší po 60 minutách. zastavit sdílení, aby se server uzavřel a zrušit odkaz.';
+	@override String get shareChooseFile => 'Vyberte mediální soubor';
+	@override String get shareChooseHelp => 'Vyberte místní audio nebo video soubor. soubor zůstává na tomto počítači.';
+	@override String get shareFfmpegMissing => 'FFmpeg nebo kódování H.264/AAC nejsou k dispozici. Instalace FFmpeg s podporou kódování H.264 a AAC.';
+	@override String get shareFailed => 'Stream se nemohl začít ani nečekaně zastavit. zkontrolujte FFmpeg a přístup k síti.';
+	@override String get shareActive => 'Stream je připraven na vaší soukromé síti.';
+	@override String get shareEnded => 'Média dosáhla konce a už se nedělá.';
+	@override String get shareStopped => 'Sdílení přerušeno. dočasný odkaz již neplatí.';
+	@override String get shareUrlCopied => 'Přenosová adresa je kopírována.';
+	@override String get shareOpenUrl => 'Otevřete tuto adresu v jednom hráči na jiném zařízení';
+	@override String get shareCopyUrl => 'Kopírování streamové adresy';
+	@override String get shareExpiresLabel => 'Link vyprší na';
+	@override String get shareStarting => 'Připravování toku...';
+	@override String get shareStart => 'Začněte sdílet';
+	@override String get shareStop => 'Přestaňte sdílet';
+	@override String get extensionsMode => 'Rozšíření a CLI';
+	@override String get extensionsIntro => 'Přidejte data-pouze vyhledávací rozšíření najít média. Vyberte výsledek, aby ji přenést do známého formuláře Open media.';
+	@override String get extensionsPrivacy => 'Manifest může definovat jedno HTTPS vyhledávací koncové body a mapové odpovídající pole. Nemůže spustit kód, přidat název žádosti, číst soubory, nebo spustit příkazy shell.';
+	@override String get extensionImport => 'Přidat rozšíření manifest';
+	@override String get extensionEmpty => 'Zvolte důvěryhodný manifest JSON soubor pro přidání.';
+	@override String get extensionChoose => 'Vyhledávací služba';
+	@override String get extensionSearchConsent => 'Každé vyhledávání odesílá vaše slova k této službě HTTPS. Výsledky se otevřou pouze po vybrání jednoho.';
+	@override String get extensionSearchLabel => 'Vyhledávání médií';
+	@override String get extensionSearch => 'Vyhledávání';
+	@override String get extensionSearching => 'Hledání...';
+	@override String get extensionNoResults => 'Bezpečné výsledky médií nebyly vráceny. zkuste další vyhledávání.';
+	@override String get extensionInstallTitle => 'Přidejte tuto vyhledávací službu?';
+	@override String get extensionReplaceTitle => 'Aktualizovat tuto službu vyhledávání?';
+	@override String get extensionService => 'Služba';
+	@override String get extensionEndpoint => 'HTTPS konečný bod';
+	@override String get extensionConsent => 'Váš vyhledávací text je zaslán do této služby. manifest neobsahuje prováděcí kód. Pokračujte pouze v případě, že důvěřujete tomuto bodu.';
+	@override String get extensionInstall => 'Přidat službu';
+	@override String get extensionReplace => 'Aktualizace služby';
+	@override String get extensionRemoveTitle => 'Odstranit tuto vyhledávací službu?';
+	@override String get extensionRemoveHelp => 'To odstraní službu z tohoto profilu. PlezyNG se s jeho koncovým bodem nesetká.';
+	@override String get extensionRemove => 'Odstranění služby';
+	@override String get extensionInvalidManifest => 'Tento soubor není podporovaným rozšířením manifest. viz průvodce Open media pro formát.';
+	@override String get extensionSaveFailed => 'Rozšíření nelze uložit do aktivního profilu.';
+	@override String get extensionSearchFailed => 'Vyhledávací služba nevrátila platnou odpověď. zkontrolujte koncový bod a zkuste znovu.';
+	@override String get cliTitle => 'Příkazová linka';
+	@override String get cliHelp => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.';
+	@override String get cliCopyExample => 'Kopírování příkladu';
+	@override String get cliCopied => 'Příklad příkazů kopírován.';
+	@override String get captureScreen => 'obrazovka';
+	@override String get captureDefaultAudio => 'Předvolený audio vstup';
+	@override String get shareQrLabel => 'QR kód pro dočasnou adresu toku';
+	@override String get shareQrHelp => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.';
+	@override String get shareHttpHint => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$cs extends Translations$fileSources$en {
@@ -7815,7 +7887,7 @@ extension on TranslationsCs {
 			'universalMedia.saveFavorite' => 'Zachraňte oblíbené',
 			'universalMedia.playNow' => 'Hrajte nyní',
 			'universalMedia.favoriteSaved' => 'Stream oblíbené uložené do tohoto profilu',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ), 
 			'universalMedia.playlistAddress' => 'Playlistová adresa',
 			'universalMedia.playlistAddressHelp' => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.',
 			'universalMedia.choosePlaylist' => 'Vyberte soubor playlist',
@@ -7825,7 +7897,7 @@ extension on TranslationsCs {
 			'universalMedia.removeFavorite' => 'Odstranit stream oblíbené',
 			'universalMedia.filesHelp' => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.',
 			'universalMedia.chooseFiles' => 'Vyberte soubory',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ), 
 			'universalMedia.wifiTransfer' => 'Odesílání souborů přes Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.',
 			'universalMedia.wifiTransferIntro' => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.',
@@ -7836,7 +7908,7 @@ extension on TranslationsCs {
 			'universalMedia.copyAddress' => 'Kopírování transferové adresy',
 			'universalMedia.addressCopied' => 'Přenosová adresa kopírovaná',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Tato adresa vyprší v ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Obdržel ${size}',
 			'universalMedia.stopTransfer' => 'Zastavení přenosu a zrušení adresy',
 			'universalMedia.startTransfer' => 'Začátek transferu',
@@ -7906,6 +7978,81 @@ extension on TranslationsCs {
 			'universalMedia.converterCancelled' => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.',
 			'universalMedia.converterDesktopOnly' => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.',
 			'universalMedia.converterStart' => 'Převod souborů',
+			'universalMedia.mediaToolsTitle' => 'Média nástroje',
+			'universalMedia.mediaToolsShortcut' => 'Zachyťte nebo sdílejte média, přidejte vyhledávací rozšíření nebo použijte příkazovou řadu.',
+			'universalMedia.mediaToolsIntro' => 'Vyberte si zaměřený nástroj. zachytit a stream-out používat FFmpeg nainstalované na tomto desku. rozšíření a CLI příkazy používají omezené požadavky HTTPS a stávající Open media tok.',
+			'universalMedia.mediaToolsAccessibility' => 'Výběry nástrojů a kontroly pracují s dotykem, ukazatelem, klávesnicí a zaměřením D-pad. Změny v stavu nahrávání, sdílení a vyhledávání jsou oznámeny.',
+			'universalMedia.mediaTool' => 'Média nástroj',
+			'universalMedia.captureIntro' => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.',
+			'universalMedia.captureNoDevices' => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.',
+			'universalMedia.captureSource' => 'obrazovka nebo fotoaparát',
+			'universalMedia.captureAudioSource' => 'Audio vstup (volitelné)',
+			'universalMedia.captureAudioHelp' => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.',
+			'universalMedia.captureAudioNone' => 'Žádný audio',
+			'universalMedia.captureWaylandHelp' => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.',
+			'universalMedia.captureFrameRate' => 'Rekordní rámová sazba',
+			'universalMedia.capturePrivacy' => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.',
+			'universalMedia.captureSaveAs' => 'Shromažďujte záznam obrazovky jako',
+			'universalMedia.captureExtensionMismatch' => 'Vyberte název, který končí v .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg nebo kódování videa H.264 není k dispozici. nainstalovat podporované FFmpeg stavbu, pak zkuste znovu.',
+			'universalMedia.captureFailed' => 'Zkontrolujte oprávnění zařízení, dostupné ukládání a podporu FFmpeg.',
+			'universalMedia.captureSaved' => 'Scénární záznam byl zachráněn.',
+			'universalMedia.captureElapsedLabel' => 'Záznamový čas',
+			'universalMedia.captureStart' => 'Začíná nahrávání',
+			'universalMedia.captureStop' => 'Zastavte se a zachraňte',
+			'universalMedia.captureMode' => 'únos',
+			'universalMedia.shareMode' => 'Sdílejte',
+			'universalMedia.shareIntro' => 'Odeslat soubor místních médií do jiného zařízení na vaší soukromé síti. PlezyNG vytváří dočasný tok HLS.',
+			'universalMedia.sharePrivacy' => 'Kdokoliv na vaší místní síti, kdo dostává soukromý odkaz může sledovat, zatímco je aktivní. odkaz vyprší po 60 minutách. zastavit sdílení, aby se server uzavřel a zrušit odkaz.',
+			'universalMedia.shareChooseFile' => 'Vyberte mediální soubor',
+			'universalMedia.shareChooseHelp' => 'Vyberte místní audio nebo video soubor. soubor zůstává na tomto počítači.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg nebo kódování H.264/AAC nejsou k dispozici. Instalace FFmpeg s podporou kódování H.264 a AAC.',
+			'universalMedia.shareFailed' => 'Stream se nemohl začít ani nečekaně zastavit. zkontrolujte FFmpeg a přístup k síti.',
+			'universalMedia.shareActive' => 'Stream je připraven na vaší soukromé síti.',
+			'universalMedia.shareEnded' => 'Média dosáhla konce a už se nedělá.',
+			'universalMedia.shareStopped' => 'Sdílení přerušeno. dočasný odkaz již neplatí.',
+			'universalMedia.shareUrlCopied' => 'Přenosová adresa je kopírována.',
+			'universalMedia.shareOpenUrl' => 'Otevřete tuto adresu v jednom hráči na jiném zařízení',
+			'universalMedia.shareCopyUrl' => 'Kopírování streamové adresy',
+			'universalMedia.shareExpiresLabel' => 'Link vyprší na',
+			'universalMedia.shareStarting' => 'Připravování toku...',
+			'universalMedia.shareStart' => 'Začněte sdílet',
+			'universalMedia.shareStop' => 'Přestaňte sdílet',
+			'universalMedia.extensionsMode' => 'Rozšíření a CLI',
+			'universalMedia.extensionsIntro' => 'Přidejte data-pouze vyhledávací rozšíření najít média. Vyberte výsledek, aby ji přenést do známého formuláře Open media.',
+			'universalMedia.extensionsPrivacy' => 'Manifest může definovat jedno HTTPS vyhledávací koncové body a mapové odpovídající pole. Nemůže spustit kód, přidat název žádosti, číst soubory, nebo spustit příkazy shell.',
+			'universalMedia.extensionImport' => 'Přidat rozšíření manifest',
+			'universalMedia.extensionEmpty' => 'Zvolte důvěryhodný manifest JSON soubor pro přidání.',
+			'universalMedia.extensionChoose' => 'Vyhledávací služba',
+			'universalMedia.extensionSearchConsent' => 'Každé vyhledávání odesílá vaše slova k této službě HTTPS. Výsledky se otevřou pouze po vybrání jednoho.',
+			'universalMedia.extensionSearchLabel' => 'Vyhledávání médií',
+			'universalMedia.extensionSearch' => 'Vyhledávání',
+			'universalMedia.extensionSearching' => 'Hledání...',
+			'universalMedia.extensionNoResults' => 'Bezpečné výsledky médií nebyly vráceny. zkuste další vyhledávání.',
+			'universalMedia.extensionInstallTitle' => 'Přidejte tuto vyhledávací službu?',
+			'universalMedia.extensionReplaceTitle' => 'Aktualizovat tuto službu vyhledávání?',
+			'universalMedia.extensionService' => 'Služba',
+			'universalMedia.extensionEndpoint' => 'HTTPS konečný bod',
+			'universalMedia.extensionConsent' => 'Váš vyhledávací text je zaslán do této služby. manifest neobsahuje prováděcí kód. Pokračujte pouze v případě, že důvěřujete tomuto bodu.',
+			'universalMedia.extensionInstall' => 'Přidat službu',
+			'universalMedia.extensionReplace' => 'Aktualizace služby',
+			'universalMedia.extensionRemoveTitle' => 'Odstranit tuto vyhledávací službu?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'To odstraní službu z tohoto profilu. PlezyNG se s jeho koncovým bodem nesetká.',
+			'universalMedia.extensionRemove' => 'Odstranění služby',
+			'universalMedia.extensionInvalidManifest' => 'Tento soubor není podporovaným rozšířením manifest. viz průvodce Open media pro formát.',
+			'universalMedia.extensionSaveFailed' => 'Rozšíření nelze uložit do aktivního profilu.',
+			'universalMedia.extensionSearchFailed' => 'Vyhledávací služba nevrátila platnou odpověď. zkontrolujte koncový bod a zkuste znovu.',
+			'universalMedia.cliTitle' => 'Příkazová linka',
+			'universalMedia.cliHelp' => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.',
+			'universalMedia.cliCopyExample' => 'Kopírování příkladu',
+			'universalMedia.cliCopied' => 'Příklad příkazů kopírován.',
+			'universalMedia.captureScreen' => 'obrazovka',
+			'universalMedia.captureDefaultAudio' => 'Předvolený audio vstup',
+			'universalMedia.shareQrLabel' => 'QR kód pro dočasnou adresu toku',
+			'universalMedia.shareQrHelp' => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.',
+			'universalMedia.shareHttpHint' => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.',
 			'fileSources.title' => 'Soubory a knihy',
 			'fileSources.subtitle' => 'Číst, poslouchat a sledovat z vlastních souborů.',
 			'fileSources.add' => 'Přidat zdroj',
@@ -8077,8 +8224,6 @@ extension on TranslationsCs {
 			'fileSources.offlineQuotaHelp' => 'Nastavení maximálního místa použitého offline kopie, dovezené soubory a stažené stahování. Snížení limitu neodstraňuje stávající kopie.',
 			'fileSources.offlineStorageUsage' => 'Offline skladování',
 			'fileSources.reservedStorage' => 'Rezervované',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Stáhnout Queue',
 			'fileSources.downloadRunning' => 'Stáhnout',
 			'fileSources.downloadQueued' => 'Čekání',

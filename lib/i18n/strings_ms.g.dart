@@ -3154,8 +3154,80 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.';
 	@override String get converterDesktopOnly => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.';
 	@override String get converterStart => 'Menukar fail';
+	@override String get mediaToolsTitle => 'Alat Media';
+	@override String get mediaToolsShortcut => 'Menangkap atau berkongsi media, menambah ekstensi carian, atau gunakan baris perintah.';
+	@override String get mediaToolsIntro => 'Pilih alat berfokus. capture dan stream-out menggunakan FFmpeg yang dipasang pada desktop ini. ekstensi dan perintah CLI menggunakan permintaan HTTPS yang terhad dan aliran Open media yang sedia ada.';
+	@override String get mediaToolsAccessibility => 'Pilihan alat dan kawalan berfungsi dengan sentuhan, penunjuk, papan kekunci, dan fokus D-pad. Rekod, perkongsian, dan perubahan status carian diumumkan.';
+	@override String get mediaTool => 'Alat Media';
+	@override String get captureIntro => 'Mencatat skrin atau kamera anda ke fail MP4 pada komputer ini. FFmpeg perlu dipasang dan termasuk kod H.264.';
+	@override String get captureNoDevices => 'Tiada skrin atau kamera ditemui. semak sokongan penangkapan FFmpeg dan keizinan privasi sistem operasi.';
+	@override String get captureSource => 'skrin atau kamera';
+	@override String get captureAudioSource => 'Pengenalan audio ( opsional )';
+	@override String get captureAudioHelp => 'Tambah audio daripada mikrofon atau input yang tersedia. pilihan peranti bergantung kepada FFmpeg dan keizinan sistem.';
+	@override String get captureAudioNone => 'Tiada audio';
+	@override String get captureWaylandHelp => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.';
+	@override String get captureFrameRate => 'Kadar rakaman';
+	@override String get capturePrivacy => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.';
+	@override String get captureSaveAs => 'Menyimpan rekod skrin sebagai';
+	@override String get captureExtensionMismatch => 'Pilih nama fail yang berakhir dalam .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg atau kod video H.264 tidak boleh didapati.Memasang pembinaan FFmpeg yang disokong, kemudian cuba lagi.';
+	@override String get captureFailed => 'Pendaftaran tidak boleh disimpan. semak kebenaran peranti, penyimpanan yang tersedia, dan sokongan FFmpeg.';
+	@override String get captureSaved => 'Rekod skrin disimpan.';
+	@override String get captureElapsedLabel => 'Masa rekod';
+	@override String get captureStart => 'Mulakan rekod';
+	@override String get captureStop => 'berhenti dan menyelamatkan';
+	@override String get captureMode => 'Penangkapan';
+	@override String get shareMode => 'berkongsi';
+	@override String get shareIntro => 'Hantar fail media tempatan ke peranti lain di rangkaian peribadi anda. PlezyNG mewujudkan aliran sementara HLS.';
+	@override String get sharePrivacy => 'Sesiapa sahaja di rangkaian tempatan anda yang menerima pautan peribadi boleh menonton sementara ia aktif. pautan tamat tempoh selepas 60 minit. berhenti berkongsi untuk menutup pelayan dan membatalkan pautan.';
+	@override String get shareChooseFile => 'Pilih fail media';
+	@override String get shareChooseHelp => 'Pilih fail audio atau video tempatan. fail itu kekal pada komputer ini.';
+	@override String get shareFfmpegMissing => 'FFmpeg atau kod H.264/AAC tidak tersedia.Memasang FFmpeg dengan sokongan kod H.264 dan AAC.';
+	@override String get shareFailed => 'Aliran tidak boleh bermula atau berhenti secara tidak dijangka. semak FFmpeg dan akses rangkaian.';
+	@override String get shareActive => 'Stream bersedia di rangkaian peribadi anda.';
+	@override String get shareEnded => 'Media telah mencapai akhir dan tidak lagi dibahagikan.';
+	@override String get shareStopped => 'Perkongsian berhenti. pautan sementara tidak lagi sah.';
+	@override String get shareUrlCopied => 'alamat yang disalin.';
+	@override String get shareOpenUrl => 'Buka alamat ini dalam satu pemain pada peranti lain';
+	@override String get shareCopyUrl => 'Menyalin alamat Stream';
+	@override String get shareExpiresLabel => 'Link akan tamat pada';
+	@override String get shareStarting => 'Menyediakan aliran ...';
+	@override String get shareStart => 'Mulakan perkongsian';
+	@override String get shareStop => 'Berhenti berkongsi';
+	@override String get extensionsMode => 'Perpanjangan dan CLI';
+	@override String get extensionsIntro => 'Tambah data-hanya ekstensi carian untuk mencari media. Pilih hasil untuk memuat naik ke borang yang biasa Open media.';
+	@override String get extensionsPrivacy => 'Manifesto boleh menentukan satu titik akhir carian HTTPS dan medan tindak balas peta. ia tidak boleh menjalankan kod, menambah tajuk permintaan, membaca fail, atau melancarkan perintah shell.';
+	@override String get extensionImport => 'Menambah Perpanjangan manifest';
+	@override String get extensionEmpty => 'Tiada perkhidmatan carian lagi. pilih fail manifest JSON yang boleh dipercayai untuk menambah satu.';
+	@override String get extensionChoose => 'Perkhidmatan Pencarian';
+	@override String get extensionSearchConsent => 'Setiap carian menghantar kata-kata anda kepada perkhidmatan HTTPS ini. hasil dibuka hanya selepas anda memilih satu.';
+	@override String get extensionSearchLabel => 'Pencarian Media';
+	@override String get extensionSearch => 'Pencarian';
+	@override String get extensionSearching => 'Mencari ...';
+	@override String get extensionNoResults => 'Tiada hasil media yang selamat dikembalikan. cuba carian lain.';
+	@override String get extensionInstallTitle => 'Menambah perkhidmatan carian ini?';
+	@override String get extensionReplaceTitle => 'Memperbaharui perkhidmatan carian ini?';
+	@override String get extensionService => 'Perkhidmatan';
+	@override String get extensionEndpoint => 'HTTPS titik akhir';
+	@override String get extensionConsent => 'Teks carian anda dihantar ke perkhidmatan ini. manifesto tidak mengandungi kod yang boleh dijalankan. teruskan hanya jika anda mempercayai titik akhir ini.';
+	@override String get extensionInstall => 'menambah perkhidmatan';
+	@override String get extensionReplace => 'Perkhidmatan Update';
+	@override String get extensionRemoveTitle => 'Menghapuskan perkhidmatan carian ini?';
+	@override String get extensionRemoveHelp => 'Ini menghapuskan perkhidmatan daripada profil ini.PlezyNG tidak menghubungi titik akhir.';
+	@override String get extensionRemove => 'Hentikan Perkhidmatan';
+	@override String get extensionInvalidManifest => 'Fail ini bukan manifest lanjutan yang disokong. lihat panduan Open media untuk format.';
+	@override String get extensionSaveFailed => 'Perpanjangan tidak boleh disimpan ke profil aktif.';
+	@override String get extensionSearchFailed => 'Perkhidmatan carian tidak mengembalikan jawapan yang sah. semak titik akhir dan cuba lagi.';
+	@override String get cliTitle => 'Garis Perintah';
+	@override String get cliHelp => 'Gunakan panduan plezyctl untuk mengesahkan manifesto atau mencari ekstensi yang sama. Ulasan perkhidmatan HTTPS sebelum setiap carian. Hasil dibuka dalam borang media yang sedia ada; pilih butang playback untuk memulakan.';
+	@override String get cliCopyExample => 'Contoh perintah salinan';
+	@override String get cliCopied => 'contoh yang disalin.';
+	@override String get captureScreen => 'skrin';
+	@override String get captureDefaultAudio => 'Pengenalan audio lalai';
+	@override String get shareQrLabel => 'Kod QR untuk alamat aliran sementara';
+	@override String get shareQrHelp => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.';
+	@override String get shareHttpHint => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$ms extends Translations$fileSources$en {
@@ -7746,7 +7818,7 @@ extension on TranslationsMs {
 			'universalMedia.saveFavorite' => 'Selamatkan kegemaran',
 			'universalMedia.playNow' => 'Bermain sekarang',
 			'universalMedia.favoriteSaved' => 'Stream favorit disimpan ke profil ini',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} masuk senarai main yang tidak disokong atau tidak selamat.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} masuk senarai main yang tidak disokong atau tidak selamat.', ), 
 			'universalMedia.playlistAddress' => 'Alamat Playlist',
 			'universalMedia.playlistAddressHelp' => 'Buka senarai m3U, M3U8, atau PLS daripada alamat web. pautan siaran langsung tidak menyimpan senarai main.',
 			'universalMedia.choosePlaylist' => 'Pilih fail playlist',
@@ -7756,7 +7828,7 @@ extension on TranslationsMs {
 			'universalMedia.removeFavorite' => 'Menghapuskan stream kegemaran',
 			'universalMedia.filesHelp' => 'Pilih fail audio, video, atau ISO untuk tempoh sementara. fail dan URL tidak ditambah kepada sejarah perpustakaan.',
 			'universalMedia.chooseFiles' => 'Pilih fail',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} fail yang dipilih', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} fail yang dipilih', ), 
 			'universalMedia.wifiTransfer' => 'Hantar fail melalui Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Memindahkan fail yang disokong daripada pelayar pada rangkaian yang sama dipercayai.',
 			'universalMedia.wifiTransferIntro' => 'Buka alamat ini dalam pelayar pada peranti lain. pilih fail untuk menambahnya ke perpustakaan Fail dan buku peranti ini.',
@@ -7767,7 +7839,7 @@ extension on TranslationsMs {
 			'universalMedia.copyAddress' => 'Menyalin alamat pemindahan',
 			'universalMedia.addressCopied' => 'Alamat pemindahan disalin',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Alamat ini tamat tempoh dalam ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} fail yang diterima', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${count} fail yang diterima', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Pengenalan kepada ${size}',
 			'universalMedia.stopTransfer' => 'Hentikan pemindahan dan membatalkan alamat',
 			'universalMedia.startTransfer' => 'Mulakan pemindahan',
@@ -7837,6 +7909,81 @@ extension on TranslationsMs {
 			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.',
 			'universalMedia.converterDesktopOnly' => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.',
 			'universalMedia.converterStart' => 'Menukar fail',
+			'universalMedia.mediaToolsTitle' => 'Alat Media',
+			'universalMedia.mediaToolsShortcut' => 'Menangkap atau berkongsi media, menambah ekstensi carian, atau gunakan baris perintah.',
+			'universalMedia.mediaToolsIntro' => 'Pilih alat berfokus. capture dan stream-out menggunakan FFmpeg yang dipasang pada desktop ini. ekstensi dan perintah CLI menggunakan permintaan HTTPS yang terhad dan aliran Open media yang sedia ada.',
+			'universalMedia.mediaToolsAccessibility' => 'Pilihan alat dan kawalan berfungsi dengan sentuhan, penunjuk, papan kekunci, dan fokus D-pad. Rekod, perkongsian, dan perubahan status carian diumumkan.',
+			'universalMedia.mediaTool' => 'Alat Media',
+			'universalMedia.captureIntro' => 'Mencatat skrin atau kamera anda ke fail MP4 pada komputer ini. FFmpeg perlu dipasang dan termasuk kod H.264.',
+			'universalMedia.captureNoDevices' => 'Tiada skrin atau kamera ditemui. semak sokongan penangkapan FFmpeg dan keizinan privasi sistem operasi.',
+			'universalMedia.captureSource' => 'skrin atau kamera',
+			'universalMedia.captureAudioSource' => 'Pengenalan audio ( opsional )',
+			'universalMedia.captureAudioHelp' => 'Tambah audio daripada mikrofon atau input yang tersedia. pilihan peranti bergantung kepada FFmpeg dan keizinan sistem.',
+			'universalMedia.captureAudioNone' => 'Tiada audio',
+			'universalMedia.captureWaylandHelp' => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.',
+			'universalMedia.captureFrameRate' => 'Kadar rakaman',
+			'universalMedia.capturePrivacy' => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.',
+			'universalMedia.captureSaveAs' => 'Menyimpan rekod skrin sebagai',
+			'universalMedia.captureExtensionMismatch' => 'Pilih nama fail yang berakhir dalam .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg atau kod video H.264 tidak boleh didapati.Memasang pembinaan FFmpeg yang disokong, kemudian cuba lagi.',
+			'universalMedia.captureFailed' => 'Pendaftaran tidak boleh disimpan. semak kebenaran peranti, penyimpanan yang tersedia, dan sokongan FFmpeg.',
+			'universalMedia.captureSaved' => 'Rekod skrin disimpan.',
+			'universalMedia.captureElapsedLabel' => 'Masa rekod',
+			'universalMedia.captureStart' => 'Mulakan rekod',
+			'universalMedia.captureStop' => 'berhenti dan menyelamatkan',
+			'universalMedia.captureMode' => 'Penangkapan',
+			'universalMedia.shareMode' => 'berkongsi',
+			'universalMedia.shareIntro' => 'Hantar fail media tempatan ke peranti lain di rangkaian peribadi anda. PlezyNG mewujudkan aliran sementara HLS.',
+			'universalMedia.sharePrivacy' => 'Sesiapa sahaja di rangkaian tempatan anda yang menerima pautan peribadi boleh menonton sementara ia aktif. pautan tamat tempoh selepas 60 minit. berhenti berkongsi untuk menutup pelayan dan membatalkan pautan.',
+			'universalMedia.shareChooseFile' => 'Pilih fail media',
+			'universalMedia.shareChooseHelp' => 'Pilih fail audio atau video tempatan. fail itu kekal pada komputer ini.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg atau kod H.264/AAC tidak tersedia.Memasang FFmpeg dengan sokongan kod H.264 dan AAC.',
+			'universalMedia.shareFailed' => 'Aliran tidak boleh bermula atau berhenti secara tidak dijangka. semak FFmpeg dan akses rangkaian.',
+			'universalMedia.shareActive' => 'Stream bersedia di rangkaian peribadi anda.',
+			'universalMedia.shareEnded' => 'Media telah mencapai akhir dan tidak lagi dibahagikan.',
+			'universalMedia.shareStopped' => 'Perkongsian berhenti. pautan sementara tidak lagi sah.',
+			'universalMedia.shareUrlCopied' => 'alamat yang disalin.',
+			'universalMedia.shareOpenUrl' => 'Buka alamat ini dalam satu pemain pada peranti lain',
+			'universalMedia.shareCopyUrl' => 'Menyalin alamat Stream',
+			'universalMedia.shareExpiresLabel' => 'Link akan tamat pada',
+			'universalMedia.shareStarting' => 'Menyediakan aliran ...',
+			'universalMedia.shareStart' => 'Mulakan perkongsian',
+			'universalMedia.shareStop' => 'Berhenti berkongsi',
+			'universalMedia.extensionsMode' => 'Perpanjangan dan CLI',
+			'universalMedia.extensionsIntro' => 'Tambah data-hanya ekstensi carian untuk mencari media. Pilih hasil untuk memuat naik ke borang yang biasa Open media.',
+			'universalMedia.extensionsPrivacy' => 'Manifesto boleh menentukan satu titik akhir carian HTTPS dan medan tindak balas peta. ia tidak boleh menjalankan kod, menambah tajuk permintaan, membaca fail, atau melancarkan perintah shell.',
+			'universalMedia.extensionImport' => 'Menambah Perpanjangan manifest',
+			'universalMedia.extensionEmpty' => 'Tiada perkhidmatan carian lagi. pilih fail manifest JSON yang boleh dipercayai untuk menambah satu.',
+			'universalMedia.extensionChoose' => 'Perkhidmatan Pencarian',
+			'universalMedia.extensionSearchConsent' => 'Setiap carian menghantar kata-kata anda kepada perkhidmatan HTTPS ini. hasil dibuka hanya selepas anda memilih satu.',
+			'universalMedia.extensionSearchLabel' => 'Pencarian Media',
+			'universalMedia.extensionSearch' => 'Pencarian',
+			'universalMedia.extensionSearching' => 'Mencari ...',
+			'universalMedia.extensionNoResults' => 'Tiada hasil media yang selamat dikembalikan. cuba carian lain.',
+			'universalMedia.extensionInstallTitle' => 'Menambah perkhidmatan carian ini?',
+			'universalMedia.extensionReplaceTitle' => 'Memperbaharui perkhidmatan carian ini?',
+			'universalMedia.extensionService' => 'Perkhidmatan',
+			'universalMedia.extensionEndpoint' => 'HTTPS titik akhir',
+			'universalMedia.extensionConsent' => 'Teks carian anda dihantar ke perkhidmatan ini. manifesto tidak mengandungi kod yang boleh dijalankan. teruskan hanya jika anda mempercayai titik akhir ini.',
+			'universalMedia.extensionInstall' => 'menambah perkhidmatan',
+			'universalMedia.extensionReplace' => 'Perkhidmatan Update',
+			'universalMedia.extensionRemoveTitle' => 'Menghapuskan perkhidmatan carian ini?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'Ini menghapuskan perkhidmatan daripada profil ini.PlezyNG tidak menghubungi titik akhir.',
+			'universalMedia.extensionRemove' => 'Hentikan Perkhidmatan',
+			'universalMedia.extensionInvalidManifest' => 'Fail ini bukan manifest lanjutan yang disokong. lihat panduan Open media untuk format.',
+			'universalMedia.extensionSaveFailed' => 'Perpanjangan tidak boleh disimpan ke profil aktif.',
+			'universalMedia.extensionSearchFailed' => 'Perkhidmatan carian tidak mengembalikan jawapan yang sah. semak titik akhir dan cuba lagi.',
+			'universalMedia.cliTitle' => 'Garis Perintah',
+			'universalMedia.cliHelp' => 'Gunakan panduan plezyctl untuk mengesahkan manifesto atau mencari ekstensi yang sama. Ulasan perkhidmatan HTTPS sebelum setiap carian. Hasil dibuka dalam borang media yang sedia ada; pilih butang playback untuk memulakan.',
+			'universalMedia.cliCopyExample' => 'Contoh perintah salinan',
+			'universalMedia.cliCopied' => 'contoh yang disalin.',
+			'universalMedia.captureScreen' => 'skrin',
+			'universalMedia.captureDefaultAudio' => 'Pengenalan audio lalai',
+			'universalMedia.shareQrLabel' => 'Kod QR untuk alamat aliran sementara',
+			'universalMedia.shareQrHelp' => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.',
+			'universalMedia.shareHttpHint' => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.',
 			'fileSources.title' => 'fail dan buku',
 			'fileSources.subtitle' => 'Membaca, mendengarkan, dan menonton daripada fail anda sendiri.',
 			'fileSources.add' => 'Menambah sumber',
@@ -8008,8 +8155,6 @@ extension on TranslationsMs {
 			'fileSources.offlineQuotaHelp' => 'Tetapkan ruang maksimum yang digunakan oleh salinan offline, fail yang diimport, dan muat turun. Mengurangkan had tidak menghapuskan salinan sedia ada.',
 			'fileSources.offlineStorageUsage' => 'Penyimpanan Offline',
 			'fileSources.reservedStorage' => 'Penyimpanan',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Mengunduh Queue',
 			'fileSources.downloadRunning' => 'Dimuat turun',
 			'fileSources.downloadQueued' => 'Menunggu',

@@ -3183,8 +3183,80 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.';
 	@override String get converterDesktopOnly => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.';
 	@override String get converterStart => 'מחליפים קובץ';
+	@override String get mediaToolsTitle => 'כלי מדיה';
+	@override String get mediaToolsShortcut => 'לצלם או לשתף מדיה, להוסיף הרחבות חיפוש, או להשתמש בשורת הפקודה.';
+	@override String get mediaToolsIntro => 'בחר כלי ממוקד.קלט וזרם-out להשתמש FFmpeg מותקן על שולחן העבודה הזה.הרחבות ו CLI פקודות להשתמש בקשות HTTPS מוגבלות ואת זרימת Open media הקיימת.';
+	@override String get mediaToolsAccessibility => 'בחירת כלי ושליטה עובדים עם מגע, מדד, כפתור, ו- D-pad מוקד.';
+	@override String get mediaTool => 'כלי מדיה';
+	@override String get captureIntro => 'להקליט את המסך שלך או מצלמה לקובץ MP4 במחשב זה. FFmpeg חייב להיות מותקן ולהכיל את הקודר H.264.';
+	@override String get captureNoDevices => 'לא נמצאו מסך או מצלמה.בדוק FFmpeg תמיכה בקלטות והרשאות הפרטיות של מערכת ההפעלה.';
+	@override String get captureSource => 'מסך או מצלמה';
+	@override String get captureAudioSource => 'כניסה אודיו (אופציונלית)';
+	@override String get captureAudioHelp => 'הוסף אודיו ממיקרופון או כניסה זמינה.בחירות המכשיר תלויות ב- FFmpeg והרשאות המערכת.';
+	@override String get captureAudioNone => 'אין אודיו';
+	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+	@override String get captureFrameRate => 'שיעור הקלטת';
+	@override String get capturePrivacy => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.';
+	@override String get captureSaveAs => 'שמור את הקלטת המסך כ';
+	@override String get captureExtensionMismatch => 'בחר שם קובץ הסתיים ב .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg או קוד וידאו H.264 אינו זמין.התקנה תומכת FFmpeg בניין, ולאחר מכן לנסות שוב.';
+	@override String get captureFailed => 'לא ניתן היה לשמור את ההקלטה.בדוק את רישיון המכשיר, אחסון זמין, ותמיכה FFmpeg.';
+	@override String get captureSaved => 'הקלטת המסך נשמרה.';
+	@override String get captureElapsedLabel => 'זמן ההקלטה';
+	@override String get captureStart => 'התחל להקליט';
+	@override String get captureStop => 'להפסיק ולהציל';
+	@override String get captureMode => 'מעצרים';
+	@override String get shareMode => 'שיתוף';
+	@override String get shareIntro => 'שלח קובץ מדיה מקומי למכשיר אחר ברשת הפרטית שלך.PlezyNG יוצר זרם זמני HLS.';
+	@override String get sharePrivacy => 'כל מי ברשת המקומית שלך שמקבל את הקישור הפרטי יכול לצפות בו בזמן שהוא פעיל.הקישור נגמר לאחר 60 דקות.';
+	@override String get shareChooseFile => 'בחר קובץ מדיה';
+	@override String get shareChooseHelp => 'בחר קובץ אודיו או וידאו מקומי.הקובץ נשאר במחשב זה.';
+	@override String get shareFfmpegMissing => 'FFmpeg או הקודרים של H.264/AAC אינם זמינים.התקנה של FFmpeg עם H.264 ותמיכה בקוד AAC.';
+	@override String get shareFailed => 'זרם לא יכול להתחיל או לעצור באופן בלתי צפוי.צפה FFmpeg וגישה לרשת.';
+	@override String get shareActive => 'המשתמש מוכן ברשת הפרטית שלך.';
+	@override String get shareEnded => 'התקשורת הגיעה לסיום והיא כבר לא משותפת.';
+	@override String get shareStopped => 'קישור זמני כבר לא בתוקף.';
+	@override String get shareUrlCopied => 'כתובת זרם עותק.';
+	@override String get shareOpenUrl => 'פתח את הכתובת הזאת במשחק אחד במכשיר אחר';
+	@override String get shareCopyUrl => 'כתובת Stream Address';
+	@override String get shareExpiresLabel => 'קישור נעלם';
+	@override String get shareStarting => 'להכין את הזרם...';
+	@override String get shareStart => 'התחל לחלוק';
+	@override String get shareStop => 'להפסיק לחלוק';
+	@override String get extensionsMode => 'הרחבות ו CLI';
+	@override String get extensionsIntro => 'הוסף תוספת חיפוש נתונים בלבד כדי למצוא מדיה. בחר תוצאה כדי להעלות אותה לתוך טופס Open media הידוע.';
+	@override String get extensionsPrivacy => 'מונדיאל יכול להגדיר שדה מסוף החיפוש של HTTPS ושדות התגובה של המפה.זה לא יכול להפעיל קוד, להוסיף כותרות בקשה, לקרוא קבצים, או פקודות שדה הפתיחה.';
+	@override String get extensionImport => 'להוסיף הרחבה manifesto';
+	@override String get extensionEmpty => 'אין שירותי חיפוש עדיין. בחר קובץ מופיע אמין JSON כדי להוסיף אחד.';
+	@override String get extensionChoose => 'שירות חיפוש';
+	@override String get extensionSearchConsent => 'כל חיפוש שולח את המילים שלך לשירות זה HTTPS.תוצאות נפתחות רק לאחר שתבחר אחד.';
+	@override String get extensionSearchLabel => 'חיפוש מדיה';
+	@override String get extensionSearch => 'חיפוש';
+	@override String get extensionSearching => 'מחפשים...';
+	@override String get extensionNoResults => 'לא הוחזרו תוצאות מדיה מאובטחת, נסה חיפוש נוסף.';
+	@override String get extensionInstallTitle => 'להוסיף שירות חיפוש זה?';
+	@override String get extensionReplaceTitle => 'עדכון שירות החיפוש הזה?';
+	@override String get extensionService => 'שירות';
+	@override String get extensionEndpoint => 'HTTPS נקודת סיום';
+	@override String get extensionConsent => 'טקסט החיפוש שלך נשלח לשירות זה.המניין אינו מכיל קוד מבוצע.המשך רק אם אתה סומך על נקודת המוצא הזו.';
+	@override String get extensionInstall => 'להוסיף שירות';
+	@override String get extensionReplace => 'עדכון שירות';
+	@override String get extensionRemoveTitle => 'להסיר את שירות החיפוש הזה?';
+	@override String get extensionRemoveHelp => 'זה מוריד את השירות מהפרופיל הזה.PlezyNG אינו מתקשר לנקודה הסופית שלה.';
+	@override String get extensionRemove => 'להסיר שירות';
+	@override String get extensionInvalidManifest => 'קובץ זה אינו מראה הרחבה תומכת.ראו מדריך Open media עבור הפורמט.';
+	@override String get extensionSaveFailed => 'לא ניתן היה לשמור את ההרחבה לפרופיל הפעיל.';
+	@override String get extensionSearchFailed => 'שירות החיפוש לא החזיר תשובה תקינה.בדוק את נקודת הסוף ולנסות שוב.';
+	@override String get cliTitle => 'קו הפיקוד';
+	@override String get cliHelp => 'השתמש במדריך plezyctl כדי לאמת מונדיאל או לחפש את אותה הרחבה.הצג את שירות HTTPS שלה לפני כל חיפוש.תוצאות פותחות בטופס התקשורת הקיימים; בחר את כפתור הצפייה כדי להתחיל.';
+	@override String get cliCopyExample => 'דוגמאות להורדה';
+	@override String get cliCopied => 'דוגמה של העתקה.';
+	@override String get captureScreen => 'מסך';
+	@override String get captureDefaultAudio => 'כניסה אודיו';
+	@override String get shareQrLabel => 'קוד QR עבור כתובת זרם זמנית';
+	@override String get shareQrHelp => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.';
+	@override String get shareHttpHint => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$he extends Translations$fileSources$en {
@@ -7779,7 +7851,7 @@ extension on TranslationsHe {
 			'universalMedia.saveFavorite' => 'הציל את האהוב',
 			'universalMedia.playNow' => 'לשחק עכשיו',
 			'universalMedia.favoriteSaved' => 'זרם אהוב נשמר לפרופיל זה',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'כניסה לא תומכת או לא בטוחה של רשימת המשחקים של ${count}.', two: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', other: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'כניסה לא תומכת או לא בטוחה של רשימת המשחקים של ${count}.', two: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', other: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', ), 
 			'universalMedia.playlistAddress' => 'כתובת Playlist',
 			'universalMedia.playlistAddressHelp' => 'פתח רשימת משחקים M3U, M3u8 או PLS מכתובת אינטרנט.קישורים זרימה ישירה אינם מאוחסנים את רשימת המשחקים.',
 			'universalMedia.choosePlaylist' => 'בחר קובץ playlist',
@@ -7789,7 +7861,7 @@ extension on TranslationsHe {
 			'universalMedia.removeFavorite' => 'להסיר זרם אהוב',
 			'universalMedia.filesHelp' => 'בחר קבצים אודיו, וידאו או ISO עבור קובץ זמני.קבצים וכתובות URL אינם מופיעים בהיסטוריה של הספרייה.',
 			'universalMedia.chooseFiles' => 'בחירת קבצים',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '1 קובץ שנבחר', two: '${count} קבצים שנבחרו', other: '${count} קבצים שנבחרו', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '1 קובץ שנבחר', two: '${count} קבצים שנבחרו', other: '${count} קבצים שנבחרו', ), 
 			'universalMedia.wifiTransfer' => 'שליחת קבצים דרך Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'העברת קבצים תומכים מתוך דפדפן באותו רשת מאובטחת.',
 			'universalMedia.wifiTransferIntro' => 'פתח את כתובת זו בדפדפן במכשיר אחר. בחר קבצים כדי להוסיף אותם לספריה של קבצי מכשיר זה וספרים.',
@@ -7800,7 +7872,7 @@ extension on TranslationsHe {
 			'universalMedia.copyAddress' => 'עותק של כתובת העברה',
 			'universalMedia.addressCopied' => 'כתובת העברת עותקים',
 			'universalMedia.transferExpires' => ({required Object time}) => 'כתובת זו נגמרת ב- ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'קובץ ${count} מקבל', two: '${count} קבצים מקבלים', other: '${count} קבצים מקבלים', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'קובץ ${count} מקבל', two: '${count} קבצים מקבלים', other: '${count} קבצים מקבלים', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'קבלת ${size}',
 			'universalMedia.stopTransfer' => 'הפסקת העברה ושינוי כתובת',
 			'universalMedia.startTransfer' => 'התחלת העברה',
@@ -7870,6 +7942,81 @@ extension on TranslationsHe {
 			'universalMedia.converterCancelled' => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.',
 			'universalMedia.converterDesktopOnly' => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.',
 			'universalMedia.converterStart' => 'מחליפים קובץ',
+			'universalMedia.mediaToolsTitle' => 'כלי מדיה',
+			'universalMedia.mediaToolsShortcut' => 'לצלם או לשתף מדיה, להוסיף הרחבות חיפוש, או להשתמש בשורת הפקודה.',
+			'universalMedia.mediaToolsIntro' => 'בחר כלי ממוקד.קלט וזרם-out להשתמש FFmpeg מותקן על שולחן העבודה הזה.הרחבות ו CLI פקודות להשתמש בקשות HTTPS מוגבלות ואת זרימת Open media הקיימת.',
+			'universalMedia.mediaToolsAccessibility' => 'בחירת כלי ושליטה עובדים עם מגע, מדד, כפתור, ו- D-pad מוקד.',
+			'universalMedia.mediaTool' => 'כלי מדיה',
+			'universalMedia.captureIntro' => 'להקליט את המסך שלך או מצלמה לקובץ MP4 במחשב זה. FFmpeg חייב להיות מותקן ולהכיל את הקודר H.264.',
+			'universalMedia.captureNoDevices' => 'לא נמצאו מסך או מצלמה.בדוק FFmpeg תמיכה בקלטות והרשאות הפרטיות של מערכת ההפעלה.',
+			'universalMedia.captureSource' => 'מסך או מצלמה',
+			'universalMedia.captureAudioSource' => 'כניסה אודיו (אופציונלית)',
+			'universalMedia.captureAudioHelp' => 'הוסף אודיו ממיקרופון או כניסה זמינה.בחירות המכשיר תלויות ב- FFmpeg והרשאות המערכת.',
+			'universalMedia.captureAudioNone' => 'אין אודיו',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
+			'universalMedia.capturePrivacy' => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.',
+			'universalMedia.captureSaveAs' => 'שמור את הקלטת המסך כ',
+			'universalMedia.captureExtensionMismatch' => 'בחר שם קובץ הסתיים ב .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg או קוד וידאו H.264 אינו זמין.התקנה תומכת FFmpeg בניין, ולאחר מכן לנסות שוב.',
+			'universalMedia.captureFailed' => 'לא ניתן היה לשמור את ההקלטה.בדוק את רישיון המכשיר, אחסון זמין, ותמיכה FFmpeg.',
+			'universalMedia.captureSaved' => 'הקלטת המסך נשמרה.',
+			'universalMedia.captureElapsedLabel' => 'זמן ההקלטה',
+			'universalMedia.captureStart' => 'התחל להקליט',
+			'universalMedia.captureStop' => 'להפסיק ולהציל',
+			'universalMedia.captureMode' => 'מעצרים',
+			'universalMedia.shareMode' => 'שיתוף',
+			'universalMedia.shareIntro' => 'שלח קובץ מדיה מקומי למכשיר אחר ברשת הפרטית שלך.PlezyNG יוצר זרם זמני HLS.',
+			'universalMedia.sharePrivacy' => 'כל מי ברשת המקומית שלך שמקבל את הקישור הפרטי יכול לצפות בו בזמן שהוא פעיל.הקישור נגמר לאחר 60 דקות.',
+			'universalMedia.shareChooseFile' => 'בחר קובץ מדיה',
+			'universalMedia.shareChooseHelp' => 'בחר קובץ אודיו או וידאו מקומי.הקובץ נשאר במחשב זה.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg או הקודרים של H.264/AAC אינם זמינים.התקנה של FFmpeg עם H.264 ותמיכה בקוד AAC.',
+			'universalMedia.shareFailed' => 'זרם לא יכול להתחיל או לעצור באופן בלתי צפוי.צפה FFmpeg וגישה לרשת.',
+			'universalMedia.shareActive' => 'המשתמש מוכן ברשת הפרטית שלך.',
+			'universalMedia.shareEnded' => 'התקשורת הגיעה לסיום והיא כבר לא משותפת.',
+			'universalMedia.shareStopped' => 'קישור זמני כבר לא בתוקף.',
+			'universalMedia.shareUrlCopied' => 'כתובת זרם עותק.',
+			'universalMedia.shareOpenUrl' => 'פתח את הכתובת הזאת במשחק אחד במכשיר אחר',
+			'universalMedia.shareCopyUrl' => 'כתובת Stream Address',
+			'universalMedia.shareExpiresLabel' => 'קישור נעלם',
+			'universalMedia.shareStarting' => 'להכין את הזרם...',
+			'universalMedia.shareStart' => 'התחל לחלוק',
+			'universalMedia.shareStop' => 'להפסיק לחלוק',
+			'universalMedia.extensionsMode' => 'הרחבות ו CLI',
+			'universalMedia.extensionsIntro' => 'הוסף תוספת חיפוש נתונים בלבד כדי למצוא מדיה. בחר תוצאה כדי להעלות אותה לתוך טופס Open media הידוע.',
+			'universalMedia.extensionsPrivacy' => 'מונדיאל יכול להגדיר שדה מסוף החיפוש של HTTPS ושדות התגובה של המפה.זה לא יכול להפעיל קוד, להוסיף כותרות בקשה, לקרוא קבצים, או פקודות שדה הפתיחה.',
+			'universalMedia.extensionImport' => 'להוסיף הרחבה manifesto',
+			'universalMedia.extensionEmpty' => 'אין שירותי חיפוש עדיין. בחר קובץ מופיע אמין JSON כדי להוסיף אחד.',
+			'universalMedia.extensionChoose' => 'שירות חיפוש',
+			'universalMedia.extensionSearchConsent' => 'כל חיפוש שולח את המילים שלך לשירות זה HTTPS.תוצאות נפתחות רק לאחר שתבחר אחד.',
+			'universalMedia.extensionSearchLabel' => 'חיפוש מדיה',
+			'universalMedia.extensionSearch' => 'חיפוש',
+			'universalMedia.extensionSearching' => 'מחפשים...',
+			'universalMedia.extensionNoResults' => 'לא הוחזרו תוצאות מדיה מאובטחת, נסה חיפוש נוסף.',
+			'universalMedia.extensionInstallTitle' => 'להוסיף שירות חיפוש זה?',
+			'universalMedia.extensionReplaceTitle' => 'עדכון שירות החיפוש הזה?',
+			'universalMedia.extensionService' => 'שירות',
+			'universalMedia.extensionEndpoint' => 'HTTPS נקודת סיום',
+			'universalMedia.extensionConsent' => 'טקסט החיפוש שלך נשלח לשירות זה.המניין אינו מכיל קוד מבוצע.המשך רק אם אתה סומך על נקודת המוצא הזו.',
+			'universalMedia.extensionInstall' => 'להוסיף שירות',
+			'universalMedia.extensionReplace' => 'עדכון שירות',
+			'universalMedia.extensionRemoveTitle' => 'להסיר את שירות החיפוש הזה?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'זה מוריד את השירות מהפרופיל הזה.PlezyNG אינו מתקשר לנקודה הסופית שלה.',
+			'universalMedia.extensionRemove' => 'להסיר שירות',
+			'universalMedia.extensionInvalidManifest' => 'קובץ זה אינו מראה הרחבה תומכת.ראו מדריך Open media עבור הפורמט.',
+			'universalMedia.extensionSaveFailed' => 'לא ניתן היה לשמור את ההרחבה לפרופיל הפעיל.',
+			'universalMedia.extensionSearchFailed' => 'שירות החיפוש לא החזיר תשובה תקינה.בדוק את נקודת הסוף ולנסות שוב.',
+			'universalMedia.cliTitle' => 'קו הפיקוד',
+			'universalMedia.cliHelp' => 'השתמש במדריך plezyctl כדי לאמת מונדיאל או לחפש את אותה הרחבה.הצג את שירות HTTPS שלה לפני כל חיפוש.תוצאות פותחות בטופס התקשורת הקיימים; בחר את כפתור הצפייה כדי להתחיל.',
+			'universalMedia.cliCopyExample' => 'דוגמאות להורדה',
+			'universalMedia.cliCopied' => 'דוגמה של העתקה.',
+			'universalMedia.captureScreen' => 'מסך',
+			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
+			'universalMedia.shareQrLabel' => 'קוד QR עבור כתובת זרם זמנית',
+			'universalMedia.shareQrHelp' => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.',
+			'universalMedia.shareHttpHint' => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.',
 			'fileSources.title' => 'קבצים וספרים',
 			'fileSources.subtitle' => 'קרא, הקשיב, והצפה מהקבצים שלך.',
 			'fileSources.add' => 'הוסף מקור',
@@ -8041,8 +8188,6 @@ extension on TranslationsHe {
 			'fileSources.offlineQuotaHelp' => 'הגדר את המרחב המקסימלי המשמש על ידי עותקים לא מקוונים, קבצים מיובאים והורדות.',
 			'fileSources.offlineStorageUsage' => 'אחסון Offline',
 			'fileSources.reservedStorage' => 'מוגן',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'הורד Queue',
 			'fileSources.downloadRunning' => 'הורדות',
 			'fileSources.downloadQueued' => 'מחכה',

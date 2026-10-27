@@ -2,7 +2,7 @@
 
 PlezyNG’s **Files and books → Open media** screen is a session-oriented entry point for media that is not already in a Plex, Jellyfin, Emby, or file-source library. It reuses the app’s normal player, playback coordinator, track controls, and profile lifecycle. The entry stays out of source catalogs and playback history unless the user explicitly saves an eligible stream favorite.
 
-Open media is a single entry in the existing Files and books area. Local conversion and Wi-Fi transfer are grouped within it as focused tools, rather than adding separate top-level navigation entries.
+Open media is a single entry in the existing Files and books area. Local conversion, Wi-Fi transfer, capture/share, search extensions, and CLI help stay grouped in the same flow instead of adding top-level navigation entries.
 
 ## Open and play
 
@@ -42,6 +42,36 @@ Desktop users can convert a local audio/video file to MP4 (H.264/AAC), M4A (AAC)
 
 Install FFmpeg on the computer and make `ffmpeg` available on `PATH`; include the H.264/AAC/MP3 encoders shown in the format labels. PlezyNG does not bundle FFmpeg, download remote media for conversion, remove DRM, or transcode a protected source. Conversion works on files the user can already open locally.
 
+## Capture a screen or camera
+
+Open **Media tools → Capture** from the existing Open media screen on desktop. Select a display or camera, choose 15, 30, or 60 fps, and optionally select an audio input. PlezyNG records H.264 MP4 locally through a user-installed `ffmpeg`; it never uploads the recording. A partial file is written beside the chosen destination and only replaces the destination after FFmpeg finishes successfully. Replacing an existing file requires confirmation, and the old file is restored if publication fails.
+
+Capture is available on Windows, macOS, and Linux desktop builds when FFmpeg includes the platform capture device and `libx264`. Camera and microphone availability depends on operating-system permissions and the FFmpeg build. Linux uses X11 capture; in a Wayland session this sees only the XWayland display and does not capture native Wayland windows or portals. PlezyNG does not provide native TV, Android, or iOS capture.
+
+## Share a local file on the private network
+
+Open **Media tools → Share**, choose a local audio or video file, then start sharing. PlezyNG uses a temporary HLS stream transcoded by user-installed FFmpeg and shows a QR code plus copyable addresses for private IPv4 interfaces. The temporary bearer address uses a random 256-bit token, accepts only GET/HEAD requests from private IPv4 peers with an expected host header, expires after 60 minutes, and is invalidated immediately when sharing stops, the app backgrounds, or the profile changes. Temporary segments are removed after the encoder stops.
+
+This share uses unencrypted HTTP and is intended for a trusted local network. Anyone who obtains the active address can watch the selected file; it is not an authenticated account share. A PlezyNG receiver must explicitly allow HTTP for that session. This is file-to-HLS sharing, not a general-purpose RTSP/RTMP/UDP output server, a remote relay, or a persistent server. The app must remain in the foreground.
+
+## Search extensions and command line
+
+**Media tools → Extensions and CLI** accepts a JSON search manifest. The schema has one credential-free HTTPS endpoint, one query parameter, and a short path to the JSON results array. It maps title, URL, and optional subtitle fields into up to 20 results. The user sees the service host and confirms the manifest before it is saved. Every search explains that the query is sent to that service. Results are loaded into the existing Open media form; playback still requires the user to select **Play now**.
+
+The schema accepts only `schema_version` (currently `1`), `id`, `name`, optional `description`, `endpoint`, `query_parameter`, `results_path`, `title_field`, `url_field`, and optional `subtitle_field`. Field names use letters, digits, `_`, or `-`; `results_path` contains one to four object keys. Unknown keys are rejected. The [example manifest](../examples/extensions/search.example.json) uses the reserved `.invalid` host and must be replaced with a trusted service before use.
+
+Extensions are data-only: the manifest cannot execute code, add request headers, access files, follow redirects, invoke a shell, or define arbitrary actions. Responses are limited to 1 MiB, searches to 200 characters, and results to 20. Only safe HTTPS media URLs are returned. Extension definitions are saved in the current profile and can be removed there.
+
+The companion `tools/plezyctl` command (Python 3.10+) validates the same manifest format, searches with the same HTTPS/response bounds, and can open a selected credential-free result in PlezyNG. Review the endpoint before every search; in noninteractive use, `--yes` confirms that the endpoint receives the search text. Signed result URLs cannot be sent through app links, because operating systems may retain them; paste those into Open media for the current session.
+
+```sh
+python3 tools/plezyctl validate --manifest examples/extensions/search.example.json
+python3 tools/plezyctl search --manifest examples/extensions/search.example.json "search terms"
+python3 tools/plezyctl search --manifest examples/extensions/search.example.json "search terms" --yes --open --result 1
+```
+
+The example manifest uses the reserved `.invalid` domain and is a schema example only. Replace its endpoint with a service you trust before searching.
+
 ## Transfer files over Wi-Fi
 
 Desktop and handheld Android builds can start a temporary local upload page from Open media. A random 256-bit bearer path is bound to a local IPv4 listener, the host header and private client address are checked, and uploads require a same-origin request. The URL expires after 15 minutes; stopping the transfer, leaving the screen, backgrounding the app, or switching profile retires it. The sender’s browser presents a labelled file input, upload button, and polite live status announcement.
@@ -54,8 +84,9 @@ The receiver accepts supported audio, video, ebook, and comic formats, up to 4 G
 - Screen-reader labels include slider names and values, button tooltips, file counts, and a live-session cue.
 - Live streams remove seeking affordances instead of leaving controls that cannot work.
 - Transfer and conversion progress use live announcements; transfer errors remain visible in both the app and browser.
+- Capture, share, and extension status messages use polite live regions. The share QR code has a screen-reader label, a scan instruction, visible copyable URLs, and a date/time expiry cue.
 - Sliders, buttons, choices, and sheets use PlezyNG’s existing focus, keyboard, D-pad, and adaptive-sheet patterns.
-- Sensitive actions explain the scope next to the control: HTTP is opt-in, favorites are explicitly saved, recording overwrite is confirmed, and transfers expire.
+- Sensitive actions explain the scope next to the control: HTTP is opt-in, favorites are explicitly saved, recording overwrite is confirmed, and both transfer/share links expire.
 
 The new interface strings use the repository’s documented machine-translation draft workflow. Native-speaker review remains necessary, especially for accessibility announcements and security guidance; no native-review claim is made for this feature.
 
@@ -71,9 +102,15 @@ The new interface strings use the repository’s documented machine-translation 
 | Optical discs | Desktop MPV only; build and OS drive support required. |
 | FFmpeg local conversion | Desktop only, with a compatible user-installed FFmpeg on `PATH`. |
 | Wi-Fi file transfer | Desktop and handheld Android, while the app stays active in the foreground. |
+| Screen/camera recording | Windows, macOS, and Linux desktop with the matching FFmpeg capture device; Linux Wayland is XWayland-limited. |
+| Private-network HLS sharing | Windows, macOS, and Linux desktop with FFmpeg, a local file, and a private IPv4 address; foreground only, 60-minute maximum. |
+| Search extensions | Non-TV builds; HTTPS JSON endpoint only, profile-local, with bounded responses and no executable code. |
+| `plezyctl` | Python 3.10+ on desktop; opening results depends on the installed PlezyNG URL handler. |
 
 ## Scope boundaries
 
-This addition complements PlezyNG’s existing MPV equalizer, shader/effect presets, subtitle tools, source library, Google Cast handoff, external-player launch, and server DVR/recording features. It does not add arbitrary screen/camera capture, a general-purpose network stream-out server, a VLC-style extension runtime, or a command-line plugin host. Those require separate native capture permissions, outbound server security/lifecycle, and extension trust boundaries; this screen does not expose nonfunctional placeholders for them.
+This guide covers the full VLC comparison gaps selected for this client: desktop screen/camera capture, outgoing local-network streaming, search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, playlists, local files, optical-disc inputs on supported desktops, conversion, live-stream recording, MPV picture/effect/audio controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
+
+The additions intentionally fit the existing Open media pane and use the app’s standard player and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
 
 New localized strings belong in `lib/i18n/en.i18n.json`; run the repository’s localization and Slang generation workflow after editing the catalog. Platform checks and FFmpeg/disc requirements should remain explicit in future UI and release notes.

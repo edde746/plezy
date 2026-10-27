@@ -3216,8 +3216,80 @@ class _Translations$universalMedia$uk extends Translations$universalMedia$en {
 	@override String get converterCancelled => 'Конвертація скасована. неповний результат був видалений.';
 	@override String get converterDesktopOnly => 'Місцева конверсія доступна на робочих комп\'ютерах з встановленим FFmpeg.';
 	@override String get converterStart => 'Конвертація файлів';
+	@override String get mediaToolsTitle => 'Медіа інструменти';
+	@override String get mediaToolsShortcut => 'Знайти або поділитися медіа, додати розширення пошуку або використовувати командну лінію.';
+	@override String get mediaToolsIntro => 'Виберіть зосереджений інструмент. Знайти і вийти з потоку використовувати FFmpeg встановлений на цьому робочому столі. Розширення і CLI накази використовують обмежені запити HTTPS і існуючий Open media потоку.';
+	@override String get mediaToolsAccessibility => 'Вибір інструментів і контролі працюють з дотиком, показником, клавіатурою та фокусом D-pad. Зміни в статусі запису, обміну та пошуку оголошуються.';
+	@override String get mediaTool => 'Медіа інструменти';
+	@override String get captureIntro => 'Зареєструйте екран або камеру на файл MP4 на цьому комп\'ютері. FFmpeg повинен бути встановлений і включати в себе код H.264.';
+	@override String get captureNoDevices => 'Не знайдено жодного екрану або камери. перевірте підтримку зйомок FFmpeg та дозвіл на конфіденційність операційної системи.';
+	@override String get captureSource => 'Екран або камера';
+	@override String get captureAudioSource => 'Аудіо вхід (опціональний)';
+	@override String get captureAudioHelp => 'Додайте звук з мікрофону або доступного входу. вибір пристрою залежить від дозволів FFmpeg та системи.';
+	@override String get captureAudioNone => 'Ніякого аудіо';
+	@override String get captureWaylandHelp => 'Wayland обмежує цей XWayland зйом до X display. Windows поза XWayland не може з\'явитися.';
+	@override String get captureFrameRate => 'Реєстрація рамки';
+	@override String get capturePrivacy => 'Запис зберігається тільки до файлу, який ви вибрали. зйомки мікрофонів є факультативними. PlezyNG не завантажує запис.';
+	@override String get captureSaveAs => 'Завантажити екран як';
+	@override String get captureExtensionMismatch => 'Виберіть філемен, що закінчується в .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg або відеокодер H.264 недоступний. встановлюйте підтримувану FFmpeg будівлю, а потім спробуйте знову.';
+	@override String get captureFailed => 'Перевірте дозвіл на пристрій, доступне зберігання та підтримку FFmpeg.';
+	@override String get captureSaved => 'Запис екрану збережений.';
+	@override String get captureElapsedLabel => 'Час запису';
+	@override String get captureStart => 'Початок запису';
+	@override String get captureStop => 'Залишити і врятувати';
+	@override String get captureMode => 'Ув\'язнення';
+	@override String get shareMode => 'Поділитися';
+	@override String get shareIntro => 'Надіслати локальний медіа-файл на інше пристрій у вашій приватній мережі. PlezyNG створює тимчасовий потік HLS.';
+	@override String get sharePrivacy => 'Кожен, хто знаходиться в вашій місцевій мережі, який отримує приватний посилання, може спостерігати, поки він активний. посилання закінчується після 60 хвилин. припинити спілкування, щоб закрити сервер і заблокувати посилання.';
+	@override String get shareChooseFile => 'Вибір медіа файлів';
+	@override String get shareChooseHelp => 'Виберіть місцевий аудіо- або відеофайл. Файл залишається на цьому комп\'ютері.';
+	@override String get shareFfmpegMissing => 'FFmpeg або коди H.264/AAC недоступні. встановлюйте FFmpeg з підтримкою кодування H.264 і AAC.';
+	@override String get shareFailed => 'Потік не міг початися або зупинився несподівано. перевірте FFmpeg і мережевий доступ.';
+	@override String get shareActive => 'Потік готовий у вашій приватній мережі.';
+	@override String get shareEnded => 'Медіа досягли кінця і більше не поділяються.';
+	@override String get shareStopped => 'Поділ припинено. тимчасовий зв\'язок більше не діє.';
+	@override String get shareUrlCopied => 'Адреса потоку копіюється.';
+	@override String get shareOpenUrl => 'Відкрийте цю адресу в одному гравцеві на іншому пристрої';
+	@override String get shareCopyUrl => 'Копіювати адресу потоку';
+	@override String get shareExpiresLabel => 'Лінк закінчується';
+	@override String get shareStarting => 'Підготовка потоку...';
+	@override String get shareStart => 'Початок спілкування';
+	@override String get shareStop => 'Перестаньте ділитися';
+	@override String get extensionsMode => 'Розширення і CLI';
+	@override String get extensionsIntro => 'Додайте розширення пошуку даних тільки для пошуку засобів масової інформації. Виберіть результат, щоб завантажити його в знайому форму Open media.';
+	@override String get extensionsPrivacy => 'Манифест може визначити один HTTPS пошуковий кінцевий пункт і поля відповіді на карту. він не може запускати код, додати заголовки запиту, читати файли або запускати команди шалу.';
+	@override String get extensionImport => 'Додаток про розширення';
+	@override String get extensionEmpty => 'Виберіть надійний manifest JSON файл, щоб додати один.';
+	@override String get extensionChoose => 'Пошукова служба';
+	@override String get extensionSearchConsent => 'Кожен пошук відправляє свої слова до цього сервісу HTTPS. Результати відкриваються тільки після того, як ви вибрали один.';
+	@override String get extensionSearchLabel => 'Пошук медіа';
+	@override String get extensionSearch => 'Пошук';
+	@override String get extensionSearching => 'Пошук...';
+	@override String get extensionNoResults => 'Безпечні результати не повернулися. спробуйте інший пошук.';
+	@override String get extensionInstallTitle => 'Додайте цю послугу пошуку?';
+	@override String get extensionReplaceTitle => 'Оновлення цієї служби пошуку?';
+	@override String get extensionService => 'Сервіс';
+	@override String get extensionEndpoint => 'HTTPS endpoint';
+	@override String get extensionConsent => 'Ваш пошуковий текст відправляється до цієї служби. Манифест не містить виконавчого коду. Продовжуйте тільки тоді, коли ви довіряєте цьому кінцевому пункту.';
+	@override String get extensionInstall => 'Додати послуги';
+	@override String get extensionReplace => 'Актуальна служба';
+	@override String get extensionRemoveTitle => 'Зняти цю службу пошуку?';
+	@override String get extensionRemoveHelp => 'Це видаляє послугу з цього профілю. PlezyNG не зв\'язується з її кінцевою точкою.';
+	@override String get extensionRemove => 'Зняти сервіс';
+	@override String get extensionInvalidManifest => 'Цей файл не є підтримуваним проявом розширення. переглянути інструкцію Open media для формату.';
+	@override String get extensionSaveFailed => 'Продовження не можна було зберегти до активного профілю.';
+	@override String get extensionSearchFailed => 'Пошукова служба не повернула дійсну відповідь. перевірте кінцеву точку і спробуйте знову.';
+	@override String get cliTitle => 'Командна лінія';
+	@override String get cliHelp => 'Використовуйте інструкцію plezyctl для підтвердження манифесту або пошуку того ж розширення. Перегляньте його сервіс HTTPS перед кожним пошуком. Результати відкриті в існуючому медіа-форму; виберіть кнопку відтворення для початку.';
+	@override String get cliCopyExample => 'Копіювати приклад команди';
+	@override String get cliCopied => 'Копіюється приклад команди.';
+	@override String get captureScreen => 'екран';
+	@override String get captureDefaultAudio => 'За замовчуванням аудіо вхід';
+	@override String get shareQrLabel => 'QR-код для тимчасової адреси потоку';
+	@override String get shareQrHelp => 'Сканування з сумісним гравцем, підключеним до однієї і тієї ж приватної мережі.';
+	@override String get shareHttpHint => 'Цей потік використовує нешифрований HTTP. у PlezyNG, дозволяйте HTTP перед відкриттям.';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$uk extends Translations$fileSources$en {
@@ -7815,7 +7887,7 @@ extension on TranslationsUk {
 			'universalMedia.saveFavorite' => 'Зберегти улюблений',
 			'universalMedia.playNow' => 'Грати зараз',
 			'universalMedia.favoriteSaved' => 'Попередня статтяПопулярні потоки збереглися до цього профілю',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити ${count} непідтримлений або небезпечний вхід списку переглядів.', few: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', many: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', other: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити ${count} непідтримлений або небезпечний вхід списку переглядів.', few: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', many: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', other: 'Завантажити ${count} непідтримлені або небезпечні входи до списку переглядів.', ), 
 			'universalMedia.playlistAddress' => 'Адреса Playlist',
 			'universalMedia.playlistAddressHelp' => 'Відкрийте перелік M3U, M3u8 або PLS з веб-адреси. прямий потік посилань не зберігає перелік.',
 			'universalMedia.choosePlaylist' => 'Вибір файлу Playlist',
@@ -7825,7 +7897,7 @@ extension on TranslationsUk {
 			'universalMedia.removeFavorite' => 'Зняти потік улюблений',
 			'universalMedia.filesHelp' => 'Виберіть аудіо, відео або файли ISO для тимчасового перегляду. Файли та URL-адреси не додаються до історії бібліотеки.',
 			'universalMedia.chooseFiles' => 'Вибір файлів',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: '1 Вибрані файли', few: '${count} вибрані файли', many: '${count} вибрані файли', other: '${count} вибрані файли', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: '1 Вибрані файли', few: '${count} вибрані файли', many: '${count} вибрані файли', other: '${count} вибрані файли', ), 
 			'universalMedia.wifiTransfer' => 'Завантажити файли через Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Передача підтримуваних файлів з браузера в тій же надійній мережі.',
 			'universalMedia.wifiTransferIntro' => 'Відкрийте цю адресу в браузері на іншому пристрої. Виберіть файли, щоб додати їх до бібліотеки файлів та книг цього пристрою.',
@@ -7836,7 +7908,7 @@ extension on TranslationsUk {
 			'universalMedia.copyAddress' => 'Копія адреси передачі',
 			'universalMedia.addressCopied' => 'Передача адреси копіюється',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Ця адреса закінчується в ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити файл ${count}', few: 'Файли ${count} отримані', many: 'Файли ${count} отримані', other: 'Файли ${count} отримані', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Завантажити файл ${count}', few: 'Файли ${count} отримані', many: 'Файли ${count} отримані', other: 'Файли ${count} отримані', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Завантажити ${size}',
 			'universalMedia.stopTransfer' => 'Заборона передачі та недійсний адрес',
 			'universalMedia.startTransfer' => 'Початок трансферу',
@@ -7906,6 +7978,81 @@ extension on TranslationsUk {
 			'universalMedia.converterCancelled' => 'Конвертація скасована. неповний результат був видалений.',
 			'universalMedia.converterDesktopOnly' => 'Місцева конверсія доступна на робочих комп\'ютерах з встановленим FFmpeg.',
 			'universalMedia.converterStart' => 'Конвертація файлів',
+			'universalMedia.mediaToolsTitle' => 'Медіа інструменти',
+			'universalMedia.mediaToolsShortcut' => 'Знайти або поділитися медіа, додати розширення пошуку або використовувати командну лінію.',
+			'universalMedia.mediaToolsIntro' => 'Виберіть зосереджений інструмент. Знайти і вийти з потоку використовувати FFmpeg встановлений на цьому робочому столі. Розширення і CLI накази використовують обмежені запити HTTPS і існуючий Open media потоку.',
+			'universalMedia.mediaToolsAccessibility' => 'Вибір інструментів і контролі працюють з дотиком, показником, клавіатурою та фокусом D-pad. Зміни в статусі запису, обміну та пошуку оголошуються.',
+			'universalMedia.mediaTool' => 'Медіа інструменти',
+			'universalMedia.captureIntro' => 'Зареєструйте екран або камеру на файл MP4 на цьому комп\'ютері. FFmpeg повинен бути встановлений і включати в себе код H.264.',
+			'universalMedia.captureNoDevices' => 'Не знайдено жодного екрану або камери. перевірте підтримку зйомок FFmpeg та дозвіл на конфіденційність операційної системи.',
+			'universalMedia.captureSource' => 'Екран або камера',
+			'universalMedia.captureAudioSource' => 'Аудіо вхід (опціональний)',
+			'universalMedia.captureAudioHelp' => 'Додайте звук з мікрофону або доступного входу. вибір пристрою залежить від дозволів FFmpeg та системи.',
+			'universalMedia.captureAudioNone' => 'Ніякого аудіо',
+			'universalMedia.captureWaylandHelp' => 'Wayland обмежує цей XWayland зйом до X display. Windows поза XWayland не може з\'явитися.',
+			'universalMedia.captureFrameRate' => 'Реєстрація рамки',
+			'universalMedia.capturePrivacy' => 'Запис зберігається тільки до файлу, який ви вибрали. зйомки мікрофонів є факультативними. PlezyNG не завантажує запис.',
+			'universalMedia.captureSaveAs' => 'Завантажити екран як',
+			'universalMedia.captureExtensionMismatch' => 'Виберіть філемен, що закінчується в .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg або відеокодер H.264 недоступний. встановлюйте підтримувану FFmpeg будівлю, а потім спробуйте знову.',
+			'universalMedia.captureFailed' => 'Перевірте дозвіл на пристрій, доступне зберігання та підтримку FFmpeg.',
+			'universalMedia.captureSaved' => 'Запис екрану збережений.',
+			'universalMedia.captureElapsedLabel' => 'Час запису',
+			'universalMedia.captureStart' => 'Початок запису',
+			'universalMedia.captureStop' => 'Залишити і врятувати',
+			'universalMedia.captureMode' => 'Ув\'язнення',
+			'universalMedia.shareMode' => 'Поділитися',
+			'universalMedia.shareIntro' => 'Надіслати локальний медіа-файл на інше пристрій у вашій приватній мережі. PlezyNG створює тимчасовий потік HLS.',
+			'universalMedia.sharePrivacy' => 'Кожен, хто знаходиться в вашій місцевій мережі, який отримує приватний посилання, може спостерігати, поки він активний. посилання закінчується після 60 хвилин. припинити спілкування, щоб закрити сервер і заблокувати посилання.',
+			'universalMedia.shareChooseFile' => 'Вибір медіа файлів',
+			'universalMedia.shareChooseHelp' => 'Виберіть місцевий аудіо- або відеофайл. Файл залишається на цьому комп\'ютері.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg або коди H.264/AAC недоступні. встановлюйте FFmpeg з підтримкою кодування H.264 і AAC.',
+			'universalMedia.shareFailed' => 'Потік не міг початися або зупинився несподівано. перевірте FFmpeg і мережевий доступ.',
+			'universalMedia.shareActive' => 'Потік готовий у вашій приватній мережі.',
+			'universalMedia.shareEnded' => 'Медіа досягли кінця і більше не поділяються.',
+			'universalMedia.shareStopped' => 'Поділ припинено. тимчасовий зв\'язок більше не діє.',
+			'universalMedia.shareUrlCopied' => 'Адреса потоку копіюється.',
+			'universalMedia.shareOpenUrl' => 'Відкрийте цю адресу в одному гравцеві на іншому пристрої',
+			'universalMedia.shareCopyUrl' => 'Копіювати адресу потоку',
+			'universalMedia.shareExpiresLabel' => 'Лінк закінчується',
+			'universalMedia.shareStarting' => 'Підготовка потоку...',
+			'universalMedia.shareStart' => 'Початок спілкування',
+			'universalMedia.shareStop' => 'Перестаньте ділитися',
+			'universalMedia.extensionsMode' => 'Розширення і CLI',
+			'universalMedia.extensionsIntro' => 'Додайте розширення пошуку даних тільки для пошуку засобів масової інформації. Виберіть результат, щоб завантажити його в знайому форму Open media.',
+			'universalMedia.extensionsPrivacy' => 'Манифест може визначити один HTTPS пошуковий кінцевий пункт і поля відповіді на карту. він не може запускати код, додати заголовки запиту, читати файли або запускати команди шалу.',
+			'universalMedia.extensionImport' => 'Додаток про розширення',
+			'universalMedia.extensionEmpty' => 'Виберіть надійний manifest JSON файл, щоб додати один.',
+			'universalMedia.extensionChoose' => 'Пошукова служба',
+			'universalMedia.extensionSearchConsent' => 'Кожен пошук відправляє свої слова до цього сервісу HTTPS. Результати відкриваються тільки після того, як ви вибрали один.',
+			'universalMedia.extensionSearchLabel' => 'Пошук медіа',
+			'universalMedia.extensionSearch' => 'Пошук',
+			'universalMedia.extensionSearching' => 'Пошук...',
+			'universalMedia.extensionNoResults' => 'Безпечні результати не повернулися. спробуйте інший пошук.',
+			'universalMedia.extensionInstallTitle' => 'Додайте цю послугу пошуку?',
+			'universalMedia.extensionReplaceTitle' => 'Оновлення цієї служби пошуку?',
+			'universalMedia.extensionService' => 'Сервіс',
+			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
+			'universalMedia.extensionConsent' => 'Ваш пошуковий текст відправляється до цієї служби. Манифест не містить виконавчого коду. Продовжуйте тільки тоді, коли ви довіряєте цьому кінцевому пункту.',
+			'universalMedia.extensionInstall' => 'Додати послуги',
+			'universalMedia.extensionReplace' => 'Актуальна служба',
+			'universalMedia.extensionRemoveTitle' => 'Зняти цю службу пошуку?',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.extensionRemoveHelp' => 'Це видаляє послугу з цього профілю. PlezyNG не зв\'язується з її кінцевою точкою.',
+			'universalMedia.extensionRemove' => 'Зняти сервіс',
+			'universalMedia.extensionInvalidManifest' => 'Цей файл не є підтримуваним проявом розширення. переглянути інструкцію Open media для формату.',
+			'universalMedia.extensionSaveFailed' => 'Продовження не можна було зберегти до активного профілю.',
+			'universalMedia.extensionSearchFailed' => 'Пошукова служба не повернула дійсну відповідь. перевірте кінцеву точку і спробуйте знову.',
+			'universalMedia.cliTitle' => 'Командна лінія',
+			'universalMedia.cliHelp' => 'Використовуйте інструкцію plezyctl для підтвердження манифесту або пошуку того ж розширення. Перегляньте його сервіс HTTPS перед кожним пошуком. Результати відкриті в існуючому медіа-форму; виберіть кнопку відтворення для початку.',
+			'universalMedia.cliCopyExample' => 'Копіювати приклад команди',
+			'universalMedia.cliCopied' => 'Копіюється приклад команди.',
+			'universalMedia.captureScreen' => 'екран',
+			'universalMedia.captureDefaultAudio' => 'За замовчуванням аудіо вхід',
+			'universalMedia.shareQrLabel' => 'QR-код для тимчасової адреси потоку',
+			'universalMedia.shareQrHelp' => 'Сканування з сумісним гравцем, підключеним до однієї і тієї ж приватної мережі.',
+			'universalMedia.shareHttpHint' => 'Цей потік використовує нешифрований HTTP. у PlezyNG, дозволяйте HTTP перед відкриттям.',
 			'fileSources.title' => 'Файли та книги',
 			'fileSources.subtitle' => 'Читати, слухати і спостерігати за своїми файлами.',
 			'fileSources.add' => 'Додати джерело',
@@ -8077,8 +8224,6 @@ extension on TranslationsUk {
 			'fileSources.offlineQuotaHelp' => 'Налаштуйте максимальний простір, який використовується офлайн-копіями, імпортованими файлами та скороченими завантаженнями. Зниження обмежень не видаляє існуючі копії.',
 			'fileSources.offlineStorageUsage' => 'Офлайн зберігання',
 			'fileSources.reservedStorage' => 'Зареєстровано',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Завантажити Queue',
 			'fileSources.downloadRunning' => 'Завантажити',
 			'fileSources.downloadQueued' => 'Чекаємо',

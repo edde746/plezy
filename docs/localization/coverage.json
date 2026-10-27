@@ -1,187 +1,187 @@
 {
   "locales": {
     "ar": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 147
+      "sameAsEnglish": 148
     },
     "az": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 178
+      "sameAsEnglish": 186
     },
     "bg": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 147
     },
     "bn": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 144
+      "sameAsEnglish": 146
     },
     "cs": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 190
     },
     "da": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 262
+      "sameAsEnglish": 263
     },
     "de": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 283
+      "sameAsEnglish": 284
     },
     "en": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 3521
+      "sameAsEnglish": 3594
     },
     "es": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 214
     },
     "es-419": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": "es",
       "sameAsEnglish": 208
     },
     "fa": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 148
+      "sameAsEnglish": 150
     },
     "fr": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 251
+      "sameAsEnglish": 252
     },
     "fr-CA": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": "fr",
-      "sameAsEnglish": 244
+      "sameAsEnglish": 245
     },
     "he": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 153
+      "sameAsEnglish": 154
     },
     "hi": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 140
+      "sameAsEnglish": 141
     },
     "hu": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 187
     },
     "id": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 190
+      "sameAsEnglish": 191
     },
     "it": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 245
     },
     "ja": {
-      "messages": 3521,
-      "inheritedFrom": null,
-      "sameAsEnglish": 158
-    },
-    "kk": {
-      "messages": 3521,
-      "inheritedFrom": null,
-      "sameAsEnglish": 144
-    },
-    "ko": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 161
     },
+    "kk": {
+      "messages": 3594,
+      "inheritedFrom": null,
+      "sameAsEnglish": 164
+    },
+    "ko": {
+      "messages": 3594,
+      "inheritedFrom": null,
+      "sameAsEnglish": 163
+    },
     "ms": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 179
     },
     "nb": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 226
     },
     "nl": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 286
+      "sameAsEnglish": 288
     },
     "pl": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 201
     },
     "pt": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 223
     },
     "pt-BR": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": "pt",
       "sameAsEnglish": 211
     },
     "pt-PT": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": "pt",
       "sameAsEnglish": 212
     },
     "ru": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 143
+      "sameAsEnglish": 144
     },
     "sv": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 235
     },
     "th": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 150
     },
     "tr": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 175
+      "sameAsEnglish": 176
     },
     "uk": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 137
+      "sameAsEnglish": 138
     },
     "uz": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
-      "sameAsEnglish": 188
+      "sameAsEnglish": 200
     },
     "vi": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 168
     },
     "zh": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 149
     },
     "zh-Hant": {
-      "messages": 3521,
+      "messages": 3594,
       "inheritedFrom": null,
       "sameAsEnglish": 145
     }
@@ -882,7 +882,7 @@
     "zh-Hant.deepLinks.openAsProfile: missing or empty translation",
     "zh-Hant.deepLinks.copy: missing or empty translation",
     "zh-Hant.deepLinks.copied: missing or empty translation",
-    "English source changed: 20 messages need translation review. Run --record-source after review.",
+    "English source changed: 93 messages need translation review. Run --record-source after review.",
     "  source: deepLinks.channelNotFound",
     "  source: deepLinks.copied",
     "  source: deepLinks.copy",
@@ -900,8 +900,8 @@
     "  source: deepLinks.showLink",
     "  source: deepLinks.showProfileLink",
     "  source: deepLinks.unsupportedItem",
-    "  source: videoControls.longPressToUnlock",
-    "  source: videoControls.tapAgainToUnlock",
-    "  source: videoControls.tapToUnlock"
+    "  source: universalMedia.captureAudioHelp",
+    "  source: universalMedia.captureAudioNone",
+    "  source: universalMedia.captureAudioSource"
   ]
 }
