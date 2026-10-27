@@ -458,7 +458,7 @@ jobs:
   apple-native-test:
     name: Apple native reliability (${{ matrix.platform }})
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -636,10 +636,8 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: windows-latest
             flutter_setup: action
           - arch: arm64
-            runner: windows-11-arm
             flutter_setup: git
     steps:
       - name: Checkout code

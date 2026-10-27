@@ -1101,7 +1101,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     DiscoveryChoiceType.sourceVideo ||
     DiscoveryChoiceType.audiobook ||
     DiscoveryChoiceType.ebook ||
-    DiscoveryChoiceType.comic => GridLayoutConstants.fullCardPosterAspectRatio,
+    DiscoveryChoiceType.comic => GridLayoutConstants.posterAspectRatio,
   };
 
   Widget _artwork(DiscoveryChoice choice, {bool backdrop = false}) {

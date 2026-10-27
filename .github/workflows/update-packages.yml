@@ -95,7 +95,7 @@ jobs:
 
   update-homebrew:
     needs: resolve-release
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-update-homebrew"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-update-homebrew"]}}', github.run_id)) }}
     permissions:
       contents: write
     env:
