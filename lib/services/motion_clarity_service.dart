@@ -68,6 +68,7 @@ class MotionClarityService {
   bool _requiresSourceReload = false;
   bool _comparisonBypass = false;
   bool _mciFilterAdded = false;
+  bool _mciDecoderFrameReserveConfigured = false;
   String? _mciFilterSpec;
   MotionClarityEngine _currentEngine = MotionClarityEngine.temporalBlend;
   MotionClarityOutputRate _currentOutputRate = MotionClarityOutputRate.currentDisplay;
@@ -435,7 +436,10 @@ class MotionClarityService {
       await _player.setProperty('interpolation', 'no');
       // Bidirectional motion search keeps reference frames; this reserve is
       // bounded and must be configured before the decoder opens.
-      await _player.setProperty('hwdec-extra-frames', '8');
+      if (!_mciDecoderFrameReserveConfigured) {
+        await _player.setProperty('hwdec-extra-frames', '8');
+        _mciDecoderFrameReserveConfigured = true;
+      }
       await _player.command(['vf', 'add', filterSpec]);
       _mciFilterAdded = true;
       _mciFilterSpec = filterSpec;
@@ -669,6 +673,7 @@ class MotionClarityService {
         appLogger.d('MotionClarityService: could not restore $name', error: error, stackTrace: stackTrace);
       }
     }
+    _mciDecoderFrameReserveConfigured = false;
   }
 
   static double? _readFps(String? raw) {
