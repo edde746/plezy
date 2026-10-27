@@ -358,6 +358,12 @@ jobs:
           cache: true
           pub-cache: false
 
+      - name: Setup Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
       - name: Install Linux native test dependencies
         run: |
           sudo apt-get update
@@ -767,6 +773,12 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
+
+      - name: Setup Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
 
       # The packaging deps, minus libmpv: that arrives prebuilt from mpv-build
       # below. The dev packages still matter — they install the runtime
