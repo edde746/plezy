@@ -155,6 +155,10 @@ void main() {
             {'id': 21, 'name': 'Private shows', 'private': true, 'mediatype': 'show'},
             {'id': 22, 'name': 'Public shows', 'mediatype': 'show'},
             {'id': 23, 'name': 'Unsupported', 'mediatype': 'episode'},
+            {'id': 24, 'name': 'AI picks', 'type': 'ai', 'mediatype': null},
+            {'id': 25, 'name': 'Curated movies', 'type': 'static', 'mediatype': null},
+            {'id': 26, 'name': 'New discoveries', 'type': 'feed'},
+            {'id': 27, 'name': 'Private AI', 'type': 'ai', 'private': true},
             {'name': 'Missing ID'},
           ]),
           200,
@@ -164,9 +168,56 @@ void main() {
       expect(requests.single.url.path, '/lists/user');
       expect(requests.single.url.queryParameters, {'include_shared': 'true'});
       expect(requests.single.headers['Authorization'], 'Bearer access');
-      expect(lists.map((list) => list.id), [20, 22]);
+      expect(lists.map((list) => list.id), [20, 22, 24, 25, 26]);
       expect(lists.every((list) => !list.isPrivate), isTrue);
     });
+
+    for (final type in ['ai', 'static', 'feed']) {
+      test('public $type list without a list-level media type loads a mixed shelf', () async {
+        handlers.add(
+          (_) => http.Response(
+            json.encode([
+              {'id': 20, 'name': 'Public $type', 'type': type, if (type != 'feed') 'mediatype': null},
+            ]),
+            200,
+          ),
+        );
+        final lists = await client.getAccountLists();
+        expect(lists.single.type, type);
+        source.dispose();
+        source = MdblistCatalogSource(
+          client,
+          shelves: [MdblistExploreShelf(listId: lists.single.id, sourceName: lists.single.name)],
+        );
+        handlers.add(
+          (_) => http.Response(
+            json.encode([
+              {
+                'title': 'First show',
+                'mediatype': 'show',
+                'ids': {'tmdb': 12},
+              },
+              {'title': 'Unsupported episode', 'mediatype': 'episode', 'id': 99},
+              {
+                'title': 'Second movie',
+                'mediatype': 'movie',
+                'ids': {'tmdb': 13},
+              },
+            ]),
+            200,
+            headers: {'x-has-more': 'true'},
+          ),
+        );
+        final hub = (await source.fetchHubs()).single;
+        expect(hub.title, 'Public $type');
+        expect(hub.page.items.map((item) => item.title), ['First show', 'Second movie']);
+        expect(hub.page.items.map((item) => item.kind), [MediaKind.show, MediaKind.movie]);
+        expect(hub.page.items.map((item) => item.ids.tmdb), [12, 13]);
+        expect(hub.page.hasMore, isTrue, reason: 'Filtering unsupported items must preserve pagination');
+        expect(requests.map((request) => request.url.path), ['/lists/user', '/lists/20/items']);
+        expect(requests.every((request) => request.method == 'GET'), isTrue);
+      });
+    }
 
     test('unified shelves preserve mixed source order, IDs and the pagination header', () async {
       source.dispose();

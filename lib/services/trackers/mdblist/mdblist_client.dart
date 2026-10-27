@@ -62,7 +62,11 @@ class MdblistClient implements DisposableTrackerClient {
     final lists = <int, MdblistAccountList>{};
     for (final entry in data.whereType<Map>()) {
       final list = MdblistAccountList.fromJson(entry.cast<String, dynamic>());
-      if (list != null && !list.isPrivate && (list.mediaType == 'movie' || list.mediaType == 'show')) {
+      // Static, AI and feed lists may mix movies and shows and have no
+      // list-level mediatype. Validate each entry when loading the shelf.
+      if (list != null &&
+          !list.isPrivate &&
+          (list.mediaType == null || list.mediaType == 'movie' || list.mediaType == 'show')) {
         lists[list.id] = list;
       }
     }

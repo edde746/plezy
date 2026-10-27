@@ -33,7 +33,7 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('discover, select two, rename, reorder, disable and restore shelves', (tester) async {
+  testWidgets('discover AI and feed lists, select, rename, reorder, disable and restore shelves', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1600);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -46,8 +46,8 @@ void main() {
         requests.add(request);
         return http.Response(
           jsonEncode([
-            {'id': 7, 'name': 'Movies', 'mediatype': 'movie'},
-            {'id': 8, 'name': 'Shows', 'mediatype': 'show'},
+            {'id': 7, 'name': 'Movies', 'type': 'ai', 'mediatype': null},
+            {'id': 8, 'name': 'Shows', 'type': 'feed'},
           ]),
           200,
         );
