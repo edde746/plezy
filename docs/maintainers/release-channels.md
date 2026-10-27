@@ -4,7 +4,7 @@ This is the release support boundary for the PlezyNG client and its separate rel
 
 ## Release trigger and order
 
-`.github/workflows/build.yml` runs for a pushed `v<major>.<minor>.<patch>` tag on `main`, or by manual dispatch from `main`. The tag must match `pubspec.yaml`, and the exact commit must pass manually dispatched CI first. It builds the configured targets, generates release notes from `CHANGELOG.md`, checksums and attests the packages, and creates a draft GitHub Release. Review the draft, then publish it.
+`.github/workflows/build.yml` runs for a pushed `v<major>.<minor>.<patch>` tag on `main`, or by manual dispatch from `main`. The tag must match `pubspec.yaml`, and the exact commit must pass manually dispatched CI first. Dispatch CI with `action=ci` and `runner_pool=private` so the private JIT broker can authorize the run. It builds the configured targets, generates release notes from `CHANGELOG.md`, checksums and attests the packages, and creates a draft GitHub Release. Review the draft, then publish it.
 
 Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, and relay-container workflows. App-store uploads are separate and manual; draft releases are accepted only for non-production testing uploads, while production Play uploads require a published stable release.
 
@@ -152,7 +152,7 @@ docker.io/snapetech/plezyng-relay:latest      # when Docker Hub credentials are 
 
 1. Update `pubspec.yaml` and add user-facing bullets under `CHANGELOG.md` → `[Unreleased]`.
 2. Commit and push the release preparation to `main`.
-3. Manually dispatch CI on `main` and confirm it completed successfully for the exact release commit.
+3. Manually dispatch CI on `main` with `action=ci` and `runner_pool=private`; confirm it completed successfully for the exact release commit. For example: `gh workflow run ci.yml --ref main -f action=ci -f runner_pool=private`.
 4. Push a `v<major>.<minor>.<patch>` tag that matches `pubspec.yaml` and points to that `main` commit. This starts **PlezyNG Release** on private JIT, including the ARM webOS and Tizen build candidates by default.
 5. Review the draft notes, package list, `SHA256SUMS.txt`, and provenance attestations.
 6. Publish the draft. Discord and configured downstream package channels run from the published-release event.

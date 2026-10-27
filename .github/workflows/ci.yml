@@ -1,10 +1,21 @@
 # ng-runner-policy: private-jit-only-v1
 name: CI - Sanity Checks
+run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 # Validation is opt-in: choose a ref from Actions and dispatch this workflow.
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: CI action authorized by the private JIT runner policy
+        required: true
+        type: choice
+        options: [ci]
+      runner_pool:
+        description: Runner pool for this workflow
+        required: true
+        type: choice
+        options: [private]
       build_linux_packages:
         description: >
           Manually smoke-build Linux packages when changing linux/packaging.
