@@ -47,6 +47,7 @@ its effective state must clearly remain Original/Limited if it cannot run.
 | Smooth | `gaussian` | Stronger blending with greater softness risk |
 | Animation | `mitchell` | Sharper compromise for drawn edges |
 | Sports | `gaussian` | Stronger blending; matching high-frame-rate source cadence is left to mpv |
+| OLED | MCI at current renderer-reported display cadence | Full-rate generated frames target the active display refresh when available; falls back with a visible reason |
 | Custom | User-selected kernel | Threshold is adjustable from 0% to 10%; the default is 1% |
 
 These are kernel choices over mpv's temporal axis, not optical-flow strength values,
@@ -56,8 +57,12 @@ an explicit 48–144 fps target; Android mpv uses the generated rate for its fir
 mode request, while other routes may keep the display's existing mode. The displayed
 Hz is renderer-reported, not measured panel scanout. MCI's Fast/Balanced/High
 choices alter FFmpeg block-search effort and variable-block refinement; higher
-effort costs more CPU and does not dial the soap-opera effect up or down. MCI output
-rate and quality remain unqualified. A threshold of 0 maps to mpv's documented
+effort costs more CPU and does not dial the soap-opera effect up or down. OLED is
+the exception to the general preset mapping: it routes through MCI at the current
+renderer-reported display rate when that rate is usable. This is a user-selected
+strategy, not OLED detection or calibration. A high generated rate can create a
+video-like look, and reported Hz is not measured scanout. Other MCI profiles still
+share the same interpolation strength. MCI output rate and quality remain unqualified. A threshold of 0 maps to mpv's documented
 always-interpolate sentinel and applies only to temporal blend. The in-player sheet
 offers quick A/B by bypassing the active motion filter; it is not split-screen and
 does not change the saved profile. With audio passthrough, display-vdrop preserves
@@ -78,6 +83,7 @@ native HDR/Dolby output automatically.
 | `smooth` / Smooth | continuous / 100 | Highest sustainable compatible output | Standard | Deblur off | The smoothest motion; films may look more like live video. |
 | `animation` / Animation | source / 0 by default | Compatible source cadence | Conservative | Preserve repeated drawings/stop-motion; keep existing scaler; optional smoothing remains explicit | Keep intentional pauses and drawn-frame timing. |
 | `sports` / Sports | continuous / 100 | Highest sustainable compatible output | Standard with text/ball protections | 80 ms added-lookahead cap; deblur off; genuine field-rate source retained | Clearer fast motion, with some added playback delay. |
+| `oled` / OLED | full display cadence / unqualified | Current renderer-reported display rate | Standard MCI scene-change handling | MCI Balanced search; no panel calibration or automatic detection; fall back with reason | Reduce sample-and-hold blur by targeting the display refresh; may look video-like. |
 | `custom` / Custom | User's last edited named preset | Explicit or auto | Explicit | Retains a copy of all base values | Your motion and clarity settings. |
 
 Cinema and Balanced use the proposed restrained timing method only after it passes
