@@ -763,7 +763,17 @@ jobs:
             libva-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev \
             libdisplay-info-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev \
             liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential
-          sudo gem install fpm --version 1.17.0 --no-document
+          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
+          if [[ -z "$proxy" ]]; then
+            echo "The private JIT HTTPS proxy is required to install fpm." >&2
+            exit 1
+          fi
+          sudo env \
+            HTTP_PROXY="${HTTP_PROXY:-$proxy}" \
+            HTTPS_PROXY="$proxy" \
+            http_proxy="${http_proxy:-${HTTP_PROXY:-$proxy}}" \
+            https_proxy="${https_proxy:-$proxy}" \
+            gem install fpm --version 1.17.0 --no-document
 
       # Keyed the same way build.yml keys it: the lock names the asset and its
       # checksum, so editing the lock is what invalidates the cache.
