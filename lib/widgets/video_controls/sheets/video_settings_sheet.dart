@@ -1276,6 +1276,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionStatus = result;
           _motionComparisonBypass = false;
         });
+        _state.onMotionClarityChanged?.call();
       });
     } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity engine', error: error, stackTrace: stackTrace);
