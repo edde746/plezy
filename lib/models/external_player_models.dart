@@ -89,6 +89,7 @@ class XCallbackPlayer {
       final value = link.toString();
       return decodesCallbackUrls ? Uri.encodeComponent(value) : value;
     }
+
     String callback(String result) {
       final value = ExternalPlayerCallbackUrls.build(result, callbackSession!);
       return decodesCallbackUrls ? Uri.encodeComponent(value) : value;

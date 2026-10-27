@@ -1150,8 +1150,8 @@
     "loadSubtitleFile": "Загрузить файл подзаголовок...",
     "subtitleLoadFailed": "Не удается загрузить субтитрированный файл",
     "skipAds": "Скачать Ads",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Нажмите, чтобы разблокировать",
+    "tapAgainToUnlock": "Нажмите ещё раз, чтобы разблокировать"
   },
   "userStatus": {},
   "messages": {
@@ -3081,8 +3081,7 @@
     "startFailed": "Нельзя начать кастинг. проверьте сервер и попробуйте снова."
   },
   "automation": {
-    "noActivePlayback": "Нет активной сессии видео для контроля.",
-    "profileNotFound": "Этот профиль Plezy не был найден."
+    "noActivePlayback": "Нет активной сессии видео для контроля."
   },
   "notifications": {
     "newEpisodeTitle": "Новый эпизод",
@@ -3872,22 +3871,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Этот Plezy ссылка не валидна.",
+    "profileNotFound": "Профиль не совпадает с \"${profile}\".",
+    "serverUnavailable": "Я не мог дойти до сервера для этого ссылки.",
+    "notFound": "Я не могу найти этот заголовок в ваших библиотеках.",
+    "unsupportedItem": "Этот линк нельзя играть.",
+    "noLiveTv": "Никакого Live TV сервера нет для этого ссылки.",
+    "channelNotFound": "Я не мог найти канал «${channel}».",
+    "showLink": "Показать линк",
+    "showProfileLink": "Показать профильный линк",
+    "dialogTitle": "Линк",
+    "showHint": "При открытии ссылки начнётся воспроизведение следующего эпизода. Добавьте в конец &mode=shuffle, чтобы воспроизводить сериал в случайном порядке.",
+    "movieHint": "Открытие этого ссылки играет фильм.",
+    "episodeHint": "Открытие этой ссылки играет этот эпизод.",
+    "profileHint": "Открытие этого ссылки переключается к этому профилю.",
+    "openAsProfile": "Откройте как ${name}",
+    "copy": "Копировать",
+    "copied": "Линк копирован"
   }
 }

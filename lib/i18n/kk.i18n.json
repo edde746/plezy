@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Басқа да салыстырды,",
     "subtitleLoadFailed": "Басқа да салыстырдан да салыстатын",
     "skipAds": "Ауызды",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Құлпын ашу үшін түртіңіз",
+    "tapAgainToUnlock": "Құлпын ашу үшін қайта түртіңіз"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Бұл үшін бір-бірімен бір-бірін бір-бірин бір-бірек келді, бір-біру үшін бір-бирімен бір"
   },
   "automation": {
-    "noActivePlayback": "Ауызды видео сессиясы бар.",
-    "profileNotFound": "Бұл Plezy профильде қарағанда ол не қарағанда."
+    "noActivePlayback": "Ауызды видео сессиясы бар."
   },
   "notifications": {
     "newEpisodeTitle": "Епізод",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Бұл Plezy сілтемесі жарамсыз.",
+    "profileNotFound": "«${profile}» профиліне сәйкес профиль табылмады.",
+    "serverUnavailable": "Бұл сілтеме үшін серверге қосыла алмадық.",
+    "notFound": "Бұл атау кітапханаларыңыздан табылмады.",
+    "unsupportedItem": "Бұл сілтемені ойнату мүмкін емес.",
+    "noLiveTv": "Бұл сілтеме үшін қолжетімді Live TV сервері жоқ.",
+    "channelNotFound": "«${channel}» арнасы табылмады.",
+    "showLink": "Сілтемені көрсету",
+    "showProfileLink": "Профиль сілтемесін көрсету",
+    "dialogTitle": "Сілтеме",
+    "showHint": "Бұл сілтемені ашқанда келесі эпизод ойнатылады. Сериалды аралас ретпен ойнату үшін соңына &mode=shuffle қосыңыз.",
+    "movieHint": "Бұл сілтемені ашқанда фильм ойнатылады.",
+    "episodeHint": "Бұл сілтемені ашқанда осы эпизод ойнатылады.",
+    "profileHint": "Бұл сілтемені ашқанда осы профильге ауысады.",
+    "openAsProfile": "${name} профилі ретінде ашу",
+    "copy": "Көшіру",
+    "copied": "Сілтеме көшірілді."
   }
 }

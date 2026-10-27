@@ -3039,8 +3039,7 @@
     "startFailed": "Could not start casting. Check the server and try again."
   },
   "automation": {
-    "noActivePlayback": "There is no active video session to control.",
-    "profileNotFound": "That Plezy profile could not be found."
+    "noActivePlayback": "There is no active video session to control."
   },
   "notifications": {
     "newEpisodeTitle": "New episode",

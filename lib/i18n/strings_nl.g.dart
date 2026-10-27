@@ -41,15 +41,11 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$nl app = _Translations$app$nl._(_root);
-	@override late final _Translations$cast$nl cast = _Translations$cast$nl._(_root);
-	@override late final _Translations$automation$nl automation = _Translations$automation$nl._(_root);
-	@override late final _Translations$notifications$nl notifications = _Translations$notifications$nl._(_root);
 	@override late final _Translations$appIcon$nl appIcon = _Translations$appIcon$nl._(_root);
 	@override late final _Translations$auth$nl auth = _Translations$auth$nl._(_root);
 	@override late final _Translations$common$nl common = _Translations$common$nl._(_root);
 	@override late final _Translations$screens$nl screens = _Translations$screens$nl._(_root);
 	@override late final _Translations$update$nl update = _Translations$update$nl._(_root);
-	@override late final _Translations$appAccess$nl appAccess = _Translations$appAccess$nl._(_root);
 	@override late final _Translations$settings$nl settings = _Translations$settings$nl._(_root);
 	@override late final _Translations$themeEditor$nl themeEditor = _Translations$themeEditor$nl._(_root);
 	@override late final _Translations$search$nl search = _Translations$search$nl._(_root);
@@ -75,7 +71,6 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$nl serverSelection = _Translations$serverSelection$nl._(_root);
 	@override late final _Translations$hubDetail$nl hubDetail = _Translations$hubDetail$nl._(_root);
 	@override late final _Translations$logs$nl logs = _Translations$logs$nl._(_root);
-	@override late final _Translations$detail$nl detail = _Translations$detail$nl._(_root);
 	@override late final _Translations$startup$nl startup = _Translations$startup$nl._(_root);
 	@override late final _Translations$licenses$nl licenses = _Translations$licenses$nl._(_root);
 	@override late final _Translations$navigation$nl navigation = _Translations$navigation$nl._(_root);
@@ -98,6 +93,11 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$nl seerr = _Translations$seerr$nl._(_root);
 	@override late final _Translations$services$nl services = _Translations$services$nl._(_root);
 	@override late final _Translations$addServer$nl addServer = _Translations$addServer$nl._(_root);
+	@override late final _Translations$cast$nl cast = _Translations$cast$nl._(_root);
+	@override late final _Translations$automation$nl automation = _Translations$automation$nl._(_root);
+	@override late final _Translations$notifications$nl notifications = _Translations$notifications$nl._(_root);
+	@override late final _Translations$appAccess$nl appAccess = _Translations$appAccess$nl._(_root);
+	@override late final _Translations$detail$nl detail = _Translations$detail$nl._(_root);
 	@override late final _Translations$watchLink$nl watchLink = _Translations$watchLink$nl._(_root);
 	@override late final _Translations$homeLayout$nl homeLayout = _Translations$homeLayout$nl._(_root);
 	@override late final _Translations$platform$nl platform = _Translations$platform$nl._(_root);
@@ -108,6 +108,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$nl sourceSetup = _Translations$sourceSetup$nl._(_root);
 	@override late final _Translations$comics$nl comics = _Translations$comics$nl._(_root);
 	@override late final _Translations$games$nl games = _Translations$games$nl._(_root);
+	@override late final _Translations$deepLinks$nl deepLinks = _Translations$deepLinks$nl._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$nl extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$nl extends Translations$cast$en {
-	_Translations$cast$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Gestoord naar een apparaat';
-	@override String get searching => 'Op zoek naar de Cast-apparaten...';
-	@override String connectedTo({required Object device}) => 'Geleid naar ${device}';
-	@override String get device => 'Cast apparaat';
-	@override String get readyToCast => 'Bereid om te casten';
-	@override String get subtitle => 'Ondertitels';
-	@override String get serverNotAvailable => 'De media server is niet beschikbaar.';
-	@override String get stopCasting => 'Stop met casting';
-	@override String get castToDevice => 'Cast naar apparaat';
-	@override String get noEpisodeAvailable => 'Er is geen episode beschikbaar om te casten.';
-	@override String get startFailed => 'Kan niet beginnen met casting. check the server and try again.';
-}
-
-// Path: automation
-class _Translations$automation$nl extends Translations$automation$en {
-	_Translations$automation$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Er is geen actieve video-sessie om te controleren.';
-	@override String get profileNotFound => 'Dat Plezy profiel kon niet worden gevonden.';
-}
-
-// Path: notifications
-class _Translations$notifications$nl extends Translations$notifications$en {
-	_Translations$notifications$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Nieuwe episode';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$nl extends Translations$update$en {
 	@override String get viewRelease => 'Bekijk release';
 	@override String get latestVersion => 'Je hebt de nieuwste versie';
 	@override String get checkFailed => 'Kon niet controleren op updates';
-}
-
-// Path: appAccess
-class _Translations$appAccess$nl extends Translations$appAccess$en {
-	_Translations$appAccess$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Probeer elke functie gratis voor 7 dagen';
-	@override String get description => 'Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.';
-	@override String get trialEndedDescription => 'Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.';
-	@override String get startTrial => 'Start mijn 7 dagen gratis proef';
-	@override String get trialActive => 'Uw 7-daagse full-feature proef is actief.';
-	@override String get trialEnded => 'Uw zeven dagen proces is voorbij';
-	@override String get trialStartFailed => 'Ik kon de test niet op dit apparaat redden. probeer dan weer.';
-	@override String get lifetimeTitle => 'PlezyNG gedurende het leven ontgrendeld';
-	@override String get lifetimeBody => 'Dank u! u heeft levenslang toegang tot elke PlezyNG functie.';
-	@override String get manageTitle => 'PlezyNG levenslange toegang';
-	@override String get manageDescription => 'Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.';
-	@override String buy({required Object price}) => 'Ontgrendel elke functie voor ${price}';
-	@override String get loadingPrice => 'De loading winkel prijs...';
-	@override String get retryPrice => 'Retry prijs lookup';
-	@override String get restore => 'Levenslang aankopen herstellen';
-	@override String get pending => 'Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.';
-	@override String get storeUnavailable => 'Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.';
-	@override String get productNotFound => 'De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.';
-	@override String get productQueryFailed => 'Kan de winkelprijs niet opladen. check your connection and try again.';
-	@override String get purchaseFailed => 'De aankoop is niet doorlopen. probeer het nogmaals.';
-	@override String get restoreFailed => 'Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.';
-	@override String get nothingToRestore => 'Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount.';
 }
 
 // Path: settings
@@ -1235,10 +1163,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} kranen',
-	);
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Ondertitels';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1275,8 +1199,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Dempen opheffen';
 	@override String get settingsButton => 'Afspeelinstellingen';
 	@override String get tracksButton => 'Audio en ondertitels';
-	@override String get trackSelectionTitle => 'Kies tracks voor playback';
-	@override String get trackSelectionAuto => 'Automatische selectie';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionQualityButton => 'Versie en kwaliteit';
 	@override String get versionColumnHeader => 'Versie';
@@ -1286,8 +1208,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld';
 	@override String get subtitleUnavailableFallback => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels';
 	@override String get pipButton => 'Beeld-in-beeldmodus';
-	@override String get openMiniPlayer => 'Open mini speler';
-	@override String get returnToFullPlayer => 'Terug naar volle speler';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get ambientLighting => 'Omgevingsverlichting';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
@@ -1296,7 +1216,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Rotatievergrendeling';
 	@override String get lockScreen => 'Scherm vergrendelen';
 	@override String get screenLockButton => 'Schermvergrendeling';
-	@override String get longPressToUnlock => 'Lang indrukken om te ontgrendelen';
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
@@ -1313,8 +1232,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Geen items in de wachtrij';
 	@override String get noAudioDevicesAvailable => 'Geen audioapparaten beschikbaar';
 	@override String get searchSubtitles => 'Ondertitels zoeken';
-	@override String get loadSubtitleFile => 'Download subtitle bestand.';
-	@override String get subtitleLoadFailed => 'Niet in de subtitle bestand';
 	@override String get language => 'Taal';
 	@override String get noSubtitlesFound => 'Geen ondertitels gevonden';
 	@override String get subtitleDownloaded => 'Ondertitel gedownload';
@@ -1323,7 +1240,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Talen zoeken...';
 	@override String get skipIntro => 'Intro overslaan';
 	@override String get skipCredits => 'Aftiteling overslaan';
-	@override String get skipAds => 'Reclame overslaan';
 	@override String get nextEpisode => 'Volgende aflevering';
 	@override String subtitleTrack({required Object n}) => 'Spoor ${n}';
 	@override String subtitleFile({required Object name}) => 'Ondertitel ${name}';
@@ -1331,6 +1247,19 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Ondertitels: uit';
 	@override String osdSubtitles({required Object track}) => 'Ondertitels: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} kranen',
+	);
+	@override String get trackSelectionTitle => 'Kies tracks voor playback';
+	@override String get trackSelectionAuto => 'Automatische selectie';
+	@override String get openMiniPlayer => 'Open mini speler';
+	@override String get returnToFullPlayer => 'Terug naar volle speler';
+	@override String get loadSubtitleFile => 'Download subtitle bestand.';
+	@override String get subtitleLoadFailed => 'Niet in de subtitle bestand';
+	@override String get skipAds => 'Reclame overslaan';
+	@override String get tapToUnlock => 'Tik om te ontgrendelen';
+	@override String get tapAgainToUnlock => 'Tik nogmaals om te ontgrendelen';
 }
 
 // Path: messages
@@ -1828,16 +1757,6 @@ class _Translations$logs$nl extends Translations$logs$en {
 	@override String get saveLogs => 'Speel logs naar bestanden';
 	@override String logsSaved({required Object path}) => 'Logs opgeslagen op ${path}';
 	@override String get saveLogsFailed => 'Ik kon de logbestand niet opslaan.';
-}
-
-// Path: detail
-class _Translations$detail$nl extends Translations$detail$en {
-	_Translations$detail$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
 }
 
 // Path: startup
@@ -2907,6 +2826,88 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	@override String get httpsRequired => 'Gebruik HTTPS of toelaat uitdrukkelijk een niet-encrypt verbinding.';
 }
 
+// Path: cast
+class _Translations$cast$nl extends Translations$cast$en {
+	_Translations$cast$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Gestoord naar een apparaat';
+	@override String get searching => 'Op zoek naar de Cast-apparaten...';
+	@override String connectedTo({required Object device}) => 'Geleid naar ${device}';
+	@override String get device => 'Cast apparaat';
+	@override String get readyToCast => 'Bereid om te casten';
+	@override String get subtitle => 'Ondertitels';
+	@override String get serverNotAvailable => 'De media server is niet beschikbaar.';
+	@override String get stopCasting => 'Stop met casting';
+	@override String get castToDevice => 'Cast naar apparaat';
+	@override String get noEpisodeAvailable => 'Er is geen episode beschikbaar om te casten.';
+	@override String get startFailed => 'Kan niet beginnen met casting. check the server and try again.';
+}
+
+// Path: automation
+class _Translations$automation$nl extends Translations$automation$en {
+	_Translations$automation$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Er is geen actieve video-sessie om te controleren.';
+}
+
+// Path: notifications
+class _Translations$notifications$nl extends Translations$notifications$en {
+	_Translations$notifications$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Nieuwe episode';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$nl extends Translations$appAccess$en {
+	_Translations$appAccess$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Probeer elke functie gratis voor 7 dagen';
+	@override String get description => 'Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.';
+	@override String get trialEndedDescription => 'Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.';
+	@override String get startTrial => 'Start mijn 7 dagen gratis proef';
+	@override String get trialActive => 'Uw 7-daagse full-feature proef is actief.';
+	@override String get trialEnded => 'Uw zeven dagen proces is voorbij';
+	@override String get trialStartFailed => 'Ik kon de test niet op dit apparaat redden. probeer dan weer.';
+	@override String get lifetimeTitle => 'PlezyNG gedurende het leven ontgrendeld';
+	@override String get lifetimeBody => 'Dank u! u heeft levenslang toegang tot elke PlezyNG functie.';
+	@override String get manageTitle => 'PlezyNG levenslange toegang';
+	@override String get manageDescription => 'Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.';
+	@override String buy({required Object price}) => 'Ontgrendel elke functie voor ${price}';
+	@override String get loadingPrice => 'De loading winkel prijs...';
+	@override String get retryPrice => 'Retry prijs lookup';
+	@override String get restore => 'Levenslang aankopen herstellen';
+	@override String get pending => 'Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.';
+	@override String get storeUnavailable => 'Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.';
+	@override String get productNotFound => 'De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.';
+	@override String get productQueryFailed => 'Kan de winkelprijs niet opladen. check your connection and try again.';
+	@override String get purchaseFailed => 'De aankoop is niet doorlopen. probeer het nogmaals.';
+	@override String get restoreFailed => 'Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.';
+	@override String get nothingToRestore => 'Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount.';
+}
+
+// Path: detail
+class _Translations$detail$nl extends Translations$detail$en {
+	_Translations$detail$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$nl extends Translations$watchLink$en {
 	_Translations$watchLink$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -3177,7 +3178,6 @@ class _Translations$universalMedia$nl extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'Locale conversie is beschikbaar op desktop computers met FFmpeg geïnstalleerd.';
 	@override String get converterStart => 'Converteren van bestanden';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$nl extends Translations$fileSources$en {
@@ -3724,6 +3724,32 @@ class _Translations$games$nl extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$nl extends Translations$deepLinks$en {
+	_Translations$deepLinks$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Deze link Plezy is niet geldig.';
+	@override String profileNotFound({required Object profile}) => 'Geen profiel overeenkomt met "${profile}".';
+	@override String get serverUnavailable => 'Ik kon de server niet bereiken voor deze link.';
+	@override String get notFound => 'Ik kan deze titel niet vinden in je bibliotheek.';
+	@override String get unsupportedItem => 'Deze link kan niet worden gespeeld.';
+	@override String get noLiveTv => 'Geen Live TV-server is beschikbaar voor deze link.';
+	@override String channelNotFound({required Object channel}) => 'Ik kon geen kanaal vinden "${channel}".';
+	@override String get showLink => 'Toon link';
+	@override String get showProfileLink => 'Profiel link weergeven';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Het openen van deze link speelt het volgende episode. Voeg &mode=shuffle toe om de show te spelen op shuffle.';
+	@override String get movieHint => 'Door deze link te openen speelt de film.';
+	@override String get episodeHint => 'Het openen van deze link speelt dit episode.';
+	@override String get profileHint => 'Het openen van deze link schakelt naar dit profiel.';
+	@override String openAsProfile({required Object name}) => 'Open als ${name}';
+	@override String get copy => 'Kopieer';
+	@override String get copied => 'Link gekopieerd';
 }
 
 // Path: appIcon.names
@@ -4840,21 +4866,6 @@ extension on TranslationsNl {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Gestoord naar een apparaat',
-			'cast.searching' => 'Op zoek naar de Cast-apparaten...',
-			'cast.connectedTo' => ({required Object device}) => 'Geleid naar ${device}',
-			'cast.device' => 'Cast apparaat',
-			'cast.readyToCast' => 'Bereid om te casten',
-			'cast.subtitle' => 'Ondertitels',
-			'cast.serverNotAvailable' => 'De media server is niet beschikbaar.',
-			'cast.stopCasting' => 'Stop met casting',
-			'cast.castToDevice' => 'Cast naar apparaat',
-			'cast.noEpisodeAvailable' => 'Er is geen episode beschikbaar om te casten.',
-			'cast.startFailed' => 'Kan niet beginnen met casting. check the server and try again.',
-			'automation.noActivePlayback' => 'Er is geen actieve video-sessie om te controleren.',
-			'automation.profileNotFound' => 'Dat Plezy profiel kon niet worden gevonden.',
-			'notifications.newEpisodeTitle' => 'Nieuwe episode',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'App-icoon',
 			'appIcon.defaultIcon' => 'Standaard',
 			'appIcon.current' => 'Huidig icoon',
@@ -5017,28 +5028,6 @@ extension on TranslationsNl {
 			'update.viewRelease' => 'Bekijk release',
 			'update.latestVersion' => 'Je hebt de nieuwste versie',
 			'update.checkFailed' => 'Kon niet controleren op updates',
-			'appAccess.title' => 'Probeer elke functie gratis voor 7 dagen',
-			'appAccess.description' => 'Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.',
-			'appAccess.trialEndedDescription' => 'Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.',
-			'appAccess.startTrial' => 'Start mijn 7 dagen gratis proef',
-			'appAccess.trialActive' => 'Uw 7-daagse full-feature proef is actief.',
-			'appAccess.trialEnded' => 'Uw zeven dagen proces is voorbij',
-			'appAccess.trialStartFailed' => 'Ik kon de test niet op dit apparaat redden. probeer dan weer.',
-			'appAccess.lifetimeTitle' => 'PlezyNG gedurende het leven ontgrendeld',
-			'appAccess.lifetimeBody' => 'Dank u! u heeft levenslang toegang tot elke PlezyNG functie.',
-			'appAccess.manageTitle' => 'PlezyNG levenslange toegang',
-			'appAccess.manageDescription' => 'Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.',
-			'appAccess.buy' => ({required Object price}) => 'Ontgrendel elke functie voor ${price}',
-			'appAccess.loadingPrice' => 'De loading winkel prijs...',
-			'appAccess.retryPrice' => 'Retry prijs lookup',
-			'appAccess.restore' => 'Levenslang aankopen herstellen',
-			'appAccess.pending' => 'Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.',
-			'appAccess.storeUnavailable' => 'Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.',
-			'appAccess.productNotFound' => 'De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.',
-			'appAccess.productQueryFailed' => 'Kan de winkelprijs niet opladen. check your connection and try again.',
-			'appAccess.purchaseFailed' => 'De aankoop is niet doorlopen. probeer het nogmaals.',
-			'appAccess.restoreFailed' => 'Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.',
-			'appAccess.nothingToRestore' => 'Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount.',
 			'settings.title' => 'Instellingen',
 			'settings.supportDeveloper' => 'Steun PlezyNG',
 			'settings.supportDeveloperDescription' => 'Doneer om de ontwikkeling te steunen',
@@ -5351,8 +5340,6 @@ extension on TranslationsNl {
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionApple' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. Op iOS, iPadOS en tvOS 26 of nieuwer worden TrueHD Atmos en DTS:X als ruimtelijke audio afgespeeld. Andere DTS- en TrueHD-sporen worden als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
 			'settings.audioChannelLimit' => 'Audiokanalen',
@@ -5390,6 +5377,8 @@ extension on TranslationsNl {
 			'settings.disableDolbyVisionDescription' => 'Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig',
 			'settings.hdrSdrConversion' => 'HDR-naar-SDR-conversie',
 			'settings.hdrSdrConversionDescription' => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Automatisch',
 			'settings.hdrSdrConversionAutoDescription' => 'Apparaat vanaf Android 9, speler op oudere versies',
 			'settings.hdrSdrConversionDevice' => 'Apparaat',
@@ -5851,7 +5840,6 @@ extension on TranslationsNl {
 			'tooltips.markAsWatched' => 'Als bekeken markeren',
 			'tooltips.markAsUnwatched' => 'Als ongekeken markeren',
 			'audioTracks.track' => ({required Object n}) => 'Audiospoor ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} kranen', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Ondertitels',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5865,8 +5853,6 @@ extension on TranslationsNl {
 			'videoControls.sleepTimerEndOfVideo' => 'Einde van huidige video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stoppen bij',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Afspelen wordt gepauzeerd aan het einde van deze video',
 			'videoControls.stillWatching' => 'Kijk je nog?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauze over ${seconds}s',
@@ -5890,8 +5876,6 @@ extension on TranslationsNl {
 			'videoControls.unmuteButton' => 'Dempen opheffen',
 			'videoControls.settingsButton' => 'Afspeelinstellingen',
 			'videoControls.tracksButton' => 'Audio en ondertitels',
-			'videoControls.trackSelectionTitle' => 'Kies tracks voor playback',
-			'videoControls.trackSelectionAuto' => 'Automatische selectie',
 			'videoControls.chaptersButton' => 'Hoofdstukken',
 			'videoControls.versionQualityButton' => 'Versie en kwaliteit',
 			'videoControls.versionColumnHeader' => 'Versie',
@@ -5901,17 +5885,16 @@ extension on TranslationsNl {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoderen niet beschikbaar — originele kwaliteit wordt afgespeeld',
 			'videoControls.subtitleUnavailableFallback' => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels',
 			'videoControls.pipButton' => 'Beeld-in-beeldmodus',
-			'videoControls.openMiniPlayer' => 'Open mini speler',
-			'videoControls.returnToFullPlayer' => 'Terug naar volle speler',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
 			'videoControls.ambientLighting' => 'Omgevingsverlichting',
 			'videoControls.fullscreenButton' => 'Volledig scherm activeren',
 			'videoControls.exitFullscreenButton' => 'Volledig scherm verlaten',
 			'videoControls.alwaysOnTopButton' => 'Altijd bovenop',
 			'videoControls.rotationLockButton' => 'Rotatievergrendeling',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Scherm vergrendelen',
 			'videoControls.screenLockButton' => 'Schermvergrendeling',
-			'videoControls.longPressToUnlock' => 'Lang indrukken om te ontgrendelen',
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
@@ -5935,8 +5918,6 @@ extension on TranslationsNl {
 			'videoControls.noQueueItems' => 'Geen items in de wachtrij',
 			'videoControls.noAudioDevicesAvailable' => 'Geen audioapparaten beschikbaar',
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
-			'videoControls.loadSubtitleFile' => 'Download subtitle bestand.',
-			'videoControls.subtitleLoadFailed' => 'Niet in de subtitle bestand',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
 			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
@@ -5945,7 +5926,6 @@ extension on TranslationsNl {
 			'videoControls.searchLanguages' => 'Talen zoeken...',
 			'videoControls.skipIntro' => 'Intro overslaan',
 			'videoControls.skipCredits' => 'Aftiteling overslaan',
-			'videoControls.skipAds' => 'Reclame overslaan',
 			'videoControls.nextEpisode' => 'Volgende aflevering',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Spoor ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Ondertitel ${name}',
@@ -5953,6 +5933,16 @@ extension on TranslationsNl {
 			'videoControls.osdSubtitlesOff' => 'Ondertitels: uit',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Ondertitels: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} kranen', ), 
+			'videoControls.trackSelectionTitle' => 'Kies tracks voor playback',
+			'videoControls.trackSelectionAuto' => 'Automatische selectie',
+			'videoControls.openMiniPlayer' => 'Open mini speler',
+			'videoControls.returnToFullPlayer' => 'Terug naar volle speler',
+			'videoControls.loadSubtitleFile' => 'Download subtitle bestand.',
+			'videoControls.subtitleLoadFailed' => 'Niet in de subtitle bestand',
+			'videoControls.skipAds' => 'Reclame overslaan',
+			'videoControls.tapToUnlock' => 'Tik om te ontgrendelen',
+			'videoControls.tapAgainToUnlock' => 'Tik nogmaals om te ontgrendelen',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als bekeken (wordt gesynchroniseerd zodra je online bent)',
@@ -6379,8 +6369,6 @@ extension on TranslationsNl {
 			'libraries.all' => 'Alles',
 			'libraries.clearAll' => 'Alles wissen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
@@ -6417,6 +6405,8 @@ extension on TranslationsNl {
 			'libraries.filterCategories.year' => 'Jaar',
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
 			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			'libraries.filterCategories.favorites' => 'Favorieten',
@@ -6498,7 +6488,6 @@ extension on TranslationsNl {
 			'logs.saveLogs' => 'Speel logs naar bestanden',
 			'logs.logsSaved' => ({required Object path}) => 'Logs opgeslagen op ${path}',
 			'logs.saveLogsFailed' => 'Ik kon de logbestand niet opslaan.',
-			'detail.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
 			'startup.failedTitle' => 'PlezyNG kon niet starten',
 			'startup.failedBody' => 'Er is iets misgegaan tijdens het opstarten. De onderstaande details laten zien wat er misging.',
 			'startup.failedBodyRepairable' => 'Het opgeslagen instellingenbestand van PlezyNG is beschadigd en moet opnieuw worden opgebouwd voordat PlezyNG kan starten. Opnieuw proberen helpt niet — kies \'Opslag repareren\'.',
@@ -6893,8 +6882,6 @@ extension on TranslationsNl {
 			'watchTogether.connecting' => 'Verbinden...',
 			'watchTogether.relayPublic' => 'Kamers gebruiken de openbare Open Watch Party-relays.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Kamers gebruiken je relay op ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Recente kamers',
 			'watchTogether.roomActions' => 'Acties voor kamer',
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
@@ -6932,6 +6919,8 @@ extension on TranslationsNl {
 			'watchTogether.playAnyway' => 'Toch afspelen',
 			'watchTogether.chooseAnotherCopy' => 'Andere kopie kiezen',
 			'watchTogether.dontPlay' => 'Niet afspelen',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Je hebt deze video niet',
 			'watchTogether.unavailableDescription' => 'PlezyNG kon hem niet vinden in je bibliotheken. Kies zelf een kopie of zoek opnieuw.',
 			'watchTogether.chooseCopy' => 'Kopie kiezen',
@@ -7407,8 +7396,6 @@ extension on TranslationsNl {
 			'metadataEdit.metadataUpdateFailed' => 'Metadata bijwerken mislukt',
 			'metadataEdit.artworkUpdated' => 'Illustraties bijgewerkt',
 			'metadataEdit.artworkUpdateFailed' => 'Illustraties bijwerken mislukt',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Geen illustraties beschikbaar',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Illustratie ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Illustratie ${index}, geselecteerd',
@@ -7446,6 +7433,8 @@ extension on TranslationsNl {
 			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',
 			'metadataEdit.alwaysEnabled' => 'Altijd ingeschakeld',
 			'metadataEdit.tags' => 'Tags',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Tag toevoegen',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Regisseur',
@@ -7636,6 +7625,43 @@ extension on TranslationsNl {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} gebruikt HTTP. Anderen op het netwerk kunnen je wachtwoord, tokens en media lezen of wijzigen. Gebruik HTTPS als dat beschikbaar is. Ga alleen verder als je dit netwerk vertrouwt en het risico accepteert.',
 			'addServer.allowHttp' => 'HTTP toestaan',
 			'addServer.httpsRequired' => 'Gebruik HTTPS of toelaat uitdrukkelijk een niet-encrypt verbinding.',
+			'cast.chooseDevice' => 'Gestoord naar een apparaat',
+			'cast.searching' => 'Op zoek naar de Cast-apparaten...',
+			'cast.connectedTo' => ({required Object device}) => 'Geleid naar ${device}',
+			'cast.device' => 'Cast apparaat',
+			'cast.readyToCast' => 'Bereid om te casten',
+			'cast.subtitle' => 'Ondertitels',
+			'cast.serverNotAvailable' => 'De media server is niet beschikbaar.',
+			'cast.stopCasting' => 'Stop met casting',
+			'cast.castToDevice' => 'Cast naar apparaat',
+			'cast.noEpisodeAvailable' => 'Er is geen episode beschikbaar om te casten.',
+			'cast.startFailed' => 'Kan niet beginnen met casting. check the server and try again.',
+			'automation.noActivePlayback' => 'Er is geen actieve video-sessie om te controleren.',
+			'notifications.newEpisodeTitle' => 'Nieuwe episode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Probeer elke functie gratis voor 7 dagen',
+			'appAccess.description' => 'Start een zevendaagse proef met volledige toegang tot elke PlezyNG functie. er is geen kosten tijdens de proef en geen abonnement. Na de proef, een levensduur aankoop op de prijs van uw winkel ontbloot PlezyNG voor levensduurt.',
+			'appAccess.trialEndedDescription' => 'Ontgrendel elke functie in PlezyNG voor het leven met één aankoop tegen de prijs van uw winkel.',
+			'appAccess.startTrial' => 'Start mijn 7 dagen gratis proef',
+			'appAccess.trialActive' => 'Uw 7-daagse full-feature proef is actief.',
+			'appAccess.trialEnded' => 'Uw zeven dagen proces is voorbij',
+			'appAccess.trialStartFailed' => 'Ik kon de test niet op dit apparaat redden. probeer dan weer.',
+			'appAccess.lifetimeTitle' => 'PlezyNG gedurende het leven ontgrendeld',
+			'appAccess.lifetimeBody' => 'Dank u! u heeft levenslang toegang tot elke PlezyNG functie.',
+			'appAccess.manageTitle' => 'PlezyNG levenslange toegang',
+			'appAccess.manageDescription' => 'Probeer elke functie gratis voor 7 dagen, dan alles voor het leven met één betaling tegen de prijs van uw winkel.',
+			'appAccess.buy' => ({required Object price}) => 'Ontgrendel elke functie voor ${price}',
+			'appAccess.loadingPrice' => 'De loading winkel prijs...',
+			'appAccess.retryPrice' => 'Retry prijs lookup',
+			'appAccess.restore' => 'Levenslang aankopen herstellen',
+			'appAccess.pending' => 'Uw aankoop wacht op betaling of goedkeuring. levensduur toegang ontgrendelt zodra de winkel het voltooit.',
+			'appAccess.storeUnavailable' => 'Controleer dat u zich aanmeldt in de winkel en de aankopen zijn toegestaan op dit apparaat.',
+			'appAccess.productNotFound' => 'De PlezyNG levensduur-outlock is nog niet beschikbaar in deze winkel.',
+			'appAccess.productQueryFailed' => 'Kan de winkelprijs niet opladen. check your connection and try again.',
+			'appAccess.purchaseFailed' => 'De aankoop is niet doorlopen. probeer het nogmaals.',
+			'appAccess.restoreFailed' => 'Ik kon niet naar de winkel komen om uw aankoop te herstellen. probeer het weer.',
+			'appAccess.nothingToRestore' => 'Nr. PlezyNG levenslange aankoop is gevonden voor dit winkelaccount.',
+			'detail.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
 			'watchLink.serverUnavailable' => 'Ik kon geen Plex server bereiken voor deze link.',
 			'watchLink.notFound' => 'Ik kon deze show of film niet vinden op je servers Plex.',
 			'watchLink.ambiguous' => 'Deze link voldoet aan items op meer dan één server.Toegevoeg een server aan de link.',
@@ -7771,7 +7797,7 @@ extension on TranslationsNl {
 			'universalMedia.saveFavorite' => 'Save de favoriete',
 			'universalMedia.playNow' => 'Speel nu',
 			'universalMedia.favoriteSaved' => 'Stream favoriete bewaard naar dit profiel',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Skipped ${count} niet ondersteund of onveilig playlist ingang.', other: 'Skipped ${count} niet ondersteunde of onveilige playlist-inputs.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Skipped ${count} niet ondersteund of onveilig playlist ingang.', other: 'Skipped ${count} niet ondersteunde of onveilige playlist-inputs.', ), 
 			'universalMedia.playlistAddress' => 'Playlist adres',
 			'universalMedia.playlistAddressHelp' => 'Open een M3U, M3u8 of PLS playlist vanuit een webadres. Direct stream links slaan de playlist niet op.',
 			'universalMedia.choosePlaylist' => 'Kies een playlist bestand',
@@ -7781,7 +7807,7 @@ extension on TranslationsNl {
 			'universalMedia.removeFavorite' => 'Verwijder de favoriete stream',
 			'universalMedia.filesHelp' => 'Kies audio, video of ISO-bestanden voor een tijdelijke waaier. bestanden en URL\'s worden niet toegevoegd aan de bibliotheekgeschiedenis.',
 			'universalMedia.chooseFiles' => 'Kies bestanden',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '1 geselecteerde bestanden', other: '${count} geselecteerde bestanden', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '1 geselecteerde bestanden', other: '${count} geselecteerde bestanden', ), 
 			'universalMedia.wifiTransfer' => 'Bestanden verzenden via Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Overdracht van ondersteunde bestanden uit een browser op hetzelfde vertrouwde netwerk.',
 			'universalMedia.wifiTransferIntro' => 'Open deze adres in een browser op een ander apparaat.Kies bestanden om ze toe te voegen aan de bibliotheek Bestanden en boeken van dit apparaat',
@@ -7792,7 +7818,7 @@ extension on TranslationsNl {
 			'universalMedia.copyAddress' => 'Kopieer overdrachtadres',
 			'universalMedia.addressCopied' => 'Transferadres gecopieerd',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Dit adres eindigt in ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${count} bestanden ontvangen', other: '${count} bestanden ontvangen', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${count} bestanden ontvangen', other: '${count} bestanden ontvangen', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Gebruikte ${size}',
 			'universalMedia.stopTransfer' => 'Stop de overdracht en invalide adres',
 			'universalMedia.startTransfer' => 'Begin met transfer',
@@ -7921,6 +7947,8 @@ extension on TranslationsNl {
 			'fileSources.bookmark' => 'Voeg Bookmark toe',
 			'fileSources.highlight' => 'Markeren',
 			'fileSources.note' => 'Noteer',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Verwijderen',
 			'fileSources.export' => 'Export noten',
 			'fileSources.exported' => 'Notes uitgegeven',
@@ -8033,8 +8061,6 @@ extension on TranslationsNl {
 			'fileSources.offlineQuotaHelp' => 'Stel de maximale ruimte die wordt gebruikt door offline kopieën, geïmporteerde bestanden en gekleurde downloads. Het verlagen van de limiet verwijdert niet bestaande copies.',
 			'fileSources.offlineStorageUsage' => 'Offline opslag',
 			'fileSources.reservedStorage' => 'Reserveerd',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Download van Queue',
 			'fileSources.downloadRunning' => 'downloaden',
 			'fileSources.downloadQueued' => 'wachten',
@@ -8354,6 +8380,23 @@ extension on TranslationsNl {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Deze link Plezy is niet geldig.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Geen profiel overeenkomt met "${profile}".',
+			'deepLinks.serverUnavailable' => 'Ik kon de server niet bereiken voor deze link.',
+			'deepLinks.notFound' => 'Ik kan deze titel niet vinden in je bibliotheek.',
+			'deepLinks.unsupportedItem' => 'Deze link kan niet worden gespeeld.',
+			'deepLinks.noLiveTv' => 'Geen Live TV-server is beschikbaar voor deze link.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Ik kon geen kanaal vinden "${channel}".',
+			'deepLinks.showLink' => 'Toon link',
+			'deepLinks.showProfileLink' => 'Profiel link weergeven',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Het openen van deze link speelt het volgende episode. Voeg &mode=shuffle toe om de show te spelen op shuffle.',
+			'deepLinks.movieHint' => 'Door deze link te openen speelt de film.',
+			'deepLinks.episodeHint' => 'Het openen van deze link speelt dit episode.',
+			'deepLinks.profileHint' => 'Het openen van deze link schakelt naar dit profiel.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Open als ${name}',
+			'deepLinks.copy' => 'Kopieer',
+			'deepLinks.copied' => 'Link gekopieerd',
 			_ => null,
 		};
 	}

@@ -41,15 +41,11 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$he app = _Translations$app$he._(_root);
-	@override late final _Translations$cast$he cast = _Translations$cast$he._(_root);
-	@override late final _Translations$automation$he automation = _Translations$automation$he._(_root);
-	@override late final _Translations$notifications$he notifications = _Translations$notifications$he._(_root);
 	@override late final _Translations$appIcon$he appIcon = _Translations$appIcon$he._(_root);
 	@override late final _Translations$auth$he auth = _Translations$auth$he._(_root);
 	@override late final _Translations$common$he common = _Translations$common$he._(_root);
 	@override late final _Translations$screens$he screens = _Translations$screens$he._(_root);
 	@override late final _Translations$update$he update = _Translations$update$he._(_root);
-	@override late final _Translations$appAccess$he appAccess = _Translations$appAccess$he._(_root);
 	@override late final _Translations$settings$he settings = _Translations$settings$he._(_root);
 	@override late final _Translations$themeEditor$he themeEditor = _Translations$themeEditor$he._(_root);
 	@override late final _Translations$search$he search = _Translations$search$he._(_root);
@@ -75,7 +71,6 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$he serverSelection = _Translations$serverSelection$he._(_root);
 	@override late final _Translations$hubDetail$he hubDetail = _Translations$hubDetail$he._(_root);
 	@override late final _Translations$logs$he logs = _Translations$logs$he._(_root);
-	@override late final _Translations$detail$he detail = _Translations$detail$he._(_root);
 	@override late final _Translations$startup$he startup = _Translations$startup$he._(_root);
 	@override late final _Translations$licenses$he licenses = _Translations$licenses$he._(_root);
 	@override late final _Translations$navigation$he navigation = _Translations$navigation$he._(_root);
@@ -98,6 +93,11 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$he seerr = _Translations$seerr$he._(_root);
 	@override late final _Translations$services$he services = _Translations$services$he._(_root);
 	@override late final _Translations$addServer$he addServer = _Translations$addServer$he._(_root);
+	@override late final _Translations$cast$he cast = _Translations$cast$he._(_root);
+	@override late final _Translations$automation$he automation = _Translations$automation$he._(_root);
+	@override late final _Translations$notifications$he notifications = _Translations$notifications$he._(_root);
+	@override late final _Translations$appAccess$he appAccess = _Translations$appAccess$he._(_root);
+	@override late final _Translations$detail$he detail = _Translations$detail$he._(_root);
 	@override late final _Translations$watchLink$he watchLink = _Translations$watchLink$he._(_root);
 	@override late final _Translations$homeLayout$he homeLayout = _Translations$homeLayout$he._(_root);
 	@override late final _Translations$platform$he platform = _Translations$platform$he._(_root);
@@ -108,6 +108,7 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$he sourceSetup = _Translations$sourceSetup$he._(_root);
 	@override late final _Translations$comics$he comics = _Translations$comics$he._(_root);
 	@override late final _Translations$games$he games = _Translations$games$he._(_root);
+	@override late final _Translations$deepLinks$he deepLinks = _Translations$deepLinks$he._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$he extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$he extends Translations$cast$en {
-	_Translations$cast$he._(TranslationsHe root) : this._root = root, super.internal(root);
-
-	final TranslationsHe _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'שידור למכשיר';
-	@override String get searching => 'מחפשים מכשירים לגידול...';
-	@override String connectedTo({required Object device}) => 'חיבור ל- ${device}';
-	@override String get device => 'מכשיר לשידור';
-	@override String get readyToCast => 'מוכן לשידור';
-	@override String get subtitle => 'כתוביות';
-	@override String get serverNotAvailable => 'שרת התקשורת אינו זמין.';
-	@override String get stopCasting => 'הפסקת השידור';
-	@override String get castToDevice => 'שידור למכשיר';
-	@override String get noEpisodeAvailable => 'אין פרקים זמינים להורדה.';
-	@override String get startFailed => 'לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב.';
-}
-
-// Path: automation
-class _Translations$automation$he extends Translations$automation$en {
-	_Translations$automation$he._(TranslationsHe root) : this._root = root, super.internal(root);
-
-	final TranslationsHe _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'אין וידאו פעיל כדי לשלוט.';
-	@override String get profileNotFound => 'לא ניתן היה למצוא את הפרופיל Plezy.';
-}
-
-// Path: notifications
-class _Translations$notifications$he extends Translations$notifications$en {
-	_Translations$notifications$he._(TranslationsHe root) : this._root = root, super.internal(root);
-
-	final TranslationsHe _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'פרק חדש';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$he extends Translations$update$en {
 	@override String get viewRelease => 'ראה שחרור';
 	@override String get latestVersion => 'אתם נמצאים בגרסה האחרונה';
 	@override String get checkFailed => 'לא הצלחתי לבדוק עדכונים';
-}
-
-// Path: appAccess
-class _Translations$appAccess$he extends Translations$appAccess$en {
-	_Translations$appAccess$he._(TranslationsHe root) : this._root = root, super.internal(root);
-
-	final TranslationsHe _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'נסה כל תכונה בחינם במשך 7 ימים';
-	@override String get description => 'התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.';
-	@override String get trialEndedDescription => 'לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.';
-	@override String get startTrial => 'התחל את הניסוי החופשי שלי 7 ימים';
-	@override String get trialActive => 'המבחן המלא של 7 הימים שלך הוא פעיל.';
-	@override String get trialEnded => 'התביעה של 7 ימים הסתיימה';
-	@override String get trialStartFailed => 'לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.';
-	@override String get lifetimeTitle => 'PlezyNG פתוח לכל החיים';
-	@override String get lifetimeBody => 'יש לך גישה לכל החיים לכל תכונה PlezyNG.';
-	@override String get manageTitle => 'PlezyNG גישה לכל החיים';
-	@override String get manageDescription => 'נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.';
-	@override String buy({required Object price}) => 'לחסום כל תכונה עבור ${price}';
-	@override String get loadingPrice => 'מחירים של חנות ...';
-	@override String get retryPrice => 'מחיר החזר מחפש';
-	@override String get restore => 'החזרת רכישות לכל החיים';
-	@override String get pending => 'הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.';
-	@override String get storeUnavailable => 'קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.';
-	@override String get productNotFound => 'הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.';
-	@override String get productQueryFailed => 'לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.';
-	@override String get purchaseFailed => 'הקנייה לא עברה, נסה שוב.';
-	@override String get restoreFailed => 'לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.';
-	@override String get nothingToRestore => 'מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה.';
 }
 
 // Path: settings
@@ -1237,10 +1165,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	final TranslationsHe _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים',
-	);
 	@override String get audioLabel => 'שמע';
 	@override String get subtitlesLabel => 'כתוביות';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1277,8 +1201,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get unmuteButton => 'ביטול השתקה';
 	@override String get settingsButton => 'תגית: Playback Settings';
 	@override String get tracksButton => 'אודיו & תת-כותרות';
-	@override String get trackSelectionTitle => 'בחר רצועות לפני המשחק';
-	@override String get trackSelectionAuto => 'בחירה אוטומטית';
 	@override String get chaptersButton => 'פרק';
 	@override String get versionQualityButton => 'גרסה ואיכות';
 	@override String get versionColumnHeader => 'גרסה';
@@ -1288,8 +1210,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'טרנסקוד לא זמין - לשחק באיכות מקורית';
 	@override String get subtitleUnavailableFallback => 'תחתונים שנבחרו לא ניתן להעלות — המשך ללא תחתונים';
 	@override String get pipButton => 'מצלמת תמונה-in-Picture';
-	@override String get openMiniPlayer => 'שחקן מיני פתוח';
-	@override String get returnToFullPlayer => 'חזרה לשחקן מלא';
 	@override String get aspectRatioButton => 'יחס גובה-רוחב';
 	@override String get ambientLighting => 'תאורה סביבתית';
 	@override String get fullscreenButton => 'כניסה למסך מלא';
@@ -1298,7 +1218,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'מקלדת סיבוב';
 	@override String get lockScreen => 'מסך סגור';
 	@override String get screenLockButton => 'מסך סגור';
-	@override String get longPressToUnlock => 'לחץ ארוך כדי לפתוח';
 	@override String get timelineSlider => 'וידאו Timeline';
 	@override String get volumeSlider => 'רמת נפח';
 	@override String endsAt({required Object time}) => 'תגיות קשורות ${time}';
@@ -1315,8 +1234,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get noQueueItems => 'אין פריטים ב- Queue';
 	@override String get noAudioDevicesAvailable => 'אין מכשירים אודיו זמינים';
 	@override String get searchSubtitles => 'חיפוש תת-כותרות';
-	@override String get loadSubtitleFile => 'הורד את הקובץ Subtitle';
-	@override String get subtitleLoadFailed => 'לא הצלחתי להעלות את הקובץ תחת הכותרת';
 	@override String get language => 'שפה';
 	@override String get noSubtitlesFound => 'לא נמצאו תת-כותרות';
 	@override String get subtitleDownloaded => 'Subtitle הורדה';
@@ -1325,7 +1242,6 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get searchLanguages => 'חיפוש שפות';
 	@override String get skipIntro => 'ספין Intro';
 	@override String get skipCredits => 'ספין אשראי';
-	@override String get skipAds => 'סקי Ads';
 	@override String get nextEpisode => 'הפרק הבא';
 	@override String subtitleTrack({required Object n}) => 'רצועה ${n}';
 	@override String subtitleFile({required Object name}) => 'תגית: ${name}';
@@ -1333,6 +1249,19 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'תגית: Off';
 	@override String osdSubtitles({required Object track}) => 'תגית: ${track}';
 	@override String osdAudio({required Object track}) => 'אודיו: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים',
+	);
+	@override String get trackSelectionTitle => 'בחר רצועות לפני המשחק';
+	@override String get trackSelectionAuto => 'בחירה אוטומטית';
+	@override String get openMiniPlayer => 'שחקן מיני פתוח';
+	@override String get returnToFullPlayer => 'חזרה לשחקן מלא';
+	@override String get loadSubtitleFile => 'הורד את הקובץ Subtitle';
+	@override String get subtitleLoadFailed => 'לא הצלחתי להעלות את הקובץ תחת הכותרת';
+	@override String get skipAds => 'סקי Ads';
+	@override String get tapToUnlock => 'הקישו כדי לבטל את הנעילה';
+	@override String get tapAgainToUnlock => 'הקישו שוב כדי לבטל את הנעילה';
 }
 
 // Path: messages
@@ -1830,16 +1759,6 @@ class _Translations$logs$he extends Translations$logs$en {
 	@override String get saveLogs => 'שמור לוגים ל-File';
 	@override String logsSaved({required Object path}) => 'רשומות שנשמרו ל- ${path}';
 	@override String get saveLogsFailed => 'לא הצלחתי לשמור את קובץ ה-LOG.';
-}
-
-// Path: detail
-class _Translations$detail$he extends Translations$detail$en {
-	_Translations$detail$he._(TranslationsHe root) : this._root = root, super.internal(root);
-
-	final TranslationsHe _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'תגיות קשורות ${time}';
 }
 
 // Path: startup
@@ -2911,6 +2830,88 @@ class _Translations$addServer$he extends Translations$addServer$en {
 	@override String get httpsRequired => 'שימוש ב- HTTPS או מאפשר באופן מפורש חיבור לא מוצפן.';
 }
 
+// Path: cast
+class _Translations$cast$he extends Translations$cast$en {
+	_Translations$cast$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'שידור למכשיר';
+	@override String get searching => 'מחפשים מכשירים לגידול...';
+	@override String connectedTo({required Object device}) => 'חיבור ל- ${device}';
+	@override String get device => 'מכשיר לשידור';
+	@override String get readyToCast => 'מוכן לשידור';
+	@override String get subtitle => 'כתוביות';
+	@override String get serverNotAvailable => 'שרת התקשורת אינו זמין.';
+	@override String get stopCasting => 'הפסקת השידור';
+	@override String get castToDevice => 'שידור למכשיר';
+	@override String get noEpisodeAvailable => 'אין פרקים זמינים להורדה.';
+	@override String get startFailed => 'לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב.';
+}
+
+// Path: automation
+class _Translations$automation$he extends Translations$automation$en {
+	_Translations$automation$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'אין וידאו פעיל כדי לשלוט.';
+}
+
+// Path: notifications
+class _Translations$notifications$he extends Translations$notifications$en {
+	_Translations$notifications$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'פרק חדש';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$he extends Translations$appAccess$en {
+	_Translations$appAccess$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'נסה כל תכונה בחינם במשך 7 ימים';
+	@override String get description => 'התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.';
+	@override String get trialEndedDescription => 'לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.';
+	@override String get startTrial => 'התחל את הניסוי החופשי שלי 7 ימים';
+	@override String get trialActive => 'המבחן המלא של 7 הימים שלך הוא פעיל.';
+	@override String get trialEnded => 'התביעה של 7 ימים הסתיימה';
+	@override String get trialStartFailed => 'לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.';
+	@override String get lifetimeTitle => 'PlezyNG פתוח לכל החיים';
+	@override String get lifetimeBody => 'יש לך גישה לכל החיים לכל תכונה PlezyNG.';
+	@override String get manageTitle => 'PlezyNG גישה לכל החיים';
+	@override String get manageDescription => 'נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.';
+	@override String buy({required Object price}) => 'לחסום כל תכונה עבור ${price}';
+	@override String get loadingPrice => 'מחירים של חנות ...';
+	@override String get retryPrice => 'מחיר החזר מחפש';
+	@override String get restore => 'החזרת רכישות לכל החיים';
+	@override String get pending => 'הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.';
+	@override String get storeUnavailable => 'קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.';
+	@override String get productNotFound => 'הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.';
+	@override String get productQueryFailed => 'לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.';
+	@override String get purchaseFailed => 'הקנייה לא עברה, נסה שוב.';
+	@override String get restoreFailed => 'לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.';
+	@override String get nothingToRestore => 'מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה.';
+}
+
+// Path: detail
+class _Translations$detail$he extends Translations$detail$en {
+	_Translations$detail$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'תגיות קשורות ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$he extends Translations$watchLink$en {
 	_Translations$watchLink$he._(TranslationsHe root) : this._root = root, super.internal(root);
@@ -3184,7 +3185,6 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.';
 	@override String get converterStart => 'מחליפים קובץ';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$he extends Translations$fileSources$en {
@@ -3732,6 +3732,32 @@ class _Translations$games$he extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$he extends Translations$deepLinks$en {
+	_Translations$deepLinks$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'קישור Plezy זה אינו חוקי.';
+	@override String profileNotFound({required Object profile}) => 'אין פרופיל מתאים ל"${profile}".';
+	@override String get serverUnavailable => 'לא יכולתי להגיע לשרת עבור קישור זה.';
+	@override String get notFound => 'לא מצאתי את הכותרת הזאת בספריות שלך.';
+	@override String get unsupportedItem => 'לא ניתן לשחק את הקישור הזה.';
+	@override String get noLiveTv => 'אין שרת טלוויזיה חי זמין עבור קישור זה.';
+	@override String channelNotFound({required Object channel}) => 'לא מצאתי ערוץ "${channel}".';
+	@override String get showLink => 'הצג קישור';
+	@override String get showProfileLink => 'הצג פרופיל קישור';
+	@override String get dialogTitle => 'קישור';
+	@override String get showHint => 'פתיחת הקישור הזה משחק את הפרק הבא.הוסף &mode=shuffle לשחק את ההצגה על shuffle.';
+	@override String get movieHint => 'פתיחת הקישור הזה משחק את הסרט.';
+	@override String get episodeHint => 'פתיחת קישור זה משחק את הפרק הזה.';
+	@override String get profileHint => 'הפתיחה של קישור זה מתפתחת לפרופיל הזה.';
+	@override String openAsProfile({required Object name}) => 'פתח כ ${name}';
+	@override String get copy => 'עותק';
+	@override String get copied => 'קישור עותק';
 }
 
 // Path: appIcon.names
@@ -4848,21 +4874,6 @@ extension on TranslationsHe {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'שידור למכשיר',
-			'cast.searching' => 'מחפשים מכשירים לגידול...',
-			'cast.connectedTo' => ({required Object device}) => 'חיבור ל- ${device}',
-			'cast.device' => 'מכשיר לשידור',
-			'cast.readyToCast' => 'מוכן לשידור',
-			'cast.subtitle' => 'כתוביות',
-			'cast.serverNotAvailable' => 'שרת התקשורת אינו זמין.',
-			'cast.stopCasting' => 'הפסקת השידור',
-			'cast.castToDevice' => 'שידור למכשיר',
-			'cast.noEpisodeAvailable' => 'אין פרקים זמינים להורדה.',
-			'cast.startFailed' => 'לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב.',
-			'automation.noActivePlayback' => 'אין וידאו פעיל כדי לשלוט.',
-			'automation.profileNotFound' => 'לא ניתן היה למצוא את הפרופיל Plezy.',
-			'notifications.newEpisodeTitle' => 'פרק חדש',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'אפליקציה icon',
 			'appIcon.defaultIcon' => 'ברירת מחדל',
 			'appIcon.current' => 'אייקון הנוכחי',
@@ -5025,28 +5036,6 @@ extension on TranslationsHe {
 			'update.viewRelease' => 'ראה שחרור',
 			'update.latestVersion' => 'אתם נמצאים בגרסה האחרונה',
 			'update.checkFailed' => 'לא הצלחתי לבדוק עדכונים',
-			'appAccess.title' => 'נסה כל תכונה בחינם במשך 7 ימים',
-			'appAccess.description' => 'התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.',
-			'appAccess.trialEndedDescription' => 'לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.',
-			'appAccess.startTrial' => 'התחל את הניסוי החופשי שלי 7 ימים',
-			'appAccess.trialActive' => 'המבחן המלא של 7 הימים שלך הוא פעיל.',
-			'appAccess.trialEnded' => 'התביעה של 7 ימים הסתיימה',
-			'appAccess.trialStartFailed' => 'לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.',
-			'appAccess.lifetimeTitle' => 'PlezyNG פתוח לכל החיים',
-			'appAccess.lifetimeBody' => 'יש לך גישה לכל החיים לכל תכונה PlezyNG.',
-			'appAccess.manageTitle' => 'PlezyNG גישה לכל החיים',
-			'appAccess.manageDescription' => 'נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.',
-			'appAccess.buy' => ({required Object price}) => 'לחסום כל תכונה עבור ${price}',
-			'appAccess.loadingPrice' => 'מחירים של חנות ...',
-			'appAccess.retryPrice' => 'מחיר החזר מחפש',
-			'appAccess.restore' => 'החזרת רכישות לכל החיים',
-			'appAccess.pending' => 'הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.',
-			'appAccess.storeUnavailable' => 'קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.',
-			'appAccess.productNotFound' => 'הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.',
-			'appAccess.productQueryFailed' => 'לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.',
-			'appAccess.purchaseFailed' => 'הקנייה לא עברה, נסה שוב.',
-			'appAccess.restoreFailed' => 'לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.',
-			'appAccess.nothingToRestore' => 'מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה.',
 			'settings.title' => 'הגדרות',
 			'settings.supportDeveloper' => 'תמיכה PlezyNG',
 			'settings.supportDeveloperDescription' => 'תרומות לתמיכה בפיתוח',
@@ -5359,8 +5348,6 @@ extension on TranslationsHe {
 			'settings.audioPassthrough' => 'אודיו פסטה',
 			'settings.audioPassthroughDescription' => 'שלח קול Dolby/DTS למקבל או לטלוויזיה שלך ללא הקוד מחדש, שמירה על הקול הסובב.',
 			'settings.audioPassthroughDescriptionApple' => 'השתמש ב-Dolby Decoder המקומי של Apple עבור Dolby Digital Plus, כולל Atmos. DTS ו-TrueHD עדיין משחקים כ-PCM רב ערוצים.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'השתמש ב-Dolby Decoder המקומי של Apple עבור Dolby Digital Plus, כולל Atmos. ב- iOS, iPadOS ו- tvOS 26 או מאוחר יותר, TrueHD Atmos ו- DTS:X משחקים כאודיו חלקי.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'כשמדובר בנורמליזציה של צליל',
 			'settings.audioChannelLimit' => 'ערוצי שמע',
@@ -5398,6 +5385,8 @@ extension on TranslationsHe {
 			'settings.disableDolbyVisionDescription' => 'לשחק את שכבת הקובץ HDR10 או HLG במקום Dolby Vision, כאשר יש',
 			'settings.hdrSdrConversion' => 'HDR ל- SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'בחר מה מחליף וידאו HDR כאשר המסך לא יכול להציג HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'אוטומטי',
 			'settings.hdrSdrConversionAutoDescription' => 'מכשיר ב- Android 9 ומאוחר יותר, שחקן בגרסאות ישנות יותר',
 			'settings.hdrSdrConversionDevice' => 'מכשיר',
@@ -5859,7 +5848,6 @@ extension on TranslationsHe {
 			'tooltips.markAsWatched' => 'מארק כפי שנצפה',
 			'tooltips.markAsUnwatched' => 'מארק כבלתי צפוי',
 			'audioTracks.track' => ({required Object n}) => 'אודיו טרק ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים', ), 
 			'videoControls.audioLabel' => 'שמע',
 			'videoControls.subtitlesLabel' => 'כתוביות',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5873,8 +5861,6 @@ extension on TranslationsHe {
 			'videoControls.sleepTimerEndOfVideo' => 'סוף הסרטון הנוכחי',
 			'videoControls.sleepTimerStopAtHeader' => 'להפסיק',
 			'videoControls.sleepTimerDurationHeader' => 'זמן',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback יפסיק בסוף הסרטון',
 			'videoControls.stillWatching' => 'עדיין לצפות?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'הפסקה ב ${seconds}s',
@@ -5898,8 +5884,6 @@ extension on TranslationsHe {
 			'videoControls.unmuteButton' => 'ביטול השתקה',
 			'videoControls.settingsButton' => 'תגית: Playback Settings',
 			'videoControls.tracksButton' => 'אודיו & תת-כותרות',
-			'videoControls.trackSelectionTitle' => 'בחר רצועות לפני המשחק',
-			'videoControls.trackSelectionAuto' => 'בחירה אוטומטית',
 			'videoControls.chaptersButton' => 'פרק',
 			'videoControls.versionQualityButton' => 'גרסה ואיכות',
 			'videoControls.versionColumnHeader' => 'גרסה',
@@ -5909,17 +5893,16 @@ extension on TranslationsHe {
 			'videoControls.transcodeUnavailableFallback' => 'טרנסקוד לא זמין - לשחק באיכות מקורית',
 			'videoControls.subtitleUnavailableFallback' => 'תחתונים שנבחרו לא ניתן להעלות — המשך ללא תחתונים',
 			'videoControls.pipButton' => 'מצלמת תמונה-in-Picture',
-			'videoControls.openMiniPlayer' => 'שחקן מיני פתוח',
-			'videoControls.returnToFullPlayer' => 'חזרה לשחקן מלא',
 			'videoControls.aspectRatioButton' => 'יחס גובה-רוחב',
 			'videoControls.ambientLighting' => 'תאורה סביבתית',
 			'videoControls.fullscreenButton' => 'כניסה למסך מלא',
 			'videoControls.exitFullscreenButton' => 'יוצא מלא מסך',
 			'videoControls.alwaysOnTopButton' => 'תמיד בראש',
 			'videoControls.rotationLockButton' => 'מקלדת סיבוב',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'מסך סגור',
 			'videoControls.screenLockButton' => 'מסך סגור',
-			'videoControls.longPressToUnlock' => 'לחץ ארוך כדי לפתוח',
 			'videoControls.timelineSlider' => 'וידאו Timeline',
 			'videoControls.volumeSlider' => 'רמת נפח',
 			'videoControls.endsAt' => ({required Object time}) => 'תגיות קשורות ${time}',
@@ -5943,8 +5926,6 @@ extension on TranslationsHe {
 			'videoControls.noQueueItems' => 'אין פריטים ב- Queue',
 			'videoControls.noAudioDevicesAvailable' => 'אין מכשירים אודיו זמינים',
 			'videoControls.searchSubtitles' => 'חיפוש תת-כותרות',
-			'videoControls.loadSubtitleFile' => 'הורד את הקובץ Subtitle',
-			'videoControls.subtitleLoadFailed' => 'לא הצלחתי להעלות את הקובץ תחת הכותרת',
 			'videoControls.language' => 'שפה',
 			'videoControls.noSubtitlesFound' => 'לא נמצאו תת-כותרות',
 			'videoControls.subtitleDownloaded' => 'Subtitle הורדה',
@@ -5953,7 +5934,6 @@ extension on TranslationsHe {
 			'videoControls.searchLanguages' => 'חיפוש שפות',
 			'videoControls.skipIntro' => 'ספין Intro',
 			'videoControls.skipCredits' => 'ספין אשראי',
-			'videoControls.skipAds' => 'סקי Ads',
 			'videoControls.nextEpisode' => 'הפרק הבא',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'רצועה ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'תגית: ${name}',
@@ -5961,6 +5941,16 @@ extension on TranslationsHe {
 			'videoControls.osdSubtitlesOff' => 'תגית: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'תגית: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'אודיו: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים', ), 
+			'videoControls.trackSelectionTitle' => 'בחר רצועות לפני המשחק',
+			'videoControls.trackSelectionAuto' => 'בחירה אוטומטית',
+			'videoControls.openMiniPlayer' => 'שחקן מיני פתוח',
+			'videoControls.returnToFullPlayer' => 'חזרה לשחקן מלא',
+			'videoControls.loadSubtitleFile' => 'הורד את הקובץ Subtitle',
+			'videoControls.subtitleLoadFailed' => 'לא הצלחתי להעלות את הקובץ תחת הכותרת',
+			'videoControls.skipAds' => 'סקי Ads',
+			'videoControls.tapToUnlock' => 'הקישו כדי לבטל את הנעילה',
+			'videoControls.tapAgainToUnlock' => 'הקישו שוב כדי לבטל את הנעילה',
 			'messages.markedAsWatched' => 'מסומן כפי שנצפה',
 			'messages.markedAsUnwatched' => 'מסומנים כבלתי צפויים',
 			'messages.markedAsWatchedOffline' => 'מסומן כפי שנצפה (סנכרן כאשר באינטרנט)',
@@ -6387,8 +6377,6 @@ extension on TranslationsHe {
 			'libraries.all' => 'הכול',
 			'libraries.clearAll' => 'ברור הכל',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'האם אתה בטוח שאתה רוצה לסרוק "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'האם אתה בטוח שאתה רוצה לנתח "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'האם אתה בטוח שאתה רוצה לשדרג את הנתונים המטאוגרפיים עבור "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'האם אתה בטוח שאתה רוצה לשחרר את השטויות עבור "${title}"?',
@@ -6425,6 +6413,8 @@ extension on TranslationsHe {
 			'libraries.filterCategories.year' => 'שנה',
 			'libraries.filterCategories.contentRating' => 'תוכן דירוג',
 			'libraries.filterCategories.tag' => 'תגית',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'לא צופה',
 			'libraries.filterCategories.unplayed' => 'לא נוגן',
 			'libraries.filterCategories.favorites' => 'מועדפים',
@@ -6506,7 +6496,6 @@ extension on TranslationsHe {
 			'logs.saveLogs' => 'שמור לוגים ל-File',
 			'logs.logsSaved' => ({required Object path}) => 'רשומות שנשמרו ל- ${path}',
 			'logs.saveLogsFailed' => 'לא הצלחתי לשמור את קובץ ה-LOG.',
-			'detail.endsAt' => ({required Object time}) => 'תגיות קשורות ${time}',
 			'startup.failedTitle' => 'PlezyNG לא יכול להתחיל',
 			'startup.failedBody' => 'משהו לא בסדר במהלך ההתחלה.הפרטים למטה מזהים מה נכשל.',
 			'startup.failedBodyRepairable' => 'קובץ ההגדרות השמור של PlezyNG פגום וצריך ליצור אותו מחדש לפני שהיישום יוכל לפעול. ניסיון נוסף לא יעזור — יש לבחור בתיקון האחסון.',
@@ -6901,8 +6890,6 @@ extension on TranslationsHe {
 			'watchTogether.connecting' => 'חיבור...',
 			'watchTogether.relayPublic' => 'החדרים משתמשים ברדיו הציבורי של מפלגת השעון הפתוח.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'החדרים משתמשים ברשת שלך ב- ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'החדרים האחרונים',
 			'watchTogether.roomActions' => 'חדר פעולות',
 			'watchTogether.renameRoom' => 'שם חדר',
@@ -6940,6 +6927,8 @@ extension on TranslationsHe {
 			'watchTogether.playAnyway' => 'לשחק בכל מקרה',
 			'watchTogether.chooseAnotherCopy' => 'בחר עותק נוסף',
 			'watchTogether.dontPlay' => 'אל תשחק',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'אין לך וידאו זה',
 			'watchTogether.unavailableDescription' => 'PlezyNG לא מצא את זה בספריות שלך.קח עותק בעצמך או לחפש שוב.',
 			'watchTogether.chooseCopy' => 'בחר עותק',
@@ -7415,8 +7404,6 @@ extension on TranslationsHe {
 			'metadataEdit.metadataUpdateFailed' => 'לא הצלחתי לעדכן את הנתונים',
 			'metadataEdit.artworkUpdated' => 'ארכיון עדכונים',
 			'metadataEdit.artworkUpdateFailed' => 'לא הצלחתי לעדכן את האמנות',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'אין יצירות אמנות זמינות',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'האפשרות האמנותית ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'האפשרות האמנותית ${index}, נבחר',
@@ -7454,6 +7441,8 @@ extension on TranslationsHe {
 			'metadataEdit.shownWithForeignAudio' => 'תגיות: אודיו זר',
 			'metadataEdit.alwaysEnabled' => 'תמיד אפשרי',
 			'metadataEdit.tags' => 'מילות מפתח',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'הוסף תגית',
 			'metadataEdit.genre' => 'ז\'אנר',
 			'metadataEdit.director' => 'במאי',
@@ -7644,6 +7633,43 @@ extension on TranslationsHe {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} משתמש ב-HTTP. אנשים ברשת עלולים לקרוא או לשנות את הסיסמה, האסימונים והמדיה שלך. יש להשתמש ב-HTTPS כשהוא זמין. יש להמשיך רק אם הרשת אמינה בעיניך והסיכון מקובל עליך.',
 			'addServer.allowHttp' => 'לאפשר HTTP',
 			'addServer.httpsRequired' => 'שימוש ב- HTTPS או מאפשר באופן מפורש חיבור לא מוצפן.',
+			'cast.chooseDevice' => 'שידור למכשיר',
+			'cast.searching' => 'מחפשים מכשירים לגידול...',
+			'cast.connectedTo' => ({required Object device}) => 'חיבור ל- ${device}',
+			'cast.device' => 'מכשיר לשידור',
+			'cast.readyToCast' => 'מוכן לשידור',
+			'cast.subtitle' => 'כתוביות',
+			'cast.serverNotAvailable' => 'שרת התקשורת אינו זמין.',
+			'cast.stopCasting' => 'הפסקת השידור',
+			'cast.castToDevice' => 'שידור למכשיר',
+			'cast.noEpisodeAvailable' => 'אין פרקים זמינים להורדה.',
+			'cast.startFailed' => 'לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב.',
+			'automation.noActivePlayback' => 'אין וידאו פעיל כדי לשלוט.',
+			'notifications.newEpisodeTitle' => 'פרק חדש',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'נסה כל תכונה בחינם במשך 7 ימים',
+			'appAccess.description' => 'התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.',
+			'appAccess.trialEndedDescription' => 'לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.',
+			'appAccess.startTrial' => 'התחל את הניסוי החופשי שלי 7 ימים',
+			'appAccess.trialActive' => 'המבחן המלא של 7 הימים שלך הוא פעיל.',
+			'appAccess.trialEnded' => 'התביעה של 7 ימים הסתיימה',
+			'appAccess.trialStartFailed' => 'לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.',
+			'appAccess.lifetimeTitle' => 'PlezyNG פתוח לכל החיים',
+			'appAccess.lifetimeBody' => 'יש לך גישה לכל החיים לכל תכונה PlezyNG.',
+			'appAccess.manageTitle' => 'PlezyNG גישה לכל החיים',
+			'appAccess.manageDescription' => 'נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.',
+			'appAccess.buy' => ({required Object price}) => 'לחסום כל תכונה עבור ${price}',
+			'appAccess.loadingPrice' => 'מחירים של חנות ...',
+			'appAccess.retryPrice' => 'מחיר החזר מחפש',
+			'appAccess.restore' => 'החזרת רכישות לכל החיים',
+			'appAccess.pending' => 'הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.',
+			'appAccess.storeUnavailable' => 'קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.',
+			'appAccess.productNotFound' => 'הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.',
+			'appAccess.productQueryFailed' => 'לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.',
+			'appAccess.purchaseFailed' => 'הקנייה לא עברה, נסה שוב.',
+			'appAccess.restoreFailed' => 'לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.',
+			'appAccess.nothingToRestore' => 'מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה.',
+			'detail.endsAt' => ({required Object time}) => 'תגיות קשורות ${time}',
 			'watchLink.serverUnavailable' => 'לא יכולתי להגיע לשרת Plex עבור קישור זה.',
 			'watchLink.notFound' => 'לא מצאתי את ההצגה או הסרט הזה בשרתים שלך Plex.',
 			'watchLink.ambiguous' => 'קישור זה תואם פריטים על יותר ממשרת אחד.',
@@ -7779,7 +7805,7 @@ extension on TranslationsHe {
 			'universalMedia.saveFavorite' => 'הציל את האהוב',
 			'universalMedia.playNow' => 'לשחק עכשיו',
 			'universalMedia.favoriteSaved' => 'זרם אהוב נשמר לפרופיל זה',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'כניסה לא תומכת או לא בטוחה של רשימת המשחקים של ${count}.', two: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', other: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'כניסה לא תומכת או לא בטוחה של רשימת המשחקים של ${count}.', two: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', other: 'הפסד ${count} כניסות רשימת משחקים לא נתמכים או לא בטוחים.', ), 
 			'universalMedia.playlistAddress' => 'כתובת Playlist',
 			'universalMedia.playlistAddressHelp' => 'פתח רשימת משחקים M3U, M3u8 או PLS מכתובת אינטרנט.קישורים זרימה ישירה אינם מאוחסנים את רשימת המשחקים.',
 			'universalMedia.choosePlaylist' => 'בחר קובץ playlist',
@@ -7789,7 +7815,7 @@ extension on TranslationsHe {
 			'universalMedia.removeFavorite' => 'להסיר זרם אהוב',
 			'universalMedia.filesHelp' => 'בחר קבצים אודיו, וידאו או ISO עבור קובץ זמני.קבצים וכתובות URL אינם מופיעים בהיסטוריה של הספרייה.',
 			'universalMedia.chooseFiles' => 'בחירת קבצים',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '1 קובץ שנבחר', two: '${count} קבצים שנבחרו', other: '${count} קבצים שנבחרו', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '1 קובץ שנבחר', two: '${count} קבצים שנבחרו', other: '${count} קבצים שנבחרו', ), 
 			'universalMedia.wifiTransfer' => 'שליחת קבצים דרך Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'העברת קבצים תומכים מתוך דפדפן באותו רשת מאובטחת.',
 			'universalMedia.wifiTransferIntro' => 'פתח את כתובת זו בדפדפן במכשיר אחר. בחר קבצים כדי להוסיף אותם לספריה של קבצי מכשיר זה וספרים.',
@@ -7800,7 +7826,7 @@ extension on TranslationsHe {
 			'universalMedia.copyAddress' => 'עותק של כתובת העברה',
 			'universalMedia.addressCopied' => 'כתובת העברת עותקים',
 			'universalMedia.transferExpires' => ({required Object time}) => 'כתובת זו נגמרת ב- ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'קובץ ${count} מקבל', two: '${count} קבצים מקבלים', other: '${count} קבצים מקבלים', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: 'קובץ ${count} מקבל', two: '${count} קבצים מקבלים', other: '${count} קבצים מקבלים', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'קבלת ${size}',
 			'universalMedia.stopTransfer' => 'הפסקת העברה ושינוי כתובת',
 			'universalMedia.startTransfer' => 'התחלת העברה',
@@ -7929,6 +7955,8 @@ extension on TranslationsHe {
 			'fileSources.bookmark' => 'הוסף Bookmark',
 			'fileSources.highlight' => 'להדגיש',
 			'fileSources.note' => 'הערה',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'מחק',
 			'fileSources.export' => 'הערות ייצוא',
 			'fileSources.exported' => 'הערות ייצוא',
@@ -8041,8 +8069,6 @@ extension on TranslationsHe {
 			'fileSources.offlineQuotaHelp' => 'הגדר את המרחב המקסימלי המשמש על ידי עותקים לא מקוונים, קבצים מיובאים והורדות.',
 			'fileSources.offlineStorageUsage' => 'אחסון Offline',
 			'fileSources.reservedStorage' => 'מוגן',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'הורד Queue',
 			'fileSources.downloadRunning' => 'הורדות',
 			'fileSources.downloadQueued' => 'מחכה',
@@ -8362,6 +8388,23 @@ extension on TranslationsHe {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'קישור Plezy זה אינו חוקי.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'אין פרופיל מתאים ל"${profile}".',
+			'deepLinks.serverUnavailable' => 'לא יכולתי להגיע לשרת עבור קישור זה.',
+			'deepLinks.notFound' => 'לא מצאתי את הכותרת הזאת בספריות שלך.',
+			'deepLinks.unsupportedItem' => 'לא ניתן לשחק את הקישור הזה.',
+			'deepLinks.noLiveTv' => 'אין שרת טלוויזיה חי זמין עבור קישור זה.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'לא מצאתי ערוץ "${channel}".',
+			'deepLinks.showLink' => 'הצג קישור',
+			'deepLinks.showProfileLink' => 'הצג פרופיל קישור',
+			'deepLinks.dialogTitle' => 'קישור',
+			'deepLinks.showHint' => 'פתיחת הקישור הזה משחק את הפרק הבא.הוסף &mode=shuffle לשחק את ההצגה על shuffle.',
+			'deepLinks.movieHint' => 'פתיחת הקישור הזה משחק את הסרט.',
+			'deepLinks.episodeHint' => 'פתיחת קישור זה משחק את הפרק הזה.',
+			'deepLinks.profileHint' => 'הפתיחה של קישור זה מתפתחת לפרופיל הזה.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'פתח כ ${name}',
+			'deepLinks.copy' => 'עותק',
+			'deepLinks.copied' => 'קישור עותק',
 			_ => null,
 		};
 	}

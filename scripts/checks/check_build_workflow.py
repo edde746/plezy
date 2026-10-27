@@ -23,6 +23,7 @@ WEBOS_CANDIDATE_BUILDER = ROOT / "tools/webos/build_release_candidate.sh"
 WEBOS_IPK_BUILDER = ROOT / "tools/webos/build_ipk.sh"
 WEBOS_RELEASE_GATE = ROOT / "tools/webos/check_release_eligibility.py"
 TIZEN_WORKFLOW = ROOT / ".github/workflows/tizen.yml"
+RELEASE_CHECKSUMS = ROOT / "scripts/create_release_checksums.py"
 text = WORKFLOW.read_text(encoding="utf-8")
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 ci_text = CI_WORKFLOW.read_text(encoding="utf-8") if CI_WORKFLOW.is_file() else ""
@@ -547,11 +548,27 @@ require(
     and "name: webos-ipk" in webos_download,
     "the WebOS release artifact must be downloaded only after explicit opt-in",
 )
+webos_checksum_rename = named_step(
+    release, "Give the WebOS checksum manifest a unique release filename"
+)
+require(
+    "include_webos_release == 'true'" in webos_checksum_rename
+    and "mv artifacts/webos/SHA256SUMS.txt artifacts/webos/webos-SHA256SUMS.txt"
+    in webos_checksum_rename
+    and release.find(webos_checksum_rename) < release.find("name: Generate release SHA-256 checksums"),
+    "the WebOS checksum manifest must be uniquely named before release checksums are generated",
+)
 collect_release_files = named_step(release, "Collect release files")
 require(
     'if [[ "$INCLUDE_WEBOS_RELEASE" == "true" ]]' in collect_release_files
-    and "artifacts/webos/*.ipk" in collect_release_files,
+    and "artifacts/webos/*.ipk" in collect_release_files
+    and "artifacts/webos/webos-SHA256SUMS.txt" in collect_release_files,
     "the WebOS IPK must enter the public release asset list only after approval",
+)
+checksum_source = RELEASE_CHECKSUMS.read_text(encoding="utf-8")
+require(
+    '".ipk"' in checksum_source and '".tpk"' in checksum_source,
+    "TV packages must be included in the release-wide checksum manifest",
 )
 
 release_if = re.search(r"(?m)^    if: (.+)$", release)

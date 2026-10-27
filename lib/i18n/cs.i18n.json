@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Odeslat do zařízení",
-    "searching": "Hledání zařízení pro výkresy...",
-    "connectedTo": "Připojení k číslu ${device}",
-    "device": "Zařízení pro odesílání",
-    "readyToCast": "Připraveno k odesílání",
-    "subtitle": "Titulky",
-    "serverNotAvailable": "Media server není k dispozici.",
-    "stopCasting": "Ukončit odesílání",
-    "castToDevice": "Odeslat do zařízení",
-    "noEpisodeAvailable": "Neexistuje žádná epizoda k dispozici.",
-    "startFailed": "Nemůžete začít casting. zkontrolujte server a zkuste znovu."
-  },
-  "automation": {
-    "noActivePlayback": "Neexistuje žádná aktivní videozáznamy k ovládání.",
-    "profileNotFound": "Tento profil Plezy nebyl nalezen."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Nová epizoda",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "aplikace ikona",
     "defaultIcon": "Výchozí",
@@ -200,30 +179,6 @@
     "viewRelease": "Zobrazit Release",
     "latestVersion": "Jste na nejnovější verzi",
     "checkFailed": "Nedokázal se dohlížet na aktualizace"
-  },
-  "appAccess": {
-    "title": "Zkuste každou funkci zdarma po dobu 7 dní",
-    "description": "Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.",
-    "trialEndedDescription": "Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.",
-    "startTrial": "Začínám 7denní bezplatný test",
-    "trialActive": "Váš 7denní plnohodnotný test je aktivní.",
-    "trialEnded": "Sedmdenní proces skončil.",
-    "trialStartFailed": "Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.",
-    "lifetimeTitle": "PlezyNG odemknutá po celý život",
-    "lifetimeBody": "Díky! máte celoživotní přístup k každému PlezyNG funkci.",
-    "manageTitle": "PlezyNG Životní přístup",
-    "manageDescription": "Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.",
-    "buy": "Odemknout všechny funkce pro ${price}",
-    "loadingPrice": "Nákladní obchodní cena...",
-    "retryPrice": "Zpět na cenu Lookup",
-    "restore": "Obnovte životní nákup",
-    "pending": "Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.",
-    "storeUnavailable": "Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.",
-    "productNotFound": "Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.",
-    "productQueryFailed": "Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.",
-    "purchaseFailed": "Nákup neprošel, zkuste to znovu.",
-    "restoreFailed": "Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.",
-    "nothingToRestore": "Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet."
   },
   "settings": {
     "title": "Nastavení",
@@ -1089,12 +1044,6 @@
     "track": "Zvukový pás ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímek",
-      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímky",
-      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímku",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímků"
-    },
     "audioLabel": "Zvuk",
     "subtitlesLabel": "Titulky",
     "addTime": "+${amount}${unit}",
@@ -1131,8 +1080,6 @@
     "unmuteButton": "Povolit zvuk",
     "settingsButton": "Playback nastavení",
     "tracksButton": "Audio a subtituly",
-    "trackSelectionTitle": "Zvolte stopy před playbackem",
-    "trackSelectionAuto": "Automatické výběr",
     "chaptersButton": "Kapitoly",
     "versionQualityButton": "Verze a kvalita",
     "versionColumnHeader": "Verze",
@@ -1142,8 +1089,6 @@
     "transcodeUnavailableFallback": "Překódování není k dispozici – hraje originální kvalitu",
     "subtitleUnavailableFallback": "Výběr vybraných titulů nelze nahrát – pokračovat bez titulů",
     "pipButton": "Obrazový režim - Picture in-Picture",
-    "openMiniPlayer": "Otevřený mini hráč",
-    "returnToFullPlayer": "Zpět na plný hráč",
     "aspectRatioButton": "Poměr stran",
     "ambientLighting": "Atmosférické osvětlení",
     "fullscreenButton": "Vstup na plný obrazovek",
@@ -1152,7 +1097,6 @@
     "rotationLockButton": "rotační zámek",
     "lockScreen": "Závěsný obrazovek",
     "screenLockButton": "Zámek obrazovky",
-    "longPressToUnlock": "Dlouhý tlak na odemknutí",
     "timelineSlider": "Video časové linie",
     "volumeSlider": "Úroveň objemu",
     "endsAt": "Končí na ${time}",
@@ -1178,8 +1122,6 @@
     "noQueueItems": "Žádné položky v kousku",
     "noAudioDevicesAvailable": "Žádné audio zařízení k dispozici",
     "searchSubtitles": "Podtitul hledání",
-    "loadSubtitleFile": "Přihláška souboru Subtitle...",
-    "subtitleLoadFailed": "Nedokázal přenést soubor subtitle",
     "language": "Jazyk",
     "noSubtitlesFound": "Žádné podtitulky nalezeny",
     "subtitleDownloaded": "Subtítky stažené",
@@ -1188,14 +1130,28 @@
     "searchLanguages": "Vyhledávací jazyky...",
     "skipIntro": "Skříň vstupuje",
     "skipCredits": "Skok úvěrů",
-    "skipAds": "Skřípání Ads",
     "nextEpisode": "Další díl",
     "subtitleTrack": "Původní číslo ${n}",
     "subtitleFile": "Článek ${name}",
     "forcedTrack": "${label} (příslušný)",
     "osdSubtitlesOff": "Název titulu: Off",
     "osdSubtitles": "Články v kategorii: ${track}",
-    "osdAudio": "Audio číslo: ${track}"
+    "osdAudio": "Audio číslo: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímek",
+      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímky",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímku",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} snímků"
+    },
+    "trackSelectionTitle": "Zvolte stopy před playbackem",
+    "trackSelectionAuto": "Automatické výběr",
+    "openMiniPlayer": "Otevřený mini hráč",
+    "returnToFullPlayer": "Zpět na plný hráč",
+    "loadSubtitleFile": "Přihláška souboru Subtitle...",
+    "subtitleLoadFailed": "Nedokázal přenést soubor subtitle",
+    "skipAds": "Skřípání Ads",
+    "tapToUnlock": "Klepnutím odemknete",
+    "tapAgainToUnlock": "Opětovným klepnutím odemknete"
   },
   "userStatus": {},
   "messages": {
@@ -1808,9 +1764,6 @@
     "saveLogs": "Shromažďujte záznamy do souboru",
     "logsSaved": "Přihlášky uložené na ${path}",
     "saveLogsFailed": "Nemohla jsem uložit soubor."
-  },
-  "detail": {
-    "endsAt": "Končí na ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG nemohl začít",
@@ -3108,6 +3061,53 @@
     "allowHttp": "Přijmout HTTP",
     "httpsRequired": "Použití HTTPS nebo výslovně umožnit nekryptované připojení."
   },
+  "cast": {
+    "chooseDevice": "Odeslat do zařízení",
+    "searching": "Hledání zařízení pro výkresy...",
+    "connectedTo": "Připojení k číslu ${device}",
+    "device": "Zařízení pro odesílání",
+    "readyToCast": "Připraveno k odesílání",
+    "subtitle": "Titulky",
+    "serverNotAvailable": "Media server není k dispozici.",
+    "stopCasting": "Ukončit odesílání",
+    "castToDevice": "Odeslat do zařízení",
+    "noEpisodeAvailable": "Neexistuje žádná epizoda k dispozici.",
+    "startFailed": "Nemůžete začít casting. zkontrolujte server a zkuste znovu."
+  },
+  "automation": {
+    "noActivePlayback": "Neexistuje žádná aktivní videozáznamy k ovládání."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Nová epizoda",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Zkuste každou funkci zdarma po dobu 7 dní",
+    "description": "Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.",
+    "trialEndedDescription": "Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.",
+    "startTrial": "Začínám 7denní bezplatný test",
+    "trialActive": "Váš 7denní plnohodnotný test je aktivní.",
+    "trialEnded": "Sedmdenní proces skončil.",
+    "trialStartFailed": "Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.",
+    "lifetimeTitle": "PlezyNG odemknutá po celý život",
+    "lifetimeBody": "Díky! máte celoživotní přístup k každému PlezyNG funkci.",
+    "manageTitle": "PlezyNG Životní přístup",
+    "manageDescription": "Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.",
+    "buy": "Odemknout všechny funkce pro ${price}",
+    "loadingPrice": "Nákladní obchodní cena...",
+    "retryPrice": "Zpět na cenu Lookup",
+    "restore": "Obnovte životní nákup",
+    "pending": "Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.",
+    "storeUnavailable": "Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.",
+    "productNotFound": "Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.",
+    "productQueryFailed": "Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.",
+    "purchaseFailed": "Nákup neprošel, zkuste to znovu.",
+    "restoreFailed": "Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.",
+    "nothingToRestore": "Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet."
+  },
+  "detail": {
+    "endsAt": "Končí na ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Nemohl jsem se dostat k serveru Plex pro tento odkaz.",
     "notFound": "Nemohl jsem najít tento show nebo film na vašich serverech Plex.",
@@ -3863,5 +3863,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "Tento odkaz Plezy není platný.",
+    "profileNotFound": "Žádný profil se neshoduje s \"${profile}\".",
+    "serverUnavailable": "Nemohla jsem se dostat na server pro tento odkaz.",
+    "notFound": "Tento název v knihovně nenajdete.",
+    "unsupportedItem": "Tento odkaz nelze hrát.",
+    "noLiveTv": "Žádný Live TV server není k dispozici pro tento odkaz.",
+    "channelNotFound": "Nemohla jsem najít kanál \"${channel}\".",
+    "showLink": "Zobrazit link",
+    "showProfileLink": "Zobrazit profilový link",
+    "dialogTitle": "Link",
+    "showHint": "Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.",
+    "movieHint": "Otevření tohoto odkazu hraje film.",
+    "episodeHint": "Otvírání tohoto odkazu hraje tento epizod.",
+    "profileHint": "Otevření tohoto odkazu přepíná na tento profil.",
+    "openAsProfile": "Otevřete jako ${name}",
+    "copy": "Kopírování",
+    "copied": "Link kopírovaný"
   }
 }

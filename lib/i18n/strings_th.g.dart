@@ -41,15 +41,11 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$th app = _Translations$app$th._(_root);
-	@override late final _Translations$cast$th cast = _Translations$cast$th._(_root);
-	@override late final _Translations$automation$th automation = _Translations$automation$th._(_root);
-	@override late final _Translations$notifications$th notifications = _Translations$notifications$th._(_root);
 	@override late final _Translations$appIcon$th appIcon = _Translations$appIcon$th._(_root);
 	@override late final _Translations$auth$th auth = _Translations$auth$th._(_root);
 	@override late final _Translations$common$th common = _Translations$common$th._(_root);
 	@override late final _Translations$screens$th screens = _Translations$screens$th._(_root);
 	@override late final _Translations$update$th update = _Translations$update$th._(_root);
-	@override late final _Translations$appAccess$th appAccess = _Translations$appAccess$th._(_root);
 	@override late final _Translations$settings$th settings = _Translations$settings$th._(_root);
 	@override late final _Translations$themeEditor$th themeEditor = _Translations$themeEditor$th._(_root);
 	@override late final _Translations$search$th search = _Translations$search$th._(_root);
@@ -75,7 +71,6 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$th serverSelection = _Translations$serverSelection$th._(_root);
 	@override late final _Translations$hubDetail$th hubDetail = _Translations$hubDetail$th._(_root);
 	@override late final _Translations$logs$th logs = _Translations$logs$th._(_root);
-	@override late final _Translations$detail$th detail = _Translations$detail$th._(_root);
 	@override late final _Translations$startup$th startup = _Translations$startup$th._(_root);
 	@override late final _Translations$licenses$th licenses = _Translations$licenses$th._(_root);
 	@override late final _Translations$navigation$th navigation = _Translations$navigation$th._(_root);
@@ -98,6 +93,11 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$th seerr = _Translations$seerr$th._(_root);
 	@override late final _Translations$services$th services = _Translations$services$th._(_root);
 	@override late final _Translations$addServer$th addServer = _Translations$addServer$th._(_root);
+	@override late final _Translations$cast$th cast = _Translations$cast$th._(_root);
+	@override late final _Translations$automation$th automation = _Translations$automation$th._(_root);
+	@override late final _Translations$notifications$th notifications = _Translations$notifications$th._(_root);
+	@override late final _Translations$appAccess$th appAccess = _Translations$appAccess$th._(_root);
+	@override late final _Translations$detail$th detail = _Translations$detail$th._(_root);
 	@override late final _Translations$watchLink$th watchLink = _Translations$watchLink$th._(_root);
 	@override late final _Translations$homeLayout$th homeLayout = _Translations$homeLayout$th._(_root);
 	@override late final _Translations$platform$th platform = _Translations$platform$th._(_root);
@@ -108,6 +108,7 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$th sourceSetup = _Translations$sourceSetup$th._(_root);
 	@override late final _Translations$comics$th comics = _Translations$comics$th._(_root);
 	@override late final _Translations$games$th games = _Translations$games$th._(_root);
+	@override late final _Translations$deepLinks$th deepLinks = _Translations$deepLinks$th._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$th extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$th extends Translations$cast$en {
-	_Translations$cast$th._(TranslationsTh root) : this._root = root, super.internal(root);
-
-	final TranslationsTh _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'แคสต์ไปยังอุปกรณ์';
-	@override String get searching => 'ค้นหาอุปกรณ์ Cast ...';
-	@override String connectedTo({required Object device}) => 'เชื่อมต่อ ${device}';
-	@override String get device => 'อุปกรณ์แคสต์';
-	@override String get readyToCast => 'พร้อมแคสต์';
-	@override String get subtitle => 'คำบรรยาย';
-	@override String get serverNotAvailable => 'เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้';
-	@override String get stopCasting => 'หยุดแคสต์';
-	@override String get castToDevice => 'แคสต์ไปยังอุปกรณ์';
-	@override String get noEpisodeAvailable => 'ไม่มีส่วนที่สามารถปล่อยตัวได้';
-	@override String get startFailed => 'ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง';
-}
-
-// Path: automation
-class _Translations$automation$th extends Translations$automation$en {
-	_Translations$automation$th._(TranslationsTh root) : this._root = root, super.internal(root);
-
-	final TranslationsTh _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม';
-	@override String get profileNotFound => 'ที่ Plezy โปรไฟล์ไม่สามารถพบได้';
-}
-
-// Path: notifications
-class _Translations$notifications$th extends Translations$notifications$en {
-	_Translations$notifications$th._(TranslationsTh root) : this._root = root, super.internal(root);
-
-	final TranslationsTh _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'ฉบับใหม่';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$th extends Translations$update$en {
 	@override String get viewRelease => 'ดูการปล่อย';
 	@override String get latestVersion => 'คุณอยู่ในเวอร์ชันล่าสุด';
 	@override String get checkFailed => 'ไม่สามารถตรวจสอบอัปเดตได้';
-}
-
-// Path: appAccess
-class _Translations$appAccess$th extends Translations$appAccess$en {
-	_Translations$appAccess$th._(TranslationsTh root) : this._root = root, super.internal(root);
-
-	final TranslationsTh _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน';
-	@override String get description => 'เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต';
-	@override String get trialEndedDescription => 'ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก';
-	@override String get startTrial => 'เริ่มต้นการทดลองฟรี 7 วัน';
-	@override String get trialActive => 'การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้';
-	@override String get trialEnded => 'การสอบถาม 7 วันของคุณจบลง';
-	@override String get trialStartFailed => 'ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง';
-	@override String get lifetimeTitle => 'PlezyNG ปิดล็อคสําหรับชีวิต';
-	@override String get lifetimeBody => 'ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต';
-	@override String get manageTitle => 'PlezyNG การเข้าถึงตลอดชีวิต';
-	@override String get manageDescription => 'ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ';
-	@override String buy({required Object price}) => 'ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}';
-	@override String get loadingPrice => 'ราคาของร้านขายส่ง';
-	@override String get retryPrice => 'ค่าใช้จ่าย Retry Lookup';
-	@override String get restore => 'การซื้อคืนชีวิต';
-	@override String get pending => 'การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์';
-	@override String get storeUnavailable => 'การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้';
-	@override String get productNotFound => 'PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้';
-	@override String get productQueryFailed => 'ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง';
-	@override String get purchaseFailed => 'การซื้อไม่ได้ผ่านการทดลองอีกครั้ง';
-	@override String get restoreFailed => 'ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง';
-	@override String get nothingToRestore => 'หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้';
 }
 
 // Path: settings
@@ -1230,9 +1158,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	final TranslationsTh _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} โครง',
-	);
 	@override String get audioLabel => 'เสียง';
 	@override String get subtitlesLabel => 'คำบรรยาย';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1269,8 +1194,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get unmuteButton => 'หมายเลข';
 	@override String get settingsButton => 'การตั้งค่า Playback';
 	@override String get tracksButton => 'เสียงและหัวข้อ';
-	@override String get trackSelectionTitle => 'เลือกแถบก่อน playback';
-	@override String get trackSelectionAuto => 'การเลือกอัตโนมัติ';
 	@override String get chaptersButton => 'ประเภท';
 	@override String get versionQualityButton => 'รุ่น & คุณภาพ';
 	@override String get versionColumnHeader => 'รุ่น';
@@ -1280,8 +1203,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'การเข้ารหัสผ่านไม่สามารถใช้ได้ - เล่นคุณภาพเดิม';
 	@override String get subtitleUnavailableFallback => 'หัวฉบับที่เลือกไม่สามารถโหลดได้ - ต่อเนื่องโดยไม่มีหัวฉบับ';
 	@override String get pipButton => 'รูปภาพในโหมด';
-	@override String get openMiniPlayer => 'ผู้เล่นขนาดเล็กเปิด';
-	@override String get returnToFullPlayer => 'กลับผู้เล่นเต็มรูปแบบ';
 	@override String get aspectRatioButton => 'อัตราส่วน';
 	@override String get ambientLighting => 'แสงสภาพแวดล้อม';
 	@override String get fullscreenButton => 'หน้าจอเต็มรูปแบบ';
@@ -1290,7 +1211,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'ล็อคหมุน';
 	@override String get lockScreen => 'หน้าจอปิดผนึก';
 	@override String get screenLockButton => 'ล็อคหน้าจอ';
-	@override String get longPressToUnlock => 'ความดันยาวที่จะเปิด';
 	@override String get timelineSlider => 'วิดีโอ Timeline';
 	@override String get volumeSlider => 'ระดับปริมาณ';
 	@override String endsAt({required Object time}) => 'เสร็จสิ้นที่ ${time}';
@@ -1307,8 +1227,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get noQueueItems => 'ไม่มีรายการใน Queue';
 	@override String get noAudioDevicesAvailable => 'ไม่มีอุปกรณ์เสียง';
 	@override String get searchSubtitles => 'ค้นหา Subtitles';
-	@override String get loadSubtitleFile => 'ดาวน์โหลดไฟล์ Subtitle';
-	@override String get subtitleLoadFailed => 'ไม่สามารถดาวน์โหลดไฟล์ subtitle';
 	@override String get language => 'ภาษา';
 	@override String get noSubtitlesFound => 'ไม่มีหัวข้อที่พบ';
 	@override String get subtitleDownloaded => 'Subtitle ดาวน์โหลด';
@@ -1317,7 +1235,6 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get searchLanguages => 'ค้นหาภาษา';
 	@override String get skipIntro => 'สไลด์อินเตอร์เน็ต';
 	@override String get skipCredits => 'คิดสกี';
-	@override String get skipAds => 'การโฆษณา Skip';
 	@override String get nextEpisode => 'เรื่องถัดไป';
 	@override String subtitleTrack({required Object n}) => 'เคล็ดลับ ${n}';
 	@override String subtitleFile({required Object name}) => 'คำบรรยาย ${name}';
@@ -1325,6 +1242,18 @@ class _Translations$videoControls$th extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'หัวข้อ: ปิด';
 	@override String osdSubtitles({required Object track}) => 'หัวข้อ: ${track}';
 	@override String osdAudio({required Object track}) => 'เสียง: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} โครง',
+	);
+	@override String get trackSelectionTitle => 'เลือกแถบก่อน playback';
+	@override String get trackSelectionAuto => 'การเลือกอัตโนมัติ';
+	@override String get openMiniPlayer => 'ผู้เล่นขนาดเล็กเปิด';
+	@override String get returnToFullPlayer => 'กลับผู้เล่นเต็มรูปแบบ';
+	@override String get loadSubtitleFile => 'ดาวน์โหลดไฟล์ Subtitle';
+	@override String get subtitleLoadFailed => 'ไม่สามารถดาวน์โหลดไฟล์ subtitle';
+	@override String get skipAds => 'การโฆษณา Skip';
+	@override String get tapToUnlock => 'แตะเพื่อปลดล็อก';
+	@override String get tapAgainToUnlock => 'แตะอีกครั้งเพื่อปลดล็อก';
 }
 
 // Path: messages
@@ -1820,16 +1749,6 @@ class _Translations$logs$th extends Translations$logs$en {
 	@override String get saveLogs => 'บันทึกบันทึกไฟล์';
 	@override String logsSaved({required Object path}) => 'บันทึกที่บันทึกถึง ${path}';
 	@override String get saveLogsFailed => 'ไม่สามารถบันทึกไฟล์บันทึก';
-}
-
-// Path: detail
-class _Translations$detail$th extends Translations$detail$en {
-	_Translations$detail$th._(TranslationsTh root) : this._root = root, super.internal(root);
-
-	final TranslationsTh _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'เสร็จสิ้นที่ ${time}';
 }
 
 // Path: startup
@@ -2888,6 +2807,88 @@ class _Translations$addServer$th extends Translations$addServer$en {
 	@override String get httpsRequired => 'ใช้ HTTPS หรืออนุญาตให้มีการเชื่อมต่อที่ไม่ได้เข้ารหัส';
 }
 
+// Path: cast
+class _Translations$cast$th extends Translations$cast$en {
+	_Translations$cast$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'แคสต์ไปยังอุปกรณ์';
+	@override String get searching => 'ค้นหาอุปกรณ์ Cast ...';
+	@override String connectedTo({required Object device}) => 'เชื่อมต่อ ${device}';
+	@override String get device => 'อุปกรณ์แคสต์';
+	@override String get readyToCast => 'พร้อมแคสต์';
+	@override String get subtitle => 'คำบรรยาย';
+	@override String get serverNotAvailable => 'เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้';
+	@override String get stopCasting => 'หยุดแคสต์';
+	@override String get castToDevice => 'แคสต์ไปยังอุปกรณ์';
+	@override String get noEpisodeAvailable => 'ไม่มีส่วนที่สามารถปล่อยตัวได้';
+	@override String get startFailed => 'ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง';
+}
+
+// Path: automation
+class _Translations$automation$th extends Translations$automation$en {
+	_Translations$automation$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม';
+}
+
+// Path: notifications
+class _Translations$notifications$th extends Translations$notifications$en {
+	_Translations$notifications$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'ฉบับใหม่';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$th extends Translations$appAccess$en {
+	_Translations$appAccess$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน';
+	@override String get description => 'เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต';
+	@override String get trialEndedDescription => 'ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก';
+	@override String get startTrial => 'เริ่มต้นการทดลองฟรี 7 วัน';
+	@override String get trialActive => 'การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้';
+	@override String get trialEnded => 'การสอบถาม 7 วันของคุณจบลง';
+	@override String get trialStartFailed => 'ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง';
+	@override String get lifetimeTitle => 'PlezyNG ปิดล็อคสําหรับชีวิต';
+	@override String get lifetimeBody => 'ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต';
+	@override String get manageTitle => 'PlezyNG การเข้าถึงตลอดชีวิต';
+	@override String get manageDescription => 'ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ';
+	@override String buy({required Object price}) => 'ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}';
+	@override String get loadingPrice => 'ราคาของร้านขายส่ง';
+	@override String get retryPrice => 'ค่าใช้จ่าย Retry Lookup';
+	@override String get restore => 'การซื้อคืนชีวิต';
+	@override String get pending => 'การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์';
+	@override String get storeUnavailable => 'การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้';
+	@override String get productNotFound => 'PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้';
+	@override String get productQueryFailed => 'ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง';
+	@override String get purchaseFailed => 'การซื้อไม่ได้ผ่านการทดลองอีกครั้ง';
+	@override String get restoreFailed => 'ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง';
+	@override String get nothingToRestore => 'หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้';
+}
+
+// Path: detail
+class _Translations$detail$th extends Translations$detail$en {
+	_Translations$detail$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'เสร็จสิ้นที่ ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$th extends Translations$watchLink$en {
 	_Translations$watchLink$th._(TranslationsTh root) : this._root = root, super.internal(root);
@@ -3155,7 +3156,6 @@ class _Translations$universalMedia$th extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'การแปลงในท้องถิ่นสามารถใช้ได้บนคอมพิวเตอร์เดสก์ท็อปที่มี FFmpeg ติดตั้ง';
 	@override String get converterStart => 'การแปลงไฟล์';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$th extends Translations$fileSources$en {
@@ -3701,6 +3701,32 @@ class _Translations$games$th extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$th extends Translations$deepLinks$en {
+	_Translations$deepLinks$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'ลิงค์ Plezy นี้ไม่ถูกต้อง';
+	@override String profileNotFound({required Object profile}) => 'ไม่มีโปรไฟล์ตรงกับ "${profile}"';
+	@override String get serverUnavailable => 'ฉันไม่สามารถเข้าถึงเซิร์ฟเวอร์สําหรับลิงค์นี้ได้';
+	@override String get notFound => 'ฉันไม่สามารถหาชื่อนี้ในห้องสมุดของคุณได้';
+	@override String get unsupportedItem => 'ลิงค์นี้ไม่สามารถเล่นได้';
+	@override String get noLiveTv => 'ไม่มีเซิร์ฟเวอร์ทีวีสดที่มีอยู่สําหรับลิงค์นี้';
+	@override String channelNotFound({required Object channel}) => 'ไม่สามารถหาช่อง "${channel}"';
+	@override String get showLink => 'แสดงลิงค์';
+	@override String get showProfileLink => 'แสดงโปรไฟล์ลิงค์';
+	@override String get dialogTitle => 'เชื่อมโยง';
+	@override String get showHint => 'การเปิดลิงก์นี้จะเล่นส่วนต่อไป เพิ่ม &mode=shuffle เพื่อเล่นการแสดงบน shuffle';
+	@override String get movieHint => 'การเปิดลิงก์นี้เล่นฟิล์ม';
+	@override String get episodeHint => 'เปิดลิงค์นี้เล่นบทความนี้';
+	@override String get profileHint => 'เปิดลิงค์นี้สวิตช์ไปยังโปรไฟล์นี้';
+	@override String openAsProfile({required Object name}) => 'เปิดเป็น ${name}';
+	@override String get copy => 'คูปอง';
+	@override String get copied => 'ลิงค์คัดลอก';
 }
 
 // Path: appIcon.names
@@ -4815,21 +4841,6 @@ extension on TranslationsTh {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'แคสต์ไปยังอุปกรณ์',
-			'cast.searching' => 'ค้นหาอุปกรณ์ Cast ...',
-			'cast.connectedTo' => ({required Object device}) => 'เชื่อมต่อ ${device}',
-			'cast.device' => 'อุปกรณ์แคสต์',
-			'cast.readyToCast' => 'พร้อมแคสต์',
-			'cast.subtitle' => 'คำบรรยาย',
-			'cast.serverNotAvailable' => 'เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้',
-			'cast.stopCasting' => 'หยุดแคสต์',
-			'cast.castToDevice' => 'แคสต์ไปยังอุปกรณ์',
-			'cast.noEpisodeAvailable' => 'ไม่มีส่วนที่สามารถปล่อยตัวได้',
-			'cast.startFailed' => 'ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง',
-			'automation.noActivePlayback' => 'ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม',
-			'automation.profileNotFound' => 'ที่ Plezy โปรไฟล์ไม่สามารถพบได้',
-			'notifications.newEpisodeTitle' => 'ฉบับใหม่',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'แอปไอคอน',
 			'appIcon.defaultIcon' => 'ค่าเริ่มต้น',
 			'appIcon.current' => 'หมายเลขรุ่น: Icon',
@@ -4992,28 +5003,6 @@ extension on TranslationsTh {
 			'update.viewRelease' => 'ดูการปล่อย',
 			'update.latestVersion' => 'คุณอยู่ในเวอร์ชันล่าสุด',
 			'update.checkFailed' => 'ไม่สามารถตรวจสอบอัปเดตได้',
-			'appAccess.title' => 'ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน',
-			'appAccess.description' => 'เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต',
-			'appAccess.trialEndedDescription' => 'ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก',
-			'appAccess.startTrial' => 'เริ่มต้นการทดลองฟรี 7 วัน',
-			'appAccess.trialActive' => 'การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้',
-			'appAccess.trialEnded' => 'การสอบถาม 7 วันของคุณจบลง',
-			'appAccess.trialStartFailed' => 'ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง',
-			'appAccess.lifetimeTitle' => 'PlezyNG ปิดล็อคสําหรับชีวิต',
-			'appAccess.lifetimeBody' => 'ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต',
-			'appAccess.manageTitle' => 'PlezyNG การเข้าถึงตลอดชีวิต',
-			'appAccess.manageDescription' => 'ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ',
-			'appAccess.buy' => ({required Object price}) => 'ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}',
-			'appAccess.loadingPrice' => 'ราคาของร้านขายส่ง',
-			'appAccess.retryPrice' => 'ค่าใช้จ่าย Retry Lookup',
-			'appAccess.restore' => 'การซื้อคืนชีวิต',
-			'appAccess.pending' => 'การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์',
-			'appAccess.storeUnavailable' => 'การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้',
-			'appAccess.productNotFound' => 'PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้',
-			'appAccess.productQueryFailed' => 'ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง',
-			'appAccess.purchaseFailed' => 'การซื้อไม่ได้ผ่านการทดลองอีกครั้ง',
-			'appAccess.restoreFailed' => 'ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง',
-			'appAccess.nothingToRestore' => 'หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้',
 			'settings.title' => 'การตั้งค่า',
 			'settings.supportDeveloper' => 'สนับสนุน PlezyNG',
 			'settings.supportDeveloperDescription' => 'การสนับสนุนการพัฒนา',
@@ -5326,8 +5315,6 @@ extension on TranslationsTh {
 			'settings.audioPassthrough' => 'เสียงที่กําหนดเอง',
 			'settings.audioPassthroughDescription' => 'ส่งเสียง Dolby / DTS ไปยังรับหรือทีวีของคุณโดยไม่ต้องเข้ารหัสใหม่และยังคงเสียงรอบ ปิดถ้าคุณไม่มีเสียง',
 			'settings.audioPassthroughDescriptionApple' => 'ใช้ decoder Dolby ที่เกิดจาก Apple สําหรับ Dolby Digital Plus รวมถึง Atmos DTS และ TrueHD ยังคงเล่นเป็น PCM มัลติช่อง ปิดถ้าคุณไม่มีเสียง',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'ใช้ decoder Dolby ที่เกิดจาก Apple สําหรับ Dolby Digital Plus รวมถึง Atmos. บน iOS, iPadOS และ tvOS 26 หรือภายหลัง, TrueHD Atmos และ DTS:X เล่นเป็นเสียงพื้นที่. ระยะทาง DTS และ TrueHD อื่น ๆ เล่นเป็น PCM มัลติช่อง. ปิดถ้าคุณไม่มีเสียง.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'ปิดขณะที่เสียง normalization เป็น',
 			'settings.audioChannelLimit' => 'ช่องเสียง',
@@ -5365,6 +5352,8 @@ extension on TranslationsTh {
 			'settings.disableDolbyVisionDescription' => 'เล่นไฟล์ HDR10 หรือชั้น HLG แทน Dolby Vision เมื่อมี',
 			'settings.hdrSdrConversion' => 'การแปลง HDR ไปยัง SDR',
 			'settings.hdrSdrConversionDescription' => 'เลือกสิ่งที่แปลงวิดีโอ HDR เมื่อหน้าจอไม่สามารถแสดง HDR',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'อัตโนมัติ',
 			'settings.hdrSdrConversionAutoDescription' => 'อุปกรณ์บน Android 9 และภายหลังผู้เล่นบนรุ่นเก่า',
 			'settings.hdrSdrConversionDevice' => 'อุปกรณ์',
@@ -5826,7 +5815,6 @@ extension on TranslationsTh {
 			'tooltips.markAsWatched' => 'Mark ตามที่มองเห็น',
 			'tooltips.markAsUnwatched' => 'หมายเลขรุ่น: Unwatched',
 			'audioTracks.track' => ({required Object n}) => 'ลวดเสียง ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} โครง', ), 
 			'videoControls.audioLabel' => 'เสียง',
 			'videoControls.subtitlesLabel' => 'คำบรรยาย',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5840,8 +5828,6 @@ extension on TranslationsTh {
 			'videoControls.sleepTimerEndOfVideo' => 'วีดีโอปัจจุบัน',
 			'videoControls.sleepTimerStopAtHeader' => 'หยุด',
 			'videoControls.sleepTimerDurationHeader' => 'เวลา',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback จะหยุดในตอนท้ายของวิดีโอนี้',
 			'videoControls.stillWatching' => 'ยังคงดู?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'การพักผ่อนใน ${seconds}s',
@@ -5865,8 +5851,6 @@ extension on TranslationsTh {
 			'videoControls.unmuteButton' => 'หมายเลข',
 			'videoControls.settingsButton' => 'การตั้งค่า Playback',
 			'videoControls.tracksButton' => 'เสียงและหัวข้อ',
-			'videoControls.trackSelectionTitle' => 'เลือกแถบก่อน playback',
-			'videoControls.trackSelectionAuto' => 'การเลือกอัตโนมัติ',
 			'videoControls.chaptersButton' => 'ประเภท',
 			'videoControls.versionQualityButton' => 'รุ่น & คุณภาพ',
 			'videoControls.versionColumnHeader' => 'รุ่น',
@@ -5876,17 +5860,16 @@ extension on TranslationsTh {
 			'videoControls.transcodeUnavailableFallback' => 'การเข้ารหัสผ่านไม่สามารถใช้ได้ - เล่นคุณภาพเดิม',
 			'videoControls.subtitleUnavailableFallback' => 'หัวฉบับที่เลือกไม่สามารถโหลดได้ - ต่อเนื่องโดยไม่มีหัวฉบับ',
 			'videoControls.pipButton' => 'รูปภาพในโหมด',
-			'videoControls.openMiniPlayer' => 'ผู้เล่นขนาดเล็กเปิด',
-			'videoControls.returnToFullPlayer' => 'กลับผู้เล่นเต็มรูปแบบ',
 			'videoControls.aspectRatioButton' => 'อัตราส่วน',
 			'videoControls.ambientLighting' => 'แสงสภาพแวดล้อม',
 			'videoControls.fullscreenButton' => 'หน้าจอเต็มรูปแบบ',
 			'videoControls.exitFullscreenButton' => 'หน้าจอแสดงผลเต็ม',
 			'videoControls.alwaysOnTopButton' => 'เสมอในด้านบน',
 			'videoControls.rotationLockButton' => 'ล็อคหมุน',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'หน้าจอปิดผนึก',
 			'videoControls.screenLockButton' => 'ล็อคหน้าจอ',
-			'videoControls.longPressToUnlock' => 'ความดันยาวที่จะเปิด',
 			'videoControls.timelineSlider' => 'วิดีโอ Timeline',
 			'videoControls.volumeSlider' => 'ระดับปริมาณ',
 			'videoControls.endsAt' => ({required Object time}) => 'เสร็จสิ้นที่ ${time}',
@@ -5910,8 +5893,6 @@ extension on TranslationsTh {
 			'videoControls.noQueueItems' => 'ไม่มีรายการใน Queue',
 			'videoControls.noAudioDevicesAvailable' => 'ไม่มีอุปกรณ์เสียง',
 			'videoControls.searchSubtitles' => 'ค้นหา Subtitles',
-			'videoControls.loadSubtitleFile' => 'ดาวน์โหลดไฟล์ Subtitle',
-			'videoControls.subtitleLoadFailed' => 'ไม่สามารถดาวน์โหลดไฟล์ subtitle',
 			'videoControls.language' => 'ภาษา',
 			'videoControls.noSubtitlesFound' => 'ไม่มีหัวข้อที่พบ',
 			'videoControls.subtitleDownloaded' => 'Subtitle ดาวน์โหลด',
@@ -5920,7 +5901,6 @@ extension on TranslationsTh {
 			'videoControls.searchLanguages' => 'ค้นหาภาษา',
 			'videoControls.skipIntro' => 'สไลด์อินเตอร์เน็ต',
 			'videoControls.skipCredits' => 'คิดสกี',
-			'videoControls.skipAds' => 'การโฆษณา Skip',
 			'videoControls.nextEpisode' => 'เรื่องถัดไป',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'เคล็ดลับ ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'คำบรรยาย ${name}',
@@ -5928,6 +5908,16 @@ extension on TranslationsTh {
 			'videoControls.osdSubtitlesOff' => 'หัวข้อ: ปิด',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'หัวข้อ: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'เสียง: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} โครง', ), 
+			'videoControls.trackSelectionTitle' => 'เลือกแถบก่อน playback',
+			'videoControls.trackSelectionAuto' => 'การเลือกอัตโนมัติ',
+			'videoControls.openMiniPlayer' => 'ผู้เล่นขนาดเล็กเปิด',
+			'videoControls.returnToFullPlayer' => 'กลับผู้เล่นเต็มรูปแบบ',
+			'videoControls.loadSubtitleFile' => 'ดาวน์โหลดไฟล์ Subtitle',
+			'videoControls.subtitleLoadFailed' => 'ไม่สามารถดาวน์โหลดไฟล์ subtitle',
+			'videoControls.skipAds' => 'การโฆษณา Skip',
+			'videoControls.tapToUnlock' => 'แตะเพื่อปลดล็อก',
+			'videoControls.tapAgainToUnlock' => 'แตะอีกครั้งเพื่อปลดล็อก',
 			'messages.markedAsWatched' => 'บัญชีตามที่สังเกต',
 			'messages.markedAsUnwatched' => 'บัญชีที่ไม่ได้รับการตรวจสอบ',
 			'messages.markedAsWatchedOffline' => 'บรรทัดตามที่เห็น (จะซิงค์เมื่อออนไลน์)',
@@ -6354,8 +6344,6 @@ extension on TranslationsTh {
 			'libraries.all' => 'ทั้งหมด',
 			'libraries.clearAll' => 'แสดงทั้งหมด',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการสแกน "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการวิเคราะห์ "${title}"',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการอัปเดตข้อมูล metadata สําหรับ "${title}"',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'คุณแน่ใจว่าคุณต้องการที่จะทําให้เสียเปล่าสําหรับ "${title}"',
@@ -6392,6 +6380,8 @@ extension on TranslationsTh {
 			'libraries.filterCategories.year' => 'ปี',
 			'libraries.filterCategories.contentRating' => 'ระดับเนื้อหา',
 			'libraries.filterCategories.tag' => 'แท็ก',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'การตรวจสอบ',
 			'libraries.filterCategories.unplayed' => 'การเล่น',
 			'libraries.filterCategories.favorites' => 'รายการโปรด',
@@ -6473,7 +6463,6 @@ extension on TranslationsTh {
 			'logs.saveLogs' => 'บันทึกบันทึกไฟล์',
 			'logs.logsSaved' => ({required Object path}) => 'บันทึกที่บันทึกถึง ${path}',
 			'logs.saveLogsFailed' => 'ไม่สามารถบันทึกไฟล์บันทึก',
-			'detail.endsAt' => ({required Object time}) => 'เสร็จสิ้นที่ ${time}',
 			'startup.failedTitle' => 'PlezyNG ไม่สามารถเริ่มต้นได้',
 			'startup.failedBody' => 'สิ่งบางอย่างผิดพลาดในระหว่างการเริ่มต้น รายละเอียดด้านล่างระบุสิ่งที่ไม่ประสบความสําเร็จ',
 			'startup.failedBodyRepairable' => 'ไฟล์การตั้งค่าที่บันทึกไว้ของ PlezyNG เสียหายและต้องสร้างใหม่ก่อนเริ่มแอป การลองอีกครั้งจะไม่ช่วย ให้เลือกซ่อมแซมพื้นที่จัดเก็บ',
@@ -6868,8 +6857,6 @@ extension on TranslationsTh {
 			'watchTogether.connecting' => 'การเชื่อมต่อ...',
 			'watchTogether.relayPublic' => 'ห้องพักใช้การสื่อสารสาธารณะ Open Watch Party',
 			'watchTogether.relayCustom' => ({required Object url}) => 'ห้องพักใช้โทรศัพท์ของคุณที่ ${url}',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'ห้องพักล่าสุด',
 			'watchTogether.roomActions' => 'การกระทําห้อง',
 			'watchTogether.renameRoom' => 'ห้องพัก',
@@ -6907,6 +6894,8 @@ extension on TranslationsTh {
 			'watchTogether.playAnyway' => 'เล่นอย่างไรก็ตาม',
 			'watchTogether.chooseAnotherCopy' => 'เลือกสําเนาอื่น ๆ',
 			'watchTogether.dontPlay' => 'อย่าเล่น',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'คุณไม่มีวิดีโอนี้',
 			'watchTogether.unavailableDescription' => 'PlezyNG ไม่สามารถหาได้ในห้องสมุดของคุณ เลือกสําเนาด้วยตัวเองหรือค้นหาอีกครั้ง',
 			'watchTogether.chooseCopy' => 'เลือกสําเนา',
@@ -7382,8 +7371,6 @@ extension on TranslationsTh {
 			'metadataEdit.metadataUpdateFailed' => 'ไม่สามารถปรับปรุงข้อมูล metadata',
 			'metadataEdit.artworkUpdated' => 'อัพเดทศิลปะ',
 			'metadataEdit.artworkUpdateFailed' => 'ไม่สามารถปรับปรุงงานศิลปะได้',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'ไม่มีงานศิลปะ',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}, เลือก',
@@ -7421,6 +7408,8 @@ extension on TranslationsTh {
 			'metadataEdit.shownWithForeignAudio' => 'แสดงด้วยเสียงต่างประเทศ',
 			'metadataEdit.alwaysEnabled' => 'ปัจจุบันเปิดใช้งาน',
 			'metadataEdit.tags' => 'แท็ก',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'เพิ่มแท็ก',
 			'metadataEdit.genre' => 'ประเภท',
 			'metadataEdit.director' => 'ผู้กำกับ',
@@ -7611,6 +7600,43 @@ extension on TranslationsTh {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} ใช้ HTTP บุคคลอื่นในเครือข่ายอาจอ่านหรือแก้ไขรหัสผ่าน โทเค็น และสื่อของคุณได้ โปรดใช้ HTTPS หากมีให้ใช้ ดำเนินการต่อเฉพาะเมื่อคุณเชื่อถือเครือข่ายนี้และยอมรับความเสี่ยง',
 			'addServer.allowHttp' => 'อนุญาต HTTP',
 			'addServer.httpsRequired' => 'ใช้ HTTPS หรืออนุญาตให้มีการเชื่อมต่อที่ไม่ได้เข้ารหัส',
+			'cast.chooseDevice' => 'แคสต์ไปยังอุปกรณ์',
+			'cast.searching' => 'ค้นหาอุปกรณ์ Cast ...',
+			'cast.connectedTo' => ({required Object device}) => 'เชื่อมต่อ ${device}',
+			'cast.device' => 'อุปกรณ์แคสต์',
+			'cast.readyToCast' => 'พร้อมแคสต์',
+			'cast.subtitle' => 'คำบรรยาย',
+			'cast.serverNotAvailable' => 'เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้',
+			'cast.stopCasting' => 'หยุดแคสต์',
+			'cast.castToDevice' => 'แคสต์ไปยังอุปกรณ์',
+			'cast.noEpisodeAvailable' => 'ไม่มีส่วนที่สามารถปล่อยตัวได้',
+			'cast.startFailed' => 'ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง',
+			'automation.noActivePlayback' => 'ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม',
+			'notifications.newEpisodeTitle' => 'ฉบับใหม่',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน',
+			'appAccess.description' => 'เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต',
+			'appAccess.trialEndedDescription' => 'ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก',
+			'appAccess.startTrial' => 'เริ่มต้นการทดลองฟรี 7 วัน',
+			'appAccess.trialActive' => 'การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้',
+			'appAccess.trialEnded' => 'การสอบถาม 7 วันของคุณจบลง',
+			'appAccess.trialStartFailed' => 'ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง',
+			'appAccess.lifetimeTitle' => 'PlezyNG ปิดล็อคสําหรับชีวิต',
+			'appAccess.lifetimeBody' => 'ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต',
+			'appAccess.manageTitle' => 'PlezyNG การเข้าถึงตลอดชีวิต',
+			'appAccess.manageDescription' => 'ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ',
+			'appAccess.buy' => ({required Object price}) => 'ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}',
+			'appAccess.loadingPrice' => 'ราคาของร้านขายส่ง',
+			'appAccess.retryPrice' => 'ค่าใช้จ่าย Retry Lookup',
+			'appAccess.restore' => 'การซื้อคืนชีวิต',
+			'appAccess.pending' => 'การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์',
+			'appAccess.storeUnavailable' => 'การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้',
+			'appAccess.productNotFound' => 'PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้',
+			'appAccess.productQueryFailed' => 'ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง',
+			'appAccess.purchaseFailed' => 'การซื้อไม่ได้ผ่านการทดลองอีกครั้ง',
+			'appAccess.restoreFailed' => 'ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง',
+			'appAccess.nothingToRestore' => 'หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้',
+			'detail.endsAt' => ({required Object time}) => 'เสร็จสิ้นที่ ${time}',
 			'watchLink.serverUnavailable' => 'ฉันไม่สามารถเข้าถึงเซิร์ฟเวอร์ Plex สําหรับลิงค์นี้',
 			'watchLink.notFound' => 'ฉันไม่สามารถหาการแสดงหรือภาพยนตร์นี้ได้บนเซิร์ฟเวอร์ Plex ของคุณ',
 			'watchLink.ambiguous' => 'เชื่อมโยงนี้ตรงกับรายการในเซิร์ฟเวอร์เดียว เพิ่มเซิร์ฟเวอร์ไปยังลิงค์',
@@ -7746,7 +7772,7 @@ extension on TranslationsTh {
 			'universalMedia.saveFavorite' => 'เก็บ Favorite',
 			'universalMedia.playNow' => 'เล่นตอนนี้',
 			'universalMedia.favoriteSaved' => 'Stream Favorite ที่บันทึกไว้ในโปรไฟล์นี้',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} เข้าสู่ระบบรายการเล่นที่ไม่ได้สนับสนุนหรือไม่ปลอดภัย', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} เข้าสู่ระบบรายการเล่นที่ไม่ได้สนับสนุนหรือไม่ปลอดภัย', ), 
 			'universalMedia.playlistAddress' => 'ที่อยู่ Playlist',
 			'universalMedia.playlistAddressHelp' => 'เปิดรายการเล่น M3U, M3u8 หรือ PLS จากที่อยู่อาศัยเว็บ เชื่อมโยง Stream Direct ไม่บันทึกรายการเล่น',
 			'universalMedia.choosePlaylist' => 'เลือกไฟล์ Playlist',
@@ -7756,7 +7782,7 @@ extension on TranslationsTh {
 			'universalMedia.removeFavorite' => 'ลบ Stream Favorite',
 			'universalMedia.filesHelp' => 'เลือกไฟล์เสียงวิดีโอหรือไฟล์ ISO สําหรับแบบชั่วคราว ไฟล์และ URLs ไม่มีการเพิ่มไปยังประวัติของห้องสมุด',
 			'universalMedia.chooseFiles' => 'เลือกไฟล์',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่เลือก', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่เลือก', ), 
 			'universalMedia.wifiTransfer' => 'ส่งไฟล์ผ่าน Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'การถ่ายโอนไฟล์ที่สนับสนุนจากเบราว์เซอร์บนเครือข่ายที่เชื่อถือได้เดียวกัน',
 			'universalMedia.wifiTransferIntro' => 'เปิดที่อยู่นี้ในเบราว์เซอร์บนอุปกรณ์อื่น เลือกไฟล์เพื่อเพิ่มไปยังห้องสมุดไฟล์และหนังสือของอุปกรณ์นี้',
@@ -7767,7 +7793,7 @@ extension on TranslationsTh {
 			'universalMedia.copyAddress' => 'โพสต์การถ่ายโอน',
 			'universalMedia.addressCopied' => 'ที่อยู่อาศัยการถ่ายโอนคัดลอก',
 			'universalMedia.transferExpires' => ({required Object time}) => 'ที่อยู่นี้หมดอายุใน ${time}',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่ได้รับ', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(n, other: '${count} ไฟล์ที่ได้รับ', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'รับ ${size}',
 			'universalMedia.stopTransfer' => 'หยุดการถ่ายโอนและยกเลิกที่อยู่อาศัย',
 			'universalMedia.startTransfer' => 'เริ่มต้นการโอน',
@@ -7896,6 +7922,8 @@ extension on TranslationsTh {
 			'fileSources.bookmark' => 'เพิ่ม Bookmark',
 			'fileSources.highlight' => 'แสดง',
 			'fileSources.note' => 'บันทึก',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'ลบ',
 			'fileSources.export' => 'การส่งออก',
 			'fileSources.exported' => 'หมายเลขที่ส่งออก',
@@ -8008,8 +8036,6 @@ extension on TranslationsTh {
 			'fileSources.offlineQuotaHelp' => 'การตั้งค่าพื้นที่สูงสุดที่ใช้โดยการคัดลอกแบบออฟไลน์ไฟล์ที่นําเข้าและดาวน์โหลดสั้น การลดข้อ จํากัด ไม่จะถอดรหัสที่มีอยู่',
 			'fileSources.offlineStorageUsage' => 'ออฟไลน์จัดเก็บ',
 			'fileSources.reservedStorage' => 'เก็บ',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'ดาวน์โหลด Queue',
 			'fileSources.downloadRunning' => 'ดาวน์โหลด',
 			'fileSources.downloadQueued' => 'รอ',
@@ -8329,6 +8355,23 @@ extension on TranslationsTh {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'ลิงค์ Plezy นี้ไม่ถูกต้อง',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'ไม่มีโปรไฟล์ตรงกับ "${profile}"',
+			'deepLinks.serverUnavailable' => 'ฉันไม่สามารถเข้าถึงเซิร์ฟเวอร์สําหรับลิงค์นี้ได้',
+			'deepLinks.notFound' => 'ฉันไม่สามารถหาชื่อนี้ในห้องสมุดของคุณได้',
+			'deepLinks.unsupportedItem' => 'ลิงค์นี้ไม่สามารถเล่นได้',
+			'deepLinks.noLiveTv' => 'ไม่มีเซิร์ฟเวอร์ทีวีสดที่มีอยู่สําหรับลิงค์นี้',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'ไม่สามารถหาช่อง "${channel}"',
+			'deepLinks.showLink' => 'แสดงลิงค์',
+			'deepLinks.showProfileLink' => 'แสดงโปรไฟล์ลิงค์',
+			'deepLinks.dialogTitle' => 'เชื่อมโยง',
+			'deepLinks.showHint' => 'การเปิดลิงก์นี้จะเล่นส่วนต่อไป เพิ่ม &mode=shuffle เพื่อเล่นการแสดงบน shuffle',
+			'deepLinks.movieHint' => 'การเปิดลิงก์นี้เล่นฟิล์ม',
+			'deepLinks.episodeHint' => 'เปิดลิงค์นี้เล่นบทความนี้',
+			'deepLinks.profileHint' => 'เปิดลิงค์นี้สวิตช์ไปยังโปรไฟล์นี้',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'เปิดเป็น ${name}',
+			'deepLinks.copy' => 'คูปอง',
+			'deepLinks.copied' => 'ลิงค์คัดลอก',
 			_ => null,
 		};
 	}

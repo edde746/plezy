@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "A subtitle fájl felvétele...",
     "subtitleLoadFailed": "Nem töltöttem fel a subtitle fájlt",
     "skipAds": "Skip hirdetések",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Koppintson a feloldáshoz",
+    "tapAgainToUnlock": "Koppintson ismét a feloldáshoz"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra."
   },
   "automation": {
-    "noActivePlayback": "Nincs aktív videó ülés ellenőrzésére.",
-    "profileNotFound": "Ez a Plezy profil nem található."
+    "noActivePlayback": "Nincs aktív videó ülés ellenőrzésére."
   },
   "notifications": {
     "newEpisodeTitle": "Új epizód",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Ez a Plezy link nem érvényes.",
+    "profileNotFound": "Nincs profil a \"${profile}\" címmel.",
+    "serverUnavailable": "Nem tudtam elérni a szervert erre a linkre.",
+    "notFound": "Nem találtam ezt a címet a könyvtárakban.",
+    "unsupportedItem": "Ezt a linket nem lehet játszani.",
+    "noLiveTv": "Nincs Live TV szerver elérhető ezen a linken.",
+    "channelNotFound": "Nem találták meg a \"${channel}\" csatornát.",
+    "showLink": "Show linkek",
+    "showProfileLink": "Profil link megjelenítése",
+    "dialogTitle": "Link",
+    "showHint": "A link megnyitása a következő epizódot játssza. Add &mode=shuffle to play the show on shuffle.",
+    "movieHint": "A link megnyitása a filmet játssza.",
+    "episodeHint": "A link megnyitása ezt az epizódot játssza.",
+    "profileHint": "A link megnyitása váltja át ezt a profilot.",
+    "openAsProfile": "Nyissa meg, mint ${name}",
+    "copy": "másolás",
+    "copied": "Link másolat"
   }
 }

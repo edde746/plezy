@@ -414,11 +414,10 @@ class PlexServer {
     this.product,
     this.platform,
     this.lastSeenAt,
+
     /// Only Direct Plex passes this after the user approves an HTTP URL.
     String? consentedHttpEndpoint,
-  }) : _consentedHttpEndpoint = consentedHttpEndpoint == null
-           ? null
-           : canonicalizeBaseUrl(consentedHttpEndpoint);
+  }) : _consentedHttpEndpoint = consentedHttpEndpoint == null ? null : canonicalizeBaseUrl(consentedHttpEndpoint);
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
     // Validate required fields first
@@ -446,8 +445,7 @@ class PlexServer {
     final seen = <String>{};
     for (final connection in parsed) {
       final uriScheme = Uri.tryParse(connection.uri)?.scheme.toLowerCase();
-      if (connection.protocol.toLowerCase() != 'https' ||
-          uriScheme != 'https') {
+      if (connection.protocol.toLowerCase() != 'https' || uriScheme != 'https') {
         continue;
       }
       if (seen.add(connection._endpointIdentity)) connections.add(connection);
@@ -776,13 +774,10 @@ class PlexServer {
     // server record is not consent for sending the account token over it.
     final preferredCandidate = preferredFirst == null ? null : _candidateForUrl(preferredFirst);
     final preferredIsHttp = Uri.tryParse(preferredFirst ?? '')?.scheme.toLowerCase() == 'http';
-    if (preferredFirst != null &&
-        preferredFirst.isNotEmpty &&
-        (!preferredIsHttp || preferredCandidate != null)) {
+    if (preferredFirst != null && preferredFirst.isNotEmpty && (!preferredIsHttp || preferredCandidate != null)) {
       urls.add(preferredFirst);
       exclude.add(preferredFirst);
-      restrictTo = preferredCandidate?.connection.networkClass ??
-          networkClassForUrl(preferredFirst);
+      restrictTo = preferredCandidate?.connection.networkClass ?? networkClassForUrl(preferredFirst);
     }
 
     final candidates = _buildPrioritizedCandidates(excludeUrls: exclude, restrictTo: restrictTo);

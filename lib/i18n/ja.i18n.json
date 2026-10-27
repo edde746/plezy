@@ -1136,8 +1136,8 @@
     "loadSubtitleFile": "サブタイトルファイルをダウンロード",
     "subtitleLoadFailed": "サブタイトルファイルをダウンロードできなかった",
     "skipAds": "スキー広告",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "タップしてロックを解除",
+    "tapAgainToUnlock": "もう一度タップしてロックを解除"
   },
   "userStatus": {},
   "messages": {
@@ -3035,8 +3035,7 @@
     "startFailed": "サーバーをチェックして再度試してみる"
   },
   "automation": {
-    "noActivePlayback": "コントロールする動画セッションはありません。",
-    "profileNotFound": "その Plezy プロフィールは見つかりませんでした。"
+    "noActivePlayback": "コントロールする動画セッションはありません。"
   },
   "notifications": {
     "newEpisodeTitle": "新エピソード",
@@ -3817,22 +3816,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "この Plezy リンクは有効ではありません。",
+    "profileNotFound": "プロフィールは「${profile}」と一致しない。",
+    "serverUnavailable": "このリンクのためにサーバーにアクセスできませんでした。",
+    "notFound": "このタイトルは図書館には見つかりません。",
+    "unsupportedItem": "このリンクはプレイできない。",
+    "noLiveTv": "このリンクにはライブテレビサーバーはありません。",
+    "channelNotFound": "チャンネル「${channel}」を見つけることができませんでした。",
+    "showLink": "リンク表示",
+    "showProfileLink": "プロフィールリンクを表示",
+    "dialogTitle": "リンク",
+    "showHint": "このリンクを開くと次のエピソードが再生されます。番組をシャッフル再生するには、末尾に &mode=shuffle を追加してください。",
+    "movieHint": "このリンクを開くことで、映画を演奏します。",
+    "episodeHint": "このリンクを開くことで、このエピソードを演奏します。",
+    "profileHint": "このリンクを開くには、このプロフィールへのスイッチが表示されます。",
+    "openAsProfile": "${name}としてオープン",
+    "copy": "コピー",
+    "copied": "リンクコピー"
   }
 }

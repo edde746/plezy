@@ -32,6 +32,7 @@ jobs:
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
+      homebrew_enabled: ${{ steps.release.outputs.homebrew_enabled }}
     steps:
       - name: Require the default branch for manual runs
         if: github.event_name == 'workflow_dispatch'
@@ -47,6 +48,12 @@ jobs:
           EVENT_TAG: ${{ github.event.release.tag_name }}
           INPUT_TAG: ${{ inputs.release_tag }}
           GH_TOKEN: ${{ github.token }}
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euo pipefail
 
@@ -92,9 +99,18 @@ jobs:
 
           echo "tag=$RESOLVED_TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ -n "$MACOS_CERTIFICATE_BASE64" && -n "$MACOS_CERTIFICATE_PASSWORD" && \
+                -n "$KEYCHAIN_PASSWORD" && -n "$APPLE_ID" && \
+                -n "$APPLE_APP_SPECIFIC_PASSWORD" && -n "$APPLE_TEAM_ID" ]]; then
+            echo "homebrew_enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "homebrew_enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Developer ID signing and notarization are not configured; skipping the Homebrew Cask update."
+          fi
 
   update-homebrew:
     needs: resolve-release
+    if: needs.resolve-release.outputs.homebrew_enabled == 'true'
     runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-update-homebrew"]}}', github.run_id)) }}
     permissions:
       contents: write
@@ -110,9 +126,9 @@ jobs:
       - name: Download and hash release
         id: release
         run: |
-          curl --fail-with-body -L -o plezy-macos.dmg \
-            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/plezy-macos.dmg"
-          SHA256=$(shasum -a 256 plezy-macos.dmg | cut -d' ' -f1)
+          curl --fail-with-body -L -o plezyng-macos.dmg \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/plezyng-macos.dmg"
+          SHA256=$(shasum -a 256 plezyng-macos.dmg | cut -d' ' -f1)
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
 
       - name: Update cask

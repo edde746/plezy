@@ -63,6 +63,11 @@ for name, block in (
     ("update-appcast-branch", appcast),
 ):
     require("needs: resolve-release" in block, f"{name} must depend on the resolver")
+require(
+    "homebrew_enabled: ${{ steps.release.outputs.homebrew_enabled }}" in resolver
+    and "if: needs.resolve-release.outputs.homebrew_enabled == 'true'" in homebrew,
+    "Homebrew Cask updates must wait for Developer ID signing and notarization credentials",
+)
 
 for name, block in (
     ("resolve-release", resolver),
@@ -79,6 +84,10 @@ require(f"RELEASE_TAG: {resolved_output}" in appcast, "appcast must use the reso
 require(
     "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG" in homebrew,
     "Homebrew must download from this repository",
+)
+require(
+    "plezyng-macos.dmg" in homebrew and "plezy-macos.dmg" not in homebrew,
+    "Homebrew must download the exact DMG filename published by build.yml",
 )
 require(
     "github.com/edde746/plezy" not in text,

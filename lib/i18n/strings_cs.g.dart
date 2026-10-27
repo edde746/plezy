@@ -41,15 +41,11 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$cs app = _Translations$app$cs._(_root);
-	@override late final _Translations$cast$cs cast = _Translations$cast$cs._(_root);
-	@override late final _Translations$automation$cs automation = _Translations$automation$cs._(_root);
-	@override late final _Translations$notifications$cs notifications = _Translations$notifications$cs._(_root);
 	@override late final _Translations$appIcon$cs appIcon = _Translations$appIcon$cs._(_root);
 	@override late final _Translations$auth$cs auth = _Translations$auth$cs._(_root);
 	@override late final _Translations$common$cs common = _Translations$common$cs._(_root);
 	@override late final _Translations$screens$cs screens = _Translations$screens$cs._(_root);
 	@override late final _Translations$update$cs update = _Translations$update$cs._(_root);
-	@override late final _Translations$appAccess$cs appAccess = _Translations$appAccess$cs._(_root);
 	@override late final _Translations$settings$cs settings = _Translations$settings$cs._(_root);
 	@override late final _Translations$themeEditor$cs themeEditor = _Translations$themeEditor$cs._(_root);
 	@override late final _Translations$search$cs search = _Translations$search$cs._(_root);
@@ -75,7 +71,6 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$cs serverSelection = _Translations$serverSelection$cs._(_root);
 	@override late final _Translations$hubDetail$cs hubDetail = _Translations$hubDetail$cs._(_root);
 	@override late final _Translations$logs$cs logs = _Translations$logs$cs._(_root);
-	@override late final _Translations$detail$cs detail = _Translations$detail$cs._(_root);
 	@override late final _Translations$startup$cs startup = _Translations$startup$cs._(_root);
 	@override late final _Translations$licenses$cs licenses = _Translations$licenses$cs._(_root);
 	@override late final _Translations$navigation$cs navigation = _Translations$navigation$cs._(_root);
@@ -98,6 +93,11 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$cs seerr = _Translations$seerr$cs._(_root);
 	@override late final _Translations$services$cs services = _Translations$services$cs._(_root);
 	@override late final _Translations$addServer$cs addServer = _Translations$addServer$cs._(_root);
+	@override late final _Translations$cast$cs cast = _Translations$cast$cs._(_root);
+	@override late final _Translations$automation$cs automation = _Translations$automation$cs._(_root);
+	@override late final _Translations$notifications$cs notifications = _Translations$notifications$cs._(_root);
+	@override late final _Translations$appAccess$cs appAccess = _Translations$appAccess$cs._(_root);
+	@override late final _Translations$detail$cs detail = _Translations$detail$cs._(_root);
 	@override late final _Translations$watchLink$cs watchLink = _Translations$watchLink$cs._(_root);
 	@override late final _Translations$homeLayout$cs homeLayout = _Translations$homeLayout$cs._(_root);
 	@override late final _Translations$platform$cs platform = _Translations$platform$cs._(_root);
@@ -108,6 +108,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$cs sourceSetup = _Translations$sourceSetup$cs._(_root);
 	@override late final _Translations$comics$cs comics = _Translations$comics$cs._(_root);
 	@override late final _Translations$games$cs games = _Translations$games$cs._(_root);
+	@override late final _Translations$deepLinks$cs deepLinks = _Translations$deepLinks$cs._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$cs extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$cs extends Translations$cast$en {
-	_Translations$cast$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Odeslat do zařízení';
-	@override String get searching => 'Hledání zařízení pro výkresy...';
-	@override String connectedTo({required Object device}) => 'Připojení k číslu ${device}';
-	@override String get device => 'Zařízení pro odesílání';
-	@override String get readyToCast => 'Připraveno k odesílání';
-	@override String get subtitle => 'Titulky';
-	@override String get serverNotAvailable => 'Media server není k dispozici.';
-	@override String get stopCasting => 'Ukončit odesílání';
-	@override String get castToDevice => 'Odeslat do zařízení';
-	@override String get noEpisodeAvailable => 'Neexistuje žádná epizoda k dispozici.';
-	@override String get startFailed => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.';
-}
-
-// Path: automation
-class _Translations$automation$cs extends Translations$automation$en {
-	_Translations$automation$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Neexistuje žádná aktivní videozáznamy k ovládání.';
-	@override String get profileNotFound => 'Tento profil Plezy nebyl nalezen.';
-}
-
-// Path: notifications
-class _Translations$notifications$cs extends Translations$notifications$en {
-	_Translations$notifications$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Nová epizoda';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$cs extends Translations$update$en {
 	@override String get viewRelease => 'Zobrazit Release';
 	@override String get latestVersion => 'Jste na nejnovější verzi';
 	@override String get checkFailed => 'Nedokázal se dohlížet na aktualizace';
-}
-
-// Path: appAccess
-class _Translations$appAccess$cs extends Translations$appAccess$en {
-	_Translations$appAccess$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Zkuste každou funkci zdarma po dobu 7 dní';
-	@override String get description => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.';
-	@override String get trialEndedDescription => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.';
-	@override String get startTrial => 'Začínám 7denní bezplatný test';
-	@override String get trialActive => 'Váš 7denní plnohodnotný test je aktivní.';
-	@override String get trialEnded => 'Sedmdenní proces skončil.';
-	@override String get trialStartFailed => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.';
-	@override String get lifetimeTitle => 'PlezyNG odemknutá po celý život';
-	@override String get lifetimeBody => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.';
-	@override String get manageTitle => 'PlezyNG Životní přístup';
-	@override String get manageDescription => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.';
-	@override String buy({required Object price}) => 'Odemknout všechny funkce pro ${price}';
-	@override String get loadingPrice => 'Nákladní obchodní cena...';
-	@override String get retryPrice => 'Zpět na cenu Lookup';
-	@override String get restore => 'Obnovte životní nákup';
-	@override String get pending => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.';
-	@override String get storeUnavailable => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.';
-	@override String get productNotFound => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.';
-	@override String get productQueryFailed => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.';
-	@override String get purchaseFailed => 'Nákup neprošel, zkuste to znovu.';
-	@override String get restoreFailed => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.';
-	@override String get nothingToRestore => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.';
 }
 
 // Path: settings
@@ -1245,12 +1173,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	final TranslationsCs _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek',
-		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky',
-		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků',
-	);
 	@override String get audioLabel => 'Zvuk';
 	@override String get subtitlesLabel => 'Titulky';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1287,8 +1209,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Povolit zvuk';
 	@override String get settingsButton => 'Playback nastavení';
 	@override String get tracksButton => 'Audio a subtituly';
-	@override String get trackSelectionTitle => 'Zvolte stopy před playbackem';
-	@override String get trackSelectionAuto => 'Automatické výběr';
 	@override String get chaptersButton => 'Kapitoly';
 	@override String get versionQualityButton => 'Verze a kvalita';
 	@override String get versionColumnHeader => 'Verze';
@@ -1298,8 +1218,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Překódování není k dispozici – hraje originální kvalitu';
 	@override String get subtitleUnavailableFallback => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů';
 	@override String get pipButton => 'Obrazový režim - Picture in-Picture';
-	@override String get openMiniPlayer => 'Otevřený mini hráč';
-	@override String get returnToFullPlayer => 'Zpět na plný hráč';
 	@override String get aspectRatioButton => 'Poměr stran';
 	@override String get ambientLighting => 'Atmosférické osvětlení';
 	@override String get fullscreenButton => 'Vstup na plný obrazovek';
@@ -1308,7 +1226,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'rotační zámek';
 	@override String get lockScreen => 'Závěsný obrazovek';
 	@override String get screenLockButton => 'Zámek obrazovky';
-	@override String get longPressToUnlock => 'Dlouhý tlak na odemknutí';
 	@override String get timelineSlider => 'Video časové linie';
 	@override String get volumeSlider => 'Úroveň objemu';
 	@override String endsAt({required Object time}) => 'Končí na ${time}';
@@ -1325,8 +1242,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Žádné položky v kousku';
 	@override String get noAudioDevicesAvailable => 'Žádné audio zařízení k dispozici';
 	@override String get searchSubtitles => 'Podtitul hledání';
-	@override String get loadSubtitleFile => 'Přihláška souboru Subtitle...';
-	@override String get subtitleLoadFailed => 'Nedokázal přenést soubor subtitle';
 	@override String get language => 'Jazyk';
 	@override String get noSubtitlesFound => 'Žádné podtitulky nalezeny';
 	@override String get subtitleDownloaded => 'Subtítky stažené';
@@ -1335,7 +1250,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Vyhledávací jazyky...';
 	@override String get skipIntro => 'Skříň vstupuje';
 	@override String get skipCredits => 'Skok úvěrů';
-	@override String get skipAds => 'Skřípání Ads';
 	@override String get nextEpisode => 'Další díl';
 	@override String subtitleTrack({required Object n}) => 'Původní číslo ${n}';
 	@override String subtitleFile({required Object name}) => 'Článek ${name}';
@@ -1343,6 +1257,21 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Název titulu: Off';
 	@override String osdSubtitles({required Object track}) => 'Články v kategorii: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio číslo: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků',
+	);
+	@override String get trackSelectionTitle => 'Zvolte stopy před playbackem';
+	@override String get trackSelectionAuto => 'Automatické výběr';
+	@override String get openMiniPlayer => 'Otevřený mini hráč';
+	@override String get returnToFullPlayer => 'Zpět na plný hráč';
+	@override String get loadSubtitleFile => 'Přihláška souboru Subtitle...';
+	@override String get subtitleLoadFailed => 'Nedokázal přenést soubor subtitle';
+	@override String get skipAds => 'Skřípání Ads';
+	@override String get tapToUnlock => 'Klepnutím odemknete';
+	@override String get tapAgainToUnlock => 'Opětovným klepnutím odemknete';
 }
 
 // Path: messages
@@ -1842,16 +1771,6 @@ class _Translations$logs$cs extends Translations$logs$en {
 	@override String get saveLogs => 'Shromažďujte záznamy do souboru';
 	@override String logsSaved({required Object path}) => 'Přihlášky uložené na ${path}';
 	@override String get saveLogsFailed => 'Nemohla jsem uložit soubor.';
-}
-
-// Path: detail
-class _Translations$detail$cs extends Translations$detail$en {
-	_Translations$detail$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Končí na ${time}';
 }
 
 // Path: startup
@@ -2941,6 +2860,88 @@ class _Translations$addServer$cs extends Translations$addServer$en {
 	@override String get httpsRequired => 'Použití HTTPS nebo výslovně umožnit nekryptované připojení.';
 }
 
+// Path: cast
+class _Translations$cast$cs extends Translations$cast$en {
+	_Translations$cast$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Odeslat do zařízení';
+	@override String get searching => 'Hledání zařízení pro výkresy...';
+	@override String connectedTo({required Object device}) => 'Připojení k číslu ${device}';
+	@override String get device => 'Zařízení pro odesílání';
+	@override String get readyToCast => 'Připraveno k odesílání';
+	@override String get subtitle => 'Titulky';
+	@override String get serverNotAvailable => 'Media server není k dispozici.';
+	@override String get stopCasting => 'Ukončit odesílání';
+	@override String get castToDevice => 'Odeslat do zařízení';
+	@override String get noEpisodeAvailable => 'Neexistuje žádná epizoda k dispozici.';
+	@override String get startFailed => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.';
+}
+
+// Path: automation
+class _Translations$automation$cs extends Translations$automation$en {
+	_Translations$automation$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Neexistuje žádná aktivní videozáznamy k ovládání.';
+}
+
+// Path: notifications
+class _Translations$notifications$cs extends Translations$notifications$en {
+	_Translations$notifications$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Nová epizoda';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$cs extends Translations$appAccess$en {
+	_Translations$appAccess$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Zkuste každou funkci zdarma po dobu 7 dní';
+	@override String get description => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.';
+	@override String get trialEndedDescription => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.';
+	@override String get startTrial => 'Začínám 7denní bezplatný test';
+	@override String get trialActive => 'Váš 7denní plnohodnotný test je aktivní.';
+	@override String get trialEnded => 'Sedmdenní proces skončil.';
+	@override String get trialStartFailed => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.';
+	@override String get lifetimeTitle => 'PlezyNG odemknutá po celý život';
+	@override String get lifetimeBody => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.';
+	@override String get manageTitle => 'PlezyNG Životní přístup';
+	@override String get manageDescription => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.';
+	@override String buy({required Object price}) => 'Odemknout všechny funkce pro ${price}';
+	@override String get loadingPrice => 'Nákladní obchodní cena...';
+	@override String get retryPrice => 'Zpět na cenu Lookup';
+	@override String get restore => 'Obnovte životní nákup';
+	@override String get pending => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.';
+	@override String get storeUnavailable => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.';
+	@override String get productNotFound => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.';
+	@override String get productQueryFailed => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.';
+	@override String get purchaseFailed => 'Nákup neprošel, zkuste to znovu.';
+	@override String get restoreFailed => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.';
+	@override String get nothingToRestore => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.';
+}
+
+// Path: detail
+class _Translations$detail$cs extends Translations$detail$en {
+	_Translations$detail$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Končí na ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$cs extends Translations$watchLink$en {
 	_Translations$watchLink$cs._(TranslationsCs root) : this._root = root, super.internal(root);
@@ -3217,7 +3218,6 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.';
 	@override String get converterStart => 'Převod souborů';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$cs extends Translations$fileSources$en {
@@ -3766,6 +3766,32 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$cs extends Translations$deepLinks$en {
+	_Translations$deepLinks$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Tento odkaz Plezy není platný.';
+	@override String profileNotFound({required Object profile}) => 'Žádný profil se neshoduje s "${profile}".';
+	@override String get serverUnavailable => 'Nemohla jsem se dostat na server pro tento odkaz.';
+	@override String get notFound => 'Tento název v knihovně nenajdete.';
+	@override String get unsupportedItem => 'Tento odkaz nelze hrát.';
+	@override String get noLiveTv => 'Žádný Live TV server není k dispozici pro tento odkaz.';
+	@override String channelNotFound({required Object channel}) => 'Nemohla jsem najít kanál "${channel}".';
+	@override String get showLink => 'Zobrazit link';
+	@override String get showProfileLink => 'Zobrazit profilový link';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.';
+	@override String get movieHint => 'Otevření tohoto odkazu hraje film.';
+	@override String get episodeHint => 'Otvírání tohoto odkazu hraje tento epizod.';
+	@override String get profileHint => 'Otevření tohoto odkazu přepíná na tento profil.';
+	@override String openAsProfile({required Object name}) => 'Otevřete jako ${name}';
+	@override String get copy => 'Kopírování';
+	@override String get copied => 'Link kopírovaný';
 }
 
 // Path: appIcon.names
@@ -4884,21 +4910,6 @@ extension on TranslationsCs {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Odeslat do zařízení',
-			'cast.searching' => 'Hledání zařízení pro výkresy...',
-			'cast.connectedTo' => ({required Object device}) => 'Připojení k číslu ${device}',
-			'cast.device' => 'Zařízení pro odesílání',
-			'cast.readyToCast' => 'Připraveno k odesílání',
-			'cast.subtitle' => 'Titulky',
-			'cast.serverNotAvailable' => 'Media server není k dispozici.',
-			'cast.stopCasting' => 'Ukončit odesílání',
-			'cast.castToDevice' => 'Odeslat do zařízení',
-			'cast.noEpisodeAvailable' => 'Neexistuje žádná epizoda k dispozici.',
-			'cast.startFailed' => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.',
-			'automation.noActivePlayback' => 'Neexistuje žádná aktivní videozáznamy k ovládání.',
-			'automation.profileNotFound' => 'Tento profil Plezy nebyl nalezen.',
-			'notifications.newEpisodeTitle' => 'Nová epizoda',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'aplikace ikona',
 			'appIcon.defaultIcon' => 'Výchozí',
 			'appIcon.current' => 'Aktuální ikona',
@@ -5061,28 +5072,6 @@ extension on TranslationsCs {
 			'update.viewRelease' => 'Zobrazit Release',
 			'update.latestVersion' => 'Jste na nejnovější verzi',
 			'update.checkFailed' => 'Nedokázal se dohlížet na aktualizace',
-			'appAccess.title' => 'Zkuste každou funkci zdarma po dobu 7 dní',
-			'appAccess.description' => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.',
-			'appAccess.trialEndedDescription' => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.',
-			'appAccess.startTrial' => 'Začínám 7denní bezplatný test',
-			'appAccess.trialActive' => 'Váš 7denní plnohodnotný test je aktivní.',
-			'appAccess.trialEnded' => 'Sedmdenní proces skončil.',
-			'appAccess.trialStartFailed' => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.',
-			'appAccess.lifetimeTitle' => 'PlezyNG odemknutá po celý život',
-			'appAccess.lifetimeBody' => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.',
-			'appAccess.manageTitle' => 'PlezyNG Životní přístup',
-			'appAccess.manageDescription' => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.',
-			'appAccess.buy' => ({required Object price}) => 'Odemknout všechny funkce pro ${price}',
-			'appAccess.loadingPrice' => 'Nákladní obchodní cena...',
-			'appAccess.retryPrice' => 'Zpět na cenu Lookup',
-			'appAccess.restore' => 'Obnovte životní nákup',
-			'appAccess.pending' => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.',
-			'appAccess.storeUnavailable' => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.',
-			'appAccess.productNotFound' => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.',
-			'appAccess.productQueryFailed' => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.',
-			'appAccess.purchaseFailed' => 'Nákup neprošel, zkuste to znovu.',
-			'appAccess.restoreFailed' => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.',
-			'appAccess.nothingToRestore' => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.',
 			'settings.title' => 'Nastavení',
 			'settings.supportDeveloper' => 'Podpora PlezyNG',
 			'settings.supportDeveloperDescription' => 'Dotace na podporu rozvoje',
@@ -5395,8 +5384,6 @@ extension on TranslationsCs {
 			'settings.audioPassthrough' => 'zvuková pasáž',
 			'settings.audioPassthroughDescription' => 'Odeslat Dolby/DTS audio do přijímače nebo televize bez re-kódování, zachování okolního zvuku.',
 			'settings.audioPassthroughDescriptionApple' => 'Použijte nativní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. DTS a TrueHD stále hrají jako multichannel PCM.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Použijte původní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. Na iOS, iPadOS a tvOS 26 nebo později, TrueHD Atmos a DTS:X přehrávat jako prostorový audio. Ostatní DTS a TrueHD stopy přehrávat jako multichannel PCM.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Zastavte, zatímco normalizace hluku je na',
 			'settings.audioChannelLimit' => 'Počet kanálů zvuku',
@@ -5434,6 +5421,8 @@ extension on TranslationsCs {
 			'settings.disableDolbyVisionDescription' => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden',
 			'settings.hdrSdrConversion' => 'HDR na SDR konverze',
 			'settings.hdrSdrConversionDescription' => 'Vyberte, co konvertuje HDR video, když displej nedokáže zobrazit HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Automaticky',
 			'settings.hdrSdrConversionAutoDescription' => 'Přístroj na Android 9 a novější, hráč na starších verzích',
 			'settings.hdrSdrConversionDevice' => 'Zařízení',
@@ -5895,7 +5884,6 @@ extension on TranslationsCs {
 			'tooltips.markAsWatched' => 'Mark jako sledovaný',
 			'tooltips.markAsUnwatched' => 'Mark jako nepozorovaný',
 			'audioTracks.track' => ({required Object n}) => 'Zvukový pás ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků', ), 
 			'videoControls.audioLabel' => 'Zvuk',
 			'videoControls.subtitlesLabel' => 'Titulky',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5909,8 +5897,6 @@ extension on TranslationsCs {
 			'videoControls.sleepTimerEndOfVideo' => 'Konec aktuálního videa',
 			'videoControls.sleepTimerStopAtHeader' => 'Zastavte se',
 			'videoControls.sleepTimerDurationHeader' => 'Časový',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback se zastaví na konci tohoto videa',
 			'videoControls.stillWatching' => 'Stále se díváte?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Odpočinek v ${seconds}s',
@@ -5934,8 +5920,6 @@ extension on TranslationsCs {
 			'videoControls.unmuteButton' => 'Povolit zvuk',
 			'videoControls.settingsButton' => 'Playback nastavení',
 			'videoControls.tracksButton' => 'Audio a subtituly',
-			'videoControls.trackSelectionTitle' => 'Zvolte stopy před playbackem',
-			'videoControls.trackSelectionAuto' => 'Automatické výběr',
 			'videoControls.chaptersButton' => 'Kapitoly',
 			'videoControls.versionQualityButton' => 'Verze a kvalita',
 			'videoControls.versionColumnHeader' => 'Verze',
@@ -5945,17 +5929,16 @@ extension on TranslationsCs {
 			'videoControls.transcodeUnavailableFallback' => 'Překódování není k dispozici – hraje originální kvalitu',
 			'videoControls.subtitleUnavailableFallback' => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů',
 			'videoControls.pipButton' => 'Obrazový režim - Picture in-Picture',
-			'videoControls.openMiniPlayer' => 'Otevřený mini hráč',
-			'videoControls.returnToFullPlayer' => 'Zpět na plný hráč',
 			'videoControls.aspectRatioButton' => 'Poměr stran',
 			'videoControls.ambientLighting' => 'Atmosférické osvětlení',
 			'videoControls.fullscreenButton' => 'Vstup na plný obrazovek',
 			'videoControls.exitFullscreenButton' => 'Výstup na plný obrazovek',
 			'videoControls.alwaysOnTopButton' => 'Vždy na vrcholu',
 			'videoControls.rotationLockButton' => 'rotační zámek',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Závěsný obrazovek',
 			'videoControls.screenLockButton' => 'Zámek obrazovky',
-			'videoControls.longPressToUnlock' => 'Dlouhý tlak na odemknutí',
 			'videoControls.timelineSlider' => 'Video časové linie',
 			'videoControls.volumeSlider' => 'Úroveň objemu',
 			'videoControls.endsAt' => ({required Object time}) => 'Končí na ${time}',
@@ -5979,8 +5962,6 @@ extension on TranslationsCs {
 			'videoControls.noQueueItems' => 'Žádné položky v kousku',
 			'videoControls.noAudioDevicesAvailable' => 'Žádné audio zařízení k dispozici',
 			'videoControls.searchSubtitles' => 'Podtitul hledání',
-			'videoControls.loadSubtitleFile' => 'Přihláška souboru Subtitle...',
-			'videoControls.subtitleLoadFailed' => 'Nedokázal přenést soubor subtitle',
 			'videoControls.language' => 'Jazyk',
 			'videoControls.noSubtitlesFound' => 'Žádné podtitulky nalezeny',
 			'videoControls.subtitleDownloaded' => 'Subtítky stažené',
@@ -5989,7 +5970,6 @@ extension on TranslationsCs {
 			'videoControls.searchLanguages' => 'Vyhledávací jazyky...',
 			'videoControls.skipIntro' => 'Skříň vstupuje',
 			'videoControls.skipCredits' => 'Skok úvěrů',
-			'videoControls.skipAds' => 'Skřípání Ads',
 			'videoControls.nextEpisode' => 'Další díl',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Původní číslo ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Článek ${name}',
@@ -5997,6 +5977,16 @@ extension on TranslationsCs {
 			'videoControls.osdSubtitlesOff' => 'Název titulu: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Články v kategorii: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio číslo: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků', ), 
+			'videoControls.trackSelectionTitle' => 'Zvolte stopy před playbackem',
+			'videoControls.trackSelectionAuto' => 'Automatické výběr',
+			'videoControls.openMiniPlayer' => 'Otevřený mini hráč',
+			'videoControls.returnToFullPlayer' => 'Zpět na plný hráč',
+			'videoControls.loadSubtitleFile' => 'Přihláška souboru Subtitle...',
+			'videoControls.subtitleLoadFailed' => 'Nedokázal přenést soubor subtitle',
+			'videoControls.skipAds' => 'Skřípání Ads',
+			'videoControls.tapToUnlock' => 'Klepnutím odemknete',
+			'videoControls.tapAgainToUnlock' => 'Opětovným klepnutím odemknete',
 			'messages.markedAsWatched' => 'označené jako sledované',
 			'messages.markedAsUnwatched' => 'označené jako nepozorované',
 			'messages.markedAsWatchedOffline' => 'Zaznamenáno jako sledované (synchronizuje se, když je online)',
@@ -6423,8 +6413,6 @@ extension on TranslationsCs {
 			'libraries.all' => 'Vše',
 			'libraries.clearAll' => 'Jasné vše',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete skenovat "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete analyzovat "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Jste si jisti, že chcete aktualizovat metadata pro "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Jste si jisti, že chcete prázdný odpad pro "${title}"?',
@@ -6461,6 +6449,8 @@ extension on TranslationsCs {
 			'libraries.filterCategories.year' => 'Rok',
 			'libraries.filterCategories.contentRating' => 'Hodnocení obsahu',
 			'libraries.filterCategories.tag' => 'Štítek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Nepřehlédnutí',
 			'libraries.filterCategories.unplayed' => 'Nepřehrané',
 			'libraries.filterCategories.favorites' => 'Oblíbené',
@@ -6542,7 +6532,6 @@ extension on TranslationsCs {
 			'logs.saveLogs' => 'Shromažďujte záznamy do souboru',
 			'logs.logsSaved' => ({required Object path}) => 'Přihlášky uložené na ${path}',
 			'logs.saveLogsFailed' => 'Nemohla jsem uložit soubor.',
-			'detail.endsAt' => ({required Object time}) => 'Končí na ${time}',
 			'startup.failedTitle' => 'PlezyNG nemohl začít',
 			'startup.failedBody' => 'Něco se během start-upu zhroutilo. podrobnosti níže identifikují to, co selžilo.',
 			'startup.failedBodyRepairable' => 'Uložený soubor nastavení PlezyNG je poškozený a před spuštěním aplikace je nutné jej znovu vytvořit. Další pokus nepomůže — zvolte opravu úložiště.',
@@ -6937,8 +6926,6 @@ extension on TranslationsCs {
 			'watchTogether.connecting' => 'Připojení...',
 			'watchTogether.relayPublic' => 'Pokoje využívají veřejné Open Watch Party relace.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Pokoje používají váš relay na ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Poslední pokoje',
 			'watchTogether.roomActions' => 'Akce v místnosti',
 			'watchTogether.renameRoom' => 'Rekonstrukce pokoje',
@@ -6976,6 +6963,8 @@ extension on TranslationsCs {
 			'watchTogether.playAnyway' => 'Hrajte jakkoliv',
 			'watchTogether.chooseAnotherCopy' => 'Vyberte další kopii',
 			'watchTogether.dontPlay' => 'Nehrát si',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Nemáte toto video',
 			'watchTogether.unavailableDescription' => 'PlezyNG nemohl najít v knihovně. vyberte si kopii sami nebo vyhledejte znovu.',
 			'watchTogether.chooseCopy' => 'Vyberte si kopii',
@@ -7451,8 +7440,6 @@ extension on TranslationsCs {
 			'metadataEdit.metadataUpdateFailed' => 'Nedokázal aktualizovat metadata',
 			'metadataEdit.artworkUpdated' => 'Umělecká aktualizace',
 			'metadataEdit.artworkUpdateFailed' => 'Nedokázal aktualizovat umělecké dílo',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'K dispozici žádné umělecké dílo',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Umělecká volba ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Možnost umělecké práce ${index}, vybraná',
@@ -7490,6 +7477,8 @@ extension on TranslationsCs {
 			'metadataEdit.shownWithForeignAudio' => 'Zahraniční audio',
 			'metadataEdit.alwaysEnabled' => 'Vždy povolená',
 			'metadataEdit.tags' => 'Štítky',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Přidat tag',
 			'metadataEdit.genre' => 'Žánr',
 			'metadataEdit.director' => 'Režisér',
@@ -7680,6 +7669,43 @@ extension on TranslationsCs {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} používá HTTP. Lidé v síti mohou číst nebo měnit vaše heslo, tokeny a média. Je-li to možné, použijte HTTPS. Pokračujte pouze v případě, že této síti důvěřujete a přijímáte toto riziko.',
 			'addServer.allowHttp' => 'Přijmout HTTP',
 			'addServer.httpsRequired' => 'Použití HTTPS nebo výslovně umožnit nekryptované připojení.',
+			'cast.chooseDevice' => 'Odeslat do zařízení',
+			'cast.searching' => 'Hledání zařízení pro výkresy...',
+			'cast.connectedTo' => ({required Object device}) => 'Připojení k číslu ${device}',
+			'cast.device' => 'Zařízení pro odesílání',
+			'cast.readyToCast' => 'Připraveno k odesílání',
+			'cast.subtitle' => 'Titulky',
+			'cast.serverNotAvailable' => 'Media server není k dispozici.',
+			'cast.stopCasting' => 'Ukončit odesílání',
+			'cast.castToDevice' => 'Odeslat do zařízení',
+			'cast.noEpisodeAvailable' => 'Neexistuje žádná epizoda k dispozici.',
+			'cast.startFailed' => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.',
+			'automation.noActivePlayback' => 'Neexistuje žádná aktivní videozáznamy k ovládání.',
+			'notifications.newEpisodeTitle' => 'Nová epizoda',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Zkuste každou funkci zdarma po dobu 7 dní',
+			'appAccess.description' => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.',
+			'appAccess.trialEndedDescription' => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.',
+			'appAccess.startTrial' => 'Začínám 7denní bezplatný test',
+			'appAccess.trialActive' => 'Váš 7denní plnohodnotný test je aktivní.',
+			'appAccess.trialEnded' => 'Sedmdenní proces skončil.',
+			'appAccess.trialStartFailed' => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.',
+			'appAccess.lifetimeTitle' => 'PlezyNG odemknutá po celý život',
+			'appAccess.lifetimeBody' => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.',
+			'appAccess.manageTitle' => 'PlezyNG Životní přístup',
+			'appAccess.manageDescription' => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.',
+			'appAccess.buy' => ({required Object price}) => 'Odemknout všechny funkce pro ${price}',
+			'appAccess.loadingPrice' => 'Nákladní obchodní cena...',
+			'appAccess.retryPrice' => 'Zpět na cenu Lookup',
+			'appAccess.restore' => 'Obnovte životní nákup',
+			'appAccess.pending' => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.',
+			'appAccess.storeUnavailable' => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.',
+			'appAccess.productNotFound' => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.',
+			'appAccess.productQueryFailed' => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.',
+			'appAccess.purchaseFailed' => 'Nákup neprošel, zkuste to znovu.',
+			'appAccess.restoreFailed' => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.',
+			'appAccess.nothingToRestore' => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.',
+			'detail.endsAt' => ({required Object time}) => 'Končí na ${time}',
 			'watchLink.serverUnavailable' => 'Nemohl jsem se dostat k serveru Plex pro tento odkaz.',
 			'watchLink.notFound' => 'Nemohl jsem najít tento show nebo film na vašich serverech Plex.',
 			'watchLink.ambiguous' => 'Tento odkaz se shoduje s položkami na více než jednom serveru. Přidejte server na odkaz.',
@@ -7815,7 +7841,7 @@ extension on TranslationsCs {
 			'universalMedia.saveFavorite' => 'Zachraňte oblíbené',
 			'universalMedia.playNow' => 'Hrajte nyní',
 			'universalMedia.favoriteSaved' => 'Stream oblíbené uložené do tohoto profilu',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ), 
 			'universalMedia.playlistAddress' => 'Playlistová adresa',
 			'universalMedia.playlistAddressHelp' => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.',
 			'universalMedia.choosePlaylist' => 'Vyberte soubor playlist',
@@ -7825,7 +7851,7 @@ extension on TranslationsCs {
 			'universalMedia.removeFavorite' => 'Odstranit stream oblíbené',
 			'universalMedia.filesHelp' => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.',
 			'universalMedia.chooseFiles' => 'Vyberte soubory',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ), 
 			'universalMedia.wifiTransfer' => 'Odesílání souborů přes Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.',
 			'universalMedia.wifiTransferIntro' => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.',
@@ -7836,7 +7862,7 @@ extension on TranslationsCs {
 			'universalMedia.copyAddress' => 'Kopírování transferové adresy',
 			'universalMedia.addressCopied' => 'Přenosová adresa kopírovaná',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Tato adresa vyprší v ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Obdržel ${size}',
 			'universalMedia.stopTransfer' => 'Zastavení přenosu a zrušení adresy',
 			'universalMedia.startTransfer' => 'Začátek transferu',
@@ -7965,6 +7991,8 @@ extension on TranslationsCs {
 			'fileSources.bookmark' => 'Přidat bookmark',
 			'fileSources.highlight' => 'Vysvětlení',
 			'fileSources.note' => 'Poznámka',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Odstranit',
 			'fileSources.export' => 'Exportní poznámky',
 			'fileSources.exported' => 'Poznámky vyvážené',
@@ -8077,8 +8105,6 @@ extension on TranslationsCs {
 			'fileSources.offlineQuotaHelp' => 'Nastavení maximálního místa použitého offline kopie, dovezené soubory a stažené stahování. Snížení limitu neodstraňuje stávající kopie.',
 			'fileSources.offlineStorageUsage' => 'Offline skladování',
 			'fileSources.reservedStorage' => 'Rezervované',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Stáhnout Queue',
 			'fileSources.downloadRunning' => 'Stáhnout',
 			'fileSources.downloadQueued' => 'Čekání',
@@ -8398,6 +8424,23 @@ extension on TranslationsCs {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Tento odkaz Plezy není platný.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Žádný profil se neshoduje s "${profile}".',
+			'deepLinks.serverUnavailable' => 'Nemohla jsem se dostat na server pro tento odkaz.',
+			'deepLinks.notFound' => 'Tento název v knihovně nenajdete.',
+			'deepLinks.unsupportedItem' => 'Tento odkaz nelze hrát.',
+			'deepLinks.noLiveTv' => 'Žádný Live TV server není k dispozici pro tento odkaz.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Nemohla jsem najít kanál "${channel}".',
+			'deepLinks.showLink' => 'Zobrazit link',
+			'deepLinks.showProfileLink' => 'Zobrazit profilový link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.',
+			'deepLinks.movieHint' => 'Otevření tohoto odkazu hraje film.',
+			'deepLinks.episodeHint' => 'Otvírání tohoto odkazu hraje tento epizod.',
+			'deepLinks.profileHint' => 'Otevření tohoto odkazu přepíná na tento profil.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Otevřete jako ${name}',
+			'deepLinks.copy' => 'Kopírování',
+			'deepLinks.copied' => 'Link kopírovaný',
 			_ => null,
 		};
 	}

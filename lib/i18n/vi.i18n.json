@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Truyền đến thiết bị",
-    "searching": "Tìm kiếm các thiết bị Cast...",
-    "connectedTo": "Kết nối với ${device}",
-    "device": "Thiết bị truyền",
-    "readyToCast": "Sẵn sàng truyền",
-    "subtitle": "Phụ đề",
-    "serverNotAvailable": "Server phương tiện truyền thông không sẵn dùng.",
-    "stopCasting": "Dừng truyền",
-    "castToDevice": "Truyền đến thiết bị",
-    "noEpisodeAvailable": "Không có tập nào có sẵn để phát.",
-    "startFailed": "Không thể bắt đầu casting. kiểm tra máy chủ và thử lại."
-  },
-  "automation": {
-    "noActivePlayback": "Không có phiên video hoạt động để kiểm soát.",
-    "profileNotFound": "Hồ sơ Plezy không thể tìm thấy."
-  },
-  "notifications": {
-    "newEpisodeTitle": "episode mới",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "ứng dụng icon",
     "defaultIcon": "Mặc Định",
@@ -200,30 +179,6 @@
     "viewRelease": "Xem bản phát hành",
     "latestVersion": "Bạn đang ở phiên bản mới nhất",
     "checkFailed": "Không kiểm tra cho các bản cập nhật"
-  },
-  "appAccess": {
-    "title": "Cố gắng mọi tính năng miễn phí trong 7 ngày",
-    "description": "Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.",
-    "trialEndedDescription": "Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.",
-    "startTrial": "Bắt đầu bài kiểm tra miễn phí 7 ngày",
-    "trialActive": "Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.",
-    "trialEnded": "Cuộc thi 7 ngày đã kết thúc",
-    "trialStartFailed": "Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.",
-    "lifetimeTitle": "PlezyNG mở khóa suốt đời",
-    "lifetimeBody": "Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.",
-    "manageTitle": "PlezyNG Thời gian truy cập",
-    "manageDescription": "Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.",
-    "buy": "Khóa tất cả các tính năng cho ${price}",
-    "loadingPrice": "Giá bán hàng tải...",
-    "retryPrice": "Retry giá lookup",
-    "restore": "Lợi ích mua sắm suốt đời",
-    "pending": "Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.",
-    "storeUnavailable": "Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.",
-    "productNotFound": "Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.",
-    "productQueryFailed": "Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.",
-    "purchaseFailed": "Mua sắm không qua được. thử lại.",
-    "restoreFailed": "Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.",
-    "nothingToRestore": "Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này."
   },
   "settings": {
     "title": "Cài đặt",
@@ -1074,9 +1029,6 @@
     "track": "Âm thanh Track ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} khung"
-    },
     "audioLabel": "Âm thanh",
     "subtitlesLabel": "Phụ đề",
     "addTime": "+${amount}${unit}",
@@ -1113,8 +1065,6 @@
     "unmuteButton": "Bật Tiếng",
     "settingsButton": "Cài đặt Playback",
     "tracksButton": "Âm thanh & Subtitles",
-    "trackSelectionTitle": "Lựa chọn đường trước khi playback",
-    "trackSelectionAuto": "Tự động Selection",
     "chaptersButton": "Chương 1",
     "versionQualityButton": "Phiên bản & Chất lượng",
     "versionColumnHeader": "Phiên bản",
@@ -1124,8 +1074,6 @@
     "transcodeUnavailableFallback": "Transcoding unavailable — chơi chất lượng ban đầu",
     "subtitleUnavailableFallback": "Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề",
     "pipButton": "Hình ảnh trong hình ảnh mode",
-    "openMiniPlayer": "Trò chơi Mini Open",
-    "returnToFullPlayer": "Trở lại cầu thủ đầy đủ",
     "aspectRatioButton": "Tỷ Lệ Khung Hình",
     "ambientLighting": "Ánh sáng môi trường",
     "fullscreenButton": "Nhập Fullscreen",
@@ -1134,7 +1082,6 @@
     "rotationLockButton": "Lock xoay",
     "lockScreen": "Màn hình Lock",
     "screenLockButton": "màn hình lock",
-    "longPressToUnlock": "Lâu áp lực để mở khóa",
     "timelineSlider": "Thanh thời gian video",
     "volumeSlider": "Tỷ lệ Volume",
     "endsAt": "Kết thúc tại ${time}",
@@ -1160,8 +1107,6 @@
     "noQueueItems": "Không có mặt hàng trong quue",
     "noAudioDevicesAvailable": "Không có thiết bị âm thanh",
     "searchSubtitles": "Tìm kiếm Subtitles",
-    "loadSubtitleFile": "tải file subtitle...",
-    "subtitleLoadFailed": "Không tải file subtitle",
     "language": "Ngôn ngữ",
     "noSubtitlesFound": "Không tìm thấy subtitles",
     "subtitleDownloaded": "Subtitle tải xuống",
@@ -1170,14 +1115,25 @@
     "searchLanguages": "Tìm kiếm ngôn ngữ...",
     "skipIntro": "Tải Skip Intro",
     "skipCredits": "Skip tín dụng",
-    "skipAds": "Tải Ads",
     "nextEpisode": "Tập Kế Tiếp",
     "subtitleTrack": "Đường sắt ${n}",
     "subtitleFile": "Chủ đề: ${name}",
     "forcedTrack": "${label} (được bắt buộc)",
     "osdSubtitlesOff": "Chủ đề: Off",
     "osdSubtitles": "Đánh giá: ${track}",
-    "osdAudio": "Âm thanh: ${track}"
+    "osdAudio": "Âm thanh: ${track}",
+    "frameCount": {
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} khung"
+    },
+    "trackSelectionTitle": "Lựa chọn đường trước khi playback",
+    "trackSelectionAuto": "Tự động Selection",
+    "openMiniPlayer": "Trò chơi Mini Open",
+    "returnToFullPlayer": "Trở lại cầu thủ đầy đủ",
+    "loadSubtitleFile": "tải file subtitle...",
+    "subtitleLoadFailed": "Không tải file subtitle",
+    "skipAds": "Tải Ads",
+    "tapToUnlock": "Chạm để mở khóa",
+    "tapAgainToUnlock": "Chạm lại để mở khóa"
   },
   "userStatus": {},
   "messages": {
@@ -1786,9 +1742,6 @@
     "saveLogs": "Save Logs to File - Lưu Logs đến File",
     "logsSaved": "Đăng ký được lưu đến ${path}",
     "saveLogsFailed": "Không thể lưu file log."
-  },
-  "detail": {
-    "endsAt": "Kết thúc tại ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG không thể bắt đầu",
@@ -3051,6 +3004,53 @@
     "allowHttp": "Cho phép HTTP",
     "httpsRequired": "Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa."
   },
+  "cast": {
+    "chooseDevice": "Truyền đến thiết bị",
+    "searching": "Tìm kiếm các thiết bị Cast...",
+    "connectedTo": "Kết nối với ${device}",
+    "device": "Thiết bị truyền",
+    "readyToCast": "Sẵn sàng truyền",
+    "subtitle": "Phụ đề",
+    "serverNotAvailable": "Server phương tiện truyền thông không sẵn dùng.",
+    "stopCasting": "Dừng truyền",
+    "castToDevice": "Truyền đến thiết bị",
+    "noEpisodeAvailable": "Không có tập nào có sẵn để phát.",
+    "startFailed": "Không thể bắt đầu casting. kiểm tra máy chủ và thử lại."
+  },
+  "automation": {
+    "noActivePlayback": "Không có phiên video hoạt động để kiểm soát."
+  },
+  "notifications": {
+    "newEpisodeTitle": "episode mới",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Cố gắng mọi tính năng miễn phí trong 7 ngày",
+    "description": "Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.",
+    "trialEndedDescription": "Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.",
+    "startTrial": "Bắt đầu bài kiểm tra miễn phí 7 ngày",
+    "trialActive": "Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.",
+    "trialEnded": "Cuộc thi 7 ngày đã kết thúc",
+    "trialStartFailed": "Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.",
+    "lifetimeTitle": "PlezyNG mở khóa suốt đời",
+    "lifetimeBody": "Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.",
+    "manageTitle": "PlezyNG Thời gian truy cập",
+    "manageDescription": "Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.",
+    "buy": "Khóa tất cả các tính năng cho ${price}",
+    "loadingPrice": "Giá bán hàng tải...",
+    "retryPrice": "Retry giá lookup",
+    "restore": "Lợi ích mua sắm suốt đời",
+    "pending": "Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.",
+    "storeUnavailable": "Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.",
+    "productNotFound": "Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.",
+    "productQueryFailed": "Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.",
+    "purchaseFailed": "Mua sắm không qua được. thử lại.",
+    "restoreFailed": "Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.",
+    "nothingToRestore": "Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này."
+  },
+  "detail": {
+    "endsAt": "Kết thúc tại ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Tôi không thể truy cập một máy chủ Plex cho liên kết này.",
     "notFound": "Tôi không thể tìm thấy chương trình hoặc bộ phim này trên máy chủ của bạn Plex.",
@@ -3794,5 +3794,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "Liên kết Plezy này không hợp lệ.",
+    "profileNotFound": "Không có hồ sơ phù hợp với \"${profile}\".",
+    "serverUnavailable": "Tôi không thể truy cập máy chủ cho liên kết này.",
+    "notFound": "Tôi không thể tìm thấy tiêu đề này trong thư viện của bạn.",
+    "unsupportedItem": "Link này không thể chơi được.",
+    "noLiveTv": "Không có máy chủ TV trực tiếp có sẵn cho liên kết này.",
+    "channelNotFound": "Không thể tìm thấy kênh \"${channel}\".",
+    "showLink": "Hiển thị link",
+    "showProfileLink": "Hiển thị profile link",
+    "dialogTitle": "liên kết",
+    "showHint": "Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.",
+    "movieHint": "Mở liên kết này chơi bộ phim.",
+    "episodeHint": "Mở liên kết này chơi phần này.",
+    "profileHint": "Mở liên kết này chuyển đổi đến hồ sơ này.",
+    "openAsProfile": "Mở như ${name}",
+    "copy": "sao chép",
+    "copied": "Link copy"
   }
 }

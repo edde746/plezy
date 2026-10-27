@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Изтеглете подзаглавието на файла.",
     "subtitleLoadFailed": "Не успя да изтеглите файл подзаглавие",
     "skipAds": "Скип реклами",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Докоснете, за да отключите",
+    "tapAgainToUnlock": "Докоснете отново, за да отключите"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Не може да започне кастинг. проверете сървъра и опитайте отново."
   },
   "automation": {
-    "noActivePlayback": "Няма активна видео сесия за контрол.",
-    "profileNotFound": "Този профил Plezy не може да бъде намерен."
+    "noActivePlayback": "Няма активна видео сесия за контрол."
   },
   "notifications": {
     "newEpisodeTitle": "Нов епизод",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Този Plezy линк не е валиден.",
+    "profileNotFound": "Няма профил, който да съответства на \"${profile}\".",
+    "serverUnavailable": "Не можех да стигна до сървъра за този линк.",
+    "notFound": "Не мога да намеря този заглавие в библиотеките си.",
+    "unsupportedItem": "Този линк не може да се играе.",
+    "noLiveTv": "Няма телевизионни сървъри за този линк.",
+    "channelNotFound": "Не мога да намеря канал \"${channel}\".",
+    "showLink": "Покажи линк",
+    "showProfileLink": "Профил линк",
+    "dialogTitle": "Линк",
+    "showHint": "Отворенето на този линк играе следващия епизод. Добавете &mode=shuffle за да играете шоуто на shuffle.",
+    "movieHint": "Отварянето на този линк играе филма.",
+    "episodeHint": "Отварянето на този линк играе този епизод.",
+    "profileHint": "Отварянето на този линк превключва към този профил.",
+    "openAsProfile": "Отворете като ${name}",
+    "copy": "Копиране",
+    "copied": "Линкът копиран"
   }
 }

@@ -56,6 +56,11 @@ It separates semantic sample review from automated scans, records before/after
 corrections, and documents the review limits. Its coverage applies to the
 catalog snapshot named in the report; it is not approval of every message.
 
+The 3.0.0 deep-link and playback screen-lock strings are recorded separately in
+[LANGUAGE_QA_3_0_0.md](LANGUAGE_QA_3_0_0.md), with per-message origins and a
+correction ledger. Structural coverage and targeted AI corrections do not
+replace native-speaker review.
+
 The [universal media QA addendum](LANGUAGE_QA_UNIVERSAL_MEDIA.md) records the 112 new feature messages, M2M100 draft provenance, two explicit plural fallbacks, and the lack of native-speaker review.
 
 The [integration QA addendum](LANGUAGE_QA_INTEGRATION.md) records the discovery

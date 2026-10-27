@@ -1150,8 +1150,8 @@
     "loadSubtitleFile": "Pobierz subtitle plik...",
     "subtitleLoadFailed": "Nie udało się pobrać subtitle",
     "skipAds": "Skok reklam",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Dotknij, aby odblokować",
+    "tapAgainToUnlock": "Dotknij ponownie, aby odblokować"
   },
   "userStatus": {},
   "messages": {
@@ -3081,8 +3081,7 @@
     "startFailed": "Nie można zacząć casting. sprawdź serwer i spróbuj ponownie."
   },
   "automation": {
-    "noActivePlayback": "Nie ma aktywnej sesji wideo do kontroli.",
-    "profileNotFound": "Ten profil Plezy nie można znaleźć."
+    "noActivePlayback": "Nie ma aktywnej sesji wideo do kontroli."
   },
   "notifications": {
     "newEpisodeTitle": "Nowy epizod",
@@ -3872,22 +3871,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Ten link Plezy nie jest ważny.",
+    "profileNotFound": "Nie ma profilu odpowiadającego \"${profile}\".",
+    "serverUnavailable": "Nie mogłem dotrzeć do serwera dla tego linku.",
+    "notFound": "Tego tytułu nie znajdziesz w Twoich bibliotekach.",
+    "unsupportedItem": "Ten link nie można odtwarzać.",
+    "noLiveTv": "Żaden serwer telewizyjny na żywo nie jest dostępny dla tego linku.",
+    "channelNotFound": "Nie mogłem znaleźć kanału \"${channel}\".",
+    "showLink": "Pokaż link",
+    "showProfileLink": "Pokaż link profilowy",
+    "dialogTitle": "Link",
+    "showHint": "Otwieranie tego linku odtwarza następny odcinek. Dodaj &mode=shuffle do odtwarzania programu na shuffle.",
+    "movieHint": "Otwierając ten link odtwarza film.",
+    "episodeHint": "Otwarcie tego linku odgrywa ten odcinek.",
+    "profileHint": "Otwieranie tego linku przesuwa się do tego profilu.",
+    "openAsProfile": "Otwórz jako ${name}",
+    "copy": "Kopia",
+    "copied": "Link kopiowany"
   }
 }

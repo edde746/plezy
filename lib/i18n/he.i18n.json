@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "שידור למכשיר",
-    "searching": "מחפשים מכשירים לגידול...",
-    "connectedTo": "חיבור ל- ${device}",
-    "device": "מכשיר לשידור",
-    "readyToCast": "מוכן לשידור",
-    "subtitle": "כתוביות",
-    "serverNotAvailable": "שרת התקשורת אינו זמין.",
-    "stopCasting": "הפסקת השידור",
-    "castToDevice": "שידור למכשיר",
-    "noEpisodeAvailable": "אין פרקים זמינים להורדה.",
-    "startFailed": "לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב."
-  },
-  "automation": {
-    "noActivePlayback": "אין וידאו פעיל כדי לשלוט.",
-    "profileNotFound": "לא ניתן היה למצוא את הפרופיל Plezy."
-  },
-  "notifications": {
-    "newEpisodeTitle": "פרק חדש",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "אפליקציה icon",
     "defaultIcon": "ברירת מחדל",
@@ -200,30 +179,6 @@
     "viewRelease": "ראה שחרור",
     "latestVersion": "אתם נמצאים בגרסה האחרונה",
     "checkFailed": "לא הצלחתי לבדוק עדכונים"
-  },
-  "appAccess": {
-    "title": "נסה כל תכונה בחינם במשך 7 ימים",
-    "description": "התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.",
-    "trialEndedDescription": "לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.",
-    "startTrial": "התחל את הניסוי החופשי שלי 7 ימים",
-    "trialActive": "המבחן המלא של 7 הימים שלך הוא פעיל.",
-    "trialEnded": "התביעה של 7 ימים הסתיימה",
-    "trialStartFailed": "לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.",
-    "lifetimeTitle": "PlezyNG פתוח לכל החיים",
-    "lifetimeBody": "יש לך גישה לכל החיים לכל תכונה PlezyNG.",
-    "manageTitle": "PlezyNG גישה לכל החיים",
-    "manageDescription": "נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.",
-    "buy": "לחסום כל תכונה עבור ${price}",
-    "loadingPrice": "מחירים של חנות ...",
-    "retryPrice": "מחיר החזר מחפש",
-    "restore": "החזרת רכישות לכל החיים",
-    "pending": "הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.",
-    "storeUnavailable": "קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.",
-    "productNotFound": "הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.",
-    "productQueryFailed": "לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.",
-    "purchaseFailed": "הקנייה לא עברה, נסה שוב.",
-    "restoreFailed": "לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.",
-    "nothingToRestore": "מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה."
   },
   "settings": {
     "title": "הגדרות",
@@ -1081,10 +1036,6 @@
     "track": "אודיו טרק ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} מסגרת",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} פרמטרים"
-    },
     "audioLabel": "שמע",
     "subtitlesLabel": "כתוביות",
     "addTime": "+${amount}${unit}",
@@ -1121,8 +1072,6 @@
     "unmuteButton": "ביטול השתקה",
     "settingsButton": "תגית: Playback Settings",
     "tracksButton": "אודיו & תת-כותרות",
-    "trackSelectionTitle": "בחר רצועות לפני המשחק",
-    "trackSelectionAuto": "בחירה אוטומטית",
     "chaptersButton": "פרק",
     "versionQualityButton": "גרסה ואיכות",
     "versionColumnHeader": "גרסה",
@@ -1132,8 +1081,6 @@
     "transcodeUnavailableFallback": "טרנסקוד לא זמין - לשחק באיכות מקורית",
     "subtitleUnavailableFallback": "תחתונים שנבחרו לא ניתן להעלות — המשך ללא תחתונים",
     "pipButton": "מצלמת תמונה-in-Picture",
-    "openMiniPlayer": "שחקן מיני פתוח",
-    "returnToFullPlayer": "חזרה לשחקן מלא",
     "aspectRatioButton": "יחס גובה-רוחב",
     "ambientLighting": "תאורה סביבתית",
     "fullscreenButton": "כניסה למסך מלא",
@@ -1142,7 +1089,6 @@
     "rotationLockButton": "מקלדת סיבוב",
     "lockScreen": "מסך סגור",
     "screenLockButton": "מסך סגור",
-    "longPressToUnlock": "לחץ ארוך כדי לפתוח",
     "timelineSlider": "וידאו Timeline",
     "volumeSlider": "רמת נפח",
     "endsAt": "תגיות קשורות ${time}",
@@ -1168,8 +1114,6 @@
     "noQueueItems": "אין פריטים ב- Queue",
     "noAudioDevicesAvailable": "אין מכשירים אודיו זמינים",
     "searchSubtitles": "חיפוש תת-כותרות",
-    "loadSubtitleFile": "הורד את הקובץ Subtitle",
-    "subtitleLoadFailed": "לא הצלחתי להעלות את הקובץ תחת הכותרת",
     "language": "שפה",
     "noSubtitlesFound": "לא נמצאו תת-כותרות",
     "subtitleDownloaded": "Subtitle הורדה",
@@ -1178,14 +1122,26 @@
     "searchLanguages": "חיפוש שפות",
     "skipIntro": "ספין Intro",
     "skipCredits": "ספין אשראי",
-    "skipAds": "סקי Ads",
     "nextEpisode": "הפרק הבא",
     "subtitleTrack": "רצועה ${n}",
     "subtitleFile": "תגית: ${name}",
     "forcedTrack": "${label} (החובה)",
     "osdSubtitlesOff": "תגית: Off",
     "osdSubtitles": "תגית: ${track}",
-    "osdAudio": "אודיו: ${track}"
+    "osdAudio": "אודיו: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} מסגרת",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} פרמטרים"
+    },
+    "trackSelectionTitle": "בחר רצועות לפני המשחק",
+    "trackSelectionAuto": "בחירה אוטומטית",
+    "openMiniPlayer": "שחקן מיני פתוח",
+    "returnToFullPlayer": "חזרה לשחקן מלא",
+    "loadSubtitleFile": "הורד את הקובץ Subtitle",
+    "subtitleLoadFailed": "לא הצלחתי להעלות את הקובץ תחת הכותרת",
+    "skipAds": "סקי Ads",
+    "tapToUnlock": "הקישו כדי לבטל את הנעילה",
+    "tapAgainToUnlock": "הקישו שוב כדי לבטל את הנעילה"
   },
   "userStatus": {},
   "messages": {
@@ -1796,9 +1752,6 @@
     "saveLogs": "שמור לוגים ל-File",
     "logsSaved": "רשומות שנשמרו ל- ${path}",
     "saveLogsFailed": "לא הצלחתי לשמור את קובץ ה-LOG."
-  },
-  "detail": {
-    "endsAt": "תגיות קשורות ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG לא יכול להתחיל",
@@ -3076,6 +3029,53 @@
     "allowHttp": "לאפשר HTTP",
     "httpsRequired": "שימוש ב- HTTPS או מאפשר באופן מפורש חיבור לא מוצפן."
   },
+  "cast": {
+    "chooseDevice": "שידור למכשיר",
+    "searching": "מחפשים מכשירים לגידול...",
+    "connectedTo": "חיבור ל- ${device}",
+    "device": "מכשיר לשידור",
+    "readyToCast": "מוכן לשידור",
+    "subtitle": "כתוביות",
+    "serverNotAvailable": "שרת התקשורת אינו זמין.",
+    "stopCasting": "הפסקת השידור",
+    "castToDevice": "שידור למכשיר",
+    "noEpisodeAvailable": "אין פרקים זמינים להורדה.",
+    "startFailed": "לא יכול להתחיל לגרד.בדוק את השרת ולנסות שוב."
+  },
+  "automation": {
+    "noActivePlayback": "אין וידאו פעיל כדי לשלוט."
+  },
+  "notifications": {
+    "newEpisodeTitle": "פרק חדש",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "נסה כל תכונה בחינם במשך 7 ימים",
+    "description": "התחל ניסיון של שבעה ימים עם גישה מלאה לכל תכונה PlezyNG.אין תשלום במהלך ניסיון ואין מנוי.אחרי ניסיון, רכישה אחת לכל החיים במחיר החנות שלך פותחת PlezyNG לכל החיים.",
+    "trialEndedDescription": "לחסום כל תכונה ב- PlezyNG לחיים עם רכישה אחת במחיר החנות שלך.",
+    "startTrial": "התחל את הניסוי החופשי שלי 7 ימים",
+    "trialActive": "המבחן המלא של 7 הימים שלך הוא פעיל.",
+    "trialEnded": "התביעה של 7 ימים הסתיימה",
+    "trialStartFailed": "לא הצלחתי לשמור את הניסוי על המכשיר הזה, בבקשה נסה שוב.",
+    "lifetimeTitle": "PlezyNG פתוח לכל החיים",
+    "lifetimeBody": "יש לך גישה לכל החיים לכל תכונה PlezyNG.",
+    "manageTitle": "PlezyNG גישה לכל החיים",
+    "manageDescription": "נסה כל תכונה בחינם במשך 7 ימים, ולאחר מכן לפתוח הכל לכל החיים עם תשלום אחד במחיר החנות שלך.",
+    "buy": "לחסום כל תכונה עבור ${price}",
+    "loadingPrice": "מחירים של חנות ...",
+    "retryPrice": "מחיר החזר מחפש",
+    "restore": "החזרת רכישות לכל החיים",
+    "pending": "הרכישה שלך מחכה לתשלום או אישור.הגישה לכל החיים פוגעת ברגע שהחנות ממלאת אותה.",
+    "storeUnavailable": "קניות אינן זמינות.בדוק שאתה נרשם לחנות והקניות מותרות על מכשיר זה.",
+    "productNotFound": "הפסקת החיים PlezyNG עדיין לא זמינה בחנות זו.",
+    "productQueryFailed": "לא יכולתי להעלות את מחיר החנות.בדוק את החיבור שלך ולנסות שוב.",
+    "purchaseFailed": "הקנייה לא עברה, נסה שוב.",
+    "restoreFailed": "לא יכולתי להגיע לחנות כדי להחזיר את הרכישה שלך.",
+    "nothingToRestore": "מספר PlezyNG רכישה לכל החיים נמצאה עבור חשבון החנות הזה."
+  },
+  "detail": {
+    "endsAt": "תגיות קשורות ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "לא יכולתי להגיע לשרת Plex עבור קישור זה.",
     "notFound": "לא מצאתי את ההצגה או הסרט הזה בשרתים שלך Plex.",
@@ -3827,5 +3827,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "קישור Plezy זה אינו חוקי.",
+    "profileNotFound": "אין פרופיל מתאים ל\"${profile}\".",
+    "serverUnavailable": "לא יכולתי להגיע לשרת עבור קישור זה.",
+    "notFound": "לא מצאתי את הכותרת הזאת בספריות שלך.",
+    "unsupportedItem": "לא ניתן לשחק את הקישור הזה.",
+    "noLiveTv": "אין שרת טלוויזיה חי זמין עבור קישור זה.",
+    "channelNotFound": "לא מצאתי ערוץ \"${channel}\".",
+    "showLink": "הצג קישור",
+    "showProfileLink": "הצג פרופיל קישור",
+    "dialogTitle": "קישור",
+    "showHint": "פתיחת הקישור הזה משחק את הפרק הבא.הוסף &mode=shuffle לשחק את ההצגה על shuffle.",
+    "movieHint": "פתיחת הקישור הזה משחק את הסרט.",
+    "episodeHint": "פתיחת קישור זה משחק את הפרק הזה.",
+    "profileHint": "הפתיחה של קישור זה מתפתחת לפרופיל הזה.",
+    "openAsProfile": "פתח כ ${name}",
+    "copy": "עותק",
+    "copied": "קישור עותק"
   }
 }

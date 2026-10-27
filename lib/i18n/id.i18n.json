@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Transmisikan ke perangkat",
-    "searching": "Mencari alat-alat yang terbuat dari ...",
-    "connectedTo": "Menghubungkan ke ${device}",
-    "device": "Perangkat transmisi",
-    "readyToCast": "Siap mentransmisikan",
-    "subtitle": "Subtitel",
-    "serverNotAvailable": "Media server tidak tersedia.",
-    "stopCasting": "Hentikan transmisi",
-    "castToDevice": "Transmisikan ke perangkat",
-    "noEpisodeAvailable": "Tidak ada episode yang tersedia untuk ditayangkan.",
-    "startFailed": "Tidak bisa memulai casting. periksa server dan coba lagi."
-  },
-  "automation": {
-    "noActivePlayback": "Tidak ada sesi video aktif untuk dikendalikan.",
-    "profileNotFound": "Yang Plezy profil tidak dapat ditemukan."
-  },
-  "notifications": {
-    "newEpisodeTitle": "episode baru",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Aplikasi Ikon",
     "defaultIcon": "Bawaan",
@@ -200,30 +179,6 @@
     "viewRelease": "Lihat Release",
     "latestVersion": "Anda berada di versi terbaru",
     "checkFailed": "gagal memeriksa update"
-  },
-  "appAccess": {
-    "title": "Cobalah setiap fitur gratis selama 7 hari",
-    "description": "Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.",
-    "trialEndedDescription": "Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.",
-    "startTrial": "Mulai ujian gratis 7 hari saya",
-    "trialActive": "7 hari ujian full-feature Anda aktif.",
-    "trialEnded": "Pengadilan 7 hari telah berakhir",
-    "trialStartFailed": "Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.",
-    "lifetimeTitle": "PlezyNG dibebaskan untuk hidup",
-    "lifetimeBody": "Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.",
-    "manageTitle": "PlezyNG akses seumur hidup",
-    "manageDescription": "Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.",
-    "buy": "Menghapus setiap fitur untuk ${price}",
-    "loadingPrice": "Harga toko yang terjangkau...",
-    "retryPrice": "Harga Retry Lookup",
-    "restore": "Restorasi pembelian seumur hidup",
-    "pending": "Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.",
-    "storeUnavailable": "Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.",
-    "productNotFound": "Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.",
-    "productQueryFailed": "Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.",
-    "purchaseFailed": "Pembelian tidak berjalan. coba lagi.",
-    "restoreFailed": "Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.",
-    "nothingToRestore": "Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini."
   },
   "settings": {
     "title": "Pengaturan",
@@ -1074,9 +1029,6 @@
     "track": "Trek audio ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} pengaturan"
-    },
     "audioLabel": "Audio yang",
     "subtitlesLabel": "Subtitel",
     "addTime": "+${amount}${unit}",
@@ -1113,8 +1065,6 @@
     "unmuteButton": "Membunyikan",
     "settingsButton": "Pengaturan Playback",
     "tracksButton": "Audio dan Subtitle",
-    "trackSelectionTitle": "Pilih jalur sebelum playback",
-    "trackSelectionAuto": "Seleksi otomatis",
     "chaptersButton": "bab yang",
     "versionQualityButton": "Versi & Kualitas",
     "versionColumnHeader": "Versi",
@@ -1124,8 +1074,6 @@
     "transcodeUnavailableFallback": "Transcoding tidak tersedia – bermain kualitas asli",
     "subtitleUnavailableFallback": "Subtitle yang dipilih tidak dapat dimuat — terus tanpa subtitle",
     "pipButton": "Gambar dalam mode",
-    "openMiniPlayer": "Pemain mini terbuka",
-    "returnToFullPlayer": "Kembali ke Full Player",
     "aspectRatioButton": "Rasio perbandingan",
     "ambientLighting": "Lampu Lingkungan",
     "fullscreenButton": "Masuk ke layar penuh",
@@ -1134,7 +1082,6 @@
     "rotationLockButton": "Lock rotasi",
     "lockScreen": "Lock layar",
     "screenLockButton": "layar lock",
-    "longPressToUnlock": "Tekan panjang untuk membuka kunci",
     "timelineSlider": "Video Timeline",
     "volumeSlider": "Tingkat Volume",
     "endsAt": "Berakhir di ${time}",
@@ -1160,8 +1107,6 @@
     "noQueueItems": "Tidak ada item dalam kue",
     "noAudioDevicesAvailable": "Tidak ada audio yang tersedia",
     "searchSubtitles": "Temuan Subtitle",
-    "loadSubtitleFile": "Download file subtitle.",
-    "subtitleLoadFailed": "gagal mengisi file subtitle",
     "language": "Bahasa",
     "noSubtitlesFound": "Tidak ditemukan subtitle",
     "subtitleDownloaded": "Subtitle diunduh",
@@ -1170,14 +1115,25 @@
     "searchLanguages": "Bahasa pencarian...",
     "skipIntro": "Pergi ke Into",
     "skipCredits": "Skripsi Kredit",
-    "skipAds": "Pemberitahuan Skip",
     "nextEpisode": "Episode Selanjutnya",
     "subtitleTrack": "Jalan Raya ${n}",
     "subtitleFile": "Subtitel ${name}",
     "forcedTrack": "${label} (Penggunaan)",
     "osdSubtitlesOff": "Judul : Off",
     "osdSubtitles": "Nama Panggilan : ${track}",
-    "osdAudio": "Audio : ${track}"
+    "osdAudio": "Audio : ${track}",
+    "frameCount": {
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} pengaturan"
+    },
+    "trackSelectionTitle": "Pilih jalur sebelum playback",
+    "trackSelectionAuto": "Seleksi otomatis",
+    "openMiniPlayer": "Pemain mini terbuka",
+    "returnToFullPlayer": "Kembali ke Full Player",
+    "loadSubtitleFile": "Download file subtitle.",
+    "subtitleLoadFailed": "gagal mengisi file subtitle",
+    "skipAds": "Pemberitahuan Skip",
+    "tapToUnlock": "Ketuk untuk membuka kunci",
+    "tapAgainToUnlock": "Ketuk lagi untuk membuka kunci"
   },
   "userStatus": {},
   "messages": {
@@ -1786,9 +1742,6 @@
     "saveLogs": "Simpan log ke file",
     "logsSaved": "Daftar yang disimpan di ${path}",
     "saveLogsFailed": "Tidak bisa menyimpan file log."
-  },
-  "detail": {
-    "endsAt": "Berakhir di ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG tidak bisa memulai",
@@ -3051,6 +3004,53 @@
     "allowHttp": "Izinkan HTTP",
     "httpsRequired": "Menggunakan HTTPS atau secara eksplisit memungkinkan koneksi yang tidak terenkripsi."
   },
+  "cast": {
+    "chooseDevice": "Transmisikan ke perangkat",
+    "searching": "Mencari alat-alat yang terbuat dari ...",
+    "connectedTo": "Menghubungkan ke ${device}",
+    "device": "Perangkat transmisi",
+    "readyToCast": "Siap mentransmisikan",
+    "subtitle": "Subtitel",
+    "serverNotAvailable": "Media server tidak tersedia.",
+    "stopCasting": "Hentikan transmisi",
+    "castToDevice": "Transmisikan ke perangkat",
+    "noEpisodeAvailable": "Tidak ada episode yang tersedia untuk ditayangkan.",
+    "startFailed": "Tidak bisa memulai casting. periksa server dan coba lagi."
+  },
+  "automation": {
+    "noActivePlayback": "Tidak ada sesi video aktif untuk dikendalikan."
+  },
+  "notifications": {
+    "newEpisodeTitle": "episode baru",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Cobalah setiap fitur gratis selama 7 hari",
+    "description": "Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.",
+    "trialEndedDescription": "Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.",
+    "startTrial": "Mulai ujian gratis 7 hari saya",
+    "trialActive": "7 hari ujian full-feature Anda aktif.",
+    "trialEnded": "Pengadilan 7 hari telah berakhir",
+    "trialStartFailed": "Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.",
+    "lifetimeTitle": "PlezyNG dibebaskan untuk hidup",
+    "lifetimeBody": "Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.",
+    "manageTitle": "PlezyNG akses seumur hidup",
+    "manageDescription": "Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.",
+    "buy": "Menghapus setiap fitur untuk ${price}",
+    "loadingPrice": "Harga toko yang terjangkau...",
+    "retryPrice": "Harga Retry Lookup",
+    "restore": "Restorasi pembelian seumur hidup",
+    "pending": "Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.",
+    "storeUnavailable": "Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.",
+    "productNotFound": "Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.",
+    "productQueryFailed": "Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.",
+    "purchaseFailed": "Pembelian tidak berjalan. coba lagi.",
+    "restoreFailed": "Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.",
+    "nothingToRestore": "Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini."
+  },
+  "detail": {
+    "endsAt": "Berakhir di ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Saya tidak bisa mengakses server Plex untuk link ini.",
     "notFound": "Saya tidak dapat menemukan acara atau film ini di server Plex Anda.",
@@ -3794,5 +3794,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "Link Plezy ini tidak sah.",
+    "profileNotFound": "Tidak ada profil yang sepadan dengan \"${profile}\".",
+    "serverUnavailable": "Saya tidak bisa mencapai server untuk link ini.",
+    "notFound": "Saya tidak bisa menemukan judul ini di perpustakaan Anda.",
+    "unsupportedItem": "Link ini tidak bisa dimainkan.",
+    "noLiveTv": "Tidak ada Live TV server yang tersedia untuk link ini.",
+    "channelNotFound": "Tidak dapat menemukan saluran \"${channel}\".",
+    "showLink": "menunjukkan link",
+    "showProfileLink": "Menampilkan profil link",
+    "dialogTitle": "Link",
+    "showHint": "Membuka link ini memainkan episode berikutnya.Tambahkan &mode=shuffle untuk bermain acara di shuffle.",
+    "movieHint": "Membuka link ini memainkan film.",
+    "episodeHint": "Membuka link ini memainkan episode ini.",
+    "profileHint": "Membuka link ini beralih ke profil ini.",
+    "openAsProfile": "Buka sebagai ${name}",
+    "copy": "Kopi",
+    "copied": "Link yang disalin"
   }
 }

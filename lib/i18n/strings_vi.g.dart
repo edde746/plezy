@@ -41,15 +41,11 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$vi app = _Translations$app$vi._(_root);
-	@override late final _Translations$cast$vi cast = _Translations$cast$vi._(_root);
-	@override late final _Translations$automation$vi automation = _Translations$automation$vi._(_root);
-	@override late final _Translations$notifications$vi notifications = _Translations$notifications$vi._(_root);
 	@override late final _Translations$appIcon$vi appIcon = _Translations$appIcon$vi._(_root);
 	@override late final _Translations$auth$vi auth = _Translations$auth$vi._(_root);
 	@override late final _Translations$common$vi common = _Translations$common$vi._(_root);
 	@override late final _Translations$screens$vi screens = _Translations$screens$vi._(_root);
 	@override late final _Translations$update$vi update = _Translations$update$vi._(_root);
-	@override late final _Translations$appAccess$vi appAccess = _Translations$appAccess$vi._(_root);
 	@override late final _Translations$settings$vi settings = _Translations$settings$vi._(_root);
 	@override late final _Translations$themeEditor$vi themeEditor = _Translations$themeEditor$vi._(_root);
 	@override late final _Translations$search$vi search = _Translations$search$vi._(_root);
@@ -75,7 +71,6 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$vi serverSelection = _Translations$serverSelection$vi._(_root);
 	@override late final _Translations$hubDetail$vi hubDetail = _Translations$hubDetail$vi._(_root);
 	@override late final _Translations$logs$vi logs = _Translations$logs$vi._(_root);
-	@override late final _Translations$detail$vi detail = _Translations$detail$vi._(_root);
 	@override late final _Translations$startup$vi startup = _Translations$startup$vi._(_root);
 	@override late final _Translations$licenses$vi licenses = _Translations$licenses$vi._(_root);
 	@override late final _Translations$navigation$vi navigation = _Translations$navigation$vi._(_root);
@@ -98,6 +93,11 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$vi seerr = _Translations$seerr$vi._(_root);
 	@override late final _Translations$services$vi services = _Translations$services$vi._(_root);
 	@override late final _Translations$addServer$vi addServer = _Translations$addServer$vi._(_root);
+	@override late final _Translations$cast$vi cast = _Translations$cast$vi._(_root);
+	@override late final _Translations$automation$vi automation = _Translations$automation$vi._(_root);
+	@override late final _Translations$notifications$vi notifications = _Translations$notifications$vi._(_root);
+	@override late final _Translations$appAccess$vi appAccess = _Translations$appAccess$vi._(_root);
+	@override late final _Translations$detail$vi detail = _Translations$detail$vi._(_root);
 	@override late final _Translations$watchLink$vi watchLink = _Translations$watchLink$vi._(_root);
 	@override late final _Translations$homeLayout$vi homeLayout = _Translations$homeLayout$vi._(_root);
 	@override late final _Translations$platform$vi platform = _Translations$platform$vi._(_root);
@@ -108,6 +108,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$vi sourceSetup = _Translations$sourceSetup$vi._(_root);
 	@override late final _Translations$comics$vi comics = _Translations$comics$vi._(_root);
 	@override late final _Translations$games$vi games = _Translations$games$vi._(_root);
+	@override late final _Translations$deepLinks$vi deepLinks = _Translations$deepLinks$vi._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$vi extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$vi extends Translations$cast$en {
-	_Translations$cast$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Truyền đến thiết bị';
-	@override String get searching => 'Tìm kiếm các thiết bị Cast...';
-	@override String connectedTo({required Object device}) => 'Kết nối với ${device}';
-	@override String get device => 'Thiết bị truyền';
-	@override String get readyToCast => 'Sẵn sàng truyền';
-	@override String get subtitle => 'Phụ đề';
-	@override String get serverNotAvailable => 'Server phương tiện truyền thông không sẵn dùng.';
-	@override String get stopCasting => 'Dừng truyền';
-	@override String get castToDevice => 'Truyền đến thiết bị';
-	@override String get noEpisodeAvailable => 'Không có tập nào có sẵn để phát.';
-	@override String get startFailed => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.';
-}
-
-// Path: automation
-class _Translations$automation$vi extends Translations$automation$en {
-	_Translations$automation$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Không có phiên video hoạt động để kiểm soát.';
-	@override String get profileNotFound => 'Hồ sơ Plezy không thể tìm thấy.';
-}
-
-// Path: notifications
-class _Translations$notifications$vi extends Translations$notifications$en {
-	_Translations$notifications$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'episode mới';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$vi extends Translations$update$en {
 	@override String get viewRelease => 'Xem bản phát hành';
 	@override String get latestVersion => 'Bạn đang ở phiên bản mới nhất';
 	@override String get checkFailed => 'Không kiểm tra cho các bản cập nhật';
-}
-
-// Path: appAccess
-class _Translations$appAccess$vi extends Translations$appAccess$en {
-	_Translations$appAccess$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Cố gắng mọi tính năng miễn phí trong 7 ngày';
-	@override String get description => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.';
-	@override String get trialEndedDescription => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.';
-	@override String get startTrial => 'Bắt đầu bài kiểm tra miễn phí 7 ngày';
-	@override String get trialActive => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.';
-	@override String get trialEnded => 'Cuộc thi 7 ngày đã kết thúc';
-	@override String get trialStartFailed => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.';
-	@override String get lifetimeTitle => 'PlezyNG mở khóa suốt đời';
-	@override String get lifetimeBody => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.';
-	@override String get manageTitle => 'PlezyNG Thời gian truy cập';
-	@override String get manageDescription => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.';
-	@override String buy({required Object price}) => 'Khóa tất cả các tính năng cho ${price}';
-	@override String get loadingPrice => 'Giá bán hàng tải...';
-	@override String get retryPrice => 'Retry giá lookup';
-	@override String get restore => 'Lợi ích mua sắm suốt đời';
-	@override String get pending => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.';
-	@override String get storeUnavailable => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.';
-	@override String get productNotFound => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.';
-	@override String get productQueryFailed => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.';
-	@override String get purchaseFailed => 'Mua sắm không qua được. thử lại.';
-	@override String get restoreFailed => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.';
-	@override String get nothingToRestore => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.';
 }
 
 // Path: settings
@@ -1230,9 +1158,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	final TranslationsVi _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung',
-	);
 	@override String get audioLabel => 'Âm thanh';
 	@override String get subtitlesLabel => 'Phụ đề';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1269,8 +1194,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Bật Tiếng';
 	@override String get settingsButton => 'Cài đặt Playback';
 	@override String get tracksButton => 'Âm thanh & Subtitles';
-	@override String get trackSelectionTitle => 'Lựa chọn đường trước khi playback';
-	@override String get trackSelectionAuto => 'Tự động Selection';
 	@override String get chaptersButton => 'Chương 1';
 	@override String get versionQualityButton => 'Phiên bản & Chất lượng';
 	@override String get versionColumnHeader => 'Phiên bản';
@@ -1280,8 +1203,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoding unavailable — chơi chất lượng ban đầu';
 	@override String get subtitleUnavailableFallback => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề';
 	@override String get pipButton => 'Hình ảnh trong hình ảnh mode';
-	@override String get openMiniPlayer => 'Trò chơi Mini Open';
-	@override String get returnToFullPlayer => 'Trở lại cầu thủ đầy đủ';
 	@override String get aspectRatioButton => 'Tỷ Lệ Khung Hình';
 	@override String get ambientLighting => 'Ánh sáng môi trường';
 	@override String get fullscreenButton => 'Nhập Fullscreen';
@@ -1290,7 +1211,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Lock xoay';
 	@override String get lockScreen => 'Màn hình Lock';
 	@override String get screenLockButton => 'màn hình lock';
-	@override String get longPressToUnlock => 'Lâu áp lực để mở khóa';
 	@override String get timelineSlider => 'Thanh thời gian video';
 	@override String get volumeSlider => 'Tỷ lệ Volume';
 	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
@@ -1307,8 +1227,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Không có mặt hàng trong quue';
 	@override String get noAudioDevicesAvailable => 'Không có thiết bị âm thanh';
 	@override String get searchSubtitles => 'Tìm kiếm Subtitles';
-	@override String get loadSubtitleFile => 'tải file subtitle...';
-	@override String get subtitleLoadFailed => 'Không tải file subtitle';
 	@override String get language => 'Ngôn ngữ';
 	@override String get noSubtitlesFound => 'Không tìm thấy subtitles';
 	@override String get subtitleDownloaded => 'Subtitle tải xuống';
@@ -1317,7 +1235,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Tìm kiếm ngôn ngữ...';
 	@override String get skipIntro => 'Tải Skip Intro';
 	@override String get skipCredits => 'Skip tín dụng';
-	@override String get skipAds => 'Tải Ads';
 	@override String get nextEpisode => 'Tập Kế Tiếp';
 	@override String subtitleTrack({required Object n}) => 'Đường sắt ${n}';
 	@override String subtitleFile({required Object name}) => 'Chủ đề: ${name}';
@@ -1325,6 +1242,18 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Chủ đề: Off';
 	@override String osdSubtitles({required Object track}) => 'Đánh giá: ${track}';
 	@override String osdAudio({required Object track}) => 'Âm thanh: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung',
+	);
+	@override String get trackSelectionTitle => 'Lựa chọn đường trước khi playback';
+	@override String get trackSelectionAuto => 'Tự động Selection';
+	@override String get openMiniPlayer => 'Trò chơi Mini Open';
+	@override String get returnToFullPlayer => 'Trở lại cầu thủ đầy đủ';
+	@override String get loadSubtitleFile => 'tải file subtitle...';
+	@override String get subtitleLoadFailed => 'Không tải file subtitle';
+	@override String get skipAds => 'Tải Ads';
+	@override String get tapToUnlock => 'Chạm để mở khóa';
+	@override String get tapAgainToUnlock => 'Chạm lại để mở khóa';
 }
 
 // Path: messages
@@ -1820,16 +1749,6 @@ class _Translations$logs$vi extends Translations$logs$en {
 	@override String get saveLogs => 'Save Logs to File - Lưu Logs đến File';
 	@override String logsSaved({required Object path}) => 'Đăng ký được lưu đến ${path}';
 	@override String get saveLogsFailed => 'Không thể lưu file log.';
-}
-
-// Path: detail
-class _Translations$detail$vi extends Translations$detail$en {
-	_Translations$detail$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
 }
 
 // Path: startup
@@ -2888,6 +2807,88 @@ class _Translations$addServer$vi extends Translations$addServer$en {
 	@override String get httpsRequired => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.';
 }
 
+// Path: cast
+class _Translations$cast$vi extends Translations$cast$en {
+	_Translations$cast$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Truyền đến thiết bị';
+	@override String get searching => 'Tìm kiếm các thiết bị Cast...';
+	@override String connectedTo({required Object device}) => 'Kết nối với ${device}';
+	@override String get device => 'Thiết bị truyền';
+	@override String get readyToCast => 'Sẵn sàng truyền';
+	@override String get subtitle => 'Phụ đề';
+	@override String get serverNotAvailable => 'Server phương tiện truyền thông không sẵn dùng.';
+	@override String get stopCasting => 'Dừng truyền';
+	@override String get castToDevice => 'Truyền đến thiết bị';
+	@override String get noEpisodeAvailable => 'Không có tập nào có sẵn để phát.';
+	@override String get startFailed => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.';
+}
+
+// Path: automation
+class _Translations$automation$vi extends Translations$automation$en {
+	_Translations$automation$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Không có phiên video hoạt động để kiểm soát.';
+}
+
+// Path: notifications
+class _Translations$notifications$vi extends Translations$notifications$en {
+	_Translations$notifications$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'episode mới';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$vi extends Translations$appAccess$en {
+	_Translations$appAccess$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Cố gắng mọi tính năng miễn phí trong 7 ngày';
+	@override String get description => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.';
+	@override String get trialEndedDescription => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.';
+	@override String get startTrial => 'Bắt đầu bài kiểm tra miễn phí 7 ngày';
+	@override String get trialActive => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.';
+	@override String get trialEnded => 'Cuộc thi 7 ngày đã kết thúc';
+	@override String get trialStartFailed => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.';
+	@override String get lifetimeTitle => 'PlezyNG mở khóa suốt đời';
+	@override String get lifetimeBody => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.';
+	@override String get manageTitle => 'PlezyNG Thời gian truy cập';
+	@override String get manageDescription => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.';
+	@override String buy({required Object price}) => 'Khóa tất cả các tính năng cho ${price}';
+	@override String get loadingPrice => 'Giá bán hàng tải...';
+	@override String get retryPrice => 'Retry giá lookup';
+	@override String get restore => 'Lợi ích mua sắm suốt đời';
+	@override String get pending => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.';
+	@override String get storeUnavailable => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.';
+	@override String get productNotFound => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.';
+	@override String get productQueryFailed => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.';
+	@override String get purchaseFailed => 'Mua sắm không qua được. thử lại.';
+	@override String get restoreFailed => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.';
+	@override String get nothingToRestore => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.';
+}
+
+// Path: detail
+class _Translations$detail$vi extends Translations$detail$en {
+	_Translations$detail$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$vi extends Translations$watchLink$en {
 	_Translations$watchLink$vi._(TranslationsVi root) : this._root = root, super.internal(root);
@@ -3155,7 +3156,6 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
 	@override String get converterStart => 'chuyển đổi file';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$vi extends Translations$fileSources$en {
@@ -3701,6 +3701,32 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$vi extends Translations$deepLinks$en {
+	_Translations$deepLinks$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Liên kết Plezy này không hợp lệ.';
+	@override String profileNotFound({required Object profile}) => 'Không có hồ sơ phù hợp với "${profile}".';
+	@override String get serverUnavailable => 'Tôi không thể truy cập máy chủ cho liên kết này.';
+	@override String get notFound => 'Tôi không thể tìm thấy tiêu đề này trong thư viện của bạn.';
+	@override String get unsupportedItem => 'Link này không thể chơi được.';
+	@override String get noLiveTv => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.';
+	@override String channelNotFound({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".';
+	@override String get showLink => 'Hiển thị link';
+	@override String get showProfileLink => 'Hiển thị profile link';
+	@override String get dialogTitle => 'liên kết';
+	@override String get showHint => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.';
+	@override String get movieHint => 'Mở liên kết này chơi bộ phim.';
+	@override String get episodeHint => 'Mở liên kết này chơi phần này.';
+	@override String get profileHint => 'Mở liên kết này chuyển đổi đến hồ sơ này.';
+	@override String openAsProfile({required Object name}) => 'Mở như ${name}';
+	@override String get copy => 'sao chép';
+	@override String get copied => 'Link copy';
 }
 
 // Path: appIcon.names
@@ -4815,21 +4841,6 @@ extension on TranslationsVi {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Truyền đến thiết bị',
-			'cast.searching' => 'Tìm kiếm các thiết bị Cast...',
-			'cast.connectedTo' => ({required Object device}) => 'Kết nối với ${device}',
-			'cast.device' => 'Thiết bị truyền',
-			'cast.readyToCast' => 'Sẵn sàng truyền',
-			'cast.subtitle' => 'Phụ đề',
-			'cast.serverNotAvailable' => 'Server phương tiện truyền thông không sẵn dùng.',
-			'cast.stopCasting' => 'Dừng truyền',
-			'cast.castToDevice' => 'Truyền đến thiết bị',
-			'cast.noEpisodeAvailable' => 'Không có tập nào có sẵn để phát.',
-			'cast.startFailed' => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.',
-			'automation.noActivePlayback' => 'Không có phiên video hoạt động để kiểm soát.',
-			'automation.profileNotFound' => 'Hồ sơ Plezy không thể tìm thấy.',
-			'notifications.newEpisodeTitle' => 'episode mới',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'ứng dụng icon',
 			'appIcon.defaultIcon' => 'Mặc Định',
 			'appIcon.current' => 'Icon hiện tại',
@@ -4992,28 +5003,6 @@ extension on TranslationsVi {
 			'update.viewRelease' => 'Xem bản phát hành',
 			'update.latestVersion' => 'Bạn đang ở phiên bản mới nhất',
 			'update.checkFailed' => 'Không kiểm tra cho các bản cập nhật',
-			'appAccess.title' => 'Cố gắng mọi tính năng miễn phí trong 7 ngày',
-			'appAccess.description' => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.',
-			'appAccess.trialEndedDescription' => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.',
-			'appAccess.startTrial' => 'Bắt đầu bài kiểm tra miễn phí 7 ngày',
-			'appAccess.trialActive' => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.',
-			'appAccess.trialEnded' => 'Cuộc thi 7 ngày đã kết thúc',
-			'appAccess.trialStartFailed' => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.',
-			'appAccess.lifetimeTitle' => 'PlezyNG mở khóa suốt đời',
-			'appAccess.lifetimeBody' => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.',
-			'appAccess.manageTitle' => 'PlezyNG Thời gian truy cập',
-			'appAccess.manageDescription' => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.',
-			'appAccess.buy' => ({required Object price}) => 'Khóa tất cả các tính năng cho ${price}',
-			'appAccess.loadingPrice' => 'Giá bán hàng tải...',
-			'appAccess.retryPrice' => 'Retry giá lookup',
-			'appAccess.restore' => 'Lợi ích mua sắm suốt đời',
-			'appAccess.pending' => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.',
-			'appAccess.storeUnavailable' => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.',
-			'appAccess.productNotFound' => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.',
-			'appAccess.productQueryFailed' => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.',
-			'appAccess.purchaseFailed' => 'Mua sắm không qua được. thử lại.',
-			'appAccess.restoreFailed' => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.',
-			'appAccess.nothingToRestore' => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.',
 			'settings.title' => 'Cài đặt',
 			'settings.supportDeveloper' => 'Hỗ trợ PlezyNG',
 			'settings.supportDeveloperDescription' => 'Ưu đãi để hỗ trợ phát triển',
@@ -5326,8 +5315,6 @@ extension on TranslationsVi {
 			'settings.audioPassthrough' => 'Âm thanh trượt',
 			'settings.audioPassthroughDescription' => 'Gửi âm thanh Dolby/DTS đến máy nhận hoặc TV của bạn mà không cần mã hóa lại, duy trì âm thanh xung quanh.',
 			'settings.audioPassthroughDescriptionApple' => 'Sử dụng bộ giải mã Dolby gốc của Apple cho Dolby Digital Plus, bao gồm Atmos. DTS và TrueHD vẫn chơi như PCM đa kênh.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Sử dụng bộ giải mã Dolby bản địa của Apple cho Dolby Digital Plus, bao gồm Atmos. Trên iOS, iPadOS và tvOS 26 hoặc sau đó, TrueHD Atmos và DTS:X chơi như âm thanh không gian.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Tắt trong khi bình thường hóa âm thanh',
 			'settings.audioChannelLimit' => 'Kênh âm thanh',
@@ -5365,6 +5352,8 @@ extension on TranslationsVi {
 			'settings.disableDolbyVisionDescription' => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một',
 			'settings.hdrSdrConversion' => 'HDR sang SDR chuyển đổi',
 			'settings.hdrSdrConversionDescription' => 'Chọn những gì chuyển đổi video HDR khi màn hình không thể hiển thị HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Tự động',
 			'settings.hdrSdrConversionAutoDescription' => 'Thiết bị trên Android 9 và sau, người chơi trên các phiên bản cũ hơn',
 			'settings.hdrSdrConversionDevice' => 'Thiết bị',
@@ -5826,7 +5815,6 @@ extension on TranslationsVi {
 			'tooltips.markAsWatched' => 'Mark theo dõi',
 			'tooltips.markAsUnwatched' => 'Mark như không được xem',
 			'audioTracks.track' => ({required Object n}) => 'Âm thanh Track ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung', ), 
 			'videoControls.audioLabel' => 'Âm thanh',
 			'videoControls.subtitlesLabel' => 'Phụ đề',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5840,8 +5828,6 @@ extension on TranslationsVi {
 			'videoControls.sleepTimerEndOfVideo' => 'Kết thúc video hiện tại',
 			'videoControls.sleepTimerStopAtHeader' => 'dừng lại',
 			'videoControls.sleepTimerDurationHeader' => 'Thời gian',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback sẽ nghỉ ngơi vào cuối video này',
 			'videoControls.stillWatching' => 'vẫn đang xem?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Đánh giá tại ${seconds}s',
@@ -5865,8 +5851,6 @@ extension on TranslationsVi {
 			'videoControls.unmuteButton' => 'Bật Tiếng',
 			'videoControls.settingsButton' => 'Cài đặt Playback',
 			'videoControls.tracksButton' => 'Âm thanh & Subtitles',
-			'videoControls.trackSelectionTitle' => 'Lựa chọn đường trước khi playback',
-			'videoControls.trackSelectionAuto' => 'Tự động Selection',
 			'videoControls.chaptersButton' => 'Chương 1',
 			'videoControls.versionQualityButton' => 'Phiên bản & Chất lượng',
 			'videoControls.versionColumnHeader' => 'Phiên bản',
@@ -5876,17 +5860,16 @@ extension on TranslationsVi {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — chơi chất lượng ban đầu',
 			'videoControls.subtitleUnavailableFallback' => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề',
 			'videoControls.pipButton' => 'Hình ảnh trong hình ảnh mode',
-			'videoControls.openMiniPlayer' => 'Trò chơi Mini Open',
-			'videoControls.returnToFullPlayer' => 'Trở lại cầu thủ đầy đủ',
 			'videoControls.aspectRatioButton' => 'Tỷ Lệ Khung Hình',
 			'videoControls.ambientLighting' => 'Ánh sáng môi trường',
 			'videoControls.fullscreenButton' => 'Nhập Fullscreen',
 			'videoControls.exitFullscreenButton' => 'Khởi hành Fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Luôn ở trên',
 			'videoControls.rotationLockButton' => 'Lock xoay',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Màn hình Lock',
 			'videoControls.screenLockButton' => 'màn hình lock',
-			'videoControls.longPressToUnlock' => 'Lâu áp lực để mở khóa',
 			'videoControls.timelineSlider' => 'Thanh thời gian video',
 			'videoControls.volumeSlider' => 'Tỷ lệ Volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
@@ -5910,8 +5893,6 @@ extension on TranslationsVi {
 			'videoControls.noQueueItems' => 'Không có mặt hàng trong quue',
 			'videoControls.noAudioDevicesAvailable' => 'Không có thiết bị âm thanh',
 			'videoControls.searchSubtitles' => 'Tìm kiếm Subtitles',
-			'videoControls.loadSubtitleFile' => 'tải file subtitle...',
-			'videoControls.subtitleLoadFailed' => 'Không tải file subtitle',
 			'videoControls.language' => 'Ngôn ngữ',
 			'videoControls.noSubtitlesFound' => 'Không tìm thấy subtitles',
 			'videoControls.subtitleDownloaded' => 'Subtitle tải xuống',
@@ -5920,7 +5901,6 @@ extension on TranslationsVi {
 			'videoControls.searchLanguages' => 'Tìm kiếm ngôn ngữ...',
 			'videoControls.skipIntro' => 'Tải Skip Intro',
 			'videoControls.skipCredits' => 'Skip tín dụng',
-			'videoControls.skipAds' => 'Tải Ads',
 			'videoControls.nextEpisode' => 'Tập Kế Tiếp',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Đường sắt ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Chủ đề: ${name}',
@@ -5928,6 +5908,16 @@ extension on TranslationsVi {
 			'videoControls.osdSubtitlesOff' => 'Chủ đề: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Đánh giá: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Âm thanh: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung', ), 
+			'videoControls.trackSelectionTitle' => 'Lựa chọn đường trước khi playback',
+			'videoControls.trackSelectionAuto' => 'Tự động Selection',
+			'videoControls.openMiniPlayer' => 'Trò chơi Mini Open',
+			'videoControls.returnToFullPlayer' => 'Trở lại cầu thủ đầy đủ',
+			'videoControls.loadSubtitleFile' => 'tải file subtitle...',
+			'videoControls.subtitleLoadFailed' => 'Không tải file subtitle',
+			'videoControls.skipAds' => 'Tải Ads',
+			'videoControls.tapToUnlock' => 'Chạm để mở khóa',
+			'videoControls.tapAgainToUnlock' => 'Chạm lại để mở khóa',
 			'messages.markedAsWatched' => 'Đánh dấu như được xem',
 			'messages.markedAsUnwatched' => 'Đánh dấu không được xem',
 			'messages.markedAsWatchedOffline' => 'Đánh dấu như đã được xem (sẽ đồng bộ khi trực tuyến)',
@@ -6354,8 +6344,6 @@ extension on TranslationsVi {
 			'libraries.all' => 'Tất cả',
 			'libraries.clearAll' => 'Tất cả rõ ràng',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn quét "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn phân tích "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn cập nhật dữ liệu metadata cho "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn làm trống rỗng cho "${title}"?',
@@ -6392,6 +6380,8 @@ extension on TranslationsVi {
 			'libraries.filterCategories.year' => 'Năm',
 			'libraries.filterCategories.contentRating' => 'Content Đánh giá',
 			'libraries.filterCategories.tag' => 'Nhãn',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Không quan sát',
 			'libraries.filterCategories.unplayed' => 'Chưa Phát',
 			'libraries.filterCategories.favorites' => 'Yêu Thích',
@@ -6473,7 +6463,6 @@ extension on TranslationsVi {
 			'logs.saveLogs' => 'Save Logs to File - Lưu Logs đến File',
 			'logs.logsSaved' => ({required Object path}) => 'Đăng ký được lưu đến ${path}',
 			'logs.saveLogsFailed' => 'Không thể lưu file log.',
-			'detail.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
 			'startup.failedTitle' => 'PlezyNG không thể bắt đầu',
 			'startup.failedBody' => 'Một cái gì đó đã sai trong quá trình khởi động. chi tiết bên dưới xác định những gì đã thất bại.',
 			'startup.failedBodyRepairable' => 'Tệp cài đặt đã lưu của PlezyNG bị hỏng và phải được tạo lại trước khi ứng dụng có thể khởi động. Thử lại sẽ không giúp ích — hãy chọn sửa bộ nhớ.',
@@ -6868,8 +6857,6 @@ extension on TranslationsVi {
 			'watchTogether.connecting' => 'Kết nối...',
 			'watchTogether.relayPublic' => 'Các phòng sử dụng các phát sóng Open Watch Party công cộng.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Các căn phòng sử dụng điện thoại của bạn tại ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Phòng mới',
 			'watchTogether.roomActions' => 'Phòng hành động',
 			'watchTogether.renameRoom' => 'Đặt phòng',
@@ -6907,6 +6894,8 @@ extension on TranslationsVi {
 			'watchTogether.playAnyway' => 'Chơi bất cứ',
 			'watchTogether.chooseAnotherCopy' => 'Chọn một bản sao khác',
 			'watchTogether.dontPlay' => 'Đừng chơi',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Bạn không có video này',
 			'watchTogether.unavailableDescription' => 'PlezyNG không thể tìm thấy nó trong thư viện của bạn. chọn bản sao cho chính mình hoặc tìm kiếm lại.',
 			'watchTogether.chooseCopy' => 'Chọn một bản sao',
@@ -7382,8 +7371,6 @@ extension on TranslationsVi {
 			'metadataEdit.metadataUpdateFailed' => 'Không cập nhật metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork cập nhật',
 			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Không có tác phẩm nghệ thuật',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Tùy chọn nghệ thuật ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Tùy chọn Artwork ${index}, được chọn',
@@ -7421,6 +7408,8 @@ extension on TranslationsVi {
 			'metadataEdit.shownWithForeignAudio' => 'Hiển thị bằng âm thanh nước ngoài',
 			'metadataEdit.alwaysEnabled' => 'Luôn có khả năng',
 			'metadataEdit.tags' => 'Thẻ',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'thêm tag',
 			'metadataEdit.genre' => 'Thể loại',
 			'metadataEdit.director' => 'Đạo Diễn',
@@ -7611,6 +7600,43 @@ extension on TranslationsVi {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} sử dụng HTTP. Người khác trên mạng có thể đọc hoặc thay đổi mật khẩu, mã thông báo và nội dung của bạn. Hãy dùng HTTPS nếu có. Chỉ tiếp tục nếu bạn tin tưởng mạng này và chấp nhận rủi ro.',
 			'addServer.allowHttp' => 'Cho phép HTTP',
 			'addServer.httpsRequired' => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.',
+			'cast.chooseDevice' => 'Truyền đến thiết bị',
+			'cast.searching' => 'Tìm kiếm các thiết bị Cast...',
+			'cast.connectedTo' => ({required Object device}) => 'Kết nối với ${device}',
+			'cast.device' => 'Thiết bị truyền',
+			'cast.readyToCast' => 'Sẵn sàng truyền',
+			'cast.subtitle' => 'Phụ đề',
+			'cast.serverNotAvailable' => 'Server phương tiện truyền thông không sẵn dùng.',
+			'cast.stopCasting' => 'Dừng truyền',
+			'cast.castToDevice' => 'Truyền đến thiết bị',
+			'cast.noEpisodeAvailable' => 'Không có tập nào có sẵn để phát.',
+			'cast.startFailed' => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.',
+			'automation.noActivePlayback' => 'Không có phiên video hoạt động để kiểm soát.',
+			'notifications.newEpisodeTitle' => 'episode mới',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Cố gắng mọi tính năng miễn phí trong 7 ngày',
+			'appAccess.description' => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.',
+			'appAccess.trialEndedDescription' => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.',
+			'appAccess.startTrial' => 'Bắt đầu bài kiểm tra miễn phí 7 ngày',
+			'appAccess.trialActive' => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.',
+			'appAccess.trialEnded' => 'Cuộc thi 7 ngày đã kết thúc',
+			'appAccess.trialStartFailed' => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.',
+			'appAccess.lifetimeTitle' => 'PlezyNG mở khóa suốt đời',
+			'appAccess.lifetimeBody' => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.',
+			'appAccess.manageTitle' => 'PlezyNG Thời gian truy cập',
+			'appAccess.manageDescription' => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.',
+			'appAccess.buy' => ({required Object price}) => 'Khóa tất cả các tính năng cho ${price}',
+			'appAccess.loadingPrice' => 'Giá bán hàng tải...',
+			'appAccess.retryPrice' => 'Retry giá lookup',
+			'appAccess.restore' => 'Lợi ích mua sắm suốt đời',
+			'appAccess.pending' => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.',
+			'appAccess.storeUnavailable' => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.',
+			'appAccess.productNotFound' => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.',
+			'appAccess.productQueryFailed' => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.',
+			'appAccess.purchaseFailed' => 'Mua sắm không qua được. thử lại.',
+			'appAccess.restoreFailed' => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.',
+			'appAccess.nothingToRestore' => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.',
+			'detail.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
 			'watchLink.serverUnavailable' => 'Tôi không thể truy cập một máy chủ Plex cho liên kết này.',
 			'watchLink.notFound' => 'Tôi không thể tìm thấy chương trình hoặc bộ phim này trên máy chủ của bạn Plex.',
 			'watchLink.ambiguous' => 'Liên kết này phù hợp với các mục trên nhiều hơn một máy chủ.Hãy thêm một máy chủ vào liên kết.',
@@ -7746,7 +7772,7 @@ extension on TranslationsVi {
 			'universalMedia.saveFavorite' => 'Giữ yêu thích',
 			'universalMedia.playNow' => 'Chơi bây giờ',
 			'universalMedia.favoriteSaved' => 'Stream Favorite được tiết kiệm đến hồ sơ này',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ), 
 			'universalMedia.playlistAddress' => 'Địa chỉ Playlist',
 			'universalMedia.playlistAddressHelp' => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.',
 			'universalMedia.choosePlaylist' => 'Chọn playlist file',
@@ -7756,7 +7782,7 @@ extension on TranslationsVi {
 			'universalMedia.removeFavorite' => 'Xóa stream yêu thích',
 			'universalMedia.filesHelp' => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.',
 			'universalMedia.chooseFiles' => 'Chọn file',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ), 
 			'universalMedia.wifiTransfer' => 'Gửi file qua Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.',
 			'universalMedia.wifiTransferIntro' => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.',
@@ -7767,7 +7793,7 @@ extension on TranslationsVi {
 			'universalMedia.copyAddress' => 'Bản sao địa chỉ chuyển đổi',
 			'universalMedia.addressCopied' => 'Địa chỉ chuyển đổi sao chép',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Nhận ${size}',
 			'universalMedia.stopTransfer' => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ',
 			'universalMedia.startTransfer' => 'Bắt đầu chuyển giao',
@@ -7896,6 +7922,8 @@ extension on TranslationsVi {
 			'fileSources.bookmark' => 'Thêm Bookmark',
 			'fileSources.highlight' => 'Đánh giá',
 			'fileSources.note' => 'Ghi chú',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Xóa',
 			'fileSources.export' => 'Export ghi chú',
 			'fileSources.exported' => 'Các ghi chú xuất khẩu',
@@ -8008,8 +8036,6 @@ extension on TranslationsVi {
 			'fileSources.offlineQuotaHelp' => 'Thiết lập không gian tối đa được sử dụng bởi các bản sao ngoại tuyến, tệp nhập khẩu và tải xuống. Giảm giới hạn sẽ không loại bỏ các bản gốc hiện có.',
 			'fileSources.offlineStorageUsage' => 'Lưu trữ Offline',
 			'fileSources.reservedStorage' => 'Bảo Vệ',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Tải Queue',
 			'fileSources.downloadRunning' => 'tải xuống',
 			'fileSources.downloadQueued' => 'chờ đợi',
@@ -8329,6 +8355,23 @@ extension on TranslationsVi {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Liên kết Plezy này không hợp lệ.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Không có hồ sơ phù hợp với "${profile}".',
+			'deepLinks.serverUnavailable' => 'Tôi không thể truy cập máy chủ cho liên kết này.',
+			'deepLinks.notFound' => 'Tôi không thể tìm thấy tiêu đề này trong thư viện của bạn.',
+			'deepLinks.unsupportedItem' => 'Link này không thể chơi được.',
+			'deepLinks.noLiveTv' => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".',
+			'deepLinks.showLink' => 'Hiển thị link',
+			'deepLinks.showProfileLink' => 'Hiển thị profile link',
+			'deepLinks.dialogTitle' => 'liên kết',
+			'deepLinks.showHint' => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.',
+			'deepLinks.movieHint' => 'Mở liên kết này chơi bộ phim.',
+			'deepLinks.episodeHint' => 'Mở liên kết này chơi phần này.',
+			'deepLinks.profileHint' => 'Mở liên kết này chuyển đổi đến hồ sơ này.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Mở như ${name}',
+			'deepLinks.copy' => 'sao chép',
+			'deepLinks.copied' => 'Link copy',
 			_ => null,
 		};
 	}

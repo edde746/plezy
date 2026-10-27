@@ -41,15 +41,11 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$ja app = _Translations$app$ja._(_root);
-	@override late final _Translations$cast$ja cast = _Translations$cast$ja._(_root);
-	@override late final _Translations$automation$ja automation = _Translations$automation$ja._(_root);
-	@override late final _Translations$notifications$ja notifications = _Translations$notifications$ja._(_root);
 	@override late final _Translations$appIcon$ja appIcon = _Translations$appIcon$ja._(_root);
 	@override late final _Translations$auth$ja auth = _Translations$auth$ja._(_root);
 	@override late final _Translations$common$ja common = _Translations$common$ja._(_root);
 	@override late final _Translations$screens$ja screens = _Translations$screens$ja._(_root);
 	@override late final _Translations$update$ja update = _Translations$update$ja._(_root);
-	@override late final _Translations$appAccess$ja appAccess = _Translations$appAccess$ja._(_root);
 	@override late final _Translations$settings$ja settings = _Translations$settings$ja._(_root);
 	@override late final _Translations$themeEditor$ja themeEditor = _Translations$themeEditor$ja._(_root);
 	@override late final _Translations$search$ja search = _Translations$search$ja._(_root);
@@ -75,7 +71,6 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$ja serverSelection = _Translations$serverSelection$ja._(_root);
 	@override late final _Translations$hubDetail$ja hubDetail = _Translations$hubDetail$ja._(_root);
 	@override late final _Translations$logs$ja logs = _Translations$logs$ja._(_root);
-	@override late final _Translations$detail$ja detail = _Translations$detail$ja._(_root);
 	@override late final _Translations$startup$ja startup = _Translations$startup$ja._(_root);
 	@override late final _Translations$licenses$ja licenses = _Translations$licenses$ja._(_root);
 	@override late final _Translations$navigation$ja navigation = _Translations$navigation$ja._(_root);
@@ -98,6 +93,11 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$ja seerr = _Translations$seerr$ja._(_root);
 	@override late final _Translations$services$ja services = _Translations$services$ja._(_root);
 	@override late final _Translations$addServer$ja addServer = _Translations$addServer$ja._(_root);
+	@override late final _Translations$cast$ja cast = _Translations$cast$ja._(_root);
+	@override late final _Translations$automation$ja automation = _Translations$automation$ja._(_root);
+	@override late final _Translations$notifications$ja notifications = _Translations$notifications$ja._(_root);
+	@override late final _Translations$appAccess$ja appAccess = _Translations$appAccess$ja._(_root);
+	@override late final _Translations$detail$ja detail = _Translations$detail$ja._(_root);
 	@override late final _Translations$watchLink$ja watchLink = _Translations$watchLink$ja._(_root);
 	@override late final _Translations$homeLayout$ja homeLayout = _Translations$homeLayout$ja._(_root);
 	@override late final _Translations$platform$ja platform = _Translations$platform$ja._(_root);
@@ -108,6 +108,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$ja sourceSetup = _Translations$sourceSetup$ja._(_root);
 	@override late final _Translations$comics$ja comics = _Translations$comics$ja._(_root);
 	@override late final _Translations$games$ja games = _Translations$games$ja._(_root);
+	@override late final _Translations$deepLinks$ja deepLinks = _Translations$deepLinks$ja._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$ja extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$ja extends Translations$cast$en {
-	_Translations$cast$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'デバイスに押し付ける';
-	@override String get searching => 'キャストデバイスを探す...';
-	@override String connectedTo({required Object device}) => '接続番号: ${device}';
-	@override String get device => 'キャストデバイス';
-	@override String get readyToCast => '投げる準備';
-	@override String get subtitle => '字幕';
-	@override String get serverNotAvailable => 'メディアサーバーは利用できません。';
-	@override String get stopCasting => 'キャストをやめる';
-	@override String get castToDevice => 'デバイスにキャスト';
-	@override String get noEpisodeAvailable => '出演可能なエピソードはありません。';
-	@override String get startFailed => 'サーバーをチェックして再度試してみる';
-}
-
-// Path: automation
-class _Translations$automation$ja extends Translations$automation$en {
-	_Translations$automation$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'コントロールする動画セッションはありません。';
-	@override String get profileNotFound => 'その Plezy プロフィールは見つかりませんでした。';
-}
-
-// Path: notifications
-class _Translations$notifications$ja extends Translations$notifications$en {
-	_Translations$notifications$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => '新エピソード';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$ja extends Translations$update$en {
 	@override String get viewRelease => 'リリースを表示';
 	@override String get latestVersion => '最新バージョンです';
 	@override String get checkFailed => 'アップデートの確認に失敗しました';
-}
-
-// Path: appAccess
-class _Translations$appAccess$ja extends Translations$appAccess$en {
-	_Translations$appAccess$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'すべての機能を7日間無料で試してみてください。';
-	@override String get description => 'PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。';
-	@override String get trialEndedDescription => 'あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。';
-	@override String get startTrial => '無料7日間の試験開始';
-	@override String get trialActive => '7日間のフルフィードテストがアクティブです。';
-	@override String get trialEnded => '7日間の試験が終わりました。';
-	@override String get trialStartFailed => 'このデバイスで試用を保存できませんでしたので、また試してみてください。';
-	@override String get lifetimeTitle => 'PlezyNG 終身無効';
-	@override String get lifetimeBody => '感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。';
-	@override String get manageTitle => 'PlezyNG 生涯アクセス';
-	@override String get manageDescription => '7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。';
-	@override String buy({required Object price}) => 'すべての機能を解除する ${price}';
-	@override String get loadingPrice => 'ストアの価格...';
-	@override String get retryPrice => '返品価格検索';
-	@override String get restore => '生涯購入の復元';
-	@override String get pending => '購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。';
-	@override String get storeUnavailable => '購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。';
-	@override String get productNotFound => 'PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。';
-	@override String get productQueryFailed => 'ストア価格を負担することはできません. 接続をチェックして再度試してみてください。';
-	@override String get purchaseFailed => '買い物は終わりませんでした!また試してみてください。';
-	@override String get restoreFailed => '買い物を回復するために店に到達できなかったので、また試してみてください。';
-	@override String get nothingToRestore => '購入番号 PlezyNG は、このストアのアカウントに検索されました。';
 }
 
 // Path: settings
@@ -1233,10 +1161,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム',
-	);
 	@override String get audioLabel => '音声';
 	@override String get subtitlesLabel => '字幕';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1273,8 +1197,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get unmuteButton => 'ミュート解除';
 	@override String get settingsButton => '再生設定';
 	@override String get tracksButton => '音声と字幕';
-	@override String get trackSelectionTitle => 'プレイバック前にトラックを選択する';
-	@override String get trackSelectionAuto => '自動選択';
 	@override String get chaptersButton => 'チャプター';
 	@override String get versionQualityButton => 'バージョンと画質';
 	@override String get versionColumnHeader => 'バージョン';
@@ -1284,8 +1206,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'トランスコードは利用できません — オリジナル画質で再生中';
 	@override String get subtitleUnavailableFallback => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
-	@override String get openMiniPlayer => 'オープンミニプレーヤー';
-	@override String get returnToFullPlayer => '完全プレイヤーに戻る';
 	@override String get aspectRatioButton => 'アスペクト比';
 	@override String get ambientLighting => 'アンビエントライティング';
 	@override String get fullscreenButton => 'フルスクリーンに入る';
@@ -1294,7 +1214,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get rotationLockButton => '回転ロック';
 	@override String get lockScreen => '画面をロック';
 	@override String get screenLockButton => '画面ロック';
-	@override String get longPressToUnlock => '長押しでロック解除';
 	@override String get timelineSlider => '動画タイムライン';
 	@override String get volumeSlider => '音量レベル';
 	@override String endsAt({required Object time}) => '${time}に終了';
@@ -1311,8 +1230,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get noQueueItems => 'キューにアイテムがありません';
 	@override String get noAudioDevicesAvailable => 'オーディオデバイスがありません';
 	@override String get searchSubtitles => '字幕を検索';
-	@override String get loadSubtitleFile => 'サブタイトルファイルをダウンロード';
-	@override String get subtitleLoadFailed => 'サブタイトルファイルをダウンロードできなかった';
 	@override String get language => '言語';
 	@override String get noSubtitlesFound => '字幕が見つかりません';
 	@override String get subtitleDownloaded => '字幕をダウンロードしました';
@@ -1321,7 +1238,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get searchLanguages => '言語を検索…';
 	@override String get skipIntro => 'イントロをスキップ';
 	@override String get skipCredits => 'クレジットをスキップ';
-	@override String get skipAds => 'スキー広告';
 	@override String get nextEpisode => '次のエピソード';
 	@override String subtitleTrack({required Object n}) => 'トラック${n}';
 	@override String subtitleFile({required Object name}) => '字幕${name}';
@@ -1329,6 +1245,19 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => '字幕: オフ';
 	@override String osdSubtitles({required Object track}) => '字幕: ${track}';
 	@override String osdAudio({required Object track}) => '音声: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム',
+	);
+	@override String get trackSelectionTitle => 'プレイバック前にトラックを選択する';
+	@override String get trackSelectionAuto => '自動選択';
+	@override String get openMiniPlayer => 'オープンミニプレーヤー';
+	@override String get returnToFullPlayer => '完全プレイヤーに戻る';
+	@override String get loadSubtitleFile => 'サブタイトルファイルをダウンロード';
+	@override String get subtitleLoadFailed => 'サブタイトルファイルをダウンロードできなかった';
+	@override String get skipAds => 'スキー広告';
+	@override String get tapToUnlock => 'タップしてロックを解除';
+	@override String get tapAgainToUnlock => 'もう一度タップしてロックを解除';
 }
 
 // Path: messages
@@ -1826,16 +1755,6 @@ class _Translations$logs$ja extends Translations$logs$en {
 	@override String get saveLogs => 'ファイルへのログを保存';
 	@override String logsSaved({required Object path}) => 'ログを保存する ${path}';
 	@override String get saveLogsFailed => 'ログファイルを保存できませんでした。';
-}
-
-// Path: detail
-class _Translations$detail$ja extends Translations$detail$en {
-	_Translations$detail$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => '${time}に終了';
 }
 
 // Path: startup
@@ -2903,6 +2822,88 @@ class _Translations$addServer$ja extends Translations$addServer$en {
 	@override String get httpsRequired => 'HTTPS を使用するか、暗号化されていない接続を明示的に許可するか。';
 }
 
+// Path: cast
+class _Translations$cast$ja extends Translations$cast$en {
+	_Translations$cast$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'デバイスに押し付ける';
+	@override String get searching => 'キャストデバイスを探す...';
+	@override String connectedTo({required Object device}) => '接続番号: ${device}';
+	@override String get device => 'キャストデバイス';
+	@override String get readyToCast => '投げる準備';
+	@override String get subtitle => '字幕';
+	@override String get serverNotAvailable => 'メディアサーバーは利用できません。';
+	@override String get stopCasting => 'キャストをやめる';
+	@override String get castToDevice => 'デバイスにキャスト';
+	@override String get noEpisodeAvailable => '出演可能なエピソードはありません。';
+	@override String get startFailed => 'サーバーをチェックして再度試してみる';
+}
+
+// Path: automation
+class _Translations$automation$ja extends Translations$automation$en {
+	_Translations$automation$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'コントロールする動画セッションはありません。';
+}
+
+// Path: notifications
+class _Translations$notifications$ja extends Translations$notifications$en {
+	_Translations$notifications$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => '新エピソード';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$ja extends Translations$appAccess$en {
+	_Translations$appAccess$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'すべての機能を7日間無料で試してみてください。';
+	@override String get description => 'PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。';
+	@override String get trialEndedDescription => 'あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。';
+	@override String get startTrial => '無料7日間の試験開始';
+	@override String get trialActive => '7日間のフルフィードテストがアクティブです。';
+	@override String get trialEnded => '7日間の試験が終わりました。';
+	@override String get trialStartFailed => 'このデバイスで試用を保存できませんでしたので、また試してみてください。';
+	@override String get lifetimeTitle => 'PlezyNG 終身無効';
+	@override String get lifetimeBody => '感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。';
+	@override String get manageTitle => 'PlezyNG 生涯アクセス';
+	@override String get manageDescription => '7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。';
+	@override String buy({required Object price}) => 'すべての機能を解除する ${price}';
+	@override String get loadingPrice => 'ストアの価格...';
+	@override String get retryPrice => '返品価格検索';
+	@override String get restore => '生涯購入の復元';
+	@override String get pending => '購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。';
+	@override String get storeUnavailable => '購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。';
+	@override String get productNotFound => 'PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。';
+	@override String get productQueryFailed => 'ストア価格を負担することはできません. 接続をチェックして再度試してみてください。';
+	@override String get purchaseFailed => '買い物は終わりませんでした!また試してみてください。';
+	@override String get restoreFailed => '買い物を回復するために店に到達できなかったので、また試してみてください。';
+	@override String get nothingToRestore => '購入番号 PlezyNG は、このストアのアカウントに検索されました。';
+}
+
+// Path: detail
+class _Translations$detail$ja extends Translations$detail$en {
+	_Translations$detail$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => '${time}に終了';
+}
+
 // Path: watchLink
 class _Translations$watchLink$ja extends Translations$watchLink$en {
 	_Translations$watchLink$ja._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -3173,7 +3174,6 @@ class _Translations$universalMedia$ja extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'ローカル変換は、FFmpegがインストールされているデスクトップコンピュータで利用できます。';
 	@override String get converterStart => 'ファイル変換';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$ja extends Translations$fileSources$en {
@@ -3719,6 +3719,32 @@ class _Translations$games$ja extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$ja extends Translations$deepLinks$en {
+	_Translations$deepLinks$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'この Plezy リンクは有効ではありません。';
+	@override String profileNotFound({required Object profile}) => 'プロフィールは「${profile}」と一致しない。';
+	@override String get serverUnavailable => 'このリンクのためにサーバーにアクセスできませんでした。';
+	@override String get notFound => 'このタイトルは図書館には見つかりません。';
+	@override String get unsupportedItem => 'このリンクはプレイできない。';
+	@override String get noLiveTv => 'このリンクにはライブテレビサーバーはありません。';
+	@override String channelNotFound({required Object channel}) => 'チャンネル「${channel}」を見つけることができませんでした。';
+	@override String get showLink => 'リンク表示';
+	@override String get showProfileLink => 'プロフィールリンクを表示';
+	@override String get dialogTitle => 'リンク';
+	@override String get showHint => 'このリンクを開くと次のエピソードが再生されます。番組をシャッフル再生するには、末尾に &mode=shuffle を追加してください。';
+	@override String get movieHint => 'このリンクを開くことで、映画を演奏します。';
+	@override String get episodeHint => 'このリンクを開くことで、このエピソードを演奏します。';
+	@override String get profileHint => 'このリンクを開くには、このプロフィールへのスイッチが表示されます。';
+	@override String openAsProfile({required Object name}) => '${name}としてオープン';
+	@override String get copy => 'コピー';
+	@override String get copied => 'リンクコピー';
 }
 
 // Path: appIcon.names
@@ -4835,21 +4861,6 @@ extension on TranslationsJa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'デバイスに押し付ける',
-			'cast.searching' => 'キャストデバイスを探す...',
-			'cast.connectedTo' => ({required Object device}) => '接続番号: ${device}',
-			'cast.device' => 'キャストデバイス',
-			'cast.readyToCast' => '投げる準備',
-			'cast.subtitle' => '字幕',
-			'cast.serverNotAvailable' => 'メディアサーバーは利用できません。',
-			'cast.stopCasting' => 'キャストをやめる',
-			'cast.castToDevice' => 'デバイスにキャスト',
-			'cast.noEpisodeAvailable' => '出演可能なエピソードはありません。',
-			'cast.startFailed' => 'サーバーをチェックして再度試してみる',
-			'automation.noActivePlayback' => 'コントロールする動画セッションはありません。',
-			'automation.profileNotFound' => 'その Plezy プロフィールは見つかりませんでした。',
-			'notifications.newEpisodeTitle' => '新エピソード',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'アプリアイコン',
 			'appIcon.defaultIcon' => 'デフォルト',
 			'appIcon.current' => '現在のアイコン',
@@ -5012,28 +5023,6 @@ extension on TranslationsJa {
 			'update.viewRelease' => 'リリースを表示',
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
-			'appAccess.title' => 'すべての機能を7日間無料で試してみてください。',
-			'appAccess.description' => 'PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。',
-			'appAccess.trialEndedDescription' => 'あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。',
-			'appAccess.startTrial' => '無料7日間の試験開始',
-			'appAccess.trialActive' => '7日間のフルフィードテストがアクティブです。',
-			'appAccess.trialEnded' => '7日間の試験が終わりました。',
-			'appAccess.trialStartFailed' => 'このデバイスで試用を保存できませんでしたので、また試してみてください。',
-			'appAccess.lifetimeTitle' => 'PlezyNG 終身無効',
-			'appAccess.lifetimeBody' => '感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。',
-			'appAccess.manageTitle' => 'PlezyNG 生涯アクセス',
-			'appAccess.manageDescription' => '7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。',
-			'appAccess.buy' => ({required Object price}) => 'すべての機能を解除する ${price}',
-			'appAccess.loadingPrice' => 'ストアの価格...',
-			'appAccess.retryPrice' => '返品価格検索',
-			'appAccess.restore' => '生涯購入の復元',
-			'appAccess.pending' => '購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。',
-			'appAccess.storeUnavailable' => '購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。',
-			'appAccess.productNotFound' => 'PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。',
-			'appAccess.productQueryFailed' => 'ストア価格を負担することはできません. 接続をチェックして再度試してみてください。',
-			'appAccess.purchaseFailed' => '買い物は終わりませんでした!また試してみてください。',
-			'appAccess.restoreFailed' => '買い物を回復するために店に到達できなかったので、また試してみてください。',
-			'appAccess.nothingToRestore' => '購入番号 PlezyNG は、このストアのアカウントに検索されました。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => 'Plezyを支援',
 			'settings.supportDeveloperDescription' => '寄付で開発を支援',
@@ -5346,8 +5335,6 @@ extension on TranslationsJa {
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。iOS、iPadOS、tvOS 26以降では、TrueHD AtmosとDTS:Xが空間オーディオとして再生されます。その他のDTSとTrueHDのトラックはマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughOverriddenByNormalization' => 'ラウドネス正規化がオンの間はオフ',
 			'settings.audioChannelLimit' => '音声チャンネル',
@@ -5385,6 +5372,8 @@ extension on TranslationsJa {
 			'settings.disableDolbyVisionDescription' => 'ファイルに HDR10 または HLG レイヤーがある場合は、Dolby Vision の代わりにそれを再生します',
 			'settings.hdrSdrConversion' => 'HDRからSDRへの変換',
 			'settings.hdrSdrConversionDescription' => 'ディスプレイがHDRを表示できないときに、HDR映像を何で変換するかを選択します。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => '自動',
 			'settings.hdrSdrConversionAutoDescription' => 'Android 9以降はデバイス、それより前のバージョンではプレーヤー',
 			'settings.hdrSdrConversionDevice' => 'デバイス',
@@ -5846,7 +5835,6 @@ extension on TranslationsJa {
 			'tooltips.markAsWatched' => '視聴済みにする',
 			'tooltips.markAsUnwatched' => '未視聴にする',
 			'audioTracks.track' => ({required Object n}) => '音声トラック${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム', ), 
 			'videoControls.audioLabel' => '音声',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5860,8 +5848,6 @@ extension on TranslationsJa {
 			'videoControls.sleepTimerEndOfVideo' => '現在の動画の最後',
 			'videoControls.sleepTimerStopAtHeader' => '停止のタイミング',
 			'videoControls.sleepTimerDurationHeader' => 'タイマー',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => '再生はこの動画の最後に一時停止します',
 			'videoControls.stillWatching' => 'まだ視聴中ですか？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒後に一時停止',
@@ -5885,8 +5871,6 @@ extension on TranslationsJa {
 			'videoControls.unmuteButton' => 'ミュート解除',
 			'videoControls.settingsButton' => '再生設定',
 			'videoControls.tracksButton' => '音声と字幕',
-			'videoControls.trackSelectionTitle' => 'プレイバック前にトラックを選択する',
-			'videoControls.trackSelectionAuto' => '自動選択',
 			'videoControls.chaptersButton' => 'チャプター',
 			'videoControls.versionQualityButton' => 'バージョンと画質',
 			'videoControls.versionColumnHeader' => 'バージョン',
@@ -5896,17 +5880,16 @@ extension on TranslationsJa {
 			'videoControls.transcodeUnavailableFallback' => 'トランスコードは利用できません — オリジナル画質で再生中',
 			'videoControls.subtitleUnavailableFallback' => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
-			'videoControls.openMiniPlayer' => 'オープンミニプレーヤー',
-			'videoControls.returnToFullPlayer' => '完全プレイヤーに戻る',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
 			'videoControls.fullscreenButton' => 'フルスクリーンに入る',
 			'videoControls.exitFullscreenButton' => 'フルスクリーンを終了',
 			'videoControls.alwaysOnTopButton' => '常に前面に表示',
 			'videoControls.rotationLockButton' => '回転ロック',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => '画面をロック',
 			'videoControls.screenLockButton' => '画面ロック',
-			'videoControls.longPressToUnlock' => '長押しでロック解除',
 			'videoControls.timelineSlider' => '動画タイムライン',
 			'videoControls.volumeSlider' => '音量レベル',
 			'videoControls.endsAt' => ({required Object time}) => '${time}に終了',
@@ -5930,8 +5913,6 @@ extension on TranslationsJa {
 			'videoControls.noQueueItems' => 'キューにアイテムがありません',
 			'videoControls.noAudioDevicesAvailable' => 'オーディオデバイスがありません',
 			'videoControls.searchSubtitles' => '字幕を検索',
-			'videoControls.loadSubtitleFile' => 'サブタイトルファイルをダウンロード',
-			'videoControls.subtitleLoadFailed' => 'サブタイトルファイルをダウンロードできなかった',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
 			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
@@ -5940,7 +5921,6 @@ extension on TranslationsJa {
 			'videoControls.searchLanguages' => '言語を検索…',
 			'videoControls.skipIntro' => 'イントロをスキップ',
 			'videoControls.skipCredits' => 'クレジットをスキップ',
-			'videoControls.skipAds' => 'スキー広告',
 			'videoControls.nextEpisode' => '次のエピソード',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'トラック${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => '字幕${name}',
@@ -5948,6 +5928,16 @@ extension on TranslationsJa {
 			'videoControls.osdSubtitlesOff' => '字幕: オフ',
 			'videoControls.osdSubtitles' => ({required Object track}) => '字幕: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => '音声: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} フレーム', ), 
+			'videoControls.trackSelectionTitle' => 'プレイバック前にトラックを選択する',
+			'videoControls.trackSelectionAuto' => '自動選択',
+			'videoControls.openMiniPlayer' => 'オープンミニプレーヤー',
+			'videoControls.returnToFullPlayer' => '完全プレイヤーに戻る',
+			'videoControls.loadSubtitleFile' => 'サブタイトルファイルをダウンロード',
+			'videoControls.subtitleLoadFailed' => 'サブタイトルファイルをダウンロードできなかった',
+			'videoControls.skipAds' => 'スキー広告',
+			'videoControls.tapToUnlock' => 'タップしてロックを解除',
+			'videoControls.tapAgainToUnlock' => 'もう一度タップしてロックを解除',
 			'messages.markedAsWatched' => '視聴済みにしました',
 			'messages.markedAsUnwatched' => '未視聴にしました',
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
@@ -6374,8 +6364,6 @@ extension on TranslationsJa {
 			'libraries.all' => 'すべて',
 			'libraries.clearAll' => 'すべてクリア',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}"をスキャンしてもよろしいですか？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}"を解析してもよろしいですか？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
@@ -6412,6 +6400,8 @@ extension on TranslationsJa {
 			'libraries.filterCategories.year' => '年',
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => '未視聴',
 			'libraries.filterCategories.unplayed' => '未再生',
 			'libraries.filterCategories.favorites' => 'お気に入り',
@@ -6493,7 +6483,6 @@ extension on TranslationsJa {
 			'logs.saveLogs' => 'ファイルへのログを保存',
 			'logs.logsSaved' => ({required Object path}) => 'ログを保存する ${path}',
 			'logs.saveLogsFailed' => 'ログファイルを保存できませんでした。',
-			'detail.endsAt' => ({required Object time}) => '${time}に終了',
 			'startup.failedTitle' => 'Plezyを起動できませんでした',
 			'startup.failedBody' => '起動中に問題が発生しました。以下の詳細に失敗の原因が示されています。',
 			'startup.failedBodyRepairable' => 'Plezyの保存済み設定ファイルが破損しているため、Plezyを起動する前に再構築する必要があります。再試行しても解決しません —「ストレージを修復」を選択してください。',
@@ -6888,8 +6877,6 @@ extension on TranslationsJa {
 			'watchTogether.connecting' => '接続中…',
 			'watchTogether.relayPublic' => 'ルームは公開のOpen Watch Partyリレーサーバーを使用します。',
 			'watchTogether.relayCustom' => ({required Object url}) => 'ルームは${url}のリレーサーバーを使用します。',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => '最近のルーム',
 			'watchTogether.roomActions' => 'ルームの操作',
 			'watchTogether.renameRoom' => 'ルーム名を変更',
@@ -6927,6 +6914,8 @@ extension on TranslationsJa {
 			'watchTogether.playAnyway' => 'このまま再生',
 			'watchTogether.chooseAnotherCopy' => '別のコピーを選択',
 			'watchTogether.dontPlay' => '再生しない',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'この動画がありません',
 			'watchTogether.unavailableDescription' => 'Plezyはライブラリでこの動画を見つけられませんでした。自分でコピーを選ぶか、もう一度検索してください。',
 			'watchTogether.chooseCopy' => 'コピーを選択',
@@ -7402,8 +7391,6 @@ extension on TranslationsJa {
 			'metadataEdit.metadataUpdateFailed' => 'メタデータの更新に失敗しました',
 			'metadataEdit.artworkUpdated' => 'アートワークを更新しました',
 			'metadataEdit.artworkUpdateFailed' => 'アートワークの更新に失敗しました',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'アートワークがありません',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}、選択済み',
@@ -7441,6 +7428,8 @@ extension on TranslationsJa {
 			'metadataEdit.shownWithForeignAudio' => '外国語音声時に表示',
 			'metadataEdit.alwaysEnabled' => '常に有効',
 			'metadataEdit.tags' => 'タグ',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'タグを追加',
 			'metadataEdit.genre' => 'ジャンル',
 			'metadataEdit.director' => '監督',
@@ -7631,6 +7620,43 @@ extension on TranslationsJa {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} は HTTP を使用しています。ネットワーク上の第三者がパスワード、トークン、メディアを読み取ったり改ざんしたりする可能性があります。利用できる場合は HTTPS を使用してください。このネットワークを信頼し、リスクを受け入れる場合のみ続行してください。',
 			'addServer.allowHttp' => 'HTTPを許可',
 			'addServer.httpsRequired' => 'HTTPS を使用するか、暗号化されていない接続を明示的に許可するか。',
+			'cast.chooseDevice' => 'デバイスに押し付ける',
+			'cast.searching' => 'キャストデバイスを探す...',
+			'cast.connectedTo' => ({required Object device}) => '接続番号: ${device}',
+			'cast.device' => 'キャストデバイス',
+			'cast.readyToCast' => '投げる準備',
+			'cast.subtitle' => '字幕',
+			'cast.serverNotAvailable' => 'メディアサーバーは利用できません。',
+			'cast.stopCasting' => 'キャストをやめる',
+			'cast.castToDevice' => 'デバイスにキャスト',
+			'cast.noEpisodeAvailable' => '出演可能なエピソードはありません。',
+			'cast.startFailed' => 'サーバーをチェックして再度試してみる',
+			'automation.noActivePlayback' => 'コントロールする動画セッションはありません。',
+			'notifications.newEpisodeTitle' => '新エピソード',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'すべての機能を7日間無料で試してみてください。',
+			'appAccess.description' => 'PlezyNG のすべての機能を使える7日間の無料体験を開始できます。体験期間中の料金やサブスクリプションはありません。体験期間終了後は、ストアに表示される価格で一度購入すると、PlezyNG を無期限で利用できます。',
+			'appAccess.trialEndedDescription' => 'あなたの店の価格で1 つの購入で一生のための PlezyNG のすべての機能を解除します。',
+			'appAccess.startTrial' => '無料7日間の試験開始',
+			'appAccess.trialActive' => '7日間のフルフィードテストがアクティブです。',
+			'appAccess.trialEnded' => '7日間の試験が終わりました。',
+			'appAccess.trialStartFailed' => 'このデバイスで試用を保存できませんでしたので、また試してみてください。',
+			'appAccess.lifetimeTitle' => 'PlezyNG 終身無効',
+			'appAccess.lifetimeBody' => '感謝! あなたはすべてのPlezyNG機能に一生のアクセスがあります。',
+			'appAccess.manageTitle' => 'PlezyNG 生涯アクセス',
+			'appAccess.manageDescription' => '7日間無料で各機能を試してみて、その後、あなたの店の価格で1回の支払いで一生のすべてをオフにします。',
+			'appAccess.buy' => ({required Object price}) => 'すべての機能を解除する ${price}',
+			'appAccess.loadingPrice' => 'ストアの価格...',
+			'appAccess.retryPrice' => '返品価格検索',
+			'appAccess.restore' => '生涯購入の復元',
+			'appAccess.pending' => '購入は支払いまたは承認を待っています. 店が完了した直後にライフタイムアクセスが開封されます。',
+			'appAccess.storeUnavailable' => '購入は利用できません. あなたが店にサインインされていることを確認し、このデバイスで購入が許可されています。',
+			'appAccess.productNotFound' => 'PlezyNG ライフタイム オフロックは、このストアではまだ利用できません。',
+			'appAccess.productQueryFailed' => 'ストア価格を負担することはできません. 接続をチェックして再度試してみてください。',
+			'appAccess.purchaseFailed' => '買い物は終わりませんでした!また試してみてください。',
+			'appAccess.restoreFailed' => '買い物を回復するために店に到達できなかったので、また試してみてください。',
+			'appAccess.nothingToRestore' => '購入番号 PlezyNG は、このストアのアカウントに検索されました。',
+			'detail.endsAt' => ({required Object time}) => '${time}に終了',
 			'watchLink.serverUnavailable' => 'このリンクのために Plex サーバーにアクセスできませんでした。',
 			'watchLink.notFound' => 'この番組または映画が Plex サーバーで見つかりませんでした。',
 			'watchLink.ambiguous' => 'このリンクは、複数のサーバーの項目と一致します. リンクにサーバーを追加します。',
@@ -7766,7 +7792,7 @@ extension on TranslationsJa {
 			'universalMedia.saveFavorite' => 'お気に入り保存',
 			'universalMedia.playNow' => 'プレー今',
 			'universalMedia.favoriteSaved' => 'ストリーム お気に入り このプロフィールに保存',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${count} 未サポートまたは不安全なプレイリストの入力。', other: '${count} 未サポートまたは不安全なプレイリストのエントリーを削除しました。', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${count} 未サポートまたは不安全なプレイリストの入力。', other: '${count} 未サポートまたは不安全なプレイリストのエントリーを削除しました。', ), 
 			'universalMedia.playlistAddress' => 'Playlist アドレス',
 			'universalMedia.playlistAddressHelp' => 'ウェブアドレスから M3U、M3U8 または PLS プレーリストを開きます。',
 			'universalMedia.choosePlaylist' => 'プレイリストファイルを選択',
@@ -7776,7 +7802,7 @@ extension on TranslationsJa {
 			'universalMedia.removeFavorite' => 'お気に入りの流れを削除する',
 			'universalMedia.filesHelp' => 'オーディオ、ビデオ、またはISOファイルを選択して一時的なスイッチを選択します. ファイルやURLは図書館の歴史に追加されません。',
 			'universalMedia.chooseFiles' => 'ファイルを選択',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '1 選ばれたファイル', other: '${count} 選択したファイル', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '1 選ばれたファイル', other: '${count} 選択したファイル', ), 
 			'universalMedia.wifiTransfer' => 'ファイルをWi-Fiで送信',
 			'universalMedia.wifiTransferHelp' => '同じ信頼できるネットワーク上のブラウザからサポートされたファイルを転送します。',
 			'universalMedia.wifiTransferIntro' => 'このアドレスを別のデバイスでブラウザで開きます. ファイルを選択して、このデバイスのファイルと本の図書館に追加します。',
@@ -7787,7 +7813,7 @@ extension on TranslationsJa {
 			'universalMedia.copyAddress' => '転送アドレスコピー',
 			'universalMedia.addressCopied' => '転送アドレスコピー',
 			'universalMedia.transferExpires' => ({required Object time}) => 'このアドレスは ${time} で終了します。',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${count} ファイルを受け取った', other: '${count} ファイルを受け取った', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, one: '${count} ファイルを受け取った', other: '${count} ファイルを受け取った', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => '受信 ${size}',
 			'universalMedia.stopTransfer' => '転送を停止し、住所を無効にする',
 			'universalMedia.startTransfer' => '転送開始',
@@ -7916,6 +7942,8 @@ extension on TranslationsJa {
 			'fileSources.bookmark' => 'ブックマークを追加',
 			'fileSources.highlight' => 'ハイライト',
 			'fileSources.note' => '注記',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => '削除',
 			'fileSources.export' => '輸出ノート',
 			'fileSources.exported' => '輸出のノート',
@@ -8028,8 +8056,6 @@ extension on TranslationsJa {
 			'fileSources.offlineQuotaHelp' => 'オフラインコピー、輸入されたファイル、およびクエードダウンロードで使用される最大スペースを設定します.制限を下げると既存のコピーは削除されません。',
 			'fileSources.offlineStorageUsage' => 'オフラインストレージ',
 			'fileSources.reservedStorage' => '予約',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'ダウンロード Queue',
 			'fileSources.downloadRunning' => 'ダウンロード',
 			'fileSources.downloadQueued' => '待つ',
@@ -8349,6 +8375,23 @@ extension on TranslationsJa {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'この Plezy リンクは有効ではありません。',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'プロフィールは「${profile}」と一致しない。',
+			'deepLinks.serverUnavailable' => 'このリンクのためにサーバーにアクセスできませんでした。',
+			'deepLinks.notFound' => 'このタイトルは図書館には見つかりません。',
+			'deepLinks.unsupportedItem' => 'このリンクはプレイできない。',
+			'deepLinks.noLiveTv' => 'このリンクにはライブテレビサーバーはありません。',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'チャンネル「${channel}」を見つけることができませんでした。',
+			'deepLinks.showLink' => 'リンク表示',
+			'deepLinks.showProfileLink' => 'プロフィールリンクを表示',
+			'deepLinks.dialogTitle' => 'リンク',
+			'deepLinks.showHint' => 'このリンクを開くと次のエピソードが再生されます。番組をシャッフル再生するには、末尾に &mode=shuffle を追加してください。',
+			'deepLinks.movieHint' => 'このリンクを開くことで、映画を演奏します。',
+			'deepLinks.episodeHint' => 'このリンクを開くことで、このエピソードを演奏します。',
+			'deepLinks.profileHint' => 'このリンクを開くには、このプロフィールへのスイッチが表示されます。',
+			'deepLinks.openAsProfile' => ({required Object name}) => '${name}としてオープン',
+			'deepLinks.copy' => 'コピー',
+			'deepLinks.copied' => 'リンクコピー',
 			_ => null,
 		};
 	}

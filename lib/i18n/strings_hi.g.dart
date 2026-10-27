@@ -41,15 +41,11 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$hi app = _Translations$app$hi._(_root);
-	@override late final _Translations$cast$hi cast = _Translations$cast$hi._(_root);
-	@override late final _Translations$automation$hi automation = _Translations$automation$hi._(_root);
-	@override late final _Translations$notifications$hi notifications = _Translations$notifications$hi._(_root);
 	@override late final _Translations$appIcon$hi appIcon = _Translations$appIcon$hi._(_root);
 	@override late final _Translations$auth$hi auth = _Translations$auth$hi._(_root);
 	@override late final _Translations$common$hi common = _Translations$common$hi._(_root);
 	@override late final _Translations$screens$hi screens = _Translations$screens$hi._(_root);
 	@override late final _Translations$update$hi update = _Translations$update$hi._(_root);
-	@override late final _Translations$appAccess$hi appAccess = _Translations$appAccess$hi._(_root);
 	@override late final _Translations$settings$hi settings = _Translations$settings$hi._(_root);
 	@override late final _Translations$themeEditor$hi themeEditor = _Translations$themeEditor$hi._(_root);
 	@override late final _Translations$search$hi search = _Translations$search$hi._(_root);
@@ -75,7 +71,6 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$hi serverSelection = _Translations$serverSelection$hi._(_root);
 	@override late final _Translations$hubDetail$hi hubDetail = _Translations$hubDetail$hi._(_root);
 	@override late final _Translations$logs$hi logs = _Translations$logs$hi._(_root);
-	@override late final _Translations$detail$hi detail = _Translations$detail$hi._(_root);
 	@override late final _Translations$startup$hi startup = _Translations$startup$hi._(_root);
 	@override late final _Translations$licenses$hi licenses = _Translations$licenses$hi._(_root);
 	@override late final _Translations$navigation$hi navigation = _Translations$navigation$hi._(_root);
@@ -98,6 +93,11 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$hi seerr = _Translations$seerr$hi._(_root);
 	@override late final _Translations$services$hi services = _Translations$services$hi._(_root);
 	@override late final _Translations$addServer$hi addServer = _Translations$addServer$hi._(_root);
+	@override late final _Translations$cast$hi cast = _Translations$cast$hi._(_root);
+	@override late final _Translations$automation$hi automation = _Translations$automation$hi._(_root);
+	@override late final _Translations$notifications$hi notifications = _Translations$notifications$hi._(_root);
+	@override late final _Translations$appAccess$hi appAccess = _Translations$appAccess$hi._(_root);
+	@override late final _Translations$detail$hi detail = _Translations$detail$hi._(_root);
 	@override late final _Translations$watchLink$hi watchLink = _Translations$watchLink$hi._(_root);
 	@override late final _Translations$homeLayout$hi homeLayout = _Translations$homeLayout$hi._(_root);
 	@override late final _Translations$platform$hi platform = _Translations$platform$hi._(_root);
@@ -108,6 +108,7 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$hi sourceSetup = _Translations$sourceSetup$hi._(_root);
 	@override late final _Translations$comics$hi comics = _Translations$comics$hi._(_root);
 	@override late final _Translations$games$hi games = _Translations$games$hi._(_root);
+	@override late final _Translations$deepLinks$hi deepLinks = _Translations$deepLinks$hi._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$hi extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$hi extends Translations$cast$en {
-	_Translations$cast$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'किसी डिवाइस पर कास्ट करें';
-	@override String get searching => 'कस्टम उपकरणों की तलाश में ...';
-	@override String connectedTo({required Object device}) => '${device} पर कनेक्ट करें';
-	@override String get device => 'कास्ट डिवाइस';
-	@override String get readyToCast => 'कास्ट करने के लिए तैयार';
-	@override String get subtitle => 'उपशीर्षक';
-	@override String get serverNotAvailable => 'मीडिया सर्वर उपलब्ध नहीं है।';
-	@override String get stopCasting => 'कास्ट करना बंद करें';
-	@override String get castToDevice => 'डिवाइस पर कास्ट करें';
-	@override String get noEpisodeAvailable => 'खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।';
-	@override String get startFailed => 'सर्वर की जांच करें और फिर से कोशिश करें।';
-}
-
-// Path: automation
-class _Translations$automation$hi extends Translations$automation$en {
-	_Translations$automation$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।';
-	@override String get profileNotFound => 'यह Plezy प्रोफ़ाइल नहीं पाया जा सकता था।';
-}
-
-// Path: notifications
-class _Translations$notifications$hi extends Translations$notifications$en {
-	_Translations$notifications$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'नए एपिसोड';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$hi extends Translations$update$en {
 	@override String get viewRelease => 'देखें रिलीज';
 	@override String get latestVersion => 'आप नवीनतम संस्करण पर हैं';
 	@override String get checkFailed => 'अद्यतन की जांच नहीं कर पाया';
-}
-
-// Path: appAccess
-class _Translations$appAccess$hi extends Translations$appAccess$en {
-	_Translations$appAccess$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें';
-	@override String get description => 'सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.';
-	@override String get trialEndedDescription => 'अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.';
-	@override String get startTrial => 'मेरे 7 दिन मुफ्त परीक्षण शुरू करें';
-	@override String get trialActive => 'आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।';
-	@override String get trialEnded => '7 दिन का मुकदमा खत्म हो गया है।';
-	@override String get trialStartFailed => 'मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.';
-	@override String get lifetimeTitle => 'PlezyNG जीवन के लिए अनलॉक';
-	@override String get lifetimeBody => 'आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।';
-	@override String get manageTitle => 'PlezyNG जीवन भर पहुंच';
-	@override String get manageDescription => '7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।';
-	@override String buy({required Object price}) => '${price} के लिए सभी सुविधाओं को अनलॉक करें';
-	@override String get loadingPrice => 'दुकान की कीमत...';
-	@override String get retryPrice => 'रिट्री की कीमत देखें';
-	@override String get restore => 'जीवन भर खरीदें';
-	@override String get pending => 'आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.';
-	@override String get storeUnavailable => 'खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.';
-	@override String get productNotFound => 'PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।';
-	@override String get productQueryFailed => 'दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.';
-	@override String get purchaseFailed => 'खरीदारी नहीं हुई. फिर से कोशिश करें.';
-	@override String get restoreFailed => 'आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.';
-	@override String get nothingToRestore => 'इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।';
 }
 
 // Path: settings
@@ -1235,10 +1163,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	final TranslationsHi _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम',
-	);
 	@override String get audioLabel => 'ऑडियो';
 	@override String get subtitlesLabel => 'उपशीर्षक';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1275,8 +1199,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get unmuteButton => 'अनमोल';
 	@override String get settingsButton => 'Playback सेटिंग्स';
 	@override String get tracksButton => 'ऑडियो और उपनाम';
-	@override String get trackSelectionTitle => 'प्लेबैक से पहले ट्रैक चुनें';
-	@override String get trackSelectionAuto => 'स्वचालित चयन';
 	@override String get chaptersButton => 'अध्याय';
 	@override String get versionQualityButton => 'संस्करण और गुणवत्ता';
 	@override String get versionColumnHeader => 'संस्करण';
@@ -1286,8 +1208,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'ट्रांसकोडिंग उपलब्ध नहीं है - मूल गुणवत्ता खेलने के लिए';
 	@override String get subtitleUnavailableFallback => 'चुने हुए उप शीर्षक लोड नहीं किया जा सकता है — बिना उप शीर्षक जारी';
 	@override String get pipButton => 'Image-in-Picture मोड';
-	@override String get openMiniPlayer => 'खोलने वाले मिनी खिलाड़ी';
-	@override String get returnToFullPlayer => 'पूर्ण खिलाड़ी के लिए वापसी';
 	@override String get aspectRatioButton => 'आस्पेक्ट अनुपात';
 	@override String get ambientLighting => 'पर्यावरण प्रकाश';
 	@override String get fullscreenButton => 'पूर्ण स्क्रीन में प्रवेश';
@@ -1296,7 +1216,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'रोटेशन लॉक';
 	@override String get lockScreen => 'लॉक स्क्रीन';
 	@override String get screenLockButton => 'स्क्रीन लॉक';
-	@override String get longPressToUnlock => 'लंबे समय तक दबाव में विघटित';
 	@override String get timelineSlider => 'वीडियो टाइमलाइन';
 	@override String get volumeSlider => 'वॉल्यूम स्तर';
 	@override String endsAt({required Object time}) => '${time} पर समाप्त';
@@ -1313,8 +1232,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get noQueueItems => 'क्यूए में कोई आइटम नहीं';
 	@override String get noAudioDevicesAvailable => 'कोई ऑडियो डिवाइस उपलब्ध नहीं है';
 	@override String get searchSubtitles => 'Subtitles खोजें';
-	@override String get loadSubtitleFile => 'Subtitle फ़ाइल डाउनलोड करें';
-	@override String get subtitleLoadFailed => 'Subtitle फ़ाइल डाउनलोड करने में विफल';
 	@override String get language => 'भाषा';
 	@override String get noSubtitlesFound => 'कोई उपनाम नहीं मिला';
 	@override String get subtitleDownloaded => 'Subtitle डाउनलोड करें';
@@ -1323,7 +1240,6 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get searchLanguages => 'भाषाओं की खोज...';
 	@override String get skipIntro => 'स्काइप इनट्रू';
 	@override String get skipCredits => 'क्रेडिट स्केप';
-	@override String get skipAds => 'स्काइप विज्ञापन';
 	@override String get nextEpisode => 'अगला एपिसोड';
 	@override String subtitleTrack({required Object n}) => 'ट्रैक ${n}';
 	@override String subtitleFile({required Object name}) => 'पदों की संख्या ${name}';
@@ -1331,6 +1247,19 @@ class _Translations$videoControls$hi extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'पदों की सूची: Off';
 	@override String osdSubtitles({required Object track}) => 'पदों की संख्या: ${track}';
 	@override String osdAudio({required Object track}) => 'ऑडियो: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम',
+	);
+	@override String get trackSelectionTitle => 'प्लेबैक से पहले ट्रैक चुनें';
+	@override String get trackSelectionAuto => 'स्वचालित चयन';
+	@override String get openMiniPlayer => 'खोलने वाले मिनी खिलाड़ी';
+	@override String get returnToFullPlayer => 'पूर्ण खिलाड़ी के लिए वापसी';
+	@override String get loadSubtitleFile => 'Subtitle फ़ाइल डाउनलोड करें';
+	@override String get subtitleLoadFailed => 'Subtitle फ़ाइल डाउनलोड करने में विफल';
+	@override String get skipAds => 'स्काइप विज्ञापन';
+	@override String get tapToUnlock => 'अनलॉक करने के लिए टैप करें';
+	@override String get tapAgainToUnlock => 'अनलॉक करने के लिए फिर से टैप करें';
 }
 
 // Path: messages
@@ -1828,16 +1757,6 @@ class _Translations$logs$hi extends Translations$logs$en {
 	@override String get saveLogs => 'फ़ाइल में लॉग्स को सहेजें';
 	@override String logsSaved({required Object path}) => 'लॉग ${path} पर संग्रहीत';
 	@override String get saveLogsFailed => 'लॉग फ़ाइल को बचाने में सक्षम नहीं था।';
-}
-
-// Path: detail
-class _Translations$detail$hi extends Translations$detail$en {
-	_Translations$detail$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => '${time} पर समाप्त';
 }
 
 // Path: startup
@@ -2907,6 +2826,88 @@ class _Translations$addServer$hi extends Translations$addServer$en {
 	@override String get httpsRequired => 'HTTPS का उपयोग करें या स्पष्ट रूप से एक अज्ञात कनेक्शन की अनुमति दें।';
 }
 
+// Path: cast
+class _Translations$cast$hi extends Translations$cast$en {
+	_Translations$cast$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'किसी डिवाइस पर कास्ट करें';
+	@override String get searching => 'कस्टम उपकरणों की तलाश में ...';
+	@override String connectedTo({required Object device}) => '${device} पर कनेक्ट करें';
+	@override String get device => 'कास्ट डिवाइस';
+	@override String get readyToCast => 'कास्ट करने के लिए तैयार';
+	@override String get subtitle => 'उपशीर्षक';
+	@override String get serverNotAvailable => 'मीडिया सर्वर उपलब्ध नहीं है।';
+	@override String get stopCasting => 'कास्ट करना बंद करें';
+	@override String get castToDevice => 'डिवाइस पर कास्ट करें';
+	@override String get noEpisodeAvailable => 'खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।';
+	@override String get startFailed => 'सर्वर की जांच करें और फिर से कोशिश करें।';
+}
+
+// Path: automation
+class _Translations$automation$hi extends Translations$automation$en {
+	_Translations$automation$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।';
+}
+
+// Path: notifications
+class _Translations$notifications$hi extends Translations$notifications$en {
+	_Translations$notifications$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'नए एपिसोड';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$hi extends Translations$appAccess$en {
+	_Translations$appAccess$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें';
+	@override String get description => 'सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.';
+	@override String get trialEndedDescription => 'अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.';
+	@override String get startTrial => 'मेरे 7 दिन मुफ्त परीक्षण शुरू करें';
+	@override String get trialActive => 'आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।';
+	@override String get trialEnded => '7 दिन का मुकदमा खत्म हो गया है।';
+	@override String get trialStartFailed => 'मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.';
+	@override String get lifetimeTitle => 'PlezyNG जीवन के लिए अनलॉक';
+	@override String get lifetimeBody => 'आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।';
+	@override String get manageTitle => 'PlezyNG जीवन भर पहुंच';
+	@override String get manageDescription => '7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।';
+	@override String buy({required Object price}) => '${price} के लिए सभी सुविधाओं को अनलॉक करें';
+	@override String get loadingPrice => 'दुकान की कीमत...';
+	@override String get retryPrice => 'रिट्री की कीमत देखें';
+	@override String get restore => 'जीवन भर खरीदें';
+	@override String get pending => 'आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.';
+	@override String get storeUnavailable => 'खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.';
+	@override String get productNotFound => 'PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।';
+	@override String get productQueryFailed => 'दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.';
+	@override String get purchaseFailed => 'खरीदारी नहीं हुई. फिर से कोशिश करें.';
+	@override String get restoreFailed => 'आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.';
+	@override String get nothingToRestore => 'इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।';
+}
+
+// Path: detail
+class _Translations$detail$hi extends Translations$detail$en {
+	_Translations$detail$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => '${time} पर समाप्त';
+}
+
 // Path: watchLink
 class _Translations$watchLink$hi extends Translations$watchLink$en {
 	_Translations$watchLink$hi._(TranslationsHi root) : this._root = root, super.internal(root);
@@ -3177,7 +3178,6 @@ class _Translations$universalMedia$hi extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'स्थानीय रूपांतरण FFmpeg स्थापित के साथ डेस्कटॉप कंप्यूटर पर उपलब्ध है।';
 	@override String get converterStart => 'फ़ाइलों को बदलना';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$hi extends Translations$fileSources$en {
@@ -3724,6 +3724,32 @@ class _Translations$games$hi extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$hi extends Translations$deepLinks$en {
+	_Translations$deepLinks$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'यह Plezy लिंक वैध नहीं है।';
+	@override String profileNotFound({required Object profile}) => 'कोई प्रोफ़ाइल "${profile}" से मेल नहीं खाता है।';
+	@override String get serverUnavailable => 'मैं इस लिंक के लिए सर्वर तक नहीं पहुंच सकता था।';
+	@override String get notFound => 'आप अपनी पुस्तकालयों में इस शीर्षक को नहीं पा सकते।';
+	@override String get unsupportedItem => 'इस लिंक को नहीं खेला जा सकता है।';
+	@override String get noLiveTv => 'इस लिंक के लिए कोई लाइव टीवी सर्वर उपलब्ध नहीं है।';
+	@override String channelNotFound({required Object channel}) => 'चैनल "${channel}" नहीं मिल सकता था।';
+	@override String get showLink => 'लिंक दिखाएं';
+	@override String get showProfileLink => 'प्रोफ़ाइल लिंक दिखाएं';
+	@override String get dialogTitle => 'लिंक';
+	@override String get showHint => 'इस लिंक को खोलने से अगले एपिसोड खेला जाता है. shuffle पर शो खेलने के लिए &mode=shuffle जोड़ें.';
+	@override String get movieHint => 'इस लिंक को खोलने से फिल्म खेलती है।';
+	@override String get episodeHint => 'इस लिंक को खोलने से यह एपिसोड खेला जाता है।';
+	@override String get profileHint => 'इस लिंक को खोलने से इस प्रोफ़ाइल के लिए स्विच होता है।';
+	@override String openAsProfile({required Object name}) => '${name} के रूप में खोलें';
+	@override String get copy => 'कॉपी करें';
+	@override String get copied => 'लिंक कॉपी करें';
 }
 
 // Path: appIcon.names
@@ -4840,21 +4866,6 @@ extension on TranslationsHi {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'किसी डिवाइस पर कास्ट करें',
-			'cast.searching' => 'कस्टम उपकरणों की तलाश में ...',
-			'cast.connectedTo' => ({required Object device}) => '${device} पर कनेक्ट करें',
-			'cast.device' => 'कास्ट डिवाइस',
-			'cast.readyToCast' => 'कास्ट करने के लिए तैयार',
-			'cast.subtitle' => 'उपशीर्षक',
-			'cast.serverNotAvailable' => 'मीडिया सर्वर उपलब्ध नहीं है।',
-			'cast.stopCasting' => 'कास्ट करना बंद करें',
-			'cast.castToDevice' => 'डिवाइस पर कास्ट करें',
-			'cast.noEpisodeAvailable' => 'खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।',
-			'cast.startFailed' => 'सर्वर की जांच करें और फिर से कोशिश करें।',
-			'automation.noActivePlayback' => 'नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।',
-			'automation.profileNotFound' => 'यह Plezy प्रोफ़ाइल नहीं पाया जा सकता था।',
-			'notifications.newEpisodeTitle' => 'नए एपिसोड',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'एप्लिकेशन आइकन',
 			'appIcon.defaultIcon' => 'मूल',
 			'appIcon.current' => 'वर्तमान आइकन',
@@ -5017,28 +5028,6 @@ extension on TranslationsHi {
 			'update.viewRelease' => 'देखें रिलीज',
 			'update.latestVersion' => 'आप नवीनतम संस्करण पर हैं',
 			'update.checkFailed' => 'अद्यतन की जांच नहीं कर पाया',
-			'appAccess.title' => '7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें',
-			'appAccess.description' => 'सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.',
-			'appAccess.trialEndedDescription' => 'अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.',
-			'appAccess.startTrial' => 'मेरे 7 दिन मुफ्त परीक्षण शुरू करें',
-			'appAccess.trialActive' => 'आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।',
-			'appAccess.trialEnded' => '7 दिन का मुकदमा खत्म हो गया है।',
-			'appAccess.trialStartFailed' => 'मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.',
-			'appAccess.lifetimeTitle' => 'PlezyNG जीवन के लिए अनलॉक',
-			'appAccess.lifetimeBody' => 'आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।',
-			'appAccess.manageTitle' => 'PlezyNG जीवन भर पहुंच',
-			'appAccess.manageDescription' => '7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।',
-			'appAccess.buy' => ({required Object price}) => '${price} के लिए सभी सुविधाओं को अनलॉक करें',
-			'appAccess.loadingPrice' => 'दुकान की कीमत...',
-			'appAccess.retryPrice' => 'रिट्री की कीमत देखें',
-			'appAccess.restore' => 'जीवन भर खरीदें',
-			'appAccess.pending' => 'आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.',
-			'appAccess.storeUnavailable' => 'खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.',
-			'appAccess.productNotFound' => 'PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।',
-			'appAccess.productQueryFailed' => 'दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.',
-			'appAccess.purchaseFailed' => 'खरीदारी नहीं हुई. फिर से कोशिश करें.',
-			'appAccess.restoreFailed' => 'आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.',
-			'appAccess.nothingToRestore' => 'इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।',
 			'settings.title' => 'सेटिंग्स',
 			'settings.supportDeveloper' => 'समर्थन PlezyNG',
 			'settings.supportDeveloperDescription' => 'विकास का समर्थन करने के लिए दान',
@@ -5351,8 +5340,6 @@ extension on TranslationsHi {
 			'settings.audioPassthrough' => 'ध्वनि के साथ',
 			'settings.audioPassthroughDescription' => 'अपने रिसेप्टर या टीवी को फिर से एन्कोडिंग के बिना Dolby/DTS ऑडियो भेजें, आसपास के ध्वनि को बनाए रखें. यदि आपके पास कोई ध्वनि नहीं है तो बंद करें.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus के लिए मूल Dolby decoder Apple का उपयोग करें, जिसमें Atmos भी शामिल है. DTS और TrueHD अभी भी मल्टीचैनल पीसीएम के रूप में खेलते हैं. यदि आपके पास कोई ध्वनि नहीं है तो बंद करें.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'डोलबी डिजिटल प्लस के लिए Apple के मूल डोलबी डिकोडर का उपयोग करें, जिसमें Atmos शामिल है. iOS, iPadOS और tvOS 26 या बाद में, TrueHD Atmos और DTS:X को अंतरिक्ष ऑडियो के रूप में खेला जाता है. अन्य DTS और TrueHD ट्रैक को मल्टीचैनल पीसीएम के रूप में खेला जाता है. बंद करें यदि आपके पास कोई ध्वनि नहीं है.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'जबकि ध्वनि सामान्यीकरण के लिए बंद हो जाता है',
 			'settings.audioChannelLimit' => 'ऑडियो चैनल',
@@ -5390,6 +5377,8 @@ extension on TranslationsHi {
 			'settings.disableDolbyVisionDescription' => 'फ़ाइल के HDR10 या HLG परत को Dolby Vision के बजाय खेलें, जब इसमें एक',
 			'settings.hdrSdrConversion' => 'HDR से SDR के लिए रूपांतरण',
 			'settings.hdrSdrConversionDescription' => 'चुनें कि HDR वीडियो को क्या रूपांतरित करता है जब डिस्प्ले HDR नहीं दिखा सकता है।',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'ऑटो',
 			'settings.hdrSdrConversionAutoDescription' => 'डिवाइस पर Android 9 और बाद में, पुराने संस्करणों पर प्लेयर',
 			'settings.hdrSdrConversionDevice' => 'डिवाइस',
@@ -5851,7 +5840,6 @@ extension on TranslationsHi {
 			'tooltips.markAsWatched' => 'मार्क देखने के लिए',
 			'tooltips.markAsUnwatched' => 'अनदेखी के रूप में मार्क',
 			'audioTracks.track' => ({required Object n}) => 'ऑडियो ट्रैक ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम', ), 
 			'videoControls.audioLabel' => 'ऑडियो',
 			'videoControls.subtitlesLabel' => 'उपशीर्षक',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5865,8 +5853,6 @@ extension on TranslationsHi {
 			'videoControls.sleepTimerEndOfVideo' => 'वर्तमान वीडियो का अंत',
 			'videoControls.sleepTimerStopAtHeader' => 'रुकें',
 			'videoControls.sleepTimerDurationHeader' => 'टाइमर',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback इस वीडियो के अंत में रुक जाएगा',
 			'videoControls.stillWatching' => 'अभी भी देखते हैं?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds} में आराम',
@@ -5890,8 +5876,6 @@ extension on TranslationsHi {
 			'videoControls.unmuteButton' => 'अनमोल',
 			'videoControls.settingsButton' => 'Playback सेटिंग्स',
 			'videoControls.tracksButton' => 'ऑडियो और उपनाम',
-			'videoControls.trackSelectionTitle' => 'प्लेबैक से पहले ट्रैक चुनें',
-			'videoControls.trackSelectionAuto' => 'स्वचालित चयन',
 			'videoControls.chaptersButton' => 'अध्याय',
 			'videoControls.versionQualityButton' => 'संस्करण और गुणवत्ता',
 			'videoControls.versionColumnHeader' => 'संस्करण',
@@ -5901,17 +5885,16 @@ extension on TranslationsHi {
 			'videoControls.transcodeUnavailableFallback' => 'ट्रांसकोडिंग उपलब्ध नहीं है - मूल गुणवत्ता खेलने के लिए',
 			'videoControls.subtitleUnavailableFallback' => 'चुने हुए उप शीर्षक लोड नहीं किया जा सकता है — बिना उप शीर्षक जारी',
 			'videoControls.pipButton' => 'Image-in-Picture मोड',
-			'videoControls.openMiniPlayer' => 'खोलने वाले मिनी खिलाड़ी',
-			'videoControls.returnToFullPlayer' => 'पूर्ण खिलाड़ी के लिए वापसी',
 			'videoControls.aspectRatioButton' => 'आस्पेक्ट अनुपात',
 			'videoControls.ambientLighting' => 'पर्यावरण प्रकाश',
 			'videoControls.fullscreenButton' => 'पूर्ण स्क्रीन में प्रवेश',
 			'videoControls.exitFullscreenButton' => 'पूर्ण स्क्रीन से बाहर',
 			'videoControls.alwaysOnTopButton' => 'हमेशा शीर्ष पर',
 			'videoControls.rotationLockButton' => 'रोटेशन लॉक',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'लॉक स्क्रीन',
 			'videoControls.screenLockButton' => 'स्क्रीन लॉक',
-			'videoControls.longPressToUnlock' => 'लंबे समय तक दबाव में विघटित',
 			'videoControls.timelineSlider' => 'वीडियो टाइमलाइन',
 			'videoControls.volumeSlider' => 'वॉल्यूम स्तर',
 			'videoControls.endsAt' => ({required Object time}) => '${time} पर समाप्त',
@@ -5935,8 +5918,6 @@ extension on TranslationsHi {
 			'videoControls.noQueueItems' => 'क्यूए में कोई आइटम नहीं',
 			'videoControls.noAudioDevicesAvailable' => 'कोई ऑडियो डिवाइस उपलब्ध नहीं है',
 			'videoControls.searchSubtitles' => 'Subtitles खोजें',
-			'videoControls.loadSubtitleFile' => 'Subtitle फ़ाइल डाउनलोड करें',
-			'videoControls.subtitleLoadFailed' => 'Subtitle फ़ाइल डाउनलोड करने में विफल',
 			'videoControls.language' => 'भाषा',
 			'videoControls.noSubtitlesFound' => 'कोई उपनाम नहीं मिला',
 			'videoControls.subtitleDownloaded' => 'Subtitle डाउनलोड करें',
@@ -5945,7 +5926,6 @@ extension on TranslationsHi {
 			'videoControls.searchLanguages' => 'भाषाओं की खोज...',
 			'videoControls.skipIntro' => 'स्काइप इनट्रू',
 			'videoControls.skipCredits' => 'क्रेडिट स्केप',
-			'videoControls.skipAds' => 'स्काइप विज्ञापन',
 			'videoControls.nextEpisode' => 'अगला एपिसोड',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'ट्रैक ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'पदों की संख्या ${name}',
@@ -5953,6 +5933,16 @@ extension on TranslationsHi {
 			'videoControls.osdSubtitlesOff' => 'पदों की सूची: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'पदों की संख्या: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'ऑडियो: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ्रेम', ), 
+			'videoControls.trackSelectionTitle' => 'प्लेबैक से पहले ट्रैक चुनें',
+			'videoControls.trackSelectionAuto' => 'स्वचालित चयन',
+			'videoControls.openMiniPlayer' => 'खोलने वाले मिनी खिलाड़ी',
+			'videoControls.returnToFullPlayer' => 'पूर्ण खिलाड़ी के लिए वापसी',
+			'videoControls.loadSubtitleFile' => 'Subtitle फ़ाइल डाउनलोड करें',
+			'videoControls.subtitleLoadFailed' => 'Subtitle फ़ाइल डाउनलोड करने में विफल',
+			'videoControls.skipAds' => 'स्काइप विज्ञापन',
+			'videoControls.tapToUnlock' => 'अनलॉक करने के लिए टैप करें',
+			'videoControls.tapAgainToUnlock' => 'अनलॉक करने के लिए फिर से टैप करें',
 			'messages.markedAsWatched' => 'देखने के लिए मार्केटिंग',
 			'messages.markedAsUnwatched' => 'अनदेखा के रूप में चिह्नित',
 			'messages.markedAsWatchedOffline' => 'देखने के रूप में चिह्नित (जब ऑनलाइन सिंक्रनाइज़ किया जाएगा)',
@@ -6379,8 +6369,6 @@ extension on TranslationsHi {
 			'libraries.all' => 'सारे',
 			'libraries.clearAll' => 'सब स्पष्ट',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'क्या आप निश्चित हैं कि आप "${title}" स्कैन करना चाहते हैं?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'क्या आप निश्चित हैं कि आप "${title}" का विश्लेषण करना चाहते हैं?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'क्या आप निश्चित हैं कि आप "${title}" के लिए मेटाडेटा को नवीनीकृत करना चाहते हैं?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'क्या आप निश्चित हैं कि आप "${title}" के लिए खाली कचरा चाहते हैं?',
@@ -6417,6 +6405,8 @@ extension on TranslationsHi {
 			'libraries.filterCategories.year' => 'वर्ष',
 			'libraries.filterCategories.contentRating' => 'सामग्री रेटिंग',
 			'libraries.filterCategories.tag' => 'Tag',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'अनदेखा',
 			'libraries.filterCategories.unplayed' => 'अनदेखा',
 			'libraries.filterCategories.favorites' => 'पसंदीदा',
@@ -6498,7 +6488,6 @@ extension on TranslationsHi {
 			'logs.saveLogs' => 'फ़ाइल में लॉग्स को सहेजें',
 			'logs.logsSaved' => ({required Object path}) => 'लॉग ${path} पर संग्रहीत',
 			'logs.saveLogsFailed' => 'लॉग फ़ाइल को बचाने में सक्षम नहीं था।',
-			'detail.endsAt' => ({required Object time}) => '${time} पर समाप्त',
 			'startup.failedTitle' => 'PlezyNG शुरू नहीं किया जा सकता',
 			'startup.failedBody' => 'स्टार्टअप के दौरान कुछ गलत हो गया. नीचे दिए गए विवरण बताते हैं कि क्या विफल रहा।',
 			'startup.failedBodyRepairable' => 'PlezyNG की सहेजी हुई सेटिंग्स फ़ाइल क्षतिग्रस्त है। ऐप शुरू होने से पहले इसे फिर से बनाना होगा। दोबारा कोशिश करने से मदद नहीं मिलेगी — स्टोरेज की मरम्मत का विकल्प चुनें।',
@@ -6893,8 +6882,6 @@ extension on TranslationsHi {
 			'watchTogether.connecting' => 'कनेक्ट...',
 			'watchTogether.relayPublic' => 'कमरे सार्वजनिक Open Watch पार्टी रिलीज का उपयोग करते हैं।',
 			'watchTogether.relayCustom' => ({required Object url}) => 'कमरे ${url} पर अपने रिले का उपयोग करते हैं।',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'हाल के कमरे',
 			'watchTogether.roomActions' => 'कमरे के कार्य',
 			'watchTogether.renameRoom' => 'कमरे का नाम',
@@ -6932,6 +6919,8 @@ extension on TranslationsHi {
 			'watchTogether.playAnyway' => 'किसी भी तरह से खेल',
 			'watchTogether.chooseAnotherCopy' => 'एक और कॉपी चुनें',
 			'watchTogether.dontPlay' => 'नहीं खेलें',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'आप इस वीडियो को नहीं रखते हैं',
 			'watchTogether.unavailableDescription' => 'PlezyNG अपने पुस्तकालयों में इसे नहीं पाया. खुद को एक प्रति चुनें या फिर से खोजें.',
 			'watchTogether.chooseCopy' => 'एक कॉपी चुनें',
@@ -7407,8 +7396,6 @@ extension on TranslationsHi {
 			'metadataEdit.metadataUpdateFailed' => 'मेटाडेटा अपडेट करने में असफल',
 			'metadataEdit.artworkUpdated' => 'Artwork अद्यतन',
 			'metadataEdit.artworkUpdateFailed' => 'कला के काम को अपडेट करने में विफलता',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'कोई कला उपलब्ध नहीं है',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'आर्टवर्क विकल्प ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'आर्टवर्क विकल्प ${index}, चुना गया',
@@ -7446,6 +7433,8 @@ extension on TranslationsHi {
 			'metadataEdit.shownWithForeignAudio' => 'विदेशी ऑडियो के साथ प्रदर्शित',
 			'metadataEdit.alwaysEnabled' => 'हमेशा सक्षम',
 			'metadataEdit.tags' => 'टैग',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'टैग जोड़ें',
 			'metadataEdit.genre' => 'जीन',
 			'metadataEdit.director' => 'निर्देशक',
@@ -7636,6 +7625,43 @@ extension on TranslationsHi {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP का उपयोग करता है। नेटवर्क पर मौजूद लोग आपका पासवर्ड, टोकन और मीडिया पढ़ या बदल सकते हैं। उपलब्ध होने पर HTTPS का उपयोग करें। केवल तभी जारी रखें जब आपको इस नेटवर्क पर भरोसा हो और आप जोखिम स्वीकार करते हों।',
 			'addServer.allowHttp' => 'HTTP की अनुमति दें',
 			'addServer.httpsRequired' => 'HTTPS का उपयोग करें या स्पष्ट रूप से एक अज्ञात कनेक्शन की अनुमति दें।',
+			'cast.chooseDevice' => 'किसी डिवाइस पर कास्ट करें',
+			'cast.searching' => 'कस्टम उपकरणों की तलाश में ...',
+			'cast.connectedTo' => ({required Object device}) => '${device} पर कनेक्ट करें',
+			'cast.device' => 'कास्ट डिवाइस',
+			'cast.readyToCast' => 'कास्ट करने के लिए तैयार',
+			'cast.subtitle' => 'उपशीर्षक',
+			'cast.serverNotAvailable' => 'मीडिया सर्वर उपलब्ध नहीं है।',
+			'cast.stopCasting' => 'कास्ट करना बंद करें',
+			'cast.castToDevice' => 'डिवाइस पर कास्ट करें',
+			'cast.noEpisodeAvailable' => 'खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।',
+			'cast.startFailed' => 'सर्वर की जांच करें और फिर से कोशिश करें।',
+			'automation.noActivePlayback' => 'नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।',
+			'notifications.newEpisodeTitle' => 'नए एपिसोड',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => '7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें',
+			'appAccess.description' => 'सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.',
+			'appAccess.trialEndedDescription' => 'अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.',
+			'appAccess.startTrial' => 'मेरे 7 दिन मुफ्त परीक्षण शुरू करें',
+			'appAccess.trialActive' => 'आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।',
+			'appAccess.trialEnded' => '7 दिन का मुकदमा खत्म हो गया है।',
+			'appAccess.trialStartFailed' => 'मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.',
+			'appAccess.lifetimeTitle' => 'PlezyNG जीवन के लिए अनलॉक',
+			'appAccess.lifetimeBody' => 'आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।',
+			'appAccess.manageTitle' => 'PlezyNG जीवन भर पहुंच',
+			'appAccess.manageDescription' => '7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।',
+			'appAccess.buy' => ({required Object price}) => '${price} के लिए सभी सुविधाओं को अनलॉक करें',
+			'appAccess.loadingPrice' => 'दुकान की कीमत...',
+			'appAccess.retryPrice' => 'रिट्री की कीमत देखें',
+			'appAccess.restore' => 'जीवन भर खरीदें',
+			'appAccess.pending' => 'आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.',
+			'appAccess.storeUnavailable' => 'खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.',
+			'appAccess.productNotFound' => 'PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।',
+			'appAccess.productQueryFailed' => 'दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.',
+			'appAccess.purchaseFailed' => 'खरीदारी नहीं हुई. फिर से कोशिश करें.',
+			'appAccess.restoreFailed' => 'आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.',
+			'appAccess.nothingToRestore' => 'इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।',
+			'detail.endsAt' => ({required Object time}) => '${time} पर समाप्त',
 			'watchLink.serverUnavailable' => 'इस लिंक के लिए Plex सर्वर तक पहुंच नहीं पाया।',
 			'watchLink.notFound' => 'इस शो या फिल्म को आपके Plex सर्वर पर नहीं पाया जा सकता।',
 			'watchLink.ambiguous' => 'यह लिंक एक से अधिक सर्वर पर आइटम से मेल खाता है. लिंक में एक सर्वर जोड़ें.',
@@ -7771,7 +7797,7 @@ extension on TranslationsHi {
 			'universalMedia.saveFavorite' => 'पसंदीदा बचाएं',
 			'universalMedia.playNow' => 'अब खेलें',
 			'universalMedia.favoriteSaved' => 'स्ट्रीम पसंदीदा इस प्रोफ़ाइल में सहेजा गया',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${count} अपरिवर्तित या असुरक्षित प्लेलिस्ट इनपुट से बाहर निकल गया।', other: '${count} अपरिवर्तित या असुरक्षित प्लेलिस्ट इनपुट को छोड़ दिया।', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${count} अपरिवर्तित या असुरक्षित प्लेलिस्ट इनपुट से बाहर निकल गया।', other: '${count} अपरिवर्तित या असुरक्षित प्लेलिस्ट इनपुट को छोड़ दिया।', ), 
 			'universalMedia.playlistAddress' => 'प्लेलिस्ट पता',
 			'universalMedia.playlistAddressHelp' => 'एक वेब पते से M3U, M3u8, या PLS प्लेलिस्ट खोलें. सीधे स्ट्रीम लिंक प्ले लिस्ट को नहीं बचाते हैं.',
 			'universalMedia.choosePlaylist' => 'Playlist फ़ाइल का चयन करें',
@@ -7781,7 +7807,7 @@ extension on TranslationsHi {
 			'universalMedia.removeFavorite' => 'पसंदीदा स्ट्रीम को हटा दें',
 			'universalMedia.filesHelp' => 'ऑडियो, वीडियो, या आईएसओ फ़ाइलों का चयन करें एक अस्थायी कवच के लिए. फ़ाइलें और यूआरएल लाइब्रेरी इतिहास में जोड़ा नहीं जाता है.',
 			'universalMedia.chooseFiles' => 'फ़ाइल चुनें',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '1 चयनित फ़ाइल', other: '${count} चयनित फ़ाइलें', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '1 चयनित फ़ाइल', other: '${count} चयनित फ़ाइलें', ), 
 			'universalMedia.wifiTransfer' => 'फ़ाइलों को Wi-Fi के माध्यम से भेजें',
 			'universalMedia.wifiTransferHelp' => 'एक ब्राउज़र से समर्थित फ़ाइलों को उसी विश्वसनीय नेटवर्क पर स्थानांतरित करें।',
 			'universalMedia.wifiTransferIntro' => 'किसी अन्य डिवाइस पर एक ब्राउज़र में इस पते को खोलें. फ़ाइलों को जोड़ने के लिए फ़ाइलें और किताबें पुस्तकालय में चुनें.',
@@ -7792,7 +7818,7 @@ extension on TranslationsHi {
 			'universalMedia.copyAddress' => 'कॉपी स्थानांतरण पता',
 			'universalMedia.addressCopied' => 'स्थानांतरण का पता कॉपी',
 			'universalMedia.transferExpires' => ({required Object time}) => 'यह पता ${time} में समाप्त हो जाता है।',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${count} फ़ाइल प्राप्त', other: '${count} फ़ाइलें प्राप्त', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${count} फ़ाइल प्राप्त', other: '${count} फ़ाइलें प्राप्त', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => '${size} प्राप्त करें',
 			'universalMedia.stopTransfer' => 'स्थानांतरण को रोकें और अनलॉक करें',
 			'universalMedia.startTransfer' => 'स्थानांतरण शुरू करें',
@@ -7921,6 +7947,8 @@ extension on TranslationsHi {
 			'fileSources.bookmark' => 'Bookmark के लिए',
 			'fileSources.highlight' => 'उजागर',
 			'fileSources.note' => 'नोट',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'डिलीट',
 			'fileSources.export' => 'नोट्स निर्यात',
 			'fileSources.exported' => 'नोटों का निर्यात',
@@ -8033,8 +8061,6 @@ extension on TranslationsHi {
 			'fileSources.offlineQuotaHelp' => 'ऑफ़लाइन प्रतियां, आयातित फ़ाइलों और क्यूएड डाउनलोड द्वारा उपयोग की जाने वाली अधिकतम जगह सेट करें. सीमा को कम करना मौजूदा प्रतियों को नहीं हटाता है.',
 			'fileSources.offlineStorageUsage' => 'ऑफ़लाइन भंडारण',
 			'fileSources.reservedStorage' => 'आरक्षित',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'डाउनलोड करें Queue',
 			'fileSources.downloadRunning' => 'डाउनलोड करें',
 			'fileSources.downloadQueued' => 'इंतजार',
@@ -8354,6 +8380,23 @@ extension on TranslationsHi {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'यह Plezy लिंक वैध नहीं है।',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'कोई प्रोफ़ाइल "${profile}" से मेल नहीं खाता है।',
+			'deepLinks.serverUnavailable' => 'मैं इस लिंक के लिए सर्वर तक नहीं पहुंच सकता था।',
+			'deepLinks.notFound' => 'आप अपनी पुस्तकालयों में इस शीर्षक को नहीं पा सकते।',
+			'deepLinks.unsupportedItem' => 'इस लिंक को नहीं खेला जा सकता है।',
+			'deepLinks.noLiveTv' => 'इस लिंक के लिए कोई लाइव टीवी सर्वर उपलब्ध नहीं है।',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'चैनल "${channel}" नहीं मिल सकता था।',
+			'deepLinks.showLink' => 'लिंक दिखाएं',
+			'deepLinks.showProfileLink' => 'प्रोफ़ाइल लिंक दिखाएं',
+			'deepLinks.dialogTitle' => 'लिंक',
+			'deepLinks.showHint' => 'इस लिंक को खोलने से अगले एपिसोड खेला जाता है. shuffle पर शो खेलने के लिए &mode=shuffle जोड़ें.',
+			'deepLinks.movieHint' => 'इस लिंक को खोलने से फिल्म खेलती है।',
+			'deepLinks.episodeHint' => 'इस लिंक को खोलने से यह एपिसोड खेला जाता है।',
+			'deepLinks.profileHint' => 'इस लिंक को खोलने से इस प्रोफ़ाइल के लिए स्विच होता है।',
+			'deepLinks.openAsProfile' => ({required Object name}) => '${name} के रूप में खोलें',
+			'deepLinks.copy' => 'कॉपी करें',
+			'deepLinks.copied' => 'लिंक कॉपी करें',
 			_ => null,
 		};
 	}

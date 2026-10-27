@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "কোনো ডিভাইসে কাস্ট করুন",
-    "searching": "খুঁজে বের করতে গিয়েছে ক্যাস্ট ডিভাইস...",
-    "connectedTo": "সংযোগ ${device}",
-    "device": "কাস্ট ডিভাইস",
-    "readyToCast": "কাস্ট করার জন্য প্রস্তুত",
-    "subtitle": "সাবটাইটেল",
-    "serverNotAvailable": "মিডিয়া সার্ভার পাওয়া যায় না।",
-    "stopCasting": "কাস্ট করা বন্ধ করুন",
-    "castToDevice": "ডিভাইসে কাস্ট করুন",
-    "noEpisodeAvailable": "খেলাটি খেলতে পাওয়া যায় না।",
-    "startFailed": "সার্ভার দেখুন এবং আবার চেষ্টা করুন।"
-  },
-  "automation": {
-    "noActivePlayback": "নিয়ন্ত্রণ করার জন্য কোন সক্রিয় ভিডিও সেশন নেই।",
-    "profileNotFound": "যে Plezy প্রোফাইল পাওয়া যায়নি।"
-  },
-  "notifications": {
-    "newEpisodeTitle": "নতুন epizode",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "আইকোন আইকোন",
     "defaultIcon": "প্রত্যাশিত",
@@ -200,30 +179,6 @@
     "viewRelease": "দেখুন Release",
     "latestVersion": "আপনি সর্বশেষ সংস্করণে আছেন",
     "checkFailed": "আপডেটের জন্য চেক করতে পারিনি"
-  },
-  "appAccess": {
-    "title": "সাত দিনের জন্য প্রতিটি ফ্রি ফাইনাল চেষ্টা করুন।",
-    "description": "সাত দিনের একটি পরীক্ষা শুরু করুন, প্রতিটি PlezyNG বৈশিষ্ট্যগুলির পূর্ণ অ্যাক্সেসের সাথে. পরীক্ষার সময় কোন ফরজ নেই এবং কোন অ্যাকাউন্ট নেই. পরীক্ষার পরে, আপনার দোকানের মূল্যতে একটি জীবন-যাত্রা কিনা PlezyNG জীবন-যাত্রা জন্য লুকিয়ে দেয়।",
-    "trialEndedDescription": "আপনার দোকানের মূল্যতে একটি কেনার সাথে জীবনযাপনের জন্য PlezyNG এর প্রতিটি বৈশিষ্ট্য বন্ধ করুন।",
-    "startTrial": "সাত দিনের বিনামূল্যে পরীক্ষা শুরু করুন",
-    "trialActive": "আপনার সাত দিনের full-feature পরীক্ষা কার্যকর।",
-    "trialEnded": "সাত দিনের মামলা শেষ হয়েছে।",
-    "trialStartFailed": "এই ডিভাইসে পরীক্ষা সংরক্ষণ করতে পারিনি, कृपया আবারও চেষ্টা করুন।",
-    "lifetimeTitle": "PlezyNG জীবনের জন্য অপসারণ",
-    "lifetimeBody": "ধন্যবাদ! আপনি প্রতিটি PlezyNG বৈশিষ্ট্যে জীবনযাপন করতে পারেন।",
-    "manageTitle": "PlezyNG জীবনের অ্যাক্সেস",
-    "manageDescription": "প্রতিটি বৈশিষ্ট্যটি সাত দিনের জন্য বিনামূল্যে চেষ্টা করুন, তারপর আপনার দোকানের মূল্যে এক টাকা দিয়ে জীবনের জন্য সবকিছু খোঁজে ফেলুন।",
-    "buy": "${price} এর জন্য প্রতিটি বৈশিষ্ট্য খোলা",
-    "loadingPrice": "লোডিং দোকান মূল্য...",
-    "retryPrice": "ফেরতের মূল্য অনুসরণ",
-    "restore": "জীবনযাত্রা খরচ পুনরায়",
-    "pending": "আপনার কেনা भुगतान বা অনুমোদন অপেক্ষায় থাকে. লাইফ টাইম অ্যাক্সেস বন্ধ হয়ে যায় যখন স্টোর এটি সম্পূর্ণ করে।",
-    "storeUnavailable": "কেনাকাটা পাওয়া যায় না. দেখুন যে আপনি স্টোরে স্বাক্ষর করা হয়েছে এবং কেনাকাটা এই ডিভাইসে অনুমোদিত হয়।",
-    "productNotFound": "এই স্টোরে এখনো PlezyNG লাইভ লাইভ লক পাওয়া যায় না।",
-    "productQueryFailed": "দোকান মূল্য লোড করতে পারবেন না. আপনার সংযোগ চেক করুন এবং আবার চেষ্টা করুন।",
-    "purchaseFailed": "কেনাকাটা শেষ হয়নি, আবারও চেষ্টা করুন।",
-    "restoreFailed": "আপনি আপনার কেনাকাটা ফিরিয়ে দিতে দোকান পৌঁছাতে পারবেন না. আবার চেষ্টা করুন.",
-    "nothingToRestore": "এই স্টোর অ্যাকাউন্টের জন্য নম্বর PlezyNG লাইভ লাইভ ক্রয় পাওয়া যায়।"
   },
   "settings": {
     "title": "সিস্টেম",
@@ -1079,10 +1034,6 @@
     "track": "অডিও ট্র্যাক ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ফ্রেম",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ফ্রেম"
-    },
     "audioLabel": "অডিও",
     "subtitlesLabel": "সাবটাইটেল",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "অসংখ্য",
     "settingsButton": "Playback সিস্টেম",
     "tracksButton": "অডিও & সাবটাইটল",
-    "trackSelectionTitle": "Playback এর আগে ট্র্যাক নির্বাচন করুন",
-    "trackSelectionAuto": "স্বয়ংক্রিয় নির্বাচন",
     "chaptersButton": "চিঠি",
     "versionQualityButton": "সংস্করণ & মান",
     "versionColumnHeader": "সংস্করণ",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transcoding unavailable — খেলতে মূল মান",
     "subtitleUnavailableFallback": "নির্বাচিত সাবটাইটলগুলি লোড করা যাবে না - সাবটাইটল ছাড়া চলতে পারে",
     "pipButton": "ছবি-ন-পিক্টার মোড",
-    "openMiniPlayer": "খোলা মিনি খেলোয়াড়",
-    "returnToFullPlayer": "পুরো খেলোয়াড়কে ফিরে আসুন",
     "aspectRatioButton": "এস্পেক্ট রেসিও",
     "ambientLighting": "পরিবেশ আলো",
     "fullscreenButton": "পুরো স্ক্রিনে প্রবেশ",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "রটিং লক",
     "lockScreen": "স্ক্রিন লক",
     "screenLockButton": "স্ক্রিন লক",
-    "longPressToUnlock": "দীর্ঘ চাপ খোলা",
     "timelineSlider": "ভিডিও টাইমলাইন",
     "volumeSlider": "পরিমাণ স্তর",
     "endsAt": "ফাইনাল ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "কোন পণ্য নেই কুকুরে",
     "noAudioDevicesAvailable": "কোন অডিও ডিভাইস পাওয়া যায় না",
     "searchSubtitles": "অনুসন্ধান Subtitles",
-    "loadSubtitleFile": "Subtitle ফাইলের জন্য...",
-    "subtitleLoadFailed": "Subtitle ফাইল লোড করতে পারিনি",
     "language": "ভাষা",
     "noSubtitlesFound": "কোন সূত্র পাওয়া যায়নি",
     "subtitleDownloaded": "Subtitle ডাউনলোড",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "ভাষা অনুসন্ধান...",
     "skipIntro": "সিন্ট্রো",
     "skipCredits": "ক্রেডিট স্কাইপ",
-    "skipAds": "হাঁটান Ads",
     "nextEpisode": "পরবর্তী Episode",
     "subtitleTrack": "ট্র্যাক ${n}",
     "subtitleFile": "পৃথিবী ${name}",
     "forcedTrack": "${label} (প্রত্যাশিত)",
     "osdSubtitlesOff": "টাইপ: বেরিয়ে",
     "osdSubtitles": "সংখ্যা: ${track}",
-    "osdAudio": "অডিও: ${track}"
+    "osdAudio": "অডিও: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ফ্রেম",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} ফ্রেম"
+    },
+    "trackSelectionTitle": "Playback এর আগে ট্র্যাক নির্বাচন করুন",
+    "trackSelectionAuto": "স্বয়ংক্রিয় নির্বাচন",
+    "openMiniPlayer": "খোলা মিনি খেলোয়াড়",
+    "returnToFullPlayer": "পুরো খেলোয়াড়কে ফিরে আসুন",
+    "loadSubtitleFile": "Subtitle ফাইলের জন্য...",
+    "subtitleLoadFailed": "Subtitle ফাইল লোড করতে পারিনি",
+    "skipAds": "হাঁটান Ads",
+    "tapToUnlock": "আনলক করতে ট্যাপ করুন",
+    "tapAgainToUnlock": "আনলক করতে আবার ট্যাপ করুন"
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "ফাইলে লগ সুরক্ষা করুন",
     "logsSaved": "লগগুলি সংরক্ষিত হয়েছে ${path}",
     "saveLogsFailed": "লগ ফাইল সংরক্ষণ করতে পারেনি।"
-  },
-  "detail": {
-    "endsAt": "ফাইনাল ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG শুরু করতে পারেনি",
@@ -3072,6 +3025,53 @@
     "allowHttp": "HTTP-এর অনুমতি দিন",
     "httpsRequired": "HTTPS ব্যবহার করুন বা স্পষ্টভাবে একটি অক্রিপ্ট সংযোগ অনুমতি দেয়।"
   },
+  "cast": {
+    "chooseDevice": "কোনো ডিভাইসে কাস্ট করুন",
+    "searching": "খুঁজে বের করতে গিয়েছে ক্যাস্ট ডিভাইস...",
+    "connectedTo": "সংযোগ ${device}",
+    "device": "কাস্ট ডিভাইস",
+    "readyToCast": "কাস্ট করার জন্য প্রস্তুত",
+    "subtitle": "সাবটাইটেল",
+    "serverNotAvailable": "মিডিয়া সার্ভার পাওয়া যায় না।",
+    "stopCasting": "কাস্ট করা বন্ধ করুন",
+    "castToDevice": "ডিভাইসে কাস্ট করুন",
+    "noEpisodeAvailable": "খেলাটি খেলতে পাওয়া যায় না।",
+    "startFailed": "সার্ভার দেখুন এবং আবার চেষ্টা করুন।"
+  },
+  "automation": {
+    "noActivePlayback": "নিয়ন্ত্রণ করার জন্য কোন সক্রিয় ভিডিও সেশন নেই।"
+  },
+  "notifications": {
+    "newEpisodeTitle": "নতুন epizode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "সাত দিনের জন্য প্রতিটি ফ্রি ফাইনাল চেষ্টা করুন।",
+    "description": "সাত দিনের একটি পরীক্ষা শুরু করুন, প্রতিটি PlezyNG বৈশিষ্ট্যগুলির পূর্ণ অ্যাক্সেসের সাথে. পরীক্ষার সময় কোন ফরজ নেই এবং কোন অ্যাকাউন্ট নেই. পরীক্ষার পরে, আপনার দোকানের মূল্যতে একটি জীবন-যাত্রা কিনা PlezyNG জীবন-যাত্রা জন্য লুকিয়ে দেয়।",
+    "trialEndedDescription": "আপনার দোকানের মূল্যতে একটি কেনার সাথে জীবনযাপনের জন্য PlezyNG এর প্রতিটি বৈশিষ্ট্য বন্ধ করুন।",
+    "startTrial": "সাত দিনের বিনামূল্যে পরীক্ষা শুরু করুন",
+    "trialActive": "আপনার সাত দিনের full-feature পরীক্ষা কার্যকর।",
+    "trialEnded": "সাত দিনের মামলা শেষ হয়েছে।",
+    "trialStartFailed": "এই ডিভাইসে পরীক্ষা সংরক্ষণ করতে পারিনি, कृपया আবারও চেষ্টা করুন।",
+    "lifetimeTitle": "PlezyNG জীবনের জন্য অপসারণ",
+    "lifetimeBody": "ধন্যবাদ! আপনি প্রতিটি PlezyNG বৈশিষ্ট্যে জীবনযাপন করতে পারেন।",
+    "manageTitle": "PlezyNG জীবনের অ্যাক্সেস",
+    "manageDescription": "প্রতিটি বৈশিষ্ট্যটি সাত দিনের জন্য বিনামূল্যে চেষ্টা করুন, তারপর আপনার দোকানের মূল্যে এক টাকা দিয়ে জীবনের জন্য সবকিছু খোঁজে ফেলুন।",
+    "buy": "${price} এর জন্য প্রতিটি বৈশিষ্ট্য খোলা",
+    "loadingPrice": "লোডিং দোকান মূল্য...",
+    "retryPrice": "ফেরতের মূল্য অনুসরণ",
+    "restore": "জীবনযাত্রা খরচ পুনরায়",
+    "pending": "আপনার কেনা भुगतान বা অনুমোদন অপেক্ষায় থাকে. লাইফ টাইম অ্যাক্সেস বন্ধ হয়ে যায় যখন স্টোর এটি সম্পূর্ণ করে।",
+    "storeUnavailable": "কেনাকাটা পাওয়া যায় না. দেখুন যে আপনি স্টোরে স্বাক্ষর করা হয়েছে এবং কেনাকাটা এই ডিভাইসে অনুমোদিত হয়।",
+    "productNotFound": "এই স্টোরে এখনো PlezyNG লাইভ লাইভ লক পাওয়া যায় না।",
+    "productQueryFailed": "দোকান মূল্য লোড করতে পারবেন না. আপনার সংযোগ চেক করুন এবং আবার চেষ্টা করুন।",
+    "purchaseFailed": "কেনাকাটা শেষ হয়নি, আবারও চেষ্টা করুন।",
+    "restoreFailed": "আপনি আপনার কেনাকাটা ফিরিয়ে দিতে দোকান পৌঁছাতে পারবেন না. আবার চেষ্টা করুন.",
+    "nothingToRestore": "এই স্টোর অ্যাকাউন্টের জন্য নম্বর PlezyNG লাইভ লাইভ ক্রয় পাওয়া যায়।"
+  },
+  "detail": {
+    "endsAt": "ফাইনাল ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "এই লিঙ্কের জন্য Plex সার্ভার পৌঁছাতে পারিনি।",
     "notFound": "আপনার সার্ভারগুলিতে এই প্রদর্শন বা ভিডিওটি পাওয়া যায় না Plex।",
@@ -3819,5 +3819,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "এই Plezy লিঙ্ক সঠিক নয়।",
+    "profileNotFound": "কোন প্রোফাইল \"${profile}\" সঙ্গে জড়িত না।",
+    "serverUnavailable": "আমি এই লিঙ্কের জন্য সার্ভার পৌঁছাতে পারিনি।",
+    "notFound": "আপনার লাইব্রেরিতে এই নামটি পাওয়া যায় না।",
+    "unsupportedItem": "এই লিঙ্ক খেলতে পারে না।",
+    "noLiveTv": "এই লিঙ্ক জন্য কোন লাইভ টিভি সার্ভার পাওয়া যায় না।",
+    "channelNotFound": "আমি চ্যানেল \"${channel}\" খুঁজতে পারিনি।",
+    "showLink": "দেখুন লিঙ্ক",
+    "showProfileLink": "প্রোফাইল লিঙ্ক",
+    "dialogTitle": "লিঙ্ক",
+    "showHint": "এই লিংক খুললে পরের পর্বটি চলবে। সিরিজটি এলোমেলোভাবে চালাতে শেষে &mode=shuffle যোগ করুন.",
+    "movieHint": "এই লিঙ্ক খুলে চলচ্চিত্রটি খেলবে।",
+    "episodeHint": "এই লিঙ্কটি খোঁজে এ епизодটি খেলতে হবে।",
+    "profileHint": "এই লিঙ্কটি খুলতে, এই প্রোফাইলের জন্য বিনিময় করা হয়।",
+    "openAsProfile": "${name} হিসাবে খোলা",
+    "copy": "কপি",
+    "copied": "লিঙ্ক কপি"
   }
 }

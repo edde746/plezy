@@ -1140,8 +1140,8 @@
     "loadSubtitleFile": "Carregar o arquivo subtítulo...",
     "subtitleLoadFailed": "Não conseguiu carregar o arquivo subtítulo",
     "skipAds": "Escape de anúncios",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Toque para desbloquear",
+    "tapAgainToUnlock": "Toque novamente para desbloquear"
   },
   "userStatus": {},
   "messages": {
@@ -3042,8 +3042,7 @@
     "startFailed": "Não pode começar a casting. verificar o servidor e tentar novamente."
   },
   "automation": {
-    "noActivePlayback": "Não há sessão de vídeo ativa para controlar.",
-    "profileNotFound": "Esse perfil Plezy não foi encontrado."
+    "noActivePlayback": "Não há sessão de vídeo ativa para controlar."
   },
   "notifications": {
     "newEpisodeTitle": "Novo episódio",
@@ -3829,22 +3828,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Este link Plezy não é válido.",
+    "profileNotFound": "Nenhum perfil corresponde a \"${profile}\".",
+    "serverUnavailable": "Não podia chegar ao servidor para este link.",
+    "notFound": "Não podia encontrar esse título em suas bibliotecas.",
+    "unsupportedItem": "Este link não pode ser jogado.",
+    "noLiveTv": "Nenhum servidor de TV ao vivo está disponível para este link.",
+    "channelNotFound": "Não podia encontrar o canal \"${channel}\".",
+    "showLink": "Mostrar link",
+    "showProfileLink": "Mostrar perfil link",
+    "dialogTitle": "Link",
+    "showHint": "Abra este link joga o próximo episódio. Adicione &mode=shuffle para jogar o show no shuffle.",
+    "movieHint": "Ao abrir este link, o filme é jogado.",
+    "episodeHint": "A abertura deste link joga este episódio.",
+    "profileHint": "Abre este link switch para esse perfil.",
+    "openAsProfile": "Abra como ${name}",
+    "copy": "Copia",
+    "copied": "Link copiado"
   }
 }

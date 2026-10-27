@@ -56,6 +56,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/deep_link_dialog.dart';
+import '../widgets/watch_link_dialog.dart';
 import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
@@ -686,6 +687,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
       if (canLinkItem(mediaItem))
         _MenuAction(value: 'show_link', icon: Symbols.link_rounded, label: t.deepLinks.showLink),
+      if (mediaItem.kind == MediaKind.show || mediaItem.kind == MediaKind.movie)
+        _MenuAction(value: 'show_watch_link', icon: Symbols.link_rounded, label: t.watchLink.menuItem),
       ..._mediaSourceMenuActions(menu, mediaItem),
       ..._libraryMenuActions(context, menu, mediaItem),
     ];
@@ -936,6 +939,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'show_link':
         if (mounted) await showItemLinkDialog(this.context, mediaItem);
+        break;
+      case 'show_watch_link':
+        if (mounted) await showWatchLinkDialog(this.context, mediaItem);
         break;
       case 'play_version':
         outcome.didNavigate = await promptAndPlayVersion(context, _mediaItem!);

@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Download subtitle bestand.",
     "subtitleLoadFailed": "Niet in de subtitle bestand",
     "skipAds": "Reclame overslaan",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Tik om te ontgrendelen",
+    "tapAgainToUnlock": "Tik nogmaals om te ontgrendelen"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Kan niet beginnen met casting. check the server and try again."
   },
   "automation": {
-    "noActivePlayback": "Er is geen actieve video-sessie om te controleren.",
-    "profileNotFound": "Dat Plezy profiel kon niet worden gevonden."
+    "noActivePlayback": "Er is geen actieve video-sessie om te controleren."
   },
   "notifications": {
     "newEpisodeTitle": "Nieuwe episode",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Deze link Plezy is niet geldig.",
+    "profileNotFound": "Geen profiel overeenkomt met \"${profile}\".",
+    "serverUnavailable": "Ik kon de server niet bereiken voor deze link.",
+    "notFound": "Ik kan deze titel niet vinden in je bibliotheek.",
+    "unsupportedItem": "Deze link kan niet worden gespeeld.",
+    "noLiveTv": "Geen Live TV-server is beschikbaar voor deze link.",
+    "channelNotFound": "Ik kon geen kanaal vinden \"${channel}\".",
+    "showLink": "Toon link",
+    "showProfileLink": "Profiel link weergeven",
+    "dialogTitle": "Link",
+    "showHint": "Het openen van deze link speelt het volgende episode. Voeg &mode=shuffle toe om de show te spelen op shuffle.",
+    "movieHint": "Door deze link te openen speelt de film.",
+    "episodeHint": "Het openen van deze link speelt dit episode.",
+    "profileHint": "Het openen van deze link schakelt naar dit profiel.",
+    "openAsProfile": "Open als ${name}",
+    "copy": "Kopieer",
+    "copied": "Link gekopieerd"
   }
 }

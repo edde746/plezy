@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "แคสต์ไปยังอุปกรณ์",
-    "searching": "ค้นหาอุปกรณ์ Cast ...",
-    "connectedTo": "เชื่อมต่อ ${device}",
-    "device": "อุปกรณ์แคสต์",
-    "readyToCast": "พร้อมแคสต์",
-    "subtitle": "คำบรรยาย",
-    "serverNotAvailable": "เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้",
-    "stopCasting": "หยุดแคสต์",
-    "castToDevice": "แคสต์ไปยังอุปกรณ์",
-    "noEpisodeAvailable": "ไม่มีส่วนที่สามารถปล่อยตัวได้",
-    "startFailed": "ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง"
-  },
-  "automation": {
-    "noActivePlayback": "ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม",
-    "profileNotFound": "ที่ Plezy โปรไฟล์ไม่สามารถพบได้"
-  },
-  "notifications": {
-    "newEpisodeTitle": "ฉบับใหม่",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "แอปไอคอน",
     "defaultIcon": "ค่าเริ่มต้น",
@@ -200,30 +179,6 @@
     "viewRelease": "ดูการปล่อย",
     "latestVersion": "คุณอยู่ในเวอร์ชันล่าสุด",
     "checkFailed": "ไม่สามารถตรวจสอบอัปเดตได้"
-  },
-  "appAccess": {
-    "title": "ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน",
-    "description": "เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต",
-    "trialEndedDescription": "ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก",
-    "startTrial": "เริ่มต้นการทดลองฟรี 7 วัน",
-    "trialActive": "การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้",
-    "trialEnded": "การสอบถาม 7 วันของคุณจบลง",
-    "trialStartFailed": "ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง",
-    "lifetimeTitle": "PlezyNG ปิดล็อคสําหรับชีวิต",
-    "lifetimeBody": "ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต",
-    "manageTitle": "PlezyNG การเข้าถึงตลอดชีวิต",
-    "manageDescription": "ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ",
-    "buy": "ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}",
-    "loadingPrice": "ราคาของร้านขายส่ง",
-    "retryPrice": "ค่าใช้จ่าย Retry Lookup",
-    "restore": "การซื้อคืนชีวิต",
-    "pending": "การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์",
-    "storeUnavailable": "การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้",
-    "productNotFound": "PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้",
-    "productQueryFailed": "ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง",
-    "purchaseFailed": "การซื้อไม่ได้ผ่านการทดลองอีกครั้ง",
-    "restoreFailed": "ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง",
-    "nothingToRestore": "หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้"
   },
   "settings": {
     "title": "การตั้งค่า",
@@ -1074,9 +1029,6 @@
     "track": "ลวดเสียง ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} โครง"
-    },
     "audioLabel": "เสียง",
     "subtitlesLabel": "คำบรรยาย",
     "addTime": "+${amount}${unit}",
@@ -1113,8 +1065,6 @@
     "unmuteButton": "หมายเลข",
     "settingsButton": "การตั้งค่า Playback",
     "tracksButton": "เสียงและหัวข้อ",
-    "trackSelectionTitle": "เลือกแถบก่อน playback",
-    "trackSelectionAuto": "การเลือกอัตโนมัติ",
     "chaptersButton": "ประเภท",
     "versionQualityButton": "รุ่น & คุณภาพ",
     "versionColumnHeader": "รุ่น",
@@ -1124,8 +1074,6 @@
     "transcodeUnavailableFallback": "การเข้ารหัสผ่านไม่สามารถใช้ได้ - เล่นคุณภาพเดิม",
     "subtitleUnavailableFallback": "หัวฉบับที่เลือกไม่สามารถโหลดได้ - ต่อเนื่องโดยไม่มีหัวฉบับ",
     "pipButton": "รูปภาพในโหมด",
-    "openMiniPlayer": "ผู้เล่นขนาดเล็กเปิด",
-    "returnToFullPlayer": "กลับผู้เล่นเต็มรูปแบบ",
     "aspectRatioButton": "อัตราส่วน",
     "ambientLighting": "แสงสภาพแวดล้อม",
     "fullscreenButton": "หน้าจอเต็มรูปแบบ",
@@ -1134,7 +1082,6 @@
     "rotationLockButton": "ล็อคหมุน",
     "lockScreen": "หน้าจอปิดผนึก",
     "screenLockButton": "ล็อคหน้าจอ",
-    "longPressToUnlock": "ความดันยาวที่จะเปิด",
     "timelineSlider": "วิดีโอ Timeline",
     "volumeSlider": "ระดับปริมาณ",
     "endsAt": "เสร็จสิ้นที่ ${time}",
@@ -1160,8 +1107,6 @@
     "noQueueItems": "ไม่มีรายการใน Queue",
     "noAudioDevicesAvailable": "ไม่มีอุปกรณ์เสียง",
     "searchSubtitles": "ค้นหา Subtitles",
-    "loadSubtitleFile": "ดาวน์โหลดไฟล์ Subtitle",
-    "subtitleLoadFailed": "ไม่สามารถดาวน์โหลดไฟล์ subtitle",
     "language": "ภาษา",
     "noSubtitlesFound": "ไม่มีหัวข้อที่พบ",
     "subtitleDownloaded": "Subtitle ดาวน์โหลด",
@@ -1170,14 +1115,25 @@
     "searchLanguages": "ค้นหาภาษา",
     "skipIntro": "สไลด์อินเตอร์เน็ต",
     "skipCredits": "คิดสกี",
-    "skipAds": "การโฆษณา Skip",
     "nextEpisode": "เรื่องถัดไป",
     "subtitleTrack": "เคล็ดลับ ${n}",
     "subtitleFile": "คำบรรยาย ${name}",
     "forcedTrack": "${label} (บังคับใช้)",
     "osdSubtitlesOff": "หัวข้อ: ปิด",
     "osdSubtitles": "หัวข้อ: ${track}",
-    "osdAudio": "เสียง: ${track}"
+    "osdAudio": "เสียง: ${track}",
+    "frameCount": {
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} โครง"
+    },
+    "trackSelectionTitle": "เลือกแถบก่อน playback",
+    "trackSelectionAuto": "การเลือกอัตโนมัติ",
+    "openMiniPlayer": "ผู้เล่นขนาดเล็กเปิด",
+    "returnToFullPlayer": "กลับผู้เล่นเต็มรูปแบบ",
+    "loadSubtitleFile": "ดาวน์โหลดไฟล์ Subtitle",
+    "subtitleLoadFailed": "ไม่สามารถดาวน์โหลดไฟล์ subtitle",
+    "skipAds": "การโฆษณา Skip",
+    "tapToUnlock": "แตะเพื่อปลดล็อก",
+    "tapAgainToUnlock": "แตะอีกครั้งเพื่อปลดล็อก"
   },
   "userStatus": {},
   "messages": {
@@ -1786,9 +1742,6 @@
     "saveLogs": "บันทึกบันทึกไฟล์",
     "logsSaved": "บันทึกที่บันทึกถึง ${path}",
     "saveLogsFailed": "ไม่สามารถบันทึกไฟล์บันทึก"
-  },
-  "detail": {
-    "endsAt": "เสร็จสิ้นที่ ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG ไม่สามารถเริ่มต้นได้",
@@ -3051,6 +3004,53 @@
     "allowHttp": "อนุญาต HTTP",
     "httpsRequired": "ใช้ HTTPS หรืออนุญาตให้มีการเชื่อมต่อที่ไม่ได้เข้ารหัส"
   },
+  "cast": {
+    "chooseDevice": "แคสต์ไปยังอุปกรณ์",
+    "searching": "ค้นหาอุปกรณ์ Cast ...",
+    "connectedTo": "เชื่อมต่อ ${device}",
+    "device": "อุปกรณ์แคสต์",
+    "readyToCast": "พร้อมแคสต์",
+    "subtitle": "คำบรรยาย",
+    "serverNotAvailable": "เซิร์ฟเวอร์สื่อไม่สามารถใช้ได้",
+    "stopCasting": "หยุดแคสต์",
+    "castToDevice": "แคสต์ไปยังอุปกรณ์",
+    "noEpisodeAvailable": "ไม่มีส่วนที่สามารถปล่อยตัวได้",
+    "startFailed": "ไม่สามารถเริ่ม casting ตรวจสอบเซิร์ฟเวอร์และลองอีกครั้ง"
+  },
+  "automation": {
+    "noActivePlayback": "ไม่มีเซสชั่นวิดีโอที่มีการใช้งานในการควบคุม"
+  },
+  "notifications": {
+    "newEpisodeTitle": "ฉบับใหม่",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "ลองทุกฟังก์ชั่นฟรีสําหรับ 7 วัน",
+    "description": "เริ่มต้นการทดลองใช้ 7 วันพร้อมการเข้าถึงเต็มรูปแบบทุกฟังก์ชั่น PlezyNG ไม่มีค่าธรรมเนียมในระหว่างการทดลองใช้และไม่มีการสมัครสมาชิก หลังจากทดลองใช้การซื้อตลอดชีวิตในราคาของร้านค้าของคุณเปิดใช้งาน PlezyNGตลอดชีวิต",
+    "trialEndedDescription": "ปล็อคฟังก์ชั่นทุกฟังก์ชั่นที่ PlezyNG สําหรับชีวิตด้วยการซื้อเดียวในราคาของร้านค้าของคุณ ไม่มีสมาชิก",
+    "startTrial": "เริ่มต้นการทดลองฟรี 7 วัน",
+    "trialActive": "การทดสอบเต็มรูปแบบ 7 วันของคุณจะใช้งานได้",
+    "trialEnded": "การสอบถาม 7 วันของคุณจบลง",
+    "trialStartFailed": "ฉันไม่สามารถบันทึกการทดสอบบนอุปกรณ์นี้ โปรดลองอีกครั้ง",
+    "lifetimeTitle": "PlezyNG ปิดล็อคสําหรับชีวิต",
+    "lifetimeBody": "ขอบคุณ! คุณสามารถเข้าถึงทุกฟังก์ชั่น PlezyNG ทุกชีวิต",
+    "manageTitle": "PlezyNG การเข้าถึงตลอดชีวิต",
+    "manageDescription": "ลองฟังก์ชั่นแต่ละอย่างฟรีเป็นเวลา 7 วันแล้วเปิดเปิดทุกอย่างตลอดชีวิตด้วยค่าใช้จ่ายเดียวในราคาของร้านค้าของคุณ",
+    "buy": "ปล็อคฟังก์ชั่นทั้งหมดสําหรับ ${price}",
+    "loadingPrice": "ราคาของร้านขายส่ง",
+    "retryPrice": "ค่าใช้จ่าย Retry Lookup",
+    "restore": "การซื้อคืนชีวิต",
+    "pending": "การซื้อของคุณกําลังรอการชําระเงินหรือการอนุมัติ การเข้าถึงตลอดชีวิตจะเปิดตัวทันทีที่ร้านค้าเสร็จสมบูรณ์",
+    "storeUnavailable": "การซื้อไม่สามารถใช้ได้ ตรวจสอบว่าคุณลงชื่อเข้าสู่ร้านค้าและการซื้อจะได้รับอนุญาตบนอุปกรณ์นี้",
+    "productNotFound": "PlezyNG ชีวิตล็อคยังไม่ได้อยู่ในร้านค้านี้",
+    "productQueryFailed": "ไม่สามารถโหลดราคาร้านค้าได้ ตรวจสอบการเชื่อมต่อของคุณและลองอีกครั้ง",
+    "purchaseFailed": "การซื้อไม่ได้ผ่านการทดลองอีกครั้ง",
+    "restoreFailed": "ฉันไม่สามารถเข้าถึงร้านค้าเพื่อรับคืนการซื้อของคุณ ลองอีกครั้ง",
+    "nothingToRestore": "หมายเลขการซื้อตลอดชีวิต PlezyNG ได้รับการค้นหาสําหรับบัญชีร้านค้านี้"
+  },
+  "detail": {
+    "endsAt": "เสร็จสิ้นที่ ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "ฉันไม่สามารถเข้าถึงเซิร์ฟเวอร์ Plex สําหรับลิงค์นี้",
     "notFound": "ฉันไม่สามารถหาการแสดงหรือภาพยนตร์นี้ได้บนเซิร์ฟเวอร์ Plex ของคุณ",
@@ -3794,5 +3794,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "ลิงค์ Plezy นี้ไม่ถูกต้อง",
+    "profileNotFound": "ไม่มีโปรไฟล์ตรงกับ \"${profile}\"",
+    "serverUnavailable": "ฉันไม่สามารถเข้าถึงเซิร์ฟเวอร์สําหรับลิงค์นี้ได้",
+    "notFound": "ฉันไม่สามารถหาชื่อนี้ในห้องสมุดของคุณได้",
+    "unsupportedItem": "ลิงค์นี้ไม่สามารถเล่นได้",
+    "noLiveTv": "ไม่มีเซิร์ฟเวอร์ทีวีสดที่มีอยู่สําหรับลิงค์นี้",
+    "channelNotFound": "ไม่สามารถหาช่อง \"${channel}\"",
+    "showLink": "แสดงลิงค์",
+    "showProfileLink": "แสดงโปรไฟล์ลิงค์",
+    "dialogTitle": "เชื่อมโยง",
+    "showHint": "การเปิดลิงก์นี้จะเล่นส่วนต่อไป เพิ่ม &mode=shuffle เพื่อเล่นการแสดงบน shuffle",
+    "movieHint": "การเปิดลิงก์นี้เล่นฟิล์ม",
+    "episodeHint": "เปิดลิงค์นี้เล่นบทความนี้",
+    "profileHint": "เปิดลิงค์นี้สวิตช์ไปยังโปรไฟล์นี้",
+    "openAsProfile": "เปิดเป็น ${name}",
+    "copy": "คูปอง",
+    "copied": "ลิงค์คัดลอก"
   }
 }

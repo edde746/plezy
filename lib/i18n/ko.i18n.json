@@ -1136,8 +1136,8 @@
     "loadSubtitleFile": "Subtitle 파일을 다운로드합니다.",
     "subtitleLoadFailed": "Subtitle 파일을 다운로드하지 못했습니다.",
     "skipAds": "스키 광고",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "잠금을 해제하려면 탭하세요",
+    "tapAgainToUnlock": "잠금을 해제하려면 다시 탭하세요"
   },
   "userStatus": {},
   "messages": {
@@ -3035,8 +3035,7 @@
     "startFailed": "캐스트를 시작할 수 없습니다. 서버를 확인하고 다시 시도하세요."
   },
   "automation": {
-    "noActivePlayback": "통제할 수 있는 비디오 세션은 없습니다.",
-    "profileNotFound": "Plezy 프로필은 찾을 수 없었습니다."
+    "noActivePlayback": "통제할 수 있는 비디오 세션은 없습니다."
   },
   "notifications": {
     "newEpisodeTitle": "새로운 에피소드",
@@ -3817,22 +3816,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "이 Plezy 링크는 유효하지 않습니다.",
+    "profileNotFound": "프로필은 \"${profile}\"과 일치하지 않습니다.",
+    "serverUnavailable": "이 링크를 위해 서버에 접근할 수 없었습니다.",
+    "notFound": "이 책의 제목은 도서관에서 찾을 수 없습니다.",
+    "unsupportedItem": "이 링크는 재생할 수 없습니다.",
+    "noLiveTv": "이 링크를 위해 라이브 TV 서버가 없습니다.",
+    "channelNotFound": "채널 \"${channel}\"을 찾을 수 없었습니다.",
+    "showLink": "링크 보기",
+    "showProfileLink": "프로필 링크 보기",
+    "dialogTitle": "링크",
+    "showHint": "이 링크를 열면 다음 에피소드를 재생합니다. shuffle에서 쇼를 재생하려면 &mode=shuffle을 추가합니다.",
+    "movieHint": "이 링크를 열면 영화가 재생됩니다.",
+    "episodeHint": "이 링크를 열면 이 에피소드를 재생합니다.",
+    "profileHint": "이 링크를 열면 이 프로필으로 스위치됩니다.",
+    "openAsProfile": "${name}으로 열기",
+    "copy": "복사본",
+    "copied": "링크 복사"
   }
 }

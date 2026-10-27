@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Last ned undertittelfil...",
     "subtitleLoadFailed": "Fikk ikke lastet opp subtitle-filen",
     "skipAds": "Hopp over reklame",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Trykk for å låse opp",
+    "tapAgainToUnlock": "Trykk igjen for å låse opp"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Kan ikke begynne å kaste. sjekk serveren og prøv igjen."
   },
   "automation": {
-    "noActivePlayback": "Det er ingen aktiv video-session å kontrollere.",
-    "profileNotFound": "Det Plezy profilen kunne ikke bli funnet."
+    "noActivePlayback": "Det er ingen aktiv video-session å kontrollere."
   },
   "notifications": {
     "newEpisodeTitle": "Nytt episode",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Denne linken til Plezy er ikke gyldig.",
+    "profileNotFound": "Ingen profil matcher \"${profile}\".",
+    "serverUnavailable": "Kan ikke nå serveren for denne koblingen.",
+    "notFound": "Du kan ikke finne denne tittelen i biblioteket ditt.",
+    "unsupportedItem": "Denne linken kan ikke spilles.",
+    "noLiveTv": "Ingen Live TV-server er tilgjengelig for denne koblingen.",
+    "channelNotFound": "Kan ikke finne kanal \"${channel}\".",
+    "showLink": "Vis link",
+    "showProfileLink": "Vis profil link",
+    "dialogTitle": "Link",
+    "showHint": "Åpne denne koblingen spiller neste episode. Legg til &mode=shuffle for å spille showet på shuffle.",
+    "movieHint": "Åpning av denne koblingen spiller filmen.",
+    "episodeHint": "Åpning av dette linket spiller denne episoden.",
+    "profileHint": "Åpne denne koblingen skifter til denne profilen.",
+    "openAsProfile": "Åpne som ${name}",
+    "copy": "Kopierer",
+    "copied": "Link kopieres"
   }
 }

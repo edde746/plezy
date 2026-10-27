@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "Транслювати на пристрій",
-    "searching": "Пошук пристроїв для вишивки...",
-    "connectedTo": "Підключений до ${device}",
-    "device": "Пристрій для трансляції",
-    "readyToCast": "Готово до трансляції",
-    "subtitle": "Субтитри",
-    "serverNotAvailable": "Медіа-сервер не доступний.",
-    "stopCasting": "Зупинити трансляцію",
-    "castToDevice": "Транслювати на пристрій",
-    "noEpisodeAvailable": "Епізоду не можна випустити.",
-    "startFailed": "Не можна почати кастинг. перевірте сервер і спробуйте знову."
-  },
-  "automation": {
-    "noActivePlayback": "Не існує активної відеосесії для контролю.",
-    "profileNotFound": "Профіль Plezy не знайдено."
-  },
-  "notifications": {
-    "newEpisodeTitle": "Новий епізод",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "Ікони App",
     "defaultIcon": "За замовчуванням",
@@ -200,30 +179,6 @@
     "viewRelease": "Переглянути випуск",
     "latestVersion": "Ви знаходитесь в останній версії",
     "checkFailed": "Не вдалося перевірити оновлення"
-  },
-  "appAccess": {
-    "title": "Спробуйте будь-яку функцію безкоштовно протягом 7 днів",
-    "description": "Почніть семиденний випробування з повним доступом до кожної функції PlezyNG. під час випробування немає оплати і без підписки. Після випробування один життєвий купівля за ціною вашого магазину відкриває PlezyNG на життя.",
-    "trialEndedDescription": "Відключити кожну функцію в PlezyNG на життя з одним покупкою за ціною вашого магазину.",
-    "startTrial": "Початок мого 7-денного безкоштовного випробування",
-    "trialActive": "Ваш 7-денний повний тест функції активний.",
-    "trialEnded": "Сім днів судового розгляду закінчилися",
-    "trialStartFailed": "Я не можу врятувати випробування на цьому пристрої. будь ласка, спробуйте знову.",
-    "lifetimeTitle": "PlezyNG відключено на життя",
-    "lifetimeBody": "Ви маєте доступу до кожної функції PlezyNG.",
-    "manageTitle": "PlezyNG Доступ до життя",
-    "manageDescription": "Спробуйте кожну функцію безкоштовно протягом 7 днів, а потім розблокуйте все на життя з однією оплатою за ціною вашого магазину.",
-    "buy": "Відключити кожну функцію для ${price}",
-    "loadingPrice": "Вартість магазину ...",
-    "retryPrice": "Повернення ціни Lookup",
-    "restore": "Відновлення життєвого купівлі",
-    "pending": "Ваш покупка чекає на оплату або затвердження. Доступ до життєвого часу відкривається, як тільки магазин завершить його.",
-    "storeUnavailable": "Переконайтеся, що ви підписуєтеся в магазин, а покупки дозволені на цьому пристрої.",
-    "productNotFound": "PlezyNG життєвий відключення ще не доступно в цьому магазині.",
-    "productQueryFailed": "Ціна магазину не може бути завантажена. перевірте зв'язок і спробуйте знову.",
-    "purchaseFailed": "Купівля не пройшла. спробуйте знову.",
-    "restoreFailed": "Я не міг би дістатися до магазину, щоб відновити вашу покупку. спробуйте знову.",
-    "nothingToRestore": "Номер PlezyNG життєвий купівля був знайдений для цього облікового запису магазину."
   },
   "settings": {
     "title": "Налаштування",
@@ -1089,12 +1044,6 @@
     "track": "Анонс звуку ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадр",
-      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадри",
-      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадрів",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадри"
-    },
     "audioLabel": "Аудіо",
     "subtitlesLabel": "Субтитри",
     "addTime": "+${amount}${unit}",
@@ -1131,8 +1080,6 @@
     "unmuteButton": "Увімкнути звук",
     "settingsButton": "Створення Playback Settings",
     "tracksButton": "Аудіо та субтитри",
-    "trackSelectionTitle": "Вибирайте сходинки перед відтворенням",
-    "trackSelectionAuto": "Автоматичний вибір",
     "chaptersButton": "Розділи",
     "versionQualityButton": "Версія і якість",
     "versionColumnHeader": "Версія",
@@ -1142,8 +1089,6 @@
     "transcodeUnavailableFallback": "Перешифрування недоступне — грати в оригінальну якість",
     "subtitleUnavailableFallback": "Вибрані субтитри не можуть бути завантажені — продовжувати без субтитри",
     "pipButton": "Модуль зображення в режимі",
-    "openMiniPlayer": "Відкритий міні-плеєр",
-    "returnToFullPlayer": "Повернення до повного гравця",
     "aspectRatioButton": "Співвідношення сторін",
     "ambientLighting": "Екологічне освітлення",
     "fullscreenButton": "Введіть повний екран",
@@ -1152,7 +1097,6 @@
     "rotationLockButton": "Ротаційний замок",
     "lockScreen": "Закритий екран",
     "screenLockButton": "Закриття екрану",
-    "longPressToUnlock": "Довгий тиск для розблокування",
     "timelineSlider": "Відео Timeline",
     "volumeSlider": "Розмір обсягу",
     "endsAt": "Завершився на ${time}",
@@ -1178,8 +1122,6 @@
     "noQueueItems": "Немає предметів в ковбасі",
     "noAudioDevicesAvailable": "Немає доступних аудіопристроїв",
     "searchSubtitles": "Пошук субтитри",
-    "loadSubtitleFile": "Завантажити файл підзаголовок...",
-    "subtitleLoadFailed": "Не вдалося завантажити файл субтитри",
     "language": "Мова",
     "noSubtitlesFound": "Немає знайдених субтитри",
     "subtitleDownloaded": "Підзаголовок завантажено",
@@ -1188,14 +1130,28 @@
     "searchLanguages": "Язики пошуку...",
     "skipIntro": "Скіп Інтро",
     "skipCredits": "Кредити Скіп",
-    "skipAds": "Скачати рекламу",
     "nextEpisode": "Наступний епізод",
     "subtitleTrack": "Стрічка ${n}",
     "subtitleFile": "Підголовок ${name}",
     "forcedTrack": "${label} (примусовий)",
     "osdSubtitlesOff": "Підзаголовок: Off",
     "osdSubtitles": "Підзаголовок: ${track}",
-    "osdAudio": "Звук: ${track}"
+    "osdAudio": "Звук: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадр",
+      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадри",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадрів",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} кадри"
+    },
+    "trackSelectionTitle": "Вибирайте сходинки перед відтворенням",
+    "trackSelectionAuto": "Автоматичний вибір",
+    "openMiniPlayer": "Відкритий міні-плеєр",
+    "returnToFullPlayer": "Повернення до повного гравця",
+    "loadSubtitleFile": "Завантажити файл підзаголовок...",
+    "subtitleLoadFailed": "Не вдалося завантажити файл субтитри",
+    "skipAds": "Скачати рекламу",
+    "tapToUnlock": "Торкніться, щоб розблокувати",
+    "tapAgainToUnlock": "Торкніться ще раз, щоб розблокувати"
   },
   "userStatus": {},
   "messages": {
@@ -1808,9 +1764,6 @@
     "saveLogs": "Зберегти логі до файлів",
     "logsSaved": "Зареєстровано до ${path}",
     "saveLogsFailed": "Я не можу зберегти файл."
-  },
-  "detail": {
-    "endsAt": "Завершився на ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG не може почати",
@@ -3108,6 +3061,53 @@
     "allowHttp": "Дозвіл HTTP",
     "httpsRequired": "Використовуйте HTTPS або експлицитно дозволяйте нешифрований зв'язок."
   },
+  "cast": {
+    "chooseDevice": "Транслювати на пристрій",
+    "searching": "Пошук пристроїв для вишивки...",
+    "connectedTo": "Підключений до ${device}",
+    "device": "Пристрій для трансляції",
+    "readyToCast": "Готово до трансляції",
+    "subtitle": "Субтитри",
+    "serverNotAvailable": "Медіа-сервер не доступний.",
+    "stopCasting": "Зупинити трансляцію",
+    "castToDevice": "Транслювати на пристрій",
+    "noEpisodeAvailable": "Епізоду не можна випустити.",
+    "startFailed": "Не можна почати кастинг. перевірте сервер і спробуйте знову."
+  },
+  "automation": {
+    "noActivePlayback": "Не існує активної відеосесії для контролю."
+  },
+  "notifications": {
+    "newEpisodeTitle": "Новий епізод",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "Спробуйте будь-яку функцію безкоштовно протягом 7 днів",
+    "description": "Почніть семиденний випробування з повним доступом до кожної функції PlezyNG. під час випробування немає оплати і без підписки. Після випробування один життєвий купівля за ціною вашого магазину відкриває PlezyNG на життя.",
+    "trialEndedDescription": "Відключити кожну функцію в PlezyNG на життя з одним покупкою за ціною вашого магазину.",
+    "startTrial": "Початок мого 7-денного безкоштовного випробування",
+    "trialActive": "Ваш 7-денний повний тест функції активний.",
+    "trialEnded": "Сім днів судового розгляду закінчилися",
+    "trialStartFailed": "Я не можу врятувати випробування на цьому пристрої. будь ласка, спробуйте знову.",
+    "lifetimeTitle": "PlezyNG відключено на життя",
+    "lifetimeBody": "Ви маєте доступу до кожної функції PlezyNG.",
+    "manageTitle": "PlezyNG Доступ до життя",
+    "manageDescription": "Спробуйте кожну функцію безкоштовно протягом 7 днів, а потім розблокуйте все на життя з однією оплатою за ціною вашого магазину.",
+    "buy": "Відключити кожну функцію для ${price}",
+    "loadingPrice": "Вартість магазину ...",
+    "retryPrice": "Повернення ціни Lookup",
+    "restore": "Відновлення життєвого купівлі",
+    "pending": "Ваш покупка чекає на оплату або затвердження. Доступ до життєвого часу відкривається, як тільки магазин завершить його.",
+    "storeUnavailable": "Переконайтеся, що ви підписуєтеся в магазин, а покупки дозволені на цьому пристрої.",
+    "productNotFound": "PlezyNG життєвий відключення ще не доступно в цьому магазині.",
+    "productQueryFailed": "Ціна магазину не може бути завантажена. перевірте зв'язок і спробуйте знову.",
+    "purchaseFailed": "Купівля не пройшла. спробуйте знову.",
+    "restoreFailed": "Я не міг би дістатися до магазину, щоб відновити вашу покупку. спробуйте знову.",
+    "nothingToRestore": "Номер PlezyNG життєвий купівля був знайдений для цього облікового запису магазину."
+  },
+  "detail": {
+    "endsAt": "Завершився на ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "Я не міг дістатися до сервера Plex для цього посилання.",
     "notFound": "Я не можу знайти цей шоу або фільм на ваших серверах Plex.",
@@ -3863,5 +3863,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "Цей Plezy посилання не діє.",
+    "profileNotFound": "Профіль не відповідає «${profile}».",
+    "serverUnavailable": "Я не міг дістатися до сервера для цього посилання.",
+    "notFound": "Я не можу знайти цей заголовок у ваших бібліотеках.",
+    "unsupportedItem": "Цей зв'язок не можна грати.",
+    "noLiveTv": "Для цього посилання немає серверів Live TV.",
+    "channelNotFound": "Я не можу знайти канал \"${channel}\".",
+    "showLink": "Показати лінк",
+    "showProfileLink": "Показати профіль",
+    "dialogTitle": "Лінк",
+    "showHint": "Відкриття цього посилання грає наступний епізод. Додайте &mode=shuffle для відтворення шоу на shuffle.",
+    "movieHint": "Відкриття цього посилання грає фільм.",
+    "episodeHint": "Відкриття цього посилання грає цей епізод.",
+    "profileHint": "Відкриття цього посилання переключається до цього профілю.",
+    "openAsProfile": "Відкрийте як ${name}",
+    "copy": "Копія",
+    "copied": "Link копіюється"
   }
 }

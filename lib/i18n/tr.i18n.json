@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Subtitle dosyası ile...",
     "subtitleLoadFailed": "Subtitle dosyasını yüklemeyi başaramadım",
     "skipAds": "Reklamları atla",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Kilidi açmak için dokunun",
+    "tapAgainToUnlock": "Kilidi açmak için tekrar dokunun"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin."
   },
   "automation": {
-    "noActivePlayback": "Kontrol edilecek aktif video oturumu yoktur.",
-    "profileNotFound": "Bu Plezy profili bulunamadı."
+    "noActivePlayback": "Kontrol edilecek aktif video oturumu yoktur."
   },
   "notifications": {
     "newEpisodeTitle": "Yeni bölüm",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Bu Plezy bağlantısı geçerli değildir.",
+    "profileNotFound": "Hiçbir profil \"${profile}\" ile eşleşmiyor.",
+    "serverUnavailable": "Bu bağlantı için sunucuya ulaşamadım.",
+    "notFound": "Kütüphanelerinizde bu başlık bulamazsınız.",
+    "unsupportedItem": "Bu bağlantı oynanamaz.",
+    "noLiveTv": "Hiçbir canlı TV sunucusu bu bağlantı için mevcut değildir.",
+    "channelNotFound": "“${channel}” kanalı bulamadım.",
+    "showLink": "Göster link",
+    "showProfileLink": "Profil Link Göster",
+    "dialogTitle": "Link",
+    "showHint": "Bu bağlantıyı açtığınızda, bir sonraki bölüm oynanır. Shuffle'da gösteriyi oynatmak için &mode=shuffle ekleyin.",
+    "movieHint": "Bu bağlantıyı açtığınızda film oynanır.",
+    "episodeHint": "Bu bağlantıyı açtığınızda bu bölüm oynanır.",
+    "profileHint": "Bu bağlantıyı açmak bu profille geçiş yapar.",
+    "openAsProfile": "${name} olarak açılır",
+    "copy": "kopyası",
+    "copied": "Link kopyalanmış"
   }
 }

@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "البث إلى جهاز",
-    "searching": "جارٍ البحث عن أجهزة البث…",
-    "connectedTo": "متصل بـ ${device}",
-    "device": "جهاز البث",
-    "readyToCast": "جاهز للبث",
-    "subtitle": "الترجمة",
-    "serverNotAvailable": "خادم الوسائط غير متاح.",
-    "stopCasting": "إيقاف البث",
-    "castToDevice": "البث إلى جهاز",
-    "noEpisodeAvailable": "لا توجد حلقة متاحة للبث.",
-    "startFailed": "تعذر بدء البث. تحقق من الخادم وحاول مرة أخرى."
-  },
-  "automation": {
-    "noActivePlayback": "لا يوجد جلسة فيديو نشطة للتحكم فيها.",
-    "profileNotFound": "لم يتم العثور على هذا الملف Plezy."
-  },
-  "notifications": {
-    "newEpisodeTitle": "الحلقة الجديدة",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "تطبيق icon",
     "defaultIcon": "الافتراضي",
@@ -200,30 +179,6 @@
     "viewRelease": "مشاهدة الإصدار",
     "latestVersion": "أنت في أحدث النسخة",
     "checkFailed": "فشل في التحقق من التحديثات"
-  },
-  "appAccess": {
-    "title": "جرّب جميع الميزات مجانًا لمدة 7 أيام",
-    "description": "ابدأ فترة تجريبية لمدة سبعة أيام مع إمكانية استخدام جميع ميزات PlezyNG. لا توجد رسوم خلال الفترة التجريبية ولا اشتراك. بعد انتهاء التجربة، يمكنك فتح PlezyNG مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك.",
-    "trialEndedDescription": "افتح جميع ميزات PlezyNG مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك. لا يوجد اشتراك.",
-    "startTrial": "بدء تجربتي المجانية لمدة 7 أيام",
-    "trialActive": "تجربتك الكاملة لجميع الميزات لمدة 7 أيام نشطة.",
-    "trialEnded": "انتهت تجربتك لمدة 7 أيام",
-    "trialStartFailed": "تعذر حفظ الفترة التجريبية على هذا الجهاز. حاول مرة أخرى.",
-    "lifetimeTitle": "تم فتح PlezyNG مدى الحياة",
-    "lifetimeBody": "شكرًا لك! يمكنك الآن استخدام جميع ميزات PlezyNG مدى الحياة.",
-    "manageTitle": "الوصول إلى PlezyNG مدى الحياة",
-    "manageDescription": "جرّب جميع الميزات مجانًا لمدة 7 أيام، ثم افتحها مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك.",
-    "buy": "فتح جميع الميزات مقابل ${price}",
-    "loadingPrice": "جارٍ تحميل السعر من المتجر…",
-    "retryPrice": "إعادة محاولة جلب السعر",
-    "restore": "استعادة عملية الشراء مدى الحياة",
-    "pending": "عملية الشراء في انتظار الدفع أو الموافقة. سيُفعّل الوصول مدى الحياة فور إتمام المتجر للعملية.",
-    "storeUnavailable": "عمليات الشراء غير متاحة. تحقق من تسجيل الدخول إلى المتجر ومن السماح بالشراء على هذا الجهاز.",
-    "productNotFound": "شراء PlezyNG مدى الحياة غير متاح في هذا المتجر بعد.",
-    "productQueryFailed": "تعذر تحميل السعر من المتجر. تحقق من اتصالك وحاول مرة أخرى.",
-    "purchaseFailed": "لم تكتمل عملية الشراء. حاول مرة أخرى.",
-    "restoreFailed": "تعذر الاتصال بالمتجر لاستعادة عملية الشراء. حاول مرة أخرى.",
-    "nothingToRestore": "لم يُعثر على عملية شراء PlezyNG مدى الحياة لحساب المتجر هذا."
   },
   "settings": {
     "title": "الإعدادات",
@@ -1099,14 +1054,6 @@
     "track": "سياق الصوت ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "zero": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار",
-      "one": "إطار واحد",
-      "two": "إطاران",
-      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطارات",
-      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار"
-    },
     "audioLabel": "الصوت",
     "subtitlesLabel": "الترجمة",
     "addTime": "+${amount}${unit}",
@@ -1143,8 +1090,6 @@
     "unmuteButton": "إلغاء كتم الصوت",
     "settingsButton": "إعدادات Playback",
     "tracksButton": "الأصوات & الأصوات",
-    "trackSelectionTitle": "اختيار المسارات قبل اللعب",
-    "trackSelectionAuto": "الاختيار التلقائي",
     "chaptersButton": "الفصول",
     "versionQualityButton": "النسخة والجودة",
     "versionColumnHeader": "الإصدار",
@@ -1154,8 +1099,6 @@
     "transcodeUnavailableFallback": "التشفير غير متوفر - لعب الجودة الأصلية",
     "subtitleUnavailableFallback": "العناوين الفرعية المختارة لا يمكن تحميلها - الاستمرار دون العناوين الفرعية",
     "pipButton": "وضع التصوير في الصورة",
-    "openMiniPlayer": "مفتوحة ميني لاعب",
-    "returnToFullPlayer": "العودة إلى اللاعب الكامل",
     "aspectRatioButton": "نسبة العرض إلى الارتفاع",
     "ambientLighting": "الإضاءة البيئية",
     "fullscreenButton": "إدخال الشاشة الكاملة",
@@ -1164,7 +1107,6 @@
     "rotationLockButton": "قفل الدوران",
     "lockScreen": "شاشة قفل",
     "screenLockButton": "قفل الشاشة",
-    "longPressToUnlock": "طويل الضغط لإلغاء القفل",
     "timelineSlider": "لعبة الفيديو",
     "volumeSlider": "حجم المستوى",
     "endsAt": "النهاية في ${time}",
@@ -1190,8 +1132,6 @@
     "noQueueItems": "لا توجد عناصر في كوشنر",
     "noAudioDevicesAvailable": "لا توجد أجهزة صوتية متاحة",
     "searchSubtitles": "البحث تحت عنوان",
-    "loadSubtitleFile": "تحميل ملف Subtitle",
-    "subtitleLoadFailed": "فشل في تحميل ملف Subtitle",
     "language": "اللغة",
     "noSubtitlesFound": "لا توجد عناوين",
     "subtitleDownloaded": "Subtitle تحميل",
@@ -1200,14 +1140,30 @@
     "searchLanguages": "البحث عن اللغات ..",
     "skipIntro": "سكاي إنترو",
     "skipCredits": "سكاي الائتمان",
-    "skipAds": "إعلانات Skip",
     "nextEpisode": "الحلقة التالية",
     "subtitleTrack": "مسار ${n}",
     "subtitleFile": "موضوع ${name}",
     "forcedTrack": "${label} (مجبرة)",
     "osdSubtitlesOff": "العنوان الأصلي: Off",
     "osdSubtitles": "الأرقام التالية: ${track}",
-    "osdAudio": "الصوت: ${track}"
+    "osdAudio": "الصوت: ${track}",
+    "frameCount": {
+      "zero": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار",
+      "one": "إطار واحد",
+      "two": "إطاران",
+      "few": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطارات",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} إطار"
+    },
+    "trackSelectionTitle": "اختيار المسارات قبل اللعب",
+    "trackSelectionAuto": "الاختيار التلقائي",
+    "openMiniPlayer": "مفتوحة ميني لاعب",
+    "returnToFullPlayer": "العودة إلى اللاعب الكامل",
+    "loadSubtitleFile": "تحميل ملف Subtitle",
+    "subtitleLoadFailed": "فشل في تحميل ملف Subtitle",
+    "skipAds": "إعلانات Skip",
+    "tapToUnlock": "اضغط لإلغاء القفل",
+    "tapAgainToUnlock": "اضغط مرة أخرى لإلغاء القفل"
   },
   "userStatus": {},
   "messages": {
@@ -1826,9 +1782,6 @@
     "saveLogs": "حفظ اللوحات إلى الملفات",
     "logsSaved": "تسجيل الدخول إلى ${path}",
     "saveLogsFailed": "لا أستطيع حفظ ملف السجل."
-  },
-  "detail": {
-    "endsAt": "النهاية في ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG لا يمكن أن تبدأ",
@@ -3156,6 +3109,53 @@
     "allowHttp": "السماح باستخدام HTTP",
     "httpsRequired": "استخدام HTTPS أو يسمح صراحة بتوصيل غير مشفر."
   },
+  "cast": {
+    "chooseDevice": "البث إلى جهاز",
+    "searching": "جارٍ البحث عن أجهزة البث…",
+    "connectedTo": "متصل بـ ${device}",
+    "device": "جهاز البث",
+    "readyToCast": "جاهز للبث",
+    "subtitle": "الترجمة",
+    "serverNotAvailable": "خادم الوسائط غير متاح.",
+    "stopCasting": "إيقاف البث",
+    "castToDevice": "البث إلى جهاز",
+    "noEpisodeAvailable": "لا توجد حلقة متاحة للبث.",
+    "startFailed": "تعذر بدء البث. تحقق من الخادم وحاول مرة أخرى."
+  },
+  "automation": {
+    "noActivePlayback": "لا يوجد جلسة فيديو نشطة للتحكم فيها."
+  },
+  "notifications": {
+    "newEpisodeTitle": "الحلقة الجديدة",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "جرّب جميع الميزات مجانًا لمدة 7 أيام",
+    "description": "ابدأ فترة تجريبية لمدة سبعة أيام مع إمكانية استخدام جميع ميزات PlezyNG. لا توجد رسوم خلال الفترة التجريبية ولا اشتراك. بعد انتهاء التجربة، يمكنك فتح PlezyNG مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك.",
+    "trialEndedDescription": "افتح جميع ميزات PlezyNG مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك. لا يوجد اشتراك.",
+    "startTrial": "بدء تجربتي المجانية لمدة 7 أيام",
+    "trialActive": "تجربتك الكاملة لجميع الميزات لمدة 7 أيام نشطة.",
+    "trialEnded": "انتهت تجربتك لمدة 7 أيام",
+    "trialStartFailed": "تعذر حفظ الفترة التجريبية على هذا الجهاز. حاول مرة أخرى.",
+    "lifetimeTitle": "تم فتح PlezyNG مدى الحياة",
+    "lifetimeBody": "شكرًا لك! يمكنك الآن استخدام جميع ميزات PlezyNG مدى الحياة.",
+    "manageTitle": "الوصول إلى PlezyNG مدى الحياة",
+    "manageDescription": "جرّب جميع الميزات مجانًا لمدة 7 أيام، ثم افتحها مدى الحياة بدفعة واحدة بالسعر المعروض في متجرك.",
+    "buy": "فتح جميع الميزات مقابل ${price}",
+    "loadingPrice": "جارٍ تحميل السعر من المتجر…",
+    "retryPrice": "إعادة محاولة جلب السعر",
+    "restore": "استعادة عملية الشراء مدى الحياة",
+    "pending": "عملية الشراء في انتظار الدفع أو الموافقة. سيُفعّل الوصول مدى الحياة فور إتمام المتجر للعملية.",
+    "storeUnavailable": "عمليات الشراء غير متاحة. تحقق من تسجيل الدخول إلى المتجر ومن السماح بالشراء على هذا الجهاز.",
+    "productNotFound": "شراء PlezyNG مدى الحياة غير متاح في هذا المتجر بعد.",
+    "productQueryFailed": "تعذر تحميل السعر من المتجر. تحقق من اتصالك وحاول مرة أخرى.",
+    "purchaseFailed": "لم تكتمل عملية الشراء. حاول مرة أخرى.",
+    "restoreFailed": "تعذر الاتصال بالمتجر لاستعادة عملية الشراء. حاول مرة أخرى.",
+    "nothingToRestore": "لم يُعثر على عملية شراء PlezyNG مدى الحياة لحساب المتجر هذا."
+  },
+  "detail": {
+    "endsAt": "النهاية في ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "لم أتمكن من الوصول إلى خادم Plex لهذا الرابط.",
     "notFound": "لم أتمكن من العثور على هذا العرض أو الفيلم على خادمات Plex الخاصة بك.",
@@ -3919,5 +3919,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "هذا الرابط Plezy غير صالح.",
+    "profileNotFound": "لا يوجد ملف تعريف يتماشى مع \"${profile}\".",
+    "serverUnavailable": "لم أتمكن من الوصول إلى الخادم لهذا الرابط.",
+    "notFound": "لا أستطيع العثور على هذا العنوان في مكتباتك.",
+    "unsupportedItem": "لا يمكن لعب هذا الرابط.",
+    "noLiveTv": "لا يوجد خادم تلفزيوني مباشر متاح لهذا الرابط.",
+    "channelNotFound": "لا يمكن العثور على قناة \"${channel}\".",
+    "showLink": "عرض الرابط",
+    "showProfileLink": "عرض رابط الملف الشخصي",
+    "dialogTitle": "الرابط",
+    "showHint": "فتح هذا الرابط يلعب الحلقة التالية.إضافة &mode=shuffle لعرض العرض على shuffle.",
+    "movieHint": "فتح هذا الرابط يلعب الفيلم.",
+    "episodeHint": "فتح هذا الرابط يلعب هذا الحلقة.",
+    "profileHint": "فتح هذا الرابط يتحول إلى هذا الملف الشخصي.",
+    "openAsProfile": "افتح كـ ${name}",
+    "copy": "نسخة",
+    "copied": "Link نسخ"
   }
 }

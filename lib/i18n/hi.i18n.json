@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "किसी डिवाइस पर कास्ट करें",
-    "searching": "कस्टम उपकरणों की तलाश में ...",
-    "connectedTo": "${device} पर कनेक्ट करें",
-    "device": "कास्ट डिवाइस",
-    "readyToCast": "कास्ट करने के लिए तैयार",
-    "subtitle": "उपशीर्षक",
-    "serverNotAvailable": "मीडिया सर्वर उपलब्ध नहीं है।",
-    "stopCasting": "कास्ट करना बंद करें",
-    "castToDevice": "डिवाइस पर कास्ट करें",
-    "noEpisodeAvailable": "खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।",
-    "startFailed": "सर्वर की जांच करें और फिर से कोशिश करें।"
-  },
-  "automation": {
-    "noActivePlayback": "नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।",
-    "profileNotFound": "यह Plezy प्रोफ़ाइल नहीं पाया जा सकता था।"
-  },
-  "notifications": {
-    "newEpisodeTitle": "नए एपिसोड",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "एप्लिकेशन आइकन",
     "defaultIcon": "मूल",
@@ -200,30 +179,6 @@
     "viewRelease": "देखें रिलीज",
     "latestVersion": "आप नवीनतम संस्करण पर हैं",
     "checkFailed": "अद्यतन की जांच नहीं कर पाया"
-  },
-  "appAccess": {
-    "title": "7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें",
-    "description": "सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.",
-    "trialEndedDescription": "अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.",
-    "startTrial": "मेरे 7 दिन मुफ्त परीक्षण शुरू करें",
-    "trialActive": "आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।",
-    "trialEnded": "7 दिन का मुकदमा खत्म हो गया है।",
-    "trialStartFailed": "मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.",
-    "lifetimeTitle": "PlezyNG जीवन के लिए अनलॉक",
-    "lifetimeBody": "आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।",
-    "manageTitle": "PlezyNG जीवन भर पहुंच",
-    "manageDescription": "7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।",
-    "buy": "${price} के लिए सभी सुविधाओं को अनलॉक करें",
-    "loadingPrice": "दुकान की कीमत...",
-    "retryPrice": "रिट्री की कीमत देखें",
-    "restore": "जीवन भर खरीदें",
-    "pending": "आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.",
-    "storeUnavailable": "खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.",
-    "productNotFound": "PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।",
-    "productQueryFailed": "दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.",
-    "purchaseFailed": "खरीदारी नहीं हुई. फिर से कोशिश करें.",
-    "restoreFailed": "आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.",
-    "nothingToRestore": "इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।"
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -1079,10 +1034,6 @@
     "track": "ऑडियो ट्रैक ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} फ्रेम",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} फ्रेम"
-    },
     "audioLabel": "ऑडियो",
     "subtitlesLabel": "उपशीर्षक",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "अनमोल",
     "settingsButton": "Playback सेटिंग्स",
     "tracksButton": "ऑडियो और उपनाम",
-    "trackSelectionTitle": "प्लेबैक से पहले ट्रैक चुनें",
-    "trackSelectionAuto": "स्वचालित चयन",
     "chaptersButton": "अध्याय",
     "versionQualityButton": "संस्करण और गुणवत्ता",
     "versionColumnHeader": "संस्करण",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "ट्रांसकोडिंग उपलब्ध नहीं है - मूल गुणवत्ता खेलने के लिए",
     "subtitleUnavailableFallback": "चुने हुए उप शीर्षक लोड नहीं किया जा सकता है — बिना उप शीर्षक जारी",
     "pipButton": "Image-in-Picture मोड",
-    "openMiniPlayer": "खोलने वाले मिनी खिलाड़ी",
-    "returnToFullPlayer": "पूर्ण खिलाड़ी के लिए वापसी",
     "aspectRatioButton": "आस्पेक्ट अनुपात",
     "ambientLighting": "पर्यावरण प्रकाश",
     "fullscreenButton": "पूर्ण स्क्रीन में प्रवेश",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "रोटेशन लॉक",
     "lockScreen": "लॉक स्क्रीन",
     "screenLockButton": "स्क्रीन लॉक",
-    "longPressToUnlock": "लंबे समय तक दबाव में विघटित",
     "timelineSlider": "वीडियो टाइमलाइन",
     "volumeSlider": "वॉल्यूम स्तर",
     "endsAt": "${time} पर समाप्त",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "क्यूए में कोई आइटम नहीं",
     "noAudioDevicesAvailable": "कोई ऑडियो डिवाइस उपलब्ध नहीं है",
     "searchSubtitles": "Subtitles खोजें",
-    "loadSubtitleFile": "Subtitle फ़ाइल डाउनलोड करें",
-    "subtitleLoadFailed": "Subtitle फ़ाइल डाउनलोड करने में विफल",
     "language": "भाषा",
     "noSubtitlesFound": "कोई उपनाम नहीं मिला",
     "subtitleDownloaded": "Subtitle डाउनलोड करें",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "भाषाओं की खोज...",
     "skipIntro": "स्काइप इनट्रू",
     "skipCredits": "क्रेडिट स्केप",
-    "skipAds": "स्काइप विज्ञापन",
     "nextEpisode": "अगला एपिसोड",
     "subtitleTrack": "ट्रैक ${n}",
     "subtitleFile": "पदों की संख्या ${name}",
     "forcedTrack": "${label} (निरपेक्ष)",
     "osdSubtitlesOff": "पदों की सूची: Off",
     "osdSubtitles": "पदों की संख्या: ${track}",
-    "osdAudio": "ऑडियो: ${track}"
+    "osdAudio": "ऑडियो: ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} फ्रेम",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} फ्रेम"
+    },
+    "trackSelectionTitle": "प्लेबैक से पहले ट्रैक चुनें",
+    "trackSelectionAuto": "स्वचालित चयन",
+    "openMiniPlayer": "खोलने वाले मिनी खिलाड़ी",
+    "returnToFullPlayer": "पूर्ण खिलाड़ी के लिए वापसी",
+    "loadSubtitleFile": "Subtitle फ़ाइल डाउनलोड करें",
+    "subtitleLoadFailed": "Subtitle फ़ाइल डाउनलोड करने में विफल",
+    "skipAds": "स्काइप विज्ञापन",
+    "tapToUnlock": "अनलॉक करने के लिए टैप करें",
+    "tapAgainToUnlock": "अनलॉक करने के लिए फिर से टैप करें"
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "फ़ाइल में लॉग्स को सहेजें",
     "logsSaved": "लॉग ${path} पर संग्रहीत",
     "saveLogsFailed": "लॉग फ़ाइल को बचाने में सक्षम नहीं था।"
-  },
-  "detail": {
-    "endsAt": "${time} पर समाप्त"
   },
   "startup": {
     "failedTitle": "PlezyNG शुरू नहीं किया जा सकता",
@@ -3072,6 +3025,53 @@
     "allowHttp": "HTTP की अनुमति दें",
     "httpsRequired": "HTTPS का उपयोग करें या स्पष्ट रूप से एक अज्ञात कनेक्शन की अनुमति दें।"
   },
+  "cast": {
+    "chooseDevice": "किसी डिवाइस पर कास्ट करें",
+    "searching": "कस्टम उपकरणों की तलाश में ...",
+    "connectedTo": "${device} पर कनेक्ट करें",
+    "device": "कास्ट डिवाइस",
+    "readyToCast": "कास्ट करने के लिए तैयार",
+    "subtitle": "उपशीर्षक",
+    "serverNotAvailable": "मीडिया सर्वर उपलब्ध नहीं है।",
+    "stopCasting": "कास्ट करना बंद करें",
+    "castToDevice": "डिवाइस पर कास्ट करें",
+    "noEpisodeAvailable": "खेलने के लिए कोई एपिसोड उपलब्ध नहीं है।",
+    "startFailed": "सर्वर की जांच करें और फिर से कोशिश करें।"
+  },
+  "automation": {
+    "noActivePlayback": "नियंत्रित करने के लिए कोई सक्रिय वीडियो सत्र नहीं है।"
+  },
+  "notifications": {
+    "newEpisodeTitle": "नए एपिसोड",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "7 दिनों के लिए मुफ्त में हर फ़ंक्शन का प्रयास करें",
+    "description": "सभी PlezyNG सुविधाओं के लिए पूर्ण पहुंच के साथ एक सात दिवसीय परीक्षण शुरू करें. परीक्षण के दौरान कोई शुल्क नहीं है और कोई सदस्यता नहीं है. परीक्षण के बाद, आपके स्टोर की कीमत पर एक जीवन भर खरीद PlezyNG जीवन भर लॉक करता है.",
+    "trialEndedDescription": "अपने स्टोर की कीमत पर एक खरीद के साथ जीवन के लिए PlezyNG में प्रत्येक सुविधा को अनलॉक करें. कोई सदस्यता नहीं है.",
+    "startTrial": "मेरे 7 दिन मुफ्त परीक्षण शुरू करें",
+    "trialActive": "आपका 7 दिन का पूर्ण प्रदर्शन परीक्षण सक्रिय है।",
+    "trialEnded": "7 दिन का मुकदमा खत्म हो गया है।",
+    "trialStartFailed": "मैं इस डिवाइस पर परीक्षण को बचाने में सक्षम नहीं था. कृपया फिर से कोशिश करें.",
+    "lifetimeTitle": "PlezyNG जीवन के लिए अनलॉक",
+    "lifetimeBody": "आपके पास हर PlezyNG फ़ंक्शन के लिए जीवन भर पहुंच है।",
+    "manageTitle": "PlezyNG जीवन भर पहुंच",
+    "manageDescription": "7 दिनों के लिए प्रत्येक सुविधा को मुफ्त में आज़माएं, फिर अपनी दुकान की कीमत पर एक भुगतान के साथ जीवन के लिए सब कुछ लॉक करें।",
+    "buy": "${price} के लिए सभी सुविधाओं को अनलॉक करें",
+    "loadingPrice": "दुकान की कीमत...",
+    "retryPrice": "रिट्री की कीमत देखें",
+    "restore": "जीवन भर खरीदें",
+    "pending": "आपका खरीद भुगतान या अनुमोदन का इंतजार कर रहा है. लाइफ-टाइम एक्सेस तुरंत बंद हो जाता है जैसे ही स्टोर इसे पूरा करता है.",
+    "storeUnavailable": "खरीदारी उपलब्ध नहीं है. सुनिश्चित करें कि आप स्टोर में साइन अप कर रहे हैं और इस डिवाइस पर खरीदारी की अनुमति है.",
+    "productNotFound": "PlezyNG जीवन-जीवन अनलॉक अभी तक इस स्टोर में उपलब्ध नहीं है।",
+    "productQueryFailed": "दुकान की कीमत पर लोड नहीं किया जा सकता. अपने कनेक्शन की जांच करें और फिर से कोशिश करें.",
+    "purchaseFailed": "खरीदारी नहीं हुई. फिर से कोशिश करें.",
+    "restoreFailed": "आप अपनी खरीद को पुनर्स्थापित करने के लिए दुकान तक नहीं पहुंच सकते. फिर से कोशिश करें.",
+    "nothingToRestore": "इस स्टोर खाते के लिए PlezyNG जीवन भर खरीद पाया गया था।"
+  },
+  "detail": {
+    "endsAt": "${time} पर समाप्त"
+  },
   "watchLink": {
     "serverUnavailable": "इस लिंक के लिए Plex सर्वर तक पहुंच नहीं पाया।",
     "notFound": "इस शो या फिल्म को आपके Plex सर्वर पर नहीं पाया जा सकता।",
@@ -3819,5 +3819,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "यह Plezy लिंक वैध नहीं है।",
+    "profileNotFound": "कोई प्रोफ़ाइल \"${profile}\" से मेल नहीं खाता है।",
+    "serverUnavailable": "मैं इस लिंक के लिए सर्वर तक नहीं पहुंच सकता था।",
+    "notFound": "आप अपनी पुस्तकालयों में इस शीर्षक को नहीं पा सकते।",
+    "unsupportedItem": "इस लिंक को नहीं खेला जा सकता है।",
+    "noLiveTv": "इस लिंक के लिए कोई लाइव टीवी सर्वर उपलब्ध नहीं है।",
+    "channelNotFound": "चैनल \"${channel}\" नहीं मिल सकता था।",
+    "showLink": "लिंक दिखाएं",
+    "showProfileLink": "प्रोफ़ाइल लिंक दिखाएं",
+    "dialogTitle": "लिंक",
+    "showHint": "इस लिंक को खोलने से अगले एपिसोड खेला जाता है. shuffle पर शो खेलने के लिए &mode=shuffle जोड़ें.",
+    "movieHint": "इस लिंक को खोलने से फिल्म खेलती है।",
+    "episodeHint": "इस लिंक को खोलने से यह एपिसोड खेला जाता है।",
+    "profileHint": "इस लिंक को खोलने से इस प्रोफ़ाइल के लिए स्विच होता है।",
+    "openAsProfile": "${name} के रूप में खोलें",
+    "copy": "कॉपी करें",
+    "copied": "लिंक कॉपी करें"
   }
 }

@@ -1,7 +1,7 @@
 {
   "locale": "en",
   "inherits": null,
-  "catalogSha256": "8518f965613b34a225726215f2a6b2775ea647cec4e299a3f399901d3ae1a510",
+  "catalogSha256": "3fcabd0ee08b4c8b5ab34a15dbcead4ddc15db45db82b1b580c6a67f431a8282",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "source-english",
@@ -17,7 +17,6 @@
     "cast.noEpisodeAvailable": "source-english",
     "cast.startFailed": "source-english",
     "automation.noActivePlayback": "source-english",
-    "automation.profileNotFound": "source-english",
     "notifications.newEpisodeTitle": "source-english",
     "notifications.newEpisodeBody": "source-english",
     "appIcon.title": "source-english",
@@ -945,7 +944,6 @@
     "videoControls.rotationLockButton": "source-english",
     "videoControls.lockScreen": "source-english",
     "videoControls.screenLockButton": "source-english",
-    "videoControls.longPressToUnlock": "source-english",
     "videoControls.timelineSlider": "source-english",
     "videoControls.volumeSlider": "source-english",
     "videoControls.endsAt": "source-english",
@@ -3506,7 +3504,26 @@
     "universalMedia.converterFailed": "source-english",
     "universalMedia.converterCancelled": "source-english",
     "universalMedia.converterDesktopOnly": "source-english",
-    "universalMedia.converterStart": "source-english"
+    "universalMedia.converterStart": "source-english",
+    "videoControls.tapToUnlock": "source-english",
+    "videoControls.tapAgainToUnlock": "source-english",
+    "deepLinks.invalid": "source-english",
+    "deepLinks.profileNotFound": "source-english",
+    "deepLinks.serverUnavailable": "source-english",
+    "deepLinks.notFound": "source-english",
+    "deepLinks.unsupportedItem": "source-english",
+    "deepLinks.noLiveTv": "source-english",
+    "deepLinks.channelNotFound": "source-english",
+    "deepLinks.showLink": "source-english",
+    "deepLinks.showProfileLink": "source-english",
+    "deepLinks.dialogTitle": "source-english",
+    "deepLinks.showHint": "source-english",
+    "deepLinks.movieHint": "source-english",
+    "deepLinks.episodeHint": "source-english",
+    "deepLinks.profileHint": "source-english",
+    "deepLinks.openAsProfile": "source-english",
+    "deepLinks.copy": "source-english",
+    "deepLinks.copied": "source-english"
   },
   "beforeIndependentQaCorrection": {
     "mediaMenu.deleteEpisodeCountWarning": "source-english"

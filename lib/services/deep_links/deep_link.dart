@@ -347,7 +347,8 @@ final _imdbId = RegExp(r'^tt\d+$', caseSensitive: false);
 final _plexHash = RegExp(r'^[0-9a-zA-Z]+$');
 
 DeepLink? _legacyProfileLink(Uri uri, Map<String, String> params) {
-  final ref = _param(params, 'id') ??
+  final ref =
+      _param(params, 'id') ??
       _param(params, 'profileId') ??
       _param(params, 'profile') ??
       (uri.pathSegments.isEmpty ? null : uri.pathSegments.first.trim());

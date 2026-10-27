@@ -49,7 +49,7 @@ class DolbyWorkflowRouteTests(unittest.TestCase):
                     "{0}-felbaker-source",
                 ),
                 "apple-source": (
-                    ("ng-shared-main-jit",),
+                    ("private-apple-builds",),
                     "{0}-apple-source",
                 ),
             },
@@ -85,7 +85,7 @@ class DolbyWorkflowRouteTests(unittest.TestCase):
         self.assertIn('"macOS","ARM64"', contracts)
 
         apple = job_block(platforms, "apple-source")
-        self.assertIn('"group":"ng-shared-main-jit"', apple)
+        self.assertIn('"group":"private-apple-builds"', apple)
         self.assertIn('"macOS","ARM64"', apple)
 
     def test_manual_fork_validation_only_uses_the_gvisor_sandbox(self):

@@ -2,27 +2,6 @@
   "app": {
     "title": "PlezyNG"
   },
-  "cast": {
-    "chooseDevice": "پخش روی دستگاه",
-    "searching": "در جستجوی دستگاه های...",
-    "connectedTo": "به ${device} متصل شده است.",
-    "device": "دستگاه پخش",
-    "readyToCast": "آمادهٔ پخش روی دستگاه",
-    "subtitle": "زیرنویس‌ها",
-    "serverNotAvailable": "سرور رسانه ای در دسترس نیست.",
-    "stopCasting": "توقف پخش روی دستگاه",
-    "castToDevice": "پخش روی دستگاه",
-    "noEpisodeAvailable": "هیچ قسمت ای برای پخش در دسترس نیست.",
-    "startFailed": "نمی توانم شروع به کاستینگ کنم، سرور را چک کنید و دوباره امتحان کنید."
-  },
-  "automation": {
-    "noActivePlayback": "هیچ جلسه ویدئویی فعال برای کنترل وجود ندارد.",
-    "profileNotFound": "این پروفایل Plezy یافت نشد."
-  },
-  "notifications": {
-    "newEpisodeTitle": "قسمت جدید",
-    "newEpisodeBody": "${show} · ${episode}"
-  },
   "appIcon": {
     "title": "آیکون اپ",
     "defaultIcon": "پیشفرض",
@@ -200,30 +179,6 @@
     "viewRelease": "مشاهده انتشارات",
     "latestVersion": "شما در آخرین نسخه هستید",
     "checkFailed": "نتوانستیم به روز رسانی ها را بررسی کنیم"
-  },
-  "appAccess": {
-    "title": "سعی کنید هر ویژگی را به صورت رایگان برای 7 روز امتحان کنید",
-    "description": "یک آزمون هفت روزه را با دسترسی کامل به هر ویژگی PlezyNG آغاز کنید.در طول آزمون هیچ هزینه ای وجود ندارد و هیچ اشتراک ای وجود ندارد.پس از آزمون، یک خرید عمر در قیمت فروشگاه شما PlezyNG را برای یک عمر باز می کند.",
-    "trialEndedDescription": "باز کردن هر ویژگی در PlezyNG برای زندگی با یک خرید در قیمت فروشگاه شما.",
-    "startTrial": "امتحان هفت روزه رایگان من را آغاز کنید",
-    "trialActive": "آزمون 7 روزه شما فعال است.",
-    "trialEnded": "دادگاه هفت روزه شما به پایان رسیده است",
-    "trialStartFailed": "من نمی توانم آزمایش را در این دستگاه ذخیره کنم لطفا دوباره امتحان کنید.",
-    "lifetimeTitle": "PlezyNG برای زندگی باز شده است",
-    "lifetimeBody": "با تشکر از شما، شما دسترسی طول عمر به هر ویژگی PlezyNG دارید.",
-    "manageTitle": "PlezyNG دسترسی طول عمر",
-    "manageDescription": "سعی کنید هر ویژگی را به مدت 7 روز رایگان کنید، سپس همه چیز را برای زندگی با یک پرداخت در قیمت فروشگاه خود باز کنید.",
-    "buy": "باز کردن هر ویژگی برای ${price}",
-    "loadingPrice": "قیمت فروشگاه...",
-    "retryPrice": "بازگشت قیمت جستجو",
-    "restore": "بازگرداندن خرید عمر",
-    "pending": "خرید شما در انتظار پرداخت یا تایید است. دسترسی طول عمر بلافاصله پس از فروشگاه آن را تکمیل می کند.",
-    "storeUnavailable": "خرید در دسترس نیست چک کنید که شما در فروشگاه ثبت نام کرده اید و خرید در این دستگاه مجاز است.",
-    "productNotFound": "خرید دسترسی مادام‌العمر PlezyNG هنوز در این فروشگاه موجود نیست.",
-    "productQueryFailed": "نمی توانم قیمت فروشگاه را بارگذاری کنم، اتصال خود را بررسی کنید و دوباره امتحان کنید.",
-    "purchaseFailed": "خرید به پایان نرسید، دوباره امتحان کنید.",
-    "restoreFailed": "من نمی توانستم به فروشگاه بروم تا خرید خود را بازگردانم.",
-    "nothingToRestore": "شماره PlezyNG خرید طول عمر برای این حساب فروشگاه یافت شد."
   },
   "settings": {
     "title": "تنظیمات",
@@ -1079,10 +1034,6 @@
     "track": "ترافیک صوتی ${n}"
   },
   "videoControls": {
-    "frameCount": {
-      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} فریم",
-      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} فریم"
-    },
     "audioLabel": "صدا",
     "subtitlesLabel": "زیرنویس‌ها",
     "addTime": "+${amount}${unit}",
@@ -1119,8 +1070,6 @@
     "unmuteButton": "صدادار",
     "settingsButton": "تنظیمات Playback",
     "tracksButton": "صدا و زیرنویس",
-    "trackSelectionTitle": "انتخاب مسیر قبل از بازی",
-    "trackSelectionAuto": "انتخاب اتوماتیک",
     "chaptersButton": "فصل ها",
     "versionQualityButton": "نسخه و کیفیت",
     "versionColumnHeader": "نسخه",
@@ -1130,8 +1079,6 @@
     "transcodeUnavailableFallback": "Transcoding Unavailable – بازی با کیفیت اصلی",
     "subtitleUnavailableFallback": "زیرنویس های انتخاب شده نمی توانند بارگذاری شوند – ادامه بدون زیرنویس ها",
     "pipButton": "حالت تصویر در تصویر",
-    "openMiniPlayer": "باز کردن مینی بازیکن",
-    "returnToFullPlayer": "بازگشت به بازیکن کامل",
     "aspectRatioButton": "نسبت تصویر",
     "ambientLighting": "روشنایی محیط زیست",
     "fullscreenButton": "وارد صفحه نمایش کامل",
@@ -1140,7 +1087,6 @@
     "rotationLockButton": "قفل چرخشی",
     "lockScreen": "صفحه نمایش قفل",
     "screenLockButton": "صفحه نمایش قفل",
-    "longPressToUnlock": "فشار طولانی برای باز کردن",
     "timelineSlider": "ویدئو زمان بندی",
     "volumeSlider": "حجم سطح",
     "endsAt": "در نهایت در ${time}",
@@ -1166,8 +1112,6 @@
     "noQueueItems": "هیچ موضوعی در قفسه",
     "noAudioDevicesAvailable": "هیچ دستگاه صوتی در دسترس نیست",
     "searchSubtitles": "جستجو زیرنویس",
-    "loadSubtitleFile": "دانلود فایل زیرنویس",
-    "subtitleLoadFailed": "دانلود فایل زیرنویس",
     "language": "زبان",
     "noSubtitlesFound": "هیچ زیرنویس یافت نشد",
     "subtitleDownloaded": "دانلود زیرنویس",
@@ -1176,14 +1120,26 @@
     "searchLanguages": "زبان های جستجو...",
     "skipIntro": "کشتی وارد",
     "skipCredits": "کپی اعتبارات",
-    "skipAds": "آگهی های اسکایپ",
     "nextEpisode": "قسمت بعد",
     "subtitleTrack": "تریلر ${n}",
     "subtitleFile": "زیرنویس ${name}",
     "forcedTrack": "${label} (مجاز)",
     "osdSubtitlesOff": "بایگانی برچسب ها: Off",
     "osdSubtitles": "برچسب ها: ${track}",
-    "osdAudio": "صدا : ${track}"
+    "osdAudio": "صدا : ${track}",
+    "frameCount": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} فریم",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} فریم"
+    },
+    "trackSelectionTitle": "انتخاب مسیر قبل از بازی",
+    "trackSelectionAuto": "انتخاب اتوماتیک",
+    "openMiniPlayer": "باز کردن مینی بازیکن",
+    "returnToFullPlayer": "بازگشت به بازیکن کامل",
+    "loadSubtitleFile": "دانلود فایل زیرنویس",
+    "subtitleLoadFailed": "دانلود فایل زیرنویس",
+    "skipAds": "آگهی های اسکایپ",
+    "tapToUnlock": "برای باز کردن قفل ضربه بزنید",
+    "tapAgainToUnlock": "برای باز کردن قفل دوباره ضربه بزنید"
   },
   "userStatus": {},
   "messages": {
@@ -1794,9 +1750,6 @@
     "saveLogs": "ذخیره فایل ها به فایل ها",
     "logsSaved": "ثبت نام در ${path}",
     "saveLogsFailed": "نمی توانم فایل را ذخیره کنم."
-  },
-  "detail": {
-    "endsAt": "در نهایت در ${time}"
   },
   "startup": {
     "failedTitle": "PlezyNG نمی تواند شروع شود",
@@ -3072,6 +3025,53 @@
     "allowHttp": "اجازه دادن به HTTP",
     "httpsRequired": "استفاده از HTTPS یا به صراحت اجازه یک اتصال غیر رمزگذاری شده."
   },
+  "cast": {
+    "chooseDevice": "پخش روی دستگاه",
+    "searching": "در جستجوی دستگاه های...",
+    "connectedTo": "به ${device} متصل شده است.",
+    "device": "دستگاه پخش",
+    "readyToCast": "آمادهٔ پخش روی دستگاه",
+    "subtitle": "زیرنویس‌ها",
+    "serverNotAvailable": "سرور رسانه ای در دسترس نیست.",
+    "stopCasting": "توقف پخش روی دستگاه",
+    "castToDevice": "پخش روی دستگاه",
+    "noEpisodeAvailable": "هیچ قسمت ای برای پخش در دسترس نیست.",
+    "startFailed": "نمی توانم شروع به کاستینگ کنم، سرور را چک کنید و دوباره امتحان کنید."
+  },
+  "automation": {
+    "noActivePlayback": "هیچ جلسه ویدئویی فعال برای کنترل وجود ندارد."
+  },
+  "notifications": {
+    "newEpisodeTitle": "قسمت جدید",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
+  "appAccess": {
+    "title": "سعی کنید هر ویژگی را به صورت رایگان برای 7 روز امتحان کنید",
+    "description": "یک آزمون هفت روزه را با دسترسی کامل به هر ویژگی PlezyNG آغاز کنید.در طول آزمون هیچ هزینه ای وجود ندارد و هیچ اشتراک ای وجود ندارد.پس از آزمون، یک خرید عمر در قیمت فروشگاه شما PlezyNG را برای یک عمر باز می کند.",
+    "trialEndedDescription": "باز کردن هر ویژگی در PlezyNG برای زندگی با یک خرید در قیمت فروشگاه شما.",
+    "startTrial": "امتحان هفت روزه رایگان من را آغاز کنید",
+    "trialActive": "آزمون 7 روزه شما فعال است.",
+    "trialEnded": "دادگاه هفت روزه شما به پایان رسیده است",
+    "trialStartFailed": "من نمی توانم آزمایش را در این دستگاه ذخیره کنم لطفا دوباره امتحان کنید.",
+    "lifetimeTitle": "PlezyNG برای زندگی باز شده است",
+    "lifetimeBody": "با تشکر از شما، شما دسترسی طول عمر به هر ویژگی PlezyNG دارید.",
+    "manageTitle": "PlezyNG دسترسی طول عمر",
+    "manageDescription": "سعی کنید هر ویژگی را به مدت 7 روز رایگان کنید، سپس همه چیز را برای زندگی با یک پرداخت در قیمت فروشگاه خود باز کنید.",
+    "buy": "باز کردن هر ویژگی برای ${price}",
+    "loadingPrice": "قیمت فروشگاه...",
+    "retryPrice": "بازگشت قیمت جستجو",
+    "restore": "بازگرداندن خرید عمر",
+    "pending": "خرید شما در انتظار پرداخت یا تایید است. دسترسی طول عمر بلافاصله پس از فروشگاه آن را تکمیل می کند.",
+    "storeUnavailable": "خرید در دسترس نیست چک کنید که شما در فروشگاه ثبت نام کرده اید و خرید در این دستگاه مجاز است.",
+    "productNotFound": "خرید دسترسی مادام‌العمر PlezyNG هنوز در این فروشگاه موجود نیست.",
+    "productQueryFailed": "نمی توانم قیمت فروشگاه را بارگذاری کنم، اتصال خود را بررسی کنید و دوباره امتحان کنید.",
+    "purchaseFailed": "خرید به پایان نرسید، دوباره امتحان کنید.",
+    "restoreFailed": "من نمی توانستم به فروشگاه بروم تا خرید خود را بازگردانم.",
+    "nothingToRestore": "شماره PlezyNG خرید طول عمر برای این حساب فروشگاه یافت شد."
+  },
+  "detail": {
+    "endsAt": "در نهایت در ${time}"
+  },
   "watchLink": {
     "serverUnavailable": "من نمی توانستم به یک سرور Plex برای این لینک دسترسی داشته باشم.",
     "notFound": "من نمی توانم این نمایش یا فیلم را در سرورهای Plex خود پیدا کنم.",
@@ -3819,5 +3819,24 @@
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
+  },
+  "deepLinks": {
+    "invalid": "این لینک Plezy معتبر نیست.",
+    "profileNotFound": "هیچ پروفایل با \"${profile}\" مطابقت ندارد.",
+    "serverUnavailable": "من نمی توانستم به سرور برای این لینک دسترسی داشته باشم.",
+    "notFound": "من نمی توانم این عنوان را در کتابخانه های شما پیدا کنم.",
+    "unsupportedItem": "این لینک بازی نمی شود.",
+    "noLiveTv": "هیچ سرور تلویزیونی زنده برای این لینک در دسترس نیست.",
+    "channelNotFound": "من نمی توانم کانال \"${channel}\" پیدا کنم.",
+    "showLink": "نمایش لینک",
+    "showProfileLink": "نمایش پروفایل لینک",
+    "dialogTitle": "لینک",
+    "showHint": "باز کردن این لینک قسمت بعدی را بازی می کند. اضافه کنید &mode=shuffle برای پخش نمایش در shuffle.",
+    "movieHint": "باز کردن این لینک فیلم را بازی می کند.",
+    "episodeHint": "باز کردن این لینک این قسمت را بازی می کند.",
+    "profileHint": "باز کردن این لینک به این پروفایل تبدیل می شود.",
+    "openAsProfile": "باز کردن به عنوان ${name}",
+    "copy": "کپی",
+    "copied": "لینک کپی شده"
   }
 }

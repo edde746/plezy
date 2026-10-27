@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Subtitle fildi qaytadi.",
     "subtitleLoadFailed": "Subtitle file‘i qaytadi.",
     "skipAds": "Ads koʻyadi",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Qulfni ochish uchun bosing",
+    "tapAgainToUnlock": "Qulfni ochish uchun yana bosing"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "U'zizga qurtlar. serveri kontroldan qurtlar, qaytarga qurtlam."
   },
   "automation": {
-    "noActivePlayback": "Video aktivni sessiya ko‘zadi.",
-    "profileNotFound": "Bu Plezy profili qothathathathatdi."
+    "noActivePlayback": "Video aktivni sessiya ko‘zadi."
   },
   "notifications": {
     "newEpisodeTitle": "Yeni epizod",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Bu Plezy havolasi yaroqsiz.",
+    "profileNotFound": "“${profile}” profiliga mos profil topilmadi.",
+    "serverUnavailable": "Bu havola uchun serverga ulanib bo‘lmadi.",
+    "notFound": "Bu nom kutubxonalaringizdan topilmadi.",
+    "unsupportedItem": "Bu havolani ijro etib bo‘lmaydi.",
+    "noLiveTv": "Bu havola uchun Live TV serveri mavjud emas.",
+    "channelNotFound": "“${channel}” kanali topilmadi.",
+    "showLink": "Havolani ko‘rsatish",
+    "showProfileLink": "Profil havolasini ko‘rsatish",
+    "dialogTitle": "Havola",
+    "showHint": "Bu havolani ochish keyingi qismni ijro etadi. Serialni aralashtirib ijro etish uchun oxiriga &mode=shuffle qo‘shing.",
+    "movieHint": "Bu havolani ochish filmni ijro etadi.",
+    "episodeHint": "Bu havolani ochish ushbu qismni ijro etadi.",
+    "profileHint": "Bu havola ushbu profilga o‘tadi.",
+    "openAsProfile": "${name} profili sifatida ochish",
+    "copy": "Nusxalash",
+    "copied": "Havola nusxalandi."
   }
 }

@@ -2193,6 +2193,10 @@ jobs:
           name: webos-ipk
           path: artifacts/webos
 
+      - name: Give the WebOS checksum manifest a unique release filename
+        if: ${{ needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
+        run: mv artifacts/webos/SHA256SUMS.txt artifacts/webos/webos-SHA256SUMS.txt
+
       - name: Download iOS artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -2384,7 +2388,7 @@ jobs:
               echo artifacts/webos/*.ipk
               echo artifacts/webos/webos-engine-provenance.json
               echo artifacts/webos/webos-compatibility.json
-              echo artifacts/webos/SHA256SUMS.txt
+              echo artifacts/webos/webos-SHA256SUMS.txt
               echo artifacts/webos/PlezyNG-lg-webos-submission.zip
             fi
             echo artifacts/ios-ipa/plezy-ios-unsigned.ipa

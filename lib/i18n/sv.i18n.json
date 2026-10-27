@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Ladda upp subtitle filen...",
     "subtitleLoadFailed": "misslyckas med att ladda upp subtitle-filen",
     "skipAds": "Skiva annonser",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Tryck för att låsa upp",
+    "tapAgainToUnlock": "Tryck igen för att låsa upp"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Kan inte börja kastar. kontrollera serveren och försök igen."
   },
   "automation": {
-    "noActivePlayback": "Det finns ingen aktiv video session att kontrollera.",
-    "profileNotFound": "Den Plezy profil kunde inte hittas."
+    "noActivePlayback": "Det finns ingen aktiv video session att kontrollera."
   },
   "notifications": {
     "newEpisodeTitle": "Ny episod",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Denna Plezy länk är inte giltig.",
+    "profileNotFound": "Ingen profil matchar \"${profile}\".",
+    "serverUnavailable": "Jag kunde inte nå serveren för den här länken.",
+    "notFound": "Jag kunde inte hitta den här rubriken i dina bibliotek.",
+    "unsupportedItem": "Denna länk kan inte spelas.",
+    "noLiveTv": "Ingen Live TV-server är tillgänglig för den här länken.",
+    "channelNotFound": "Kan inte hitta kanal \"${channel}\".",
+    "showLink": "Visa länken",
+    "showProfileLink": "Visa profil länk",
+    "dialogTitle": "Länkar",
+    "showHint": "Öppna den här länken spelar nästa avsnitt. Lägg till &mode=shuffle för att spela showen på shuffle.",
+    "movieHint": "Öppna den här länken spelar filmen.",
+    "episodeHint": "Att öppna denna länk spelar den här episoden.",
+    "profileHint": "Öppna den här länken växlar till denna profil.",
+    "openAsProfile": "Öppna som ${name}",
+    "copy": "Kopiera",
+    "copied": "Link kopierad"
   }
 }

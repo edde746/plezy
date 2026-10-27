@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Release automation
+
+- Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
+
 ## [3.0.0] - 2026-10-27
 
 This release gathers PlezyNG’s feature work since the fork, platform expansion, and security updates. Experimental playback and platform paths remain identified as experimental below.
@@ -13,6 +17,10 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Add one-command native dependency refresh and all-platform private-JIT release orchestration.
 - Include ARM webOS and Tizen tester builds in versioned releases, with pinned SDK and host-tool setup for Android, webOS and Tizen.
 - Provision pinned Android SDK packages and install hash-verified Python/Ninja plus host prerequisites for Android, webOS and Tizen private JIT builds.
+
+#### Localization
+
+- Complete translated labels for deep links and playback screen-lock controls across supported locales.
 
 #### Universal media tools
 

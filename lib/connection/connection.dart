@@ -8,14 +8,9 @@ import '../utils/url_utils.dart';
 /// Keeps HTTP only for the exact active endpoint the user approved. Every
 /// alternate endpoint can receive authenticated requests through failover, so
 /// only HTTPS alternates are safe to retain without separate consent.
-List<String> _filterUnconsentedHttpFallbacks(
-  String activeBaseUrl,
-  Iterable<String> urls,
-) {
+List<String> _filterUnconsentedHttpFallbacks(String activeBaseUrl, Iterable<String> urls) {
   final active = canonicalizeBaseUrl(activeBaseUrl);
-  return List.unmodifiable(
-    urls.where((url) => url == active || Uri.tryParse(url)?.scheme == 'https'),
-  );
+  return List.unmodifiable(urls.where((url) => url == active || Uri.tryParse(url)?.scheme == 'https'));
 }
 
 /// A media server connection — a unit of authentication the user added.
@@ -290,10 +285,7 @@ class JellyfinConnection extends Connection {
        // fallback, including historic guesses saved by older versions. For an
        // explicitly approved HTTP connection, only that active URL may remain
        // cleartext; other HTTP URLs have not been consented to.
-       baseUrls = _filterUnconsentedHttpFallbacks(
-         baseUrl,
-         _normalizeBaseUrls(baseUrl, baseUrls),
-       );
+       baseUrls = _filterUnconsentedHttpFallbacks(baseUrl, _normalizeBaseUrls(baseUrl, baseUrls));
 
   @override
   MediaBackend get kind => dialect.backend;
@@ -474,10 +466,7 @@ class PlexDirectConnection extends PlexMediaConnection {
        // fallback, including historic guesses saved by older versions. For an
        // explicitly approved HTTP connection, only that active URL may remain
        // cleartext; other HTTP URLs have not been consented to.
-       baseUrls = _filterUnconsentedHttpFallbacks(
-         baseUrl,
-         _normalizeBaseUrls(baseUrl, baseUrls),
-       );
+       baseUrls = _filterUnconsentedHttpFallbacks(baseUrl, _normalizeBaseUrls(baseUrl, baseUrls));
 
   @override
   MediaBackend get kind => MediaBackend.plex;

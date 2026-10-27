@@ -1136,8 +1136,8 @@
     "loadSubtitleFile": "查询下载文件...",
     "subtitleLoadFailed": "未能下载字幕文件",
     "skipAds": "滑雪广告",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "点按以解锁",
+    "tapAgainToUnlock": "再次点按以解锁"
   },
   "userStatus": {},
   "messages": {
@@ -3035,8 +3035,7 @@
     "startFailed": "无法开始投射,检查服务器并尝试一次。"
   },
   "automation": {
-    "noActivePlayback": "没有活跃的视频会话可以控制。",
-    "profileNotFound": "这个 Plezy 个人资料无法找到。"
+    "noActivePlayback": "没有活跃的视频会话可以控制。"
   },
   "notifications": {
     "newEpisodeTitle": "新集",
@@ -3817,22 +3816,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "此 Plezy 链接不有效。",
+    "profileNotFound": "没有个人资料符合“${profile}”。",
+    "serverUnavailable": "我无法到达这个链接的服务器。",
+    "notFound": "我无法在图书馆中找到这个标题。",
+    "unsupportedItem": "这个链接不能播放。",
+    "noLiveTv": "没有现场电视服务器可用于此链接。",
+    "channelNotFound": "我找不到“${channel}”频道。",
+    "showLink": "显示链接",
+    "showProfileLink": "显示个人资料链接",
+    "dialogTitle": "链接",
+    "showHint": "打开此链接将播放下一集。要随机播放整部剧集，请在末尾添加 &mode=shuffle。",
+    "movieHint": "打开这个链接播放电影。",
+    "episodeHint": "打开这个链接播放了这个节目。",
+    "profileHint": "打开此链接转换到这个个人资料。",
+    "openAsProfile": "打开 ${name}",
+    "copy": "复制",
+    "copied": "链接复制"
   }
 }

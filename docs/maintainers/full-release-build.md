@@ -1,9 +1,12 @@
-# One-command full release build
+# One-command PlezyNG 3.0.0 release
 
-Run the release orchestrator from an authenticated `gh` session:
+After the native, Apple, Linux/Android, Windows, webOS, and Tizen private-JIT
+routes pass their current-revision canaries, run the complete release from an
+authenticated `gh` session:
 
 ```sh
-python3 scripts/release_all_platforms.py --version 2.25.0
+python3 scripts/release_all_platforms.py --version 3.0.0 --publish \
+  --scratch /mnt/disks/gamespool0/plezyng-release-3.0.0-20261027
 ```
 
 The command coordinates the existing private JIT workflows in order. It reuses
@@ -20,17 +23,26 @@ It pushes that focused pin update to PlezyNG `main`, waits for CI on that exact
 commit, creates the matching `v<version>` tag, and dispatches the all-platform
 release build. The release build includes the webOS and Tizen ARM candidates by
 default. Apple jobs refresh their SwiftPM mirror after the native pin changes.
+Before publication, the orchestrator checks that every required release asset
+exists. `--publish` then promotes the GitHub draft and sequentially dispatches
+the configured store, package, container, appcast, and Discord workflows. It
+reuses successful channel runs and stops on a prior failed run rather than
+repeating an external side effect blindly.
 
 The webOS candidate is built but kept out of public release assets unless the
 existing artifact eligibility gate passes and the operator opts in:
 
 ```sh
-python3 scripts/release_all_platforms.py --version 2.25.0 --include-webos-release
+python3 scripts/release_all_platforms.py --version 3.0.0 --include-webos-release --publish \
+  --scratch /mnt/disks/gamespool0/plezyng-release-3.0.0-20261027
 ```
 
-Tizen remains a build artifact for qualification. Store submissions remain
-separate because Google, Apple, Amazon, Samsung, and LG have account, review,
-signing, or device-qualification steps beyond producing the release files.
+Tizen remains a tester artifact for qualification; Seller Office signing and
+submission are not configured. App Store Connect and Amazon uploads do not
+submit builds for review. Google Play is sent to the internal draft track.
+Microsoft Store, Samsung Seller Office, macOS Developer ID signing, Windows
+Authenticode signing, and LG public IPK publication remain gated on their
+missing identities, profiles, credentials, or artifact approvals.
 
 The orchestrator uses the current machine's GitHub CLI authentication only for
 workflow dispatch, repository commits, and the version tag. Build, test,
@@ -42,4 +54,6 @@ moves an existing tag.
 
 The final JSON receipt is written to the printed scratch directory. Temporary
 checkouts and the verified source archive are removed after the workflow run;
-GitHub retains the workflow logs and release artifacts.
+GitHub retains the workflow logs and release artifacts. The scratch directory
+and its receipt remain for review and should be cleaned only after the release
+has completed and its outputs have been transferred or retained deliberately.

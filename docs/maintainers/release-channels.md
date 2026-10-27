@@ -4,9 +4,9 @@ This is the release support boundary for the PlezyNG client and its separate rel
 
 ## Release trigger and order
 
-`.github/workflows/build.yml` runs for a pushed `v<major>.<minor>.<patch>` tag on `main`, or by manual dispatch from `main`. The tag must match `pubspec.yaml`, and the exact commit must pass manually dispatched CI first. Dispatch CI with `action=ci` and `runner_pool=private` so the private JIT broker can authorize the run. It builds the configured targets, generates release notes from `CHANGELOG.md`, checksums and attests the packages, and creates a draft GitHub Release. Review the draft, then publish it.
+`.github/workflows/build.yml` is manually dispatched with `action=release` and `runner_pool=private` against the exact `v<major>.<minor>.<patch>` tag. Tag pushes do not start builds. The tag must match `pubspec.yaml`, and the exact commit must pass manually dispatched CI first. The release orchestrator dispatches the private-JIT build, checks the assembled release assets, then promotes the GitHub draft only when invoked with `--publish`.
 
-Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, and relay-container workflows. App-store uploads are separate and manual; draft releases are accepted only for non-production testing uploads, while production Play uploads require a published stable release.
+Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. With `--publish`, the orchestrator explicitly dispatches configured Discord, appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, relay-container, and app-store upload workflows after the release is published. Google Play uploads go to the internal draft track; Apple and Amazon uploads do not submit builds for review. Missing credentials or store identities remain skipped and are recorded in the release receipt.
 
 ## Client packages on GitHub Releases
 
@@ -36,8 +36,8 @@ Changing the install IDs means an install signed under upstream's identity canno
 
 | Channel | State | How it works |
 | --- | --- | --- |
-| GitHub Releases | Active | Push a `v<major>.<minor>.<patch>` tag for a main commit after that exact commit passes manually dispatched CI. The private-JIT `PlezyNG Release` workflow builds the packages and creates a draft; manual dispatch remains available for build-only, release, and webOS validation runs. Tag releases exclude the webOS IPK until its separate artifact and redistribution gates are approved. |
-| Homebrew | Active | `update-packages.yml` updates the fork's cask and appcast after a published release. |
+| GitHub Releases | Active | Dispatch the private-JIT `PlezyNG Release` workflow for a `v<major>.<minor>.<patch>` tag on main after that exact commit passes manually dispatched CI. Tag pushes do not start jobs. The orchestrator checks the draft assets and promotes it only with `--publish`. The webOS IPK stays out until its separate artifact and redistribution gates are approved. |
+| Homebrew and Sparkle | Partially configured | `update-packages.yml` updates the appcast after a published release. Homebrew Cask is skipped until Developer ID signing and notarization credentials are configured. |
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |

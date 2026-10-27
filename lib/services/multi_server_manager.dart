@@ -868,10 +868,9 @@ class MultiServerManager {
   Future<bool> addDirectPlexConnection(PlexDirectConnection connection, {String? profileId}) async {
     final serverId = connection.serverMachineId;
     final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId ?? serverId);
-    final consentedHttpEndpoint =
-        Uri.tryParse(connection.baseUrl)?.scheme.toLowerCase() == 'http'
-            ? connection.baseUrl
-            : null;
+    final consentedHttpEndpoint = Uri.tryParse(connection.baseUrl)?.scheme.toLowerCase() == 'http'
+        ? connection.baseUrl
+        : null;
 
     final server = PlexServer(
       name: connection.serverName,

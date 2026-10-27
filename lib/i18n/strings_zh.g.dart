@@ -41,15 +41,11 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final Translations$app$zh app = Translations$app$zh.internal(_root);
-	@override late final Translations$cast$zh cast = Translations$cast$zh.internal(_root);
-	@override late final Translations$automation$zh automation = Translations$automation$zh.internal(_root);
-	@override late final Translations$notifications$zh notifications = Translations$notifications$zh.internal(_root);
 	@override late final Translations$appIcon$zh appIcon = Translations$appIcon$zh.internal(_root);
 	@override late final Translations$auth$zh auth = Translations$auth$zh.internal(_root);
 	@override late final Translations$common$zh common = Translations$common$zh.internal(_root);
 	@override late final Translations$screens$zh screens = Translations$screens$zh.internal(_root);
 	@override late final Translations$update$zh update = Translations$update$zh.internal(_root);
-	@override late final Translations$appAccess$zh appAccess = Translations$appAccess$zh.internal(_root);
 	@override late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
 	@override late final Translations$themeEditor$zh themeEditor = Translations$themeEditor$zh.internal(_root);
 	@override late final Translations$search$zh search = Translations$search$zh.internal(_root);
@@ -75,7 +71,6 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$serverSelection$zh serverSelection = Translations$serverSelection$zh.internal(_root);
 	@override late final Translations$hubDetail$zh hubDetail = Translations$hubDetail$zh.internal(_root);
 	@override late final Translations$logs$zh logs = Translations$logs$zh.internal(_root);
-	@override late final Translations$detail$zh detail = Translations$detail$zh.internal(_root);
 	@override late final Translations$startup$zh startup = Translations$startup$zh.internal(_root);
 	@override late final Translations$licenses$zh licenses = Translations$licenses$zh.internal(_root);
 	@override late final Translations$navigation$zh navigation = Translations$navigation$zh.internal(_root);
@@ -98,6 +93,11 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$seerr$zh seerr = Translations$seerr$zh.internal(_root);
 	@override late final Translations$services$zh services = Translations$services$zh.internal(_root);
 	@override late final Translations$addServer$zh addServer = Translations$addServer$zh.internal(_root);
+	@override late final Translations$cast$zh cast = Translations$cast$zh.internal(_root);
+	@override late final Translations$automation$zh automation = Translations$automation$zh.internal(_root);
+	@override late final Translations$notifications$zh notifications = Translations$notifications$zh.internal(_root);
+	@override late final Translations$appAccess$zh appAccess = Translations$appAccess$zh.internal(_root);
+	@override late final Translations$detail$zh detail = Translations$detail$zh.internal(_root);
 	@override late final Translations$watchLink$zh watchLink = Translations$watchLink$zh.internal(_root);
 	@override late final Translations$homeLayout$zh homeLayout = Translations$homeLayout$zh.internal(_root);
 	@override late final Translations$platform$zh platform = Translations$platform$zh.internal(_root);
@@ -108,6 +108,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$sourceSetup$zh sourceSetup = Translations$sourceSetup$zh.internal(_root);
 	@override late final Translations$comics$zh comics = Translations$comics$zh.internal(_root);
 	@override late final Translations$games$zh games = Translations$games$zh.internal(_root);
+	@override late final Translations$deepLinks$zh deepLinks = Translations$deepLinks$zh.internal(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class Translations$app$zh extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class Translations$cast$zh extends Translations$cast$en {
-	Translations$cast$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => '点击一个设备';
-	@override String get searching => '寻找卡片设备';
-	@override String connectedTo({required Object device}) => '连接到 ${device}';
-	@override String get device => '加密装置';
-	@override String get readyToCast => '准备放';
-	@override String get subtitle => '字幕';
-	@override String get serverNotAvailable => '媒体服务器不适用。';
-	@override String get stopCasting => '停止加密';
-	@override String get castToDevice => '点击设备';
-	@override String get noEpisodeAvailable => '没有任何节目可播放。';
-	@override String get startFailed => '无法开始投射,检查服务器并尝试一次。';
-}
-
-// Path: automation
-class Translations$automation$zh extends Translations$automation$en {
-	Translations$automation$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => '没有活跃的视频会话可以控制。';
-	@override String get profileNotFound => '这个 Plezy 个人资料无法找到。';
-}
-
-// Path: notifications
-class Translations$notifications$zh extends Translations$notifications$en {
-	Translations$notifications$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => '新集';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class Translations$update$zh extends Translations$update$en {
 	@override String get viewRelease => '查看发布详情';
 	@override String get latestVersion => '当前已是最新版本';
 	@override String get checkFailed => '无法检查更新';
-}
-
-// Path: appAccess
-class Translations$appAccess$zh extends Translations$appAccess$en {
-	Translations$appAccess$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '每個功能都免費嘗試7天';
-	@override String get description => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。';
-	@override String get trialEndedDescription => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。';
-	@override String get startTrial => '开始我的7天免费试验';
-	@override String get trialActive => '您的7天全功能测试已活跃。';
-	@override String get trialEnded => '你的七天审判结束了';
-	@override String get trialStartFailed => '我无法在这个设备上保存测试,请再试一次。';
-	@override String get lifetimeTitle => 'PlezyNG 终身禁用';
-	@override String get lifetimeBody => '感谢!您终身访问所有 PlezyNG 功能。';
-	@override String get manageTitle => 'PlezyNG 终身访问';
-	@override String get manageDescription => '每個功能都免費嘗試7天,然後用一個付款解锁一生的一切,以您的商店的價格。';
-	@override String buy({required Object price}) => '解锁所有功能为 ${price}';
-	@override String get loadingPrice => '货物价格...';
-	@override String get retryPrice => '回报价格 查看';
-	@override String get restore => '恢复终身购买';
-	@override String get pending => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。';
-	@override String get storeUnavailable => '目前无法购买。请确认您已登录商店，且此设备允许购买。';
-	@override String get productNotFound => 'PlezyNG 终身解锁 目前尚未在本商店提供。';
-	@override String get productQueryFailed => '无法收取商店价格,请检查您的连接并尝试一次。';
-	@override String get purchaseFailed => '購買不錯了,再試一次。';
-	@override String get restoreFailed => '无法到达商店恢复您的购买,再试一次。';
-	@override String get nothingToRestore => '已找到第 PlezyNG 终身购买号,用于此商店帐户。';
 }
 
 // Path: settings
@@ -1233,10 +1161,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
-	);
 	@override String get audioLabel => '音频';
 	@override String get subtitlesLabel => '字幕';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1273,8 +1197,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get unmuteButton => '取消静音';
 	@override String get settingsButton => '播放设置';
 	@override String get tracksButton => '音频和字幕';
-	@override String get trackSelectionTitle => '选择游戏前的游戏';
-	@override String get trackSelectionAuto => '自动选择';
 	@override String get chaptersButton => '章节';
 	@override String get versionQualityButton => '版本与画质';
 	@override String get versionColumnHeader => '版本';
@@ -1284,8 +1206,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => '转码不可用 — 以原始画质播放';
 	@override String get subtitleUnavailableFallback => '无法加载所选字幕 — 将继续无字幕播放';
 	@override String get pipButton => '画中画';
-	@override String get openMiniPlayer => '開放小型玩家';
-	@override String get returnToFullPlayer => '回到全玩家';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get ambientLighting => '氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
@@ -1294,7 +1214,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get rotationLockButton => '旋转锁定';
 	@override String get lockScreen => '锁定屏幕';
 	@override String get screenLockButton => '屏幕锁定';
-	@override String get longPressToUnlock => '长按解锁';
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量滑块';
 	@override String endsAt({required Object time}) => '结束时间：${time}';
@@ -1311,8 +1230,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get noQueueItems => '队列中没有项目';
 	@override String get noAudioDevicesAvailable => '没有可用的音频设备';
 	@override String get searchSubtitles => '搜索字幕';
-	@override String get loadSubtitleFile => '查询下载文件...';
-	@override String get subtitleLoadFailed => '未能下载字幕文件';
 	@override String get language => '语言';
 	@override String get noSubtitlesFound => '未找到字幕';
 	@override String get subtitleDownloaded => '字幕已下载';
@@ -1321,7 +1238,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get searchLanguages => '搜索语言…';
 	@override String get skipIntro => '跳过片头';
 	@override String get skipCredits => '跳过片尾';
-	@override String get skipAds => '滑雪广告';
 	@override String get nextEpisode => '下一集';
 	@override String subtitleTrack({required Object n}) => '轨道 ${n}';
 	@override String subtitleFile({required Object name}) => '字幕 ${name}';
@@ -1329,6 +1245,19 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => '字幕：关闭';
 	@override String osdSubtitles({required Object track}) => '字幕：${track}';
 	@override String osdAudio({required Object track}) => '音频：${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架',
+	);
+	@override String get trackSelectionTitle => '选择游戏前的游戏';
+	@override String get trackSelectionAuto => '自动选择';
+	@override String get openMiniPlayer => '開放小型玩家';
+	@override String get returnToFullPlayer => '回到全玩家';
+	@override String get loadSubtitleFile => '查询下载文件...';
+	@override String get subtitleLoadFailed => '未能下载字幕文件';
+	@override String get skipAds => '滑雪广告';
+	@override String get tapToUnlock => '点按以解锁';
+	@override String get tapAgainToUnlock => '再次点按以解锁';
 }
 
 // Path: messages
@@ -1826,16 +1755,6 @@ class Translations$logs$zh extends Translations$logs$en {
 	@override String get saveLogs => '存储存档';
 	@override String logsSaved({required Object path}) => '存储到 ${path} 的存档';
 	@override String get saveLogsFailed => '无法保存存档。';
-}
-
-// Path: detail
-class Translations$detail$zh extends Translations$detail$en {
-	Translations$detail$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => '结束时间：${time}';
 }
 
 // Path: startup
@@ -2903,6 +2822,88 @@ class Translations$addServer$zh extends Translations$addServer$en {
 	@override String get httpsRequired => '使用 HTTPS 或明确允许未加密的连接。';
 }
 
+// Path: cast
+class Translations$cast$zh extends Translations$cast$en {
+	Translations$cast$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => '点击一个设备';
+	@override String get searching => '寻找卡片设备';
+	@override String connectedTo({required Object device}) => '连接到 ${device}';
+	@override String get device => '加密装置';
+	@override String get readyToCast => '准备放';
+	@override String get subtitle => '字幕';
+	@override String get serverNotAvailable => '媒体服务器不适用。';
+	@override String get stopCasting => '停止加密';
+	@override String get castToDevice => '点击设备';
+	@override String get noEpisodeAvailable => '没有任何节目可播放。';
+	@override String get startFailed => '无法开始投射,检查服务器并尝试一次。';
+}
+
+// Path: automation
+class Translations$automation$zh extends Translations$automation$en {
+	Translations$automation$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => '没有活跃的视频会话可以控制。';
+}
+
+// Path: notifications
+class Translations$notifications$zh extends Translations$notifications$en {
+	Translations$notifications$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => '新集';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class Translations$appAccess$zh extends Translations$appAccess$en {
+	Translations$appAccess$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '每個功能都免費嘗試7天';
+	@override String get description => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。';
+	@override String get trialEndedDescription => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。';
+	@override String get startTrial => '开始我的7天免费试验';
+	@override String get trialActive => '您的7天全功能测试已活跃。';
+	@override String get trialEnded => '你的七天审判结束了';
+	@override String get trialStartFailed => '我无法在这个设备上保存测试,请再试一次。';
+	@override String get lifetimeTitle => 'PlezyNG 终身禁用';
+	@override String get lifetimeBody => '感谢!您终身访问所有 PlezyNG 功能。';
+	@override String get manageTitle => 'PlezyNG 终身访问';
+	@override String get manageDescription => '每個功能都免費嘗試7天,然後用一個付款解锁一生的一切,以您的商店的價格。';
+	@override String buy({required Object price}) => '解锁所有功能为 ${price}';
+	@override String get loadingPrice => '货物价格...';
+	@override String get retryPrice => '回报价格 查看';
+	@override String get restore => '恢复终身购买';
+	@override String get pending => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。';
+	@override String get storeUnavailable => '目前无法购买。请确认您已登录商店，且此设备允许购买。';
+	@override String get productNotFound => 'PlezyNG 终身解锁 目前尚未在本商店提供。';
+	@override String get productQueryFailed => '无法收取商店价格,请检查您的连接并尝试一次。';
+	@override String get purchaseFailed => '購買不錯了,再試一次。';
+	@override String get restoreFailed => '无法到达商店恢复您的购买,再试一次。';
+	@override String get nothingToRestore => '已找到第 PlezyNG 终身购买号,用于此商店帐户。';
+}
+
+// Path: detail
+class Translations$detail$zh extends Translations$detail$en {
+	Translations$detail$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => '结束时间：${time}';
+}
+
 // Path: watchLink
 class Translations$watchLink$zh extends Translations$watchLink$en {
 	Translations$watchLink$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -3173,7 +3174,6 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => '本地转换可在桌面计算机上使用 FFmpeg 安装。';
 	@override String get converterStart => '转换文件';
 }
-
 
 // Path: fileSources
 class Translations$fileSources$zh extends Translations$fileSources$en {
@@ -3719,6 +3719,32 @@ class Translations$games$zh extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class Translations$deepLinks$zh extends Translations$deepLinks$en {
+	Translations$deepLinks$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => '此 Plezy 链接不有效。';
+	@override String profileNotFound({required Object profile}) => '没有个人资料符合“${profile}”。';
+	@override String get serverUnavailable => '我无法到达这个链接的服务器。';
+	@override String get notFound => '我无法在图书馆中找到这个标题。';
+	@override String get unsupportedItem => '这个链接不能播放。';
+	@override String get noLiveTv => '没有现场电视服务器可用于此链接。';
+	@override String channelNotFound({required Object channel}) => '我找不到“${channel}”频道。';
+	@override String get showLink => '显示链接';
+	@override String get showProfileLink => '显示个人资料链接';
+	@override String get dialogTitle => '链接';
+	@override String get showHint => '打开此链接将播放下一集。要随机播放整部剧集，请在末尾添加 &mode=shuffle。';
+	@override String get movieHint => '打开这个链接播放电影。';
+	@override String get episodeHint => '打开这个链接播放了这个节目。';
+	@override String get profileHint => '打开此链接转换到这个个人资料。';
+	@override String openAsProfile({required Object name}) => '打开 ${name}';
+	@override String get copy => '复制';
+	@override String get copied => '链接复制';
 }
 
 // Path: appIcon.names
@@ -4835,21 +4861,6 @@ extension on TranslationsZh {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => '点击一个设备',
-			'cast.searching' => '寻找卡片设备',
-			'cast.connectedTo' => ({required Object device}) => '连接到 ${device}',
-			'cast.device' => '加密装置',
-			'cast.readyToCast' => '准备放',
-			'cast.subtitle' => '字幕',
-			'cast.serverNotAvailable' => '媒体服务器不适用。',
-			'cast.stopCasting' => '停止加密',
-			'cast.castToDevice' => '点击设备',
-			'cast.noEpisodeAvailable' => '没有任何节目可播放。',
-			'cast.startFailed' => '无法开始投射,检查服务器并尝试一次。',
-			'automation.noActivePlayback' => '没有活跃的视频会话可以控制。',
-			'automation.profileNotFound' => '这个 Plezy 个人资料无法找到。',
-			'notifications.newEpisodeTitle' => '新集',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => '应用图标',
 			'appIcon.defaultIcon' => '默认',
 			'appIcon.current' => '当前图标',
@@ -5012,28 +5023,6 @@ extension on TranslationsZh {
 			'update.viewRelease' => '查看发布详情',
 			'update.latestVersion' => '当前已是最新版本',
 			'update.checkFailed' => '无法检查更新',
-			'appAccess.title' => '每個功能都免費嘗試7天',
-			'appAccess.description' => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。',
-			'appAccess.trialEndedDescription' => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。',
-			'appAccess.startTrial' => '开始我的7天免费试验',
-			'appAccess.trialActive' => '您的7天全功能测试已活跃。',
-			'appAccess.trialEnded' => '你的七天审判结束了',
-			'appAccess.trialStartFailed' => '我无法在这个设备上保存测试,请再试一次。',
-			'appAccess.lifetimeTitle' => 'PlezyNG 终身禁用',
-			'appAccess.lifetimeBody' => '感谢!您终身访问所有 PlezyNG 功能。',
-			'appAccess.manageTitle' => 'PlezyNG 终身访问',
-			'appAccess.manageDescription' => '每個功能都免費嘗試7天,然後用一個付款解锁一生的一切,以您的商店的價格。',
-			'appAccess.buy' => ({required Object price}) => '解锁所有功能为 ${price}',
-			'appAccess.loadingPrice' => '货物价格...',
-			'appAccess.retryPrice' => '回报价格 查看',
-			'appAccess.restore' => '恢复终身购买',
-			'appAccess.pending' => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。',
-			'appAccess.storeUnavailable' => '目前无法购买。请确认您已登录商店，且此设备允许购买。',
-			'appAccess.productNotFound' => 'PlezyNG 终身解锁 目前尚未在本商店提供。',
-			'appAccess.productQueryFailed' => '无法收取商店价格,请检查您的连接并尝试一次。',
-			'appAccess.purchaseFailed' => '購買不錯了,再試一次。',
-			'appAccess.restoreFailed' => '无法到达商店恢复您的购买,再试一次。',
-			'appAccess.nothingToRestore' => '已找到第 PlezyNG 终身购买号,用于此商店帐户。',
 			'settings.title' => '设置',
 			'settings.supportDeveloper' => '支持 PlezyNG',
 			'settings.supportDeveloperDescription' => '捐赠以支持开发',
@@ -5346,8 +5335,6 @@ extension on TranslationsZh {
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
 			'settings.audioPassthroughDescriptionApple' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。在 iOS、iPadOS 和 tvOS 26 或更高版本上，TrueHD Atmos 和 DTS:X 以空间音频播放。其他 DTS 和 TrueHD 音轨以多声道 PCM 播放。如果没有声音，请关闭。',
 			'settings.audioPassthroughOverriddenByNormalization' => '响度标准化开启时停用',
 			'settings.audioChannelLimit' => '音频声道',
@@ -5385,6 +5372,8 @@ extension on TranslationsZh {
 			'settings.disableDolbyVisionDescription' => '文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision',
 			'settings.hdrSdrConversion' => 'HDR 转 SDR',
 			'settings.hdrSdrConversionDescription' => '选择在显示器无法显示 HDR 时由谁转换 HDR 视频。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => '自动',
 			'settings.hdrSdrConversionAutoDescription' => 'Android 9 及更高版本使用设备，更早版本使用播放器',
 			'settings.hdrSdrConversionDevice' => '设备',
@@ -5846,7 +5835,6 @@ extension on TranslationsZh {
 			'tooltips.markAsWatched' => '标记为已观看',
 			'tooltips.markAsUnwatched' => '标记为未观看',
 			'audioTracks.track' => ({required Object n}) => '音轨 ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', ), 
 			'videoControls.audioLabel' => '音频',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5860,8 +5848,6 @@ extension on TranslationsZh {
 			'videoControls.sleepTimerEndOfVideo' => '当前视频结束时',
 			'videoControls.sleepTimerStopAtHeader' => '停止于',
 			'videoControls.sleepTimerDurationHeader' => '定时器',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => '播放将在此视频结束时暂停',
 			'videoControls.stillWatching' => '还在看吗？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds} 秒后暂停',
@@ -5885,8 +5871,6 @@ extension on TranslationsZh {
 			'videoControls.unmuteButton' => '取消静音',
 			'videoControls.settingsButton' => '播放设置',
 			'videoControls.tracksButton' => '音频和字幕',
-			'videoControls.trackSelectionTitle' => '选择游戏前的游戏',
-			'videoControls.trackSelectionAuto' => '自动选择',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionQualityButton' => '版本与画质',
 			'videoControls.versionColumnHeader' => '版本',
@@ -5896,17 +5880,16 @@ extension on TranslationsZh {
 			'videoControls.transcodeUnavailableFallback' => '转码不可用 — 以原始画质播放',
 			'videoControls.subtitleUnavailableFallback' => '无法加载所选字幕 — 将继续无字幕播放',
 			'videoControls.pipButton' => '画中画',
-			'videoControls.openMiniPlayer' => '開放小型玩家',
-			'videoControls.returnToFullPlayer' => '回到全玩家',
 			'videoControls.aspectRatioButton' => '宽高比',
 			'videoControls.ambientLighting' => '氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
 			'videoControls.exitFullscreenButton' => '退出全屏',
 			'videoControls.alwaysOnTopButton' => '窗口置顶',
 			'videoControls.rotationLockButton' => '旋转锁定',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => '锁定屏幕',
 			'videoControls.screenLockButton' => '屏幕锁定',
-			'videoControls.longPressToUnlock' => '长按解锁',
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量滑块',
 			'videoControls.endsAt' => ({required Object time}) => '结束时间：${time}',
@@ -5930,8 +5913,6 @@ extension on TranslationsZh {
 			'videoControls.noQueueItems' => '队列中没有项目',
 			'videoControls.noAudioDevicesAvailable' => '没有可用的音频设备',
 			'videoControls.searchSubtitles' => '搜索字幕',
-			'videoControls.loadSubtitleFile' => '查询下载文件...',
-			'videoControls.subtitleLoadFailed' => '未能下载字幕文件',
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
 			'videoControls.subtitleDownloaded' => '字幕已下载',
@@ -5940,7 +5921,6 @@ extension on TranslationsZh {
 			'videoControls.searchLanguages' => '搜索语言…',
 			'videoControls.skipIntro' => '跳过片头',
 			'videoControls.skipCredits' => '跳过片尾',
-			'videoControls.skipAds' => '滑雪广告',
 			'videoControls.nextEpisode' => '下一集',
 			'videoControls.subtitleTrack' => ({required Object n}) => '轨道 ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => '字幕 ${name}',
@@ -5948,6 +5928,16 @@ extension on TranslationsZh {
 			'videoControls.osdSubtitlesOff' => '字幕：关闭',
 			'videoControls.osdSubtitles' => ({required Object track}) => '字幕：${track}',
 			'videoControls.osdAudio' => ({required Object track}) => '音频：${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 框架', ), 
+			'videoControls.trackSelectionTitle' => '选择游戏前的游戏',
+			'videoControls.trackSelectionAuto' => '自动选择',
+			'videoControls.openMiniPlayer' => '開放小型玩家',
+			'videoControls.returnToFullPlayer' => '回到全玩家',
+			'videoControls.loadSubtitleFile' => '查询下载文件...',
+			'videoControls.subtitleLoadFailed' => '未能下载字幕文件',
+			'videoControls.skipAds' => '滑雪广告',
+			'videoControls.tapToUnlock' => '点按以解锁',
+			'videoControls.tapAgainToUnlock' => '再次点按以解锁',
 			'messages.markedAsWatched' => '已标记为已观看',
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看（将在联网时同步）',
@@ -6374,8 +6364,6 @@ extension on TranslationsZh {
 			'libraries.all' => '全部',
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描“${title}”吗？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析“${title}”吗？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新“${title}”的元数据吗？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空“${title}”的回收站吗？',
@@ -6412,6 +6400,8 @@ extension on TranslationsZh {
 			'libraries.filterCategories.year' => '年份',
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => '未观看',
 			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '收藏夹',
@@ -6493,7 +6483,6 @@ extension on TranslationsZh {
 			'logs.saveLogs' => '存储存档',
 			'logs.logsSaved' => ({required Object path}) => '存储到 ${path} 的存档',
 			'logs.saveLogsFailed' => '无法保存存档。',
-			'detail.endsAt' => ({required Object time}) => '结束时间：${time}',
 			'startup.failedTitle' => 'PlezyNG 无法启动',
 			'startup.failedBody' => '启动过程中出现问题。以下详情指出了失败的原因。',
 			'startup.failedBodyRepairable' => 'PlezyNG 的已保存设置文件已损坏，必须先重建才能启动。重试没有用——请选择“修复存储”。',
@@ -6888,8 +6877,6 @@ extension on TranslationsZh {
 			'watchTogether.connecting' => '正在连接…',
 			'watchTogether.relayPublic' => '房间使用公共 Open Watch Party 中继服务器。',
 			'watchTogether.relayCustom' => ({required Object url}) => '房间使用你位于 ${url} 的中继服务器。',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => '最近的房间',
 			'watchTogether.roomActions' => '房间操作',
 			'watchTogether.renameRoom' => '重命名房间',
@@ -6927,6 +6914,8 @@ extension on TranslationsZh {
 			'watchTogether.playAnyway' => '仍要播放',
 			'watchTogether.chooseAnotherCopy' => '选择其他副本',
 			'watchTogether.dontPlay' => '不播放',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => '你没有此视频',
 			'watchTogether.unavailableDescription' => 'PlezyNG 在你的媒体库中找不到它。请自行选择副本或重新搜索。',
 			'watchTogether.chooseCopy' => '选择副本',
@@ -7402,8 +7391,6 @@ extension on TranslationsZh {
 			'metadataEdit.metadataUpdateFailed' => '元数据更新失败',
 			'metadataEdit.artworkUpdated' => '封面图片已更新',
 			'metadataEdit.artworkUpdateFailed' => '封面图片更新失败',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => '没有可用的封面图片',
 			'metadataEdit.artworkOption' => ({required Object index}) => '封面图片选项 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '封面图片选项 ${index}，已选择',
@@ -7441,6 +7428,8 @@ extension on TranslationsZh {
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
 			'metadataEdit.alwaysEnabled' => '始终启用',
 			'metadataEdit.tags' => '标签',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => '添加标签',
 			'metadataEdit.genre' => '类型',
 			'metadataEdit.director' => '导演',
@@ -7631,6 +7620,43 @@ extension on TranslationsZh {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} 使用 HTTP。网络中的其他人可能读取或篡改您的密码、令牌和媒体内容。请尽可能使用 HTTPS。只有在您信任此网络并接受风险时才继续。',
 			'addServer.allowHttp' => '允许 HTTP',
 			'addServer.httpsRequired' => '使用 HTTPS 或明确允许未加密的连接。',
+			'cast.chooseDevice' => '点击一个设备',
+			'cast.searching' => '寻找卡片设备',
+			'cast.connectedTo' => ({required Object device}) => '连接到 ${device}',
+			'cast.device' => '加密装置',
+			'cast.readyToCast' => '准备放',
+			'cast.subtitle' => '字幕',
+			'cast.serverNotAvailable' => '媒体服务器不适用。',
+			'cast.stopCasting' => '停止加密',
+			'cast.castToDevice' => '点击设备',
+			'cast.noEpisodeAvailable' => '没有任何节目可播放。',
+			'cast.startFailed' => '无法开始投射,检查服务器并尝试一次。',
+			'automation.noActivePlayback' => '没有活跃的视频会话可以控制。',
+			'notifications.newEpisodeTitle' => '新集',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => '每個功能都免費嘗試7天',
+			'appAccess.description' => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。',
+			'appAccess.trialEndedDescription' => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。',
+			'appAccess.startTrial' => '开始我的7天免费试验',
+			'appAccess.trialActive' => '您的7天全功能测试已活跃。',
+			'appAccess.trialEnded' => '你的七天审判结束了',
+			'appAccess.trialStartFailed' => '我无法在这个设备上保存测试,请再试一次。',
+			'appAccess.lifetimeTitle' => 'PlezyNG 终身禁用',
+			'appAccess.lifetimeBody' => '感谢!您终身访问所有 PlezyNG 功能。',
+			'appAccess.manageTitle' => 'PlezyNG 终身访问',
+			'appAccess.manageDescription' => '每個功能都免費嘗試7天,然後用一個付款解锁一生的一切,以您的商店的價格。',
+			'appAccess.buy' => ({required Object price}) => '解锁所有功能为 ${price}',
+			'appAccess.loadingPrice' => '货物价格...',
+			'appAccess.retryPrice' => '回报价格 查看',
+			'appAccess.restore' => '恢复终身购买',
+			'appAccess.pending' => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。',
+			'appAccess.storeUnavailable' => '目前无法购买。请确认您已登录商店，且此设备允许购买。',
+			'appAccess.productNotFound' => 'PlezyNG 终身解锁 目前尚未在本商店提供。',
+			'appAccess.productQueryFailed' => '无法收取商店价格,请检查您的连接并尝试一次。',
+			'appAccess.purchaseFailed' => '購買不錯了,再試一次。',
+			'appAccess.restoreFailed' => '无法到达商店恢复您的购买,再试一次。',
+			'appAccess.nothingToRestore' => '已找到第 PlezyNG 终身购买号,用于此商店帐户。',
+			'detail.endsAt' => ({required Object time}) => '结束时间：${time}',
 			'watchLink.serverUnavailable' => '无法访问 Plex 服务器此链接。',
 			'watchLink.notFound' => '我无法在您的服务器上找到此节目或电影 Plex。',
 			'watchLink.ambiguous' => '此链接匹配多个服务器上的项目,并将服务器添加到链接中。',
@@ -7766,7 +7792,7 @@ extension on TranslationsZh {
 			'universalMedia.saveFavorite' => '保存最喜欢',
 			'universalMedia.playNow' => '现在玩',
 			'universalMedia.favoriteSaved' => '流喜爱保存到此个人资料',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 不受支持或不安全的播放列表输入。', other: '${count} 不受支持或不安全的播放列表输入。', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 不受支持或不安全的播放列表输入。', other: '${count} 不受支持或不安全的播放列表输入。', ), 
 			'universalMedia.playlistAddress' => 'Playlist 地址',
 			'universalMedia.playlistAddressHelp' => '從網頁地址開啟 M3U、M3U8 或 PLS 播放列表. Direct Stream 連結不會保存播放名單。',
 			'universalMedia.choosePlaylist' => '选择 Playlist 文件',
@@ -7776,7 +7802,7 @@ extension on TranslationsZh {
 			'universalMedia.removeFavorite' => '删除流喜爱',
 			'universalMedia.filesHelp' => '选择音频、视频或ISO文件,以便进行临时记录. 文件和URL不添加到图书馆历史。',
 			'universalMedia.chooseFiles' => '选择文件',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '1 选择的文件', other: '${count} 已选择的文件', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '1 选择的文件', other: '${count} 已选择的文件', ), 
 			'universalMedia.wifiTransfer' => '通过 Wi-Fi 发送文件',
 			'universalMedia.wifiTransferHelp' => '从同一信任网络的浏览器传输支持的文件。',
 			'universalMedia.wifiTransferIntro' => '在另一个设备上的浏览器中打开此地址. 选择文件以将其添加到该设备的文件和书籍图书馆。',
@@ -7787,7 +7813,7 @@ extension on TranslationsZh {
 			'universalMedia.copyAddress' => '传输地址复制',
 			'universalMedia.addressCopied' => '传输地址复制',
 			'universalMedia.transferExpires' => ({required Object time}) => '此地址在 ${time} 中终止。',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 获取文件', other: '${count} 收到的文件', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${count} 获取文件', other: '${count} 收到的文件', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => '接收 ${size}',
 			'universalMedia.stopTransfer' => '停止转让和取消地址',
 			'universalMedia.startTransfer' => '转移开始',
@@ -7916,6 +7942,8 @@ extension on TranslationsZh {
 			'fileSources.bookmark' => '添加 Bookmark',
 			'fileSources.highlight' => '突出',
 			'fileSources.note' => '注目',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => '删除',
 			'fileSources.export' => '出口笔记',
 			'fileSources.exported' => '出口的笔记',
@@ -8028,8 +8056,6 @@ extension on TranslationsZh {
 			'fileSources.offlineQuotaHelp' => '设置离线副本、导入文件和排队中下载占用的最大空间。降低上限不会删除现有副本。',
 			'fileSources.offlineStorageUsage' => '非线存储',
 			'fileSources.reservedStorage' => '保留',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => '下载Queue',
 			'fileSources.downloadRunning' => '下载',
 			'fileSources.downloadQueued' => '等待',
@@ -8349,6 +8375,23 @@ extension on TranslationsZh {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => '此 Plezy 链接不有效。',
+			'deepLinks.profileNotFound' => ({required Object profile}) => '没有个人资料符合“${profile}”。',
+			'deepLinks.serverUnavailable' => '我无法到达这个链接的服务器。',
+			'deepLinks.notFound' => '我无法在图书馆中找到这个标题。',
+			'deepLinks.unsupportedItem' => '这个链接不能播放。',
+			'deepLinks.noLiveTv' => '没有现场电视服务器可用于此链接。',
+			'deepLinks.channelNotFound' => ({required Object channel}) => '我找不到“${channel}”频道。',
+			'deepLinks.showLink' => '显示链接',
+			'deepLinks.showProfileLink' => '显示个人资料链接',
+			'deepLinks.dialogTitle' => '链接',
+			'deepLinks.showHint' => '打开此链接将播放下一集。要随机播放整部剧集，请在末尾添加 &mode=shuffle。',
+			'deepLinks.movieHint' => '打开这个链接播放电影。',
+			'deepLinks.episodeHint' => '打开这个链接播放了这个节目。',
+			'deepLinks.profileHint' => '打开此链接转换到这个个人资料。',
+			'deepLinks.openAsProfile' => ({required Object name}) => '打开 ${name}',
+			'deepLinks.copy' => '复制',
+			'deepLinks.copied' => '链接复制',
 			_ => null,
 		};
 	}

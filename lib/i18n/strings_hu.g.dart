@@ -41,15 +41,11 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$hu app = _Translations$app$hu._(_root);
-	@override late final _Translations$cast$hu cast = _Translations$cast$hu._(_root);
-	@override late final _Translations$automation$hu automation = _Translations$automation$hu._(_root);
-	@override late final _Translations$notifications$hu notifications = _Translations$notifications$hu._(_root);
 	@override late final _Translations$appIcon$hu appIcon = _Translations$appIcon$hu._(_root);
 	@override late final _Translations$auth$hu auth = _Translations$auth$hu._(_root);
 	@override late final _Translations$common$hu common = _Translations$common$hu._(_root);
 	@override late final _Translations$screens$hu screens = _Translations$screens$hu._(_root);
 	@override late final _Translations$update$hu update = _Translations$update$hu._(_root);
-	@override late final _Translations$appAccess$hu appAccess = _Translations$appAccess$hu._(_root);
 	@override late final _Translations$settings$hu settings = _Translations$settings$hu._(_root);
 	@override late final _Translations$themeEditor$hu themeEditor = _Translations$themeEditor$hu._(_root);
 	@override late final _Translations$search$hu search = _Translations$search$hu._(_root);
@@ -75,7 +71,6 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$hu serverSelection = _Translations$serverSelection$hu._(_root);
 	@override late final _Translations$hubDetail$hu hubDetail = _Translations$hubDetail$hu._(_root);
 	@override late final _Translations$logs$hu logs = _Translations$logs$hu._(_root);
-	@override late final _Translations$detail$hu detail = _Translations$detail$hu._(_root);
 	@override late final _Translations$startup$hu startup = _Translations$startup$hu._(_root);
 	@override late final _Translations$licenses$hu licenses = _Translations$licenses$hu._(_root);
 	@override late final _Translations$navigation$hu navigation = _Translations$navigation$hu._(_root);
@@ -98,6 +93,11 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$hu seerr = _Translations$seerr$hu._(_root);
 	@override late final _Translations$services$hu services = _Translations$services$hu._(_root);
 	@override late final _Translations$addServer$hu addServer = _Translations$addServer$hu._(_root);
+	@override late final _Translations$cast$hu cast = _Translations$cast$hu._(_root);
+	@override late final _Translations$automation$hu automation = _Translations$automation$hu._(_root);
+	@override late final _Translations$notifications$hu notifications = _Translations$notifications$hu._(_root);
+	@override late final _Translations$appAccess$hu appAccess = _Translations$appAccess$hu._(_root);
+	@override late final _Translations$detail$hu detail = _Translations$detail$hu._(_root);
 	@override late final _Translations$watchLink$hu watchLink = _Translations$watchLink$hu._(_root);
 	@override late final _Translations$homeLayout$hu homeLayout = _Translations$homeLayout$hu._(_root);
 	@override late final _Translations$platform$hu platform = _Translations$platform$hu._(_root);
@@ -108,6 +108,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$hu sourceSetup = _Translations$sourceSetup$hu._(_root);
 	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 	@override late final _Translations$games$hu games = _Translations$games$hu._(_root);
+	@override late final _Translations$deepLinks$hu deepLinks = _Translations$deepLinks$hu._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$hu extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$hu extends Translations$cast$en {
-	_Translations$cast$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'A készülékre kattintva';
-	@override String get searching => 'A Cast eszközök keresése...';
-	@override String connectedTo({required Object device}) => 'Kapcsolódó oldalak ${device}';
-	@override String get device => 'Cast eszköz';
-	@override String get readyToCast => 'Kész a kiadásra';
-	@override String get subtitle => 'Feliratok';
-	@override String get serverNotAvailable => 'A média szerver nem elérhető.';
-	@override String get stopCasting => 'Csatlakozás megáll';
-	@override String get castToDevice => 'A készülékre vágás';
-	@override String get noEpisodeAvailable => 'Nincs epizód, amit el lehet dobni.';
-	@override String get startFailed => 'Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra.';
-}
-
-// Path: automation
-class _Translations$automation$hu extends Translations$automation$en {
-	_Translations$automation$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Nincs aktív videó ülés ellenőrzésére.';
-	@override String get profileNotFound => 'Ez a Plezy profil nem található.';
-}
-
-// Path: notifications
-class _Translations$notifications$hu extends Translations$notifications$en {
-	_Translations$notifications$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Új epizód';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$hu extends Translations$update$en {
 	@override String get viewRelease => 'Kiadási megjegyzések';
 	@override String get latestVersion => 'A legújabb verziót használod';
 	@override String get checkFailed => 'Nem sikerült az újabb frissítések ellenőrzése';
-}
-
-// Path: appAccess
-class _Translations$appAccess$hu extends Translations$appAccess$en {
-	_Translations$appAccess$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Próbáld ki minden funkciót ingyen 7 napig';
-	@override String get description => 'Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.';
-	@override String get trialEndedDescription => 'A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.';
-	@override String get startTrial => 'Kezdje a 7 napos ingyenes próbát';
-	@override String get trialActive => 'A 7 napos teljes funkciót tesztelője aktív.';
-	@override String get trialEnded => 'A 7 napos bírósági eljárás befejeződött';
-	@override String get trialStartFailed => 'Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.';
-	@override String get lifetimeTitle => 'PlezyNG életre szóló zárolás';
-	@override String get lifetimeBody => 'Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.';
-	@override String get manageTitle => 'PlezyNG Élethosszú hozzáférés';
-	@override String get manageDescription => 'Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.';
-	@override String buy({required Object price}) => 'Minden funkció letiltása a ${price}';
-	@override String get loadingPrice => 'A szállítási árak...';
-	@override String get retryPrice => 'Visszaállítási ár keresés';
-	@override String get restore => 'Életmód vásárlás';
-	@override String get pending => 'A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.';
-	@override String get storeUnavailable => 'A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.';
-	@override String get productNotFound => 'A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.';
-	@override String get productQueryFailed => 'Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.';
-	@override String get purchaseFailed => 'A vásárlás nem ment át. próbáljon újra.';
-	@override String get restoreFailed => 'Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.';
-	@override String get nothingToRestore => 'A PlezyNG életévét megvásárlás találta ebben a boltban.';
 }
 
 // Path: settings
@@ -1235,10 +1163,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretrendszer',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretek',
-	);
 	@override String get audioLabel => 'Hang';
 	@override String get subtitlesLabel => 'Feliratok';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1275,8 +1199,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Hang visszakapcsolása';
 	@override String get settingsButton => 'Lejátszási beállítások';
 	@override String get tracksButton => 'Hang és feliratok';
-	@override String get trackSelectionTitle => 'Válassza ki a játékot a playback előtt';
-	@override String get trackSelectionAuto => 'Automatikus kiválasztás';
 	@override String get chaptersButton => 'Fejezetek';
 	@override String get versionQualityButton => 'Verzió és minőség';
 	@override String get versionColumnHeader => 'Verzió';
@@ -1286,8 +1208,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'A transzkódolás nem érhető el — eredeti minőség lejátszása';
 	@override String get subtitleUnavailableFallback => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül';
 	@override String get pipButton => 'Kép a képben mód';
-	@override String get openMiniPlayer => 'Nyitott mini játékos';
-	@override String get returnToFullPlayer => 'Visszatérés a teljes játékoshoz';
 	@override String get aspectRatioButton => 'Méretarány';
 	@override String get ambientLighting => 'Környezeti megvilágítás';
 	@override String get fullscreenButton => 'Teljes képernyős mód bekapcsolása';
@@ -1296,7 +1216,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Elforgatás zárolása';
 	@override String get lockScreen => 'Képernyő zárolása';
 	@override String get screenLockButton => 'Képernyőzár';
-	@override String get longPressToUnlock => 'Nyomd hosszan a feloldáshoz';
 	@override String get timelineSlider => 'Videó idősáv';
 	@override String get volumeSlider => 'Hangerő';
 	@override String endsAt({required Object time}) => 'Vége: ${time}';
@@ -1313,8 +1232,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Nincsenek elemek a sorban';
 	@override String get noAudioDevicesAvailable => 'Nincsenek elérhető audioeszközök';
 	@override String get searchSubtitles => 'Feliratok keresése';
-	@override String get loadSubtitleFile => 'A subtitle fájl felvétele...';
-	@override String get subtitleLoadFailed => 'Nem töltöttem fel a subtitle fájlt';
 	@override String get language => 'Nyelv';
 	@override String get noSubtitlesFound => 'Nem találhatók feliratok';
 	@override String get subtitleDownloaded => 'Felirat letöltve';
@@ -1323,7 +1240,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Nyelvek keresése...';
 	@override String get skipIntro => 'Főcím átugrása';
 	@override String get skipCredits => 'Stáblista átugrása';
-	@override String get skipAds => 'Skip hirdetések';
 	@override String get nextEpisode => 'Következő epizód';
 	@override String subtitleTrack({required Object n}) => '${n}. sáv';
 	@override String subtitleFile({required Object name}) => '${name} felirat';
@@ -1331,6 +1247,19 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Feliratok: ki';
 	@override String osdSubtitles({required Object track}) => 'Feliratok: ${track}';
 	@override String osdAudio({required Object track}) => 'Hang: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretrendszer',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretek',
+	);
+	@override String get trackSelectionTitle => 'Válassza ki a játékot a playback előtt';
+	@override String get trackSelectionAuto => 'Automatikus kiválasztás';
+	@override String get openMiniPlayer => 'Nyitott mini játékos';
+	@override String get returnToFullPlayer => 'Visszatérés a teljes játékoshoz';
+	@override String get loadSubtitleFile => 'A subtitle fájl felvétele...';
+	@override String get subtitleLoadFailed => 'Nem töltöttem fel a subtitle fájlt';
+	@override String get skipAds => 'Skip hirdetések';
+	@override String get tapToUnlock => 'Koppintson a feloldáshoz';
+	@override String get tapAgainToUnlock => 'Koppintson ismét a feloldáshoz';
 }
 
 // Path: messages
@@ -1828,16 +1757,6 @@ class _Translations$logs$hu extends Translations$logs$en {
 	@override String get saveLogs => 'Logs to File tárolás';
 	@override String logsSaved({required Object path}) => 'A regisztrációt a ${path}';
 	@override String get saveLogsFailed => 'Nem tudta megmenteni a log fájlt.';
-}
-
-// Path: detail
-class _Translations$detail$hu extends Translations$detail$en {
-	_Translations$detail$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Vége: ${time}';
 }
 
 // Path: startup
@@ -2907,6 +2826,88 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	@override String get httpsRequired => 'Használja a HTTPS vagy kifejezetten engedélyezi a titkosított kapcsolatot.';
 }
 
+// Path: cast
+class _Translations$cast$hu extends Translations$cast$en {
+	_Translations$cast$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'A készülékre kattintva';
+	@override String get searching => 'A Cast eszközök keresése...';
+	@override String connectedTo({required Object device}) => 'Kapcsolódó oldalak ${device}';
+	@override String get device => 'Cast eszköz';
+	@override String get readyToCast => 'Kész a kiadásra';
+	@override String get subtitle => 'Feliratok';
+	@override String get serverNotAvailable => 'A média szerver nem elérhető.';
+	@override String get stopCasting => 'Csatlakozás megáll';
+	@override String get castToDevice => 'A készülékre vágás';
+	@override String get noEpisodeAvailable => 'Nincs epizód, amit el lehet dobni.';
+	@override String get startFailed => 'Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra.';
+}
+
+// Path: automation
+class _Translations$automation$hu extends Translations$automation$en {
+	_Translations$automation$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Nincs aktív videó ülés ellenőrzésére.';
+}
+
+// Path: notifications
+class _Translations$notifications$hu extends Translations$notifications$en {
+	_Translations$notifications$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Új epizód';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$hu extends Translations$appAccess$en {
+	_Translations$appAccess$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Próbáld ki minden funkciót ingyen 7 napig';
+	@override String get description => 'Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.';
+	@override String get trialEndedDescription => 'A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.';
+	@override String get startTrial => 'Kezdje a 7 napos ingyenes próbát';
+	@override String get trialActive => 'A 7 napos teljes funkciót tesztelője aktív.';
+	@override String get trialEnded => 'A 7 napos bírósági eljárás befejeződött';
+	@override String get trialStartFailed => 'Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.';
+	@override String get lifetimeTitle => 'PlezyNG életre szóló zárolás';
+	@override String get lifetimeBody => 'Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.';
+	@override String get manageTitle => 'PlezyNG Élethosszú hozzáférés';
+	@override String get manageDescription => 'Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.';
+	@override String buy({required Object price}) => 'Minden funkció letiltása a ${price}';
+	@override String get loadingPrice => 'A szállítási árak...';
+	@override String get retryPrice => 'Visszaállítási ár keresés';
+	@override String get restore => 'Életmód vásárlás';
+	@override String get pending => 'A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.';
+	@override String get storeUnavailable => 'A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.';
+	@override String get productNotFound => 'A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.';
+	@override String get productQueryFailed => 'Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.';
+	@override String get purchaseFailed => 'A vásárlás nem ment át. próbáljon újra.';
+	@override String get restoreFailed => 'Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.';
+	@override String get nothingToRestore => 'A PlezyNG életévét megvásárlás találta ebben a boltban.';
+}
+
+// Path: detail
+class _Translations$detail$hu extends Translations$detail$en {
+	_Translations$detail$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Vége: ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$hu extends Translations$watchLink$en {
 	_Translations$watchLink$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -3177,7 +3178,6 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.';
 	@override String get converterStart => 'fájl átalakítása';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$hu extends Translations$fileSources$en {
@@ -3724,6 +3724,32 @@ class _Translations$games$hu extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$hu extends Translations$deepLinks$en {
+	_Translations$deepLinks$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Ez a Plezy link nem érvényes.';
+	@override String profileNotFound({required Object profile}) => 'Nincs profil a "${profile}" címmel.';
+	@override String get serverUnavailable => 'Nem tudtam elérni a szervert erre a linkre.';
+	@override String get notFound => 'Nem találtam ezt a címet a könyvtárakban.';
+	@override String get unsupportedItem => 'Ezt a linket nem lehet játszani.';
+	@override String get noLiveTv => 'Nincs Live TV szerver elérhető ezen a linken.';
+	@override String channelNotFound({required Object channel}) => 'Nem találták meg a "${channel}" csatornát.';
+	@override String get showLink => 'Show linkek';
+	@override String get showProfileLink => 'Profil link megjelenítése';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'A link megnyitása a következő epizódot játssza. Add &mode=shuffle to play the show on shuffle.';
+	@override String get movieHint => 'A link megnyitása a filmet játssza.';
+	@override String get episodeHint => 'A link megnyitása ezt az epizódot játssza.';
+	@override String get profileHint => 'A link megnyitása váltja át ezt a profilot.';
+	@override String openAsProfile({required Object name}) => 'Nyissa meg, mint ${name}';
+	@override String get copy => 'másolás';
+	@override String get copied => 'Link másolat';
 }
 
 // Path: appIcon.names
@@ -4840,21 +4866,6 @@ extension on TranslationsHu {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'A készülékre kattintva',
-			'cast.searching' => 'A Cast eszközök keresése...',
-			'cast.connectedTo' => ({required Object device}) => 'Kapcsolódó oldalak ${device}',
-			'cast.device' => 'Cast eszköz',
-			'cast.readyToCast' => 'Kész a kiadásra',
-			'cast.subtitle' => 'Feliratok',
-			'cast.serverNotAvailable' => 'A média szerver nem elérhető.',
-			'cast.stopCasting' => 'Csatlakozás megáll',
-			'cast.castToDevice' => 'A készülékre vágás',
-			'cast.noEpisodeAvailable' => 'Nincs epizód, amit el lehet dobni.',
-			'cast.startFailed' => 'Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra.',
-			'automation.noActivePlayback' => 'Nincs aktív videó ülés ellenőrzésére.',
-			'automation.profileNotFound' => 'Ez a Plezy profil nem található.',
-			'notifications.newEpisodeTitle' => 'Új epizód',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Alkalmazásikon',
 			'appIcon.defaultIcon' => 'Alapértelmezett',
 			'appIcon.current' => 'Jelenlegi ikon',
@@ -5017,28 +5028,6 @@ extension on TranslationsHu {
 			'update.viewRelease' => 'Kiadási megjegyzések',
 			'update.latestVersion' => 'A legújabb verziót használod',
 			'update.checkFailed' => 'Nem sikerült az újabb frissítések ellenőrzése',
-			'appAccess.title' => 'Próbáld ki minden funkciót ingyen 7 napig',
-			'appAccess.description' => 'Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.',
-			'appAccess.trialEndedDescription' => 'A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.',
-			'appAccess.startTrial' => 'Kezdje a 7 napos ingyenes próbát',
-			'appAccess.trialActive' => 'A 7 napos teljes funkciót tesztelője aktív.',
-			'appAccess.trialEnded' => 'A 7 napos bírósági eljárás befejeződött',
-			'appAccess.trialStartFailed' => 'Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.',
-			'appAccess.lifetimeTitle' => 'PlezyNG életre szóló zárolás',
-			'appAccess.lifetimeBody' => 'Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.',
-			'appAccess.manageTitle' => 'PlezyNG Élethosszú hozzáférés',
-			'appAccess.manageDescription' => 'Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.',
-			'appAccess.buy' => ({required Object price}) => 'Minden funkció letiltása a ${price}',
-			'appAccess.loadingPrice' => 'A szállítási árak...',
-			'appAccess.retryPrice' => 'Visszaállítási ár keresés',
-			'appAccess.restore' => 'Életmód vásárlás',
-			'appAccess.pending' => 'A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.',
-			'appAccess.storeUnavailable' => 'A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.',
-			'appAccess.productNotFound' => 'A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.',
-			'appAccess.productQueryFailed' => 'Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.',
-			'appAccess.purchaseFailed' => 'A vásárlás nem ment át. próbáljon újra.',
-			'appAccess.restoreFailed' => 'Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.',
-			'appAccess.nothingToRestore' => 'A PlezyNG életévét megvásárlás találta ebben a boltban.',
 			'settings.title' => 'Beállítások',
 			'settings.supportDeveloper' => 'PlezyNG támogatása',
 			'settings.supportDeveloperDescription' => 'Adománnyal támogassa a fejlesztést',
@@ -5351,8 +5340,6 @@ extension on TranslationsHu {
 			'settings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionApple' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. iOS, iPadOS és tvOS 26 vagy újabb rendszeren a TrueHD Atmos és a DTS:X térbeli hangzásként szól. A többi DTS- és TrueHD-sáv többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ki, amíg a hangerőnormalizálás be van kapcsolva',
 			'settings.audioChannelLimit' => 'Hangcsatornák',
@@ -5390,6 +5377,8 @@ extension on TranslationsHu {
 			'settings.disableDolbyVisionDescription' => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen',
 			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
 			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Automatikus',
 			'settings.hdrSdrConversionAutoDescription' => 'Eszköz Android 9-től, lejátszó a régebbi verziókon',
 			'settings.hdrSdrConversionDevice' => 'Eszköz',
@@ -5851,7 +5840,6 @@ extension on TranslationsHu {
 			'tooltips.markAsWatched' => 'Megjelölés megtekintettként',
 			'tooltips.markAsUnwatched' => 'Megjelölés nem megtekintettként',
 			'audioTracks.track' => ({required Object n}) => '${n}. hangsáv',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretrendszer', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretek', ), 
 			'videoControls.audioLabel' => 'Hang',
 			'videoControls.subtitlesLabel' => 'Feliratok',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5865,8 +5853,6 @@ extension on TranslationsHu {
 			'videoControls.sleepTimerEndOfVideo' => 'Jelenlegi videó vége',
 			'videoControls.sleepTimerStopAtHeader' => 'Leállítás ekkor',
 			'videoControls.sleepTimerDurationHeader' => 'Időzítő',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'A lejátszás szünetel a videó végén',
 			'videoControls.stillWatching' => 'Még nézed?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Szüneteltetés ${seconds} mp múlva',
@@ -5890,8 +5876,6 @@ extension on TranslationsHu {
 			'videoControls.unmuteButton' => 'Hang visszakapcsolása',
 			'videoControls.settingsButton' => 'Lejátszási beállítások',
 			'videoControls.tracksButton' => 'Hang és feliratok',
-			'videoControls.trackSelectionTitle' => 'Válassza ki a játékot a playback előtt',
-			'videoControls.trackSelectionAuto' => 'Automatikus kiválasztás',
 			'videoControls.chaptersButton' => 'Fejezetek',
 			'videoControls.versionQualityButton' => 'Verzió és minőség',
 			'videoControls.versionColumnHeader' => 'Verzió',
@@ -5901,17 +5885,16 @@ extension on TranslationsHu {
 			'videoControls.transcodeUnavailableFallback' => 'A transzkódolás nem érhető el — eredeti minőség lejátszása',
 			'videoControls.subtitleUnavailableFallback' => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül',
 			'videoControls.pipButton' => 'Kép a képben mód',
-			'videoControls.openMiniPlayer' => 'Nyitott mini játékos',
-			'videoControls.returnToFullPlayer' => 'Visszatérés a teljes játékoshoz',
 			'videoControls.aspectRatioButton' => 'Méretarány',
 			'videoControls.ambientLighting' => 'Környezeti megvilágítás',
 			'videoControls.fullscreenButton' => 'Teljes képernyős mód bekapcsolása',
 			'videoControls.exitFullscreenButton' => 'Teljes képernyős mód kikapcsolása',
 			'videoControls.alwaysOnTopButton' => 'Mindig legfelül',
 			'videoControls.rotationLockButton' => 'Elforgatás zárolása',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Képernyő zárolása',
 			'videoControls.screenLockButton' => 'Képernyőzár',
-			'videoControls.longPressToUnlock' => 'Nyomd hosszan a feloldáshoz',
 			'videoControls.timelineSlider' => 'Videó idősáv',
 			'videoControls.volumeSlider' => 'Hangerő',
 			'videoControls.endsAt' => ({required Object time}) => 'Vége: ${time}',
@@ -5935,8 +5918,6 @@ extension on TranslationsHu {
 			'videoControls.noQueueItems' => 'Nincsenek elemek a sorban',
 			'videoControls.noAudioDevicesAvailable' => 'Nincsenek elérhető audioeszközök',
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
-			'videoControls.loadSubtitleFile' => 'A subtitle fájl felvétele...',
-			'videoControls.subtitleLoadFailed' => 'Nem töltöttem fel a subtitle fájlt',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
 			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
@@ -5945,7 +5926,6 @@ extension on TranslationsHu {
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
 			'videoControls.skipIntro' => 'Főcím átugrása',
 			'videoControls.skipCredits' => 'Stáblista átugrása',
-			'videoControls.skipAds' => 'Skip hirdetések',
 			'videoControls.nextEpisode' => 'Következő epizód',
 			'videoControls.subtitleTrack' => ({required Object n}) => '${n}. sáv',
 			'videoControls.subtitleFile' => ({required Object name}) => '${name} felirat',
@@ -5953,6 +5933,16 @@ extension on TranslationsHu {
 			'videoControls.osdSubtitlesOff' => 'Feliratok: ki',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Feliratok: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Hang: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretrendszer', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} keretek', ), 
+			'videoControls.trackSelectionTitle' => 'Válassza ki a játékot a playback előtt',
+			'videoControls.trackSelectionAuto' => 'Automatikus kiválasztás',
+			'videoControls.openMiniPlayer' => 'Nyitott mini játékos',
+			'videoControls.returnToFullPlayer' => 'Visszatérés a teljes játékoshoz',
+			'videoControls.loadSubtitleFile' => 'A subtitle fájl felvétele...',
+			'videoControls.subtitleLoadFailed' => 'Nem töltöttem fel a subtitle fájlt',
+			'videoControls.skipAds' => 'Skip hirdetések',
+			'videoControls.tapToUnlock' => 'Koppintson a feloldáshoz',
+			'videoControls.tapAgainToUnlock' => 'Koppintson ismét a feloldáshoz',
 			'messages.markedAsWatched' => 'Megjelölve megtekintettként',
 			'messages.markedAsUnwatched' => 'Megjelölve nem megtekintettként',
 			'messages.markedAsWatchedOffline' => 'Megjelölve megtekintettként (szinkronizálás online állapotban)',
@@ -6379,8 +6369,6 @@ extension on TranslationsHu {
 			'libraries.all' => 'Összes',
 			'libraries.clearAll' => 'Összes törlése',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Biztosan be szeretnéd olvasni a következőt: "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Biztosan elemezni szeretnéd a következőt: "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Biztosan frissíteni szeretnéd a metaadatokat a következőhöz: "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Biztosan ki szeretnéd üríteni a lomtárat a következőnél: "${title}"?',
@@ -6417,6 +6405,8 @@ extension on TranslationsHu {
 			'libraries.filterCategories.year' => 'Év',
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Nem látott',
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
@@ -6498,7 +6488,6 @@ extension on TranslationsHu {
 			'logs.saveLogs' => 'Logs to File tárolás',
 			'logs.logsSaved' => ({required Object path}) => 'A regisztrációt a ${path}',
 			'logs.saveLogsFailed' => 'Nem tudta megmenteni a log fájlt.',
-			'detail.endsAt' => ({required Object time}) => 'Vége: ${time}',
 			'startup.failedTitle' => 'A PlezyNG nem tudott elindulni',
 			'startup.failedBody' => 'Valami hiba történt az indítás során. Az alábbi részletek mutatják, mi hibázott.',
 			'startup.failedBodyRepairable' => 'A PlezyNG mentett beállításfájlja sérült, és újra kell építeni, mielőtt a PlezyNG elindulhatna. Az újrapróbálkozás nem segít – válassza a Tárhely javítása lehetőséget.',
@@ -6893,8 +6882,6 @@ extension on TranslationsHu {
 			'watchTogether.connecting' => 'Csatlakozás...',
 			'watchTogether.relayPublic' => 'A szobák a nyilvános Open Watch Party-reléket használják.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'A szobák a saját relédet használják: ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Legutóbbi szobák',
 			'watchTogether.roomActions' => 'Szobaműveletek',
 			'watchTogether.renameRoom' => 'Szoba átnevezése',
@@ -6932,6 +6919,8 @@ extension on TranslationsHu {
 			'watchTogether.playAnyway' => 'Lejátszás mégis',
 			'watchTogether.chooseAnotherCopy' => 'Másik példány választása',
 			'watchTogether.dontPlay' => 'Ne játszd le',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Ez a videó nincs meg neked',
 			'watchTogether.unavailableDescription' => 'A PlezyNG nem találta meg a könyvtáraidban. Válassz ki magad egy példányt, vagy keress újra.',
 			'watchTogether.chooseCopy' => 'Példány választása',
@@ -7407,8 +7396,6 @@ extension on TranslationsHu {
 			'metadataEdit.metadataUpdateFailed' => 'Nem sikerült a metaadatok frissítése',
 			'metadataEdit.artworkUpdated' => 'Képek frissítve',
 			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Nincsenek elérhető képek',
 			'metadataEdit.artworkOption' => ({required Object index}) => '${index}. képváltozat',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '${index}. képváltozat, kiválasztva',
@@ -7446,6 +7433,8 @@ extension on TranslationsHu {
 			'metadataEdit.shownWithForeignAudio' => 'Idegen nyelvű hang esetén megjelenítve',
 			'metadataEdit.alwaysEnabled' => 'Mindig engedélyezve',
 			'metadataEdit.tags' => 'Címkék',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Címke hozzáadása',
 			'metadataEdit.genre' => 'Műfaj',
 			'metadataEdit.director' => 'Rendező',
@@ -7636,6 +7625,43 @@ extension on TranslationsHu {
 			'addServer.insecureDescription' => ({required Object url}) => 'A(z) ${url} HTTP-t használ. A hálózaton mások elolvashatják vagy módosíthatják a jelszavát, a tokenjeit és a médiatartalmait. Ha elérhető, használjon HTTPS-t. Csak akkor folytassa, ha megbízik ebben a hálózatban és elfogadja a kockázatot.',
 			'addServer.allowHttp' => 'HTTP engedélyezése',
 			'addServer.httpsRequired' => 'Használja a HTTPS vagy kifejezetten engedélyezi a titkosított kapcsolatot.',
+			'cast.chooseDevice' => 'A készülékre kattintva',
+			'cast.searching' => 'A Cast eszközök keresése...',
+			'cast.connectedTo' => ({required Object device}) => 'Kapcsolódó oldalak ${device}',
+			'cast.device' => 'Cast eszköz',
+			'cast.readyToCast' => 'Kész a kiadásra',
+			'cast.subtitle' => 'Feliratok',
+			'cast.serverNotAvailable' => 'A média szerver nem elérhető.',
+			'cast.stopCasting' => 'Csatlakozás megáll',
+			'cast.castToDevice' => 'A készülékre vágás',
+			'cast.noEpisodeAvailable' => 'Nincs epizód, amit el lehet dobni.',
+			'cast.startFailed' => 'Nem tudok elkezdeni a szétválasztást. ellenőrizze a szervert, és próbáljon újra.',
+			'automation.noActivePlayback' => 'Nincs aktív videó ülés ellenőrzésére.',
+			'notifications.newEpisodeTitle' => 'Új epizód',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Próbáld ki minden funkciót ingyen 7 napig',
+			'appAccess.description' => 'Kezdje a hét napos próbát minden PlezyNG funkcióhoz való teljes hozzáféréssel. A próbában nincs díj és nincs előfizetés. A próbát követően egy élethosszig tartó vásárlás az üzlet árán PlezyNG az élethosszú zárat nyit.',
+			'appAccess.trialEndedDescription' => 'A PlezyNG minden funkciót letiltja az életre egy vásárlással az üzlet árán.',
+			'appAccess.startTrial' => 'Kezdje a 7 napos ingyenes próbát',
+			'appAccess.trialActive' => 'A 7 napos teljes funkciót tesztelője aktív.',
+			'appAccess.trialEnded' => 'A 7 napos bírósági eljárás befejeződött',
+			'appAccess.trialStartFailed' => 'Nem tudtam menteni a tesztet a készülékre. kérjük, próbáljon újra.',
+			'appAccess.lifetimeTitle' => 'PlezyNG életre szóló zárolás',
+			'appAccess.lifetimeBody' => 'Köszönöm! az egész életen át tartó hozzáférést kap minden PlezyNG funkcióhoz.',
+			'appAccess.manageTitle' => 'PlezyNG Élethosszú hozzáférés',
+			'appAccess.manageDescription' => 'Próbáld ki minden funkciót ingyen 7 napig, majd letölti az egész életet egy fizetéssel az áruház ára.',
+			'appAccess.buy' => ({required Object price}) => 'Minden funkció letiltása a ${price}',
+			'appAccess.loadingPrice' => 'A szállítási árak...',
+			'appAccess.retryPrice' => 'Visszaállítási ár keresés',
+			'appAccess.restore' => 'Életmód vásárlás',
+			'appAccess.pending' => 'A vásárlás fizetést vagy jóváhagyást vár. Az élethosszig tartó hozzáférés a bolt befejezését követően zárul.',
+			'appAccess.storeUnavailable' => 'A vásárlás nem elérhető. Ellenőrizze, hogy Ön regisztrált a boltban, és a vásárlás engedélyezett ezen a készüléken.',
+			'appAccess.productNotFound' => 'A PlezyNG élethosszig tartó zárolás még nem elérhető ebben a boltban.',
+			'appAccess.productQueryFailed' => 'Nem tudtam feltölteni a bolt árat. Ellenőrizze a kapcsolatot, és próbáljon meg újra.',
+			'appAccess.purchaseFailed' => 'A vásárlás nem ment át. próbáljon újra.',
+			'appAccess.restoreFailed' => 'Nem tudtam eljutni a boltba, hogy visszaállítsam a vásárlást. próbáljon újra.',
+			'appAccess.nothingToRestore' => 'A PlezyNG életévét megvásárlás találta ebben a boltban.',
+			'detail.endsAt' => ({required Object time}) => 'Vége: ${time}',
 			'watchLink.serverUnavailable' => 'Nem tudtam elérni a Plex szervert erre a linkre.',
 			'watchLink.notFound' => 'Nem találtam ezt a show-t vagy filmet a Plex szervereken.',
 			'watchLink.ambiguous' => 'Ez a link megfelel az elemeknek több szerveren.A linkhez adjon hozzá egy szervert.',
@@ -7771,7 +7797,7 @@ extension on TranslationsHu {
 			'universalMedia.saveFavorite' => 'Megmentse kedvencét',
 			'universalMedia.playNow' => 'Játssz most',
 			'universalMedia.favoriteSaved' => 'Stream kedvenc mentett erre a profilra',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: 'A ${count} nem támogatott vagy biztonságos lejátszási lista bejárata.', other: 'A ${count} nem támogatott vagy biztonságos lejátszási listájának bejegyzései.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: 'A ${count} nem támogatott vagy biztonságos lejátszási lista bejárata.', other: 'A ${count} nem támogatott vagy biztonságos lejátszási listájának bejegyzései.', ), 
 			'universalMedia.playlistAddress' => 'Playlist címek',
 			'universalMedia.playlistAddressHelp' => 'Nyissa meg a M3U, M3u8 vagy PLS lejátszási listát egy webcímről. közvetlen áramlás linkek nem menthetik meg a lejátszó listát.',
 			'universalMedia.choosePlaylist' => 'Válassza ki a Playlist fájlt',
@@ -7781,7 +7807,7 @@ extension on TranslationsHu {
 			'universalMedia.removeFavorite' => 'Távolítsa el a kedvenc stream',
 			'universalMedia.filesHelp' => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.',
 			'universalMedia.chooseFiles' => 'Válasszon fájlokat',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '1 kiválasztott fájl', other: '${count} kiválasztott fájlok', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '1 kiválasztott fájl', other: '${count} kiválasztott fájlok', ), 
 			'universalMedia.wifiTransfer' => 'Fájlok küldése Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Támogatott fájlok átadása egy böngészőről ugyanazon megbízható hálózaton.',
 			'universalMedia.wifiTransferIntro' => 'Nyissa meg ezt a címet egy böngészőben egy másik eszközön. Válassza ki a fájlokat, hogy hozzáadják őket a készülék Fájlok és könyvek könyvtárába.',
@@ -7792,7 +7818,7 @@ extension on TranslationsHu {
 			'universalMedia.copyAddress' => 'átviteli cím másolása',
 			'universalMedia.addressCopied' => 'átutalási cím másolva',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Ez a cím az ${time}-ben lejár.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${count} fájl kapott', other: '${count} fájlok kaptak', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${count} fájl kapott', other: '${count} fájlok kaptak', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Megérkezett ${size}',
 			'universalMedia.stopTransfer' => 'Megállapodás átadásáról és cím megsemmisítéséről',
 			'universalMedia.startTransfer' => 'Kezdődik a transzfer',
@@ -7921,6 +7947,8 @@ extension on TranslationsHu {
 			'fileSources.bookmark' => 'Add a bookmark',
 			'fileSources.highlight' => 'Fokozás',
 			'fileSources.note' => 'jegyzetek',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Törlés',
 			'fileSources.export' => 'exportjegyzékek',
 			'fileSources.exported' => 'Kiadó jegyzetek',
@@ -8033,8 +8061,6 @@ extension on TranslationsHu {
 			'fileSources.offlineQuotaHelp' => 'Állítsa be a maximális helyet használt offline másolatok, importált fájlok, és lejátszott letöltések. A határ csökkentése nem távolítja el a meglévő másolatokat.',
 			'fileSources.offlineStorageUsage' => 'Offline tárolás',
 			'fileSources.reservedStorage' => 'fenntartás',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Letöltés Queue',
 			'fileSources.downloadRunning' => 'Letöltés',
 			'fileSources.downloadQueued' => 'Várakozás',
@@ -8354,6 +8380,23 @@ extension on TranslationsHu {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Ez a Plezy link nem érvényes.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Nincs profil a "${profile}" címmel.',
+			'deepLinks.serverUnavailable' => 'Nem tudtam elérni a szervert erre a linkre.',
+			'deepLinks.notFound' => 'Nem találtam ezt a címet a könyvtárakban.',
+			'deepLinks.unsupportedItem' => 'Ezt a linket nem lehet játszani.',
+			'deepLinks.noLiveTv' => 'Nincs Live TV szerver elérhető ezen a linken.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Nem találták meg a "${channel}" csatornát.',
+			'deepLinks.showLink' => 'Show linkek',
+			'deepLinks.showProfileLink' => 'Profil link megjelenítése',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'A link megnyitása a következő epizódot játssza. Add &mode=shuffle to play the show on shuffle.',
+			'deepLinks.movieHint' => 'A link megnyitása a filmet játssza.',
+			'deepLinks.episodeHint' => 'A link megnyitása ezt az epizódot játssza.',
+			'deepLinks.profileHint' => 'A link megnyitása váltja át ezt a profilot.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Nyissa meg, mint ${name}',
+			'deepLinks.copy' => 'másolás',
+			'deepLinks.copied' => 'Link másolat',
 			_ => null,
 		};
 	}

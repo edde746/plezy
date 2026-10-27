@@ -1138,8 +1138,8 @@
     "loadSubtitleFile": "Subtitle filə yükləmək.",
     "subtitleLoadFailed": "Subtitle filini yüklə bilmədim",
     "skipAds": "Adlar üçün",
-    "tapToUnlock": "",
-    "tapAgainToUnlock": ""
+    "tapToUnlock": "Kilidi açmaq üçün toxunun",
+    "tapAgainToUnlock": "Kilidi açmaq üçün yenidən toxunun"
   },
   "userStatus": {},
   "messages": {
@@ -3039,8 +3039,7 @@
     "startFailed": "Yayımı başlatmaq mümkün olmadı. Serveri yoxlayın və yenidən cəhd edin."
   },
   "automation": {
-    "noActivePlayback": "Video-kontroleyi kontrol etmək mümkün deyil.",
-    "profileNotFound": "Bu Plezy profili bulamadı."
+    "noActivePlayback": "Video-kontroleyi kontrol etmək mümkün deyil."
   },
   "notifications": {
     "newEpisodeTitle": "Yeni epizod",
@@ -3822,22 +3821,22 @@
     "steamLibraryHint": "Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection."
   },
   "deepLinks": {
-    "invalid": "",
-    "profileNotFound": "",
-    "serverUnavailable": "",
-    "notFound": "",
-    "unsupportedItem": "",
-    "noLiveTv": "",
-    "channelNotFound": "",
-    "showLink": "",
-    "showProfileLink": "",
-    "dialogTitle": "",
-    "showHint": "",
-    "movieHint": "",
-    "episodeHint": "",
-    "profileHint": "",
-    "openAsProfile": "",
-    "copy": "",
-    "copied": ""
+    "invalid": "Bu Plezy bağlantısı geçerli deyil.",
+    "profileNotFound": "“${profile}” və “ZxqPROFile0” arasında heç bir profil yoxdur.",
+    "serverUnavailable": "Bu linki üçün serverə ulaşamazdım.",
+    "notFound": "Bu kitabın kitabında bir başlık bulamazdım.",
+    "unsupportedItem": "Bu linki oynamaq mümkün deyil.",
+    "noLiveTv": "Bu linki üçün Live TV server yoxdur.",
+    "channelNotFound": "“${channel}” kanalını bulamazdım.",
+    "showLink": "İndir Link",
+    "showProfileLink": "Profil link göstərmək",
+    "dialogTitle": "Link",
+    "showHint": "Bu linki açın, bir sonraki epizod oynanır. shuffle-da şov oynamak için &mode=shuffle ekləyin.",
+    "movieHint": "Bu linki açmaq filmi oynayır.",
+    "episodeHint": "Bu linki açmaq bu epizodu oynayır.",
+    "profileHint": "Bu profillə bu link-i açılır.",
+    "openAsProfile": "${name} kimi açılır",
+    "copy": "Kopya",
+    "copied": "Link kopyalar"
   }
 }

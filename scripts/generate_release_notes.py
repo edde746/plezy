@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render release notes from a versioned CHANGELOG.md section or Unreleased."""
+"""Render release notes from a versioned CHANGELOG.md section and Unreleased."""
 
 from __future__ import annotations
 
@@ -70,7 +70,14 @@ def main() -> int:
     if "Unreleased" in duplicates:
         print("release notes: CHANGELOG.md has duplicate [Unreleased] sections.", file=sys.stderr)
         return 1
-    section = entries[args.version] if args.version in entries else entries.get("Unreleased", "")
+    versioned = entries.get(args.version, "")
+    unreleased = entries.get("Unreleased", "")
+    if versioned and unreleased:
+        section = (
+            f"{versioned}\n\n### Additional release updates\n\n{unreleased}"
+        )
+    else:
+        section = versioned or unreleased
     if (
         not section
         or not re.search(r"^\s*-\s+\S", section, re.MULTILINE)

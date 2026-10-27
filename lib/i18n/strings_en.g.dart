@@ -41,15 +41,11 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
-	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
-	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
-	late final Translations$notifications$en notifications = Translations$notifications$en.internal(_root);
 	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
-	late final Translations$appAccess$en appAccess = Translations$appAccess$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
 	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
@@ -61,7 +57,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$tooltips$en tooltips = Translations$tooltips$en.internal(_root);
 	late final Translations$audioTracks$en audioTracks = Translations$audioTracks$en.internal(_root);
 	late final Translations$videoControls$en videoControls = Translations$videoControls$en.internal(_root);
-	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
 	late final Translations$messages$en messages = Translations$messages$en.internal(_root);
 	late final Translations$subtitlingStyling$en subtitlingStyling = Translations$subtitlingStyling$en.internal(_root);
 	late final Translations$mpvConfig$en mpvConfig = Translations$mpvConfig$en.internal(_root);
@@ -76,7 +71,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
-	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
@@ -99,6 +93,11 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
+	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
+	late final Translations$notifications$en notifications = Translations$notifications$en.internal(_root);
+	late final Translations$appAccess$en appAccess = Translations$appAccess$en.internal(_root);
+	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 	late final Translations$platform$en platform = Translations$platform$en.internal(_root);
@@ -109,6 +108,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$sourceSetup$en sourceSetup = Translations$sourceSetup$en.internal(_root);
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 	late final Translations$games$en games = Translations$games$en.internal(_root);
+	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
 }
 
 // Path: app
@@ -121,78 +121,6 @@ class Translations$app$en {
 
 	/// en: 'PlezyNG'
 	String get title => 'PlezyNG';
-}
-
-// Path: cast
-class Translations$cast$en {
-	Translations$cast$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Cast to a device'
-	String get chooseDevice => 'Cast to a device';
-
-	/// en: 'Searching for Cast devices…'
-	String get searching => 'Searching for Cast devices…';
-
-	/// en: 'Connected to ${device}'
-	String connectedTo({required Object device}) => 'Connected to ${device}';
-
-	/// en: 'Cast device'
-	String get device => 'Cast device';
-
-	/// en: 'Ready to cast'
-	String get readyToCast => 'Ready to cast';
-
-	/// en: 'Subtitles'
-	String get subtitle => 'Subtitles';
-
-	/// en: 'The media server is not available.'
-	String get serverNotAvailable => 'The media server is not available.';
-
-	/// en: 'Stop casting'
-	String get stopCasting => 'Stop casting';
-
-	/// en: 'Cast to device'
-	String get castToDevice => 'Cast to device';
-
-	/// en: 'There is no episode available to cast.'
-	String get noEpisodeAvailable => 'There is no episode available to cast.';
-
-	/// en: 'Could not start casting. Check the server and try again.'
-	String get startFailed => 'Could not start casting. Check the server and try again.';
-}
-
-// Path: automation
-class Translations$automation$en {
-	Translations$automation$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'There is no active video session to control.'
-	String get noActivePlayback => 'There is no active video session to control.';
-
-	/// en: 'That Plezy profile could not be found.'
-	String get profileNotFound => 'That Plezy profile could not be found.';
-}
-
-// Path: notifications
-class Translations$notifications$en {
-	Translations$notifications$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'New episode'
-	String get newEpisodeTitle => 'New episode';
-
-	/// en: '${show} · ${episode}'
-	String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -586,81 +514,6 @@ class Translations$update$en {
 
 	/// en: 'Failed to check for updates'
 	String get checkFailed => 'Failed to check for updates';
-}
-
-// Path: appAccess
-class Translations$appAccess$en {
-	Translations$appAccess$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Try every feature free for 7 days'
-	String get title => 'Try every feature free for 7 days';
-
-	/// en: 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.'
-	String get description => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.';
-
-	/// en: 'Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.'
-	String get trialEndedDescription => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.';
-
-	/// en: 'Start my 7-day free trial'
-	String get startTrial => 'Start my 7-day free trial';
-
-	/// en: 'Your 7-day full-feature trial is active.'
-	String get trialActive => 'Your 7-day full-feature trial is active.';
-
-	/// en: 'Your 7-day trial has ended'
-	String get trialEnded => 'Your 7-day trial has ended';
-
-	/// en: 'Couldn't save the trial on this device. Please try again.'
-	String get trialStartFailed => 'Couldn\'t save the trial on this device. Please try again.';
-
-	/// en: 'PlezyNG unlocked for life'
-	String get lifetimeTitle => 'PlezyNG unlocked for life';
-
-	/// en: 'Thanks! You have lifetime access to every PlezyNG feature.'
-	String get lifetimeBody => 'Thanks! You have lifetime access to every PlezyNG feature.';
-
-	/// en: 'PlezyNG lifetime access'
-	String get manageTitle => 'PlezyNG lifetime access';
-
-	/// en: 'Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.'
-	String get manageDescription => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.';
-
-	/// en: 'Unlock every feature for ${price}'
-	String buy({required Object price}) => 'Unlock every feature for ${price}';
-
-	/// en: 'Loading store price...'
-	String get loadingPrice => 'Loading store price...';
-
-	/// en: 'Retry price lookup'
-	String get retryPrice => 'Retry price lookup';
-
-	/// en: 'Restore lifetime purchase'
-	String get restore => 'Restore lifetime purchase';
-
-	/// en: 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.'
-	String get pending => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.';
-
-	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
-	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
-
-	/// en: 'The PlezyNG lifetime unlock isn't available in this store yet.'
-	String get productNotFound => 'The PlezyNG lifetime unlock isn\'t available in this store yet.';
-
-	/// en: 'Couldn't load the store price. Check your connection and try again.'
-	String get productQueryFailed => 'Couldn\'t load the store price. Check your connection and try again.';
-
-	/// en: 'The purchase didn't go through. Try again.'
-	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
-
-	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
-	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
-
-	/// en: 'No PlezyNG lifetime purchase was found for this store account.'
-	String get nothingToRestore => 'No PlezyNG lifetime purchase was found for this store account.';
 }
 
 // Path: settings
@@ -3076,12 +2929,6 @@ class Translations$videoControls$en {
 
 	// Translations
 
-	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames}'
-	String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames',
-	);
-
 	/// en: 'Audio'
 	String get audioLabel => 'Audio';
 
@@ -3190,12 +3037,6 @@ class Translations$videoControls$en {
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
 
-	/// en: 'Choose tracks before playback'
-	String get trackSelectionTitle => 'Choose tracks before playback';
-
-	/// en: 'Automatic selection'
-	String get trackSelectionAuto => 'Automatic selection';
-
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
@@ -3223,12 +3064,6 @@ class Translations$videoControls$en {
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
 
-	/// en: 'Open mini player'
-	String get openMiniPlayer => 'Open mini player';
-
-	/// en: 'Return to full player'
-	String get returnToFullPlayer => 'Return to full player';
-
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
 
@@ -3252,15 +3087,6 @@ class Translations$videoControls$en {
 
 	/// en: 'Screen lock'
 	String get screenLockButton => 'Screen lock';
-
-	/// en: 'Long press to unlock'
-	String get longPressToUnlock => 'Long press to unlock';
-
-	/// en: 'Tap to unlock'
-	String get tapToUnlock => 'Tap to unlock';
-
-	/// en: 'Tap again to unlock'
-	String get tapAgainToUnlock => 'Tap again to unlock';
 
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
@@ -3309,12 +3135,6 @@ class Translations$videoControls$en {
 	/// en: 'Search Subtitles'
 	String get searchSubtitles => 'Search Subtitles';
 
-	/// en: 'Load subtitle file…'
-	String get loadSubtitleFile => 'Load subtitle file…';
-
-	/// en: 'Failed to load subtitle file'
-	String get subtitleLoadFailed => 'Failed to load subtitle file';
-
 	/// en: 'Language'
 	String get language => 'Language';
 
@@ -3339,9 +3159,6 @@ class Translations$videoControls$en {
 	/// en: 'Skip Credits'
 	String get skipCredits => 'Skip Credits';
 
-	/// en: 'Skip Ads'
-	String get skipAds => 'Skip Ads';
-
 	/// en: 'Next Episode'
 	String get nextEpisode => 'Next Episode';
 
@@ -3362,6 +3179,39 @@ class Translations$videoControls$en {
 
 	/// en: 'Audio: ${track}'
 	String osdAudio({required Object track}) => 'Audio: ${track}';
+
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames}'
+	String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames',
+	);
+
+	/// en: 'Choose tracks before playback'
+	String get trackSelectionTitle => 'Choose tracks before playback';
+
+	/// en: 'Automatic selection'
+	String get trackSelectionAuto => 'Automatic selection';
+
+	/// en: 'Open mini player'
+	String get openMiniPlayer => 'Open mini player';
+
+	/// en: 'Return to full player'
+	String get returnToFullPlayer => 'Return to full player';
+
+	/// en: 'Load subtitle file…'
+	String get loadSubtitleFile => 'Load subtitle file…';
+
+	/// en: 'Failed to load subtitle file'
+	String get subtitleLoadFailed => 'Failed to load subtitle file';
+
+	/// en: 'Skip Ads'
+	String get skipAds => 'Skip Ads';
+
+	/// en: 'Tap to unlock'
+	String get tapToUnlock => 'Tap to unlock';
+
+	/// en: 'Tap again to unlock'
+	String get tapAgainToUnlock => 'Tap again to unlock';
 }
 
 // Path: messages
@@ -4568,18 +4418,6 @@ class Translations$logs$en {
 
 	/// en: 'Could not save the log file.'
 	String get saveLogsFailed => 'Could not save the log file.';
-}
-
-// Path: detail
-class Translations$detail$en {
-	Translations$detail$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Ends at ${time}'
-	String endsAt({required Object time}) => 'Ends at ${time}';
 }
 
 // Path: startup
@@ -7274,6 +7112,162 @@ class Translations$addServer$en {
 	String get httpsRequired => 'Use HTTPS or explicitly allow an unencrypted connection.';
 }
 
+// Path: cast
+class Translations$cast$en {
+	Translations$cast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Cast to a device'
+	String get chooseDevice => 'Cast to a device';
+
+	/// en: 'Searching for Cast devices…'
+	String get searching => 'Searching for Cast devices…';
+
+	/// en: 'Connected to ${device}'
+	String connectedTo({required Object device}) => 'Connected to ${device}';
+
+	/// en: 'Cast device'
+	String get device => 'Cast device';
+
+	/// en: 'Ready to cast'
+	String get readyToCast => 'Ready to cast';
+
+	/// en: 'Subtitles'
+	String get subtitle => 'Subtitles';
+
+	/// en: 'The media server is not available.'
+	String get serverNotAvailable => 'The media server is not available.';
+
+	/// en: 'Stop casting'
+	String get stopCasting => 'Stop casting';
+
+	/// en: 'Cast to device'
+	String get castToDevice => 'Cast to device';
+
+	/// en: 'There is no episode available to cast.'
+	String get noEpisodeAvailable => 'There is no episode available to cast.';
+
+	/// en: 'Could not start casting. Check the server and try again.'
+	String get startFailed => 'Could not start casting. Check the server and try again.';
+}
+
+// Path: automation
+class Translations$automation$en {
+	Translations$automation$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'There is no active video session to control.'
+	String get noActivePlayback => 'There is no active video session to control.';
+}
+
+// Path: notifications
+class Translations$notifications$en {
+	Translations$notifications$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'New episode'
+	String get newEpisodeTitle => 'New episode';
+
+	/// en: '${show} · ${episode}'
+	String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class Translations$appAccess$en {
+	Translations$appAccess$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Try every feature free for 7 days'
+	String get title => 'Try every feature free for 7 days';
+
+	/// en: 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.'
+	String get description => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.';
+
+	/// en: 'Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.'
+	String get trialEndedDescription => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.';
+
+	/// en: 'Start my 7-day free trial'
+	String get startTrial => 'Start my 7-day free trial';
+
+	/// en: 'Your 7-day full-feature trial is active.'
+	String get trialActive => 'Your 7-day full-feature trial is active.';
+
+	/// en: 'Your 7-day trial has ended'
+	String get trialEnded => 'Your 7-day trial has ended';
+
+	/// en: 'Couldn't save the trial on this device. Please try again.'
+	String get trialStartFailed => 'Couldn\'t save the trial on this device. Please try again.';
+
+	/// en: 'PlezyNG unlocked for life'
+	String get lifetimeTitle => 'PlezyNG unlocked for life';
+
+	/// en: 'Thanks! You have lifetime access to every PlezyNG feature.'
+	String get lifetimeBody => 'Thanks! You have lifetime access to every PlezyNG feature.';
+
+	/// en: 'PlezyNG lifetime access'
+	String get manageTitle => 'PlezyNG lifetime access';
+
+	/// en: 'Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.'
+	String get manageDescription => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.';
+
+	/// en: 'Unlock every feature for ${price}'
+	String buy({required Object price}) => 'Unlock every feature for ${price}';
+
+	/// en: 'Loading store price...'
+	String get loadingPrice => 'Loading store price...';
+
+	/// en: 'Retry price lookup'
+	String get retryPrice => 'Retry price lookup';
+
+	/// en: 'Restore lifetime purchase'
+	String get restore => 'Restore lifetime purchase';
+
+	/// en: 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.';
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The PlezyNG lifetime unlock isn't available in this store yet.'
+	String get productNotFound => 'The PlezyNG lifetime unlock isn\'t available in this store yet.';
+
+	/// en: 'Couldn't load the store price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the store price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No PlezyNG lifetime purchase was found for this store account.'
+	String get nothingToRestore => 'No PlezyNG lifetime purchase was found for this store account.';
+}
+
+// Path: detail
+class Translations$detail$en {
+	Translations$detail$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Ends at ${time}'
+	String endsAt({required Object time}) => 'Ends at ${time}';
+}
+
 // Path: watchLink
 class Translations$watchLink$en {
 	Translations$watchLink$en.internal(this._root);
@@ -7996,7 +7990,6 @@ class Translations$universalMedia$en {
 	/// en: 'Convert file'
 	String get converterStart => 'Convert file';
 }
-
 
 // Path: fileSources
 class Translations$fileSources$en {
@@ -11943,21 +11936,6 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Cast to a device',
-			'cast.searching' => 'Searching for Cast devices…',
-			'cast.connectedTo' => ({required Object device}) => 'Connected to ${device}',
-			'cast.device' => 'Cast device',
-			'cast.readyToCast' => 'Ready to cast',
-			'cast.subtitle' => 'Subtitles',
-			'cast.serverNotAvailable' => 'The media server is not available.',
-			'cast.stopCasting' => 'Stop casting',
-			'cast.castToDevice' => 'Cast to device',
-			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
-			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
-			'automation.noActivePlayback' => 'There is no active video session to control.',
-			'automation.profileNotFound' => 'That Plezy profile could not be found.',
-			'notifications.newEpisodeTitle' => 'New episode',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
@@ -12120,28 +12098,6 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
-			'appAccess.title' => 'Try every feature free for 7 days',
-			'appAccess.description' => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.',
-			'appAccess.trialEndedDescription' => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.',
-			'appAccess.startTrial' => 'Start my 7-day free trial',
-			'appAccess.trialActive' => 'Your 7-day full-feature trial is active.',
-			'appAccess.trialEnded' => 'Your 7-day trial has ended',
-			'appAccess.trialStartFailed' => 'Couldn\'t save the trial on this device. Please try again.',
-			'appAccess.lifetimeTitle' => 'PlezyNG unlocked for life',
-			'appAccess.lifetimeBody' => 'Thanks! You have lifetime access to every PlezyNG feature.',
-			'appAccess.manageTitle' => 'PlezyNG lifetime access',
-			'appAccess.manageDescription' => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.',
-			'appAccess.buy' => ({required Object price}) => 'Unlock every feature for ${price}',
-			'appAccess.loadingPrice' => 'Loading store price...',
-			'appAccess.retryPrice' => 'Retry price lookup',
-			'appAccess.restore' => 'Restore lifetime purchase',
-			'appAccess.pending' => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.',
-			'appAccess.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
-			'appAccess.productNotFound' => 'The PlezyNG lifetime unlock isn\'t available in this store yet.',
-			'appAccess.productQueryFailed' => 'Couldn\'t load the store price. Check your connection and try again.',
-			'appAccess.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
-			'appAccess.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
-			'appAccess.nothingToRestore' => 'No PlezyNG lifetime purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donate to support development',
@@ -12454,8 +12410,6 @@ extension on Translations {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
 			'settings.audioChannelLimit' => 'Audio Channels',
@@ -12493,6 +12447,8 @@ extension on Translations {
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
 			'settings.hdrSdrConversionDevice' => 'Device',
@@ -12954,7 +12910,6 @@ extension on Translations {
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
 			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -12968,8 +12923,6 @@ extension on Translations {
 			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
@@ -12993,8 +12946,6 @@ extension on Translations {
 			'videoControls.unmuteButton' => 'Unmute',
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
-			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
-			'videoControls.trackSelectionAuto' => 'Automatic selection',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
@@ -13004,17 +12955,16 @@ extension on Translations {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
-			'videoControls.openMiniPlayer' => 'Open mini player',
-			'videoControls.returnToFullPlayer' => 'Return to full player',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
 			'videoControls.rotationLockButton' => 'Rotation lock',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
-			'videoControls.longPressToUnlock' => 'Long press to unlock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -13038,8 +12988,6 @@ extension on Translations {
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
-			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
-			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -13048,7 +12996,6 @@ extension on Translations {
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
-			'videoControls.skipAds' => 'Skip Ads',
 			'videoControls.nextEpisode' => 'Next Episode',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Track ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Subtitle ${name}',
@@ -13056,6 +13003,16 @@ extension on Translations {
 			'videoControls.osdSubtitlesOff' => 'Subtitles: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Subtitles: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames', ), 
+			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
+			'videoControls.trackSelectionAuto' => 'Automatic selection',
+			'videoControls.openMiniPlayer' => 'Open mini player',
+			'videoControls.returnToFullPlayer' => 'Return to full player',
+			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
+			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
+			'videoControls.skipAds' => 'Skip Ads',
+			'videoControls.tapToUnlock' => 'Tap to unlock',
+			'videoControls.tapAgainToUnlock' => 'Tap again to unlock',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -13482,8 +13439,6 @@ extension on Translations {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
@@ -13520,6 +13475,8 @@ extension on Translations {
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
@@ -13601,7 +13558,6 @@ extension on Translations {
 			'logs.saveLogs' => 'Save Logs to File',
 			'logs.logsSaved' => ({required Object path}) => 'Logs saved to ${path}',
 			'logs.saveLogsFailed' => 'Could not save the log file.',
-			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'startup.failedTitle' => 'PlezyNG could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'PlezyNG\'s saved settings file is damaged and has to be rebuilt before PlezyNG can start. Retrying will not help — choose Repair storage.',
@@ -13996,8 +13952,6 @@ extension on Translations {
 			'watchTogether.connecting' => 'Connecting...',
 			'watchTogether.relayPublic' => 'Rooms use the public Open Watch Party relays.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rooms use your relay at ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.roomActions' => 'Room actions',
 			'watchTogether.renameRoom' => 'Rename Room',
@@ -14035,6 +13989,8 @@ extension on Translations {
 			'watchTogether.playAnyway' => 'Play Anyway',
 			'watchTogether.chooseAnotherCopy' => 'Choose Another Copy',
 			'watchTogether.dontPlay' => 'Don\'t Play',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'You don\'t have this video',
 			'watchTogether.unavailableDescription' => 'PlezyNG couldn\'t find it in your libraries. Pick a copy yourself or search again.',
 			'watchTogether.chooseCopy' => 'Choose a Copy',
@@ -14510,8 +14466,6 @@ extension on Translations {
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
@@ -14549,6 +14503,8 @@ extension on Translations {
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			'metadataEdit.tags' => 'Tags',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Add tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Director',
@@ -14739,6 +14695,43 @@ extension on Translations {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.',
 			'addServer.allowHttp' => 'Allow HTTP',
 			'addServer.httpsRequired' => 'Use HTTPS or explicitly allow an unencrypted connection.',
+			'cast.chooseDevice' => 'Cast to a device',
+			'cast.searching' => 'Searching for Cast devices…',
+			'cast.connectedTo' => ({required Object device}) => 'Connected to ${device}',
+			'cast.device' => 'Cast device',
+			'cast.readyToCast' => 'Ready to cast',
+			'cast.subtitle' => 'Subtitles',
+			'cast.serverNotAvailable' => 'The media server is not available.',
+			'cast.stopCasting' => 'Stop casting',
+			'cast.castToDevice' => 'Cast to device',
+			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
+			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
+			'automation.noActivePlayback' => 'There is no active video session to control.',
+			'notifications.newEpisodeTitle' => 'New episode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Try every feature free for 7 days',
+			'appAccess.description' => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.',
+			'appAccess.trialEndedDescription' => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.',
+			'appAccess.startTrial' => 'Start my 7-day free trial',
+			'appAccess.trialActive' => 'Your 7-day full-feature trial is active.',
+			'appAccess.trialEnded' => 'Your 7-day trial has ended',
+			'appAccess.trialStartFailed' => 'Couldn\'t save the trial on this device. Please try again.',
+			'appAccess.lifetimeTitle' => 'PlezyNG unlocked for life',
+			'appAccess.lifetimeBody' => 'Thanks! You have lifetime access to every PlezyNG feature.',
+			'appAccess.manageTitle' => 'PlezyNG lifetime access',
+			'appAccess.manageDescription' => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.',
+			'appAccess.buy' => ({required Object price}) => 'Unlock every feature for ${price}',
+			'appAccess.loadingPrice' => 'Loading store price...',
+			'appAccess.retryPrice' => 'Retry price lookup',
+			'appAccess.restore' => 'Restore lifetime purchase',
+			'appAccess.pending' => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.',
+			'appAccess.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'appAccess.productNotFound' => 'The PlezyNG lifetime unlock isn\'t available in this store yet.',
+			'appAccess.productQueryFailed' => 'Couldn\'t load the store price. Check your connection and try again.',
+			'appAccess.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'appAccess.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'appAccess.nothingToRestore' => 'No PlezyNG lifetime purchase was found for this store account.',
+			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
 			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
 			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
@@ -14874,7 +14867,7 @@ extension on Translations {
 			'universalMedia.saveFavorite' => 'Save favorite',
 			'universalMedia.playNow' => 'Play now',
 			'universalMedia.favoriteSaved' => 'Stream favorite saved to this profile',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ), 
 			'universalMedia.playlistAddress' => 'Playlist address',
 			'universalMedia.playlistAddressHelp' => 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.',
 			'universalMedia.choosePlaylist' => 'Choose playlist file',
@@ -14884,7 +14877,7 @@ extension on Translations {
 			'universalMedia.removeFavorite' => 'Remove stream favorite',
 			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
 			'universalMedia.chooseFiles' => 'Choose files',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '1 selected file', other: '${count} selected files', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '1 selected file', other: '${count} selected files', ), 
 			'universalMedia.wifiTransfer' => 'Send files over Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Transfer supported files from a browser on the same trusted network.',
 			'universalMedia.wifiTransferIntro' => 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.',
@@ -14895,7 +14888,7 @@ extension on Translations {
 			'universalMedia.copyAddress' => 'Copy transfer address',
 			'universalMedia.addressCopied' => 'Transfer address copied',
 			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Received ${size}',
 			'universalMedia.stopTransfer' => 'Stop transfer and invalidate address',
 			'universalMedia.startTransfer' => 'Start transfer',
@@ -15024,6 +15017,8 @@ extension on Translations {
 			'fileSources.bookmark' => 'Add bookmark',
 			'fileSources.highlight' => 'Highlight',
 			'fileSources.note' => 'Note',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Delete',
 			'fileSources.export' => 'Export notes',
 			'fileSources.exported' => 'Notes exported',
@@ -15136,8 +15131,6 @@ extension on Translations {
 			'fileSources.offlineQuotaHelp' => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.',
 			'fileSources.offlineStorageUsage' => 'Offline storage',
 			'fileSources.reservedStorage' => 'reserved',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Download queue',
 			'fileSources.downloadRunning' => 'Downloading',
 			'fileSources.downloadQueued' => 'Waiting',
@@ -15457,8 +15450,6 @@ extension on Translations {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
-			'videoControls.tapToUnlock' => 'Tap to unlock',
-			'videoControls.tapAgainToUnlock' => 'Tap again to unlock',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

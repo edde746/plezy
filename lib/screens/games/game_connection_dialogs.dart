@@ -44,15 +44,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
     for (final c in [_name, _address, _port, _mac]) {
       c.dispose();
     }
-    for (final node in [
-      _protocolFocus,
-      _nameFocus,
-      _addressFocus,
-      _portFocus,
-      _macFocus,
-      _saveFocus,
-      _cancelFocus,
-    ]) {
+    for (final node in [_protocolFocus, _nameFocus, _addressFocus, _portFocus, _macFocus, _saveFocus, _cancelFocus]) {
       node.dispose();
     }
     super.dispose();

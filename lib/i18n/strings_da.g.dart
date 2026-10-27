@@ -41,15 +41,11 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$da app = _Translations$app$da._(_root);
-	@override late final _Translations$cast$da cast = _Translations$cast$da._(_root);
-	@override late final _Translations$automation$da automation = _Translations$automation$da._(_root);
-	@override late final _Translations$notifications$da notifications = _Translations$notifications$da._(_root);
 	@override late final _Translations$appIcon$da appIcon = _Translations$appIcon$da._(_root);
 	@override late final _Translations$auth$da auth = _Translations$auth$da._(_root);
 	@override late final _Translations$common$da common = _Translations$common$da._(_root);
 	@override late final _Translations$screens$da screens = _Translations$screens$da._(_root);
 	@override late final _Translations$update$da update = _Translations$update$da._(_root);
-	@override late final _Translations$appAccess$da appAccess = _Translations$appAccess$da._(_root);
 	@override late final _Translations$settings$da settings = _Translations$settings$da._(_root);
 	@override late final _Translations$themeEditor$da themeEditor = _Translations$themeEditor$da._(_root);
 	@override late final _Translations$search$da search = _Translations$search$da._(_root);
@@ -75,7 +71,6 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$da serverSelection = _Translations$serverSelection$da._(_root);
 	@override late final _Translations$hubDetail$da hubDetail = _Translations$hubDetail$da._(_root);
 	@override late final _Translations$logs$da logs = _Translations$logs$da._(_root);
-	@override late final _Translations$detail$da detail = _Translations$detail$da._(_root);
 	@override late final _Translations$startup$da startup = _Translations$startup$da._(_root);
 	@override late final _Translations$licenses$da licenses = _Translations$licenses$da._(_root);
 	@override late final _Translations$navigation$da navigation = _Translations$navigation$da._(_root);
@@ -98,6 +93,11 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$da seerr = _Translations$seerr$da._(_root);
 	@override late final _Translations$services$da services = _Translations$services$da._(_root);
 	@override late final _Translations$addServer$da addServer = _Translations$addServer$da._(_root);
+	@override late final _Translations$cast$da cast = _Translations$cast$da._(_root);
+	@override late final _Translations$automation$da automation = _Translations$automation$da._(_root);
+	@override late final _Translations$notifications$da notifications = _Translations$notifications$da._(_root);
+	@override late final _Translations$appAccess$da appAccess = _Translations$appAccess$da._(_root);
+	@override late final _Translations$detail$da detail = _Translations$detail$da._(_root);
 	@override late final _Translations$watchLink$da watchLink = _Translations$watchLink$da._(_root);
 	@override late final _Translations$homeLayout$da homeLayout = _Translations$homeLayout$da._(_root);
 	@override late final _Translations$platform$da platform = _Translations$platform$da._(_root);
@@ -108,6 +108,7 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$sourceSetup$da sourceSetup = _Translations$sourceSetup$da._(_root);
 	@override late final _Translations$comics$da comics = _Translations$comics$da._(_root);
 	@override late final _Translations$games$da games = _Translations$games$da._(_root);
+	@override late final _Translations$deepLinks$da deepLinks = _Translations$deepLinks$da._(_root);
 }
 
 // Path: app
@@ -118,48 +119,6 @@ class _Translations$app$da extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$da extends Translations$cast$en {
-	_Translations$cast$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Sæt på en enhed';
-	@override String get searching => 'Søg efter enheder...';
-	@override String connectedTo({required Object device}) => 'Tilslut til ${device}';
-	@override String get device => 'Cast udstyr';
-	@override String get readyToCast => 'Klar til at kastes';
-	@override String get subtitle => 'Undertekster';
-	@override String get serverNotAvailable => 'Media server er ikke tilgængelig.';
-	@override String get stopCasting => 'Stop med casting';
-	@override String get castToDevice => 'Sæt på enheden';
-	@override String get noEpisodeAvailable => 'Der er ingen episode til rådighed til at udskrive.';
-	@override String get startFailed => 'Kan ikke begynde at kaste. tjek serveren og prøv igen.';
-}
-
-// Path: automation
-class _Translations$automation$da extends Translations$automation$en {
-	_Translations$automation$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Der er ingen aktive video sessioner til at styre.';
-	@override String get profileNotFound => 'Det Plezy profil kunne ikke findes.';
-}
-
-// Path: notifications
-class _Translations$notifications$da extends Translations$notifications$en {
-	_Translations$notifications$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Ny episode';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -322,37 +281,6 @@ class _Translations$update$da extends Translations$update$en {
 	@override String get viewRelease => 'Vis udgivelse';
 	@override String get latestVersion => 'Du har den nyeste version';
 	@override String get checkFailed => 'Kunne ikke søge efter opdateringer';
-}
-
-// Path: appAccess
-class _Translations$appAccess$da extends Translations$appAccess$en {
-	_Translations$appAccess$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Prøv hver funktion gratis i 7 dage';
-	@override String get description => 'Start en syv dages forsøg med fuld adgang til hver PlezyNG funktion. Der er ingen gebyrer under forsøget og ingen abonnement. Efter forsøget, en livslang køb på din butikens pris blokerer PlezyNG for livet.';
-	@override String get trialEndedDescription => 'Unlock alle funktioner i PlezyNG for livet med én køb til din butik pris.';
-	@override String get startTrial => 'Start min 7 dages gratis prøve';
-	@override String get trialActive => 'Din 7-dages fuldt ud funktionstest er aktiv.';
-	@override String get trialEnded => 'Din 7 dages forhandling er over';
-	@override String get trialStartFailed => 'Jeg kunne ikke spare prøven på denne enhed. bedes prøve igen.';
-	@override String get lifetimeTitle => 'PlezyNG udslukket til livet';
-	@override String get lifetimeBody => 'Du har livslang adgang til alle PlezyNG funktioner.';
-	@override String get manageTitle => 'PlezyNG Livslang adgang';
-	@override String get manageDescription => 'Prøv hver funktion gratis i 7 dage, og derefter låse alt for livet med en betaling til din butik.';
-	@override String buy({required Object price}) => 'Udsluk alle funktioner for ${price}';
-	@override String get loadingPrice => 'Laden af pris...';
-	@override String get retryPrice => 'Returnering af priset';
-	@override String get restore => 'Tilbage livslang køb';
-	@override String get pending => 'Din køb venter på betaling eller godkendelse. Livslang adgang lukker ud, så snart butikken afsluttede det.';
-	@override String get storeUnavailable => 'Kontroller, at du er indmeldt i butikken og køb er tilladt på denne enhed.';
-	@override String get productNotFound => 'Den PlezyNG livslang lås er endnu ikke tilgængelig i denne butik.';
-	@override String get productQueryFailed => 'Jeg kunne ikke opkræve butikken pris. Tjek din forbindelse og prøv igen.';
-	@override String get purchaseFailed => 'Købet er ikke gået igennem. prøv igen.';
-	@override String get restoreFailed => 'Jeg kunne ikke komme til butikken for at genoprette din køb. prøv igen.';
-	@override String get nothingToRestore => 'PlezyNG livslang køb blev fundet for denne butik konto.';
 }
 
 // Path: settings
@@ -1235,10 +1163,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} udstyr',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} rammer',
-	);
 	@override String get audioLabel => 'Lyd';
 	@override String get subtitlesLabel => 'Undertekster';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1275,8 +1199,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Slå lyden til';
 	@override String get settingsButton => 'Afspilningsindstillinger';
 	@override String get tracksButton => 'Lyd og undertekster';
-	@override String get trackSelectionTitle => 'Vælg spor før playback';
-	@override String get trackSelectionAuto => 'Automatisk udvælgelse';
 	@override String get chaptersButton => 'Kapitler';
 	@override String get versionQualityButton => 'Version og kvalitet';
 	@override String get versionColumnHeader => 'Version';
@@ -1286,8 +1208,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transkodning utilgængelig — afspiller original kvalitet';
 	@override String get subtitleUnavailableFallback => 'De valgte undertekster kunne ikke indlæses — afspilningen fortsætter uden undertekster';
 	@override String get pipButton => 'Billede-i-billede-tilstand';
-	@override String get openMiniPlayer => 'Åbent mini spiller';
-	@override String get returnToFullPlayer => 'Tilbage til fuld spiller';
 	@override String get aspectRatioButton => 'Billedformat';
 	@override String get ambientLighting => 'Omgivelsesbelysning';
 	@override String get fullscreenButton => 'Fuldskærm';
@@ -1296,7 +1216,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Rotationslås';
 	@override String get lockScreen => 'Lås skærm';
 	@override String get screenLockButton => 'Skærmlås';
-	@override String get longPressToUnlock => 'Hold nede for at låse op';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Lydstyrkeniveau';
 	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
@@ -1313,8 +1232,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Ingen elementer i køen';
 	@override String get noAudioDevicesAvailable => 'Ingen lydenheder tilgængelige';
 	@override String get searchSubtitles => 'Søg undertekster';
-	@override String get loadSubtitleFile => 'Download af filen undertitel.';
-	@override String get subtitleLoadFailed => 'Ikke lad ned undertitel fil';
 	@override String get language => 'Sprog';
 	@override String get noSubtitlesFound => 'Ingen undertekster fundet';
 	@override String get subtitleDownloaded => 'Undertekst downloadet';
@@ -1323,7 +1240,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Søg sprog...';
 	@override String get skipIntro => 'Spring intro over';
 	@override String get skipCredits => 'Spring rulletekster over';
-	@override String get skipAds => 'Skær Ads';
 	@override String get nextEpisode => 'Næste episode';
 	@override String subtitleTrack({required Object n}) => 'Spor ${n}';
 	@override String subtitleFile({required Object name}) => 'Undertekst ${name}';
@@ -1331,6 +1247,19 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Undertekster: Fra';
 	@override String osdSubtitles({required Object track}) => 'Undertekster: ${track}';
 	@override String osdAudio({required Object track}) => 'Lyd: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} udstyr',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} rammer',
+	);
+	@override String get trackSelectionTitle => 'Vælg spor før playback';
+	@override String get trackSelectionAuto => 'Automatisk udvælgelse';
+	@override String get openMiniPlayer => 'Åbent mini spiller';
+	@override String get returnToFullPlayer => 'Tilbage til fuld spiller';
+	@override String get loadSubtitleFile => 'Download af filen undertitel.';
+	@override String get subtitleLoadFailed => 'Ikke lad ned undertitel fil';
+	@override String get skipAds => 'Skær Ads';
+	@override String get tapToUnlock => 'Tryk for at låse op';
+	@override String get tapAgainToUnlock => 'Tryk igen for at låse op';
 }
 
 // Path: messages
@@ -1828,16 +1757,6 @@ class _Translations$logs$da extends Translations$logs$en {
 	@override String get saveLogs => 'Spare logs til filer';
 	@override String logsSaved({required Object path}) => 'Logs gemt til ${path}';
 	@override String get saveLogsFailed => 'Jeg kunne ikke gemme den logfil.';
-}
-
-// Path: detail
-class _Translations$detail$da extends Translations$detail$en {
-	_Translations$detail$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
 }
 
 // Path: startup
@@ -2907,6 +2826,88 @@ class _Translations$addServer$da extends Translations$addServer$en {
 	@override String get httpsRequired => 'Brug HTTPS eller udtrykkeligt tillade en ikke-krypteret forbindelse.';
 }
 
+// Path: cast
+class _Translations$cast$da extends Translations$cast$en {
+	_Translations$cast$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Sæt på en enhed';
+	@override String get searching => 'Søg efter enheder...';
+	@override String connectedTo({required Object device}) => 'Tilslut til ${device}';
+	@override String get device => 'Cast udstyr';
+	@override String get readyToCast => 'Klar til at kastes';
+	@override String get subtitle => 'Undertekster';
+	@override String get serverNotAvailable => 'Media server er ikke tilgængelig.';
+	@override String get stopCasting => 'Stop med casting';
+	@override String get castToDevice => 'Sæt på enheden';
+	@override String get noEpisodeAvailable => 'Der er ingen episode til rådighed til at udskrive.';
+	@override String get startFailed => 'Kan ikke begynde at kaste. tjek serveren og prøv igen.';
+}
+
+// Path: automation
+class _Translations$automation$da extends Translations$automation$en {
+	_Translations$automation$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Der er ingen aktive video sessioner til at styre.';
+}
+
+// Path: notifications
+class _Translations$notifications$da extends Translations$notifications$en {
+	_Translations$notifications$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Ny episode';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$da extends Translations$appAccess$en {
+	_Translations$appAccess$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Prøv hver funktion gratis i 7 dage';
+	@override String get description => 'Start en syv dages forsøg med fuld adgang til hver PlezyNG funktion. Der er ingen gebyrer under forsøget og ingen abonnement. Efter forsøget, en livslang køb på din butikens pris blokerer PlezyNG for livet.';
+	@override String get trialEndedDescription => 'Unlock alle funktioner i PlezyNG for livet med én køb til din butik pris.';
+	@override String get startTrial => 'Start min 7 dages gratis prøve';
+	@override String get trialActive => 'Din 7-dages fuldt ud funktionstest er aktiv.';
+	@override String get trialEnded => 'Din 7 dages forhandling er over';
+	@override String get trialStartFailed => 'Jeg kunne ikke spare prøven på denne enhed. bedes prøve igen.';
+	@override String get lifetimeTitle => 'PlezyNG udslukket til livet';
+	@override String get lifetimeBody => 'Du har livslang adgang til alle PlezyNG funktioner.';
+	@override String get manageTitle => 'PlezyNG Livslang adgang';
+	@override String get manageDescription => 'Prøv hver funktion gratis i 7 dage, og derefter låse alt for livet med en betaling til din butik.';
+	@override String buy({required Object price}) => 'Udsluk alle funktioner for ${price}';
+	@override String get loadingPrice => 'Laden af pris...';
+	@override String get retryPrice => 'Returnering af priset';
+	@override String get restore => 'Tilbage livslang køb';
+	@override String get pending => 'Din køb venter på betaling eller godkendelse. Livslang adgang lukker ud, så snart butikken afsluttede det.';
+	@override String get storeUnavailable => 'Kontroller, at du er indmeldt i butikken og køb er tilladt på denne enhed.';
+	@override String get productNotFound => 'Den PlezyNG livslang lås er endnu ikke tilgængelig i denne butik.';
+	@override String get productQueryFailed => 'Jeg kunne ikke opkræve butikken pris. Tjek din forbindelse og prøv igen.';
+	@override String get purchaseFailed => 'Købet er ikke gået igennem. prøv igen.';
+	@override String get restoreFailed => 'Jeg kunne ikke komme til butikken for at genoprette din køb. prøv igen.';
+	@override String get nothingToRestore => 'PlezyNG livslang køb blev fundet for denne butik konto.';
+}
+
+// Path: detail
+class _Translations$detail$da extends Translations$detail$en {
+	_Translations$detail$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Slutter kl. ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$da extends Translations$watchLink$en {
 	_Translations$watchLink$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -3177,7 +3178,6 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get converterDesktopOnly => 'Lokal konvertering er tilgængelig på skrivebord computere med FFmpeg installeret.';
 	@override String get converterStart => 'Konverter filer';
 }
-
 
 // Path: fileSources
 class _Translations$fileSources$da extends Translations$fileSources$en {
@@ -3724,6 +3724,32 @@ class _Translations$games$da extends Translations$games$en {
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$da extends Translations$deepLinks$en {
+	_Translations$deepLinks$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Denne Plezy link er ikke gyldig.';
+	@override String profileNotFound({required Object profile}) => 'Der er ingen profil, der svarer til "${profile}".';
+	@override String get serverUnavailable => 'Jeg kunne ikke nå serveren for denne link.';
+	@override String get notFound => 'Jeg kan ikke finde titlen i dine biblioteker.';
+	@override String get unsupportedItem => 'Denne link kan ikke spilles.';
+	@override String get noLiveTv => 'Der er ingen Live TV-server til rådighed for denne link.';
+	@override String channelNotFound({required Object channel}) => 'Kan ikke finde kanal "${channel}".';
+	@override String get showLink => 'Se linket';
+	@override String get showProfileLink => 'Se profil link';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Åbning af denne link spiller den næste episode. tilføje &mode=shuffle til at spille showet på shuffle.';
+	@override String get movieHint => 'Åbningen af denne link spiller filmen.';
+	@override String get episodeHint => 'Åbningen af denne link spiller denne episode.';
+	@override String get profileHint => 'Åbning af denne link skifter til denne profil.';
+	@override String openAsProfile({required Object name}) => 'Åbne som ${name}';
+	@override String get copy => 'Kopiering';
+	@override String get copied => 'Link kopieret';
 }
 
 // Path: appIcon.names
@@ -4840,21 +4866,6 @@ extension on TranslationsDa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Sæt på en enhed',
-			'cast.searching' => 'Søg efter enheder...',
-			'cast.connectedTo' => ({required Object device}) => 'Tilslut til ${device}',
-			'cast.device' => 'Cast udstyr',
-			'cast.readyToCast' => 'Klar til at kastes',
-			'cast.subtitle' => 'Undertekster',
-			'cast.serverNotAvailable' => 'Media server er ikke tilgængelig.',
-			'cast.stopCasting' => 'Stop med casting',
-			'cast.castToDevice' => 'Sæt på enheden',
-			'cast.noEpisodeAvailable' => 'Der er ingen episode til rådighed til at udskrive.',
-			'cast.startFailed' => 'Kan ikke begynde at kaste. tjek serveren og prøv igen.',
-			'automation.noActivePlayback' => 'Der er ingen aktive video sessioner til at styre.',
-			'automation.profileNotFound' => 'Det Plezy profil kunne ikke findes.',
-			'notifications.newEpisodeTitle' => 'Ny episode',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Nuværende ikon',
@@ -5017,28 +5028,6 @@ extension on TranslationsDa {
 			'update.viewRelease' => 'Vis udgivelse',
 			'update.latestVersion' => 'Du har den nyeste version',
 			'update.checkFailed' => 'Kunne ikke søge efter opdateringer',
-			'appAccess.title' => 'Prøv hver funktion gratis i 7 dage',
-			'appAccess.description' => 'Start en syv dages forsøg med fuld adgang til hver PlezyNG funktion. Der er ingen gebyrer under forsøget og ingen abonnement. Efter forsøget, en livslang køb på din butikens pris blokerer PlezyNG for livet.',
-			'appAccess.trialEndedDescription' => 'Unlock alle funktioner i PlezyNG for livet med én køb til din butik pris.',
-			'appAccess.startTrial' => 'Start min 7 dages gratis prøve',
-			'appAccess.trialActive' => 'Din 7-dages fuldt ud funktionstest er aktiv.',
-			'appAccess.trialEnded' => 'Din 7 dages forhandling er over',
-			'appAccess.trialStartFailed' => 'Jeg kunne ikke spare prøven på denne enhed. bedes prøve igen.',
-			'appAccess.lifetimeTitle' => 'PlezyNG udslukket til livet',
-			'appAccess.lifetimeBody' => 'Du har livslang adgang til alle PlezyNG funktioner.',
-			'appAccess.manageTitle' => 'PlezyNG Livslang adgang',
-			'appAccess.manageDescription' => 'Prøv hver funktion gratis i 7 dage, og derefter låse alt for livet med en betaling til din butik.',
-			'appAccess.buy' => ({required Object price}) => 'Udsluk alle funktioner for ${price}',
-			'appAccess.loadingPrice' => 'Laden af pris...',
-			'appAccess.retryPrice' => 'Returnering af priset',
-			'appAccess.restore' => 'Tilbage livslang køb',
-			'appAccess.pending' => 'Din køb venter på betaling eller godkendelse. Livslang adgang lukker ud, så snart butikken afsluttede det.',
-			'appAccess.storeUnavailable' => 'Kontroller, at du er indmeldt i butikken og køb er tilladt på denne enhed.',
-			'appAccess.productNotFound' => 'Den PlezyNG livslang lås er endnu ikke tilgængelig i denne butik.',
-			'appAccess.productQueryFailed' => 'Jeg kunne ikke opkræve butikken pris. Tjek din forbindelse og prøv igen.',
-			'appAccess.purchaseFailed' => 'Købet er ikke gået igennem. prøv igen.',
-			'appAccess.restoreFailed' => 'Jeg kunne ikke komme til butikken for at genoprette din køb. prøv igen.',
-			'appAccess.nothingToRestore' => 'PlezyNG livslang køb blev fundet for denne butik konto.',
 			'settings.title' => 'Indstillinger',
 			'settings.supportDeveloper' => 'Støt PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donér for at støtte udviklingen',
@@ -5351,8 +5340,6 @@ extension on TranslationsDa {
 			'settings.audioPassthrough' => 'Lyd-passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionApple' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. På iOS, iPadOS og tvOS 26 eller nyere afspilles TrueHD Atmos og DTS:X som rumlig lyd. Andre DTS- og TrueHD-spor afspilles som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Fra, mens lydstyrkenormalisering er slået til',
 			'settings.audioChannelLimit' => 'Lydkanaler',
@@ -5390,6 +5377,8 @@ extension on TranslationsDa {
 			'settings.disableDolbyVisionDescription' => 'Afspil filens HDR10- eller HLG-lag i stedet for Dolby Vision, når det findes',
 			'settings.hdrSdrConversion' => 'HDR til SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Vælg, hvad der konverterer HDR-video, når skærmen ikke kan vise HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Automatisk',
 			'settings.hdrSdrConversionAutoDescription' => 'Enhed på Android 9 og nyere, afspiller på ældre versioner',
 			'settings.hdrSdrConversionDevice' => 'Enhed',
@@ -5851,7 +5840,6 @@ extension on TranslationsDa {
 			'tooltips.markAsWatched' => 'Markér som set',
 			'tooltips.markAsUnwatched' => 'Markér som uset',
 			'audioTracks.track' => ({required Object n}) => 'Lydspor ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} udstyr', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} rammer', ), 
 			'videoControls.audioLabel' => 'Lyd',
 			'videoControls.subtitlesLabel' => 'Undertekster',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5865,8 +5853,6 @@ extension on TranslationsDa {
 			'videoControls.sleepTimerEndOfVideo' => 'Slutningen af aktuel video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stop ved',
 			'videoControls.sleepTimerDurationHeader' => 'Varighed',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Afspilningen sættes på pause ved slutningen af denne video',
 			'videoControls.stillWatching' => 'Ser du stadig?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Sætter på pause om ${seconds} s',
@@ -5890,8 +5876,6 @@ extension on TranslationsDa {
 			'videoControls.unmuteButton' => 'Slå lyden til',
 			'videoControls.settingsButton' => 'Afspilningsindstillinger',
 			'videoControls.tracksButton' => 'Lyd og undertekster',
-			'videoControls.trackSelectionTitle' => 'Vælg spor før playback',
-			'videoControls.trackSelectionAuto' => 'Automatisk udvælgelse',
 			'videoControls.chaptersButton' => 'Kapitler',
 			'videoControls.versionQualityButton' => 'Version og kvalitet',
 			'videoControls.versionColumnHeader' => 'Version',
@@ -5901,17 +5885,16 @@ extension on TranslationsDa {
 			'videoControls.transcodeUnavailableFallback' => 'Transkodning utilgængelig — afspiller original kvalitet',
 			'videoControls.subtitleUnavailableFallback' => 'De valgte undertekster kunne ikke indlæses — afspilningen fortsætter uden undertekster',
 			'videoControls.pipButton' => 'Billede-i-billede-tilstand',
-			'videoControls.openMiniPlayer' => 'Åbent mini spiller',
-			'videoControls.returnToFullPlayer' => 'Tilbage til fuld spiller',
 			'videoControls.aspectRatioButton' => 'Billedformat',
 			'videoControls.ambientLighting' => 'Omgivelsesbelysning',
 			'videoControls.fullscreenButton' => 'Fuldskærm',
 			'videoControls.exitFullscreenButton' => 'Forlad fuldskærm',
 			'videoControls.alwaysOnTopButton' => 'Altid øverst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lås skærm',
 			'videoControls.screenLockButton' => 'Skærmlås',
-			'videoControls.longPressToUnlock' => 'Hold nede for at låse op',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Lydstyrkeniveau',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
@@ -5935,8 +5918,6 @@ extension on TranslationsDa {
 			'videoControls.noQueueItems' => 'Ingen elementer i køen',
 			'videoControls.noAudioDevicesAvailable' => 'Ingen lydenheder tilgængelige',
 			'videoControls.searchSubtitles' => 'Søg undertekster',
-			'videoControls.loadSubtitleFile' => 'Download af filen undertitel.',
-			'videoControls.subtitleLoadFailed' => 'Ikke lad ned undertitel fil',
 			'videoControls.language' => 'Sprog',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster fundet',
 			'videoControls.subtitleDownloaded' => 'Undertekst downloadet',
@@ -5945,7 +5926,6 @@ extension on TranslationsDa {
 			'videoControls.searchLanguages' => 'Søg sprog...',
 			'videoControls.skipIntro' => 'Spring intro over',
 			'videoControls.skipCredits' => 'Spring rulletekster over',
-			'videoControls.skipAds' => 'Skær Ads',
 			'videoControls.nextEpisode' => 'Næste episode',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Spor ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Undertekst ${name}',
@@ -5953,6 +5933,16 @@ extension on TranslationsDa {
 			'videoControls.osdSubtitlesOff' => 'Undertekster: Fra',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Undertekster: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Lyd: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} udstyr', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} rammer', ), 
+			'videoControls.trackSelectionTitle' => 'Vælg spor før playback',
+			'videoControls.trackSelectionAuto' => 'Automatisk udvælgelse',
+			'videoControls.openMiniPlayer' => 'Åbent mini spiller',
+			'videoControls.returnToFullPlayer' => 'Tilbage til fuld spiller',
+			'videoControls.loadSubtitleFile' => 'Download af filen undertitel.',
+			'videoControls.subtitleLoadFailed' => 'Ikke lad ned undertitel fil',
+			'videoControls.skipAds' => 'Skær Ads',
+			'videoControls.tapToUnlock' => 'Tryk for at låse op',
+			'videoControls.tapAgainToUnlock' => 'Tryk igen for at låse op',
 			'messages.markedAsWatched' => 'Markeret som set',
 			'messages.markedAsUnwatched' => 'Markeret som uset',
 			'messages.markedAsWatchedOffline' => 'Markeret som set (synkroniseres online)',
@@ -6379,8 +6369,6 @@ extension on TranslationsDa {
 			'libraries.all' => 'Alle',
 			'libraries.clearAll' => 'Ryd alle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil scanne "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil analysere "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
@@ -6417,6 +6405,8 @@ extension on TranslationsDa {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
 			'libraries.filterCategories.tag' => 'Tag',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Usete',
 			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
 			'libraries.filterCategories.favorites' => 'Favoritter',
@@ -6498,7 +6488,6 @@ extension on TranslationsDa {
 			'logs.saveLogs' => 'Spare logs til filer',
 			'logs.logsSaved' => ({required Object path}) => 'Logs gemt til ${path}',
 			'logs.saveLogsFailed' => 'Jeg kunne ikke gemme den logfil.',
-			'detail.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
 			'startup.failedTitle' => 'PlezyNG kunne ikke starte',
 			'startup.failedBody' => 'Der gik noget galt under opstart. Oplysningerne nedenfor viser, hvad der gik galt.',
 			'startup.failedBodyRepairable' => 'PlezyNG\'s gemte indstillingsfil er beskadiget og skal genopbygges, før PlezyNG kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.',
@@ -6893,8 +6882,6 @@ extension on TranslationsDa {
 			'watchTogether.connecting' => 'Forbinder...',
 			'watchTogether.relayPublic' => 'Rum bruger de offentlige Open Watch Party-relayservere.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rum bruger din relayserver på ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Seneste rum',
 			'watchTogether.roomActions' => 'Handlinger for rum',
 			'watchTogether.renameRoom' => 'Omdøb rum',
@@ -6932,6 +6919,8 @@ extension on TranslationsDa {
 			'watchTogether.playAnyway' => 'Afspil alligevel',
 			'watchTogether.chooseAnotherCopy' => 'Vælg en anden kopi',
 			'watchTogether.dontPlay' => 'Afspil ikke',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Du har ikke denne video',
 			'watchTogether.unavailableDescription' => 'PlezyNG kunne ikke finde den i dine biblioteker. Vælg selv en kopi, eller søg igen.',
 			'watchTogether.chooseCopy' => 'Vælg en kopi',
@@ -7407,8 +7396,6 @@ extension on TranslationsDa {
 			'metadataEdit.metadataUpdateFailed' => 'Kunne ikke opdatere metadata',
 			'metadataEdit.artworkUpdated' => 'Grafik opdateret',
 			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke opdatere grafik',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Ingen grafik tilgængelig',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Grafikvalg ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Grafikvalg ${index}, valgt',
@@ -7446,6 +7433,8 @@ extension on TranslationsDa {
 			'metadataEdit.shownWithForeignAudio' => 'Vis ved fremmedsproget lyd',
 			'metadataEdit.alwaysEnabled' => 'Altid aktiveret',
 			'metadataEdit.tags' => 'Tags',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Tilføj tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Instruktør',
@@ -7636,6 +7625,43 @@ extension on TranslationsDa {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} bruger HTTP. Andre på netværket kan læse eller ændre din adgangskode, dine tokens og dine medier. Brug HTTPS, når det er muligt. Fortsæt kun, hvis du stoler på netværket og accepterer risikoen.',
 			'addServer.allowHttp' => 'Tillad HTTP',
 			'addServer.httpsRequired' => 'Brug HTTPS eller udtrykkeligt tillade en ikke-krypteret forbindelse.',
+			'cast.chooseDevice' => 'Sæt på en enhed',
+			'cast.searching' => 'Søg efter enheder...',
+			'cast.connectedTo' => ({required Object device}) => 'Tilslut til ${device}',
+			'cast.device' => 'Cast udstyr',
+			'cast.readyToCast' => 'Klar til at kastes',
+			'cast.subtitle' => 'Undertekster',
+			'cast.serverNotAvailable' => 'Media server er ikke tilgængelig.',
+			'cast.stopCasting' => 'Stop med casting',
+			'cast.castToDevice' => 'Sæt på enheden',
+			'cast.noEpisodeAvailable' => 'Der er ingen episode til rådighed til at udskrive.',
+			'cast.startFailed' => 'Kan ikke begynde at kaste. tjek serveren og prøv igen.',
+			'automation.noActivePlayback' => 'Der er ingen aktive video sessioner til at styre.',
+			'notifications.newEpisodeTitle' => 'Ny episode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Prøv hver funktion gratis i 7 dage',
+			'appAccess.description' => 'Start en syv dages forsøg med fuld adgang til hver PlezyNG funktion. Der er ingen gebyrer under forsøget og ingen abonnement. Efter forsøget, en livslang køb på din butikens pris blokerer PlezyNG for livet.',
+			'appAccess.trialEndedDescription' => 'Unlock alle funktioner i PlezyNG for livet med én køb til din butik pris.',
+			'appAccess.startTrial' => 'Start min 7 dages gratis prøve',
+			'appAccess.trialActive' => 'Din 7-dages fuldt ud funktionstest er aktiv.',
+			'appAccess.trialEnded' => 'Din 7 dages forhandling er over',
+			'appAccess.trialStartFailed' => 'Jeg kunne ikke spare prøven på denne enhed. bedes prøve igen.',
+			'appAccess.lifetimeTitle' => 'PlezyNG udslukket til livet',
+			'appAccess.lifetimeBody' => 'Du har livslang adgang til alle PlezyNG funktioner.',
+			'appAccess.manageTitle' => 'PlezyNG Livslang adgang',
+			'appAccess.manageDescription' => 'Prøv hver funktion gratis i 7 dage, og derefter låse alt for livet med en betaling til din butik.',
+			'appAccess.buy' => ({required Object price}) => 'Udsluk alle funktioner for ${price}',
+			'appAccess.loadingPrice' => 'Laden af pris...',
+			'appAccess.retryPrice' => 'Returnering af priset',
+			'appAccess.restore' => 'Tilbage livslang køb',
+			'appAccess.pending' => 'Din køb venter på betaling eller godkendelse. Livslang adgang lukker ud, så snart butikken afsluttede det.',
+			'appAccess.storeUnavailable' => 'Kontroller, at du er indmeldt i butikken og køb er tilladt på denne enhed.',
+			'appAccess.productNotFound' => 'Den PlezyNG livslang lås er endnu ikke tilgængelig i denne butik.',
+			'appAccess.productQueryFailed' => 'Jeg kunne ikke opkræve butikken pris. Tjek din forbindelse og prøv igen.',
+			'appAccess.purchaseFailed' => 'Købet er ikke gået igennem. prøv igen.',
+			'appAccess.restoreFailed' => 'Jeg kunne ikke komme til butikken for at genoprette din køb. prøv igen.',
+			'appAccess.nothingToRestore' => 'PlezyNG livslang køb blev fundet for denne butik konto.',
+			'detail.endsAt' => ({required Object time}) => 'Slutter kl. ${time}',
 			'watchLink.serverUnavailable' => 'Jeg kunne ikke nå en server på Plex for denne link.',
 			'watchLink.notFound' => 'Jeg kunne ikke finde denne show eller film på dine Plex servere.',
 			'watchLink.ambiguous' => 'Denne link matcher elementer på mere end én server. tilføje en server til linket.',
@@ -7771,7 +7797,7 @@ extension on TranslationsDa {
 			'universalMedia.saveFavorite' => 'Beskytt favorit',
 			'universalMedia.playNow' => 'Spil nu',
 			'universalMedia.favoriteSaved' => 'Stream favorit gemt til denne profil',
-			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Skiftede ${count} ustøttet eller usikre playlist indgang.', other: 'Skiftede ${count} uafhængige eller usikre playlist-indtægter.', ),
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Skiftede ${count} ustøttet eller usikre playlist indgang.', other: 'Skiftede ${count} uafhængige eller usikre playlist-indtægter.', ), 
 			'universalMedia.playlistAddress' => 'Playlist adresser',
 			'universalMedia.playlistAddressHelp' => 'Åbn en M3U, M3u8 eller PLS playlist fra en webadresse. direkte streaming links gemmer ikke playlisten.',
 			'universalMedia.choosePlaylist' => 'Vælg Playlist fil',
@@ -7781,7 +7807,7 @@ extension on TranslationsDa {
 			'universalMedia.removeFavorite' => 'Fjern streaming favorit',
 			'universalMedia.filesHelp' => 'Vælg lyd, video eller ISO-filer for en midlertidig kue. filer og URL\'er tilføjes ikke til bibliotekets historie.',
 			'universalMedia.chooseFiles' => 'Vælg filer',
-			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '1 udvalgte filer', other: '${count} udvalgte filer', ),
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '1 udvalgte filer', other: '${count} udvalgte filer', ), 
 			'universalMedia.wifiTransfer' => 'Send filer via Wi-Fi',
 			'universalMedia.wifiTransferHelp' => 'Overfør støttet filer fra en browser til det samme pålidelige netværk.',
 			'universalMedia.wifiTransferIntro' => 'Åbn denne adresse i en browser på en anden enhed.Vælg filer for at tilføje dem til denne enheds Filer og bøger bibliotek.',
@@ -7792,7 +7818,7 @@ extension on TranslationsDa {
 			'universalMedia.copyAddress' => 'Kopierer overførselsadresse',
 			'universalMedia.addressCopied' => 'Overførselsadresse kopieret',
 			'universalMedia.transferExpires' => ({required Object time}) => 'Denne adresse udløber i ${time}.',
-			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${count} fil modtaget', other: '${count} filer modtaget', ),
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${count} fil modtaget', other: '${count} filer modtaget', ), 
 			'universalMedia.uploadedData' => ({required Object size}) => 'Gennemførte ${size}',
 			'universalMedia.stopTransfer' => 'Stop overførsel og annullere adressen',
 			'universalMedia.startTransfer' => 'Start overførsel',
@@ -7921,6 +7947,8 @@ extension on TranslationsDa {
 			'fileSources.bookmark' => 'Tilføj Bookmark',
 			'fileSources.highlight' => 'Højtegn',
 			'fileSources.note' => 'Bemærk',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.delete' => 'Slet',
 			'fileSources.export' => 'Eksport noter',
 			'fileSources.exported' => 'Noter eksporteret',
@@ -8033,8 +8061,6 @@ extension on TranslationsDa {
 			'fileSources.offlineQuotaHelp' => 'Sæt den maksimale plads, der bruges af offline kopier, importerede filer og nedladninger. Lavere grænsen fjerner ikke eksisterende kopier.',
 			'fileSources.offlineStorageUsage' => 'Offline opbevaring',
 			'fileSources.reservedStorage' => 'Reserveret',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Download af Queue',
 			'fileSources.downloadRunning' => 'nedladning',
 			'fileSources.downloadQueued' => 'Venter',
@@ -8354,6 +8380,23 @@ extension on TranslationsDa {
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Denne Plezy link er ikke gyldig.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Der er ingen profil, der svarer til "${profile}".',
+			'deepLinks.serverUnavailable' => 'Jeg kunne ikke nå serveren for denne link.',
+			'deepLinks.notFound' => 'Jeg kan ikke finde titlen i dine biblioteker.',
+			'deepLinks.unsupportedItem' => 'Denne link kan ikke spilles.',
+			'deepLinks.noLiveTv' => 'Der er ingen Live TV-server til rådighed for denne link.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Kan ikke finde kanal "${channel}".',
+			'deepLinks.showLink' => 'Se linket',
+			'deepLinks.showProfileLink' => 'Se profil link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Åbning af denne link spiller den næste episode. tilføje &mode=shuffle til at spille showet på shuffle.',
+			'deepLinks.movieHint' => 'Åbningen af denne link spiller filmen.',
+			'deepLinks.episodeHint' => 'Åbningen af denne link spiller denne episode.',
+			'deepLinks.profileHint' => 'Åbning af denne link skifter til denne profil.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Åbne som ${name}',
+			'deepLinks.copy' => 'Kopiering',
+			'deepLinks.copied' => 'Link kopieret',
 			_ => null,
 		};
 	}

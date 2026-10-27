@@ -1,6 +1,6 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish Snap Store packages
-run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}:channel:{3}', inputs.action, inputs.runner_pool, inputs.release_tag, inputs.channel) }}
 
 on:
   workflow_dispatch:
