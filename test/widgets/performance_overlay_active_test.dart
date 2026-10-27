@@ -30,7 +30,6 @@ class _CountingStatsPlayer implements Player {
     fileLoaded: Stream.empty(),
     fileLoadFailed: Stream.empty(),
     primaryMediaReady: Stream.empty(),
-    backendSwitched: Stream.empty(),
   );
 
   @override
@@ -41,9 +40,6 @@ class _CountingStatsPlayer implements Player {
     statsCalls++;
     return {'playerType': 'mpv', 'demuxer-cache-state': '{"fw-bytes":12582912}'};
   }
-
-  @override
-  Future<String> runtimePlayerType() async => 'mpv';
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

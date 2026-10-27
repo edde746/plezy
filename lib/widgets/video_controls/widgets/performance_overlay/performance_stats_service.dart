@@ -11,8 +11,8 @@ import 'performance_stats.dart';
 
 /// Service that polls player properties and provides performance stats via a stream.
 ///
-/// Supports both MPV (desktop/iOS) and ExoPlayer (Android) backends.
-/// Handles runtime backend switching (e.g., ExoPlayer -> MPV fallback on Android).
+/// Android reads the stats the native mpv plugin aggregates; other platforms
+/// query mpv properties directly.
 ///
 /// Usage:
 /// ```dart
@@ -37,10 +37,6 @@ class PerformanceStatsService {
   bool _fpsTrackingActive = false;
   bool _fpsCallbackRegistered = false;
 
-  // Track runtime player type for logging (can differ from Dart object type after fallback)
-  // Values: 'exoplayer', 'mpv', or 'unknown'
-  String _runtimePlayerType = 'unknown';
-  StreamSubscription<void>? _backendSwitchedSubscription;
   bool _fetchInProgress = false;
   bool _disposed = false;
 
@@ -52,24 +48,11 @@ class PerformanceStatsService {
   void startPolling() {
     _pollingTimer?.cancel();
 
-    // Listen for backend switches (only the Android ExoPlayer -> MPV
-    // fallback ever emits; the stream is silent elsewhere).
-    _backendSwitchedSubscription?.cancel();
-    _backendSwitchedSubscription = player.streams.backendSwitched.listen((_) {
-      _updateRuntimePlayerType();
-    });
-
     // Start FPS tracking
     _startFpsTracking();
     // Fetch immediately, then poll
     _fetchStats();
     _pollingTimer = Timer.periodic(pollInterval, (_) => _fetchStats());
-  }
-
-  /// Update the runtime player type by querying the native layer.
-  Future<void> _updateRuntimePlayerType() async {
-    _runtimePlayerType = await player.runtimePlayerType();
-    appLogger.d('Performance stats: runtime player type updated to $_runtimePlayerType');
   }
 
   void _startFpsTracking() {
@@ -112,17 +95,9 @@ class PerformanceStatsService {
     if (_disposed || _fetchInProgress) return;
     _fetchInProgress = true;
     try {
-      // Ensure we know the runtime type on first fetch
-      if (_runtimePlayerType == 'unknown') {
-        await _updateRuntimePlayerType();
-      }
-
       if (player.providesNativeStats) {
-        // Android (ExoPlayer or MPV fallback): the native side returns
-        // appropriate stats based on which backend is active.
         await _fetchAndroidStats();
       } else {
-        // For mpv-channel players, use MPV property queries
         await _fetchMpvStats();
       }
     } catch (e) {
@@ -132,11 +107,9 @@ class PerformanceStatsService {
     }
   }
 
-  /// Fetch stats from Android player (ExoPlayer or MPV fallback).
-  /// The native side returns appropriate stats based on the active backend.
+  /// Fetch the stats the Android mpv plugin aggregates natively.
   Future<void> _fetchAndroidStats() async {
     final statsMap = await player.getStats();
-    final playerType = statsMap['playerType'] as String? ?? 'unknown';
 
     // Get app memory usage
     int? appMemory;
@@ -144,102 +117,59 @@ class PerformanceStatsService {
       appMemory = ProcessInfo.currentRss;
     } catch (_) {}
 
-    if (playerType == 'mpv') {
-      // Parse MPV stats format (returned when in fallback mode)
-      final audio = _resolveAudioDisplay(
-        format: statsMap['audio-params/format'] as String?,
-        samplerate: statsMap['audio-params/samplerate'] as String?,
-        hrChannels: statsMap['audio-params/hr-channels'] as String?,
-        demuxSamplerate: statsMap['current-tracks/audio/demux-samplerate'] as String?,
-        demuxChannelCount: statsMap['current-tracks/audio/demux-channel-count'] as String?,
-      );
-      final stats = PerformanceStats(
-        playerType: 'mpv',
-        videoCodec: _formatVideoCodecName(statsMap['video-codec'] as String?),
-        videoWidth: _parseInt(statsMap['video-params/w'] as String?),
-        videoHeight: _parseInt(statsMap['video-params/h'] as String?),
-        videoFps: _parseDouble(statsMap['container-fps'] as String?),
-        actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
-        videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
-        hwdecCurrent: statsMap['hwdec-current'] as String?,
-        audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
-        audioSamplerate: audio.samplerate,
-        audioChannels: audio.channels,
-        audioPassthroughFormat: audio.passthroughFormat,
-        audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
-        avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
-        cacheUsed: _parseCacheForwardBytes(statsMap['demuxer-cache-state'] as String?),
-        cacheLimit: _parseCacheLimitBytes(
-          statsMap['demuxer-max-bytes'] as String?,
-          statsMap['demuxer-max-back-bytes'] as String?,
-        ),
-        cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
-        displayFps: _parseDouble(statsMap['display-fps'] as String?),
-        frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
-        decoderFrameDropCount: _parseInt(statsMap['decoder-frame-drop-count'] as String?),
-        cacheDuration: _parseDouble(statsMap['demuxer-cache-duration'] as String?),
-        // Color/Format properties
-        pixelformat: statsMap['video-params/pixelformat'] as String?,
-        hwPixelformat: statsMap['video-params/hw-pixelformat'] as String?,
-        colormatrix: statsMap['video-params/colormatrix'] as String?,
-        primaries: statsMap['video-params/primaries'] as String?,
-        gamma: statsMap['video-params/gamma'] as String?,
-        // HDR metadata
-        maxLuma: _parseDouble(statsMap['video-params/max-luma'] as String?),
-        minLuma: _parseDouble(statsMap['video-params/min-luma'] as String?),
-        maxCll: _parseDouble(statsMap['video-params/max-cll'] as String?),
-        maxFall: _parseDouble(statsMap['video-params/max-fall'] as String?),
-        // Other
-        aspectName: statsMap['video-params/aspect-name'] as String?,
-        rotate: _parseInt(statsMap['video-params/rotate'] as String?),
-        // Dolby Vision: the bitstream's profile and what decodes it
-        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
-        dvRoute: DvRoute.fromId(statsMap['dvRoute'] as String?),
-        appMemoryBytes: appMemory,
-        uiFps: _currentUiFps,
-      );
-      _emit(stats);
-    } else {
-      // Parse ExoPlayer stats format
-      final stats = PerformanceStats(
-        playerType: 'exoplayer',
-        // Video metrics
-        videoCodec: _formatVideoCodecName((statsMap['videoCodec'] ?? statsMap['videoMimeType']) as String?),
-        videoWidth: statsMap['videoWidth'] as int?,
-        videoHeight: statsMap['videoHeight'] as int?,
-        videoFps: (statsMap['videoFps'] as num?)?.toDouble(),
-        videoBitrate: statsMap['videoBitrate'] as int?,
-        videoDecoderName: statsMap['videoDecoderName'] as String?,
-        // Audio metrics
-        audioCodec: _formatAudioCodecName((statsMap['audioCodec'] ?? statsMap['audioMimeType']) as String?),
-        audioSamplerate: statsMap['audioSampleRate'] as int?,
-        audioChannels: CodecUtils.formatAudioChannels(statsMap['audioChannels'] as int?),
-        audioBitrate: statsMap['audioBitrate'] as int?,
-        audioDecoderName: statsMap['audioDecoderName'] as String?,
-        // Tunneling
-        tunneledPlayback: statsMap['tunneledPlayback'] == true,
-        tunnelingStatus: statsMap['tunnelingStatus'] as String?,
-        // Performance metrics
-        frameDropCount: statsMap['videoDroppedFrames'] as int?,
-        // Buffer metrics - convert ms to seconds for duration
-        cacheDuration: ((statsMap['totalBufferedDurationMs'] as int?) ?? 0) / 1000.0,
-        bufferTargetBytes: statsMap['bufferTargetBytes'] as int?,
-        bufferMaxMs: statsMap['bufferMaxMs'] as int?,
-        // DV conversion
-        dvConversionActive: statsMap['dvConversionActive'] == true,
-        dvConversionMode: statsMap['dvConversionMode'] as String? ?? '',
-        dvConvertedRpus: (statsMap['dvConvertedRpus'] as num?)?.toInt(),
-        dvRpuConversionFailures: (statsMap['dvRpuConversionFailures'] as num?)?.toInt(),
-        dvAvgRpuConversionUs: (statsMap['dvAvgRpuConversionUs'] as num?)?.toInt(),
-        dvAvgSampleProcessingUs: (statsMap['dvAvgSampleProcessingUs'] as num?)?.toInt(),
-        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
-        dvPlaybackPath: statsMap['dvPlaybackPath'] as String?,
-        // App metrics
-        appMemoryBytes: appMemory,
-        uiFps: _currentUiFps,
-      );
-      _emit(stats);
-    }
+    final audio = _resolveAudioDisplay(
+      format: statsMap['audio-params/format'] as String?,
+      samplerate: statsMap['audio-params/samplerate'] as String?,
+      hrChannels: statsMap['audio-params/hr-channels'] as String?,
+      demuxSamplerate: statsMap['current-tracks/audio/demux-samplerate'] as String?,
+      demuxChannelCount: statsMap['current-tracks/audio/demux-channel-count'] as String?,
+    );
+    final stats = PerformanceStats(
+      playerType: 'mpv',
+      videoCodec: _formatVideoCodecName(statsMap['video-codec'] as String?),
+      videoWidth: _parseInt(statsMap['video-params/w'] as String?),
+      videoHeight: _parseInt(statsMap['video-params/h'] as String?),
+      videoFps: _parseDouble(statsMap['container-fps'] as String?),
+      actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
+      videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
+      hwdecCurrent: statsMap['hwdec-current'] as String?,
+      audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
+      audioSamplerate: audio.samplerate,
+      audioChannels: audio.channels,
+      audioPassthroughFormat: audio.passthroughFormat,
+      audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
+      avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
+      cacheUsed: _parseCacheForwardBytes(statsMap['demuxer-cache-state'] as String?),
+      cacheLimit: _parseCacheLimitBytes(
+        statsMap['demuxer-max-bytes'] as String?,
+        statsMap['demuxer-max-back-bytes'] as String?,
+      ),
+      cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
+      displayFps: _parseDouble(statsMap['display-fps'] as String?),
+      frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
+      decoderFrameDropCount: _parseInt(statsMap['decoder-frame-drop-count'] as String?),
+      cacheDuration: _parseDouble(statsMap['demuxer-cache-duration'] as String?),
+      // Color/Format properties
+      pixelformat: statsMap['video-params/pixelformat'] as String?,
+      hwPixelformat: statsMap['video-params/hw-pixelformat'] as String?,
+      colormatrix: statsMap['video-params/colormatrix'] as String?,
+      primaries: statsMap['video-params/primaries'] as String?,
+      gamma: statsMap['video-params/gamma'] as String?,
+      // HDR metadata
+      maxLuma: _parseDouble(statsMap['video-params/max-luma'] as String?),
+      minLuma: _parseDouble(statsMap['video-params/min-luma'] as String?),
+      maxCll: _parseDouble(statsMap['video-params/max-cll'] as String?),
+      maxFall: _parseDouble(statsMap['video-params/max-fall'] as String?),
+      // Other
+      aspectName: statsMap['video-params/aspect-name'] as String?,
+      rotate: _parseInt(statsMap['video-params/rotate'] as String?),
+      // Dolby Vision: the bitstream's profile and what decodes it
+      dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
+      dvRoute: DvRoute.fromId(statsMap['dvRoute'] as String?),
+      appMemoryBytes: appMemory,
+      uiFps: _currentUiFps,
+    );
+    _emit(stats);
   }
 
   /// Fetch stats from MPV via property queries.
@@ -433,10 +363,9 @@ class PerformanceStatsService {
   }
 
   /// Format a video codec name for display. Handles mpv's descriptive
-  /// strings ('hevc (Main 10)'), ExoPlayer's RFC 6381 codec IDs
-  /// ('hvc1.2.4.L153.B0', 'av01.0.08M.10'), and `video/...` MIME types
-  /// ('video/hevc') used as a fallback when the container carries no
-  /// codecs string.
+  /// strings ('hevc (Main 10)') as well as RFC 6381 codec IDs
+  /// ('hvc1.2.4.L153.B0', 'av01.0.08M.10') and `video/...` MIME types
+  /// ('video/hevc').
   String? _formatVideoCodecName(String? codec) {
     if (codec == null || codec.isEmpty) return null;
     final upper = codec.toUpperCase();
@@ -456,8 +385,7 @@ class PerformanceStatsService {
     return codec;
   }
 
-  /// Format an audio codec name for display. Both mpv's ffmpeg names and
-  /// ExoPlayer's RFC 6381 codec IDs go through the shared mapping.
+  /// Format an audio codec name for display through the shared mapping.
   String? _formatAudioCodecName(String? codec) {
     if (codec == null || codec.isEmpty) return null;
     return CodecUtils.formatAudioCodec(codec);
@@ -467,8 +395,6 @@ class PerformanceStatsService {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
-    _backendSwitchedSubscription?.cancel();
-    _backendSwitchedSubscription = null;
     stopPolling();
     _statsController.close();
   }

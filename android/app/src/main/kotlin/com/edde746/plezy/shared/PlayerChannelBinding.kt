@@ -57,10 +57,6 @@ internal class PlayerChannelBinding(
     }
   }
 
-  fun emitProperty(id: Int, value: Any?) {
-    runOnMain { eventSink?.success(listOf(id, value)) }
-  }
-
   fun emitProperty(id: Int, value: Any?, sourceId: Long?) {
     runOnMain { eventSink?.success(listOf(id, value, sourceId)) }
   }

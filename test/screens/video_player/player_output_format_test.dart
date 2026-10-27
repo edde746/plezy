@@ -4,8 +4,7 @@ import 'package:plezy/screens/video_player/player_output_format.dart';
 import '../../test_helpers/watch_together_fakes.dart';
 
 /// A player whose mpv properties are exactly the given map; anything else
-/// is unavailable, as a backend without the property (ExoPlayer) or a chain
-/// that has not configured yet reports it.
+/// is unavailable, as a chain that has not configured yet reports it.
 class _PropertyPlayer extends FakeSyncPlayer {
   _PropertyPlayer(this._properties);
 

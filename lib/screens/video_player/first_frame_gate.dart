@@ -11,7 +11,7 @@ typedef FirstFrameSnapshot = ({bool uiReady, bool rendered});
 /// - [uiReady] drives the UI (spinner, chrome, controls readiness). It may be
 ///   forced true after a startup failure purely to hide the loading spinner.
 /// - [rendered] is the stricter reporting latch: only a renderer event (or
-///   the established non-ExoPlayer position fallback) marks it, and progress
+///   the established position fallback) marks it, and progress
 ///   reporting/watchdog gating read it.
 ///
 /// The [uiReady] notifier is created once per screen and must keep its

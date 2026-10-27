@@ -23,8 +23,8 @@ PlaybackFailureAction resolve({
 void main() {
   group('HTTP 403', () {
     test('on-demand playback treats the refusal as terminal', () {
-      // The server refused this account or connection (#2510); no retry,
-      // quality change, or backend switch gets past it.
+      // The server refused this account or connection (#2510); no retry or
+      // quality change gets past it.
       expect(resolve(statuses: {403}), PlaybackFailureAction.playbackNotAllowedDialog);
     });
 
@@ -46,8 +46,8 @@ void main() {
 
   group('HTTP 404', () {
     test('on-demand playback treats it as terminal', () {
-      // The file behind the item is unreadable server-side (#1750); no retry,
-      // quality change, or backend switch recovers it.
+      // The file behind the item is unreadable server-side (#1750); no retry
+      // or quality change recovers it.
       expect(resolve(statuses: {404}), PlaybackFailureAction.mediaUnreadableDialog);
       expect(resolve(cause: PlayerError.serverHttp404), PlaybackFailureAction.mediaUnreadableDialog);
     });

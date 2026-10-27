@@ -440,7 +440,6 @@ void main() {
       const primaryUri = 'https://example.test/source/primary.ass';
       const secondaryUri = 'https://example.test/source/secondary.ass';
       final player = _FakeTrackSheetPlayer(
-        supportsSecondarySubtitles: true,
         tracks: const Tracks(
           subtitle: [
             SubtitleTrack(id: 's1', title: 'Primary sidecar', codec: 'ass', isExternal: true, uri: primaryUri),
@@ -739,38 +738,31 @@ Future<void> _pumpTrackSheet(
 }
 
 class _FakeTrackSheetPlayer implements Player {
-  _FakeTrackSheetPlayer({
-    required Tracks tracks,
-    required TrackSelection track,
-    this.supportsSecondarySubtitles = false,
-  }) : _state = PlayerState(tracks: tracks, track: track),
-       _streams = PlayerStreams(
-         playing: const Stream<bool>.empty(),
-         completed: const Stream<bool>.empty(),
-         buffering: const Stream<bool>.empty(),
-         position: const Stream<Duration>.empty(),
-         duration: const Stream<Duration>.empty(),
-         seekable: const Stream<bool>.empty(),
-         buffer: const Stream<Duration>.empty(),
-         volume: const Stream<double>.empty(),
-         rate: const Stream<double>.empty(),
-         tracks: const Stream<Tracks>.empty(),
-         track: const Stream<TrackSelection>.empty(),
-         log: const Stream<PlayerLog>.empty(),
-         error: const Stream<PlayerError>.empty(),
-         audioDevice: const Stream<AudioDevice>.empty(),
-         audioDevices: const Stream<List<AudioDevice>>.empty(),
-         bufferRanges: const Stream<List<BufferRange>>.empty(),
-         playbackRestart: const Stream<void>.empty(),
-         backendSwitched: const Stream<void>.empty(),
-       );
+  _FakeTrackSheetPlayer({required Tracks tracks, required TrackSelection track})
+    : _state = PlayerState(tracks: tracks, track: track),
+      _streams = PlayerStreams(
+        playing: const Stream<bool>.empty(),
+        completed: const Stream<bool>.empty(),
+        buffering: const Stream<bool>.empty(),
+        position: const Stream<Duration>.empty(),
+        duration: const Stream<Duration>.empty(),
+        seekable: const Stream<bool>.empty(),
+        buffer: const Stream<Duration>.empty(),
+        volume: const Stream<double>.empty(),
+        rate: const Stream<double>.empty(),
+        tracks: const Stream<Tracks>.empty(),
+        track: const Stream<TrackSelection>.empty(),
+        log: const Stream<PlayerLog>.empty(),
+        error: const Stream<PlayerError>.empty(),
+        audioDevice: const Stream<AudioDevice>.empty(),
+        audioDevices: const Stream<List<AudioDevice>>.empty(),
+        bufferRanges: const Stream<List<BufferRange>>.empty(),
+        playbackRestart: const Stream<void>.empty(),
+      );
 
   final PlayerState _state;
   final PlayerStreams _streams;
   SubtitleTrack? lastSelectedSubtitle;
-
-  @override
-  final bool supportsSecondarySubtitles;
 
   @override
   PlayerState get state => _state;

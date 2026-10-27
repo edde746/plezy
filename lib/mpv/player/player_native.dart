@@ -103,11 +103,10 @@ class PlayerNative extends PlayerBase {
 
   /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
   ///
-  /// Served by the always-registered mpv plugin, so it works whichever backend
-  /// is playing. Successful positive results are memoized — the playback-open
-  /// hot path asks again on every open. Failures keep returning 0 without
-  /// being cached, so a transient channel error can't pin the fallback for the
-  /// process lifetime.
+  /// Served by the always-registered mpv plugin. Successful positive results
+  /// are memoized — the playback-open hot path asks again on every open.
+  /// Failures keep returning 0 without being cached, so a transient channel
+  /// error can't pin the fallback for the process lifetime.
   static Future<int> getHeapSize() async {
     final cached = _cachedHeapSizeMB;
     if (cached != null) return cached;
@@ -254,8 +253,8 @@ class PlayerNative extends PlayerBase {
     try {
       // The video core carries the session's decode intent so Android can
       // choose its vo before mpv_initialize, and the subtitle "Render
-      // Resolution" fraction for its vo=mediacodec OSD plane (the same knob the
-      // ExoPlayer overlay honors; other platforms size the OSD themselves).
+      // Resolution" fraction for its vo=mediacodec OSD plane (other platforms
+      // size the OSD themselves).
       // The OSD plane is presented on the video's own timestamp: shifting it
       // by a display period put it on the vsync Amlogic's compositor latches
       // the next picture on and pushed that picture a vsync late (a 4:1 hold

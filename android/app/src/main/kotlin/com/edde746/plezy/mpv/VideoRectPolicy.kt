@@ -10,9 +10,7 @@ import kotlin.math.pow
  * The fork `vo=mediacodec` scales decoded buffers to the whole Surface and
  * implements none of mpv's src/dst rect math, so aspect, cover and zoom are
  * view geometry: the video surface is sized to the rectangle the image should
- * occupy and the container clips whatever falls outside it. That mirrors the
- * ExoPlayer path, which scales its own surface and keeps the subtitle overlay
- * on the full-size container.
+ * occupy and the container clips whatever falls outside it.
  */
 internal object VideoRectPolicy {
   /**

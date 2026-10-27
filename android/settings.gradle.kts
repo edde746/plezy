@@ -24,4 +24,3 @@ plugins {
 }
 
 include(":app")
-include(":libass")

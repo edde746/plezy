@@ -35,7 +35,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
     // corrupt the SettingsGroup corner shapes).
     return SettingsBuilder(
       prefs: const [
-        SettingsService.useExoPlayer,
         SettingsService.matchRefreshRate,
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
@@ -45,23 +44,19 @@ class PlaybackSettingsScreen extends StatelessWidget {
       ],
       builder: (context) {
         final svc = SettingsService.instance;
-        final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
-        // ExoPlayer only has the stereo fold, so a 5.1 limit set on mpv plays
-        // (and shows) as Original there.
-        final storedChannelLimit = svc.read(SettingsService.audioChannelLimit);
-        final channelLimit = exoActive ? storedChannelLimit.onExoPlayer : storedChannelLimit;
+        final channelLimit = svc.read(SettingsService.audioChannelLimit);
         final showDisplaySwitchDelay =
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
-        // Android mpv and Apple TV only: ExoPlayer is not taking new features, and
-        // elsewhere no Dolby Vision signal ever reaches the display.
-        final showDisableDolbyVision = (Platform.isAndroid && !exoActive) || PlatformDetector.isAppleTV();
+        // Android and Apple TV only: elsewhere no Dolby Vision signal ever
+        // reaches the display.
+        final showDisableDolbyVision = Platform.isAndroid || PlatformDetector.isAppleTV();
         // With Dolby Vision disabled mpv strips every Profile 7 file, so the
         // conversion choices would change nothing.
-        final showDvConversionMode = Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision));
+        final showDvConversionMode = Platform.isAndroid && !svc.read(SettingsService.disableDolbyVision);
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -69,12 +64,9 @@ class PlaybackSettingsScreen extends StatelessWidget {
             SettingsGroup(
               title: t.settings.player,
               children: [
-                if (Platform.isAndroid) _playerBackendSelector(),
                 if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
-                if (!exoActive) _mpvConfigTile(),
+                _mpvConfigTile(),
                 _hardwareDecodingTile(),
-                if (exoActive) _playbackBufferTile(),
-                if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
               ],
             ),
@@ -89,11 +81,8 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
-                // mpv-only: ExoPlayer always leaves the conversion to the device.
-                if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
-                // mpv-only (#2149): ExoPlayer has no filter chain, so the
-                // tile disappears while the ExoPlayer backend is active.
-                if (!exoActive) _deinterlaceTile(),
+                if (Platform.isAndroid) _hdrSdrConversionTile(),
+                _deinterlaceTile(),
                 // TODO: "Extend video into display cutout" toggle (#1769)
                 // goes here, Android-only.
               ],
@@ -103,7 +92,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
               title: t.settings.audio,
               children: [
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
-                _audioChannelLimitTile(exoActive: exoActive),
+                _audioChannelLimitTile(),
                 // Only a stereo fold mixes the center away; any fold can clip.
                 if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
                 if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
@@ -418,16 +407,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
     ],
   );
 
-  Widget _playerBackendSelector() => SettingSegmentedTile<bool>(
-    pref: SettingsService.useExoPlayer,
-    icon: Symbols.play_circle_rounded,
-    title: t.settings.playerBackend,
-    segments: [
-      ButtonSegment(value: true, label: Text(t.settings.exoPlayer)),
-      ButtonSegment(value: false, label: Text(t.settings.mpv)),
-    ],
-  );
-
   Widget _externalPlayerTile() => SettingsBuilder(
     prefs: [SettingsService.useExternalPlayer, SettingsService.selectedExternalPlayer],
     builder: (context) {
@@ -522,9 +501,9 @@ class PlaybackSettingsScreen extends StatelessWidget {
     DeinterlaceMode.film => t.settings.deinterlaceFilm,
   };
 
-  // Normalization wins over passthrough in the player (neither mpv's filter nor
-  // ExoPlayer's platform effect can process a bitstream), so the switch reports
-  // that override instead of promising bitstreaming that will not happen.
+  // Normalization wins over passthrough in the player (mpv's filter cannot
+  // process a bitstream), so the switch reports that override instead of
+  // promising bitstreaming that will not happen.
   Widget _audioPassthroughTile() => SettingsBuilder(
     prefs: const [SettingsService.audioNormalization],
     builder: (context) {
@@ -545,14 +524,13 @@ class PlaybackSettingsScreen extends StatelessWidget {
     },
   );
 
-  Widget _audioChannelLimitTile({required bool exoActive}) => SettingSelectionTile<AudioChannelLimit>(
+  Widget _audioChannelLimitTile() => SettingSelectionTile<AudioChannelLimit>(
     pref: SettingsService.audioChannelLimit,
     icon: Symbols.speaker_group_rounded,
     title: t.settings.audioChannelLimit,
-    subtitleBuilder: (limit) =>
-        '${audioChannelLimitLabel(exoActive ? limit.onExoPlayer : limit)} · ${t.settings.audioChannelLimitDescription}',
+    subtitleBuilder: (limit) => '${audioChannelLimitLabel(limit)} · ${t.settings.audioChannelLimitDescription}',
     options: [
-      for (final limit in AudioChannelLimit.available(exoPlayer: exoActive))
+      for (final limit in AudioChannelLimit.values)
         DialogOption(value: limit, title: audioChannelLimitLabel(limit), subtitle: audioChannelLimitDescription(limit)),
     ],
   );
@@ -591,13 +569,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
     subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
     labelText: t.settings.secondsLabel,
     suffixText: t.settings.secondsShort,
-  );
-
-  Widget _tunneledPlaybackTile() => SettingSwitchTile(
-    pref: SettingsService.tunneledPlayback,
-    icon: Symbols.tv_options_input_settings_rounded,
-    title: t.settings.tunneledPlayback,
-    subtitle: t.settings.tunneledPlaybackDescription,
   );
 
   Widget _disableDolbyVisionTile() => SettingSwitchTile(
@@ -652,22 +623,6 @@ class PlaybackSettingsScreen extends StatelessWidget {
     HdrSdrConversion.auto => t.settings.hdrSdrConversionAuto,
     HdrSdrConversion.device => t.settings.hdrSdrConversionDevice,
     HdrSdrConversion.player => t.settings.hdrSdrConversionPlayer,
-  };
-
-  Widget _playbackBufferTile() => SettingSelectionTile<PlaybackBufferTier>(
-    pref: SettingsService.playbackBufferTier,
-    icon: Symbols.hourglass_top_rounded,
-    title: t.settings.playbackBuffer,
-    subtitleBuilder: (tier) => '${_playbackBufferLabel(tier)} · ${t.settings.playbackBufferDescription}',
-    options: PlaybackBufferTier.values
-        .map((tier) => DialogOption(value: tier, title: _playbackBufferLabel(tier)))
-        .toList(),
-  );
-
-  String _playbackBufferLabel(PlaybackBufferTier tier) => switch (tier) {
-    PlaybackBufferTier.auto => t.settings.playbackBufferAuto,
-    PlaybackBufferTier.large => t.settings.playbackBufferLarge,
-    PlaybackBufferTier.extraLarge => t.settings.playbackBufferExtraLarge,
   };
 
   Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset>(

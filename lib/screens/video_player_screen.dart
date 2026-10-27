@@ -13,7 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/platform/player_android.dart';
 import '../mpv/player/player_native.dart';
 
 import '../services/scrub_preview_source.dart';
@@ -897,7 +896,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   BuildContext get _sheetContext => _overlayChildKey.currentContext ?? context;
 
-  // VLC-style in-player toast controller (rate changes, backend switch, etc.).
+  // VLC-style in-player toast controller (rate changes, etc.).
   final PlayerToastController _toastController = PlayerToastController();
 
   late final VisualEffectsController _visualEffects = VisualEffectsController(
@@ -929,7 +928,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   /// Android TV: release the native AV pipeline once the app stays
   /// backgrounded past the grace window. A merely paused player keeps its
-  /// MediaCodec decoders and (tunneled passthrough) AudioTrack alive, which
+  /// MediaCodec decoders and (passthrough) AudioTrack alive, which
   /// on shared-pipeline TV SoCs degrades every other app until Plezy is
   /// force-stopped. The grace absorbs transient hidden/paused blips
   /// (assistant overlay, HDMI-CEC events) so quick app switches don't churn
@@ -1299,7 +1298,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
-      _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+      _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance);
 
   /// The service layer without standing up the whole player initialization —
   /// the entry point for asserting what a screen publishes to the OS media
@@ -1709,10 +1708,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
-      final playbackBufferTier = settingsService.read(SettingsService.playbackBufferTier);
       final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
       final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
-      final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
       // Kick off getPlaybackData() before the Windows display-mode sync, the
       // music-session teardown in claimVideo(), player construction, and the
@@ -1817,7 +1814,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
-      final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
+      final currentPlayer = Player(hardwareDecoding: enableHardwareDecoding);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
       if (Platform.isAndroid) {
@@ -1829,24 +1826,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       initPhase = 'configuring player';
       await currentPlayer.configureSubtitleFonts();
       await currentPlayer.setProperty('sub-ass', 'yes'); // Enable libass
-      if (Platform.isAndroid && useExoPlayer) {
-        final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
-        await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
-        await currentPlayer.setProperty('exo-buffer-tier', playbackBufferTier.nativeValue);
-      }
       if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
         await currentPlayer.setProperty('dv-conversion-mode', dvConversionMode.nativeValue);
       }
       // Before the first file, so its opening route is already decided: a
       // later write would start it on one renderer and move it to the other.
-      if (Platform.isAndroid && !useExoPlayer) {
+      if (Platform.isAndroid) {
         final hdrSdrConversion = settingsService.read(SettingsService.hdrSdrConversion);
         await currentPlayer.setProperty('hdr-sdr-conversion', hdrSdrConversion.nativeValue);
       }
       // Also before the first file: Android mpv picks the decoder per file
       // before it opens, and tvOS asks the TV for a mode at the first frame.
-      if ((Platform.isAndroid && !useExoPlayer) || PlatformDetector.isAppleTV()) {
+      if (Platform.isAndroid || PlatformDetector.isAppleTV()) {
         final disableDolbyVision = settingsService.read(SettingsService.disableDolbyVision);
         await currentPlayer.setProperty('dolby-vision-output', disableDolbyVision ? 'no' : 'yes');
       }
@@ -1854,10 +1846,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         await currentPlayer.setProperty('dv-conversion-log', debugLoggingEnabled ? 'yes' : 'no');
       }
       // Android demuxer memory is owned natively: MpvPlayerCore caps its
-      // demuxer cache off the device heap class at init (DemuxerBudget), and
-      // ExoPlayer's LoadControlPolicy derives its own target the same way.
-      // requestAudioFocus initializes Android players, so start it only after
-      // init-time ExoPlayer options above have been cached.
+      // demuxer cache off the device heap class at init (DemuxerBudget).
       if (Platform.isAndroid && !widget.isLive) {
         _audioFocusFuture = currentPlayer.requestAudioFocus();
         _audioFocusFuture!.ignore();
@@ -1868,14 +1857,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
       await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
-      // Deinterlacing (#2149, #2710) is mpv-only by design — ExoPlayer has no
-      // filter chain. Both modes act only on content flagged interlaced. Live
-      // TV keeps plain deinterlacing under Film: broadcast mixes telecined
-      // film with sports and news shot at field rate, which inverse telecine
-      // makes stutter. Wrapped: a preference must never abort player
-      // initialization (a core that rejects the value keeps its default).
+      // Deinterlacing (#2149, #2710): both modes act only on content flagged
+      // interlaced. Live TV keeps plain deinterlacing under Film: broadcast
+      // mixes telecined film with sports and news shot at field rate, which
+      // inverse telecine makes stutter. Wrapped: a preference must never abort
+      // player initialization (a core that rejects the value keeps its default).
       final deinterlaceMode = settingsService.read(SettingsService.deinterlaceMode);
-      if (!(Platform.isAndroid && useExoPlayer) && deinterlaceMode != DeinterlaceMode.off) {
+      if (deinterlaceMode != DeinterlaceMode.off) {
         final applied = widget.isLive && deinterlaceMode == DeinterlaceMode.film
             ? DeinterlaceMode.video
             : deinterlaceMode;
@@ -1954,17 +1942,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
 
-      // Placement policy is MPV-only and independent of ASS styling. Keep the
-      // last accepted/default value on refusal; custom mpv.conf still wins below.
-      if (!(Platform.isAndroid && useExoPlayer)) {
-        try {
-          await currentPlayer.setProperty(
-            'sub-use-margins',
-            settingsService.read(SettingsService.subtitleUseMargins) ? 'yes' : 'no',
-          );
-        } catch (e) {
-          appLogger.w('VideoPlayerScreen: subtitle margins not applied', error: e);
-        }
+      // Placement policy is independent of ASS styling. Keep the last
+      // accepted/default value on refusal; custom mpv.conf still wins below.
+      try {
+        await currentPlayer.setProperty(
+          'sub-use-margins',
+          settingsService.read(SettingsService.subtitleUseMargins) ? 'yes' : 'no',
+        );
+      } catch (e) {
+        appLogger.w('VideoPlayerScreen: subtitle margins not applied', error: e);
       }
 
       if (Platform.isIOS) {
@@ -2081,9 +2067,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         await currentPlayer.setAudioNormalization(true);
       }
 
-      // After the passthrough apply: the stereo limit wins on both backends
-      // (mpv clears audio-spdif, ExoPlayer force-decodes encoded audio). The
-      // 5.1 limit only shapes decoded PCM and leaves passthrough alone.
+      // After the passthrough apply: the stereo limit wins (mpv clears
+      // audio-spdif). The 5.1 limit only shapes decoded PCM and leaves
+      // passthrough alone.
       final audioChannelLimit = settingsService.read(SettingsService.audioChannelLimit);
       if (audioChannelLimit != AudioChannelLimit.original) {
         await currentPlayer.setAudioChannelLimit(
@@ -2098,9 +2084,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       // Before custom mpv.conf, so an `audio-device` line there still wins.
-      if (!(Platform.isAndroid && useExoPlayer)) {
-        await applyPreferredAudioDevice(currentPlayer, settingsService.read(SettingsService.audioOutputDevice));
-      }
+      await applyPreferredAudioDevice(currentPlayer, settingsService.read(SettingsService.audioOutputDevice));
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
       // Only the Linux video plane owns the four real mpv properties, so only
@@ -2159,11 +2143,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       _playerBackendLabel = currentPlayer.playerType;
 
       initPhase = 'wiring player streams';
-      await _wirePlayerStreams(
-        currentPlayer: currentPlayer,
-        settingsService: settingsService,
-        useExoPlayer: useExoPlayer,
-      );
+      await _wirePlayerStreams(currentPlayer: currentPlayer, settingsService: settingsService);
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
       if (mounted) {
@@ -2527,10 +2507,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
-      // ExoPlayerCore.releasePending leaves the display mode for this call;
-      // MpvPlayerCore restores it natively on dispose and the call is
-      // idempotent there. Skip it during a player→player replacement, the
-      // Android analog of preserveDisplayMode below.
+      // MpvPlayerCore restores the display mode natively on dispose and the
+      // call is idempotent there. Skip it during a player→player replacement,
+      // the Android analog of preserveDisplayMode below.
       if (!isReplacingWithVideo) {
         player!.clearVideoFrameRate();
       }

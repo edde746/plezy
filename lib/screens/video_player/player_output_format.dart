@@ -14,7 +14,7 @@ class PlayerOutputFormat {
   const PlayerOutputFormat({required this.fps, required this.width, required this.height});
 
   /// The presented frame rate, or null while the container carries no usable
-  /// rate (ExoPlayer detects it only after a few rendered frames).
+  /// rate.
   final double? fps;
 
   /// Decoded dimensions (0 = unknown), so a transcode targets the server's
@@ -36,8 +36,7 @@ class PlayerOutputFormat {
   /// media time the caller measured a frame [step] advancing — see
   /// [presentsFields]. Under inverse telecine (`ivtc-active`, the fork's
   /// `deinterlace=ivtc`) the chain rebuilds the film frames and drops one in
-  /// five instead, so 29.97i is presented at 23.976 fps. Backends without
-  /// these properties (ExoPlayer) never deinterlace.
+  /// five instead, so 29.97i is presented at 23.976 fps.
   ///
   /// Without `container-fps` — a Matroska track with no DefaultDuration,
   /// for which mpv's own demuxer has no other source (#2607) — the rate is

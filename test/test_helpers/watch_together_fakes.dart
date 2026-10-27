@@ -82,7 +82,6 @@ class FakeSyncPlayer implements Player {
     bufferRanges: const Stream<List<BufferRange>>.empty(),
     playbackRestart: _playbackRestartController.stream,
     fileStarted: _fileStartedController.stream,
-    backendSwitched: const Stream<void>.empty(),
   );
 
   void _maybeThrow() {

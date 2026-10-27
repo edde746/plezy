@@ -62,8 +62,7 @@ MediaDisplayColorType classifyMediaDisplayColor({
 /// reports it. Display matching itself reads the decoded stream from mpv
 /// (server metadata is missing or wrong for transcodes and Live TV, and
 /// cannot see what the filter chain does to the rate); this feeds the HDR
-/// classification of stream details and ExoPlayer's pre-open switch, which
-/// has no decoded stream to read before it creates its renderers.
+/// classification of stream details and the Android GL color-transfer hint.
 class MediaDisplayCriteria {
   final double? fps;
   final int? width;

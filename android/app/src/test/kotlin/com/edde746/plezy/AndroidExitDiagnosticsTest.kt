@@ -209,42 +209,21 @@ class AndroidExitDiagnosticsTest {
   }
 
   @Test
-  fun mapsOnlyFixedRuntimeDiagnosticFields() {
+  fun mapsTheRuntimeUiState() {
     val mapped = AndroidExitReportMapper.map(
       record = HistoricalExitRecord(reason = 5, status = 0, importance = 100, timestamp = 100),
       deviceModel = "NVIDIA Shield",
       apiLevel = 35,
       abi = "arm64-v8a",
       lowRam = false,
-      runtime = RuntimeDiagnosticSnapshot(
-        codecContext = "audio:truehd",
-        channelCount = 8,
-        sampleRate = 48000,
-        selectedDecoder = "c2.android.truehd.decoder",
-        passthroughEnabled = true,
-        downmixEnabled = false,
-        normalizationEnabled = false,
-        uiState = "player"
-      )
+      runtime = RuntimeDiagnosticSnapshot(uiState = "player")
     ).toMap()
 
-    assertEquals("audio:truehd", mapped["codecContext"])
-    assertEquals(8, mapped["channelCount"])
-    assertEquals(48000, mapped["sampleRate"])
-    assertEquals("c2.android.truehd.decoder", mapped["selectedDecoder"])
-    assertEquals(true, mapped["passthroughEnabled"])
-    assertEquals(false, mapped["downmixEnabled"])
-    assertEquals(false, mapped["normalizationEnabled"])
     assertEquals("player", mapped["uiState"])
   }
 
   @Test
-  fun reducesRemoteCodecMetadataToFixedContextValues() {
-    assertEquals("audio:eac3", AndroidRuntimeDiagnostics.codecContextForMime("audio/eac3-joc"))
-    assertEquals("video:dolby_vision", AndroidRuntimeDiagnostics.codecContextForMime("video/dolby-vision"))
-    assertEquals("audio:other", AndroidRuntimeDiagnostics.codecContextForMime("audio/user-defined"))
-    assertNull(AndroidRuntimeDiagnostics.codecContextForMime("https://example.test/private"))
-    assertEquals("unknown", AndroidRuntimeDiagnostics.sanitizeDecoderName("decoder with a remote label"))
+  fun rejectsUiStatesOutsideTheFixedSet() {
     assertNull(AndroidRuntimeDiagnostics.sanitizeUiState("server-name"))
   }
 

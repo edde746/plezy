@@ -1262,12 +1262,9 @@ class TrackSelectionService {
       appLogger.d('Subtitle selection pending: native tracks have not arrived');
     }
 
-    // Apply preferred secondary subtitle track if provided (mpv-only)
+    // Apply preferred secondary subtitle track if provided
     final secondaryPreference = preferredSecondarySubtitleTrack;
-    if (secondaryPreference != null &&
-        secondaryPreference is! SubtitleOffPreference &&
-        player.supportsSecondarySubtitles &&
-        realSubtitleTracks.isNotEmpty) {
+    if (secondaryPreference != null && secondaryPreference is! SubtitleOffPreference && realSubtitleTracks.isNotEmpty) {
       final secondaryMatch = switch (secondaryPreference) {
         SubtitleOffPreference() => null,
         SubtitleTrackPreference(:final track) =>

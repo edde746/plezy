@@ -682,7 +682,7 @@ class PlexVideoControls extends StatefulWidget {
   /// Called to toggle ambient lighting (passed to settings sheet)
   final VoidCallback? onToggleAmbientLighting;
 
-  /// Toast controller for VLC-style in-player notifications (rate changes, backend switch).
+  /// Toast controller for VLC-style in-player notifications (rate changes).
   final PlayerToastController toastController;
 
   /// Seeds the chapter list so widget tests can exercise chapter-dependent

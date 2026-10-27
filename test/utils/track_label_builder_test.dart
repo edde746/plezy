@@ -196,7 +196,7 @@ void main() {
       );
     });
 
-    test('cleans raw Jellyfin/ExoPlayer subtitle metadata prefixes', () {
+    test('cleans raw title=/LANG= subtitle metadata prefixes', () {
       expect(
         TrackLabelBuilder.subtitleLabel(title: 'title=German - SUBRIP', language: 'LANG=DEU', codec: 'srt', index: 0),
         const TrackLabel('German', 'SRT'),

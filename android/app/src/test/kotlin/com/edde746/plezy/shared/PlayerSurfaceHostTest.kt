@@ -7,8 +7,8 @@ import android.view.SurfaceHolder
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -27,7 +27,7 @@ class PlayerSurfaceHostTest {
       override fun surfaceDestroyed(holder: SurfaceHolder) = Unit
     }
 
-    val container = PlayerSurfaceHost.createContainer(activity, clipChildren = true)
+    val container = PlayerSurfaceHost.createContainer(activity)
     val surface = PlayerSurfaceHost.createVideoSurface(activity, callback)
     container.addView(surface)
     val content = PlayerSurfaceHost.attachToContent(activity, container)
@@ -37,7 +37,7 @@ class PlayerSurfaceHostTest {
     assertEquals(ViewGroup.LayoutParams.MATCH_PARENT, container.layoutParams.width)
     assertEquals(ViewGroup.LayoutParams.MATCH_PARENT, container.layoutParams.height)
     assertEquals(Color.BLACK, (container.background as ColorDrawable).color)
-    assertTrue(container.clipChildren)
+    assertFalse(container.clipChildren)
     assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.width)
     assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.height)
   }

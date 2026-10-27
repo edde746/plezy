@@ -349,16 +349,8 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Mniej animacji i grafiki o niższej rozdzielczości';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków';
-	@override String get playerBackend => 'Mechanizm odtwarzania';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Dekodowanie sprzętowe';
 	@override String get hardwareDecodingDescription => 'Użyj akceleracji sprzętowej, gdy dostępna';
-	@override String get playbackBuffer => 'Bufor odtwarzania';
-	@override String get playbackBufferAuto => 'Auto (zalecane)';
-	@override String get playbackBufferLarge => 'Duży';
-	@override String get playbackBufferExtraLarge => 'Bardzo duży';
-	@override String get playbackBufferDescription => 'Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.';
 	@override String get defaultQualityTitle => 'Domyślna jakość';
 	@override String get cellularQualityTitle => 'Domyślna jakość w sieci komórkowej';
 	@override String get cellularQualitySameAsDefault => 'Taka sama jak domyślna jakość';
@@ -504,8 +496,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Dopasuj zakres dynamiki';
 	@override String get matchDynamicRangeDescription => 'Włącz HDR dla treści HDR, potem wróć do SDR';
 	@override String get displaySwitchDelay => 'Opóźnienie przełączania ekranu';
-	@override String get tunneledPlayback => 'Tunelowane odtwarzanie';
-	@override String get tunneledPlaybackDescription => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz lub ruch się zacina.';
 	@override String get audioPassthrough => 'Przekazywanie dźwięku';
 	@override String get audioPassthroughDescription => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
 	@override String get audioPassthroughDescriptionApple => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
@@ -546,7 +536,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Odtwarzacz';
 	@override String get hdrSdrConversionPlayerDescription => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV';
 	@override String get deinterlace => 'Usuwanie przeplotu';
-	@override String get deinterlaceDescription => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)';
+	@override String get deinterlaceDescription => 'Usuwa artefakty grzebienia z wideo z przeplotem';
 	@override String get deinterlaceOff => 'Wył.';
 	@override String get deinterlaceOffDescription => 'Wyświetla wideo z przeplotem w postaci, w jakiej zostało zdekodowane';
 	@override String get deinterlaceVideo => 'Wideo';
@@ -1084,7 +1074,6 @@ class _Translations$messages$pl extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Brak dostępnych elementów';
 	@override String get failedToCreatePlayQueueNoItems => 'Nie udało się utworzyć kolejki odtwarzania — brak elementów';
 	@override String failedPlayback({required Object action, required Object error}) => 'Nie udało się ${action}: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Przełączanie na kompatybilny odtwarzacz...';
 	@override String get serverLimitTitle => 'Odtwarzanie nie powiodło się';
 	@override String get serverLimitBody => 'Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.';
 	@override String get mediaUnreadableTitle => 'Plik niedostępny';
@@ -1131,8 +1120,6 @@ class _Translations$subtitlingStyling$pl extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Dół';
 	@override String get useMargins => 'Użyj marginesów';
 	@override String get useMarginsDescription => 'Pozwól napisom tekstowym pojawiać się w przestrzeni poza wideo. Napisy stylizowane mogą zachować pierwotne położenie.';
-	@override String get anchorToScreen => 'Zakotwicz na ekranie';
-	@override String get anchorToScreenDescription => 'Wyświetlaj napisy tekstowe na czarnych pasach poniżej obrazu panoramicznego';
 	@override String get bold => 'Pogrubienie';
 	@override String get italic => 'Kursywa';
 	@override String get renderResolution => 'Rozdzielczość renderowania';
@@ -2127,8 +2114,6 @@ class _Translations$performanceOverlay$pl extends Translations$performanceOverla
 	@override String get buffer => 'Bufor';
 	@override String get app => 'Aplikacja';
 	@override String get decoder => 'Dekoder';
-	@override String get rawDecoder => 'Surowy dekoder';
-	@override String get tunneling => 'Tunelowanie';
 	@override String get passthrough => 'Przekazywanie';
 	@override String get aspect => 'Proporcje';
 	@override String get rotation => 'Obrót';
@@ -2141,7 +2126,6 @@ class _Translations$performanceOverlay$pl extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'Warstwa bazowa HLG';
 	@override String get dvRouteBaseLayerSdr => 'Warstwa bazowa SDR';
 	@override String get dvRouteReshaped => 'Przekształcenie RPU (gpu-next)';
-	@override String get p7Conversion => 'Konw. P7';
 	@override String get sampleRate => 'Częstotliwość próbkowania';
 	@override String get pixelFormat => 'Format pikseli';
 	@override String get hwFormat => 'Format HW';
@@ -2152,9 +2136,6 @@ class _Translations$performanceOverlay$pl extends Translations$performanceOverla
 	@override String get displayFps => 'FPS ekranu';
 	@override String get avSync => 'Synchronizacja A/V';
 	@override String get dropped => 'Pominięte';
-	@override String get dvRpus => 'DV RPU';
-	@override String get dvRpuAverage => 'Śr. DV RPU';
-	@override String get dvSampleAverage => 'Śr. próbki DV';
 	@override String get maxLuma => 'Maks. luma';
 	@override String get minLuma => 'Min. luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2166,15 +2147,7 @@ class _Translations$performanceOverlay$pl extends Translations$performanceOverla
 	@override String get memory => 'Pamięć';
 	@override String get uiFps => 'FPS interfejsu';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android (sprzętowy)';
-	@override String get decoderNvidiaHw => 'NVIDIA (sprzętowy)';
-	@override String get decoderQualcommHw => 'Qualcomm (sprzętowy)';
-	@override String get decoderMediatekHw => 'MediaTek (sprzętowy)';
-	@override String get decoderExynosHw => 'Exynos (sprzętowy)';
 	@override String get decoderSoftware => 'Programowy';
-	@override String get decoderHardware => 'Sprzętowy';
-	@override String get tunnelingActive => 'Aktywne';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})';
 }
 
 // Path: externalPlayer
@@ -3652,16 +3625,8 @@ extension on TranslationsPl {
 			'settings.visualEffectsReducedDescription' => 'Mniej animacji i grafiki o niższej rozdzielczości',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków',
-			'settings.playerBackend' => 'Mechanizm odtwarzania',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Dekodowanie sprzętowe',
 			'settings.hardwareDecodingDescription' => 'Użyj akceleracji sprzętowej, gdy dostępna',
-			'settings.playbackBuffer' => 'Bufor odtwarzania',
-			'settings.playbackBufferAuto' => 'Auto (zalecane)',
-			'settings.playbackBufferLarge' => 'Duży',
-			'settings.playbackBufferExtraLarge' => 'Bardzo duży',
-			'settings.playbackBufferDescription' => 'Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.',
 			'settings.defaultQualityTitle' => 'Domyślna jakość',
 			'settings.cellularQualityTitle' => 'Domyślna jakość w sieci komórkowej',
 			'settings.cellularQualitySameAsDefault' => 'Taka sama jak domyślna jakość',
@@ -3807,8 +3772,6 @@ extension on TranslationsPl {
 			'settings.matchDynamicRange' => 'Dopasuj zakres dynamiki',
 			'settings.matchDynamicRangeDescription' => 'Włącz HDR dla treści HDR, potem wróć do SDR',
 			'settings.displaySwitchDelay' => 'Opóźnienie przełączania ekranu',
-			'settings.tunneledPlayback' => 'Tunelowane odtwarzanie',
-			'settings.tunneledPlaybackDescription' => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz lub ruch się zacina.',
 			'settings.audioPassthrough' => 'Przekazywanie dźwięku',
 			'settings.audioPassthroughDescription' => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
 			'settings.audioPassthroughDescriptionApple' => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
@@ -3849,7 +3812,7 @@ extension on TranslationsPl {
 			'settings.hdrSdrConversionPlayer' => 'Odtwarzacz',
 			'settings.hdrSdrConversionPlayerDescription' => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV',
 			'settings.deinterlace' => 'Usuwanie przeplotu',
-			'settings.deinterlaceDescription' => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)',
+			'settings.deinterlaceDescription' => 'Usuwa artefakty grzebienia z wideo z przeplotem',
 			'settings.deinterlaceOff' => 'Wył.',
 			'settings.deinterlaceOffDescription' => 'Wyświetla wideo z przeplotem w postaci, w jakiej zostało zdekodowane',
 			'settings.deinterlaceVideo' => 'Wideo',
@@ -3930,8 +3893,6 @@ extension on TranslationsPl {
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Tekst drugorzędny',
 			'themeEditor.slots.accent' => 'Akcent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Krycie',
 			'themeEditor.hexHint' => '#RRGGBB lub #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Z innych motywów',
@@ -3942,6 +3903,8 @@ extension on TranslationsPl {
 			'themeEditor.contrast.textMutedOnSurface' => 'Tekst drugorzędny na powierzchni',
 			'themeEditor.contrast.accentOnBg' => 'Akcent na tle',
 			'themeEditor.contrast.accentOnSurface' => 'Akcent na powierzchni',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Etykieta przycisku na akcencie',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, poniżej zalecanego ${minimum}:1',
 			'themeEditor.discardTitle' => 'Odrzucić zmiany?',
@@ -4312,7 +4275,6 @@ extension on TranslationsPl {
 			'messages.noItemsAvailable' => 'Brak dostępnych elementów',
 			'messages.failedToCreatePlayQueueNoItems' => 'Nie udało się utworzyć kolejki odtwarzania — brak elementów',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Nie udało się ${action}: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Przełączanie na kompatybilny odtwarzacz...',
 			'messages.serverLimitTitle' => 'Odtwarzanie nie powiodło się',
 			'messages.serverLimitBody' => 'Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.',
 			'messages.mediaUnreadableTitle' => 'Plik niedostępny',
@@ -4350,8 +4312,6 @@ extension on TranslationsPl {
 			'subtitlingStyling.positionBottom' => 'Dół',
 			'subtitlingStyling.useMargins' => 'Użyj marginesów',
 			'subtitlingStyling.useMarginsDescription' => 'Pozwól napisom tekstowym pojawiać się w przestrzeni poza wideo. Napisy stylizowane mogą zachować pierwotne położenie.',
-			'subtitlingStyling.anchorToScreen' => 'Zakotwicz na ekranie',
-			'subtitlingStyling.anchorToScreenDescription' => 'Wyświetlaj napisy tekstowe na czarnych pasach poniżej obrazu panoramicznego',
 			'subtitlingStyling.bold' => 'Pogrubienie',
 			'subtitlingStyling.italic' => 'Kursywa',
 			'subtitlingStyling.renderResolution' => 'Rozdzielczość renderowania',
@@ -4444,8 +4404,6 @@ extension on TranslationsPl {
 			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
 			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Dodaj do ${displayName}: Plex, Jellyfin, Emby lub połączenie innego profilu',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesja wygasła dla ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sesja wygasła dla ${count} serwerów',
@@ -4459,6 +4417,8 @@ extension on TranslationsPl {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach',
 			'accountPreferences.pickAccount' => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.',
 			'accountPreferences.storedOnAccount' => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Brak kont do skonfigurowania',
 			'accountPreferences.noAccountsHint' => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.',
 			'accountPreferences.unavailable' => 'Nie można połączyć się z tym kontem',
@@ -4958,8 +4918,6 @@ extension on TranslationsPl {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Nie udało się uruchomić kanału na żywo',
 			'liveTv.failedToBuildStreamUrl' => 'Nie udało się utworzyć adresu URL strumienia',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nie udało się uruchomić kanału: ${reason}',
@@ -4973,6 +4931,8 @@ extension on TranslationsPl {
 			'collections.deleteFailed' => 'Nie udało się usunąć kolekcji',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Nie udało się usunąć kolekcji: ${error}',
 			'collections.selectCollection' => 'Wybierz kolekcję',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Nazwa kolekcji',
 			'collections.enterCollectionName' => 'Wprowadź nazwę kolekcji',
 			'collections.addedToCollection' => 'Dodano do kolekcji',
@@ -5423,8 +5383,6 @@ extension on TranslationsPl {
 			'performanceOverlay.buffer' => 'Bufor',
 			'performanceOverlay.app' => 'Aplikacja',
 			'performanceOverlay.decoder' => 'Dekoder',
-			'performanceOverlay.rawDecoder' => 'Surowy dekoder',
-			'performanceOverlay.tunneling' => 'Tunelowanie',
 			'performanceOverlay.passthrough' => 'Przekazywanie',
 			'performanceOverlay.aspect' => 'Proporcje',
 			'performanceOverlay.rotation' => 'Obrót',
@@ -5437,7 +5395,6 @@ extension on TranslationsPl {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'Warstwa bazowa HLG',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'Warstwa bazowa SDR',
 			'performanceOverlay.dvRouteReshaped' => 'Przekształcenie RPU (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'Konw. P7',
 			'performanceOverlay.sampleRate' => 'Częstotliwość próbkowania',
 			'performanceOverlay.pixelFormat' => 'Format pikseli',
 			'performanceOverlay.hwFormat' => 'Format HW',
@@ -5448,9 +5405,6 @@ extension on TranslationsPl {
 			'performanceOverlay.displayFps' => 'FPS ekranu',
 			'performanceOverlay.avSync' => 'Synchronizacja A/V',
 			'performanceOverlay.dropped' => 'Pominięte',
-			'performanceOverlay.dvRpus' => 'DV RPU',
-			'performanceOverlay.dvRpuAverage' => 'Śr. DV RPU',
-			'performanceOverlay.dvSampleAverage' => 'Śr. próbki DV',
 			'performanceOverlay.maxLuma' => 'Maks. luma',
 			'performanceOverlay.minLuma' => 'Min. luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5462,18 +5416,8 @@ extension on TranslationsPl {
 			'performanceOverlay.memory' => 'Pamięć',
 			'performanceOverlay.uiFps' => 'FPS interfejsu',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android (sprzętowy)',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA (sprzętowy)',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm (sprzętowy)',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek (sprzętowy)',
-			'performanceOverlay.decoderExynosHw' => 'Exynos (sprzętowy)',
 			'performanceOverlay.decoderSoftware' => 'Programowy',
-			'performanceOverlay.decoderHardware' => 'Sprzętowy',
-			'performanceOverlay.tunnelingActive' => 'Aktywne',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',
 			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Użyj zewnętrznego odtwarzacza',
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w innej aplikacji',
 			'externalPlayer.selectPlayer' => 'Wybierz odtwarzacz',
@@ -5501,6 +5445,8 @@ extension on TranslationsPl {
 			'metadataEdit.contentRating' => 'Klasyfikacja wiekowa',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slogan',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Opis',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Tło',

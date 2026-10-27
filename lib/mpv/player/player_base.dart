@@ -20,8 +20,8 @@ import 'player_streams.dart';
 
 /// Abstract base class for player implementations.
 ///
-/// This class contains shared logic for both [PlayerAndroid] (ExoPlayer)
-/// and [PlayerNative] (MPV) implementations, including:
+/// This class contains the shared logic behind [PlayerNative] and its
+/// desktop subclasses, including:
 /// - State management
 /// - Stream controller setup
 /// - Event handling infrastructure
@@ -304,9 +304,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// The (name, format) registrations every backend makes at init — the
   /// properties [handlePropertyChange] needs for core [PlayerState].
   /// `track-list` is registered separately because mpv uses node format on
-  /// Apple platforms; backend-specific extras (mpv: secondary-sid /
-  /// demuxer-cache-state / audio-device*; ExoPlayer: demuxer-cache-time)
-  /// are appended by the subclasses.
+  /// Apple platforms; backend-specific extras (secondary-sid /
+  /// demuxer-cache-state / audio-device*) are appended by the subclasses.
   static const List<(String, String)> corePropertyObservations = [
     ('time-pos', 'double'),
     ('duration', 'double'),
@@ -419,28 +418,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         }
         break;
 
-      case 'demuxer-cache-time':
-        final bufferMs = _timelineMsFromSourceSeconds(value);
-        if (bufferMs != null) {
-          final nowMs = _throttleSw.elapsedMilliseconds;
-          if (nowMs - _lastCacheStateMs < 250) break;
-          _lastCacheStateMs = nowMs;
-          final buffer = Duration(milliseconds: bufferMs);
-          final rangeStart = _state.position;
-          final previousRanges = _state.bufferRanges;
-          final rangesChanged =
-              previousRanges.length != 1 ||
-              previousRanges.first.start != rangeStart ||
-              previousRanges.first.end != buffer;
-          final ranges = rangesChanged ? [BufferRange(start: rangeStart, end: buffer)] : previousRanges;
-          _state = _state.copyWith(buffer: buffer, bufferRanges: ranges);
-          bufferController.add(buffer);
-          if (rangesChanged) {
-            bufferRangesController.add(ranges);
-          }
-        }
-        break;
-
       case 'demuxer-cache-state':
         _handleDemuxerCacheState(value, sourceId: sourceId);
         break;
@@ -538,7 +515,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (cacheState == null) return;
     if (sourceId == null || sourceId == _activeSourceId) _detectDemuxerProgress(cacheState);
 
-    // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
+    // Extract cache-end for the single buffer duration
     final cacheEndMs = _timelineMsFromSourceSeconds(cacheState['cache-end']);
     final buffer = cacheEndMs == null ? _state.buffer : Duration(milliseconds: cacheEndMs);
 
@@ -672,8 +649,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'file-loaded':
         if (sourceId != null && sourceId != _activeSourceId) break;
         _primaryFileLoaded = true;
-        // ExoPlayer reports no start-file: its media-item transition is the
-        // only "new file" boundary before the frame it renders next.
+        // The loaded file has neither played out nor rendered a frame yet.
         _state = _state.copyWith(completed: false, hasRenderedFrame: false);
         completedController.add(false);
         fileLoadedController.add(null);
@@ -803,7 +779,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         if (selected) {
           // mpv marks both the `sid` and the `--secondary-sid` track as
           // selected; `main-selection` (0 = primary, 1 = secondary) tells them
-          // apart. Backends that never report it (ExoPlayer) keep the plain
+          // apart. Backends that never report it keep the plain
           // selected-means-primary reading.
           final mainSelection = _finiteInt(track['main-selection']);
           if (mainSelection == null || mainSelection == 0) {
@@ -1304,33 +1280,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> clearVideoFrameRate() async {}
 
   @override
-  // ignore: no-empty-block - base no-op, ExoPlayer styles subtitles natively
-  Future<void> setSubtitleStyle({
-    required double fontSize,
-    required String textColor,
-    required double borderSize,
-    required String borderColor,
-    required String bgColor,
-    required int bgOpacity,
-    int subtitlePosition = 100,
-    bool bold = false,
-    bool italic = false,
-    bool anchorToScreen = false,
-  }) async {}
-
-  @override
-  // ignore: no-empty-block - base no-op, mpv scales via panscan/aspect-override
-  Future<void> setBoxFitMode(int mode) async {}
-
-  @override
   // ignore: no-empty-block - base no-op, non-Apple mpv zooms via the video-zoom property
   Future<void> setVideoZoom(double scale) async {}
 
   @override
   Future<Map<String, dynamic>> getStats() async => const {};
-
-  @override
-  Future<String> runtimePlayerType() async => playerType;
 
   @override
   Future<bool> requestAudioFocus() async {
@@ -1345,12 +1299,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioDevice(AudioDevice device) async {}
-
-  @override
-  bool get supportsSecondarySubtitles => true;
-
-  @override
-  bool get detectsFpsAfterRender => false;
 
   @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
@@ -1382,8 +1330,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   static const String _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
   /// Android's normalization: acompressor as a slow AGC toward -14 LUFS, then
-  /// alimiter as the -3 dB ceiling, with the parameters of ExoPlayer's
-  /// DynamicsProcessing (AudioNormalizationEffect.kt). `link=maximum` drives
+  /// alimiter as the -3 dB ceiling. `link=maximum` drives
   /// every channel's gain from the loudest one, so 5.1 keeps its balance
   /// without a fold to stereo.
   ///

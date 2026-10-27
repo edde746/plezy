@@ -211,22 +211,9 @@ jobs:
       - name: Configure Android local properties
         run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
 
-      - name: Configure Android host native tests
-        run: |
-          cmake -S android/app/src/test/cpp -B build/android-host-tests \
-            -DCMAKE_BUILD_TYPE=Debug
-
-      - name: Build Android host native tests
-        run: cmake --build build/android-host-tests --parallel 2
-
-      - name: Run Android host native tests
-        run: |
-          ctest --test-dir build/android-host-tests \
-            --output-on-failure --no-tests=error
-
       - name: Run Android JVM unit tests
         working-directory: android
-        run: ./gradlew :app:testDebugUnitTest :saf_util:testDebugUnitTest :libass:testDebugUnitTest -x :app:compileFlutterBuildDebug --continue
+        run: ./gradlew :app:testDebugUnitTest :saf_util:testDebugUnitTest -x :app:compileFlutterBuildDebug --continue
 
       - name: Check Android API compatibility
         working-directory: android

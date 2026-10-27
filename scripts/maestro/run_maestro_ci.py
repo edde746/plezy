@@ -10,17 +10,8 @@ from collections.abc import Sequence
 import run_maestro
 
 
-ANDROID_15_INSTRUMENTATION_CLASSES = (
-    "androidx.media3.decoder.ffmpeg.PlezyFfmpegPlaybackTest,"
-    "com.edde746.plezy.exoplayer.PlezyAudioModePlaybackTest"
-)
-ANDROID_15_INSTRUMENTATION_TARGET = "android-15-instrumentation"
-# Keep reachability separate from the debug playback suites above: those exercise
-# APIs the app legitimately shrinks. This target guards FFmpeg and MPV's native paths.
-ANDROID_R8_REACHABILITY_CLASSES = (
-    "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest,"
-    "com.edde746.plezy.mpv.MpvPlayerReachabilityTest"
-)
+# Runs against the minified variant to guard MPV's JNI reachability under R8.
+ANDROID_R8_REACHABILITY_CLASSES = "com.edde746.plezy.mpv.MpvPlayerReachabilityTest"
 ANDROID_R8_REACHABILITY_TARGET = "android-r8-reachability"
 
 
@@ -178,21 +169,6 @@ DESTRUCTIVE_MANUAL_TARGETS: dict[str, tuple[tuple[str, ...], ...]] = {
 }
 
 
-def run_android_15_instrumentation() -> None:
-    print("==> Android 15 filtered instrumentation", flush=True)
-    run_maestro._run_checked(
-        (
-            "android/gradlew",
-            "-p",
-            "android",
-            ":app:connectedDebugAndroidTest",
-            "-x",
-            ":app:compileFlutterBuildDebug",
-            f"-Pandroid.testInstrumentationRunnerArguments.class={ANDROID_15_INSTRUMENTATION_CLASSES}",
-        )
-    )
-
-
 def run_android_r8_reachability() -> None:
     print("==> Android R8 reachability", flush=True)
     # Run minified instrumentation to catch reflective, JNI, and native-load keep
@@ -235,9 +211,6 @@ def run_target(name: str, *, disposable_emulator: bool = False) -> int:
             return 2
         print(f"==> DESTRUCTIVE manual Maestro target: {name}", flush=True)
         return run_recipes(DESTRUCTIVE_MANUAL_TARGETS[name])
-    if name == ANDROID_15_INSTRUMENTATION_TARGET:
-        run_android_15_instrumentation()
-        return 0
     if name == ANDROID_R8_REACHABILITY_TARGET:
         run_android_r8_reachability()
         return 0
@@ -250,7 +223,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         "target",
         choices=(
             *GROUPS,
-            ANDROID_15_INSTRUMENTATION_TARGET,
             ANDROID_R8_REACHABILITY_TARGET,
             *DESTRUCTIVE_MANUAL_TARGETS,
         ),

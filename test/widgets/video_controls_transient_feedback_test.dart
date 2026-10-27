@@ -1337,7 +1337,6 @@ class _RecordingPlayer implements Player {
     audioDevices: const Stream<List<AudioDevice>>.empty(),
     bufferRanges: const Stream<List<BufferRange>>.empty(),
     playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
   );
 
   /// Mirrors [PlayerBase.runSeek]: the requested target is announced whatever

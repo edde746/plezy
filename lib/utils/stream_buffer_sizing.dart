@@ -40,10 +40,9 @@ int nextPowerOfTwo(int value) {
   return result;
 }
 
-/// Heap-tier cap for the stream ring on Android, mirroring the demuxer
-/// auto-scaling tiers in video_player_screen.dart — mpv is the
-/// ExoPlayer-fallback engine there, which is exactly where low-RAM TV boxes
-/// land.
+/// Heap-tier cap for the stream ring on Android, mirroring the heap classes
+/// MpvPlayerCore's DemuxerBudget sizes the demuxer cache by — low-RAM TV
+/// boxes are exactly where it matters.
 int androidStreamRingCapBytes(int heapMB) {
   if (heapMB <= 0) return unknownBitrateStreamRingBytes;
   if (heapMB <= 256) return 32 * 1024 * 1024;

@@ -10,7 +10,7 @@ import android.content.ComponentCallbacks2
  * whatever it is allowed, which crowds a 1 GB TV box until Android's
  * low-memory killer takes the whole app. Tiered off
  * [android.app.ActivityManager.getLargeMemoryClass], the same signal
- * `stream_buffer_sizing.dart` and ExoPlayer's `LoadControlPolicy` use.
+ * `stream_buffer_sizing.dart` uses.
  *
  * Applied as pre-init *options* in [MpvPlayerCore], so a `demuxer-max-bytes`
  * line in the user's mpv.conf still wins; [forTrimLevel] re-derives it from

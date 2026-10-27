@@ -349,16 +349,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Daha az animasyon ve daha düşük çözünürlüklü görseller';
 	@override String get hideSpoilers => 'İzlenmeyen Bölümler İçin Sürpriz Bozanları Gizle';
 	@override String get hideSpoilersDescription => 'İzlenmeyen bölümler için küçük resimleri ve açıklamaları bulanıklaştır';
-	@override String get playerBackend => 'Oynatıcı Altyapısı';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Donanım Çözme';
 	@override String get hardwareDecodingDescription => 'Mümkün olduğunda donanım hızlandırmasını kullan';
-	@override String get playbackBuffer => 'Oynatma Tamponu';
-	@override String get playbackBufferAuto => 'Otomatik (Önerilen)';
-	@override String get playbackBufferLarge => 'Büyük';
-	@override String get playbackBufferExtraLarge => 'Ekstra Büyük';
-	@override String get playbackBufferDescription => 'Kararsız bağlantılara karşı daha fazla tamponlar. Tampon Boyutu ile de sınırlıdır.';
 	@override String get defaultQualityTitle => 'Varsayılan Kalite';
 	@override String get cellularQualityTitle => 'Hücresel Veride Varsayılan Kalite';
 	@override String get cellularQualitySameAsDefault => 'Varsayılan Kaliteyle Aynı';
@@ -504,8 +496,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Dinamik Aralığı Eşitle';
 	@override String get matchDynamicRangeDescription => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön';
 	@override String get displaySwitchDelay => 'Ekran Değiştirme Gecikmesi';
-	@override String get tunneledPlayback => 'Tünelli Oynatma';
-	@override String get tunneledPlaybackDescription => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.';
 	@override String get audioPassthrough => 'Ses Doğrudan Geçişi (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.';
 	@override String get audioPassthroughDescriptionApple => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.';
@@ -546,7 +536,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Oynatıcı';
 	@override String get hdrSdrConversionPlayerDescription => 'Dönüştürmeyi oynatıcı yapar. Tutarlı renkler, ancak 4K düşük donanımlı TV kutularında takılabilir';
 	@override String get deinterlace => 'Geçmeli Tarama Giderme';
-	@override String get deinterlaceDescription => 'Geçmeli videolardaki taraklanma bozukluklarını giderir (yalnızca mpv oynatıcı)';
+	@override String get deinterlaceDescription => 'Geçmeli videolardaki taraklanma bozukluklarını giderir';
 	@override String get deinterlaceOff => 'Kapalı';
 	@override String get deinterlaceOffDescription => 'Geçmeli videoyu çözüldüğü gibi gösterir';
 	@override String get deinterlaceVideo => 'Video';
@@ -1076,7 +1066,6 @@ class _Translations$messages$tr extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Öge bulunmuyor';
 	@override String get failedToCreatePlayQueueNoItems => 'Oynatma kuyruğu oluşturulamadı — öge yok';
 	@override String failedPlayback({required Object action, required Object error}) => '${action} başarısız oldu: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Uyumlu oynatıcıya geçiliyor...';
 	@override String get serverLimitTitle => 'Oynatma başarısız oldu';
 	@override String get serverLimitBody => 'Sunucu hatası (HTTP 500). Muhtemelen bir bant genişliği/kod dönüştürme sınırı bu oturumu reddetti. Sunucu sahibinden bunu ayarlamasını isteyin.';
 	@override String get mediaUnreadableTitle => 'Dosya kullanılamıyor';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$tr extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Alt';
 	@override String get useMargins => 'Kenar boşluklarını kullan';
 	@override String get useMarginsDescription => 'Metin altyazılarına videonun dışındaki alanda izin ver. Biçimlendirilmiş altyazılar orijinal konumlarını koruyabilir.';
-	@override String get anchorToScreen => 'Ekrana sabitle';
-	@override String get anchorToScreenDescription => 'Metin altyazılarını geniş ekran videonun altındaki siyah çubuklarda göster';
 	@override String get bold => 'Kalın';
 	@override String get italic => 'İtalik';
 	@override String get renderResolution => 'İşleme Çözünürlüğü';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$tr extends Translations$performanceOverla
 	@override String get buffer => 'Arabellek';
 	@override String get app => 'Uygulama';
 	@override String get decoder => 'Çözücü';
-	@override String get rawDecoder => 'Ham Çözücü';
-	@override String get tunneling => 'Tünelleme';
 	@override String get passthrough => 'Doğrudan geçiş';
 	@override String get aspect => 'Oran';
 	@override String get rotation => 'Döndürme';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$tr extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG temel katmanı';
 	@override String get dvRouteBaseLayerSdr => 'SDR temel katmanı';
 	@override String get dvRouteReshaped => 'RPU ile yeniden şekillendirilmiş (gpu-next)';
-	@override String get p7Conversion => 'P7 Dönüştürme';
 	@override String get sampleRate => 'Örnekleme Hızı';
 	@override String get pixelFormat => 'Piksel Biçimi';
 	@override String get hwFormat => 'HW Biçimi';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$tr extends Translations$performanceOverla
 	@override String get displayFps => 'Ekran FPS';
 	@override String get avSync => 'A/V Eşitleme';
 	@override String get dropped => 'Kare Kaybı';
-	@override String get dvRpus => 'DV RPU\'ları';
-	@override String get dvRpuAverage => 'DV RPU Ort.';
-	@override String get dvSampleAverage => 'DV Örnek Ort.';
 	@override String get maxLuma => 'Maks Luma';
 	@override String get minLuma => 'Min Luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$tr extends Translations$performanceOverla
 	@override String get memory => 'Bellek';
 	@override String get uiFps => 'Arayüz (UI) FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android Donanım';
-	@override String get decoderNvidiaHw => 'NVIDIA Donanım';
-	@override String get decoderQualcommHw => 'Qualcomm Donanım';
-	@override String get decoderMediatekHw => 'MediaTek Donanım';
-	@override String get decoderExynosHw => 'Exynos Donanım';
 	@override String get decoderSoftware => 'Yazılım';
-	@override String get decoderHardware => 'Donanım';
-	@override String get tunnelingActive => 'Etkin';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsTr {
 			'settings.visualEffectsReducedDescription' => 'Daha az animasyon ve daha düşük çözünürlüklü görseller',
 			'settings.hideSpoilers' => 'İzlenmeyen Bölümler İçin Sürpriz Bozanları Gizle',
 			'settings.hideSpoilersDescription' => 'İzlenmeyen bölümler için küçük resimleri ve açıklamaları bulanıklaştır',
-			'settings.playerBackend' => 'Oynatıcı Altyapısı',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Donanım Çözme',
 			'settings.hardwareDecodingDescription' => 'Mümkün olduğunda donanım hızlandırmasını kullan',
-			'settings.playbackBuffer' => 'Oynatma Tamponu',
-			'settings.playbackBufferAuto' => 'Otomatik (Önerilen)',
-			'settings.playbackBufferLarge' => 'Büyük',
-			'settings.playbackBufferExtraLarge' => 'Ekstra Büyük',
-			'settings.playbackBufferDescription' => 'Kararsız bağlantılara karşı daha fazla tamponlar. Tampon Boyutu ile de sınırlıdır.',
 			'settings.defaultQualityTitle' => 'Varsayılan Kalite',
 			'settings.cellularQualityTitle' => 'Hücresel Veride Varsayılan Kalite',
 			'settings.cellularQualitySameAsDefault' => 'Varsayılan Kaliteyle Aynı',
@@ -3783,8 +3748,6 @@ extension on TranslationsTr {
 			'settings.matchDynamicRange' => 'Dinamik Aralığı Eşitle',
 			'settings.matchDynamicRangeDescription' => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön',
 			'settings.displaySwitchDelay' => 'Ekran Değiştirme Gecikmesi',
-			'settings.tunneledPlayback' => 'Tünelli Oynatma',
-			'settings.tunneledPlaybackDescription' => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.',
 			'settings.audioPassthrough' => 'Ses Doğrudan Geçişi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughDescriptionApple' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
@@ -3825,7 +3788,7 @@ extension on TranslationsTr {
 			'settings.hdrSdrConversionPlayer' => 'Oynatıcı',
 			'settings.hdrSdrConversionPlayerDescription' => 'Dönüştürmeyi oynatıcı yapar. Tutarlı renkler, ancak 4K düşük donanımlı TV kutularında takılabilir',
 			'settings.deinterlace' => 'Geçmeli Tarama Giderme',
-			'settings.deinterlaceDescription' => 'Geçmeli videolardaki taraklanma bozukluklarını giderir (yalnızca mpv oynatıcı)',
+			'settings.deinterlaceDescription' => 'Geçmeli videolardaki taraklanma bozukluklarını giderir',
 			'settings.deinterlaceOff' => 'Kapalı',
 			'settings.deinterlaceOffDescription' => 'Geçmeli videoyu çözüldüğü gibi gösterir',
 			'settings.deinterlaceVideo' => 'Video',
@@ -3906,8 +3869,6 @@ extension on TranslationsTr {
 			'themeEditor.slots.text' => 'Metin',
 			'themeEditor.slots.textMuted' => 'İkincil metin',
 			'themeEditor.slots.accent' => 'Vurgu',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opaklık',
 			'themeEditor.hexHint' => '#RRGGBB veya #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Diğer temalardan',
@@ -3918,6 +3879,8 @@ extension on TranslationsTr {
 			'themeEditor.contrast.textMutedOnSurface' => 'Yüzey üzerinde ikincil metin',
 			'themeEditor.contrast.accentOnBg' => 'Arka plan üzerinde vurgu',
 			'themeEditor.contrast.accentOnSurface' => 'Yüzey üzerinde vurgu',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Vurgu üzerinde düğme etiketi',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, önerilen ${minimum}:1 değerinin altında',
 			'themeEditor.discardTitle' => 'Değişiklikler atılsın mı?',
@@ -4288,7 +4251,6 @@ extension on TranslationsTr {
 			'messages.noItemsAvailable' => 'Öge bulunmuyor',
 			'messages.failedToCreatePlayQueueNoItems' => 'Oynatma kuyruğu oluşturulamadı — öge yok',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action} başarısız oldu: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Uyumlu oynatıcıya geçiliyor...',
 			'messages.serverLimitTitle' => 'Oynatma başarısız oldu',
 			'messages.serverLimitBody' => 'Sunucu hatası (HTTP 500). Muhtemelen bir bant genişliği/kod dönüştürme sınırı bu oturumu reddetti. Sunucu sahibinden bunu ayarlamasını isteyin.',
 			'messages.mediaUnreadableTitle' => 'Dosya kullanılamıyor',
@@ -4326,8 +4288,6 @@ extension on TranslationsTr {
 			'subtitlingStyling.positionBottom' => 'Alt',
 			'subtitlingStyling.useMargins' => 'Kenar boşluklarını kullan',
 			'subtitlingStyling.useMarginsDescription' => 'Metin altyazılarına videonun dışındaki alanda izin ver. Biçimlendirilmiş altyazılar orijinal konumlarını koruyabilir.',
-			'subtitlingStyling.anchorToScreen' => 'Ekrana sabitle',
-			'subtitlingStyling.anchorToScreenDescription' => 'Metin altyazılarını geniş ekran videonun altındaki siyah çubuklarda göster',
 			'subtitlingStyling.bold' => 'Kalın',
 			'subtitlingStyling.italic' => 'İtalik',
 			'subtitlingStyling.renderResolution' => 'İşleme Çözünürlüğü',
@@ -4420,8 +4380,6 @@ extension on TranslationsTr {
 			'connections.sectionTitle' => 'Bağlantılar',
 			'connections.addConnection' => 'Bağlantı ekle',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} için oturum süresi doldu',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} sunucu için oturum süresi doldu',
@@ -4435,6 +4393,8 @@ extension on TranslationsTr {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Ses, altyazı ve kitaplık seçenekleri ${count} hesaba kaydedildi',
 			'accountPreferences.pickAccount' => 'Her hesap kendi tercihlerini saklar. Düzenlemek için birini seçin.',
 			'accountPreferences.storedOnAccount' => 'Bu seçenekler hesabın kendisine kaydedilir; böylece hesaba giriş yapan her uygulama bunları kullanır — diğer cihazlarınızdaki Plezy dahil.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Yapılandırılacak hesap yok',
 			'accountPreferences.noAccountsHint' => 'Plex\'e giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın; o hesapta saklanan tercihler burada görünür.',
 			'accountPreferences.unavailable' => 'Bu hesaba ulaşılamıyor',
@@ -4934,8 +4894,6 @@ extension on TranslationsTr {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanal başlatılamadı: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsTr {
 			'collections.deleteFailed' => 'Koleksiyon silinemedi',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Koleksiyon silinemedi: ${error}',
 			'collections.selectCollection' => 'Koleksiyon Seç',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Koleksiyon Adı',
 			'collections.enterCollectionName' => 'Koleksiyon adını girin',
 			'collections.addedToCollection' => 'Koleksiyona eklendi',
@@ -5399,8 +5359,6 @@ extension on TranslationsTr {
 			'performanceOverlay.buffer' => 'Arabellek',
 			'performanceOverlay.app' => 'Uygulama',
 			'performanceOverlay.decoder' => 'Çözücü',
-			'performanceOverlay.rawDecoder' => 'Ham Çözücü',
-			'performanceOverlay.tunneling' => 'Tünelleme',
 			'performanceOverlay.passthrough' => 'Doğrudan geçiş',
 			'performanceOverlay.aspect' => 'Oran',
 			'performanceOverlay.rotation' => 'Döndürme',
@@ -5413,7 +5371,6 @@ extension on TranslationsTr {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG temel katmanı',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR temel katmanı',
 			'performanceOverlay.dvRouteReshaped' => 'RPU ile yeniden şekillendirilmiş (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 Dönüştürme',
 			'performanceOverlay.sampleRate' => 'Örnekleme Hızı',
 			'performanceOverlay.pixelFormat' => 'Piksel Biçimi',
 			'performanceOverlay.hwFormat' => 'HW Biçimi',
@@ -5424,9 +5381,6 @@ extension on TranslationsTr {
 			'performanceOverlay.displayFps' => 'Ekran FPS',
 			'performanceOverlay.avSync' => 'A/V Eşitleme',
 			'performanceOverlay.dropped' => 'Kare Kaybı',
-			'performanceOverlay.dvRpus' => 'DV RPU\'ları',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
-			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsTr {
 			'performanceOverlay.memory' => 'Bellek',
 			'performanceOverlay.uiFps' => 'Arayüz (UI) FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android Donanım',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA Donanım',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm Donanım',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek Donanım',
-			'performanceOverlay.decoderExynosHw' => 'Exynos Donanım',
 			'performanceOverlay.decoderSoftware' => 'Yazılım',
-			'performanceOverlay.decoderHardware' => 'Donanım',
-			'performanceOverlay.tunnelingActive' => 'Etkin',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			'externalPlayer.title' => 'Harici Oynatıcı',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Harici Oynatıcı Kullan',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başka bir uygulamada açın',
 			'externalPlayer.selectPlayer' => 'Oynatıcı Seç',
@@ -5477,6 +5421,8 @@ extension on TranslationsTr {
 			'metadataEdit.contentRating' => 'İçerik Derecelendirmesi',
 			'metadataEdit.studio' => 'Stüdyo',
 			'metadataEdit.tagline' => 'Slogan',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Özet',
 			'metadataEdit.poster' => 'Afiş',
 			'metadataEdit.background' => 'Arka Plan',

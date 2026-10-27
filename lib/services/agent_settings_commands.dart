@@ -6,7 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 
-import '../models/audio_channel_limit.dart';
 import '../models/external_player_models.dart';
 import '../models/hotkey_model.dart';
 import '../models/shader_preset.dart';
@@ -182,7 +181,6 @@ class AgentSettingsCommands {
     final tv = PlatformDetector.isTV();
     final desktop = PlatformDetector.isDesktopOS();
     final mobile = (Platform.isAndroid || Platform.isIOS) && !tv;
-    final exo = _exoActive;
     switch (key) {
       case 'keyboard_hotkeys':
         if (!KeyboardShortcutsService.isPlatformSupported()) {
@@ -218,7 +216,7 @@ class AgentSettingsCommands {
         if (!PlatformDetector.supportsExternalPlayers()) return 'External players are unavailable on this device.';
       case 'audio_passthrough':
         if (!PlatformDetector.supportsAudioPassthrough()) return 'Audio passthrough is unavailable on this device.';
-      case 'android_use_exoplayer' || 'match_content_frame_rate' || 'dv_conversion_mode':
+      case 'match_content_frame_rate' || 'dv_conversion_mode':
         if (!Platform.isAndroid) return 'This setting is Android-only.';
       case 'match_content_resolution':
         if (!Platform.isAndroid || !tv) return 'Content resolution matching requires Android TV.';
@@ -231,25 +229,17 @@ class AgentSettingsCommands {
       case 'enable_hdr':
         if (Platform.isAndroid) return 'Android HDR output is controlled by the platform, not this setting.';
       case 'ambient_lighting':
-        if (exo || !ShaderService.isPlatformSupported) {
-          return 'Ambient lighting requires mpv on a platform with shader support.';
-        }
+        if (!ShaderService.isPlatformSupported) return 'Ambient lighting requires a platform with shader support.';
       case 'hdr_tone_mapping':
         if (!Platform.isLinux) return 'HDR tone mapping selection requires the Linux native video plane.';
       case 'hdr_sdr_conversion':
-        if (!Platform.isAndroid || exo) return 'HDR-to-SDR conversion selection requires the Android mpv backend.';
+        if (!Platform.isAndroid) return 'HDR-to-SDR conversion selection is Android-only.';
       case 'disable_dolby_vision':
-        if (!(Platform.isAndroid && !exo) && !PlatformDetector.isAppleTV()) {
-          return 'Disabling Dolby Vision requires the Android mpv backend or Apple TV.';
+        if (!Platform.isAndroid && !PlatformDetector.isAppleTV()) {
+          return 'Disabling Dolby Vision requires Android or Apple TV.';
         }
-      case 'tunneled_playback' || 'playback_buffer_tier' || 'subtitle_anchor_to_screen':
-        if (!exo) return 'This setting requires the existing Android ExoPlayer backend.';
       case 'custom_shaders' || 'global_shader_preset':
-        if (exo || !ShaderService.isPlatformSupported) {
-          return 'Shaders are unavailable on the current platform or player backend.';
-        }
-      case 'mpv_config_text' || 'mpv_config_presets' || 'deinterlace_mode' || 'subtitle_use_margins':
-        if (exo) return 'This setting requires the mpv backend.';
+        if (!ShaderService.isPlatformSupported) return 'Shaders are unavailable on the current platform.';
       case 'subtitle_render_resolution':
         if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
           return 'Subtitle render resolution is Android/Apple-only.';
@@ -272,8 +262,6 @@ class AgentSettingsCommands {
     return null;
   }
 
-  static bool get _exoActive => Platform.isAndroid && SettingsService.instance.read(SettingsService.useExoPlayer);
-
   static void _validatePlatformValue(String key, Object? value) {
     if (key == 'subtitle_render_resolution') {
       final choices = Platform.isIOS || Platform.isMacOS
@@ -286,9 +274,6 @@ class AgentSettingsCommands {
               SubtitleRenderResolution.quarter,
             ];
       if (!choices.contains(value)) throw const FormatException('Unsupported subtitle resolution on this platform');
-    }
-    if (key == 'audio_channel_limit' && !AudioChannelLimit.available(exoPlayer: _exoActive).contains(value)) {
-      throw const FormatException('ExoPlayer can only mix down to stereo');
     }
     if ((key == 'audio_sync_offset' || key == 'subtitle_sync_offset') &&
         value is int &&
@@ -329,11 +314,9 @@ class AgentSettingsCommands {
     'subtitle_render_resolution',
     'subtitle_bold',
     'subtitle_italic',
-    'subtitle_anchor_to_screen',
     'subtitle_use_margins',
     'match_content_frame_rate',
     'match_content_resolution',
-    'tunneled_playback',
     'dv_conversion_mode',
     'disable_dolby_vision',
     'hdr_sdr_conversion',
@@ -357,8 +340,6 @@ class AgentSettingsCommands {
     'use_external_player',
     'external_players',
     'selected_external_player',
-    'android_use_exoplayer',
-    'playback_buffer_tier',
     'deinterlace_mode',
     'player_always_on_top',
     'match_refresh_rate',
@@ -393,9 +374,6 @@ class AgentSettingsCommands {
                     ])
               .map((v) => v.name)
               .toList();
-    }
-    if (pref == SettingsService.audioChannelLimit) {
-      choices = AudioChannelLimit.available(exoPlayer: _exoActive).map((v) => v.name).toList();
     }
     return {
       'key': pref.key,

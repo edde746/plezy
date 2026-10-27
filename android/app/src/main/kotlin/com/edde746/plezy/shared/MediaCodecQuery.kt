@@ -76,10 +76,9 @@ internal object MediaCodecQuery {
 
   fun findHardwareDecoder(
     mimeType: String,
-    codecKind: Int = MediaCodecList.REGULAR_CODECS,
     predicate: (MediaCodecInfo, String) -> Boolean = { _, _ -> true }
   ): MediaCodecInfo? {
-    for (info in MediaCodecList(codecKind).codecInfos) {
+    for (info in MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos) {
       if (info.isEncoder || !isHardwareAccelerated(info)) continue
       for (type in info.supportedTypes) {
         if (type.equals(mimeType, ignoreCase = true) && predicate(info, type)) {

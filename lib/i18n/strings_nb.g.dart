@@ -349,16 +349,8 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Færre animasjoner og grafikk med lavere oppløsning';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og beskrivelser for usette episoder';
-	@override String get playerBackend => 'Avspillingsmotor';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Maskinvaredekoding';
 	@override String get hardwareDecodingDescription => 'Bruk maskinvareakselerasjon når tilgjengelig';
-	@override String get playbackBuffer => 'Avspillingsbuffer';
-	@override String get playbackBufferAuto => 'Auto (anbefalt)';
-	@override String get playbackBufferLarge => 'Stor';
-	@override String get playbackBufferExtraLarge => 'Ekstra stor';
-	@override String get playbackBufferDescription => 'Bufrer mer mot ustabile tilkoblinger. Begrenses også av bufferstørrelsen.';
 	@override String get defaultQualityTitle => 'Standardkvalitet';
 	@override String get cellularQualityTitle => 'Standardkvalitet på mobilnett';
 	@override String get cellularQualitySameAsDefault => 'Samme som standardkvalitet';
@@ -504,8 +496,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Tilpass dynamikkområde';
 	@override String get matchDynamicRangeDescription => 'Slå på HDR for HDR-innhold, og deretter tilbake til SDR';
 	@override String get displaySwitchDelay => 'Forsinkelse ved skjermbytte';
-	@override String get tunneledPlayback => 'Tunnelert avspilling';
-	@override String get tunneledPlaybackDescription => 'Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video eller bevegelser hakker.';
 	@override String get audioPassthrough => 'Direkte lydutgang';
 	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.';
 	@override String get audioPassthroughDescriptionApple => 'Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Slå av hvis du ikke har lyd.';
@@ -546,7 +536,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Spiller';
 	@override String get hdrSdrConversionPlayerDescription => 'Spilleren konverterer. Jevne farger, men 4K kan hakke på enkle TV-bokser';
 	@override String get deinterlace => 'Deinterlacing';
-	@override String get deinterlaceDescription => 'Fjern combing-artefakter fra interlaced video (kun mpv-spiller)';
+	@override String get deinterlaceDescription => 'Fjern combing-artefakter fra interlaced video';
 	@override String get deinterlaceOff => 'Av';
 	@override String get deinterlaceOffDescription => 'Vis interlaced video slik den dekodes';
 	@override String get deinterlaceVideo => 'Video';
@@ -1076,7 +1066,6 @@ class _Translations$messages$nb extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Ingen elementer tilgjengelig';
 	@override String get failedToCreatePlayQueueNoItems => 'Kunne ikke opprette avspillingskø – ingen elementer';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunne ikke ${action}: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Bytter til kompatibel spiller...';
 	@override String get serverLimitTitle => 'Avspilling mislyktes';
 	@override String get serverLimitBody => 'Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.';
 	@override String get mediaUnreadableTitle => 'Fil utilgjengelig';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$nb extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Nederst';
 	@override String get useMargins => 'Bruk marger';
 	@override String get useMarginsDescription => 'Tillat tekstundertekster i området utenfor videoen. Stilundertekster kan beholde sin opprinnelige plassering.';
-	@override String get anchorToScreen => 'Forankre til skjermen';
-	@override String get anchorToScreenDescription => 'Vis tekstundertekster i de svarte feltene under video i bredformat';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
 	@override String get renderResolution => 'Gjengivelsesoppløsning';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$nb extends Translations$performanceOverla
 	@override String get buffer => 'Buffer';
 	@override String get app => 'App';
 	@override String get decoder => 'Dekoder';
-	@override String get rawDecoder => 'Rå dekoder';
-	@override String get tunneling => 'Tunneling';
 	@override String get passthrough => 'Direkte utgang';
 	@override String get aspect => 'Format';
 	@override String get rotation => 'Rotasjon';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$nb extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-basislag';
 	@override String get dvRouteBaseLayerSdr => 'SDR-basislag';
 	@override String get dvRouteReshaped => 'RPU-omformet (gpu-next)';
-	@override String get p7Conversion => 'P7-konv.';
 	@override String get sampleRate => 'Samplingsrate';
 	@override String get pixelFormat => 'Pikselformat';
 	@override String get hwFormat => 'HW-format';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$nb extends Translations$performanceOverla
 	@override String get displayFps => 'Skjerm-FPS';
 	@override String get avSync => 'A/V-synk';
 	@override String get dropped => 'Tapte';
-	@override String get dvRpus => 'DV RPU-er';
-	@override String get dvRpuAverage => 'DV RPU snitt';
-	@override String get dvSampleAverage => 'DV-sample snitt';
 	@override String get maxLuma => 'Maks luma';
 	@override String get minLuma => 'Min luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$nb extends Translations$performanceOverla
 	@override String get memory => 'Minne';
 	@override String get uiFps => 'UI FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android-maskinvare';
-	@override String get decoderNvidiaHw => 'NVIDIA-maskinvare';
-	@override String get decoderQualcommHw => 'Qualcomm-maskinvare';
-	@override String get decoderMediatekHw => 'MediaTek-maskinvare';
-	@override String get decoderExynosHw => 'Exynos-maskinvare';
 	@override String get decoderSoftware => 'Programvare';
-	@override String get decoderHardware => 'Maskinvare';
-	@override String get tunnelingActive => 'Aktiv';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsNb {
 			'settings.visualEffectsReducedDescription' => 'Færre animasjoner og grafikk med lavere oppløsning',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og beskrivelser for usette episoder',
-			'settings.playerBackend' => 'Avspillingsmotor',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Maskinvaredekoding',
 			'settings.hardwareDecodingDescription' => 'Bruk maskinvareakselerasjon når tilgjengelig',
-			'settings.playbackBuffer' => 'Avspillingsbuffer',
-			'settings.playbackBufferAuto' => 'Auto (anbefalt)',
-			'settings.playbackBufferLarge' => 'Stor',
-			'settings.playbackBufferExtraLarge' => 'Ekstra stor',
-			'settings.playbackBufferDescription' => 'Bufrer mer mot ustabile tilkoblinger. Begrenses også av bufferstørrelsen.',
 			'settings.defaultQualityTitle' => 'Standardkvalitet',
 			'settings.cellularQualityTitle' => 'Standardkvalitet på mobilnett',
 			'settings.cellularQualitySameAsDefault' => 'Samme som standardkvalitet',
@@ -3783,8 +3748,6 @@ extension on TranslationsNb {
 			'settings.matchDynamicRange' => 'Tilpass dynamikkområde',
 			'settings.matchDynamicRangeDescription' => 'Slå på HDR for HDR-innhold, og deretter tilbake til SDR',
 			'settings.displaySwitchDelay' => 'Forsinkelse ved skjermbytte',
-			'settings.tunneledPlayback' => 'Tunnelert avspilling',
-			'settings.tunneledPlaybackDescription' => 'Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video eller bevegelser hakker.',
 			'settings.audioPassthrough' => 'Direkte lydutgang',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionApple' => 'Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Slå av hvis du ikke har lyd.',
@@ -3825,7 +3788,7 @@ extension on TranslationsNb {
 			'settings.hdrSdrConversionPlayer' => 'Spiller',
 			'settings.hdrSdrConversionPlayerDescription' => 'Spilleren konverterer. Jevne farger, men 4K kan hakke på enkle TV-bokser',
 			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Fjern combing-artefakter fra interlaced video (kun mpv-spiller)',
+			'settings.deinterlaceDescription' => 'Fjern combing-artefakter fra interlaced video',
 			'settings.deinterlaceOff' => 'Av',
 			'settings.deinterlaceOffDescription' => 'Vis interlaced video slik den dekodes',
 			'settings.deinterlaceVideo' => 'Video',
@@ -3906,8 +3869,6 @@ extension on TranslationsNb {
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundærtekst',
 			'themeEditor.slots.accent' => 'Aksent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opasitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Fra andre temaer',
@@ -3918,6 +3879,8 @@ extension on TranslationsNb {
 			'themeEditor.contrast.textMutedOnSurface' => 'Sekundærtekst på overflate',
 			'themeEditor.contrast.accentOnBg' => 'Aksent på bakgrunn',
 			'themeEditor.contrast.accentOnSurface' => 'Aksent på overflate',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Knappetekst på aksent',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, under anbefalt minimum på ${minimum}:1',
 			'themeEditor.discardTitle' => 'Forkaste endringene?',
@@ -4288,7 +4251,6 @@ extension on TranslationsNb {
 			'messages.noItemsAvailable' => 'Ingen elementer tilgjengelig',
 			'messages.failedToCreatePlayQueueNoItems' => 'Kunne ikke opprette avspillingskø – ingen elementer',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunne ikke ${action}: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Bytter til kompatibel spiller...',
 			'messages.serverLimitTitle' => 'Avspilling mislyktes',
 			'messages.serverLimitBody' => 'Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.',
 			'messages.mediaUnreadableTitle' => 'Fil utilgjengelig',
@@ -4326,8 +4288,6 @@ extension on TranslationsNb {
 			'subtitlingStyling.positionBottom' => 'Nederst',
 			'subtitlingStyling.useMargins' => 'Bruk marger',
 			'subtitlingStyling.useMarginsDescription' => 'Tillat tekstundertekster i området utenfor videoen. Stilundertekster kan beholde sin opprinnelige plassering.',
-			'subtitlingStyling.anchorToScreen' => 'Forankre til skjermen',
-			'subtitlingStyling.anchorToScreenDescription' => 'Vis tekstundertekster i de svarte feltene under video i bredformat',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
 			'subtitlingStyling.renderResolution' => 'Gjengivelsesoppløsning',
@@ -4420,8 +4380,6 @@ extension on TranslationsNb {
 			'connections.sectionTitle' => 'Tilkoblinger',
 			'connections.addConnection' => 'Legg til tilkobling',
 			'connections.addConnectionSubtitleNoProfile' => 'Logg inn med Plex eller koble til en Jellyfin- eller Emby-server',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Legg til for ${displayName}: Plex, Jellyfin, Emby eller en annen profiltilkobling',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Økten er utløpt for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Økten er utløpt for ${count} servere',
@@ -4435,6 +4393,8 @@ extension on TranslationsNb {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Lyd-, undertekst- og bibliotekalternativer lagret på ${count} kontoer',
 			'accountPreferences.pickAccount' => 'Hver konto lagrer sine egne innstillinger. Velg hvilken du vil redigere.',
 			'accountPreferences.storedOnAccount' => 'Disse alternativene lagres på selve kontoen, så alle apper som er logget på den, bruker dem — inkludert Plezy på de andre enhetene dine.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Ingen kontoer å konfigurere',
 			'accountPreferences.noAccountsHint' => 'Logg inn på Plex, eller koble til en Jellyfin- eller Emby-server, så vises innstillingene som er lagret på den kontoen, her.',
 			'accountPreferences.unavailable' => 'Kan ikke nå denne kontoen',
@@ -4934,8 +4894,6 @@ extension on TranslationsNb {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerte ugyldige avspillingsdata for direkte-TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte direktekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke opprette strømme-URL-en',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kunne ikke starte kanalen: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsNb {
 			'collections.deleteFailed' => 'Kunne ikke slette samling',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Kunne ikke slette samling: ${error}',
 			'collections.selectCollection' => 'Velg samling',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Samlingsnavn',
 			'collections.enterCollectionName' => 'Skriv inn samlingsnavn',
 			'collections.addedToCollection' => 'Lagt til i samling',
@@ -5399,8 +5359,6 @@ extension on TranslationsNb {
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Dekoder',
-			'performanceOverlay.rawDecoder' => 'Rå dekoder',
-			'performanceOverlay.tunneling' => 'Tunneling',
 			'performanceOverlay.passthrough' => 'Direkte utgang',
 			'performanceOverlay.aspect' => 'Format',
 			'performanceOverlay.rotation' => 'Rotasjon',
@@ -5413,7 +5371,6 @@ extension on TranslationsNb {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-basislag',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-basislag',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-omformet (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7-konv.',
 			'performanceOverlay.sampleRate' => 'Samplingsrate',
 			'performanceOverlay.pixelFormat' => 'Pikselformat',
 			'performanceOverlay.hwFormat' => 'HW-format',
@@ -5424,9 +5381,6 @@ extension on TranslationsNb {
 			'performanceOverlay.displayFps' => 'Skjerm-FPS',
 			'performanceOverlay.avSync' => 'A/V-synk',
 			'performanceOverlay.dropped' => 'Tapte',
-			'performanceOverlay.dvRpus' => 'DV RPU-er',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU snitt',
-			'performanceOverlay.dvSampleAverage' => 'DV-sample snitt',
 			'performanceOverlay.maxLuma' => 'Maks luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsNb {
 			'performanceOverlay.memory' => 'Minne',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android-maskinvare',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA-maskinvare',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm-maskinvare',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek-maskinvare',
-			'performanceOverlay.decoderExynosHw' => 'Exynos-maskinvare',
 			'performanceOverlay.decoderSoftware' => 'Programvare',
-			'performanceOverlay.decoderHardware' => 'Maskinvare',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',
 			'externalPlayer.title' => 'Ekstern spiller',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Bruk ekstern spiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åpne videoer i en annen app',
 			'externalPlayer.selectPlayer' => 'Velg spiller',
@@ -5477,6 +5421,8 @@ extension on TranslationsNb {
 			'metadataEdit.contentRating' => 'Aldersgrense',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slagord',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Sammendrag',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Bakgrunn',

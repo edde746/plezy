@@ -397,7 +397,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   bool get _showDebugDvConversionMode {
     if (!kDebugMode) return false;
-    if (Platform.isAndroid) return widget.player.playerType == 'exoplayer';
     return (Platform.isIOS || Platform.isMacOS) && widget.player.playerType == 'mpv';
   }
 
@@ -514,12 +513,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       }
     }());
   }
-
-  /// ExoPlayer only has the stereo fold; see [AudioChannelLimit.onExoPlayer].
-  bool get _isExoPlayer => Platform.isAndroid && widget.player.playerType == 'exoplayer';
-
-  AudioChannelLimit get _displayedAudioChannelLimit =>
-      _isExoPlayer ? _audioChannelLimit.onExoPlayer : _audioChannelLimit;
 
   // Same ordering and undo contract as the tone-mapping picker above: the
   // player takes the limit first, and a refused store write puts both back.
@@ -926,9 +919,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         // Audio Passthrough is not here: it configures the audio output route rather
-        // than this playback, and applying it mid-stream bounces the audio renderer and
-        // re-decides video tunneling. It lives in Settings > Video Playback next to
-        // Tunneled Playback, which is applied the same way — at the next player start.
+        // than this playback, and applying it mid-stream bounces the audio output. It
+        // lives in Settings > Video Playback and applies at the next player start.
 
         // Dolby / Spatial Audio badge. The Dolby application guide requires
         // the app to reflect AVAudioSession.renderingMode; the system only
@@ -952,8 +944,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         _SettingsMenuItem(
           icon: Symbols.speaker_group_rounded,
           title: t.settings.audioChannelLimit,
-          valueText: audioChannelLimitLabel(_displayedAudioChannelLimit),
-          isHighlighted: _displayedAudioChannelLimit != AudioChannelLimit.original,
+          valueText: audioChannelLimitLabel(_audioChannelLimit),
+          isHighlighted: _audioChannelLimit != AudioChannelLimit.original,
           onTap: () => _navigateTo(_SettingsView.audioChannelLimit),
         ),
 
@@ -1031,17 +1023,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             onTap: () => _navigateTo(_SettingsView.dvConversion),
           ),
 
-        // Debug: Trigger MPV Fallback (Android ExoPlayer only)
-        if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
-          FocusableListTile(
-            leading: AppIcon(Symbols.swap_horiz_rounded, fill: 1, color: tokens(context).textMuted),
-            title: const Text('Trigger MPV Fallback'),
-            onTap: () {
-              const MethodChannel('com.plezy/exo_player').invokeMethod('triggerFallback');
-              OverlaySheetController.of(context).close();
-            },
-          ),
-
         if (kDebugMode)
           for (final status in const [403, 500, 404, 503])
             FocusableListTile(
@@ -1111,11 +1092,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildAudioChannelLimitView() {
     final primary = Theme.of(context).colorScheme.primary;
-    final selected = _displayedAudioChannelLimit;
+    final selected = _audioChannelLimit;
 
     return ListView(
       children: [
-        for (final limit in AudioChannelLimit.available(exoPlayer: _isExoPlayer))
+        for (final limit in AudioChannelLimit.values)
           FocusableListTile(
             title: Text(audioChannelLimitLabel(limit), style: TextStyle(color: selected == limit ? primary : null)),
             subtitle: Text(

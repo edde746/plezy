@@ -45,10 +45,7 @@ export const faqs: Faq[] = [
   {
     id: "video-player",
     question: "What video player does Plezy use?",
-    answer:
-      'mpv on most platforms, with ExoPlayer available on Android for HDR support and better performance. ExoPlayer also has libass support via <a href="https://github.com/peerless2012/libass-android" target="_blank" rel="noopener">libass-android</a>.',
-    schemaAnswer:
-      "mpv on most platforms, with ExoPlayer available on Android for HDR support and better performance. ExoPlayer also has libass support via libass-android.",
+    answer: "mpv on every platform.",
   },
   {
     id: "plex-block",

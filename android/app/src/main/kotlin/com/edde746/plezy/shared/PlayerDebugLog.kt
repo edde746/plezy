@@ -12,7 +12,7 @@ import android.util.Log
  *
  * The gate follows the app's "Debug Logging" setting: Dart pushes the mpv log level down at
  * `initialize` and over `setLogLevel`, and a verbose level opens this too. It is process-wide
- * because the shared player helpers are reached from both player backends.
+ * because the shared player helpers are reached from the video and the audio-only cores alike.
  */
 object PlayerDebugLog {
   @Volatile var enabled: Boolean = false

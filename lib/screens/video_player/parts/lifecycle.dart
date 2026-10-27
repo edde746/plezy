@@ -200,7 +200,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // early without setting _hiddenForBackground), but the screensaver can
     // still destroy the surface. Kick the video output so a missed surface
     // callback can't leave the picture black: mpv re-attaches via
-    // refreshVideoOutput, ExoPlayer just reapplies sizing/z-order.
+    // refreshVideoOutput.
     else if (!_hiddenForBackground &&
         Platform.isAndroid &&
         PlatformDetector.isTV() &&
@@ -244,15 +244,15 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   }
 
   /// Grace expired while still backgrounded: release the native AV pipeline
-  /// (MediaCodec decoders + AudioTrack, tunneled passthrough included) so a
+  /// (MediaCodec decoders + AudioTrack, passthrough included) so a
   /// parked Plezy can't starve other apps on shared-hardware TV SoCs, and end
   /// the backend playback session. Fire OS standby never freezes the process,
   /// so paused heartbeats would pin the session in the server dashboard for
   /// as long as the device sits dark (#1911) — and they buy nothing here: the
   /// restore path performs a fresh playback decision and rebuilds progress
-  /// reporting anyway. stop() retains Dart-side position/duration/track state
-  /// on both Android backends; position and track selections are latched here
-  /// because the reload on restore reads them after the native state is gone.
+  /// reporting anyway. stop() retains Dart-side position/duration/track
+  /// state; position and track selections are latched here because the
+  /// reload on restore reads them after the native state is gone.
   Future<void> _suspendPlayerForTvBackground() async {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;

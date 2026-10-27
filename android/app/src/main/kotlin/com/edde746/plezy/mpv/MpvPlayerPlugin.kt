@@ -8,7 +8,6 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
 import com.edde746.plezy.shared.PlayerChannelBinding
 import com.edde746.plezy.shared.PlayerDebugLog
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -95,9 +94,8 @@ open class MpvPlayerPlugin(
   // settle the Dart future.
   private val initWatchdogMs = 20_000L
 
-  // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
-  // MpvPlayer's companion loads libmpv, so substituting both is the only way
-  // a JVM test can drive this plugin's initialization path.
+  // Test seams: MpvPlayer's companion loads libmpv, so substituting both is
+  // the only way a JVM test can drive this plugin's initialization path.
   internal var createCore: (Context, Boolean, Float, String) -> MpvPlayerCore =
     { context, hardwareDecoding, subtitleRenderScale, logLevel ->
       MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel)
@@ -244,7 +242,6 @@ open class MpvPlayerPlugin(
       "closeContentFd" -> handleCloseContentFd(call, result)
       "getHeapSize" -> {
         // Device heap class for Dart-side memory tiering (stream ring cache).
-        // Lives on the always-registered mpv channel so it survives backends.
         val context: Context? = activity ?: applicationContext
         val am = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         result.success(am?.largeMemoryClass ?: 0)
@@ -271,7 +268,7 @@ open class MpvPlayerPlugin(
     // from older callers; hardware decode is the setting's default.
     val hardwareDecoding = call.argument<Boolean>("hardwareDecoding") ?: true
     // Subtitle "Render Resolution" for the vo=mediacodec OSD plane (Full / ¾ / ½ /
-    // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
+    // ⅓ / ¼ of the surface).
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
     val logLevel = call.argument<String>("logLevel") ?: "warn"
@@ -372,7 +369,7 @@ open class MpvPlayerPlugin(
           }
         } else {
           // Start hidden - now safe because setVisible operates on the container,
-          // not the SurfaceView directly (matching ExoPlayer's approach).
+          // not the SurfaceView directly.
           // No-op on the audio-only core, which has no render layer.
           core.setVisible(false)
           PlayerDebugLog.d(tag) { "Initialized: true" }

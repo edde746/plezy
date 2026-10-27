@@ -349,16 +349,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Аз анимация және төмен сапалы суреттер';
 	@override String get hideSpoilers => 'Көрілмеген бөлімдер үшін спойлерлерді жасыру';
 	@override String get hideSpoilersDescription => 'Көрілмеген бөлімдердің суреттері мен сипаттамаларын бұлдырату';
-	@override String get playerBackend => 'Ойнатқыш инфрақұрылымы';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппараттық декодтау';
 	@override String get hardwareDecodingDescription => 'Мүмкіндігінше аппараттық үдетуді пайдалану';
-	@override String get playbackBuffer => 'Ойнату буфері';
-	@override String get playbackBufferAuto => 'Авто (ұсынылады)';
-	@override String get playbackBufferLarge => 'Үлкен';
-	@override String get playbackBufferExtraLarge => 'Өте үлкен';
-	@override String get playbackBufferDescription => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.';
 	@override String get defaultQualityTitle => 'Әдепкі сапа';
 	@override String get cellularQualityTitle => 'Мобильді желідегі әдепкі сапа';
 	@override String get cellularQualitySameAsDefault => 'Әдепкі сапамен бірдей';
@@ -504,8 +496,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Динамикалық диапазонды сәйкестендіру';
 	@override String get matchDynamicRangeDescription => 'HDR мазмұн үшін HDR қосу, кейін SDR-ға қайту';
 	@override String get displaySwitchDelay => 'Экранды ауыстыру кідірісі';
-	@override String get tunneledPlayback => 'Туннельді ойнату';
-	@override String get tunneledPlaybackDescription => 'Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.';
 	@override String get audioPassthrough => 'Дыбысты тікелей өткізу (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.';
 	@override String get audioPassthroughDescriptionApple => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.';
@@ -546,7 +536,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Ойнатқыш';
 	@override String get hdrSdrConversionPlayerDescription => 'Түрлендіруді ойнатқыш орындайды. Түстер тұрақты, бірақ әлсіз ТВ-приставкаларда 4K кідіруі мүмкін';
 	@override String get deinterlace => 'Деинтерлейсинг';
-	@override String get deinterlaceDescription => 'Жоларалық видеодағы тарақ тәрізді артефактілерді жою (тек mpv ойнатқышында)';
+	@override String get deinterlaceDescription => 'Жоларалық видеодағы тарақ тәрізді артефактілерді жою';
 	@override String get deinterlaceOff => 'Өшірулі';
 	@override String get deinterlaceOffDescription => 'Жоларалық видеоны декодталған күйінде көрсету';
 	@override String get deinterlaceVideo => 'Видео';
@@ -1076,7 +1066,6 @@ class _Translations$messages$kk extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Элементтер жоқ';
 	@override String get failedToCreatePlayQueueNoItems => 'Ойнату кезегін жасау мүмкін болмады — элементтер жоқ';
 	@override String failedPlayback({required Object action, required Object error}) => '${action} сәтсіз аяқталды: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Үйлесімді ойнатқышқа ауысуда...';
 	@override String get serverLimitTitle => 'Ойнату қатесі';
 	@override String get serverLimitBody => 'Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.';
 	@override String get mediaUnreadableTitle => 'Файл қолжетімсіз';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$kk extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Төмен';
 	@override String get useMargins => 'Шеттерді пайдалану';
 	@override String get useMarginsDescription => 'Мәтіндік субтитрлерге бейнеден тыс жерді пайдалануға рұқсат ету. Стильді субтитрлер өз орналасуын сақтауы мүмкін.';
-	@override String get anchorToScreen => 'Экранға бекіту';
-	@override String get anchorToScreenDescription => 'Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету';
 	@override String get bold => 'Қалың';
 	@override String get italic => 'Көлбеу';
 	@override String get renderResolution => 'Рендеринг ажыратымдылығы';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get buffer => 'Буфер';
 	@override String get app => 'Қолданба';
 	@override String get decoder => 'Декодер';
-	@override String get rawDecoder => 'Өңделмеген декодер';
-	@override String get tunneling => 'Туннельдеу';
 	@override String get passthrough => 'Тікелей өткізу';
 	@override String get aspect => 'Қатынас';
 	@override String get rotation => 'Бұрылыс';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG негізгі қабаты';
 	@override String get dvRouteBaseLayerSdr => 'SDR негізгі қабаты';
 	@override String get dvRouteReshaped => 'RPU арқылы қайта пішінделген (gpu-next)';
-	@override String get p7Conversion => 'P7 түрлендіруі';
 	@override String get sampleRate => 'Дискретизация жиілігі';
 	@override String get pixelFormat => 'Пиксель форматы';
 	@override String get hwFormat => 'HW форматы';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get displayFps => 'Дисплей FPS';
 	@override String get avSync => 'A/V синхрондау';
 	@override String get dropped => 'Өткізілген кадрлар';
-	@override String get dvRpus => 'DV RPU-лар';
-	@override String get dvRpuAverage => 'DV RPU Орт.';
-	@override String get dvSampleAverage => 'DV Үлгі Орт.';
 	@override String get maxLuma => 'Макс Luma';
 	@override String get minLuma => 'Мин Luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get memory => 'Жады';
 	@override String get uiFps => 'Интерфейс (UI) FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => 'Бағдарламалық';
-	@override String get decoderHardware => 'Аппараттық';
-	@override String get tunnelingActive => 'Белсенді';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsKk {
 			'settings.visualEffectsReducedDescription' => 'Аз анимация және төмен сапалы суреттер',
 			'settings.hideSpoilers' => 'Көрілмеген бөлімдер үшін спойлерлерді жасыру',
 			'settings.hideSpoilersDescription' => 'Көрілмеген бөлімдердің суреттері мен сипаттамаларын бұлдырату',
-			'settings.playerBackend' => 'Ойнатқыш инфрақұрылымы',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппараттық декодтау',
 			'settings.hardwareDecodingDescription' => 'Мүмкіндігінше аппараттық үдетуді пайдалану',
-			'settings.playbackBuffer' => 'Ойнату буфері',
-			'settings.playbackBufferAuto' => 'Авто (ұсынылады)',
-			'settings.playbackBufferLarge' => 'Үлкен',
-			'settings.playbackBufferExtraLarge' => 'Өте үлкен',
-			'settings.playbackBufferDescription' => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.',
 			'settings.defaultQualityTitle' => 'Әдепкі сапа',
 			'settings.cellularQualityTitle' => 'Мобильді желідегі әдепкі сапа',
 			'settings.cellularQualitySameAsDefault' => 'Әдепкі сапамен бірдей',
@@ -3783,8 +3748,6 @@ extension on TranslationsKk {
 			'settings.matchDynamicRange' => 'Динамикалық диапазонды сәйкестендіру',
 			'settings.matchDynamicRangeDescription' => 'HDR мазмұн үшін HDR қосу, кейін SDR-ға қайту',
 			'settings.displaySwitchDelay' => 'Экранды ауыстыру кідірісі',
-			'settings.tunneledPlayback' => 'Туннельді ойнату',
-			'settings.tunneledPlaybackDescription' => 'Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.',
 			'settings.audioPassthrough' => 'Дыбысты тікелей өткізу (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
@@ -3825,7 +3788,7 @@ extension on TranslationsKk {
 			'settings.hdrSdrConversionPlayer' => 'Ойнатқыш',
 			'settings.hdrSdrConversionPlayerDescription' => 'Түрлендіруді ойнатқыш орындайды. Түстер тұрақты, бірақ әлсіз ТВ-приставкаларда 4K кідіруі мүмкін',
 			'settings.deinterlace' => 'Деинтерлейсинг',
-			'settings.deinterlaceDescription' => 'Жоларалық видеодағы тарақ тәрізді артефактілерді жою (тек mpv ойнатқышында)',
+			'settings.deinterlaceDescription' => 'Жоларалық видеодағы тарақ тәрізді артефактілерді жою',
 			'settings.deinterlaceOff' => 'Өшірулі',
 			'settings.deinterlaceOffDescription' => 'Жоларалық видеоны декодталған күйінде көрсету',
 			'settings.deinterlaceVideo' => 'Видео',
@@ -3906,8 +3869,6 @@ extension on TranslationsKk {
 			'themeEditor.slots.text' => 'Мәтін',
 			'themeEditor.slots.textMuted' => 'Қосалқы мәтін',
 			'themeEditor.slots.accent' => 'Акцент',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Мөлдірлік',
 			'themeEditor.hexHint' => '#RRGGBB немесе #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Басқа тақырыптардан',
@@ -3918,6 +3879,8 @@ extension on TranslationsKk {
 			'themeEditor.contrast.textMutedOnSurface' => 'Беткі қабаттағы қосалқы мәтін',
 			'themeEditor.contrast.accentOnBg' => 'Фондағы акцент',
 			'themeEditor.contrast.accentOnSurface' => 'Беткі қабаттағы акцент',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Акценттегі түйме мәтіні',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, ұсынылған ${minimum}:1 мәнінен төмен',
 			'themeEditor.discardTitle' => 'Өзгерістер жойылсын ба?',
@@ -4288,7 +4251,6 @@ extension on TranslationsKk {
 			'messages.noItemsAvailable' => 'Элементтер жоқ',
 			'messages.failedToCreatePlayQueueNoItems' => 'Ойнату кезегін жасау мүмкін болмады — элементтер жоқ',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action} сәтсіз аяқталды: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Үйлесімді ойнатқышқа ауысуда...',
 			'messages.serverLimitTitle' => 'Ойнату қатесі',
 			'messages.serverLimitBody' => 'Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.',
 			'messages.mediaUnreadableTitle' => 'Файл қолжетімсіз',
@@ -4326,8 +4288,6 @@ extension on TranslationsKk {
 			'subtitlingStyling.positionBottom' => 'Төмен',
 			'subtitlingStyling.useMargins' => 'Шеттерді пайдалану',
 			'subtitlingStyling.useMarginsDescription' => 'Мәтіндік субтитрлерге бейнеден тыс жерді пайдалануға рұқсат ету. Стильді субтитрлер өз орналасуын сақтауы мүмкін.',
-			'subtitlingStyling.anchorToScreen' => 'Экранға бекіту',
-			'subtitlingStyling.anchorToScreenDescription' => 'Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету',
 			'subtitlingStyling.bold' => 'Қалың',
 			'subtitlingStyling.italic' => 'Көлбеу',
 			'subtitlingStyling.renderResolution' => 'Рендеринг ажыратымдылығы',
@@ -4420,8 +4380,6 @@ extension on TranslationsKk {
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті',
@@ -4435,6 +4393,8 @@ extension on TranslationsKk {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count} тіркелгіде сақталған аудио, субтитр және кітапхана баптаулары',
 			'accountPreferences.pickAccount' => 'Әр тіркелгі өз баптауларын сақтайды. Өңдеу үшін біреуін таңдаңыз.',
 			'accountPreferences.storedOnAccount' => 'Бұл баптаулар тіркелгінің өзінде сақталады, сондықтан оған кірген әрбір қолданба оларды пайдаланады — басқа құрылғыларыңыздағы Plezy қоса.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Баптауға тіркелгілер жоқ',
 			'accountPreferences.noAccountsHint' => 'Plex-ке кіріңіз немесе Jellyfin не Emby серверін қосыңыз, сонда сол тіркелгіде сақталған баптаулар осында көрсетіледі.',
 			'accountPreferences.unavailable' => 'Бұл тіркелгіге қол жеткізу мүмкін емес',
@@ -4934,8 +4894,6 @@ extension on TranslationsKk {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
 			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Арнаны іске қосу мүмкін болмады: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsKk {
 			'collections.deleteFailed' => 'Топтаманы өшіру мүмкін болмады',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Топтаманы өшіру қатесі: ${error}',
 			'collections.selectCollection' => 'Топтаманы таңдау',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Топтама атауы',
 			'collections.enterCollectionName' => 'Топтама атауын енгізіңіз',
 			'collections.addedToCollection' => 'Топтамаға қосылды',
@@ -5399,8 +5359,6 @@ extension on TranslationsKk {
 			'performanceOverlay.buffer' => 'Буфер',
 			'performanceOverlay.app' => 'Қолданба',
 			'performanceOverlay.decoder' => 'Декодер',
-			'performanceOverlay.rawDecoder' => 'Өңделмеген декодер',
-			'performanceOverlay.tunneling' => 'Туннельдеу',
 			'performanceOverlay.passthrough' => 'Тікелей өткізу',
 			'performanceOverlay.aspect' => 'Қатынас',
 			'performanceOverlay.rotation' => 'Бұрылыс',
@@ -5413,7 +5371,6 @@ extension on TranslationsKk {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG негізгі қабаты',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR негізгі қабаты',
 			'performanceOverlay.dvRouteReshaped' => 'RPU арқылы қайта пішінделген (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 түрлендіруі',
 			'performanceOverlay.sampleRate' => 'Дискретизация жиілігі',
 			'performanceOverlay.pixelFormat' => 'Пиксель форматы',
 			'performanceOverlay.hwFormat' => 'HW форматы',
@@ -5424,9 +5381,6 @@ extension on TranslationsKk {
 			'performanceOverlay.displayFps' => 'Дисплей FPS',
 			'performanceOverlay.avSync' => 'A/V синхрондау',
 			'performanceOverlay.dropped' => 'Өткізілген кадрлар',
-			'performanceOverlay.dvRpus' => 'DV RPU-лар',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Орт.',
-			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
 			'performanceOverlay.maxLuma' => 'Макс Luma',
 			'performanceOverlay.minLuma' => 'Мин Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsKk {
 			'performanceOverlay.memory' => 'Жады',
 			'performanceOverlay.uiFps' => 'Интерфейс (UI) FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
-			'performanceOverlay.decoderHardware' => 'Аппараттық',
-			'performanceOverlay.tunnelingActive' => 'Белсенді',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Сыртқы ойнатқышты пайдалану',
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',
 			'externalPlayer.selectPlayer' => 'Ойнатқышты таңдау',
@@ -5477,6 +5421,8 @@ extension on TranslationsKk {
 			'metadataEdit.contentRating' => 'Мазмұн рейтингі',
 			'metadataEdit.studio' => 'Студия',
 			'metadataEdit.tagline' => 'Ұран/Слоган',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Сипаттамасы/Күйі',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',

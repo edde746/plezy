@@ -376,15 +376,15 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// dropped every other frame and let video fall behind audio (#2568).
   ///
   /// [firstFrame] is the open's first-frame signal, armed before the open:
-  /// the launch's attempt outcome, or the one a zap arms for itself. Null —
-  /// open as before — on ExoPlayer, which keeps its post-first-frame
-  /// detection, and on desktop. Time-shift seeks, subtitle rebuilds and
-  /// stream recovery reopen the same channel and keep its negotiated mode.
+  /// the launch's attempt outcome, or the one a zap arms for itself. Returns
+  /// null — open as before — on desktop, iOS and macOS. Time-shift seeks,
+  /// subtitle rebuilds and stream recovery reopen the same channel and keep
+  /// its negotiated mode.
   _FrameRateStartupPlan? _armLiveDisplayNegotiation(Player currentPlayer, PlaybackOpenOutcome firstFrame) {
     final plan = _firstFrameStartupPlan(currentPlayer, SettingsService.instance, hasVideoUrl: true);
     if (plan == null) return null;
     _frameRate.resetForNewItem();
-    if (plan.countsAsApplied) _frameRate.applied = true;
+    if (plan.needsFirstFrameSwitch) _frameRate.applied = true;
     plan.armFirstFrameGate(firstFrame, _frameRate);
     return plan;
   }
@@ -404,7 +404,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   }) async {
     final generation = _transitionGate.generation;
     try {
-      if (stream == null || !plan.holdPlaybackStart) return;
+      if (stream == null || !plan.needsFirstFrameSwitch) return;
       await _releaseFrameRateStartupGate(
         currentPlayer: currentPlayer,
         settingsService: SettingsService.instance,
@@ -648,7 +648,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         currentPlayer,
         streamUrl,
         targetEpoch: targetEpoch,
-        play: (frameRatePlan?.holdPlaybackStart ?? false) ? false : null,
+        play: (frameRatePlan?.needsFirstFrameSwitch ?? false) ? false : null,
         onOpenStarted: () {
           replacementOpenStarted = true;
           // The native state belongs to the replacement from this point,

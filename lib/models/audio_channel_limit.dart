@@ -9,15 +9,4 @@
 /// [surround51] only shapes decoded PCM: a bitstream keeps its own layout, so
 /// passthrough stays available. [stereo] decodes every track, so passthrough
 /// is off while it is selected.
-enum AudioChannelLimit {
-  original,
-  surround51,
-  stereo;
-
-  /// ExoPlayer only has the stereo downmix, and the backend is being removed,
-  /// so [surround51] plays as [original] there.
-  AudioChannelLimit get onExoPlayer => this == surround51 ? original : this;
-
-  /// The limits the active backend honours.
-  static List<AudioChannelLimit> available({required bool exoPlayer}) => exoPlayer ? const [original, stereo] : values;
-}
+enum AudioChannelLimit { original, surround51, stereo }

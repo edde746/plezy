@@ -1,6 +1,5 @@
 import java.io.FileInputStream
 import java.util.Properties
-import java.util.UUID
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -9,14 +8,6 @@ plugins {
   // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
   id("dev.flutter.flutter-gradle-plugin")
 }
-
-apply(from = rootProject.file("gradle/native-artifacts.gradle.kts"))
-
-@Suppress("UNCHECKED_CAST")
-val verifySha256 = extra["verifySha256"] as (File, String, String) -> Unit
-
-@Suppress("UNCHECKED_CAST")
-val promoteDirectory = extra["promoteDirectory"] as (File, File) -> Unit
 
 // mpv-build's mpv-android library (libmpv, FFmpeg, libc++ and the JNI glue
 // with its Kotlin API, package com.edde746.mpv, one AAR), pinned in the
@@ -60,22 +51,16 @@ repositories {
 }
 val mpvAarDependency = "edde746:mpv-android:${mpvAar.getValue("key")}@aar"
 
-// The AAR's native libraries this build reads itself: the FFmpeg libraries the
-// Media3 adapter links (CMake then packages those same bytes), and the libc++
-// runtime libmpv was linked against, packaged at PROJECT scope below so it
-// deterministically wins the merge over any older copy.
+// The AAR's native library this build reads itself: the libc++ runtime libmpv
+// was linked against, packaged at PROJECT scope below so it deterministically
+// wins the merge over any older copy.
 val mpvAarNatives = configurations.create("mpvAarNatives") {
   isCanBeConsumed = false
 }
 val mpvNativeDir = layout.buildDirectory.dir("mpv-android").get().asFile
-val mpvFfmpegJniDir = File(mpvNativeDir, "ffmpeg/jni")
 val mpvLibcxxJniDir = File(mpvNativeDir, "libcxx/jni")
 val mpvAbis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
-  from(provider { zipTree(mpvAarNatives.singleFile) }) {
-    include("jni/*/libavcodec.so", "jni/*/libavutil.so", "jni/*/libswresample.so")
-    into("ffmpeg")
-  }
   from(provider { zipTree(mpvAarNatives.singleFile) }) {
     include("jni/*/libc++_shared.so")
     into("libcxx")
@@ -91,198 +76,6 @@ val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
 }
 
 val media3Version = "1.11.0"
-val mpvFfmpegVersion = "8.0.1"
-val mpvFfmpegSourceSha256 = "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
-val mpvFfmpegSourceUrl = "https://ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
-val mpvFfmpegDevelopmentDir = layout.buildDirectory.dir("libmpv-ffmpeg-development").get().asFile
-
-// Build the Media3 JNI adapter against the same shared FFmpeg libraries that
-// libmpv packages. Headers are pinned to libmpv's FFmpeg version and remain
-// build-only; the APK contains one FFmpeg implementation for both players.
-// The AAR carries no headers, so they come from FFmpeg's release source: the
-// Media3 adapter uses none of the declarations mpv-build's patches change
-// (libavcodec/mediacodec.h, libavcodec/jni.h).
-val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") {
-  dependsOn(extractMpvNatives)
-  val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
-  val libraries = listOf("avcodec", "avutil", "swresample")
-  inputs.dir(mpvFfmpegJniDir)
-  inputs.property("ffmpegVersion", mpvFfmpegVersion)
-  inputs.property("sourceUrl", mpvFfmpegSourceUrl)
-  inputs.property("sourceSha256", mpvFfmpegSourceSha256)
-  outputs.files(
-    mpvAbis.flatMap { abi ->
-      libraries.map { library -> File(mpvFfmpegDevelopmentDir, "native/$abi/lib$library.so") }
-    }
-  )
-  outputs.files(
-    File(mpvFfmpegDevelopmentDir, "include/libavcodec/avcodec.h"),
-    File(mpvFfmpegDevelopmentDir, "include/libavutil/avconfig.h"),
-    File(mpvFfmpegDevelopmentDir, "include/libswresample/swresample.h"),
-    manifest
-  )
-  doLast {
-    val staging = File(
-      mpvFfmpegDevelopmentDir.parentFile,
-      "${mpvFfmpegDevelopmentDir.name}.staging-${UUID.randomUUID()}"
-    )
-    try {
-      val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.xz")
-      val includeDir = File(staging, "include")
-      val nativeDir = File(staging, "native")
-      staging.mkdirs()
-      try {
-        providers.exec {
-          commandLine("curl", "-sfL", mpvFfmpegSourceUrl, "-o", sourceArchive.absolutePath)
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to download FFmpeg $mpvFfmpegVersion headers", error)
-      }
-      verifySha256(sourceArchive, mpvFfmpegSourceSha256, "FFmpeg $mpvFfmpegVersion source")
-
-      val extractedSource = File(staging, "source").apply { mkdirs() }
-      try {
-        providers.exec {
-          commandLine(
-            "tar",
-            "-xJf",
-            sourceArchive.absolutePath,
-            "--strip-components=1",
-            "-C",
-            extractedSource.absolutePath
-          )
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
-      }
-      listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
-        project.copy {
-          from(File(extractedSource, library)) {
-            include("*.h")
-          }
-          into(File(includeDir, library))
-        }
-      }
-      File(includeDir, "libavutil/avconfig.h").writeText(
-        """
-        |/* Generated for Plezy's little-endian Android ABIs. */
-        |#ifndef AVUTIL_AVCONFIG_H
-        |#define AVUTIL_AVCONFIG_H
-        |#define AV_HAVE_BIGENDIAN 0
-        |#define AV_HAVE_FAST_UNALIGNED 0
-        |#endif /* AVUTIL_AVCONFIG_H */
-        |
-        """.trimMargin()
-      )
-
-      project.copy {
-        from(mpvFfmpegJniDir) {
-          include(libraries.map { library -> "*/lib$library.so" })
-        }
-        includeEmptyDirs = false
-        into(nativeDir)
-      }
-
-      val missing = mpvAbis.flatMap { abi ->
-        libraries.map { library -> File(nativeDir, "$abi/lib$library.so") }
-      }.filterNot(File::isFile)
-      if (missing.isNotEmpty()) {
-        throw GradleException(
-          "$mpvAarDependency is missing FFmpeg libraries: ${missing.joinToString { it.relativeTo(staging).path }}"
-        )
-      }
-      File(staging, ".manifest").writeText(
-        "ffmpeg=$mpvFfmpegVersion\nsourceSha256=$mpvFfmpegSourceSha256\n"
-      )
-      sourceArchive.delete()
-      extractedSource.deleteRecursively()
-      promoteDirectory(staging, mpvFfmpegDevelopmentDir)
-    } finally {
-      staging.deleteRecursively()
-    }
-  }
-}
-
-val doviVersion = "2.3.1"
-val doviDir = layout.buildDirectory.dir("libdovi").get().asFile
-val doviArtifacts = mapOf(
-  "arm64-v8a" to Pair(
-    "aarch64-linux-android",
-    "9d2983fc86f2f9e6da54c3c84ba8ea3a528690619f312ff4620198071b84e9ae"
-  ),
-  "armeabi-v7a" to Pair(
-    "armv7-linux-androideabi",
-    "ed6fec8bf744e41c661b97f5fc4bf1197ebe9b09a140cbde369728e790ee3a68"
-  ),
-  "x86" to Pair(
-    "i686-linux-android",
-    "50f0a5606e617dff8976b9e7930a23272f4804882a35a6f0f2b2f2d3f8ed7135"
-  ),
-  "x86_64" to Pair(
-    "x86_64-linux-android",
-    "eba59678f89b792f5c6f802962e237542fe8328f6aa03a0a90ee77353dac3194"
-  )
-)
-val doviBaseUrl = "https://github.com/edde746/libdovi-builds/releases/download/v$doviVersion"
-
-val downloadLibdovi = tasks.register("downloadLibdovi") {
-  val manifest = File(doviDir, ".manifest")
-  inputs.property("version", doviVersion)
-  inputs.property("baseUrl", doviBaseUrl)
-  doviArtifacts.forEach { (abi, artifact) ->
-    inputs.property("$abi.triple", artifact.first)
-    inputs.property("$abi.sha256", artifact.second)
-    inputs.property("$abi.sourceUrl", "$doviBaseUrl/libdovi-${artifact.first}.tar.gz")
-  }
-  outputs.files(doviArtifacts.keys.map { abi -> File(doviDir, "$abi/lib/libdovi.a") } + manifest)
-  doLast {
-    doviDir.parentFile.mkdirs()
-    val staging = File(doviDir.parentFile, "${doviDir.name}.staging-${UUID.randomUUID()}")
-    try {
-      staging.mkdirs()
-      val downloads = File(staging, ".downloads").apply { mkdirs() }
-      doviArtifacts.forEach { (abi, artifact) ->
-        val (triple, expectedSha256) = artifact
-        val archiveName = "libdovi-$triple.tar.gz"
-        val archive = File(downloads, archiveName)
-        val sourceUrl = "$doviBaseUrl/$archiveName"
-        try {
-          providers.exec {
-            commandLine("curl", "-sfL", sourceUrl, "-o", archive.absolutePath)
-          }.result.get().assertNormalExitValue()
-        } catch (error: Exception) {
-          throw GradleException("Failed to download $archiveName v$doviVersion", error)
-        }
-        verifySha256(archive, expectedSha256, "$archiveName v$doviVersion")
-
-        val outDir = File(staging, "$abi/lib").apply { mkdirs() }
-        try {
-          providers.exec {
-            commandLine("tar", "-xzf", archive.absolutePath, "-C", outDir.absolutePath)
-          }.result.get().assertNormalExitValue()
-        } catch (error: Exception) {
-          throw GradleException("Failed to extract $archiveName", error)
-        }
-        if (!File(outDir, "libdovi.a").isFile) {
-          throw GradleException("$archiveName did not contain the expected libdovi.a")
-        }
-      }
-      if (!downloads.deleteRecursively()) {
-        throw GradleException("Failed to clean staged libdovi archives")
-      }
-      val manifestText = buildString {
-        append("version=$doviVersion\n")
-        doviArtifacts.forEach { (abi, artifact) ->
-          append("$abi=${artifact.first},${artifact.second}\n")
-        }
-      }
-      File(staging, ".manifest").writeText(manifestText)
-      promoteDirectory(staging, doviDir)
-    } finally {
-      staging.deleteRecursively()
-    }
-  }
-}
 
 android {
   namespace = "com.edde746.plezy"
@@ -308,28 +101,11 @@ android {
     versionName = flutter.versionName
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    externalNativeBuild {
-      cmake {
-        arguments += listOf(
-          "-DDOVI_ENABLE_LIBDOVI=ON",
-          "-DDOVI_LIBDOVI_PREBUILT_ROOT=${doviDir.absolutePath}",
-          "-DMPV_FFMPEG_ROOT=${mpvFfmpegDevelopmentDir.absolutePath}"
-        )
-      }
-    }
-
     if (System.getenv("AMAZON") != null) {
       versionCode = (flutter.versionCode ?: 0) + 3000
       ndk {
         abiFilters += listOf("armeabi-v7a", "arm64-v8a")
       }
-    }
-  }
-
-  externalNativeBuild {
-    cmake {
-      path = file("src/main/cpp/CMakeLists.txt")
-      version = "4.1.2"
     }
   }
 
@@ -366,8 +142,7 @@ android {
     // R8 only ever ran on `release`, so every gate in this repository exercised code
     // the shipped APK does not contain: reflective lookups, JNI callbacks and native
     // library loading can all break under shrinking while every debug check passes.
-    // #1703 shipped that way — DefaultRenderersFactory's Class.forName for the bundled
-    // FFmpeg audio renderer failed in release builds only.
+    // #1703 shipped that way: a Class.forName lookup failed in release builds only.
     //
     // Inherits release's minification and keep rules (the Flutter plugin has already
     // installed them by the time this block runs) but stays debuggable and debug-signed,
@@ -394,8 +169,8 @@ android {
 
   // Instrumentation normally runs against `debug`; the R8 reachability gate opts into the
   // minified variant with -Pplezy.testBuildType=minified. Only one build type can host
-  // androidTest, and the existing playback suites need media3 builder APIs the app itself
-  // never calls — which R8 legitimately shrinks — so they stay on debug.
+  // androidTest, and the playback device suites need the debug-only
+  // MpvLifecycleTestActivity, so they stay on debug.
   testBuildType = (findProperty("plezy.testBuildType") as String?) ?: "debug"
 
   packaging {
@@ -465,13 +240,6 @@ flutter {
   source = "../.."
 }
 
-tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
-  dependsOn(downloadLibdovi, prepareMpvFfmpegDevelopment)
-}
-
-tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(prepareMpvFfmpegDevelopment)
-}
 // Gradle snapshots jniLibs source dirs before task execution; this keeps the
 // extracted libc++ directory present during input discovery.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
@@ -494,24 +262,13 @@ dependencies {
   // classpath stays coherent.
   implementation("androidx.work:work-runtime-ktx:2.11.0")
 
-  // Media3 ExoPlayer for Android
-  implementation("androidx.media3:media3-decoder:$media3Version")
-  implementation("androidx.media3:media3-exoplayer:$media3Version")
-  implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
-  implementation("androidx.media3:media3-ui:$media3Version")
+  // MpvPlaceholderSurface's EGLSurfaceTexture and the audio constants MpvAudioOutputPolicy uses.
   implementation("androidx.media3:media3-common:$media3Version")
-
-  // Cronet for HTTP/2 multiplexing + better connection management
-  implementation("androidx.media3:media3-datasource-cronet:$media3Version")
-  implementation("org.chromium.net:cronet-embedded:143.7445.0")
-
-  // Keeping libass in-project lets its static core share the app's native
-  // packaging rules.
-  implementation(project(":libass"))
+  // Only for AudioCapabilities, which MpvAudioOutputPolicy reads to gate mpv's audio-spdif list.
+  implementation("androidx.media3:media3-exoplayer:$media3Version")
 
   testImplementation("junit:junit:4.13.2")
-  // Real android.util.* implementations for tests exercising media3 classes
-  // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
+  // Real Android framework implementations (activities, the main looper) for JVM tests
   testImplementation("org.robolectric:robolectric:4.16.1")
   testImplementation("androidx.work:work-testing:2.11.0")
   androidTestImplementation("androidx.test:runner:1.7.0")

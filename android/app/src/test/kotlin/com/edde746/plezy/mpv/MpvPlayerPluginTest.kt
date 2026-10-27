@@ -354,51 +354,6 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun heldLoadPauseIntentSynchronouslyBlocksFocusAndSurfaceAutoResumeWithoutNativeWrite() {
-    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
-    val core = testVideoCore { name, value -> writes += name to value }
-    setBoolean(core, "desiredPaused", false)
-    setBoolean(core, "cachedPaused", false)
-    setBoolean(core, "resumeBlockedByPublicPause", false)
-    setBoolean(core, "pausedForSurfaceLoss", true)
-    setBoolean(core, "pausedForAudioFocusLoss", true)
-    setBoolean(core, "deferredResumeRequested", true)
-
-    core.setPauseIntentForLoad(paused = true)
-    invokeAutoResume(core, "audio focus gain")
-    invokeAutoResume(core, "surface attached")
-
-    assertEquals(true, getBoolean(core, "desiredPaused"))
-    assertEquals(true, getBoolean(core, "cachedPaused"))
-    assertEquals(true, getBoolean(core, "resumeBlockedByPublicPause"))
-    assertEquals(false, getBoolean(core, "pausedForSurfaceLoss"))
-    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
-    assertEquals(false, getBoolean(core, "deferredResumeRequested"))
-    assertFalse(awaitQueueEntry(writes, "pause" to "no"))
-    assertTrue(writes.isEmpty())
-  }
-
-  @Test
-  fun autoplayLoadIntentClearsPublicPauseBlockWithoutPrematureNativeResumeWrite() {
-    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
-    val core = testCore { name, value -> writes += name to value }
-    setBoolean(core, "desiredPaused", true)
-    setBoolean(core, "cachedPaused", true)
-    setBoolean(core, "resumeBlockedByPublicPause", true)
-
-    core.setPauseIntentForLoad(paused = false)
-
-    assertEquals(false, getBoolean(core, "desiredPaused"))
-    assertEquals(false, getBoolean(core, "cachedPaused"))
-    assertEquals(false, getBoolean(core, "resumeBlockedByPublicPause"))
-    assertFalse(awaitQueueEntry(writes, "pause" to "no"))
-
-    invokeAudioFocusPause(core)
-    assertTrue(awaitQueueEntry(writes, "pause" to "yes"))
-    assertEquals(listOf("pause" to "yes"), writes.toList())
-  }
-
-  @Test
   fun activeFocusLossExplicitResumeReacquiresFocusAndWritesOnce() {
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val focusResumeCallbacks = AtomicInteger()
@@ -2140,18 +2095,6 @@ class MpvPlayerPluginTest {
     assertNull(entries(25)["async"])
     assertEquals("0", entries(25)["ndk_codec"])
     assertEquals("0", entries(36)["ndk_codec"])
-  }
-
-  private fun awaitQueueEntry(
-    queue: ConcurrentLinkedQueue<Pair<String, String>>,
-    expected: Pair<String, String>
-  ): Boolean {
-    repeat(10) {
-      shadowOf(Looper.getMainLooper()).idle()
-      if (queue.contains(expected)) return true
-      Thread.sleep(10)
-    }
-    return false
   }
 
   private fun awaitCompletion(result: RecordingResult) {

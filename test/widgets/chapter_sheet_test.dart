@@ -96,7 +96,6 @@ class _FakePlayer implements Player {
     audioDevices: Stream<List<AudioDevice>>.empty(),
     bufferRanges: Stream<List<BufferRange>>.empty(),
     playbackRestart: Stream<void>.empty(),
-    backendSwitched: Stream<void>.empty(),
   );
   @override
   Future<void> seek(Duration position) async => seeks.add(position);

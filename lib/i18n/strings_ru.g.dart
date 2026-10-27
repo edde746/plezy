@@ -349,16 +349,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Меньше анимаций и графика с более низким разрешением';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
-	@override String get playerBackend => 'Бэкенд плеера';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппаратное декодирование';
 	@override String get hardwareDecodingDescription => 'Использовать аппаратное ускорение, когда доступно';
-	@override String get playbackBuffer => 'Буфер воспроизведения';
-	@override String get playbackBufferAuto => 'Авто (рекомендуется)';
-	@override String get playbackBufferLarge => 'Большой';
-	@override String get playbackBufferExtraLarge => 'Очень большой';
-	@override String get playbackBufferDescription => 'Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.';
 	@override String get defaultQualityTitle => 'Качество по умолчанию';
 	@override String get cellularQualityTitle => 'Качество по умолчанию в мобильной сети';
 	@override String get cellularQualitySameAsDefault => 'Как качество по умолчанию';
@@ -504,8 +496,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Соответствие динамического диапазона';
 	@override String get matchDynamicRangeDescription => 'Включать HDR для HDR-контента, затем возвращаться к SDR';
 	@override String get displaySwitchDelay => 'Задержка переключения дисплея';
-	@override String get tunneledPlayback => 'Туннельное воспроизведение';
-	@override String get tunneledPlaybackDescription => 'Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
 	@override String get audioPassthroughDescriptionApple => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.';
@@ -546,7 +536,7 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Проигрыватель';
 	@override String get hdrSdrConversionPlayerDescription => 'Преобразует проигрыватель. Одинаковые цвета, но 4K может подтормаживать на слабых ТВ-приставках';
 	@override String get deinterlace => 'Деинтерлейсинг';
-	@override String get deinterlaceDescription => 'Устранять гребёнку на чересстрочном видео (только в плеере mpv)';
+	@override String get deinterlaceDescription => 'Устранять гребёнку на чересстрочном видео';
 	@override String get deinterlaceOff => 'Выкл.';
 	@override String get deinterlaceOffDescription => 'Показывать чересстрочное видео как есть после декодирования';
 	@override String get deinterlaceVideo => 'Видео';
@@ -1084,7 +1074,6 @@ class _Translations$messages$ru extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Нет доступных элементов';
 	@override String get failedToCreatePlayQueueNoItems => 'Не удалось создать очередь воспроизведения — нет элементов';
 	@override String failedPlayback({required Object action, required Object error}) => 'Не удалось ${action}: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Переключение на совместимый плеер...';
 	@override String get serverLimitTitle => 'Ошибка воспроизведения';
 	@override String get serverLimitBody => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.';
 	@override String get mediaUnreadableTitle => 'Файл недоступен';
@@ -1131,8 +1120,6 @@ class _Translations$subtitlingStyling$ru extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Снизу';
 	@override String get useMargins => 'Использовать поля';
 	@override String get useMarginsDescription => 'Разрешить текстовым субтитрам размещаться в области за пределами видео. Стилизованные субтитры могут сохранять исходное положение.';
-	@override String get anchorToScreen => 'Привязка к экрану';
-	@override String get anchorToScreenDescription => 'Показывать текстовые субтитры в чёрных полосах под широкоформатным видео';
 	@override String get bold => 'Жирный';
 	@override String get italic => 'Курсив';
 	@override String get renderResolution => 'Разрешение отрисовки';
@@ -2127,8 +2114,6 @@ class _Translations$performanceOverlay$ru extends Translations$performanceOverla
 	@override String get buffer => 'Буфер';
 	@override String get app => 'Приложение';
 	@override String get decoder => 'Декодер';
-	@override String get rawDecoder => 'Raw-декодер';
-	@override String get tunneling => 'Туннелирование';
 	@override String get passthrough => 'Сквозной вывод';
 	@override String get aspect => 'Соотношение';
 	@override String get rotation => 'Поворот';
@@ -2141,7 +2126,6 @@ class _Translations$performanceOverlay$ru extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'Базовый слой HLG';
 	@override String get dvRouteBaseLayerSdr => 'Базовый слой SDR';
 	@override String get dvRouteReshaped => 'Решейпинг по RPU (gpu-next)';
-	@override String get p7Conversion => 'Конв. P7';
 	@override String get sampleRate => 'Частота дискр.';
 	@override String get pixelFormat => 'Формат пикселей';
 	@override String get hwFormat => 'Формат HW';
@@ -2152,9 +2136,6 @@ class _Translations$performanceOverlay$ru extends Translations$performanceOverla
 	@override String get displayFps => 'FPS дисплея';
 	@override String get avSync => 'A/V синхр.';
 	@override String get dropped => 'Пропущено';
-	@override String get dvRpus => 'DV RPU';
-	@override String get dvRpuAverage => 'Сред. DV RPU';
-	@override String get dvSampleAverage => 'Сред. сэмпл DV';
 	@override String get maxLuma => 'Макс. яркость';
 	@override String get minLuma => 'Мин. яркость';
 	@override String get maxCll => 'MaxCLL';
@@ -2166,15 +2147,7 @@ class _Translations$performanceOverlay$ru extends Translations$performanceOverla
 	@override String get memory => 'Память';
 	@override String get uiFps => 'FPS интерфейса';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android, аппаратный';
-	@override String get decoderNvidiaHw => 'NVIDIA, аппаратный';
-	@override String get decoderQualcommHw => 'Qualcomm, аппаратный';
-	@override String get decoderMediatekHw => 'MediaTek, аппаратный';
-	@override String get decoderExynosHw => 'Exynos, аппаратный';
 	@override String get decoderSoftware => 'Программный';
-	@override String get decoderHardware => 'Аппаратный';
-	@override String get tunnelingActive => 'Активно';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})';
 }
 
 // Path: externalPlayer
@@ -3652,16 +3625,8 @@ extension on TranslationsRu {
 			'settings.visualEffectsReducedDescription' => 'Меньше анимаций и графика с более низким разрешением',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
-			'settings.playerBackend' => 'Бэкенд плеера',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппаратное декодирование',
 			'settings.hardwareDecodingDescription' => 'Использовать аппаратное ускорение, когда доступно',
-			'settings.playbackBuffer' => 'Буфер воспроизведения',
-			'settings.playbackBufferAuto' => 'Авто (рекомендуется)',
-			'settings.playbackBufferLarge' => 'Большой',
-			'settings.playbackBufferExtraLarge' => 'Очень большой',
-			'settings.playbackBufferDescription' => 'Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.',
 			'settings.defaultQualityTitle' => 'Качество по умолчанию',
 			'settings.cellularQualityTitle' => 'Качество по умолчанию в мобильной сети',
 			'settings.cellularQualitySameAsDefault' => 'Как качество по умолчанию',
@@ -3807,8 +3772,6 @@ extension on TranslationsRu {
 			'settings.matchDynamicRange' => 'Соответствие динамического диапазона',
 			'settings.matchDynamicRangeDescription' => 'Включать HDR для HDR-контента, затем возвращаться к SDR',
 			'settings.displaySwitchDelay' => 'Задержка переключения дисплея',
-			'settings.tunneledPlayback' => 'Туннельное воспроизведение',
-			'settings.tunneledPlaybackDescription' => 'Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.',
 			'settings.audioPassthrough' => 'Сквозной вывод аудио',
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
 			'settings.audioPassthroughDescriptionApple' => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.',
@@ -3849,7 +3812,7 @@ extension on TranslationsRu {
 			'settings.hdrSdrConversionPlayer' => 'Проигрыватель',
 			'settings.hdrSdrConversionPlayerDescription' => 'Преобразует проигрыватель. Одинаковые цвета, но 4K может подтормаживать на слабых ТВ-приставках',
 			'settings.deinterlace' => 'Деинтерлейсинг',
-			'settings.deinterlaceDescription' => 'Устранять гребёнку на чересстрочном видео (только в плеере mpv)',
+			'settings.deinterlaceDescription' => 'Устранять гребёнку на чересстрочном видео',
 			'settings.deinterlaceOff' => 'Выкл.',
 			'settings.deinterlaceOffDescription' => 'Показывать чересстрочное видео как есть после декодирования',
 			'settings.deinterlaceVideo' => 'Видео',
@@ -3930,8 +3893,6 @@ extension on TranslationsRu {
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
 			'themeEditor.slots.accent' => 'Акцент',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Непрозрачность',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Из других тем',
@@ -3942,6 +3903,8 @@ extension on TranslationsRu {
 			'themeEditor.contrast.textMutedOnSurface' => 'Второстепенный текст на поверхности',
 			'themeEditor.contrast.accentOnBg' => 'Акцент на фоне',
 			'themeEditor.contrast.accentOnSurface' => 'Акцент на поверхности',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Надпись кнопки на акценте',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, ниже рекомендуемых ${minimum}:1',
 			'themeEditor.discardTitle' => 'Не сохранять изменения?',
@@ -4312,7 +4275,6 @@ extension on TranslationsRu {
 			'messages.noItemsAvailable' => 'Нет доступных элементов',
 			'messages.failedToCreatePlayQueueNoItems' => 'Не удалось создать очередь воспроизведения — нет элементов',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Не удалось ${action}: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Переключение на совместимый плеер...',
 			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
 			'messages.serverLimitBody' => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.',
 			'messages.mediaUnreadableTitle' => 'Файл недоступен',
@@ -4350,8 +4312,6 @@ extension on TranslationsRu {
 			'subtitlingStyling.positionBottom' => 'Снизу',
 			'subtitlingStyling.useMargins' => 'Использовать поля',
 			'subtitlingStyling.useMarginsDescription' => 'Разрешить текстовым субтитрам размещаться в области за пределами видео. Стилизованные субтитры могут сохранять исходное положение.',
-			'subtitlingStyling.anchorToScreen' => 'Привязка к экрану',
-			'subtitlingStyling.anchorToScreenDescription' => 'Показывать текстовые субтитры в чёрных полосах под широкоформатным видео',
 			'subtitlingStyling.bold' => 'Жирный',
 			'subtitlingStyling.italic' => 'Курсив',
 			'subtitlingStyling.renderResolution' => 'Разрешение отрисовки',
@@ -4444,8 +4404,6 @@ extension on TranslationsRu {
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
 			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
@@ -4459,6 +4417,8 @@ extension on TranslationsRu {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Параметры аудио, субтитров и библиотеки сохранены на ${count} аккаунтах',
 			'accountPreferences.pickAccount' => 'Каждый аккаунт хранит собственные настройки. Выберите, какой редактировать.',
 			'accountPreferences.storedOnAccount' => 'Эти параметры сохраняются на самом аккаунте, поэтому их используют все приложения, вошедшие в него, — включая Plezy на ваших других устройствах.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Нет аккаунтов для настройки',
 			'accountPreferences.noAccountsHint' => 'Войдите в Plex или подключите сервер Jellyfin или Emby — и настройки, сохранённые на этом аккаунте, появятся здесь.',
 			'accountPreferences.unavailable' => 'Не удаётся получить доступ к этому аккаунту',
@@ -4958,8 +4918,6 @@ extension on TranslationsRu {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Не удалось запустить канал: ${reason}',
@@ -4973,6 +4931,8 @@ extension on TranslationsRu {
 			'collections.deleteFailed' => 'Не удалось удалить коллекцию',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Не удалось удалить коллекцию: ${error}',
 			'collections.selectCollection' => 'Выбрать коллекцию',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Название коллекции',
 			'collections.enterCollectionName' => 'Введите название коллекции',
 			'collections.addedToCollection' => 'Добавлено в коллекцию',
@@ -5423,8 +5383,6 @@ extension on TranslationsRu {
 			'performanceOverlay.buffer' => 'Буфер',
 			'performanceOverlay.app' => 'Приложение',
 			'performanceOverlay.decoder' => 'Декодер',
-			'performanceOverlay.rawDecoder' => 'Raw-декодер',
-			'performanceOverlay.tunneling' => 'Туннелирование',
 			'performanceOverlay.passthrough' => 'Сквозной вывод',
 			'performanceOverlay.aspect' => 'Соотношение',
 			'performanceOverlay.rotation' => 'Поворот',
@@ -5437,7 +5395,6 @@ extension on TranslationsRu {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'Базовый слой HLG',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'Базовый слой SDR',
 			'performanceOverlay.dvRouteReshaped' => 'Решейпинг по RPU (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'Конв. P7',
 			'performanceOverlay.sampleRate' => 'Частота дискр.',
 			'performanceOverlay.pixelFormat' => 'Формат пикселей',
 			'performanceOverlay.hwFormat' => 'Формат HW',
@@ -5448,9 +5405,6 @@ extension on TranslationsRu {
 			'performanceOverlay.displayFps' => 'FPS дисплея',
 			'performanceOverlay.avSync' => 'A/V синхр.',
 			'performanceOverlay.dropped' => 'Пропущено',
-			'performanceOverlay.dvRpus' => 'DV RPU',
-			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
-			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
 			'performanceOverlay.maxLuma' => 'Макс. яркость',
 			'performanceOverlay.minLuma' => 'Мин. яркость',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5462,18 +5416,8 @@ extension on TranslationsRu {
 			'performanceOverlay.memory' => 'Память',
 			'performanceOverlay.uiFps' => 'FPS интерфейса',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android, аппаратный',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA, аппаратный',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm, аппаратный',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek, аппаратный',
-			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			'performanceOverlay.decoderSoftware' => 'Программный',
-			'performanceOverlay.decoderHardware' => 'Аппаратный',
-			'performanceOverlay.tunnelingActive' => 'Активно',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
 			'externalPlayer.title' => 'Внешний плеер',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',
@@ -5501,6 +5445,8 @@ extension on TranslationsRu {
 			'metadataEdit.contentRating' => 'Возрастной рейтинг',
 			'metadataEdit.studio' => 'Студия',
 			'metadataEdit.tagline' => 'Слоган',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',

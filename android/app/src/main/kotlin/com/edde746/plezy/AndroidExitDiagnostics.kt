@@ -1,7 +1,6 @@
 package com.edde746.plezy
 
 import android.content.Context
-import android.content.SharedPreferences
 import java.security.MessageDigest
 import java.util.concurrent.Executors
 
@@ -47,13 +46,6 @@ internal class StartupPhaseStore(
 }
 
 internal data class RuntimeDiagnosticSnapshot(
-  val codecContext: String? = null,
-  val channelCount: Int? = null,
-  val sampleRate: Int? = null,
-  val selectedDecoder: String? = null,
-  val passthroughEnabled: Boolean? = null,
-  val downmixEnabled: Boolean? = null,
-  val normalizationEnabled: Boolean? = null,
   val uiState: String? = null
 )
 
@@ -65,28 +57,7 @@ internal object AndroidRuntimeDiagnostics {
   const val UI_PLAYER_DISPOSED = "player_disposed"
 
   private const val PREFERENCES_NAME = "plezy_runtime_diagnostics"
-  private const val KEY_CODEC_CONTEXT = "codec_context"
-  private const val KEY_CHANNEL_COUNT = "channel_count"
-  private const val KEY_SAMPLE_RATE = "sample_rate"
-  private const val KEY_SELECTED_DECODER = "selected_decoder"
-  private const val KEY_PASSTHROUGH_ENABLED = "passthrough_enabled"
-  private const val KEY_DOWNMIX_ENABLED = "downmix_enabled"
-  private const val KEY_NORMALIZATION_ENABLED = "normalization_enabled"
   private const val KEY_UI_STATE = "ui_state"
-  private val allowedCodecContexts = setOf(
-    "audio:aac",
-    "audio:ac3",
-    "audio:eac3",
-    "audio:dts",
-    "audio:truehd",
-    "audio:flac",
-    "audio:pcm",
-    "audio:other",
-    "video:dolby_vision",
-    "video:hevc",
-    "video:avc",
-    "video:other"
-  )
   private val allowedUiStates = setOf(
     UI_STARTUP,
     UI_AUTHENTICATION,
@@ -94,104 +65,25 @@ internal object AndroidRuntimeDiagnostics {
     UI_PLAYER,
     UI_PLAYER_DISPOSED
   )
-  private val decoderNamePattern = Regex("[A-Za-z0-9_.:-]{1,96}")
   private val executor by lazy {
     Executors.newSingleThreadExecutor { task ->
       Thread(task, "plezy-runtime-diagnostics").apply { isDaemon = true }
     }
   }
 
-  fun codecContextForMime(mimeType: String?): String? {
-    val normalized = mimeType?.lowercase() ?: return null
-    return when (normalized) {
-      "audio/mp4a-latm" -> "audio:aac"
-      "audio/ac3" -> "audio:ac3"
-      "audio/eac3", "audio/eac3-joc" -> "audio:eac3"
-      "audio/vnd.dts", "audio/vnd.dts.hd" -> "audio:dts"
-      "audio/true-hd" -> "audio:truehd"
-      "audio/flac" -> "audio:flac"
-      "audio/raw" -> "audio:pcm"
-      "video/dolby-vision" -> "video:dolby_vision"
-      "video/hevc" -> "video:hevc"
-      "video/avc" -> "video:avc"
-      else -> when {
-        normalized.startsWith("audio/") -> "audio:other"
-        normalized.startsWith("video/") -> "video:other"
-        else -> null
-      }
-    }
-  }
-
-  fun sanitizeDecoderName(raw: String?): String? {
-    if (raw == null) return null
-    return raw.takeIf(decoderNamePattern::matches) ?: "unknown"
-  }
-
   fun sanitizeUiState(raw: String?): String? = raw?.takeIf(allowedUiStates::contains)
+
   fun sanitize(snapshot: RuntimeDiagnosticSnapshot): RuntimeDiagnosticSnapshot = RuntimeDiagnosticSnapshot(
-    codecContext = snapshot.codecContext?.takeIf(allowedCodecContexts::contains),
-    channelCount = snapshot.channelCount?.takeIf { it in 1..32 },
-    sampleRate = snapshot.sampleRate?.takeIf { it in 1..768_000 },
-    selectedDecoder = sanitizeDecoderName(snapshot.selectedDecoder),
-    passthroughEnabled = snapshot.passthroughEnabled,
-    downmixEnabled = snapshot.downmixEnabled,
-    normalizationEnabled = snapshot.normalizationEnabled,
     uiState = sanitizeUiState(snapshot.uiState)
   )
 
-  fun update(
-    context: Context,
-    codecContext: String? = null,
-    channelCount: Int? = null,
-    sampleRate: Int? = null,
-    selectedDecoder: String? = null,
-    passthroughEnabled: Boolean? = null,
-    downmixEnabled: Boolean? = null,
-    normalizationEnabled: Boolean? = null,
-    uiState: String? = null
-  ) {
-    val sanitized = sanitize(
-      RuntimeDiagnosticSnapshot(
-        codecContext = codecContext,
-        channelCount = channelCount,
-        sampleRate = sampleRate,
-        selectedDecoder = selectedDecoder,
-        passthroughEnabled = passthroughEnabled,
-        downmixEnabled = downmixEnabled,
-        normalizationEnabled = normalizationEnabled,
-        uiState = uiState
-      )
-    )
-    val applicationContext = context.applicationContext
-    executor.execute {
-      runCatching {
-        applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).edit().apply {
-          sanitized.codecContext?.let { putString(KEY_CODEC_CONTEXT, it) }
-          sanitized.channelCount?.let { putInt(KEY_CHANNEL_COUNT, it) }
-          sanitized.sampleRate?.let { putInt(KEY_SAMPLE_RATE, it) }
-          sanitized.selectedDecoder?.let { putString(KEY_SELECTED_DECODER, it) }
-          sanitized.passthroughEnabled?.let { putBoolean(KEY_PASSTHROUGH_ENABLED, it) }
-          sanitized.downmixEnabled?.let { putBoolean(KEY_DOWNMIX_ENABLED, it) }
-          sanitized.normalizationEnabled?.let { putBoolean(KEY_NORMALIZATION_ENABLED, it) }
-          sanitized.uiState?.let { putString(KEY_UI_STATE, it) }
-        }.commit()
-      }
-    }
-  }
-
-  fun clearPlayback(context: Context) {
+  fun update(context: Context, uiState: String) {
+    val sanitized = sanitizeUiState(uiState) ?: return
     val applicationContext = context.applicationContext
     executor.execute {
       runCatching {
         applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).edit()
-          .remove(KEY_CODEC_CONTEXT)
-          .remove(KEY_CHANNEL_COUNT)
-          .remove(KEY_SAMPLE_RATE)
-          .remove(KEY_SELECTED_DECODER)
-          .remove(KEY_PASSTHROUGH_ENABLED)
-          .remove(KEY_DOWNMIX_ENABLED)
-          .remove(KEY_NORMALIZATION_ENABLED)
-          .putString(KEY_UI_STATE, UI_PLAYER_DISPOSED)
+          .putString(KEY_UI_STATE, sanitized)
           .commit()
       }
     }
@@ -201,21 +93,9 @@ internal object AndroidRuntimeDiagnostics {
     val preferences = context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     return sanitize(
       RuntimeDiagnosticSnapshot(
-        codecContext = runCatching { preferences.getString(KEY_CODEC_CONTEXT, null) }.getOrNull(),
-        channelCount = runCatching { preferences.getInt(KEY_CHANNEL_COUNT, -1) }.getOrNull(),
-        sampleRate = runCatching { preferences.getInt(KEY_SAMPLE_RATE, -1) }.getOrNull(),
-        selectedDecoder = runCatching { preferences.getString(KEY_SELECTED_DECODER, null) }.getOrNull(),
-        passthroughEnabled = readBoolean(preferences, KEY_PASSTHROUGH_ENABLED),
-        downmixEnabled = readBoolean(preferences, KEY_DOWNMIX_ENABLED),
-        normalizationEnabled = readBoolean(preferences, KEY_NORMALIZATION_ENABLED),
         uiState = runCatching { preferences.getString(KEY_UI_STATE, null) }.getOrNull()
       )
     )
-  }
-
-  private fun readBoolean(preferences: SharedPreferences, key: String): Boolean? {
-    if (!preferences.contains(key)) return null
-    return runCatching { preferences.getBoolean(key, false) }.getOrNull()
   }
 }
 
@@ -248,13 +128,6 @@ internal data class PreviousExitReport(
     description?.let { put("description", it) }
     pssKb?.let { put("pssKb", it) }
     rssKb?.let { put("rssKb", it) }
-    runtime.codecContext?.let { put("codecContext", it) }
-    runtime.channelCount?.let { put("channelCount", it) }
-    runtime.sampleRate?.let { put("sampleRate", it) }
-    runtime.selectedDecoder?.let { put("selectedDecoder", it) }
-    runtime.passthroughEnabled?.let { put("passthroughEnabled", it) }
-    runtime.downmixEnabled?.let { put("downmixEnabled", it) }
-    runtime.normalizationEnabled?.let { put("normalizationEnabled", it) }
     runtime.uiState?.let { put("uiState", it) }
   }
 }

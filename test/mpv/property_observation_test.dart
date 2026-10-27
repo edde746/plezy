@@ -2,17 +2,13 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/player/platform/player_android.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/prefs.dart';
 
 /// Guards the channel contract: every property [PlayerBase.handlePropertyChange]
-/// depends on for core state must be registered by each backend at init.
-/// The Android ExoPlayer plugin replays exactly these registrations into a
-/// fallback MPV core, so a missing registration here silently breaks the
-/// event stream after a backend switch.
+/// depends on for core state must be registered by the mpv backend at init.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -60,48 +56,6 @@ void main() {
   }
 
   Set<String> names(List<MethodCall> calls) => calls.map((c) => (c.arguments as Map)['name'] as String).toSet();
-
-  test('ExoPlayer registers the core properties (plus its cache extra)', () async {
-    final player = PlayerAndroid();
-    final observations = await capturedObservations(
-      channelName: 'com.plezy/exo_player',
-      initialize: () => player.requestAudioFocus(), // forces _ensureInitialized
-      dispose: () => player.dispose(),
-    );
-
-    final registered = names(observations);
-    expect(registered, containsAll(coreNames));
-    expect(registered, contains('demuxer-cache-time'));
-    for (final call in observations) {
-      final args = call.arguments as Map;
-      expect(args['format'], isNotNull);
-      expect(args['id'], isA<int>());
-    }
-  });
-
-  test('PlayerAndroid forwards only explicit playback restart events', () async {
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    const channel = MethodChannel('com.plezy/exo_player');
-    messenger.setMockMethodCallHandler(channel, (_) async => null);
-    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
-
-    final player = PlayerAndroid();
-    var restartCount = 0;
-    final subscription = player.streams.playbackRestart.listen((_) => restartCount++);
-    addTearDown(() async {
-      await subscription.cancel();
-      await player.dispose();
-    });
-
-    player.handlePropertyChange('paused-for-cache', false);
-    player.handlePropertyChange('time-pos', 12.0);
-    await Future<void>.delayed(Duration.zero);
-    expect(restartCount, 0);
-
-    player.handlePlayerEvent('playback-restart', null);
-    await Future<void>.delayed(Duration.zero);
-    expect(restartCount, 1);
-  });
 
   test('mpv registers the core properties (plus its track/device extras)', () async {
     final player = PlayerNative();

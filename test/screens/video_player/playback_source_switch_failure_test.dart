@@ -310,7 +310,6 @@ class _SwitchPlayer extends FakeSyncPlayer {
       bufferRanges: base.bufferRanges,
       playbackRestart: base.playbackRestart,
       fileStarted: base.fileStarted,
-      backendSwitched: base.backendSwitched,
     );
   }
 

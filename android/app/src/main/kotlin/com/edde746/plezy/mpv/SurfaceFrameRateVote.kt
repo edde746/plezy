@@ -13,7 +13,7 @@ import com.edde746.plezy.shared.PlayerDebugLog
  * the surface will present at. With the platform default of seamless-only
  * switching it is invisible on a display that cannot change mode without a
  * blank, and on one that can (or whose HWC keeps its modes in a single
- * group) it is what moves a 60 Hz panel to 24/25 Hz under ExoPlayer without
+ * group) it is what moves a 60 Hz panel to 24/25 Hz under Media3 without
  * any app-side mode switch. Deliberate, non-seamless switches stay with
  * [com.edde746.plezy.shared.FrameRateManager]. mpv-build `6aa1d87` removed the
  * vote from the fork vo; this puts it back where Media3 keeps it, in the

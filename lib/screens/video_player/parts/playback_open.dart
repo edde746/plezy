@@ -1,54 +1,32 @@
 part of '../../video_player_screen.dart';
 
-/// Outcome of the pre-open display negotiation for one open: which
-/// pre-switch ran (ExoPlayer only), whether playback must open paused behind
-/// a startup gate, and which post-open follow-up releases it.
+/// Outcome of the pre-open display negotiation for one open: whether
+/// playback must open paused behind the first-frame startup gate.
 ///
-/// mpv never switches before open: its target is read from the decoded
-/// stream itself (see [PlayerOutputFormat]), so it opens paused, negotiates
-/// the display once the first frame proves what is being presented, and
-/// resumes. ExoPlayer keeps its metadata-driven pre-open switch.
+/// The display never switches before open: its target is read from the
+/// decoded stream itself (see [PlayerOutputFormat]), so Android mpv and
+/// Apple TV open paused, negotiate the display once the first frame proves
+/// what is being presented, and resume.
 class _FrameRateStartupPlan {
-  _FrameRateStartupPlan({required this.fps, this.width = 0, this.height = 0});
-
-  /// The ExoPlayer fps to rate-match; null when refresh-rate matching is off
-  /// or the rate is unknown (a resolution-only switch passes 0 natively,
-  /// which keeps the current refresh rate). Always null for mpv.
-  final double? fps;
-
-  /// Native video dimensions for the ExoPlayer switch: the
-  /// resolution-matching target when that setting is on, and otherwise the
-  /// floor a display-mode fallback must not downscale below just to match
-  /// cadence (0 = unknown).
-  final int width;
-  final int height;
-  bool preOpenExoHandled = false;
-  bool needsPostOpenSwitch = false;
+  _FrameRateStartupPlan({required this.needsFirstFrameSwitch});
 
   /// Open paused; once the first frame is shown, negotiate the display from
   /// the player's own output (Android mpv) or wait out the AVDisplayManager
-  /// switch the decoded stream triggered (Apple TV), then resume.
-  bool needsFirstFrameSwitch = false;
+  /// switch the decoded stream triggered (Apple TV), then resume. This also
+  /// marks the item's display switch applied, so the post-first-frame
+  /// fallback cannot switch twice.
+  final bool needsFirstFrameSwitch;
 
   /// The first-frame signal, taken from the attempt's open outcome *before*
   /// open() so the gate can't miss a synchronously-fast restart event.
-  /// Non-null exactly while [needsFirstFrameSwitch] is set, which is final
-  /// before [armFirstFrameGate] runs. Resolves false — never throws — when
-  /// the open fails, is aborted, or hits the outcome's deadline.
+  /// Non-null exactly while [needsFirstFrameSwitch] is set. Resolves false —
+  /// never throws — when the open fails, is aborted, or hits the outcome's
+  /// deadline.
   Future<bool> _startupFrameReady = Future<bool>.value(false);
 
   /// The [FrameRateMatcher.beginDisplayNegotiation] token holding the first
   /// frame behind the loading UI for this open; null when no gate is armed.
   Object? displayNegotiation;
-
-  /// Whether playback must open paused behind a startup gate that
-  /// [_releaseFrameRateStartupGate] resumes.
-  bool get holdPlaybackStart => needsPostOpenSwitch || needsFirstFrameSwitch;
-
-  /// Whether the plan already owns the per-item switch — keeps the
-  /// post-first-frame fallback from double-switching while a planned
-  /// follow-up is still pending.
-  bool get countsAsApplied => needsFirstFrameSwitch || preOpenExoHandled;
 
   /// See [_startupFrameReady]. Also begins the first-frame UI hold on
   /// [frameRate], which the gate release ends with this plan's token.
@@ -90,10 +68,9 @@ Duration? resolveOpenResumePosition({
 /// The initial start flow ([_startPlayback]) and in-place reload flow
 /// ([_reloadMediaInPlace]) both route through these helpers — and through
 /// the shared [_openResolvedMedia] orchestration — so per-open behavior
-/// (the GL color-transfer hint, frame-rate suppression windows, native
-/// subtitle styling, and the open sequence) cannot drift between paths.
-/// This is also the only place that reads
-/// [SettingsService.displaySwitchDelay].
+/// (the GL color-transfer hint, frame-rate suppression windows, and the open
+/// sequence) cannot drift between paths. This is also the only place that
+/// reads [SettingsService.displaySwitchDelay].
 extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   PlaybackSession _commitSidecarFallbackSession(PlaybackSession session) {
     return _updatePlaybackSessionSubtitleSelection(session, const PlaybackSubtitleSelection.off());
@@ -135,9 +112,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required MediaDisplayCriteria? displayCriteria,
     required bool isTranscoding,
   }) async {
-    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
-    // the two Android backends (true = the mpv core).
-    if (!Platform.isAndroid || !player.needsDecoderRefreshAfterDisplaySwitch) return;
+    if (!Platform.isAndroid) return;
     final transfer = isTranscoding ? null : displayCriteria?.transfer;
     await player.setProperty('content-color-transfer', transfer ?? 'unknown');
   }
@@ -165,23 +140,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       videoHeight: videoHeight,
       matchResolution: settingsService.read(SettingsService.matchContentResolution),
     );
-  }
-
-  /// Whether the ExoPlayer pre-open display-mode negotiation applies: the
-  /// user opted into per-content refresh-rate matching and metadata already
-  /// told us the target fps, and/or opted into resolution matching and
-  /// metadata carries the video dimensions. Shared by the start and reload
-  /// flows so the eligibility rule cannot drift between them.
-  bool _shouldAutoSwitchDisplayModeForOpen(
-    SettingsService settingsService, {
-    double? fps,
-    int width = 0,
-    int height = 0,
-  }) {
-    if (!Platform.isAndroid) return false;
-    final rateEligible = settingsService.read(SettingsService.matchContentFrameRate) && fps != null && fps > 0;
-    final resolutionEligible = settingsService.read(SettingsService.matchContentResolution) && width > 0 && height > 0;
-    return rateEligible || resolutionEligible;
   }
 
   /// A shuffled queue opts out of resume when the user asked for it (#2303):
@@ -222,7 +180,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
   /// The startup plan for a backend that negotiates the display from the
   /// decoded stream at its first frame — Android mpv and Apple TV — or null
-  /// for one that does not (ExoPlayer, desktop). Shared by the VOD open and
+  /// for one that does not (desktop, iOS, macOS). Shared by the VOD open and
   /// Live TV channel opens ([_armLiveDisplayNegotiation]) so the two cannot
   /// drift.
   _FrameRateStartupPlan? _firstFrameStartupPlan(
@@ -230,103 +188,23 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     SettingsService settingsService, {
     required bool hasVideoUrl,
   }) {
-    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
-    // the two Android backends (true = the mpv core).
+    // needsDecoderRefreshAfterDisplaySwitch marks the Android mpv core.
     final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
     if (!isAndroidMpv && !PlatformDetector.isAppleTV()) return null;
-    final plan = _FrameRateStartupPlan(fps: null);
     final matchingEnabled =
         settingsService.read(SettingsService.matchContentFrameRate) ||
         settingsService.read(SettingsService.matchContentResolution);
     // Apple TV matching is a system setting (AVDisplayManager); the gate
     // only exists to keep playback from running through the HDMI blank.
-    plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
-    return plan;
-  }
-
-  /// Decide the display strategy for an open. mpv (Android) and Apple TV
-  /// open paused and negotiate from the decoded stream at the first frame;
-  /// ExoPlayer switches before open from metadata (after audio focus, so
-  /// AudioTrack passthrough survives the renegotiation) and falls back to a
-  /// post-open switch that holds playback start when it could not. Returns
-  /// null when the screen/player went stale mid-switch and the caller must
-  /// bail.
-  Future<_FrameRateStartupPlan?> _prepareFrameRateForOpen({
-    required Player currentPlayer,
-    required SettingsService settingsService,
-    required double? preKnownFps,
-    required bool hasVideoUrl,
-    required bool isTranscoding,
-    required Future<void> Function() ensureAudioFocus,
-    int preKnownWidth = 0,
-    int preKnownHeight = 0,
-  }) async {
-    final firstFramePlan = _firstFrameStartupPlan(currentPlayer, settingsService, hasVideoUrl: hasVideoUrl);
-    if (firstFramePlan != null) return firstFramePlan;
-
-    // Rate-match only when the user opted in; the plan's fps drives the
-    // switch calls, so a resolution-only open passes 0 to the native side.
-    final rateMatchFps = settingsService.read(SettingsService.matchContentFrameRate) ? preKnownFps : null;
-    final plan = _FrameRateStartupPlan(fps: rateMatchFps, width: preKnownWidth, height: preKnownHeight);
-    final willAutoSwitch = _shouldAutoSwitchDisplayModeForOpen(
-      settingsService,
-      fps: preKnownFps,
-      width: preKnownWidth,
-      height: preKnownHeight,
-    );
-
-    // Independent of matchContentFrameRate: ExoPlayer needs the rate even when the
-    // display never switches, because it also decides whether video tunneling is
-    // safe for this item. Neither the Matroska nor the MP4 extractor populates
-    // Format.frameRate, and a tunneled session renders no frames back for the
-    // native FPS detector, so metadata is the only source.
-    //
-    // Source-side only: a transcode's metadata rate describes the original
-    // file, not what the server is about to send. "0" clears a stale rate
-    // carried over from the previous item.
-    if (Platform.isAndroid) {
-      final directPlayFps = isTranscoding ? null : preKnownFps;
-      await currentPlayer.setProperty('content-frame-rate', (directPlayFps ?? 0).toString());
-    }
-    final needsExoPreOpen = willAutoSwitch && hasVideoUrl;
-    plan.needsPostOpenSwitch = willAutoSwitch && !needsExoPreOpen;
-
-    // ExoPlayer prepares AudioTrack during open() even when opened paused.
-    // On Shield/AVR chains, switching HDMI refresh rate after that can break
-    // direct passthrough, so switch before ExoPlayer creates renderers.
-    if (needsExoPreOpen) {
-      final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
-      try {
-        await ensureAudioFocus();
-        if (!mounted || player != currentPlayer) return null;
-        appLogger.d('Display matching: pre-open ExoPlayer switch to ${plan.fps}fps (duration: ${durationMs}ms)');
-        final didSwitch = await _switchDisplayFrameRateForOpen(
-          player: currentPlayer,
-          settingsService: settingsService,
-          fps: plan.fps ?? 0,
-          durationMs: durationMs,
-          videoWidth: plan.width,
-          videoHeight: plan.height,
-        );
-        if (!mounted || player != currentPlayer) return null;
-        plan.preOpenExoHandled = true;
-        appLogger.d('Frame rate matching: pre-open ExoPlayer switch complete (switched=$didSwitch)');
-      } catch (e) {
-        appLogger.w('Failed to apply pre-open ExoPlayer frame rate matching', error: e);
-        plan.needsPostOpenSwitch = true;
-        plan.preOpenExoHandled = false;
-      }
-    }
-
-    return plan;
+    return _FrameRateStartupPlan(needsFirstFrameSwitch: hasVideoUrl && (!isAndroidMpv || matchingEnabled));
   }
 
   /// Release the startup gate a [_FrameRateStartupPlan] held playback
-  /// behind: run the ExoPlayer post-open fallback switch, or wait for the
-  /// first rendered frame and negotiate the display from what the player
-  /// presents, then resume via [resumeAfterStartupGate]. A gate that settles
-  /// without a frame resumes only while [isCurrent] still holds — a failed,
-  /// aborted, or superseded open has nothing to resume.
+  /// behind: wait for the first rendered frame and negotiate the display
+  /// from what the player presents, then resume via
+  /// [resumeAfterStartupGate]. A gate that settles without a frame resumes
+  /// only while [isCurrent] still holds — a failed, aborted, or superseded
+  /// open has nothing to resume.
   Future<void> _releaseFrameRateStartupGate({
     required Player currentPlayer,
     required SettingsService settingsService,
@@ -334,41 +212,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
   }) async {
-    // Fallback refresh-rate path. The player was opened paused;
-    // setVideoFrameRate awaits the real display-change event (+ settle +
-    // user delay) before returning, then we start playback.
-    if (plan.needsPostOpenSwitch && mounted && player == currentPlayer) {
-      _frameRate.applied = true;
-      final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
-      bool didSwitch = false;
-      try {
-        didSwitch = await _switchDisplayFrameRateForOpen(
-          player: currentPlayer,
-          settingsService: settingsService,
-          fps: plan.fps ?? 0,
-          durationMs: durationMs,
-          videoWidth: plan.width,
-          videoHeight: plan.height,
-        );
-        if (!mounted || player != currentPlayer) return;
-        if (didSwitch) {
-          await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-open frame rate switch');
-        }
-      } catch (e) {
-        appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
-      }
-
-      // Always resume — either the switch completed and we want to play,
-      // or no switch was needed and we need to start playback now that the
-      // preparation gate has been cleared.
-      await resumeAfterStartupGate('post-open frame rate switch');
-
-      unawaited(
-        Sentry.addBreadcrumb(
-          Breadcrumb(message: 'Pre-playback frame rate: ${plan.fps}fps, switched=$didSwitch', category: 'player'),
-        ),
-      );
-    } else if (plan.needsFirstFrameSwitch && mounted && player == currentPlayer) {
+    if (plan.needsFirstFrameSwitch && mounted && player == currentPlayer) {
       try {
         await _negotiateDisplayAtFirstFrame(
           currentPlayer: currentPlayer,
@@ -472,12 +316,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// frames cost ~170 ms at field rate, ~420 ms at 24p; [windowStart] is
   /// where the window began, for the seek that follows.
   Future<({PlayerOutputFormat output, Duration? windowStart})> _measurePresentedFormat(Player currentPlayer) async {
-    // The ExoPlayer plugin (and its mpv fallback core) exposes no chain
-    // state and cannot step; take what its stats report.
-    if (currentPlayer is PlayerAndroid) {
-      return (output: await PlayerOutputFormat.read(currentPlayer), windowStart: null);
-    }
-
     await _awaitDecodedFrame(currentPlayer);
     // A vehicle that forbids playback also forbids stepping frames.
     if (!automotivePlaybackAllowedNow()) {
@@ -671,30 +509,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Push the user's subtitle style to the native rendering layer. Must run
-  /// after open() since that's when ExoPlayer initializes its subtitle views.
-  /// Only the ExoPlayer backend consumes it — [Player.setSubtitleStyle] is a
-  /// no-op on every mpv backend, which styles via `sub-*` properties — so the
-  /// style settings reads are skipped there. Gated on the same
-  /// configured-backend signal as track_controls/video_settings_sheet; the
-  /// Android mpv fallback keeps playerType 'exoplayer' and still receives the
-  /// call, exactly as before.
-  Future<void> _applyNativeSubtitleStyle(Player player, SettingsService settingsService) async {
-    if (player.playerType != 'exoplayer') return;
-    await player.setSubtitleStyle(
-      fontSize: settingsService.read(SettingsService.subtitleFontSize).toDouble(),
-      textColor: settingsService.read(SettingsService.subtitleTextColor),
-      borderSize: settingsService.read(SettingsService.subtitleBorderSize).toDouble(),
-      borderColor: settingsService.read(SettingsService.subtitleBorderColor),
-      bgColor: settingsService.read(SettingsService.subtitleBackgroundColor),
-      bgOpacity: settingsService.read(SettingsService.subtitleBackgroundOpacity),
-      subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
-      bold: settingsService.read(SettingsService.subtitleBold),
-      italic: settingsService.read(SettingsService.subtitleItalic),
-      anchorToScreen: settingsService.read(SettingsService.subtitleAnchorToScreen),
-    );
-  }
-
   /// Build the per-item [TrackManager] for a freshly opened source. The
   /// start and reload flows construct it identically apart from where the
   /// preferred tracks and profile settings come from.
@@ -753,8 +567,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// linear instead of dropping the connection on every byte seek — see
   /// [networkStreamRingBytes]). Every property is always written, set or
   /// reset, so a reused player never carries one item's tuning into the next
-  /// open. On Android with ExoPlayer active they are stashed natively and
-  /// replayed on the exo→mpv fallback, so keep them unconditional.
+  /// open.
   Future<void> _applyNetworkStreamTuning({
     required Player player,
     required bool isNetworkVod,
@@ -828,11 +641,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
   }
 
-  /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.
+  /// Open [videoUrl] on [player]: stream tuning → open.
   ///
   /// [shouldContinue] is re-checked between the awaits so stale generations
   /// stop without touching the player further. [onOpened] fires immediately
-  /// after open() returns (before styling) so callers can flip rollback
+  /// after open() returns so callers can flip rollback
   /// bookkeeping at the exact ownership boundary. [outcome] is the attempt's
   /// armed open outcome: the sidecar guard reads its signals, and an open
   /// that throws aborts it so no waiter is left holding.
@@ -842,7 +655,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// without subtitles.
   Future<_MediaOpenResult> _openMediaOnPlayer({
     required Player player,
-    required SettingsService settingsService,
     required String videoUrl,
     required bool isTranscoding,
     required bool isLocalMedia,
@@ -921,15 +733,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       }
     }
 
-    if (!shouldContinue()) {
-      return _MediaOpenResult(didOpen: true, sidecarFallbackUsed: sidecarFallbackUsed);
-    }
-    await _applyNativeSubtitleStyle(player, settingsService);
     return _MediaOpenResult(didOpen: true, sidecarFallbackUsed: sidecarFallbackUsed);
   }
 
   /// Shared orchestration for opening a resolved source on the live player:
-  /// pre-open frame-rate negotiation → per-item frame-rate reset → GL
+  /// first-frame startup plan → per-item frame-rate reset → GL
   /// color-transfer hint → startup-gate arming → external-subtitle planning →
   /// open → sidecar-fallback session recompute → track-manager build →
   /// post-open track application → frame-rate startup-gate release.
@@ -997,9 +805,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // reads result.isTranscoding because its session commits at the open
     // boundary.
     required bool Function() primarySubtitleTranscoding,
-    // Audio-focus hook for the pre-open ExoPlayer switch. start memoizes the
-    // in-flight _audioFocusFuture; reload requests focus directly.
-    required Future<void> Function() ensureAudioFocus,
     // start: true — the flag is dropped here, right before the frame-rate
     // reset; reload dropped it earlier, at its eager-identity boundary.
     required bool clearFirstFrameForOpen,
@@ -1042,17 +847,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     final displayCriteria = result.mediaInfo?.displayCriteria;
 
-    final frameRatePlan = await _prepareFrameRateForOpen(
-      currentPlayer: currentPlayer,
-      settingsService: settingsService,
-      preKnownFps: displayCriteria?.fps,
-      preKnownWidth: displayCriteria?.width ?? 0,
-      preKnownHeight: displayCriteria?.height ?? 0,
-      hasVideoUrl: result.videoUrl != null,
-      isTranscoding: result.isTranscoding,
-      ensureAudioFocus: ensureAudioFocus,
-    );
-    if (frameRatePlan == null || (staleGuard != null && !staleGuard())) return false;
+    final frameRatePlan =
+        _firstFrameStartupPlan(currentPlayer, settingsService, hasVideoUrl: result.videoUrl != null) ??
+        _FrameRateStartupPlan(needsFirstFrameSwitch: false);
+    if (staleGuard != null && !staleGuard()) return false;
 
     final wtOwnsStart = watchTogetherOwnsStart();
     final shouldAutoStart = resolveShouldAutoStart(wtOwnsStart);
@@ -1061,10 +859,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     // Open video through Player
     if (result.videoUrl != null) {
-      // Reset first frame flag and frame rate retry counter for new video
+      // Reset first frame flag and per-item frame-rate state for new video
       if (clearFirstFrameForOpen) _firstFrame.resetUiForOpen();
       _frameRate.resetForNewItem();
-      if (frameRatePlan.countsAsApplied) {
+      if (frameRatePlan.needsFirstFrameSwitch) {
         _frameRate.applied = true;
       }
 
@@ -1079,7 +877,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (beforeArm != null && !await beforeArm()) return false;
 
       frameRatePlan.armFirstFrameGate(outcome, _frameRate);
-      final shouldAutoPlay = shouldAutoStart && !frameRatePlan.holdPlaybackStart;
+      final shouldAutoPlay = shouldAutoStart && !frameRatePlan.needsFirstFrameSwitch;
 
       // Sidecars ride along with open() so tracks are discovered in a single
       // prepare/loadfile cycle.
@@ -1092,7 +890,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (!isCurrent()) return false;
       final openResult = await _openMediaOnPlayer(
         player: currentPlayer,
-        settingsService: settingsService,
         videoUrl: result.videoUrl!,
         isTranscoding: result.isTranscoding,
         isLocalMedia: isLocalMedia,
@@ -1115,7 +912,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         openSubtitleSelection = openSession.subtitleSelection;
       }
 
-      if (!await afterMediaOpened(shouldAutoPlay, frameRatePlan.holdPlaybackStart, wtOwnsStart)) return false;
+      if (!await afterMediaOpened(shouldAutoPlay, frameRatePlan.needsFirstFrameSwitch, wtOwnsStart)) return false;
     }
 
     if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;

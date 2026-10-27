@@ -716,35 +716,11 @@ class Translations$settings$en {
 	/// en: 'Blur thumbnails and descriptions for unwatched episodes'
 	String get hideSpoilersDescription => 'Blur thumbnails and descriptions for unwatched episodes';
 
-	/// en: 'Player Backend'
-	String get playerBackend => 'Player Backend';
-
-	/// en: 'ExoPlayer'
-	String get exoPlayer => 'ExoPlayer';
-
-	/// en: 'mpv'
-	String get mpv => 'mpv';
-
 	/// en: 'Hardware Decoding'
 	String get hardwareDecoding => 'Hardware Decoding';
 
 	/// en: 'Use hardware acceleration when available'
 	String get hardwareDecodingDescription => 'Use hardware acceleration when available';
-
-	/// en: 'Playback Buffer'
-	String get playbackBuffer => 'Playback Buffer';
-
-	/// en: 'Auto (Recommended)'
-	String get playbackBufferAuto => 'Auto (Recommended)';
-
-	/// en: 'Large'
-	String get playbackBufferLarge => 'Large';
-
-	/// en: 'Extra Large'
-	String get playbackBufferExtraLarge => 'Extra Large';
-
-	/// en: 'Buffer more against unstable connections. Also limited by Buffer Size.'
-	String get playbackBufferDescription => 'Buffer more against unstable connections. Also limited by Buffer Size.';
 
 	/// en: 'Default Quality'
 	String get defaultQualityTitle => 'Default Quality';
@@ -1181,12 +1157,6 @@ class Translations$settings$en {
 	/// en: 'Display Switch Delay'
 	String get displaySwitchDelay => 'Display Switch Delay';
 
-	/// en: 'Tunneled Playback'
-	String get tunneledPlayback => 'Tunneled Playback';
-
-	/// en: 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.'
-	String get tunneledPlaybackDescription => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.';
-
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
 
@@ -1307,8 +1277,8 @@ class Translations$settings$en {
 	/// en: 'Deinterlacing'
 	String get deinterlace => 'Deinterlacing';
 
-	/// en: 'Remove combing artifacts from interlaced video (mpv player only)'
-	String get deinterlaceDescription => 'Remove combing artifacts from interlaced video (mpv player only)';
+	/// en: 'Remove combing artifacts from interlaced video'
+	String get deinterlaceDescription => 'Remove combing artifacts from interlaced video';
 
 	/// en: 'Off'
 	String get deinterlaceOff => 'Off';
@@ -2677,9 +2647,6 @@ class Translations$messages$en {
 	/// en: 'Failed to ${action}: ${error}'
 	String failedPlayback({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
 
-	/// en: 'Switching to compatible player...'
-	String get switchingToCompatiblePlayer => 'Switching to compatible player...';
-
 	/// en: 'Playback failed'
 	String get serverLimitTitle => 'Playback failed';
 
@@ -2799,12 +2766,6 @@ class Translations$subtitlingStyling$en {
 
 	/// en: 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.'
 	String get useMarginsDescription => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.';
-
-	/// en: 'Anchor to Screen'
-	String get anchorToScreen => 'Anchor to Screen';
-
-	/// en: 'Show text subtitles in the black bars below widescreen video'
-	String get anchorToScreenDescription => 'Show text subtitles in the black bars below widescreen video';
 
 	/// en: 'Bold'
 	String get bold => 'Bold';
@@ -5202,12 +5163,6 @@ class Translations$performanceOverlay$en {
 	/// en: 'Decoder'
 	String get decoder => 'Decoder';
 
-	/// en: 'Raw Decoder'
-	String get rawDecoder => 'Raw Decoder';
-
-	/// en: 'Tunneling'
-	String get tunneling => 'Tunneling';
-
 	/// en: 'Passthrough'
 	String get passthrough => 'Passthrough';
 
@@ -5244,9 +5199,6 @@ class Translations$performanceOverlay$en {
 	/// en: 'RPU reshaped (gpu-next)'
 	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
-	/// en: 'P7 Conv'
-	String get p7Conversion => 'P7 Conv';
-
 	/// en: 'Sample Rate'
 	String get sampleRate => 'Sample Rate';
 
@@ -5276,15 +5228,6 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'Dropped'
 	String get dropped => 'Dropped';
-
-	/// en: 'DV RPUs'
-	String get dvRpus => 'DV RPUs';
-
-	/// en: 'DV RPU Avg'
-	String get dvRpuAverage => 'DV RPU Avg';
-
-	/// en: 'DV Sample Avg'
-	String get dvSampleAverage => 'DV Sample Avg';
 
 	/// en: 'Max Luma'
 	String get maxLuma => 'Max Luma';
@@ -5322,32 +5265,8 @@ class Translations$performanceOverlay$en {
 	/// en: 'FPS'
 	String get fps => 'FPS';
 
-	/// en: 'Android HW'
-	String get decoderAndroidHw => 'Android HW';
-
-	/// en: 'NVIDIA HW'
-	String get decoderNvidiaHw => 'NVIDIA HW';
-
-	/// en: 'Qualcomm HW'
-	String get decoderQualcommHw => 'Qualcomm HW';
-
-	/// en: 'MediaTek HW'
-	String get decoderMediatekHw => 'MediaTek HW';
-
-	/// en: 'Exynos HW'
-	String get decoderExynosHw => 'Exynos HW';
-
 	/// en: 'Software'
 	String get decoderSoftware => 'Software';
-
-	/// en: 'Hardware'
-	String get decoderHardware => 'Hardware';
-
-	/// en: 'Active'
-	String get tunnelingActive => 'Active';
-
-	/// en: '${converted} (${failures} failed)'
-	String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} failed)';
 }
 
 // Path: externalPlayer
@@ -8326,16 +8245,8 @@ extension on Translations {
 			'settings.visualEffectsReducedDescription' => 'Fewer animations and lower-resolution artwork',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
-			'settings.playerBackend' => 'Player Backend',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
-			'settings.playbackBuffer' => 'Playback Buffer',
-			'settings.playbackBufferAuto' => 'Auto (Recommended)',
-			'settings.playbackBufferLarge' => 'Large',
-			'settings.playbackBufferExtraLarge' => 'Extra Large',
-			'settings.playbackBufferDescription' => 'Buffer more against unstable connections. Also limited by Buffer Size.',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.cellularQualityTitle' => 'Default Quality on Cellular',
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
@@ -8481,8 +8392,6 @@ extension on Translations {
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
@@ -8523,7 +8432,7 @@ extension on Translations {
 			'settings.hdrSdrConversionPlayer' => 'Player',
 			'settings.hdrSdrConversionPlayerDescription' => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes',
 			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Remove combing artifacts from interlaced video (mpv player only)',
+			'settings.deinterlaceDescription' => 'Remove combing artifacts from interlaced video',
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOffDescription' => 'Show interlaced video as it is decoded',
 			'settings.deinterlaceVideo' => 'Video',
@@ -8604,8 +8513,6 @@ extension on Translations {
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
@@ -8616,6 +8523,8 @@ extension on Translations {
 			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
 			'themeEditor.contrast.accentOnBg' => 'Accent on background',
 			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
 			'themeEditor.discardTitle' => 'Discard changes?',
@@ -8988,7 +8897,6 @@ extension on Translations {
 			'messages.noItemsAvailable' => 'No items available',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create a play queue — no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
 			'messages.mediaUnreadableTitle' => 'File unavailable',
@@ -9026,8 +8934,6 @@ extension on Translations {
 			'subtitlingStyling.positionBottom' => 'Bottom',
 			'subtitlingStyling.useMargins' => 'Use margins',
 			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
-			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
-			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
 			'subtitlingStyling.renderResolution' => 'Render Resolution',
@@ -9118,8 +9024,6 @@ extension on Translations {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
@@ -9133,6 +9037,8 @@ extension on Translations {
 			'accountPreferences.sectionTitle' => 'Account preferences',
 			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio, subtitle and library options saved on ${account}',
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio, subtitle and library options saved on ${count} accounts',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.pickAccount' => 'Every account stores its own preferences. Pick the one to edit.',
 			'accountPreferences.storedOnAccount' => 'These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.',
 			'accountPreferences.noAccounts' => 'No accounts to configure',
@@ -9632,8 +9538,6 @@ extension on Translations {
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
@@ -9647,6 +9551,8 @@ extension on Translations {
 			'collections.deleteCollection' => 'Delete Collection',
 			'collections.deleteConfirm' => ({required Object title}) => 'Delete "${title}"? This can\'t be undone.',
 			'collections.deleted' => 'Collection deleted',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteFailed' => 'Failed to delete collection',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.selectCollection' => 'Select Collection',
@@ -10100,8 +10006,6 @@ extension on Translations {
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',
-			'performanceOverlay.rawDecoder' => 'Raw Decoder',
-			'performanceOverlay.tunneling' => 'Tunneling',
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',
@@ -10114,7 +10018,6 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
@@ -10125,9 +10028,6 @@ extension on Translations {
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
 			'performanceOverlay.dropped' => 'Dropped',
-			'performanceOverlay.dvRpus' => 'DV RPUs',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
-			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -10140,17 +10040,7 @@ extension on Translations {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			_ => null,
-		} ?? switch (path) {
-			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Active',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
@@ -10175,6 +10065,8 @@ extension on Translations {
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',
 			'metadataEdit.studio' => 'Studio',

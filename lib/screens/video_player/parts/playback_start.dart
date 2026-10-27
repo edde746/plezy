@@ -102,7 +102,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
 
         frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, attempt.outcome);
-        final holdPlaybackStart = frameRatePlan?.holdPlaybackStart ?? false;
+        final holdPlaybackStart = frameRatePlan?.needsFirstFrameSwitch ?? false;
         final opened = await _openLiveStream(
           currentPlayer,
           streamUrl,
@@ -248,24 +248,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       );
       _commitPlaybackSession(session);
 
-      // Display matching: mpv and Apple TV open paused and negotiate from the
-      // decoded stream at the first frame; ExoPlayer switches before creating
-      // its decoders when metadata provides an fps.
+      // Display matching: Android mpv and Apple TV open paused and negotiate
+      // from the decoded stream at the first frame.
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
-      var audioFocusReady = false;
-
-      Future<void> ensureAudioFocus() async {
-        if (audioFocusReady) return;
-        final focusFuture = _audioFocusFuture;
-        if (focusFuture != null) {
-          await focusFuture;
-          _audioFocusFuture = null;
-        } else {
-          await currentPlayer.requestAudioFocus();
-        }
-        audioFocusReady = true;
-      }
 
       Duration? resumePosition;
       MediaServerClient? mediaClientForTracks;
@@ -292,7 +278,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
-        ensureAudioFocus: ensureAudioFocus,
         clearFirstFrameForOpen: true,
         deferAutomotiveStart: true,
         beforeColorHint: () async {
@@ -300,7 +285,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // This causes other media apps (Spotify, podcasts, etc.) to pause.
           // Fired in parallel with MPV setup in `_initializePlayer`; we await
           // the in-flight future here (usually already resolved).
-          await ensureAudioFocus();
+          final focusFuture = _audioFocusFuture;
+          if (focusFuture != null) {
+            await focusFuture;
+            _audioFocusFuture = null;
+          } else {
+            await currentPlayer.requestAudioFocus();
+          }
           if (!attempt.isCurrent) return false;
 
           resumePosition = await _resolveOpenResumePosition(
