@@ -22,7 +22,6 @@ import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_size_calculator.dart';
-import '../../../utils/layout_constants.dart';
 import '../../../utils/media_image_helper.dart';
 import '../../../utils/provider_extensions.dart';
 import '../alpha_jump_bar.dart';
@@ -1830,7 +1829,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final spacing = MediaGridDelegate.spacingFor(context: context);
       final columnCount = GridSizeCalculator.getColumnCount(screenSize.width, maxExtent, crossAxisSpacing: spacing);
       final itemWidth = (screenSize.width - spacing * (columnCount - 1)) / columnCount;
-      final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+      final itemHeight = MediaGridDelegate.cellHeightFor(context: context, itemWidth: itemWidth);
       final rowHeight = itemHeight + spacing;
       if (rowHeight <= 0) return _activeFetchSize;
       final visibleRows = (screenSize.height / rowHeight).ceil() + 1;
