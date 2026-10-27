@@ -142,33 +142,17 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   void _toggleScreenLock() {
-    final locking = !_isScreenLocked;
-    _setControlsState(() {
-      _isScreenLocked = locking;
-      if (locking) {
-        _showLockIcon = true;
-      }
-    });
-    if (locking) {
-      _cancelEdgeAdjustmentGesture();
-      widget.chromeController.hide(ignoreHolds: true);
-      _startLockIconHideTimer();
+    if (_isScreenLocked) {
+      _unlockScreen();
+      return;
     }
-  }
-
-  void _startLockIconHideTimer() {
-    _lockIconTimer?.cancel();
-    _lockIconTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) _setControlsState(() => _showLockIcon = false);
-    });
+    _setControlsState(() => _isScreenLocked = true);
+    _cancelEdgeAdjustmentGesture();
+    widget.chromeController.hide(ignoreHolds: true);
   }
 
   void _unlockScreen() {
-    _setControlsState(() {
-      _isScreenLocked = false;
-      _showLockIcon = false;
-    });
-    _lockIconTimer?.cancel();
+    _setControlsState(() => _isScreenLocked = false);
     widget.chromeController.show();
   }
 

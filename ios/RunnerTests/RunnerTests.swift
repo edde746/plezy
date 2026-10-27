@@ -103,6 +103,7 @@ final class RecordingPipDelegate: MpvPipDelegate {
   func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void) { completion() }
   var isPipPlaying: Bool { true }
   var pipDuration: Double { 60 }
+  var pipPosition: Double { 0 }
 }
 
 final class ReleaseTrackingCore: MpvPlayerCoreBase {
