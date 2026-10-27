@@ -61,6 +61,18 @@ SRT/VTT sidecars are supported; ASS and bitmap subtitles require server
 burn-in. The plugin has no native first-frame callback: readiness uses the
 first advancing playback-clock sample, not merely initialize/play completion.
 
+## Versioned build integration
+
+Full versioned PlezyNG Release runs call this workflow for an ARM tester TPK
+by default. The build uses the pinned Linux ARM SDK bootstrap and development
+profile, then uploads an experimental workflow artifact; the recipient must
+re-sign it for a specific Samsung TV before installation. The bootstrap
+requires acceptance of Samsung's SDK terms. This tester artifact is not
+Seller Office ready. A production package needs a Samsung TV signing profile,
+the encrypted SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64 secret, and a physical TV
+device smoke test. Seller Office handoff stays disabled by default; no store
+listing or certification is submitted by the versioned build.
+
 ## Toolchain and build inputs
 
 `scripts/tizen/toolchain.json` pins Flutter-Tizen, its Flutter revision

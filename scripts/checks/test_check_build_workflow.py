@@ -220,6 +220,51 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("draft release creation must require a successful complete build", result.stderr)
 
+    def test_webos_candidate_build_is_independent_of_public_release_opt_in(self) -> None:
+        workflow = self._workflow()
+        start = workflow.index("  build-webos:\n")
+        end = workflow.index("  build-tizen:\n", start)
+        webos_job = workflow[start:end].replace(
+            "outputs.include_webos_build == 'true'",
+            "outputs.include_webos_release == 'true'",
+            1,
+        )
+        workflow = workflow[:start] + webos_job + workflow[end:]
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("versioned builds must build webOS independently", result.stderr)
+
+    def test_unapproved_webos_ipk_upload_is_rejected(self) -> None:
+        workflow = self._workflow()
+        evidence_step = "      - name: Upload WebOS validation evidence without vendor runtime binaries\n"
+        injected_upload = """      - name: Upload experimental WebOS candidate for this build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: webos-ipk-experimental
+          path: ${{ steps.webos-build.outputs.output_dir }}/*
+
+"""
+        self.assertIn(evidence_step, workflow)
+        workflow = workflow.replace(evidence_step, injected_upload + evidence_step, 1)
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unapproved WebOS candidates must stay inside", result.stderr)
+
+    def test_versioned_tizen_build_stays_arm_and_store_gated(self) -> None:
+        workflow = self._workflow().replace(
+            "      architecture: arm\n", "      architecture: x64\n", 1
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches Tizen call")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ARM Tizen tester workflow without store handoff", result.stderr)
+
     def test_release_tag_without_exact_target_is_rejected(self) -> None:
         workflow = self._workflow().replace(
             "          target_commitish: ${{ github.sha }}\n",

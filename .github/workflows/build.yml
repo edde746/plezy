@@ -34,14 +34,24 @@ on:
         description: Semantic version for artifact names and optional draft release (required in release mode)
         required: false
         type: string
+      include_webos_build:
+        description: Build and verify the experimental ARM webOS candidate in this workflow run
+        required: true
+        type: boolean
+        default: true
       include_webos_release:
         description: >-
           Include the LG webOS IPK in a public release after its exact artifact
-          and redistribution gates are approved.
+          and redistribution gates are approved. This does not control whether
+          the candidate is built.
         required: true
         type: boolean
         default: false
-
+      include_tizen_build:
+        description: Build the experimental ARM Samsung Tizen tester candidate in this workflow run
+        required: true
+        type: boolean
+        default: true
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
   FLUTTER_VERSION: "3.47.1"
@@ -68,7 +78,9 @@ jobs:
       mode: ${{ steps.request.outputs.mode }}
       release_tag: ${{ steps.request.outputs.release_tag }}
       version: ${{ steps.request.outputs.version }}
+      include_webos_build: ${{ steps.request.outputs.include_webos_build }}
       include_webos_release: ${{ steps.request.outputs.include_webos_release }}
+      include_tizen_build: ${{ steps.request.outputs.include_tizen_build }}
     permissions:
       contents: read
       actions: read
@@ -87,7 +99,9 @@ jobs:
           RUNNER_POOL_INPUT: ${{ inputs.runner_pool }}
           MODE_INPUT: ${{ inputs.mode }}
           RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
+          INCLUDE_WEBOS_BUILD_INPUT: ${{ inputs.include_webos_build }}
           INCLUDE_WEBOS_RELEASE_INPUT: ${{ inputs.include_webos_release }}
+          INCLUDE_TIZEN_BUILD_INPUT: ${{ inputs.include_tizen_build }}
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" == "push" ]]; then
@@ -100,14 +114,18 @@ jobs:
               exit 1
             fi
             VERSION="${RELEASE_TAG#v}"
+            INCLUDE_WEBOS_BUILD=true
             INCLUDE_WEBOS_RELEASE=false
+            INCLUDE_TIZEN_BUILD=true
           else
             ACTION="$ACTION_INPUT"
             RUNNER_POOL="$RUNNER_POOL_INPUT"
             MODE="$MODE_INPUT"
             RELEASE_TAG="$RELEASE_TAG_INPUT"
             VERSION="$RELEASE_TAG"
+            INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"
             INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
+            INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"
             if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
               echo "Unsupported action: $ACTION" >&2
               exit 1
@@ -131,9 +149,19 @@ jobs:
             if [[ "$MODE" == "webos-validation" ]]; then
               RELEASE_TAG=""
               VERSION=""
+              INCLUDE_WEBOS_BUILD=true
               INCLUDE_WEBOS_RELEASE=false
+              INCLUDE_TIZEN_BUILD=false
             elif [[ "$INCLUDE_WEBOS_RELEASE" != "true" && "$INCLUDE_WEBOS_RELEASE" != "false" ]]; then
               echo "include_webos_release must be true or false." >&2
+              exit 1
+            fi
+            if [[ "$MODE" == "release" && "$INCLUDE_WEBOS_BUILD" != "true" && "$INCLUDE_WEBOS_BUILD" != "false" ]]; then
+              echo "include_webos_build must be true or false." >&2
+              exit 1
+            fi
+            if [[ "$MODE" == "release" && "$INCLUDE_TIZEN_BUILD" != "true" && "$INCLUDE_TIZEN_BUILD" != "false" ]]; then
+              echo "include_tizen_build must be true or false." >&2
               exit 1
             fi
           fi
@@ -143,7 +171,9 @@ jobs:
             echo "mode=$MODE"
             echo "release_tag=$RELEASE_TAG"
             echo "version=$VERSION"
+            echo "include_webos_build=$INCLUDE_WEBOS_BUILD"
             echo "include_webos_release=$INCLUDE_WEBOS_RELEASE"
+            echo "include_tizen_build=$INCLUDE_TIZEN_BUILD"
           } >> "$GITHUB_OUTPUT"
 
       - name: Require the main branch
@@ -188,6 +218,14 @@ jobs:
           fi
           if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
             echo "webOS-only validation requires the build action." >&2
+            exit 1
+          fi
+          if [[ "${{ steps.request.outputs.include_webos_release }}" == "true" && "${{ steps.request.outputs.include_webos_build }}" != "true" ]]; then
+            echo "A public webOS release requires building the webOS candidate." >&2
+            exit 1
+          fi
+          if [[ "${{ steps.request.outputs.include_webos_release }}" == "true" && "$ACTION" != "release" ]]; then
+            echo "Public webOS inclusion requires action=release." >&2
             exit 1
           fi
 
@@ -397,7 +435,7 @@ jobs:
           if-no-files-found: warn
 
   build-webos:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'webos-validation' || (needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true')) }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'webos-validation' || (needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_build == 'true')) }}
     needs: validate-trusted-ref
     name: Build WebOS TV package (ARMv7)
     timeout-minutes: 360
@@ -447,10 +485,10 @@ jobs:
             --artifact "${ipks[0]}"
 
       - name: Prepare LG Seller Lounge handoff bundle
-        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         env:
           OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.version }}
           SOURCE_COMMIT: ${{ github.sha }}
         shell: bash
         run: |
@@ -505,6 +543,20 @@ jobs:
           path: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}/logs/**
           if-no-files-found: warn
           retention-days: 14
+
+  build-tizen:
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_tizen_build == 'true' }}
+    needs: validate-trusted-ref
+    name: Build Samsung Tizen TV package (ARM)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tizen.yml
+    with:
+      build_package: true
+      architecture: arm
+      tester_build: true
+      security_profile: ''
+      include_seller_office_handoff: false
 
   build-ios:
     if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -1789,8 +1841,8 @@ jobs:
           path: plezyng-linux-x86_64.AppImage
 
   create-release:
-    needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.outputs.runner_pool == 'private' && needs.validate-trusted-ref.outputs.action == 'release' && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (needs.validate-trusted-ref.outputs.include_webos_release != 'true' && needs.build-webos.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    needs: [validate-trusted-ref, build-android, build-webos, build-tizen, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
+    if: ${{ always() && needs.validate-trusted-ref.outputs.runner_pool == 'private' && needs.validate-trusted-ref.outputs.action == 'release' && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (needs.validate-trusted-ref.outputs.include_webos_build != 'true' && needs.validate-trusted-ref.outputs.include_webos_release != 'true' && needs.build-webos.result == 'skipped')) && (needs.build-tizen.result == 'success' || (needs.validate-trusted-ref.outputs.include_tizen_build != 'true' && needs.build-tizen.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write

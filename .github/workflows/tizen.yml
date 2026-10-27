@@ -1,12 +1,12 @@
 # ng-runner-policy: private-jit-only-v1
 name: Samsung Tizen TV
 
-# Manual tester builds and optional Seller Office handoff; no store submission.
+# Private ARM tester builds for versioned releases; manual Seller Office handoff remains opt-in.
 on:
   workflow_dispatch:
     inputs:
       build_package:
-        description: Build a signed experimental TPK after validation
+        description: Build an experimental ARM tester TPK after validation
         type: boolean
         default: false
       tester_build:
@@ -21,6 +21,40 @@ on:
       security_profile:
         description: Existing profile; non-tester builds import the encrypted Samsung bundle
         type: string
+      include_seller_office_handoff:
+        description: Prepare a Seller Office handoff bundle after separate approval
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      build_package:
+        description: Build the TPK after validation
+        type: boolean
+        required: false
+        default: true
+      architecture:
+        description: ARM TV or x64 emulator
+        type: string
+        required: false
+        default: arm
+      tester_build:
+        description: Build with a development profile; the recipient must re-sign for a TV
+        type: boolean
+        required: false
+        default: true
+      security_profile:
+        description: Existing Samsung profile name
+        type: string
+        required: false
+        default: ""
+      include_seller_office_handoff:
+        description: Prepare a Seller Office handoff bundle after separate approval
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64:
+        required: false
 
 permissions:
   contents: read
@@ -47,7 +81,7 @@ jobs:
 
   package:
     needs: validate
-    if: inputs.build_package && github.ref == 'refs/heads/main'
+    if: inputs.build_package && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package"]}}', github.run_id)) }}
     timeout-minutes: 60
     env:
@@ -148,7 +182,7 @@ jobs:
             --output build/tizen-release "${options[@]}"
           cp scripts/tizen/package.py scripts/tizen/toolchain.json docs/maintainers/tizen-tester.md build/tizen-release/
       - name: Prepare Samsung TV Seller Office handoff bundle
-        if: ${{ !inputs.tester_build && inputs.architecture == 'arm' }}
+        if: ${{ !inputs.tester_build && inputs.architecture == 'arm' && inputs.include_seller_office_handoff }}
         shell: bash
         env:
           SOURCE_COMMIT: ${{ github.sha }}
@@ -165,7 +199,7 @@ jobs:
             --evidence build/tizen-release/PlezyNG-tizen-arm-native-sources.tar.gz \
             --output build/tizen-release/PlezyNG-samsung-tv-submission.zip
       - name: Upload Samsung TV Seller Office handoff bundle
-        if: ${{ !inputs.tester_build && inputs.architecture == 'arm' }}
+        if: ${{ !inputs.tester_build && inputs.architecture == 'arm' && inputs.include_seller_office_handoff }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: plezyng-samsung-tv-store-submission

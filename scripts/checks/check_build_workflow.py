@@ -22,6 +22,7 @@ WINDOWS_CMAKE = WORKFLOW.parents[2] / "windows/CMakeLists.txt"
 WEBOS_CANDIDATE_BUILDER = ROOT / "tools/webos/build_release_candidate.sh"
 WEBOS_IPK_BUILDER = ROOT / "tools/webos/build_ipk.sh"
 WEBOS_RELEASE_GATE = ROOT / "tools/webos/check_release_eligibility.py"
+TIZEN_WORKFLOW = ROOT / ".github/workflows/tizen.yml"
 text = WORKFLOW.read_text(encoding="utf-8")
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 ci_text = CI_WORKFLOW.read_text(encoding="utf-8") if CI_WORKFLOW.is_file() else ""
@@ -321,6 +322,30 @@ require(
     "public WebOS release inclusion must be an explicit opt-in",
 )
 require(
+    re.search(
+        r"(?ms)^      include_webos_build:\n.*?        type: boolean\n"
+        r"        default: true\n",
+        text,
+    )
+    is not None,
+    "versioned builds must build the experimental WebOS candidate by default",
+)
+require(
+    re.search(
+        r"(?ms)^      include_tizen_build:\n.*?        type: boolean\n"
+        r"        default: true\n",
+        text,
+    )
+    is not None,
+    "versioned builds must build the experimental Tizen candidate by default",
+)
+request_resolver = named_step(job("validate-trusted-ref"), "Resolve release request")
+require(
+    'INCLUDE_WEBOS_BUILD=true' in request_resolver
+    and 'INCLUDE_TIZEN_BUILD=true' in request_resolver,
+    "versioned tags must build both ARM TV candidates by default",
+)
+require(
     "Validate release tag before building" in job("validate-trusted-ref")
     and "steps.request.outputs.mode == 'release'" in job("validate-trusted-ref")
     and "RELEASE_TAG: ${{ steps.request.outputs.release_tag }}" in job("validate-trusted-ref")
@@ -331,9 +356,9 @@ require(
 build_webos = job("build-webos")
 require(
     "needs.validate-trusted-ref.outputs.mode == 'webos-validation'" in build_webos
-    and "needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true'" in build_webos
+    and "needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_build == 'true'" in build_webos
     and "bash tools/webos/build_release_candidate.sh" in build_webos,
-    "webOS builds must be validation-only or explicitly included in a full release",
+    "versioned builds must build webOS independently from public-release inclusion",
 )
 require(
     "python3 -m unittest discover -s tools/webos/tests -v"
@@ -388,6 +413,17 @@ require(
     in named_step(build_webos, "Upload approved WebOS IPK for public release assembly"),
     "the WebOS IPK must not be uploaded as a public workflow artifact before release approval",
 )
+require(
+    "Upload experimental WebOS candidate for this build" not in build_webos,
+    "unapproved WebOS candidates must stay inside the ephemeral private-JIT workspace",
+)
+require(
+    "Public webOS inclusion requires action=release." in job("validate-trusted-ref")
+    and "needs.validate-trusted-ref.outputs.include_webos_release == 'true'" in named_step(
+        build_webos, "Upload approved WebOS IPK for public release assembly"
+    ),
+    "WebOS IPKs must only enter public artifacts for an approved draft-release action",
+)
 validation_evidence = named_step(
     build_webos, "Upload WebOS validation evidence without vendor runtime binaries"
 )
@@ -395,6 +431,28 @@ require(
     "webos-validation-evidence" in validation_evidence
     and "*.ipk" not in validation_evidence,
     "webOS validation artifacts must contain metadata, not vendor runtime binaries",
+)
+tizen_job = job("build-tizen")
+require(
+    "uses: ./.github/workflows/tizen.yml" in tizen_job
+    and "outputs.include_tizen_build == 'true'" in tizen_job
+    and "architecture: arm" in tizen_job
+    and "tester_build: true" in tizen_job
+    and "security_profile: ''" in tizen_job
+    and "include_seller_office_handoff: false" in tizen_job,
+    "versioned builds must call the ARM Tizen tester workflow without store handoff",
+)
+tizen_workflow = (
+    TIZEN_WORKFLOW.read_text(encoding="utf-8") if TIZEN_WORKFLOW.is_file() else ""
+)
+require(
+    "  workflow_call:" in tizen_workflow
+    and "tester_build:" in tizen_workflow
+    and "python3 scripts/tizen/prepare_signing_profile.py" in tizen_workflow
+    and "python3 scripts/tizen/package.py build" in tizen_workflow
+    and "startsWith(github.ref, 'refs/tags/v')" in tizen_workflow
+    and "name: plezyng-tizen-${{ inputs.architecture }}-experimental" in tizen_workflow,
+    "Tizen reusable workflow must build signed packages from main and version tags",
 )
 require(
     re.search(
@@ -438,6 +496,7 @@ for action_pool_job in (
     "validate-trusted-ref",
     "build-android",
     "build-webos",
+    "build-tizen",
     "build-ios",
     "build-tvos",
     "build-macos",
@@ -457,7 +516,7 @@ for action_pool_job in (
 
 release = job("create-release")
 require(
-    "needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
+    "needs: [validate-trusted-ref, build-android, build-webos, build-tizen, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
     in release,
     "release dependencies must include the trust gate, all platform builds, and Windows packaging",
 )
@@ -500,6 +559,8 @@ require(
     and "needs.validate-trusted-ref.result == 'success'" in release_condition
     and "needs.build-webos.result == 'success'" in release_condition
     and "needs.build-webos.result == 'skipped'" in release_condition
+    and "needs.build-tizen.result == 'success'" in release_condition
+    and "needs.build-tizen.result == 'skipped'" in release_condition
     and "contains(needs.*.result, 'failure')" in release_condition
     and "contains(needs.*.result, 'cancelled')" in release_condition,
     "draft release creation must require a successful complete build",

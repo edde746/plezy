@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Prepare the versioned 2.25.0 main-tag release with private JIT builds across the supported platforms, including ARM webOS and Tizen candidates.
+
+## [2.25.0] - 2026-10-27
+
+This release records PlezyNG's additive feature work since the fork, along with the related security, accessibility, playback, source, reader, platform, and release-system changes. Experimental paths retain their qualification status below.
+
 - Require platform build dispatches to carry explicit action and private-pool tags, and gate every build job to that selection.
 - Let build-only platform runs validate the trusted branch without waiting for a separate CI dispatch; retain that CI prerequisite for release actions.
 - Restore shared focus navigation across source browsing and dialogs, announce source and sync errors accessibly, and explain shared-ID requirements before recovery imports.
@@ -145,6 +151,7 @@
 - Add a configurable content screensaver that rotates artwork from selected connected libraries while idle.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
+- Trigger private JIT multi-platform release builds from validated `vMAJOR.MINOR.PATCH` tags on `main`, including experimental ARM webOS and Samsung Tizen build jobs by default.
 - Add credential-gated signed Android Play/Amazon and Apple App Store assets, manual mobile-store submissions, an identity-gated Windows Store MSIX bundle, release checksums, Windows package-manager submissions, and multi-architecture relay container publishing.
 - Prepare credential-gated Snap Store, AppImage, AUR, Fedora COPR, and Launchpad PPA release channels.
 - Use PlezyNG-specific Android, Apple, tvOS, and Flatpak application identities for store and package submissions.
