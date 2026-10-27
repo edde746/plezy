@@ -18,9 +18,7 @@ video experiment logging switch. A separate engine build is required.
 
 An experimental Android AAR now passes a synthetic FEL-on versus explicit
 EL-dropped pixel comparison through mpv's real `gpu-next` Surface output on an
-API 36 x86_64 emulator. That proves the authored residual reaches Android
-output; it does not update the production AAR or qualify real-device playback,
-Dolby-reference pixels, or physical Dolby Vision output.
+API 36 x86_64 emulator.
 
 The repository also includes a pinned Apple dual-layer experiment host for
 macOS/iOS/tvOS, an offline FEL-to-HDR/SDR companion pipeline, and platform testing
