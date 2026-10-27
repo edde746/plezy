@@ -864,7 +864,8 @@
     "rotationLockButton": "Bloqueo de rotación",
     "lockScreen": "Bloquear pantalla",
     "screenLockButton": "Bloqueo de pantalla",
-    "longPressToUnlock": "Mantén pulsado para desbloquear",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Línea de tiempo del video",
     "volumeSlider": "Nivel de volumen",
     "endsAt": "Termina a las ${time}",
@@ -2558,5 +2559,24 @@
     "redirectDifferentHost": "El servidor redirigió a un host diferente. Introduce directamente la URL final de ${product}.",
     "redirectInsecure": "El servidor redirigió de HTTPS a una URL no segura",
     "redirectUnsupportedEnterFinal": "El servidor redirigió a una URL no compatible. Introduce directamente la URL final de ${product}."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

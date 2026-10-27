@@ -1,3 +1,4 @@
+import '../media/chapter_marker_classifier.dart';
 import '../media/media_version.dart';
 import '../media/media_source_info.dart';
 import '../utils/jellyfin_time.dart';
@@ -104,6 +105,7 @@ List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> 
 PlaybackExtras jellyfinPlaybackExtrasFromRaw(
   dynamic raw,
   String itemId, {
+  required ChapterMarkerClassifier classifier,
   String? introPattern,
   String? creditsPattern,
   bool forceChapterFallback = false,
@@ -134,6 +136,7 @@ PlaybackExtras jellyfinPlaybackExtrasFromRaw(
   return PlaybackExtras.withChapterFallback(
     chapters: mapped,
     markers: markers,
+    classifier: classifier,
     introPatternStr: introPattern,
     creditsPatternStr: creditsPattern,
     forceChapterFallback: forceChapterFallback,

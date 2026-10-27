@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../media/chapter_marker_classifier.dart';
 import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
 import '../media/episode_collection.dart';
@@ -1859,7 +1860,7 @@ class PlexClient
               parseResponse: parseResponse,
             );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      final extras = _parsePlaybackExtrasFromMetadataJson(
+      final extras = await _parsePlaybackExtrasFromMetadataJson(
         metadataJson,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
@@ -1903,13 +1904,14 @@ class PlexClient
     return _getFirstMetadataJsonFromData(data);
   }
 
-  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(
+  Future<PlaybackExtras> _parsePlaybackExtrasFromMetadataJson(
     Map<String, dynamic>? metadataJson, {
     String? introPattern,
     String? creditsPattern,
     bool forceChapterFallback = false,
-  }) => plexPlaybackExtrasFromCacheJson(
+  }) async => plexPlaybackExtrasFromCacheJson(
     metadataJson,
+    classifier: await ChapterMarkerClassifier.bundled,
     introPattern: introPattern,
     creditsPattern: creditsPattern,
     forceChapterFallback: forceChapterFallback,

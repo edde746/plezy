@@ -367,8 +367,8 @@ class PlayerAndroid extends PlayerBase {
       () => invoke('setAudioNormalization', {'enabled': enabled}),
       () => _audioNormalizationEnabled == enabled,
     );
-    // Keep the mpv audiotrack-normalize property flowing through setMpvProperty so
-    // the plugin's pendingMpvProperties replay normalizes if exo falls back to mpv.
+    // Keep mpv's normalization `af` flowing through setMpvProperty so the
+    // plugin's pendingMpvProperties replay normalizes if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
   }
 

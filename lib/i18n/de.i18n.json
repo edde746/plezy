@@ -864,7 +864,8 @@
     "rotationLockButton": "Drehsperre",
     "lockScreen": "Bildschirm sperren",
     "screenLockButton": "Bildschirmsperre",
-    "longPressToUnlock": "Lange drücken zum Entsperren",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Videozeitleiste",
     "volumeSlider": "Lautstärkepegel",
     "endsAt": "Endet um ${time}",
@@ -2558,5 +2559,24 @@
     "redirectDifferentHost": "Der Server hat zu einem anderen Host weitergeleitet. Gib die endgültige ${product}-URL direkt ein.",
     "redirectInsecure": "Der Server hat von HTTPS zu einer unsicheren URL weitergeleitet",
     "redirectUnsupportedEnterFinal": "Der Server hat zu einer nicht unterstützten URL weitergeleitet. Gib die endgültige ${product}-URL direkt ein."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

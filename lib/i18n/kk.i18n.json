@@ -864,7 +864,8 @@
     "rotationLockButton": "Бұрылыс бұғаттауы",
     "lockScreen": "Экранды бұғаттау",
     "screenLockButton": "Экран бұғаттауы",
-    "longPressToUnlock": "Бұғаттаудан шығару үшін ұзақ басыңыз",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Видео уақыт шкаласы",
     "volumeSlider": "Дыбыс деңгейі",
     "endsAt": "Аяқталу уақыты: ${time}",
@@ -2558,5 +2559,24 @@
     "redirectDifferentHost": "Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
     "redirectInsecure": "Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады",
     "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

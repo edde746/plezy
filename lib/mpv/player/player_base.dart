@@ -1369,8 +1369,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
-  /// mpv loudnorm targeting streaming-style loudness; Android uses the platform
-  /// effect with matching parameters instead (see [setAudioNormalization]).
+  /// mpv loudnorm targeting streaming-style loudness; Android uses
+  /// [_androidNormalizationFilter] instead.
   ///
   /// Dynamic-mode loudnorm always outputs float64 at 192 kHz, which made the
   /// AO open at f64/192k and forced the OS mixer to convert/resample on the
@@ -1381,22 +1381,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
   static const String _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
-  /// Android normalizes in the platform mixer: mpv-build's
-  /// `audiotrack-normalize` attaches DynamicsProcessing (LoudnessEnhancer
-  /// below API 28) to the AudioTrack's session, the effect ExoPlayer uses.
-  /// loudnorm runs on mpv's core thread, which also hands video frames to the
-  /// output; on 32-bit TV boxes its f64/192 kHz pass made those frames late
-  /// (#2654) and could not keep up with multichannel audio at all, so the
-  /// filter used to fold everything to stereo first. The effect costs mpv
-  /// nothing and keeps every channel. The option reopens the audio output when
-  /// it changes, and only processes PCM, like the filter.
+  /// Android's normalization: acompressor as a slow AGC toward -14 LUFS, then
+  /// alimiter as the -3 dB ceiling, with the parameters of ExoPlayer's
+  /// DynamicsProcessing (AudioNormalizationEffect.kt). `link=maximum` drives
+  /// every channel's gain from the loudest one, so 5.1 keeps its balance
+  /// without a fold to stereo.
+  ///
+  /// loudnorm is too heavy here: it runs on mpv's core thread, which also
+  /// hands video frames to the output, and on 32-bit TV boxes its f64/192 kHz
+  /// pass made those frames late (#2654). This chain stays at the source rate
+  /// and costs about 2% of loudnorm on 5.1. The platform effect is no
+  /// substitute either: attached to the AudioTrack's session (mpv-build's
+  /// `audiotrack-normalize`), DynamicsProcessing overflowed its ring buffer on
+  /// a Galaxy Z Fold6's 5.1 route, silencing audio and stuttering video
+  /// (#2832), and left a Fold3's spatialized 5.1 untouched.
+  static const String _androidNormalizationFilter =
+      'acompressor=threshold=-34dB:ratio=4:knee=6dB:attack=30:release=300:makeup=15dB:link=maximum,'
+      'alimiter=limit=-3dB:attack=1:release=60:level=false';
+
   @override
   Future<void> setAudioNormalization(bool enabled) async {
-    if (Platform.isAndroid) {
-      await setProperty('audiotrack-normalize', enabled ? 'yes' : 'no');
-      return;
-    }
-    await setProperty('af', enabled ? _loudnormFilter : '');
+    final filter = Platform.isAndroid ? _androidNormalizationFilter : _loudnormFilter;
+    await setProperty('af', enabled ? filter : '');
   }
 
   /// mpv's `audio-channels` for each limit. The 5.1 limit is a list so stereo

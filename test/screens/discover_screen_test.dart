@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/focus/covered_route_focus_boundary.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -835,14 +836,34 @@ void main() {
       reason: 'the user navigated on; do not yank focus',
     );
   });
+
+  testWidgets('the first-load rail claim made under a root route lands when it pops (#2817)', (tester) async {
+    final gated = await _pumpGatedDiscover(tester, underRootCover: true);
+    await gated.landItems(tester);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'root_cover',
+      reason: 'the claim must not steal the covering route',
+    );
+
+    gated.rootNavigator!.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
 }
 
 class _GatedDiscover {
-  _GatedDiscover({required this.client, required this.sidebarItem, required this.otherSidebarItem});
+  _GatedDiscover({required this.client, required this.sidebarItem, required this.otherSidebarItem, this.rootNavigator});
 
   final _GatedHubsFakeClient client;
   final FocusNode sidebarItem;
   final FocusNode otherSidebarItem;
+
+  /// Set with `underRootCover`; popping it uncovers the screen.
+  final GlobalKey<NavigatorState>? rootNavigator;
 
   /// Replace the empty-items hub with a populated one and run a full pass.
   Future<void> landItems(WidgetTester tester) async {
@@ -857,7 +878,8 @@ class _GatedDiscover {
           size: 1,
         ),
       );
-    (tester.state(find.byType(DiscoverScreen)) as FullRefreshable).fullRefresh();
+    // skipOffstage: a covering root route leaves the screen offstage.
+    (tester.state(find.byType(DiscoverScreen, skipOffstage: false)) as FullRefreshable).fullRefresh();
     await tester.pump();
     client.release();
     await tester.pump();
@@ -868,7 +890,12 @@ class _GatedDiscover {
 /// Mounts a TV [DiscoverScreen] beside a sidebar stand-in and completes its
 /// first load with a hub that has no items, so the rail has nothing to render
 /// and the screen's "focus the rail when ready" request stays armed.
-Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
+///
+/// [underRootCover] mounts it the way the profile session does — behind a
+/// [CoveredRouteFocusBoundary] and a nested navigator — and pushes a route on
+/// the root navigator before that first load lands, as when a profile chosen
+/// in the root picker remounts the session beneath it.
+Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCover = false}) async {
   await SettingsService.getInstance();
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1280, 720);
@@ -911,9 +938,12 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
   );
   final sidebarItem = FocusNode(debugLabel: 'sidebar_item');
   final otherSidebarItem = FocusNode(debugLabel: 'other_sidebar_item');
+  final cover = FocusNode(debugLabel: 'root_cover');
+  final rootNavigator = underRootCover ? GlobalKey<NavigatorState>() : null;
   addTearDown(() async {
     sidebarItem.dispose();
     otherSidebarItem.dispose();
+    cover.dispose();
     discoverProvider.dispose();
     activeProfileProvider.dispose();
     companionRemoteProvider.dispose();
@@ -925,6 +955,25 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
     await db.close();
   });
 
+  final shell = Row(
+    children: [
+      Column(
+        children: [
+          Focus(focusNode: sidebarItem, child: const SizedBox(width: 80, height: 360)),
+          Focus(focusNode: otherSidebarItem, child: const SizedBox(width: 80, height: 360)),
+        ],
+      ),
+      MainScreenFocusScope(
+        focusSidebar: () {},
+        sideNavigationWidth: SideNavigationRailState.expandedWidth,
+        reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+        foregroundLeft: 80,
+        foregroundWidth: 1200,
+        viewportWidth: 1280,
+        child: const SizedBox(width: 1200, height: 720, child: DiscoverScreen()),
+      ),
+    ],
+  );
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -939,37 +988,42 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
         ],
         child: InputModeTracker(
           child: MaterialApp(
+            navigatorKey: rootNavigator,
             theme: monoTheme(MonoPalette.dark),
-            home: Row(
-              children: [
-                Column(
-                  children: [
-                    Focus(focusNode: sidebarItem, child: const SizedBox(width: 80, height: 360)),
-                    Focus(focusNode: otherSidebarItem, child: const SizedBox(width: 80, height: 360)),
-                  ],
-                ),
-                MainScreenFocusScope(
-                  focusSidebar: () {},
-                  sideNavigationWidth: SideNavigationRailState.expandedWidth,
-                  reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
-                  foregroundLeft: 80,
-                  foregroundWidth: 1200,
-                  viewportWidth: 1280,
-                  child: const SizedBox(width: 1200, height: 720, child: DiscoverScreen()),
-                ),
-              ],
-            ),
+            home: rootNavigator == null
+                ? shell
+                : CoveredRouteFocusBoundary(
+                    child: Navigator(onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (_) => shell)),
+                  ),
           ),
         ),
       ),
     ),
   );
   await tester.pump();
+  if (rootNavigator != null) {
+    rootNavigator.currentState!.push(
+      MaterialPageRoute<void>(
+        builder: (_) => Focus(focusNode: cover, autofocus: true, child: const SizedBox.expand()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+  }
   client.release();
   await tester.pump();
   await tester.pump();
-  expect(find.byType(TvBrowseRail), findsNothing, reason: 'an empty-items hub gives the rail nothing to show');
-  return _GatedDiscover(client: client, sidebarItem: sidebarItem, otherSidebarItem: otherSidebarItem);
+  expect(
+    find.byType(TvBrowseRail, skipOffstage: false),
+    findsNothing,
+    reason: 'an empty-items hub gives the rail nothing to show',
+  );
+  return _GatedDiscover(
+    client: client,
+    sidebarItem: sidebarItem,
+    otherSidebarItem: otherSidebarItem,
+    rootNavigator: rootNavigator,
+  );
 }
 
 /// Mounts [DiscoverScreen] in the smallest graph both layout branches need, so

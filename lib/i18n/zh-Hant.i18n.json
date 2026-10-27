@@ -861,7 +861,8 @@
     "rotationLockButton": "旋轉鎖定",
     "lockScreen": "鎖定螢幕",
     "screenLockButton": "螢幕鎖定",
-    "longPressToUnlock": "長按解鎖",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "影片時間軸",
     "volumeSlider": "音量調整",
     "endsAt": "預計 ${time} 結束",
@@ -2546,5 +2547,24 @@
     "redirectDifferentHost": "伺服器重新導向至不同的主機。請直接輸入最終的 ${product} URL。",
     "redirectInsecure": "伺服器從 HTTPS 重新導向至不安全的 URL",
     "redirectUnsupportedEnterFinal": "伺服器重新導向至不支援的 URL。請直接輸入最終的 ${product} URL。"
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

@@ -28,6 +28,8 @@
 		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
 		A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */; };
 		A9C0FF1C2F00120000000003 /* AlternateAppIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */; };
+		1FB1E3FC084653353BC7A05F /* DeepLinkDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */; };
+		48BFBE9EA6DCC36FD5AF161B /* DeepLinkPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 /* End PBXBuildFile section */
 
@@ -86,6 +88,8 @@
 		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDecodeCapabilitiesPlugin.swift; sourceTree = "<group>"; };
 		A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconPlugin.swift; path = ../shared/apple/AppIcon/AppIconPlugin.swift; sourceTree = SOURCE_ROOT; };
 		A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AlternateAppIcons.xcassets; sourceTree = "<group>"; };
+		236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkDeliveryCoordinator.swift; path = ../shared/apple/DeepLink/DeepLinkDeliveryCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkPlugin.swift; path = ../shared/apple/DeepLink/DeepLinkPlugin.swift; sourceTree = SOURCE_ROOT; };
 		BB346A1D0705AB171F80B11B /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE48FF2E074644167608B23D /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		F3553CDE70191F0FC81A782E /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -206,6 +210,8 @@
 				B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */,
 				A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */,
 				A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */,
+				236F8E4D18840737730E5EDD /* DeepLinkDeliveryCoordinator.swift */,
+				D81440C3D3F557FB52C1CFCD /* DeepLinkPlugin.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -442,6 +448,8 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
 				A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */,
+				1FB1E3FC084653353BC7A05F /* DeepLinkDeliveryCoordinator.swift in Sources */,
+				48BFBE9EA6DCC36FD5AF161B /* DeepLinkPlugin.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -813,7 +821,7 @@
 			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 582f6d6e748a87a1536bf5cdad0af97b75725ffb;
+				revision = 3b9f38affe3c4171f8e6bc47331feffd3d13be1d;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

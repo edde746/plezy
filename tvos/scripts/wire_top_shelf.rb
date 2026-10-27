@@ -134,9 +134,6 @@ test_target.build_configurations.each do |config|
   settings['TVOS_DEPLOYMENT_TARGET'] = '17.0'
 end
 
-event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
-ensure_source(runner, event_delivery_ref)
-
 extension_group = main_group['TopShelfExtension'] || main_group.new_group('TopShelfExtension', 'TopShelfExtension')
 top_shelf_ref = ensure_file(extension_group, 'TopShelfProvider.swift')
 ensure_file(extension_group, 'Info.plist')

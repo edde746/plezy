@@ -73,6 +73,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
       itemId,
+      classifier: await ChapterMarkerClassifier.bundled,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
       forceChapterFallback: forceChapterFallback,
@@ -93,6 +94,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return jellyfinPlaybackExtrasFromRaw(
       item.raw,
       itemId,
+      classifier: await ChapterMarkerClassifier.bundled,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
       forceChapterFallback: forceChapterFallback,

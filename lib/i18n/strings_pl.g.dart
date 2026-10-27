@@ -992,7 +992,6 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Blokada obrotu';
 	@override String get lockScreen => 'Zablokuj ekran';
 	@override String get screenLockButton => 'Blokada ekranu';
-	@override String get longPressToUnlock => 'Przytrzymaj, aby odblokować';
 	@override String get timelineSlider => 'Oś czasu wideo';
 	@override String get volumeSlider => 'Poziom głośności';
 	@override String endsAt({required Object time}) => 'Kończy się o ${time}';
@@ -4228,7 +4227,6 @@ extension on TranslationsPl {
 			'videoControls.rotationLockButton' => 'Blokada obrotu',
 			'videoControls.lockScreen' => 'Zablokuj ekran',
 			'videoControls.screenLockButton' => 'Blokada ekranu',
-			'videoControls.longPressToUnlock' => 'Przytrzymaj, aby odblokować',
 			'videoControls.timelineSlider' => 'Oś czasu wideo',
 			'videoControls.volumeSlider' => 'Poziom głośności',
 			'videoControls.endsAt' => ({required Object time}) => 'Kończy się o ${time}',
@@ -4445,9 +4443,9 @@ extension on TranslationsPl {
 			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
 			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
+			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
 			_ => null,
 		} ?? switch (path) {
-			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Dodaj do ${displayName}: Plex, Jellyfin, Emby lub połączenie innego profilu',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesja wygasła dla ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sesja wygasła dla ${count} serwerów',
@@ -4959,9 +4957,9 @@ extension on TranslationsPl {
 			'liveTv.recordSettings.keepUpToHint' => '0 zachowuje wszystkie odcinki',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo',
 			_ => null,
 		} ?? switch (path) {
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo',
 			'liveTv.failedToStartChannel' => 'Nie udało się uruchomić kanału na żywo',
 			'liveTv.failedToBuildStreamUrl' => 'Nie udało się utworzyć adresu URL strumienia',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nie udało się uruchomić kanału: ${reason}',
@@ -5473,9 +5471,9 @@ extension on TranslationsPl {
 			'performanceOverlay.decoderHardware' => 'Sprzętowy',
 			'performanceOverlay.tunnelingActive' => 'Aktywne',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',
+			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
 			'externalPlayer.useExternalPlayer' => 'Użyj zewnętrznego odtwarzacza',
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w innej aplikacji',
 			'externalPlayer.selectPlayer' => 'Wybierz odtwarzacz',

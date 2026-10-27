@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/chapter_marker_classifier.dart';
 import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 
@@ -7,6 +8,8 @@ import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 /// resulting [MediaAudioTrack] / [MediaSubtitleTrack] lists, so the field
 /// shape needs to be stable across iterations.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('jellyfinMediaSourceToMediaSourceInfo', () {
     test('maps audio + subtitle streams and preserves Jellyfin default selection hints', () {
       final source = {
@@ -635,26 +638,37 @@ void main() {
   });
 
   group('jellyfinPlaybackExtrasFromRaw', () {
+    late ChapterMarkerClassifier classifier;
+    setUpAll(() async => classifier = await ChapterMarkerClassifier.bundled);
+
     test('path-encodes chapter thumbnail item id and image tag', () {
-      final extras = jellyfinPlaybackExtrasFromRaw({
-        'Chapters': [
-          {'StartPositionTicks': 0, 'ImageTag': 'chapter/tag ?x'},
-        ],
-      }, 'folder/item #1?x');
+      final extras = jellyfinPlaybackExtrasFromRaw(
+        {
+          'Chapters': [
+            {'StartPositionTicks': 0, 'ImageTag': 'chapter/tag ?x'},
+          ],
+        },
+        'folder/item #1?x',
+        classifier: classifier,
+      );
 
       expect(extras.chapters.single.thumb, '/Items/folder%2Fitem%20%231%3Fx/Images/Chapter/0?tag=chapter%2Ftag%20%3Fx');
     });
 
     test('uses default OP and ED chapter patterns for skip markers', () {
-      final extras = jellyfinPlaybackExtrasFromRaw({
-        'RunTimeTicks': _ticks(150000),
-        'Chapters': [
-          {'Name': 'Prologue', 'StartPositionTicks': _ticks(0)},
-          {'Name': 'OP', 'StartPositionTicks': _ticks(10000)},
-          {'Name': 'Part A', 'StartPositionTicks': _ticks(90000)},
-          {'Name': 'ED', 'StartPositionTicks': _ticks(120000)},
-        ],
-      }, 'item-1');
+      final extras = jellyfinPlaybackExtrasFromRaw(
+        {
+          'RunTimeTicks': _ticks(150000),
+          'Chapters': [
+            {'Name': 'Prologue', 'StartPositionTicks': _ticks(0)},
+            {'Name': 'OP', 'StartPositionTicks': _ticks(10000)},
+            {'Name': 'Part A', 'StartPositionTicks': _ticks(90000)},
+            {'Name': 'ED', 'StartPositionTicks': _ticks(120000)},
+          ],
+        },
+        'item-1',
+        classifier: classifier,
+      );
 
       expect(extras.markers.map((m) => m.type), ['intro', 'credits']);
       expect(extras.markers[0].startTimeOffset, 10000);
@@ -689,6 +703,7 @@ void main() {
           ],
         },
         'item-1',
+        classifier: classifier,
         markers: jellyfinMediaSegmentsToMarkers({
           'Items': [
             {'Type': 'Intro', 'StartTicks': _ticks(10000), 'EndTicks': _ticks(30000)},

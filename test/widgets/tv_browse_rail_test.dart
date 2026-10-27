@@ -2632,6 +2632,111 @@ void main() {
     expect(focusedItemIds.last, episode2.id);
   });
 
+  // Continue Watching evicts a finished episode at once and only a later
+  // refetch brings the next one in, so the row changes in two steps (#2814).
+  group('selection when a finished episode leaves before the next one arrives', () {
+    late MultiServerProvider multiServerProvider;
+    late List<String> focusedItemIds;
+    final movieA = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final movieC = testMediaItem(id: 'movie_c', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie C');
+    final movieD = testMediaItem(id: 'movie_d', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie D');
+    final episode1 = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E01',
+    );
+    final episode2 = testMediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E02',
+    );
+
+    setUp(() {
+      multiServerProvider = testMultiServerProvider(MultiServerManager());
+      focusedItemIds = [];
+    });
+    tearDown(() => multiServerProvider.dispose());
+
+    Future<void> pumpRail(WidgetTester tester, List<MediaItem> items) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>.value(
+          value: multiServerProvider,
+          child: InputModeTracker(
+            child: MaterialApp(
+              theme: monoTheme(MonoPalette.dark),
+              home: Scaffold(
+                body: SizedBox(
+                  width: 1280,
+                  height: 720,
+                  child: TvBrowseRail(
+                    focusMemory: focusMemory,
+                    key: const ValueKey('rail'),
+                    hubs: [
+                      MediaHub(
+                        id: 'continue_watching',
+                        title: 'Continue Watching',
+                        type: 'mixed',
+                        items: items,
+                        size: items.length,
+                      ),
+                    ],
+                    autofocus: true,
+                    iconForHub: (_, _) => Icons.tv_rounded,
+                    onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> pressRight(WidgetTester tester) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lands on the next episode instead of the neighbour that slid into its slot', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 720);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await pumpRail(tester, [movieA, episode1, movieC, movieD]);
+      await pressRight(tester);
+      expect(focusedItemIds.last, episode1.id);
+
+      await pumpRail(tester, [movieA, movieC, movieD]);
+      await pumpRail(tester, [episode2, movieA, movieC, movieD]);
+
+      expect(focusedItemIds.last, episode2.id);
+    });
+
+    testWidgets('stops following the finished episode once the user moves', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 720);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await pumpRail(tester, [movieA, episode1, movieC, movieD]);
+      await pressRight(tester);
+      await pumpRail(tester, [movieA, movieC, movieD]);
+      await pressRight(tester);
+      expect(focusedItemIds.last, movieD.id);
+
+      await pumpRail(tester, [episode2, movieA, movieC, movieD]);
+
+      expect(focusedItemIds.last, movieD.id);
+    });
+  });
+
   // The horizontal rail uses a constant `itemExtent` (SliverFixedExtentList),
   // which is what makes sliver layout math O(1) per realized child instead of
   // O(n). That only holds while the leading/trailing action slots occupy
