@@ -73,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang build-essential
+          sudo apt-get install -y --no-install-recommends clang build-essential cmake
           flutter pub get
 
       - name: Install wakelock_plus development dependencies
@@ -268,8 +268,8 @@ jobs:
       - name: Configure Android local properties
         run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
 
-      # CodeQL runs inside this private JIT job. Advanced setup must be selected
-      # in repository security settings so SARIF uploads are accepted.
+      # CodeQL runs inside this private JIT job using advanced setup. Repository
+      # default setup must be disabled so the tagged scan can upload SARIF.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
@@ -468,6 +468,26 @@ jobs:
           cache: true
           pub-cache: false
 
+      - name: Install CocoaPods
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:$PATH"
+          gem install cocoapods --version 1.17.0 --no-document \
+            --install-dir "$RUNNER_TEMP/cocoapods-gems" \
+            --bindir "$RUNNER_TEMP/cocoapods-bin"
+          gem_path="$RUNNER_TEMP/cocoapods-gems:$(gem env gempath)"
+          {
+            echo "GEM_HOME=$RUNNER_TEMP/cocoapods-gems"
+            echo "GEM_PATH=$gem_path"
+          } >> "$GITHUB_ENV"
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/cocoapods-bin" >> "$GITHUB_PATH"
+          export GEM_HOME="$RUNNER_TEMP/cocoapods-gems"
+          export GEM_PATH="$gem_path"
+          export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
+          pod --version
+
       - name: Install locked Dart dependencies
         if: matrix.platform != 'tvOS'
         run: flutter pub get --enforce-lockfile --no-example
@@ -579,7 +599,7 @@ jobs:
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
