@@ -77,6 +77,17 @@ class NavigationTab {
   }
 }
 
+/// Sections offered as a startup destination, in navigation order. Live TV and
+/// Explore are listed even while unavailable: startup opens Home and switches
+/// once a server or catalog source provides them.
+const startupSectionTabs = [
+  NavigationTabId.discover,
+  NavigationTabId.libraries,
+  NavigationTabId.liveTv,
+  NavigationTabId.explore,
+  NavigationTabId.search,
+];
+
 // Label getters (must be top-level for const constructor)
 String _getHomeLabel() => t.common.home;
 String _getExploreLabel() => t.navigation.explore;

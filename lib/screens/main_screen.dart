@@ -401,9 +401,10 @@ class _MainScreenState extends State<MainScreen>
   /// Last selected online tab (restored when coming back online after an offline fallback)
   NavigationTabId? _lastOnlineTabId;
 
-  /// A preferred startup section (e.g. Live TV) that wasn't visible yet at cold
-  /// start because servers bind asynchronously. Applied once it becomes
-  /// available (see [_handleLiveTvChanged]); cleared on any explicit selection.
+  /// A preferred startup section (Live TV or Explore) that wasn't visible yet
+  /// at cold start because servers bind and catalog sources hydrate
+  /// asynchronously. Applied once it becomes available (see
+  /// [_applyPendingStartupTab]); cleared on any explicit selection.
   NavigationTabId? _pendingStartupTab;
 
   /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
@@ -1293,10 +1294,13 @@ class _MainScreenState extends State<MainScreen>
     _lastHasLiveTv = hasLiveTv;
 
     _handleTabAvailabilityChanged();
+    _applyPendingStartupTab();
+  }
 
-    // A preferred startup section (only Live TV can be deferred) just became
-    // available — switch to it via _selectTab so it gets the usual visibility
-    // and focus handling. _selectTab clears _pendingStartupTab.
+  /// A deferred startup section just became available — switch to it via
+  /// _selectTab so it gets the usual visibility and focus handling.
+  /// _selectTab clears _pendingStartupTab.
+  void _applyPendingStartupTab() {
     final pending = _pendingStartupTab;
     if (pending != null && _getVisibleTabs(_isOffline).any((t) => t.id == pending)) {
       _selectTab(pending);
@@ -1311,6 +1315,7 @@ class _MainScreenState extends State<MainScreen>
     _lastHasExplore = hasExplore;
 
     _handleTabAvailabilityChanged();
+    _applyPendingStartupTab();
   }
 
   void _handleOfflineStatusChanged() {
