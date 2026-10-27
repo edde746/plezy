@@ -1,12 +1,9 @@
 # ng-runner-policy: private-jit-only-v1
 # packer-windows-jit-v1
 name: PlezyNG Release
-run-name: ${{ github.event_name == 'push' && format('action:release:pool:private:tag:{0}', github.ref_name) || format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag || 'adhoc') }}
+run-name: ${{ inputs.action == 'release' && format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, github.ref_name) || format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       action:
@@ -30,8 +27,8 @@ on:
           - release
           - webos-validation
         default: release
-      release_tag:
-        description: Semantic version for artifact names and optional draft release (required in release mode)
+      build_version:
+        description: Semantic version for artifact names; leave blank to use pubspec.yaml (release action uses the selected v* tag)
         required: false
         type: string
       include_webos_build:
@@ -70,7 +67,7 @@ env:
 jobs:
   validate-trusted-ref:
     name: Validate release request
-    if: ${{ github.event_name == 'push' || (inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release')) }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-trusted-ref"]}}', github.run_id)) }}
     outputs:
       action: ${{ steps.request.outputs.action }}
@@ -94,76 +91,71 @@ jobs:
         id: request
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }}
           ACTION_INPUT: ${{ inputs.action }}
           RUNNER_POOL_INPUT: ${{ inputs.runner_pool }}
           MODE_INPUT: ${{ inputs.mode }}
-          RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
+          BUILD_VERSION_INPUT: ${{ inputs.build_version }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
           INCLUDE_WEBOS_BUILD_INPUT: ${{ inputs.include_webos_build }}
           INCLUDE_WEBOS_RELEASE_INPUT: ${{ inputs.include_webos_release }}
           INCLUDE_TIZEN_BUILD_INPUT: ${{ inputs.include_tizen_build }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            ACTION=release
-            RUNNER_POOL=private
-            MODE=release
-            RELEASE_TAG="$GITHUB_REF_NAME"
-            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Release tag must use vMAJOR.MINOR.PATCH: $RELEASE_TAG" >&2
+          ACTION="$ACTION_INPUT"
+          RUNNER_POOL="$RUNNER_POOL_INPUT"
+          MODE="$MODE_INPUT"
+          INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"
+          INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
+          INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"
+          if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
+            echo "Unsupported action: $ACTION" >&2
+            exit 1
+          fi
+          if [[ "$RUNNER_POOL" != "private" ]]; then
+            echo "This workflow currently supports only the private runner pool." >&2
+            exit 1
+          fi
+          if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
+            echo "Unsupported platform mode: $MODE" >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
+            echo "webOS-only validation requires the build action." >&2
+            exit 1
+          fi
+          if [[ "$ACTION" == "release" ]]; then
+            RELEASE_TAG="$REF_NAME"
+            if [[ "$REF_TYPE" != "tag" || ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "The release action must dispatch against a vMAJOR.MINOR.PATCH tag." >&2
               exit 1
             fi
             VERSION="${RELEASE_TAG#v}"
+          else
+            RELEASE_TAG="$BUILD_VERSION_INPUT"
+            if [[ -z "$RELEASE_TAG" && "$MODE" == "release" ]]; then
+              RELEASE_TAG=$(python3 scripts/pubspec_version.py pubspec.yaml)
+              RELEASE_TAG=${RELEASE_TAG%%+*}
+            fi
+            VERSION="$RELEASE_TAG"
+          fi
+          if [[ "$MODE" == "webos-validation" ]]; then
+            RELEASE_TAG=""
+            VERSION=""
             INCLUDE_WEBOS_BUILD=true
             INCLUDE_WEBOS_RELEASE=false
-            INCLUDE_TIZEN_BUILD=true
-          else
-            ACTION="$ACTION_INPUT"
-            RUNNER_POOL="$RUNNER_POOL_INPUT"
-            MODE="$MODE_INPUT"
-            RELEASE_TAG="$RELEASE_TAG_INPUT"
-            VERSION="$RELEASE_TAG"
-            INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"
-            INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
-            INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"
-            if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
-              echo "Unsupported action: $ACTION" >&2
-              exit 1
-            fi
-            if [[ "$RUNNER_POOL" != "private" ]]; then
-              echo "This workflow currently supports only the private runner pool." >&2
-              exit 1
-            fi
-            if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
-              echo "Unsupported platform mode: $MODE" >&2
-              exit 1
-            fi
-            if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
-              echo "webOS-only validation requires the build action." >&2
-              exit 1
-            fi
-            if [[ "$MODE" == "release" && ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Manual release version must use semantic versioning: $RELEASE_TAG" >&2
-              exit 1
-            fi
-            if [[ "$MODE" == "webos-validation" ]]; then
-              RELEASE_TAG=""
-              VERSION=""
-              INCLUDE_WEBOS_BUILD=true
-              INCLUDE_WEBOS_RELEASE=false
-              INCLUDE_TIZEN_BUILD=false
-            elif [[ "$INCLUDE_WEBOS_RELEASE" != "true" && "$INCLUDE_WEBOS_RELEASE" != "false" ]]; then
-              echo "include_webos_release must be true or false." >&2
-              exit 1
-            fi
-            if [[ "$MODE" == "release" && "$INCLUDE_WEBOS_BUILD" != "true" && "$INCLUDE_WEBOS_BUILD" != "false" ]]; then
-              echo "include_webos_build must be true or false." >&2
-              exit 1
-            fi
-            if [[ "$MODE" == "release" && "$INCLUDE_TIZEN_BUILD" != "true" && "$INCLUDE_TIZEN_BUILD" != "false" ]]; then
-              echo "include_tizen_build must be true or false." >&2
-              exit 1
-            fi
+            INCLUDE_TIZEN_BUILD=false
+          elif [[ "$INCLUDE_WEBOS_RELEASE" != "true" && "$INCLUDE_WEBOS_RELEASE" != "false" ]]; then
+            echo "include_webos_release must be true or false." >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "release" && "$INCLUDE_WEBOS_BUILD" != "true" && "$INCLUDE_WEBOS_BUILD" != "false" ]]; then
+            echo "include_webos_build must be true or false." >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "release" && "$INCLUDE_TIZEN_BUILD" != "true" && "$INCLUDE_TIZEN_BUILD" != "false" ]]; then
+            echo "include_tizen_build must be true or false." >&2
+            exit 1
           fi
           {
             echo "action=$ACTION"
@@ -176,20 +168,24 @@ jobs:
             echo "include_tizen_build=$INCLUDE_TIZEN_BUILD"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Require the main branch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Require the main branch for builds
+        if: ${{ inputs.action == 'build' }}
         shell: bash
         run: |
           if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Release builds may only run from refs/heads/main." >&2
+            echo "Build actions may only run from refs/heads/main." >&2
             exit 1
           fi
 
-      - name: Require the pushed tag to point to main
-        if: ${{ github.event_name == 'push' }}
+      - name: Require the release tag to point to main
+        if: ${{ inputs.action == 'release' }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" != tag || ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release actions must select an exact vMAJOR.MINOR.PATCH tag." >&2
+            exit 1
+          fi
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
           if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
             echo "Release tags must point to a commit on main." >&2
@@ -232,7 +228,7 @@ jobs:
       - name: Validate release tag before building
         if: ${{ steps.request.outputs.mode == 'release' }}
         env:
-          EVENT_NAME: ${{ github.event_name }}
+          ACTION: ${{ steps.request.outputs.action }}
           RELEASE_TAG: ${{ steps.request.outputs.release_tag }}
           VERSION: ${{ steps.request.outputs.version }}
         run: |
@@ -247,12 +243,12 @@ jobs:
             echo "Release tag $RELEASE_TAG does not match pubspec version $PACKAGE_VERSION." >&2
             exit 1
           fi
-          if [[ "$EVENT_NAME" == "push" && "$RELEASE_TAG" != "v$PACKAGE_VERSION" ]]; then
-            echo "Pushed release tag $RELEASE_TAG does not match v$PACKAGE_VERSION." >&2
+          if [[ "$ACTION" == "release" && "$RELEASE_TAG" != "v$PACKAGE_VERSION" ]]; then
+            echo "Selected release tag $RELEASE_TAG does not match v$PACKAGE_VERSION." >&2
             exit 1
           fi
-          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RELEASE_TAG" != "$PACKAGE_VERSION" ]]; then
-            echo "Manual release tag $RELEASE_TAG does not match $PACKAGE_VERSION." >&2
+          if [[ "$ACTION" == "build" && "$VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "Requested build version $VERSION does not match pubspec version $PACKAGE_VERSION." >&2
             exit 1
           fi
 
