@@ -1069,33 +1069,24 @@ class MpvPlayerCoreBase: NSObject {
 
   private func applySharedMpvOptions(mpv: OpaquePointer) {
     checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))
+    // Host-clock presentation: samples carry mpv's scheduled display time
+    // against a free-running timebase, so audio-clock drift never
+    // accumulates in the VO (#1776), and seeks and stops never move the
+    // layer's timebase. With media time it jumps back on every backward seek
+    // and to 0 on stop; on macOS 27 that can leave frames already taken for
+    // display stamped ahead of the clock, and WindowServer stops updating the
+    // screen until the clock reaches them, or its watchdog panics the Mac
+    // first (#2823). iOS PiP maps the timebase to the playback position
+    // itself (MpvPipController.playbackTimeRange); macOS PiP moves the layers
+    // into PIP.framework's window and never reads it.
+    checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
+    // No per-frame CI composite of the OSD. tvOS HDR is HDMI mode switching,
+    // not EDR - an SDR sibling layer doesn't dim the video, so the composite,
+    // which round-trips BT.2020/PQ through linear P3, buys nothing there.
+    checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
     #if targetEnvironment(simulator)
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
       checkError(mpv_set_option_string(mpv, "hwdec", "no"))
-    #elseif os(tvOS)
-      // tvOS HDR is HDMI mode switching, not EDR — an SDR sibling layer
-      // doesn't dim the video, so skip the per-frame CI composite that
-      // round-trips BT.2020/PQ through linear P3.
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
-      // Host-clock presentation: samples carry mpv's scheduled display
-      // time against a free-running timebase, so audio-clock drift never
-      // accumulates in the VO (#1776). Media-time presentation is only
-      // needed for AVPictureInPictureController, which tvOS does not have.
-      checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
-      checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
-    #elseif os(macOS)
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
-      // Host-clock presentation, as on tvOS. With media time the layer's
-      // timebase jumps back on every backward seek and to 0 on stop; on
-      // macOS 27 that can leave frames already taken for display stamped
-      // ahead of the clock, and WindowServer stops updating the screen
-      // until the clock reaches them, or its watchdog panics the Mac
-      // first (#2823). macOS PiP moves the layers into PIP.framework's
-      // window and never reads the timebase.
-      checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
-      checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
     #else
-      checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
     #endif
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))

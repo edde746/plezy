@@ -12,6 +12,7 @@ protocol MpvPipDelegate: AnyObject {
   func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
   var isPipPlaying: Bool { get }
   var pipDuration: Double { get }
+  var pipPosition: Double { get }
 }
 
 #if os(tvOS)
@@ -72,6 +73,16 @@ protocol MpvPipDelegate: AnyObject {
     private let retryScheduler: (@escaping () -> Void) -> Void
     private let startTimeoutScheduler: (@escaping () -> Void) -> Void
     private var autoStartEnabled = false
+    /// Start and length of the last range handed to PiP, on the display
+    /// layer's timeline; nil while PiP has none or a live one.
+    private var timelineStart: CMTime?
+    private var timelineDuration = 0.0
+    private var timelineTimer: Timer?
+    /// How far PiP's elapsed time may drift from mpv's position before the
+    /// range is re-sent, and how often that is checked while PiP is up.
+    private static let timelineTolerance = 0.25
+    private static let timelineCheckInterval: TimeInterval = 0.5
+    static let liveTimeRange = CMTimeRange(start: .negativeInfinity, duration: .positiveInfinity)
 
     // MARK: - Initialization
 
@@ -106,6 +117,7 @@ protocol MpvPipDelegate: AnyObject {
     }
 
     deinit {
+      timelineTimer?.invalidate()
       if let completion = pendingStartCompletion {
         pendingStartCompletion = nil
         if Thread.isMainThread {
@@ -215,6 +227,7 @@ protocol MpvPipDelegate: AnyObject {
           startRequested, let completion = pendingStartCompletion
         else { return }
         MpvLog.debug("[MpvPipController] PiP start produced no delegate outcome before the deadline")
+        stopTimelineTracking()
         pendingStartCompletion = nil
         startRequested = false
         systemStartExpected = false
@@ -252,6 +265,7 @@ protocol MpvPipDelegate: AnyObject {
     func pictureInPictureWillStart(from controller: MpvPictureInPictureControlling) {
       guard !isTornDown, isCurrentController(controller) else { return }
       systemStartExpected = true
+      startTimelineTracking()
       delegate?.pipWillStart()
     }
 
@@ -287,6 +301,7 @@ protocol MpvPipDelegate: AnyObject {
         systemStartExpected || pendingStartCompletion != nil
       else { return }
       systemStartExpected = false
+      stopTimelineTracking()
       delegate?.pipDidFailToStart(error: error)
       finishStart(generation: startGeneration, success: false)
     }
@@ -297,7 +312,9 @@ protocol MpvPipDelegate: AnyObject {
     }
 
     func pictureInPictureDidStop(from controller: MpvPictureInPictureControlling) {
-      guard !isTornDown, isCurrentController(controller), hasActiveSession else { return }
+      guard !isTornDown, isCurrentController(controller) else { return }
+      stopTimelineTracking()
+      guard hasActiveSession else { return }
       hasActiveSession = false
       let restored = restoreRequested
       restoreRequested = false
@@ -340,10 +357,67 @@ protocol MpvPipDelegate: AnyObject {
       pipController?.stopPictureInPicture()
     }
 
-    /// Invalidate the playback state so PiP updates its UI (play/pause button)
+    /// Invalidate the playback state so PiP re-reads the play state and range.
     func invalidatePlaybackState() {
       guard !isTornDown else { return }
       pipController?.invalidatePlaybackState()
+    }
+
+    /// The playback range on the display layer's timeline. PiP shows the
+    /// layer timebase's time minus the range start as elapsed time. Host
+    /// presentation runs that timebase on mpv's clock at 1x, not on the
+    /// playback position, so the range starts at (timebase now - position).
+    /// While playing, a seek, a speed other than 1x or a stall moves the two
+    /// apart and `checkTimeline` re-sends the range.
+    fileprivate func playbackTimeRange() -> CMTimeRange {
+      guard let timebase = sampleBufferLayer?.controlTimebase,
+        let delegate, delegate.pipDuration > 0
+      else {
+        timelineStart = nil
+        timelineDuration = 0
+        return Self.liveTimeRange
+      }
+      let duration = delegate.pipDuration
+      let position = min(max(delegate.pipPosition, 0), duration)
+      let start = CMTimeSubtract(
+        CMTimebaseGetTime(timebase), CMTime(seconds: position, preferredTimescale: 1_000_000_000))
+      timelineStart = start
+      timelineDuration = duration
+      return CMTimeRange(start: start, duration: CMTime(seconds: duration, preferredTimescale: 1_000_000_000))
+    }
+
+    private func startTimelineTracking() {
+      timelineTimer?.invalidate()
+      let timer = Timer(timeInterval: Self.timelineCheckInterval, repeats: true) { [weak self] _ in
+        self?.checkTimeline()
+      }
+      RunLoop.main.add(timer, forMode: .common)
+      timelineTimer = timer
+    }
+
+    private func stopTimelineTracking() {
+      timelineTimer?.invalidate()
+      timelineTimer = nil
+      timelineStart = nil
+      timelineDuration = 0
+    }
+
+    private func checkTimeline() {
+      guard !isTornDown, let delegate, let timebase = sampleBufferLayer?.controlTimebase else { return }
+      guard let start = timelineStart else {
+        // A live range until the duration is known.
+        if delegate.pipDuration > 0 { invalidatePlaybackState() }
+        return
+      }
+      // Paused, PiP holds the elapsed time it last computed, and the pause
+      // change itself re-sent the range; the running timebase is moot.
+      guard delegate.isPipPlaying else { return }
+      let shown = CMTimeGetSeconds(CMTimeSubtract(CMTimebaseGetTime(timebase), start))
+      if abs(shown - delegate.pipPosition) > Self.timelineTolerance
+        || delegate.pipDuration != timelineDuration
+      {
+        invalidatePlaybackState()
+      }
     }
 
     /// Fully tear down PiP without touching the shared inline display layer.
@@ -354,6 +428,7 @@ protocol MpvPipDelegate: AnyObject {
       systemStartExpected = false
       hasActiveSession = false
       restoreRequested = false
+      stopTimelineTracking()
       if #available(iOS 15.0, *) {
         (delegateHelper as? PipDelegateHelper)?.controller = nil
         (pipController as? AVPictureInPictureController)?.delegate = nil
@@ -457,16 +532,9 @@ protocol MpvPipDelegate: AnyObject {
       guard let controller,
         controller.isCurrentController(pictureInPictureController)
       else {
-        return CMTimeRange(start: .zero, duration: CMTime(seconds: 1, preferredTimescale: 1))
+        return MpvPipController.liveTimeRange
       }
-      let duration = controller.delegate?.pipDuration ?? 0
-      if duration > 0 {
-        return CMTimeRange(
-          start: .zero,
-          duration: CMTime(seconds: duration, preferredTimescale: 1000)
-        )
-      }
-      return CMTimeRange(start: .zero, duration: CMTime(seconds: 1, preferredTimescale: 1))
+      return controller.playbackTimeRange()
     }
 
     func pictureInPictureControllerIsPlaybackPaused(
