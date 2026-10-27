@@ -188,7 +188,7 @@ class TrackChapterControls extends StatelessWidget {
         );
         buttonIndex++;
 
-        if (player.playerType == 'mpv') {
+        if (player.playerType == 'mpv' && !isMobile) {
           final currentIndex = buttonIndex;
           final motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata);
           final isMotionActive = motionPreset != MotionClarityPreset.original;
