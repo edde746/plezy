@@ -2,15 +2,17 @@
 
 ## [Unreleased]
 
-- Add one-command native dependency refresh and all-platform private-JIT release orchestration.
-- Complete the 2.25.0 locale catalogs, record explicit fallbacks for new Steam account copy, fix release validation issues, and configure Gradle to use the private JIT runner's HTTPS proxy.
-- Keep settings import and reset feedback visible when root rebuilds for locale or TV-mode changes.
+- Prepare the 3.0.0 full-platform build on private JIT runners, including webOS and Tizen.
 
-## [2.25.0] - 2026-10-27
+## [3.0.0] - 2026-10-27
 
 This release gathers PlezyNG’s feature work since the fork, platform expansion, and security updates. Experimental playback and platform paths remain identified as experimental below.
 
 ### Added
+
+#### Release automation
+
+- Add one-command native dependency refresh and all-platform private-JIT release orchestration.
 
 #### Playback and downloads
 
@@ -78,6 +80,8 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 
 ### Changed
 
+- Complete locale catalogs, record explicit fallbacks for new Steam account copy, fix release validation, and configure Gradle to use the private JIT runner's HTTPS proxy.
+- Keep settings import and reset feedback visible when root rebuilds for locale or TV-mode changes.
 - Route Windows release packaging through PlezyNG's private Windows runner.
 - Use shared focus controls for Home row dialogs, subtitle styling and video equalizer sliders, with TV text input for Home row names.
 - Use Plezy's shared Material Symbols icons for file-source, source-detail, player and standalone subtitle-search actions.
