@@ -34,6 +34,7 @@ export 'base_shared_preferences_service.dart'
         JsonPref;
 import '../models/audio_channel_limit.dart';
 import '../models/audio_quality_preset.dart';
+import '../models/motion_processing_mode.dart';
 import '../models/transcode_quality_preset.dart';
 import '../models/home_section_config.dart';
 import '../models/plex/plex_managed_hub.dart';
@@ -429,6 +430,25 @@ class LegacyBoolEnumPref<T extends Enum> extends EnumPref<T> {
     }
     return super.readFrom(svc);
   }
+}
+
+/// Reads the pre-release motion smoothing profiles as the single supported
+/// MPV mode, so preferences created during development keep their intent.
+class _MotionProcessingModePref extends EnumPref<MotionProcessingMode> {
+  const _MotionProcessingModePref()
+    : super('motion_smoothing_preset', values: MotionProcessingMode.values, defaultValue: MotionProcessingMode.off);
+
+  @override
+  MotionProcessingMode fromJson(Object? value) => switch (value) {
+    'natural' || 'balanced' || 'smooth' => MotionProcessingMode.mpv,
+    _ => super.fromJson(value),
+  };
+
+  @override
+  MotionProcessingMode readFrom(BaseSharedPreferencesService svc) => switch (svc.readNullableString(key)) {
+    'natural' || 'balanced' || 'smooth' => MotionProcessingMode.mpv,
+    _ => super.readFrom(svc),
+  };
 }
 
 /// Migrates from the legacy `auto_skip_*` booleans: on → [SkipMarkerMode.auto],
@@ -1025,6 +1045,18 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: DeinterlaceMode.off,
     legacyTrue: DeinterlaceMode.video,
     legacyFalse: DeinterlaceMode.off,
+  );
+
+  /// Device-local renderer or neural interpolation request. The active player
+  /// resolves it against the actual output path and may safely fall back to Off.
+  static const EnumPref<MotionProcessingMode> motionProcessingMode = _MotionProcessingModePref();
+
+  /// Last neural preset chosen by the user. It is retained for the first
+  /// qualified Neural backend, but is not offered while this build has none.
+  static const neuralInterpolationPreset = EnumPref<NeuralInterpolationPreset>(
+    'neural_interpolation_preset',
+    values: NeuralInterpolationPreset.values,
+    defaultValue: NeuralInterpolationPreset.balanced,
   );
 
   /// Remembered state of the player's always-on-top toggle (#931). The window
@@ -1970,6 +2002,8 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberedBrightnessLevel,
     refusedVideoCodecs,
     audioOutputDevice,
+    motionProcessingMode,
+    neuralInterpolationPreset,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

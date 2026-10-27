@@ -1079,6 +1079,22 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
     if (!shouldContinue()) return const _MediaOpenResult(didOpen: false);
 
+    // Reapply the selected mode at every item boundary, including next-episode
+    // opens on the same player. This configures MPV before it opens the file so
+    // the renderer can reserve interpolation references; unsupported Neural
+    // requests restore the original MPV timing and keep ordinary playback.
+    if (!widget.isLive && MotionProcessingService.supportsPlayer(player)) {
+      try {
+        await MotionProcessingService.configureForPlayback(
+          player,
+          settingsService.read(SettingsService.motionProcessingMode),
+        );
+      } catch (error, stackTrace) {
+        appLogger.w('VideoPlayerScreen: motion processing not applied', error: error, stackTrace: stackTrace);
+      }
+      if (!shouldContinue()) return const _MediaOpenResult(didOpen: false);
+    }
+
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(outcome: outcome, subtitles: externalSubtitlesAtOpen);
     // Both call sites check [shouldContinue] on the statement before, with no

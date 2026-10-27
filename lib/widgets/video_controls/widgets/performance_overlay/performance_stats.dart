@@ -75,6 +75,9 @@ class PerformanceStats {
   final double? actualFps;
   final double? avsyncChange;
   final double? displayFps;
+  final String? currentVideoOutput;
+  final String? videoSync;
+  final bool? motionInterpolationActive;
   final int? frameDropCount;
   final int? decoderFrameDropCount;
 
@@ -131,6 +134,9 @@ class PerformanceStats {
     this.actualFps,
     this.avsyncChange,
     this.displayFps,
+    this.currentVideoOutput,
+    this.videoSync,
+    this.motionInterpolationActive,
     this.frameDropCount,
     this.decoderFrameDropCount,
     this.cacheUsed,
@@ -255,6 +261,12 @@ class PerformanceStats {
     if (displayFps == null) return t.common.notAvailable;
     return formatDecimal(displayFps!, minimumDecimals: 0, maximumDecimals: 0);
   }
+
+  String get motionInterpolationFormatted => motionInterpolationActive == null
+      ? t.common.notAvailable
+      : motionInterpolationActive!
+      ? t.common.on
+      : t.common.off;
 
   /// Format dropped frames count.
   ///

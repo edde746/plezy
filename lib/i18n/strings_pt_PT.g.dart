@@ -809,6 +809,18 @@ class Translations$lending$pt_PT extends Translations$lending$pt {
 	@override String get cancel => 'Cancelar';
 }
 
+// Path: sourceSetup
+class Translations$sourceSetup$pt_PT extends Translations$sourceSetup$pt {
+	Translations$sourceSetup$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPtPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get subtitleApplyFailed => 'Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.';
+	@override String get subtitleSearching => 'A pesquisar no OpenSubtitles';
+	@override String subtitleDownloading({required Object title}) => 'A descarregar a legenda: ${title}';
+}
+
 // Path: common.mediaKind
 class Translations$common$mediaKind$pt_PT extends Translations$common$mediaKind$pt {
 	Translations$common$mediaKind$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
@@ -1085,18 +1097,6 @@ class Translations$services$libraryFilter$pt_PT extends Translations$services$li
 	@override String get modeBlacklist => 'Lista de bloqueios';
 	@override String get modeWhitelist => 'Lista de permissões';
 	@override String get libraries => 'Bibliotecas';
-}
-
-// Path: sourceSetup
-class Translations$sourceSetup$pt_PT extends Translations$sourceSetup$pt {
-	Translations$sourceSetup$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
-
-	final TranslationsPtPt _root; // ignore: unused_field
-
-	// Translations
-	@override String get subtitleApplyFailed => 'Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.';
-	@override String get subtitleSearching => 'A pesquisar no OpenSubtitles';
-	@override String subtitleDownloading({required Object title}) => 'A descarregar a legenda: ${title}';
 }
 
 /// The flat map containing all translations for locale <pt-PT>.

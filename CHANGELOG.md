@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add opt-in MPV display-synchronized motion smoothing on the qualified Windows output, report interpolation state in playback diagnostics, and prepare capability-gated Neural presets with a cross-platform runtime assessment.
 - Ask Plex, Jellyfin, and Emby for a full server video transcode when webOS opens an identified Dolby Vision source.
 - Refresh the embedded login background from the current PlezyNG website artwork, including a 4K asset for large displays.
 - Route Windows x64 release builds and package-manager submissions through private JIT runners.

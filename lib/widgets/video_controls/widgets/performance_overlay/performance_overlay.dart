@@ -111,6 +111,11 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (isMpv) _metric(t.performanceOverlay.renderFps, _stats.actualFpsFormatted),
         if (isMpv) _metric(t.performanceOverlay.displayFps, _stats.displayFpsFormatted),
         if (isMpv) _metric(t.performanceOverlay.avSync, _stats.avsyncFormatted),
+        if (isMpv && _stats.currentVideoOutput != null)
+          _metric(t.performanceOverlay.videoOutput, _stats.currentVideoOutput!),
+        if (isMpv && _stats.motionInterpolationActive != null)
+          _metric(t.performanceOverlay.motionInterpolation, _stats.motionInterpolationFormatted),
+        if (isMpv && _stats.videoSync != null) _metric(t.performanceOverlay.videoSync, _stats.videoSync!),
         _metric(t.performanceOverlay.dropped, _stats.droppedFramesFormatted),
         if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpus, _stats.dvRpuCountFormatted),
         if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpuAverage, _stats.dvAvgRpuConversionFormatted),

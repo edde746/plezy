@@ -12,6 +12,7 @@ import '../../media/media_kind.dart';
 import '../../media/media_library.dart';
 import '../../models/audio_channel_limit.dart';
 import '../../models/audio_quality_preset.dart';
+import '../../models/motion_processing_mode.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
 import '../../providers/libraries_provider.dart';
@@ -22,12 +23,14 @@ import '../../utils/dialogs.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
+import '../../services/motion_processing_service.dart';
 import '../../services/video_decode_capabilities.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -170,6 +173,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               ],
             ),
 
+            _motionProcessingGroup(),
+
             SettingsGroup(
               title: t.settings.audio,
               children: [
@@ -235,6 +240,57 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       },
     );
   }
+
+  Widget _motionProcessingGroup() => SettingsGroup(
+    title: t.settings.motionProcessing,
+    children: [
+      if (MotionProcessingService.isMpvPlatformSupported)
+        SettingSelectionTile<MotionProcessingMode>(
+          pref: SettingsService.motionProcessingMode,
+          icon: Symbols.slow_motion_video_rounded,
+          title: t.settings.motionSmoothing,
+          subtitleBuilder: (mode) => _motionProcessingModeSummary(mode),
+          options: [
+            DialogOption(
+              value: MotionProcessingMode.off,
+              title: t.settings.motionSmoothingOff,
+              subtitle: t.settings.motionSmoothingOffDescription,
+            ),
+            DialogOption(
+              value: MotionProcessingMode.mpv,
+              title: t.settings.motionSmoothingMpv,
+              subtitle: t.settings.motionSmoothingMpvDescription,
+            ),
+          ],
+        )
+      else
+        FocusableListTile(
+          enabled: false,
+          leading: AppIcon(Symbols.slow_motion_video_rounded, fill: 1),
+          title: Text(t.settings.motionSmoothing),
+          subtitle: Text(t.settings.motionSmoothingUnavailableDescription),
+        ),
+      FocusableListTile(
+        enabled: false,
+        leading: AppIcon(Symbols.memory_rounded, fill: 1),
+        title: Text(t.settings.neuralInterpolation),
+        subtitle: Text(t.settings.neuralInterpolationUnavailableDescription),
+      ),
+    ],
+  );
+
+  String _motionProcessingModeLabel(MotionProcessingMode mode) => switch (mode) {
+    MotionProcessingMode.off => t.settings.motionSmoothingOff,
+    MotionProcessingMode.mpv => t.settings.motionSmoothingMpv,
+    MotionProcessingMode.neural => t.settings.neuralInterpolationUnavailable,
+  };
+
+  String _motionProcessingModeSummary(MotionProcessingMode mode) => switch (mode) {
+    MotionProcessingMode.off => '${_motionProcessingModeLabel(mode)} · ${t.settings.motionSmoothingOffDescription}',
+    MotionProcessingMode.mpv => '${_motionProcessingModeLabel(mode)} · ${t.settings.motionSmoothingDescription}',
+    MotionProcessingMode.neural =>
+      '${_motionProcessingModeLabel(mode)} · ${t.settings.neuralInterpolationUnavailableDescription}',
+  };
 
   Widget _seekAndTimingGroup() => SettingsGroup(
     title: t.settings.seekAndTiming,

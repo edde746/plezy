@@ -175,6 +175,9 @@ class PerformanceStatsService {
         ),
         cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
         displayFps: _parseDouble(statsMap['display-fps'] as String?),
+        currentVideoOutput: statsMap['current-vo']?.toString(),
+        videoSync: statsMap['video-sync']?.toString(),
+        motionInterpolationActive: _parseBool(statsMap['interpolation']?.toString()),
         frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
         decoderFrameDropCount: _parseInt(statsMap['decoder-frame-drop-count'] as String?),
         cacheDuration: _parseDouble(statsMap['demuxer-cache-duration'] as String?),
@@ -295,6 +298,8 @@ class PerformanceStatsService {
         player.getProperty('current-tracks/video/dolby-vision-profile'), // 12
         player.getProperty('current-vo'), // 13
         Platform.isLinux ? player.getProperty('plezyng-dv-renderer') : Future.value(null), // 14
+        player.getProperty('video-sync'), // 15
+        player.getProperty('interpolation'), // 16
       ]);
     }
 
@@ -337,6 +342,9 @@ class PerformanceStatsService {
       cacheDuration: _parseDouble(results[17]),
       // Video-dependent properties
       displayFps: _parseDouble(videoResults?.first),
+      currentVideoOutput: videoResults?[13],
+      videoSync: videoResults?[15],
+      motionInterpolationActive: _parseBool(videoResults?[16]),
       pixelformat: videoResults?[1],
       hwPixelformat: videoResults?[2],
       colormatrix: videoResults?[3],
@@ -366,6 +374,12 @@ class PerformanceStatsService {
     if (value == null || value.isEmpty) return null;
     return int.tryParse(value);
   }
+
+  bool? _parseBool(String? value) => switch (value) {
+    'yes' || 'true' || '1' => true,
+    'no' || 'false' || '0' => false,
+    _ => null,
+  };
 
   /// Reads `fw-bytes` out of mpv's `demuxer-cache-state`.
   ///

@@ -392,6 +392,9 @@ class Translations$common$en {
 	/// en: 'OK'
 	String get ok => 'OK';
 
+	/// en: 'On'
+	String get on => 'On';
+
 	/// en: 'Off'
 	String get off => 'Off';
 
@@ -1505,6 +1508,54 @@ class Translations$settings$en {
 
 	/// en: 'Match display refresh rate in fullscreen'
 	String get matchRefreshRateDescription => 'Match display refresh rate in fullscreen';
+
+	/// en: 'Motion processing'
+	String get motionProcessing => 'Motion processing';
+
+	/// en: 'Motion smoothing'
+	String get motionSmoothing => 'Motion smoothing';
+
+	/// en: 'Display-synchronized temporal interpolation on supported GPU outputs; fast motion may look soft or show artifacts.'
+	String get motionSmoothingDescription => 'Display-synchronized temporal interpolation on supported GPU outputs; fast motion may look soft or show artifacts.';
+
+	/// en: 'This build has no qualified MPV display-synchronized video output on this platform.'
+	String get motionSmoothingUnavailableDescription => 'This build has no qualified MPV display-synchronized video output on this platform.';
+
+	/// en: 'MPV could not apply motion smoothing. Playback will continue unchanged.'
+	String get motionSmoothingApplyFailed => 'MPV could not apply motion smoothing. Playback will continue unchanged.';
+
+	/// en: 'Saved for the next video. MPV sets up frame buffering when playback starts.'
+	String get motionSmoothingNextPlayback => 'Saved for the next video. MPV sets up frame buffering when playback starts.';
+
+	/// en: 'Off'
+	String get motionSmoothingOff => 'Off';
+
+	/// en: 'Keep the player’s existing display and frame cadence.'
+	String get motionSmoothingOffDescription => 'Keep the player’s existing display and frame cadence.';
+
+	/// en: 'MPV'
+	String get motionSmoothingMpv => 'MPV';
+
+	/// en: 'Use MPV’s display-synchronized temporal interpolation. This is renderer-based, not neural frame generation.'
+	String get motionSmoothingMpvDescription => 'Use MPV’s display-synchronized temporal interpolation. This is renderer-based, not neural frame generation.';
+
+	/// en: 'Neural interpolation'
+	String get neuralInterpolation => 'Neural interpolation';
+
+	/// en: 'Neural unavailable'
+	String get neuralInterpolationUnavailable => 'Neural unavailable';
+
+	/// en: 'Neural interpolation needs a qualified runtime and video frame path. When available, choose Performance, Balanced, or Quality.'
+	String get neuralInterpolationUnavailableDescription => 'Neural interpolation needs a qualified runtime and video frame path. When available, choose Performance, Balanced, or Quality.';
+
+	/// en: 'Performance'
+	String get neuralInterpolationPresetPerformance => 'Performance';
+
+	/// en: 'Balanced'
+	String get neuralInterpolationPresetBalanced => 'Balanced';
+
+	/// en: 'Quality'
+	String get neuralInterpolationPresetQuality => 'Quality';
 
 	/// en: 'Match Dynamic Range'
 	String get matchDynamicRange => 'Match Dynamic Range';
@@ -5962,6 +6013,15 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'Display FPS'
 	String get displayFps => 'Display FPS';
+
+	/// en: 'Video Output'
+	String get videoOutput => 'Video Output';
+
+	/// en: 'Interpolation'
+	String get motionInterpolation => 'Interpolation';
+
+	/// en: 'Video Sync'
+	String get videoSync => 'Video Sync';
 
 	/// en: 'A/V Sync'
 	String get avSync => 'A/V Sync';
@@ -10872,6 +10932,7 @@ extension on Translations {
 			'common.settings' => 'Settings',
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
+			'common.on' => 'On',
 			'common.off' => 'Off',
 			'common.options' => 'Options',
 			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
@@ -11253,6 +11314,22 @@ extension on Translations {
 			'settings.matchContentResolutionDescription' => 'Switch the display to the video\'s native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback',
 			'settings.matchRefreshRate' => 'Match Refresh Rate',
 			'settings.matchRefreshRateDescription' => 'Match display refresh rate in fullscreen',
+			'settings.motionProcessing' => 'Motion processing',
+			'settings.motionSmoothing' => 'Motion smoothing',
+			'settings.motionSmoothingDescription' => 'Display-synchronized temporal interpolation on supported GPU outputs; fast motion may look soft or show artifacts.',
+			'settings.motionSmoothingUnavailableDescription' => 'This build has no qualified MPV display-synchronized video output on this platform.',
+			'settings.motionSmoothingApplyFailed' => 'MPV could not apply motion smoothing. Playback will continue unchanged.',
+			'settings.motionSmoothingNextPlayback' => 'Saved for the next video. MPV sets up frame buffering when playback starts.',
+			'settings.motionSmoothingOff' => 'Off',
+			'settings.motionSmoothingOffDescription' => 'Keep the player’s existing display and frame cadence.',
+			'settings.motionSmoothingMpv' => 'MPV',
+			'settings.motionSmoothingMpvDescription' => 'Use MPV’s display-synchronized temporal interpolation. This is renderer-based, not neural frame generation.',
+			'settings.neuralInterpolation' => 'Neural interpolation',
+			'settings.neuralInterpolationUnavailable' => 'Neural unavailable',
+			'settings.neuralInterpolationUnavailableDescription' => 'Neural interpolation needs a qualified runtime and video frame path. When available, choose Performance, Balanced, or Quality.',
+			'settings.neuralInterpolationPresetPerformance' => 'Performance',
+			'settings.neuralInterpolationPresetBalanced' => 'Balanced',
+			'settings.neuralInterpolationPresetQuality' => 'Quality',
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
@@ -11271,6 +11348,8 @@ extension on Translations {
 			'settings.audioChannelLimitSurround51Description' => 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.',
 			'settings.audioChannelLimitStereo' => 'Stereo',
 			'settings.audioChannelLimitStereoDescription' => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downmixCenterBoost' => 'Center Channel Boost',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Boost (dB)',
@@ -11288,8 +11367,6 @@ extension on Translations {
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.experimentalDolbyVision' => 'Experimental Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'settings.experimentalDolbyVisionDescription' => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.',
 			'settings.dvExperimentUnavailableDescription' => 'This experiment is currently available on Linux only.',
 			'settings.dvCompatibilityFallback' => 'Compatibility fallback',
@@ -11785,6 +11862,8 @@ extension on Translations {
 			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
 			'messages.playbackCancelled' => 'Playback was canceled.',
 			'messages.playbackFailed' => 'Playback could not be started.',
+			_ => null,
+		} ?? switch (path) {
 			'messages.playbackFailedDetail' => ({required Object error}) => 'Playback could not be started: ${error}',
 			'messages.audioOutputFailed' => 'The audio output stopped responding. Check the TV or receiver\'s audio connection; if other apps have no sound either, restart the device.',
 			'messages.mediaUnavailable' => 'This content is no longer available.',
@@ -11802,8 +11881,6 @@ extension on Translations {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
@@ -12299,6 +12376,8 @@ extension on Translations {
 			'startup.backupDeleted' => 'Copy deleted.',
 			'startup.previousFailureTitle' => 'PlezyNG failed to start last time',
 			'licenses.relatedPackages' => 'Related Packages',
+			_ => null,
+		} ?? switch (path) {
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
@@ -12316,8 +12395,6 @@ extension on Translations {
 			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
 			'explore.mdblistShelves.add' => 'Add shelf',
 			'explore.mdblistShelves.save' => 'Save shelves',
-			_ => null,
-		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
 			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
@@ -12813,6 +12890,8 @@ extension on Translations {
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Delete download',
 			'downloads.retryDownload' => 'Retry download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
@@ -12830,8 +12909,6 @@ extension on Translations {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -13099,6 +13176,9 @@ extension on Translations {
 			'performanceOverlay.transfer' => 'Transfer',
 			'performanceOverlay.renderFps' => 'Render FPS',
 			'performanceOverlay.displayFps' => 'Display FPS',
+			'performanceOverlay.videoOutput' => 'Video Output',
+			'performanceOverlay.motionInterpolation' => 'Interpolation',
+			'performanceOverlay.videoSync' => 'Video Sync',
 			'performanceOverlay.avSync' => 'A/V Sync',
 			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
@@ -13324,6 +13404,8 @@ extension on Translations {
 			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
 			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
 			'services.libraryFilter.mode' => 'Filter mode',
+			_ => null,
+		} ?? switch (path) {
 			'services.libraryFilter.modeBlacklist' => 'Blacklist',
 			'services.libraryFilter.modeWhitelist' => 'Whitelist',
 			'services.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
@@ -13344,8 +13426,6 @@ extension on Translations {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -13838,6 +13918,8 @@ extension on Translations {
 			'sourceSetup.metadataFailed' => 'Online metadata could not be loaded. Playback and local details are still available.',
 			'sourceSetup.videoDetailsLoading' => 'Loading video details',
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
@@ -13858,8 +13940,6 @@ extension on Translations {
 			'sourceSetup.smbEncrypted' => 'SMB3 encryption on',
 			'sourceSetup.smbUnencrypted' => 'SMB3 encryption off',
 			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Check endpoint security',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is required.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.',

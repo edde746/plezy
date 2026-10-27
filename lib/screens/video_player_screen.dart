@@ -76,6 +76,7 @@ import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/motion_processing_service.dart';
 import '../services/storage_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
