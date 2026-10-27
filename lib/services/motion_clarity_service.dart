@@ -74,6 +74,7 @@ class MotionClarityService {
   MotionClarityPreset _currentPreset = MotionClarityPreset.original;
   MotionTemporalKernel _currentKernel = MotionTemporalKernel.linear;
   int _currentThresholdPercent = 1;
+  String? _statusReason;
 
   MotionClarityService._(this._player);
 
@@ -125,9 +126,8 @@ class MotionClarityService {
       targetFps: _currentTargetFps,
       outputDriver: driver,
       displayFps: fps,
-      reason: driver == null || driver.isEmpty
-          ? 'The renderer has not reported its active output yet.'
-          : null,
+      reason: _statusReason ??
+          (driver == null || driver.isEmpty ? 'The renderer has not reported its active output yet.' : null),
     );
   }
 
@@ -190,6 +190,7 @@ class MotionClarityService {
 
     if (!preset.interpolationEnabled) {
       await _restoreOriginalValues();
+      _statusReason = null;
       _currentPreset = MotionClarityPreset.original;
       _currentEngine = requestedEngine;
       _currentOutputRate = requestedOutputRate;
@@ -292,6 +293,7 @@ class MotionClarityService {
     }
     _currentKernel = effectiveKernel;
     _currentThresholdPercent = effectiveThreshold;
+    _statusReason = null;
     final result = MotionClarityApplyResult(
       isSupported: true,
       isConfigured: true,
@@ -448,6 +450,7 @@ class MotionClarityService {
     _currentOutputRate = outputRate;
     _currentMciQuality = mciQuality;
     _currentTargetFps = targetFps;
+    _statusReason = 'Experimental FFmpeg motion compensation is active; monitor playback load and artifacts.';
     _currentKernel = kernel;
     _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
     _comparisonBypass = false;
@@ -486,6 +489,8 @@ class MotionClarityService {
       outputRate: outputRate,
       applyPresetRouting: false,
     );
+    final effectiveReason = reason + ' ' + (result.reason ?? 'Temporal blending is active.');
+    _statusReason = effectiveReason;
     return MotionClarityApplyResult(
       isSupported: result.isSupported,
       isConfigured: result.isConfigured,
@@ -495,7 +500,7 @@ class MotionClarityService {
       effectiveEngine: result.effectiveEngine,
       outputDriver: driver,
       displayFps: displayFps,
-      reason: reason + ' ' + (result.reason ?? 'Temporal blending is active.'),
+      reason: effectiveReason,
     );
   }
 
@@ -507,6 +512,7 @@ class MotionClarityService {
     _currentTargetFps = null;
     _comparisonBypass = false;
     _requiresSourceReload = false;
+    _statusReason = null;
   }
 
   Future<void> _removeMciFilter({bool throwOnError = false}) async {
