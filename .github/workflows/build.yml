@@ -1,9 +1,12 @@
 # ng-runner-policy: private-jit-only-v1
 # packer-windows-jit-v1
 name: PlezyNG Release
-run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag || 'adhoc') }}
+run-name: ${{ github.event_name == 'push' && format('action:release:pool:private:tag:{0}', github.ref_name) || format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag || 'adhoc') }}
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       action:
@@ -57,17 +60,94 @@ env:
 jobs:
   validate-trusted-ref:
     name: Validate release request
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') }}
+    if: ${{ github.event_name == 'push' || (inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release')) }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-trusted-ref"]}}', github.run_id)) }}
+    outputs:
+      action: ${{ steps.request.outputs.action }}
+      runner_pool: ${{ steps.request.outputs.runner_pool }}
+      mode: ${{ steps.request.outputs.mode }}
+      release_tag: ${{ steps.request.outputs.release_tag }}
+      version: ${{ steps.request.outputs.version }}
+      include_webos_release: ${{ steps.request.outputs.include_webos_release }}
     permissions:
       contents: read
       actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Resolve release request
+        id: request
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTION_INPUT: ${{ inputs.action }}
+          RUNNER_POOL_INPUT: ${{ inputs.runner_pool }}
+          MODE_INPUT: ${{ inputs.mode }}
+          RELEASE_TAG_INPUT: ${{ inputs.release_tag }}
+          INCLUDE_WEBOS_RELEASE_INPUT: ${{ inputs.include_webos_release }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            ACTION=release
+            RUNNER_POOL=private
+            MODE=release
+            RELEASE_TAG="$GITHUB_REF_NAME"
+            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Release tag must use vMAJOR.MINOR.PATCH: $RELEASE_TAG" >&2
+              exit 1
+            fi
+            VERSION="${RELEASE_TAG#v}"
+            INCLUDE_WEBOS_RELEASE=false
+          else
+            ACTION="$ACTION_INPUT"
+            RUNNER_POOL="$RUNNER_POOL_INPUT"
+            MODE="$MODE_INPUT"
+            RELEASE_TAG="$RELEASE_TAG_INPUT"
+            VERSION="$RELEASE_TAG"
+            INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
+            if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
+              echo "Unsupported action: $ACTION" >&2
+              exit 1
+            fi
+            if [[ "$RUNNER_POOL" != "private" ]]; then
+              echo "This workflow currently supports only the private runner pool." >&2
+              exit 1
+            fi
+            if [[ "$MODE" != "release" && "$MODE" != "webos-validation" ]]; then
+              echo "Unsupported platform mode: $MODE" >&2
+              exit 1
+            fi
+            if [[ "$MODE" == "webos-validation" && "$ACTION" != "build" ]]; then
+              echo "webOS-only validation requires the build action." >&2
+              exit 1
+            fi
+            if [[ "$MODE" == "release" && ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Manual release version must use semantic versioning: $RELEASE_TAG" >&2
+              exit 1
+            fi
+            if [[ "$MODE" == "webos-validation" ]]; then
+              RELEASE_TAG=""
+              VERSION=""
+              INCLUDE_WEBOS_RELEASE=false
+            elif [[ "$INCLUDE_WEBOS_RELEASE" != "true" && "$INCLUDE_WEBOS_RELEASE" != "false" ]]; then
+              echo "include_webos_release must be true or false." >&2
+              exit 1
+            fi
+          fi
+          {
+            echo "action=$ACTION"
+            echo "runner_pool=$RUNNER_POOL"
+            echo "mode=$MODE"
+            echo "release_tag=$RELEASE_TAG"
+            echo "version=$VERSION"
+            echo "include_webos_release=$INCLUDE_WEBOS_RELEASE"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Require the main branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         run: |
           if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
@@ -75,12 +155,23 @@ jobs:
             exit 1
           fi
 
+      - name: Require the pushed tag to point to main
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "Release tags must point to a commit on main." >&2
+            exit 1
+          fi
+
       - name: Validate action and runner pool
         shell: bash
         env:
-          ACTION: ${{ inputs.action }}
-          RUNNER_POOL: ${{ inputs.runner_pool }}
-          MODE: ${{ inputs.mode }}
+          ACTION: ${{ steps.request.outputs.action }}
+          RUNNER_POOL: ${{ steps.request.outputs.runner_pool }}
+          MODE: ${{ steps.request.outputs.mode }}
         run: |
           set -euo pipefail
           if [[ "$ACTION" != "build" && "$ACTION" != "release" ]]; then
@@ -101,24 +192,34 @@ jobs:
           fi
 
       - name: Validate release tag before building
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ steps.request.outputs.mode == 'release' }}
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ steps.request.outputs.release_tag }}
+          VERSION: ${{ steps.request.outputs.version }}
         run: |
           set -euo pipefail
-          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
-          VERSION=${VERSION%%+*}
-          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+          PACKAGE_VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          PACKAGE_VERSION=${PACKAGE_VERSION%%+*}
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release version must use semantic versioning: $VERSION" >&2
             exit 1
           fi
-          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
-            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
+          if [[ "$VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $PACKAGE_VERSION." >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "push" && "$RELEASE_TAG" != "v$PACKAGE_VERSION" ]]; then
+            echo "Pushed release tag $RELEASE_TAG does not match v$PACKAGE_VERSION." >&2
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RELEASE_TAG" != "$PACKAGE_VERSION" ]]; then
+            echo "Manual release tag $RELEASE_TAG does not match $PACKAGE_VERSION." >&2
             exit 1
           fi
 
       - name: Require successful CI for this commit
-        if: ${{ inputs.mode == 'release' && inputs.action == 'release' }}
+        if: ${{ steps.request.outputs.mode == 'release' && steps.request.outputs.action == 'release' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -138,22 +239,22 @@ jobs:
           fi
 
       - name: Require approval for the exact webOS release artifact
-        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        if: ${{ steps.request.outputs.mode == 'release' && steps.request.outputs.include_webos_release == 'true' }}
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ steps.request.outputs.version }}
         run: >-
           python3 tools/webos/check_release_eligibility.py
           --preflight
           --version "$RELEASE_TAG"
 
       - name: Validate webOS-only mode input
-        if: ${{ inputs.mode == 'webos-validation' }}
+        if: ${{ steps.request.outputs.mode == 'webos-validation' }}
         run: |
           echo "This manual run builds only the WebOS ARM package on the private Linux JIT route."
           echo "No draft release is created."
 
   build-android:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     timeout-minutes: 360
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-android"]}}', github.run_id)) }}
@@ -167,14 +268,14 @@ jobs:
           persist-credentials: false
 
       - name: Setup Java
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
         with:
           distribution: "temurin"
           java-version: "21"
 
       - name: Setup Flutter
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
@@ -184,7 +285,7 @@ jobs:
           pub-cache: false
 
       - name: Cache Pub dependencies
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -192,7 +293,7 @@ jobs:
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache Gradle
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -201,12 +302,12 @@ jobs:
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Install dependencies
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Configure Android signing
         id: android-signing
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -239,34 +340,34 @@ jobs:
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build APKs
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
       - name: Package APKs
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         run: |
           tar -czf plezy-android-arm64-v8a.tar.gz -C build/app/outputs/flutter-apk app-arm64-v8a-release.apk --transform 's/app-arm64-v8a-release.apk/plezy.apk/'
           tar -czf plezy-android-armeabi-v7a.tar.gz -C build/app/outputs/flutter-apk app-armeabi-v7a-release.apk --transform 's/app-armeabi-v7a-release.apk/plezy.apk/'
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
       - name: Build signed Android App Bundle
-        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         run: |
           flutter build appbundle --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --obfuscate --split-debug-info=debug-info/android-play
           cp build/app/outputs/bundle/release/app-release.aab plezyng-android-play.aab
 
       - name: Build signed Amazon Appstore APK
-        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         run: |
           AMAZON=1 ORG_GRADLE_PROJECT_openiapStore=amazon flutter build apk --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --dart-define=AMAZON_STORE=true --obfuscate --split-debug-info=debug-info/android-amazon
           cp build/app/outputs/flutter-apk/app-release.apk plezyng-amazon-firetv.apk
 
       - name: Clean up keystore
-        if: ${{ always() && inputs.mode == 'release' }}
+        if: ${{ always() && needs.validate-trusted-ref.outputs.mode == 'release' }}
         run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Attest APKs
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
@@ -275,7 +376,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
       - name: Attest Android App Bundle
-        if: ${{ inputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && steps.android-signing.outputs.configured == 'true' }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
@@ -283,7 +384,7 @@ jobs:
             plezyng-amazon-firetv.apk
 
       - name: Upload APKs
-        if: ${{ inputs.mode == 'release' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: android-apk
@@ -296,10 +397,7 @@ jobs:
           if-no-files-found: warn
 
   build-webos:
-    if: >-
-      inputs.runner_pool == 'private' &&
-      (inputs.action == 'build' || inputs.action == 'release') &&
-      (inputs.mode == 'webos-validation' || (inputs.mode == 'release' && inputs.include_webos_release))
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'webos-validation' || (needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true')) }}
     needs: validate-trusted-ref
     name: Build WebOS TV package (ARMv7)
     timeout-minutes: 360
@@ -329,13 +427,13 @@ jobs:
         run: bash tools/webos/build_release_candidate.sh
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
-          PLEZY_WEBOS_RELEASE_BUILD: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+          PLEZY_WEBOS_RELEASE_BUILD: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
 
       - name: Verify the exact approved WebOS IPK
-        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         env:
           OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -379,7 +477,7 @@ jobs:
             ${{ steps.webos-build.outputs.output_dir }}/SHA256SUMS.txt
 
       - name: Upload approved WebOS IPK for public release assembly
-        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: webos-ipk
@@ -388,7 +486,7 @@ jobs:
           retention-days: 14
 
       - name: Upload WebOS validation evidence without vendor runtime binaries
-        if: ${{ inputs.mode == 'webos-validation' }}
+        if: ${{ needs.validate-trusted-ref.outputs.mode == 'webos-validation' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: webos-validation-evidence
@@ -409,7 +507,7 @@ jobs:
           retention-days: 14
 
   build-ios:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
     permissions:
@@ -588,7 +686,7 @@ jobs:
           if-no-files-found: error
 
   build-tvos:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build tvOS developer package (arm64)
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
@@ -782,7 +880,7 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:
@@ -1032,7 +1130,7 @@ jobs:
             macos-dmg-size.txt
 
   build-windows:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
@@ -1176,8 +1274,8 @@ jobs:
           path: build/windows/${{ matrix.arch }}/runner/Release/
 
   package-windows:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
-    needs: build-windows
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    needs: [validate-trusted-ref, build-windows]
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-package-windows"]}}', github.run_id)) }}
     permissions:
       id-token: write
@@ -1278,12 +1376,13 @@ jobs:
       - name: Package Chocolatey release
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.validate-trusted-ref.outputs.version }}
           PACKAGE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:RELEASE_TAG -ne $env:PACKAGE_VERSION) {
-            throw "Chocolatey package version $env:PACKAGE_VERSION does not match release tag $env:RELEASE_TAG"
+          if ($env:RELEASE_VERSION -ne $env:PACKAGE_VERSION) {
+            throw "Chocolatey package version $env:PACKAGE_VERSION does not match release version $env:RELEASE_VERSION"
           }
           $installer = Get-Item 'plezy-windows-installer.exe'
           $checksum = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -1393,7 +1492,7 @@ jobs:
           path: release-packages/plezyng.*.nupkg
 
   build-linux:
-    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && inputs.mode == 'release' }}
+    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","arm64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) }}
@@ -1586,7 +1685,7 @@ jobs:
       - name: Prepare Snap package inputs
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.version }}
         run: |
           set -euo pipefail
           snap_dir=linux/packaging/snap
@@ -1616,7 +1715,7 @@ jobs:
         if: matrix.arch == 'x64'
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.version }}
         run: |
           set -euo pipefail
           app_dir="$RUNNER_TEMP/plezyng.AppDir"
@@ -1691,7 +1790,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && inputs.runner_pool == 'private' && inputs.action == 'release' && inputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (!inputs.include_webos_release && needs.build-webos.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ always() && needs.validate-trusted-ref.outputs.runner_pool == 'private' && needs.validate-trusted-ref.outputs.action == 'release' && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (needs.validate-trusted-ref.outputs.include_webos_release != 'true' && needs.build-webos.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write
@@ -1721,7 +1820,7 @@ jobs:
 
       - name: Generate release notes from CHANGELOG.md
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.version }}
         run: python3 scripts/generate_release_notes.py "$RELEASE_TAG" > release-notes.md
 
       - name: Download Android artifacts
@@ -1731,7 +1830,7 @@ jobs:
           path: artifacts/android-apk
 
       - name: Download WebOS artifact
-        if: ${{ inputs.include_webos_release }}
+        if: ${{ needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: webos-ipk
@@ -1809,8 +1908,9 @@ jobs:
 
       - name: Generate WinGet manifest bundle
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-        run: python3 scripts/generate_winget_manifests.py "$RELEASE_TAG" artifacts/windows-installer/plezy-windows-installer.exe artifacts
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.validate-trusted-ref.outputs.version }}
+        run: python3 scripts/generate_winget_manifests.py "$RELEASE_VERSION" artifacts/windows-installer/plezy-windows-installer.exe artifacts --release-tag "$RELEASE_TAG"
 
       - name: Generate release SHA-256 checksums
         run: python3 scripts/create_release_checksums.py artifacts
@@ -1820,9 +1920,11 @@ jobs:
         with:
           subject-path: |
             artifacts/SHA256SUMS.txt
-            artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
+            artifacts/plezyng-winget-manifests-${{ needs.validate-trusted-ref.outputs.version }}.zip
 
       - name: Generate appcast.xml
+        env:
+          RELEASE_TAG: ${{ needs.validate-trusted-ref.outputs.release_tag }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.version.outputs.build_number }}"
@@ -1856,13 +1958,13 @@ jobs:
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${BUILD_NUMBER}</sparkle:version>
                 <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
-                <sparkle:releaseNotesLink>${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}</sparkle:releaseNotesLink>
+                <sparkle:releaseNotesLink>${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}</sparkle:releaseNotesLink>
           XMLEOF
 
           # macOS enclosure
           if [ -n "$MACOS_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/plezy-macos.dmg"
+                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/plezy-macos.dmg"
                            length="${MACOS_DMG_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${MACOS_ED_SIG}"
                            sparkle:os="macos" />
@@ -1872,7 +1974,7 @@ jobs:
           # Windows enclosure
           if [ -n "$WIN_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/plezy-windows-installer.exe"
+                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${WIN_ED_SIG}"
                            sparkle:installerArguments="/SILENT /SP-"
@@ -1895,8 +1997,8 @@ jobs:
       - name: Collect release files
         id: release-files
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          INCLUDE_WEBOS_RELEASE: ${{ inputs.include_webos_release }}
+          RELEASE_VERSION: ${{ needs.validate-trusted-ref.outputs.version }}
+          INCLUDE_WEBOS_RELEASE: ${{ needs.validate-trusted-ref.outputs.include_webos_release }}
         run: |
           {
             echo 'files<<EOF'
@@ -1926,7 +2028,7 @@ jobs:
               echo artifacts/windows-msix/plezyng-windows.msixbundle
             fi
             echo artifacts/windows-chocolatey/plezyng.*.nupkg
-            echo "artifacts/plezyng-winget-manifests-${RELEASE_TAG}.zip"
+            echo "artifacts/plezyng-winget-manifests-${RELEASE_VERSION}.zip"
             if [ -f artifacts/android-apk/plezyng-android-play.aab ]; then
               echo artifacts/android-apk/plezyng-android-play.aab
             fi
@@ -1947,8 +2049,8 @@ jobs:
           body_path: release-notes.md
           draft: true
           prerelease: false
-          name: ${{ inputs.release_tag }}
-          tag_name: ${{ inputs.release_tag }}
+          name: ${{ needs.validate-trusted-ref.outputs.release_tag }}
+          tag_name: ${{ needs.validate-trusted-ref.outputs.release_tag }}
           target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

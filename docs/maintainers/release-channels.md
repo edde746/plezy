@@ -35,7 +35,7 @@ Changing the install IDs means an install signed under upstream's identity canno
 
 | Channel | State | How it works |
 | --- | --- | --- |
-| GitHub Releases | Active | Manual `PlezyNG Release` workflow builds and attaches packages. |
+| GitHub Releases | Active | Push a `v<major>.<minor>.<patch>` tag for a main commit after that exact commit passes manually dispatched CI. The private-JIT `PlezyNG Release` workflow builds the packages and creates a draft; manual dispatch remains available for build-only, release, and webOS validation runs. Tag releases exclude the webOS IPK until its separate artifact and redistribution gates are approved. |
 | Homebrew | Active | `update-packages.yml` updates the fork's cask and appcast after a published release. |
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
@@ -151,8 +151,9 @@ docker.io/snapetech/plezyng-relay:latest      # when Docker Hub credentials are 
 
 1. Update `pubspec.yaml` and add user-facing bullets under `CHANGELOG.md` → `[Unreleased]`.
 2. Commit and push the release preparation to `main`.
-3. Run **PlezyNG Release** manually from `main`, with `release_tag` exactly equal to the application version.
-4. Review the draft notes, package list, `SHA256SUMS.txt`, and provenance attestations.
-5. Publish the draft. Discord and configured downstream package channels run from the published-release event.
-6. To update a mobile store, run **Publish PlezyNG store builds** manually from `main` after the stable GitHub Release is published, then finish review/promotion in the store console.
-7. Submit a configured MSIX bundle manually through Partner Center. Confirm GHCR has both architectures; check Docker Hub, Chocolatey, and WinGet only when their credentials are configured, and track Microsoft's WinGet pull request separately.
+3. Manually dispatch CI on `main` and confirm it completed successfully for the exact release commit.
+4. Push a `v<major>.<minor>.<patch>` tag that matches `pubspec.yaml` and points to that `main` commit. This starts **PlezyNG Release** on private JIT.
+5. Review the draft notes, package list, `SHA256SUMS.txt`, and provenance attestations.
+6. Publish the draft. Discord and configured downstream package channels run from the published-release event.
+7. To update a mobile store, run **Publish PlezyNG store builds** manually from `main` after the stable GitHub Release is published, then finish review/promotion in the store console.
+8. Submit a configured MSIX bundle manually through Partner Center. Confirm GHCR has both architectures; check Docker Hub, Chocolatey, and WinGet only when their credentials are configured, and track Microsoft's WinGet pull request separately.

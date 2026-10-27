@@ -29,16 +29,26 @@ def main() -> int:
     parser.add_argument("version", help="semantic version for the release")
     parser.add_argument("installer", type=Path, help="combined Windows installer")
     parser.add_argument("output", type=Path, help="output directory for the manifest bundle")
+    parser.add_argument(
+        "--release-tag",
+        help="exact GitHub release tag used for download links (defaults to version)",
+    )
     args = parser.parse_args()
 
     if not re.fullmatch(r"\d+\.\d+\.\d+", args.version):
         parser.error("version must use semantic versioning (for example 2.24.1)")
+    release_tag = args.release_tag or args.version
+    if (
+        not re.fullmatch(r"v?\d+\.\d+\.\d+", release_tag)
+        or release_tag.removeprefix("v") != args.version
+    ):
+        parser.error("release tag must be the exact version, optionally prefixed with v")
     if not args.installer.is_file():
         parser.error(f"Windows installer does not exist: {args.installer}")
 
     digest = sha256(args.installer)
     installer_url = (
-        f"https://github.com/{REPOSITORY}/releases/download/{args.version}/{INSTALLER_NAME}"
+        f"https://github.com/{REPOSITORY}/releases/download/{release_tag}/{INSTALLER_NAME}"
     )
     package_dir = Path("manifests/s/SnapeTech/PlezyNG") / args.version
     output_dir = args.output / package_dir
@@ -102,7 +112,7 @@ Tags:
   - jellyfin
   - emby
   - video
-ReleaseNotesUrl: https://github.com/{REPOSITORY}/releases/tag/{args.version}
+ReleaseNotesUrl: https://github.com/{REPOSITORY}/releases/tag/{release_tag}
 ManifestType: defaultLocale
 ManifestVersion: {MANIFEST_VERSION}
 """,

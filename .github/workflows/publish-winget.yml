@@ -39,7 +39,8 @@ jobs:
             throw 'Manual WinGet submissions must run from main.'
           }
           $tag = if ($env:GITHUB_EVENT_NAME -eq 'release') { $env:EVENT_TAG } else { $env:INPUT_TAG }
-          if ($tag -notmatch '^\d+\.\d+\.\d+$') { throw "Release tag must be semantic versioning: $tag" }
+          if ($tag -notmatch '^v?\d+\.\d+\.\d+$') { throw "Release tag must be semantic versioning: $tag" }
+          $version = $tag -replace '^v', ''
           $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json tagName,isDraft,publishedAt
           if ($LASTEXITCODE -ne 0) { throw "Unable to inspect release $tag" }
           $metadata = $release | ConvertFrom-Json
@@ -61,16 +62,18 @@ jobs:
             throw "Release $tag is not on main or an ancestor of main."
           }
           "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Download the release manifest bundle and installer evidence
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
           gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY `
-            --pattern "plezyng-winget-manifests-$env:RELEASE_TAG.zip" `
+            --pattern "plezyng-winget-manifests-$env:RELEASE_VERSION.zip" `
             --pattern 'plezy-windows-installer.exe' `
             --pattern 'SHA256SUMS.txt' --dir release-assets
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download WinGet release assets.' }
@@ -79,9 +82,10 @@ jobs:
         shell: pwsh
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $manifestZip = Get-Item "release-assets\plezyng-winget-manifests-$env:RELEASE_TAG.zip"
+          $manifestZip = Get-Item "release-assets\plezyng-winget-manifests-$env:RELEASE_VERSION.zip"
           $installer = Get-Item 'release-assets\plezy-windows-installer.exe'
           $checksums = 'release-assets\SHA256SUMS.txt'
           foreach ($asset in @($manifestZip, $installer)) {
@@ -108,6 +112,7 @@ jobs:
           WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
           SUBMIT_REQUESTED: ${{ github.event_name == 'release' || inputs.submit }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:SUBMIT_REQUESTED -ne 'true') {
@@ -131,8 +136,8 @@ jobs:
             throw 'The .NET 6 runtime required by WinGetCreate was not installed.'
           }
           $env:PATH = "$dotnetRoot;$env:PATH"
-          $manifestRoot = Join-Path $PWD "winget-submit\manifests\s\SnapeTech\PlezyNG\$env:RELEASE_TAG"
+          $manifestRoot = Join-Path $PWD "winget-submit\manifests\s\SnapeTech\PlezyNG\$env:RELEASE_VERSION"
           $manifestPath = Join-Path $manifestRoot 'SnapeTech.PlezyNG.yaml'
           if (-not (Test-Path $manifestPath)) { throw "Version manifest is missing: $manifestPath" }
-          & .\wingetcreate.exe submit --prtitle "SnapeTech.PlezyNG $env:RELEASE_TAG" --no-open $manifestPath
+          & .\wingetcreate.exe submit --prtitle "SnapeTech.PlezyNG $env:RELEASE_VERSION" --no-open $manifestPath
           if ($LASTEXITCODE -ne 0) { throw "wingetcreate submit failed with exit code $LASTEXITCODE" }

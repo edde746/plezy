@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="${EVENT_TAG:-$INPUT_TAG}"
-          if [[ ! "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ ! "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Expected a stable semantic-version tag, got: $tag" >&2
             exit 1
           fi

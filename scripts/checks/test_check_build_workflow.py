@@ -189,7 +189,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
     def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            'if [[ "$RELEASE_TAG" != "$VERSION" ]]; then',
+            'if [[ "$VERSION" != "$PACKAGE_VERSION" ]]; then',
             'if false; then',
             1,
         )
@@ -198,7 +198,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("release tags must be checked against pubspec", result.stderr)
+        self.assertIn("release mode must validate the requested version and pushed v-tag", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
@@ -211,10 +211,10 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("run names must identify the action, pool, release tag or webOS validation", result.stderr)
+        self.assertIn("run names must expose the action, pool, and tag claim for manual and pushed releases", result.stderr)
 
     def test_build_only_mode_cannot_create_a_draft_release(self) -> None:
-        workflow = self._workflow().replace("inputs.action == 'release' && ", "", 1)
+        workflow = self._workflow().replace("needs.validate-trusted-ref.outputs.action == 'release' && ", "", 1)
         self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches release guard")
         result = self._run(workflow)
         self.assertNotEqual(result.returncode, 0)

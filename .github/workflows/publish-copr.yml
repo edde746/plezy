@@ -37,7 +37,8 @@ jobs:
         run: |
           set -euo pipefail
           tag="${EVENT_TAG:-$INPUT_TAG}"
-          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          version="${tag#v}"
           metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
           [[ "$(jq -r '.isDraft' <<<"$metadata")" == "false" && "$(jq -r '.isPrerelease' <<<"$metadata")" == "false" ]] || {
             echo "COPR requires a published stable GitHub Release." >&2
@@ -55,6 +56,7 @@ jobs:
             exit 1
           }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -81,6 +83,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/plezyng-copr/assets"
@@ -100,6 +103,7 @@ jobs:
         if: steps.settings.outputs.configured == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           sudo apt-get update
@@ -112,7 +116,7 @@ jobs:
           cp linux/packaging/org.snapetech.plezyng.desktop "$top/SOURCES/org.snapetech.plezyng.desktop"
           cp assets/plezy.png "$top/SOURCES/plezy.png"
           cp LICENSE "$top/SOURCES/LICENSE"
-          sed "s/^Version:.*/Version:        $RELEASE_TAG/" linux/packaging/copr/plezyng.spec > "$top/SPECS/plezyng.spec"
+          sed "s/^Version:.*/Version:        $RELEASE_VERSION/" linux/packaging/copr/plezyng.spec > "$top/SPECS/plezyng.spec"
           rpmbuild --define "_topdir $top" -bs "$top/SPECS/plezyng.spec"
 
       - name: Submit source RPM to COPR

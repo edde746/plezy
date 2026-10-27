@@ -56,15 +56,19 @@ All these checks must pass before your changes can be merged.
 ### Changelog and release notes
 
 Add a concise, user-visible bullet under `CHANGELOG.md` → `## [Unreleased]` for app, platform, or release-build changes.
-The pre-commit hook checks staged changes, and CI checks pull requests and pushes to `main`. Install the hook once with
+The pre-commit hook checks staged changes. Run CI manually on `main` before tagging a release. Install the hook once with
 `scripts/setup_hooks.sh`.
 
-The `PlezyNG Release` workflow is manual and only runs from `main`. Dispatch it with a semantic version that matches
-`pubspec.yaml`; it builds all release platforms and creates a draft GitHub release with notes from `CHANGELOG.md`.
-It uses a matching version section when one exists, otherwise it uses `Unreleased`. Before later releases, move shipped
-bullets into a dated version section and keep `Unreleased` for new work. Publish the draft when it is ready; publishing
-updates the Homebrew cask and appcast, then announces the release in Discord with its changelog notes and a link.
-Regular pushes and pull requests run CI checks but do not run the release build.
+The `PlezyNG Release` workflow accepts a pushed `v<major>.<minor>.<patch>` tag or a manual dispatch from `main`.
+Push a tag only after the matching `main` commit has a completed successful manual CI run; the tag must point to `main`
+and match the version in `pubspec.yaml`. The tag starts the private-JIT release build and creates a draft GitHub release.
+Manual dispatch remains available for build-only, release, and webOS validation runs. A tag release does not include the webOS IPK;
+that channel remains opt-in after its artifact and redistribution gates are approved.
+
+The workflow uses a matching changelog version section when one exists, otherwise it uses `Unreleased`. Before later
+releases, move shipped bullets into a dated version section and keep `Unreleased` for new work. Publish the draft when it
+is ready; publishing updates the Homebrew cask and appcast, then announces the release in Discord with its changelog notes
+and a link. Regular branch pushes do not run the release build.
 
 ### Maestro end-to-end tests
 

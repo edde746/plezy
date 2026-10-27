@@ -38,7 +38,8 @@ jobs:
         run: |
           set -euo pipefail
           tag="${EVENT_TAG:-$INPUT_TAG}"
-          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release tag: $tag" >&2; exit 1; }
+          [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release tag: $tag" >&2; exit 1; }
+          version="${tag#v}"
           metadata=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,publishedAt)
           [[ "$(jq -r .tagName <<<"$metadata")" == "$tag" ]] || { echo 'Release tag mismatch.' >&2; exit 1; }
           [[ "$(jq -r .isDraft <<<"$metadata")" == false ]] || { echo "Release $tag is still a draft." >&2; exit 1; }
@@ -56,6 +57,7 @@ jobs:
           {
             echo "tag=$tag"
             echo "commit=$commit"
+            echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -85,24 +87,24 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            VERSION=${{ steps.release.outputs.tag }}
+            VERSION=${{ steps.release.outputs.version }}
             REVISION=${{ steps.release.outputs.commit }}
             BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}
           tags: |
-            ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.tag }}
+            ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.version }}
             ghcr.io/snapetech-org/plezyng-relay:latest
           labels: |
             org.opencontainers.image.title=PlezyNG Relay
             org.opencontainers.image.description=PlezyNG authentication and artifact relay service
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
             org.opencontainers.image.revision=${{ steps.release.outputs.commit }}
           cache-from: type=gha,scope=plezyng-relay
           cache-to: type=gha,scope=plezyng-relay,mode=max
 
       - name: Verify GHCR architecture manifest
         env:
-          IMAGE: ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.tag }}
+          IMAGE: ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           docker buildx imagetools inspect "$IMAGE" --raw | jq -e '
@@ -138,24 +140,24 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            VERSION=${{ steps.release.outputs.tag }}
+            VERSION=${{ steps.release.outputs.version }}
             REVISION=${{ steps.release.outputs.commit }}
             BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}
           tags: |
-            snapetech/plezyng-relay:${{ steps.release.outputs.tag }}
+            snapetech/plezyng-relay:${{ steps.release.outputs.version }}
             snapetech/plezyng-relay:latest
           labels: |
             org.opencontainers.image.title=PlezyNG Relay
             org.opencontainers.image.description=PlezyNG authentication and artifact relay service
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
             org.opencontainers.image.revision=${{ steps.release.outputs.commit }}
           cache-from: type=gha,scope=plezyng-relay
 
       - name: Verify Docker Hub architecture manifest
         if: steps.dockerhub.outputs.available == 'true'
         env:
-          IMAGE: snapetech/plezyng-relay:${{ steps.release.outputs.tag }}
+          IMAGE: snapetech/plezyng-relay:${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           docker buildx imagetools inspect "$IMAGE" --raw | jq -e '

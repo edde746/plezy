@@ -322,14 +322,16 @@ require(
 )
 require(
     "Validate release tag before building" in job("validate-trusted-ref")
-    and "inputs.mode == 'release'" in job("validate-trusted-ref")
-    and "RELEASE_TAG: ${{ inputs.release_tag }}" in job("validate-trusted-ref"),
-    "release mode must validate its optional release_tag input before building",
+    and "steps.request.outputs.mode == 'release'" in job("validate-trusted-ref")
+    and "RELEASE_TAG: ${{ steps.request.outputs.release_tag }}" in job("validate-trusted-ref")
+    and '"$VERSION" != "$PACKAGE_VERSION"' in job("validate-trusted-ref")
+    and '"$RELEASE_TAG" != "v$PACKAGE_VERSION"' in job("validate-trusted-ref"),
+    "release mode must validate the requested version and pushed v-tag before building",
 )
 build_webos = job("build-webos")
 require(
-    "inputs.mode == 'webos-validation'" in build_webos
-    and "inputs.mode == 'release' && inputs.include_webos_release" in build_webos
+    "needs.validate-trusted-ref.outputs.mode == 'webos-validation'" in build_webos
+    and "needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true'" in build_webos
     and "bash tools/webos/build_release_candidate.sh" in build_webos,
     "webOS builds must be validation-only or explicitly included in a full release",
 )
@@ -382,7 +384,7 @@ require(
     "the public release must verify the exact qualified IPK hash, source, and version",
 )
 require(
-    "if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}"
+    "if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}"
     in named_step(build_webos, "Upload approved WebOS IPK for public release assembly"),
     "the WebOS IPK must not be uploaded as a public workflow artifact before release approval",
 )
@@ -412,8 +414,9 @@ require(
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
-    re.search(r"(?m)^  (push|pull_request):", text) is None,
-    "release builds must not run on commits or pull requests",
+    re.search(r"(?ms)^  push:\n    tags:\n      - ['\"]v\*['\"]", text) is not None
+    and re.search(r"(?m)^  pull_request:", text) is None,
+    "release builds must run only for v* tags, not commits or pull requests",
 )
 require(
     "if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}"
@@ -425,9 +428,10 @@ require(
 run_name = re.search(r"(?m)^run-name: (.*)$", text)
 run_name_expression = run_name.group(1) if run_name else ""
 require(
-    all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag"))
+    "github.event_name == 'push'" in run_name_expression
+    and all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.release_tag"))
     and all(marker in run_name_expression for marker in ("action:", "pool:", "tag:")),
-    "run names must expose the explicit action, pool, and tag claim to the JIT broker",
+    "run names must expose the action, pool, and tag claim for manual and pushed releases",
 )
 
 for action_pool_job in (
@@ -442,11 +446,14 @@ for action_pool_job in (
     "build-linux",
 ):
     block = job(action_pool_job)
-    require(
-        "inputs.action == 'build'" in block
-        and "inputs.runner_pool == 'private'" in block,
-        f"{action_pool_job} must be gated by the requested build action and private pool",
-    )
+    if action_pool_job == "validate-trusted-ref":
+        gated = "github.event_name == 'push'" in block and "inputs.runner_pool == 'private'" in block
+    else:
+        gated = (
+            "needs.validate-trusted-ref.outputs.action == 'build'" in block
+            and "needs.validate-trusted-ref.outputs.runner_pool == 'private'" in block
+        )
+    require(gated, f"{action_pool_job} must be gated by the requested action and private pool")
 
 release = job("create-release")
 require(
@@ -470,7 +477,7 @@ for artifact in (
 
 webos_download = named_step(release, "Download WebOS artifact")
 require(
-    "if: ${{ inputs.include_webos_release }}" in webos_download
+    "if: ${{ needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}" in webos_download
     and "name: webos-ipk" in webos_download,
     "the WebOS release artifact must be downloaded only after explicit opt-in",
 )
@@ -485,9 +492,9 @@ release_if = re.search(r"(?m)^    if: (.+)$", release)
 require(release_if is not None, "release job must have an explicit condition")
 release_condition = release_if.group(1) if release_if else ""
 require(
-    "inputs.mode == 'release'" in release_condition
-    and "inputs.action == 'release'" in release_condition
-    and "inputs.runner_pool == 'private'" in release_condition
+    "needs.validate-trusted-ref.outputs.mode == 'release'" in release_condition
+    and "needs.validate-trusted-ref.outputs.action == 'release'" in release_condition
+    and "needs.validate-trusted-ref.outputs.runner_pool == 'private'" in release_condition
     and all(f"needs.{name}.result == 'success'" in release_condition for name in (
         "build-android", "build-ios", "build-tvos", "build-macos", "build-windows", "package-windows", "build-linux"))
     and "needs.validate-trusted-ref.result == 'success'" in release_condition
@@ -502,8 +509,8 @@ require(
 require("draft: true" in release, "build output must remain a draft release")
 require("body_path: release-notes.md" in release, "draft notes must come from the changelog renderer")
 require(
-    "tag_name: ${{ inputs.release_tag }}" in release,
-    "release builds must bind the requested tag",
+    "tag_name: ${{ needs.validate-trusted-ref.outputs.release_tag }}" in release,
+    "release builds must bind the validated release tag",
 )
 require(
     "target_commitish: ${{ github.sha }}" in release,
@@ -526,7 +533,8 @@ require(
 )
 require(
     "Validate release tag before building" in trusted_ref
-    and '"$RELEASE_TAG" != "$VERSION"' in trusted_ref
+    and '"$VERSION" != "$PACKAGE_VERSION"' in trusted_ref
+    and '"$EVENT_NAME" == "push" && "$RELEASE_TAG" != "v$PACKAGE_VERSION"' in trusted_ref
     and '"$RUNNER_POOL" != "private"' in trusted_ref
     and '"$ACTION" != "build"' in trusted_ref,
     "release tags must be checked against pubspec; action and runner pool must be validated before platform builds start",

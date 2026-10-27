@@ -39,9 +39,10 @@ jobs:
             throw 'Manual Chocolatey publication must run from main.'
           }
           $tag = if ($env:GITHUB_EVENT_NAME -eq 'release') { $env:EVENT_TAG } else { $env:INPUT_TAG }
-          if ($tag -notmatch '^\d+\.\d+\.\d+$') {
+          if ($tag -notmatch '^v?\d+\.\d+\.\d+$') {
             throw "Release tag must be semantic versioning: $tag"
           }
+          $version = $tag -replace '^v', ''
           $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json tagName,isDraft,publishedAt
           if ($LASTEXITCODE -ne 0) { throw "Unable to inspect release $tag" }
           $metadata = $release | ConvertFrom-Json
@@ -63,12 +64,14 @@ jobs:
             throw "Release $tag is not on main or an ancestor of main."
           }
           "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Download the release package and installer evidence
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
           gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY `
@@ -81,6 +84,7 @@ jobs:
         shell: pwsh
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
           $package = @(Get-ChildItem release-assets\*.nupkg)
@@ -105,7 +109,7 @@ jobs:
           if ($installScript -notmatch [regex]::Escape($expectedUrl)) { throw 'Package points to a different release installer.' }
           if ($installScript -notmatch [regex]::Escape($installerHash)) { throw 'Package installer checksum does not match the release asset.' }
           $nuspec = Get-ChildItem $extractDir -Filter '*.nuspec' | Select-Object -First 1
-          if ($null -eq $nuspec -or (Get-Content $nuspec.FullName -Raw) -notmatch "<version>$([regex]::Escape($env:RELEASE_TAG))</version>") {
+          if ($null -eq $nuspec -or (Get-Content $nuspec.FullName -Raw) -notmatch "<version>$([regex]::Escape($env:RELEASE_VERSION))</version>") {
             throw 'Chocolatey package metadata does not match the release version.'
           }
 

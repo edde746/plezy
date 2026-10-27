@@ -41,7 +41,8 @@ jobs:
         run: |
           set -euo pipefail
           tag="${EVENT_TAG:-$INPUT_TAG}"
-          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          version="${tag#v}"
           metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
           [[ "$(jq -r '.isDraft' <<<"$metadata")" == "false" && "$(jq -r '.isPrerelease' <<<"$metadata")" == "false" ]] || {
             echo "PPA publication requires a published stable GitHub Release." >&2
@@ -59,6 +60,7 @@ jobs:
             exit 1
           }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -143,11 +145,12 @@ jobs:
         if: steps.settings.outputs.configured == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
           UBUNTU_SERIES: ${{ matrix.ubuntu_series }}
           GPG_FINGERPRINT: ${{ steps.signing.outputs.fingerprint }}
         run: |
           set -euo pipefail
-          version="$RELEASE_TAG"
+          version="$RELEASE_VERSION"
           source_name="plezyng-${version}"
           work="$RUNNER_TEMP/plezyng-ppa/build"
           source_dir="$work/$source_name"

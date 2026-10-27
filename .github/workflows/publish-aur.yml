@@ -42,10 +42,11 @@ jobs:
         run: |
           set -euo pipefail
           tag="${EVENT_TAG:-$INPUT_TAG}"
-          if [[ ! "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ ! "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Expected a stable semantic-version tag, got: $tag" >&2
             exit 1
           fi
+          version="${tag#v}"
           metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
           if [[ "$(jq -r '.isDraft' <<<"$metadata")" != "false" || "$(jq -r '.isPrerelease' <<<"$metadata")" != "false" ]]; then
             echo "AUR updates require a published stable GitHub Release." >&2
@@ -63,6 +64,7 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Check AUR publisher settings
         id: settings
@@ -90,6 +92,7 @@ jobs:
           AUR_PACKAGE_NAME: ${{ vars.AUR_PACKAGE_NAME }}
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -122,7 +125,23 @@ jobs:
           cp linux/packaging/aur/PKGBUILD "$aur_repo/PKGBUILD"
           cp linux/packaging/aur/plezyng.desktop "$aur_repo/plezyng.desktop"
           cp LICENSE "$aur_repo/LICENSE"
-          sed -i "s/^pkgver=.*/pkgver=${RELEASE_TAG}/" "$aur_repo/PKGBUILD"
+          sed -i "s/^pkgver=.*/pkgver=${RELEASE_VERSION}/" "$aur_repo/PKGBUILD"
+          python3 - "$aur_repo/PKGBUILD" "$RELEASE_TAG" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          recipe = Path(sys.argv[1])
+          tag = sys.argv[2]
+          text, count = re.subn(
+              r"(/releases/download/)\$pkgver(/)",
+              lambda match: f"{match.group(1)}{tag}{match.group(2)}",
+              recipe.read_text(encoding="utf-8"),
+          )
+          if count != 2:
+              raise SystemExit(f"Expected two versioned release URLs in PKGBUILD, found {count}.")
+          recipe.write_text(text, encoding="utf-8")
+          PY
           sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${x64_sha}')/" "$aur_repo/PKGBUILD"
           sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${arm64_sha}')/" "$aur_repo/PKGBUILD"
 
