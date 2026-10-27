@@ -15,7 +15,7 @@ on:
         options: [arm, x64]
         default: arm
       security_profile:
-        description: Existing Samsung signing profile on the provisioned ephemeral runner
+        description: Existing Samsung profile from the encrypted Actions secret bundle
         type: string
 
 permissions:
@@ -48,6 +48,7 @@ jobs:
     timeout-minutes: 60
     env:
       PLEZY_FLUTTER_TIZEN_ROOT: ${{ vars.PLEZYNG_FLUTTER_TIZEN_ROOT }}
+      PLEZYNG_TIZEN_STUDIO_ROOT: ${{ vars.PLEZYNG_TIZEN_STUDIO_ROOT }}
       TIZEN_CMAKE_TOOLCHAIN_ARM: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_ARM }}
       TIZEN_CMAKE_TOOLCHAIN_X64: ${{ vars.PLEZYNG_TIZEN_TOOLCHAIN_X64 }}
       PACKAGE_ARCH: ${{ inputs.architecture }}
@@ -64,7 +65,21 @@ jobs:
           test -x "$PLEZY_FLUTTER_TIZEN_ROOT/bin/flutter-tizen" || { echo 'Provision the pinned 2026 Samsung SDK on this private JIT image.'; exit 1; }
           if [[ "$PACKAGE_ARCH" == arm ]]; then toolchain="$TIZEN_CMAKE_TOOLCHAIN_ARM"; else toolchain="$TIZEN_CMAKE_TOOLCHAIN_X64"; fi
           test -f "$toolchain" || { echo 'A Samsung compiler/sysroot CMake toolchain is required.'; exit 1; }
+          test -x "$PLEZYNG_TIZEN_STUDIO_ROOT/tools/ide/bin/tizen" || { echo 'Provision Tizen Studio and Samsung TV extensions on the private JIT image.'; exit 1; }
+          printf '%s\n' "$PLEZYNG_TIZEN_STUDIO_ROOT/tools/ide/bin" >> "$GITHUB_PATH"
           python3 scripts/tizen/package.py native --arch "$PACKAGE_ARCH" --toolchain "$toolchain" --output build/tizen-native
+      - name: Materialize the Samsung signing profile for this job
+        shell: bash
+        env:
+          SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64: ${{ secrets.SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64 }}
+          SIGNING_PROFILE: ${{ inputs.security_profile }}
+          PROFILE_DESTINATION: ${{ runner.temp }}/plezyng-tizen-signing
+        run: |
+          set -euo pipefail
+          python3 scripts/tizen/prepare_signing_profile.py \
+            --profile "$SIGNING_PROFILE" \
+            --destination "$PROFILE_DESTINATION"
+          tizen cli-config -g "default.profiles.path=$PROFILE_DESTINATION/profiles.xml"
       - name: Build and inspect signed TV package
         run: >-
           python3 scripts/tizen/package.py build
@@ -102,3 +117,7 @@ jobs:
           path: build/tizen-release/
           if-no-files-found: error
           retention-days: 14
+      - name: Remove ephemeral Samsung signing material
+        if: always()
+        shell: bash
+        run: rm -rf -- "$RUNNER_TEMP/plezyng-tizen-signing"

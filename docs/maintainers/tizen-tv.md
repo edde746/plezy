@@ -70,16 +70,23 @@ Provision a dedicated ephemeral Linux x64 build image with:
    compilers, sysroot and ABI flags. Use the SDK's compiler configuration;
    a Linux desktop compiler is not a TV cross-toolchain. See
    `scripts/tizen/toolchain.example.cmake` for the required inputs.
-5. An existing Samsung Certificate Manager security profile authorized for
-   the test TV's DUID. Keep its keys/passwords outside the repository and
-   uploaded artifacts. An arbitrary signed package is not universally
-   installable; signatures and DUID authorization are checked on-device.
+5. An existing Samsung Certificate Manager TV profile. Keep its author and
+   distributor keys outside the repository, runner image, and artifacts. The
+   package job reads `SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64` from an encrypted
+   Actions secret, materializes only the selected profile in `RUNNER_TEMP`,
+   sets the Tizen CLI profile path, and removes the temporary certificate files
+   at job end. For device installation, the distributor certificate must
+   authorize that TV's DUID; the Seller Office signing profile must meet
+   Samsung's separate submission requirements.
 
 Do not substitute GCC 9.2-era dependencies into a 2026 build without checking
 Samsung's ABI requirements. The vendored media plugin retains upstream's
 small architecture-specific wrapper libraries; their compatibility with the
 chosen SDK must be confirmed during the native build and device smoke test.
 
+Before dispatching a package build, create the signing profile in Samsung Certificate Manager, then store its portable bundle as the repository Actions secret `SAMSUNG_TIZEN_PROFILE_ARCHIVE_B64`. The secret value is base64 text for a gzip tar containing exactly one `profiles.xml` plus the selected profile's referenced `.p12`, `.pwd`, `.cer`, `.crt`, `.pem`, or `.der` files. Use relative archive paths; omit account tokens, logs, and unrelated profiles. Keep the encoded value within GitHub's 48 KiB secret limit. Set the `PLEZYNG_TIZEN_STUDIO_ROOT` Actions variable to the provisioned Tizen Studio root, and enter the profile name in the workflow's `security_profile` input. The helper rejects unsafe archive entries, narrows the XML to that profile, rebases referenced certificate paths, and never copies signing material to build outputs.
+
+Samsung's [Certificate Manager guide](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/creating-certificates.html) requires a Samsung developer account and target-device DUID for profile creation; preserve the same author certificate for future updates. The [TV SDK installation guide](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html) requires Tizen Studio, Samsung TV Extensions, and Samsung Certificate Extension. Install these on the private JIT image after reviewing and accepting their vendor licenses; use TV Extension 10.0.0 and Certificate Extension 2.0.73 or later for the 2026 toolchain.
 From a clean tracked checkout after dependency resolution:
 
 ```sh
