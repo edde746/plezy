@@ -9,15 +9,18 @@ A settings surface or successful property write does not complete the full featu
 
 - Adds typed Original, Cinema, Balanced, Smooth, Animation, Sports and Custom
   profiles. The default stays Original.
-- Adds portable preset, kernel and threshold preferences plus global/library/title
-  scope for the preset.
-- Adds Playback Settings and in-player controls, including custom temporal kernel
-  and threshold selection.
-- Applies mpv display synchronization, temporal convolution, a bounded hardware
-  decoder surface reserve and renderer-status reporting. It restores the player's
-  pre-feature options when Original is selected.
-- Restricts the implementation to mpv renderer paths and reports unsupported native
-  outputs. It does not report requested refresh as measured presentation.
+- Adds portable preset, kernel and threshold preferences. The selected global/library/title
+  scope applies to the profile and both custom temporal controls.
+- Adds Playback Settings and in-player controls, including custom temporal kernel,
+  threshold selection and a quick A/B switch that bypasses only temporal blending.
+- Resolves each source's scoped profile in the media and live-stream pre-open
+  paths, so mpv can allocate decoder reference surfaces before opening that source. Applies display
+  synchronization, temporal convolution and renderer-status reporting. The A/B switch keeps display
+  sync, scaling and audio settings active. It restores the player's pre-feature options
+  when Original is selected.
+- Checks the active mpv output (gpu, gpu-next or libmpv), including supported libmpv
+  routes across operating systems, and reports unsupported native-TV outputs. A
+  renderer-reported refresh value is labeled as reported, not measured scanout.
 
 This delivers useful cadence-blending controls; it does not implement any of the
 full native frame-processing packages. Motion-compensated interpolation, scene and

@@ -20,14 +20,21 @@ format, and preserve ordinary playback whenever processing is unavailable.
 This PR now adds an optional mpv temporal-blending feature. It exposes Original,
 Cinema, Balanced, Smooth, Animation, Sports and Custom profiles in Playback Settings
 and the in-player settings sheet. Custom mode exposes the temporal kernel and an
-interpolation threshold. The profile is portable and can be saved globally, per
-library or per title. Original remains the default.
+interpolation threshold. The profile, custom temporal kernel and threshold use the
+same global, library or title scope. The in-player sheet also provides a quick A/B
+toggle that bypasses only temporal blending while keeping display synchronization,
+spatial scaling and audio settings unchanged. The media and live-stream open paths resolve each item's scoped profile before
+opening its decoder. Original remains the default.
 
-When the active mpv output exposes its GPU render stage, the feature requests
-`video-sync=display-resample`, mpv `interpolation`, a `tscale` kernel, an interpolation
-threshold and bounded decoder reference surfaces. A successful property write is
-reported as configured; it is not a measured presentation-rate or visual-quality
-claim. Spatial upscaling remains independent in the existing Shader presets.
+When the active mpv output exposes its GPU render stage (`gpu`, `gpu-next` or
+`libmpv`), the feature requests display synchronization (`display-resample` with
+decoded audio, `display-vdrop` with bitstream passthrough), mpv interpolation, a
+temporal kernel, a threshold and bounded decoder reference surfaces. A threshold of
+0 maps to mpv's always-interpolate sentinel. The capability check follows the active
+player and renderer, including libmpv, while native-TV media routes remain
+unavailable. Successful property writes indicate configured options only; actual
+presentation rate and visual quality remain unmeasured. Spatial upscaling remains
+independent in the existing Shader presets.
 
 ## Product target and runtime boundary
 

@@ -1282,6 +1282,23 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         _frameRate.applied = true;
       }
 
+      // Resolve the profile for this exact media item before open(), not
+      // after it in track setup. mpv allocates hardware-decoder reference
+      // surfaces during source initialization, so this is the last safe point
+      // to apply scoped interpolation settings.
+      if (currentPlayer.playerType == 'mpv') {
+        final motionService = MotionClarityService.forPlayer(currentPlayer);
+        final motionResult = await motionService.configure(
+          preset: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, metadata),
+          kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, metadata),
+          thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, metadata),
+          beforeSourceOpen: true,
+        );
+        if (!motionResult.isSupported && motionResult.reason != null) {
+          appLogger.d('PlaybackOpen: motion clarity unavailable for this output: ${motionResult.reason}');
+        }
+      }
+
       if (beforeColorHint != null && !await beforeColorHint()) return false;
 
       await _announceContentColorTransfer(

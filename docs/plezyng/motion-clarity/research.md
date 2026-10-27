@@ -9,7 +9,7 @@ TV comparison was run in this planning task.
 
 | ID | Source | Evidence and use in this plan |
 | --- | --- | --- |
-| R01 | [mpv stable reference manual](https://mpv.io/manual/stable/) | `interpolation`/`tscale` perform temporal filtering for rate mismatch. Distinguish this from motion-compensated synthesis; preserve video-sync/audio semantics. |
+| R01 | [mpv stable reference manual](https://mpv.io/manual/stable/) | `interpolation`/`tscale` perform temporal filtering, only on `gpu`, `gpu-next` and `libmpv` VOs. Interpolation needs display-sync mode and may need decoder look-ahead configured before source open. `display-vdrop` can toggle thresholded interpolation around small rate differences; `-1` disables that threshold logic. |
 | R02 | [FFmpeg filter documentation](https://ffmpeg.org/ffmpeg-filters.html#minterpolate) | `minterpolate` exposes motion-compensated, blend and duplicate modes, rational output FPS and scene handling. Use as an algorithm/reference comparison, not an assumed 4K real-time solution. |
 | R03 | [libplacebo renderer/frame queue](https://libplacebo.org/renderer/) and [options](https://libplacebo.org/options/) | Frame metadata, GPU textures, queueing, scaling/colour and temporal mixing infrastructure. Its mixing API is not proof of a motion-estimation engine. |
 | R04 | [RIFE paper, ECCV 2022](https://arxiv.org/abs/2011.06294) | Learned intermediate-flow estimation supports arbitrary-timestep interpolation. Supports the proposed neural design; published benchmark results do not predict our 4K HDR playback throughput. |
@@ -29,8 +29,35 @@ TV comparison was run in this planning task.
 | R18 | [Blurry Video Frame Interpolation, CVPR 2020](https://openaccess.thecvf.com/content_CVPR_2020/html/Shen_Blurry_Video_Frame_Interpolation_CVPR_2020_paper.html) | Research explicitly distinguishes frame interpolation and source deblurring; supports separate qualification instead of assuming more frames remove captured blur. |
 | R19 | [RTINGS original stutter test methodology](https://www.rtings.com/tv/tests/motion/stutter) | Original high-speed measurements and discussion of frame hold, judder and interpolation. Use the measurement distinction, not product rankings as proof of our results. |
 | R20 | [AMD FidelityFX frame interpolation documentation](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/frame-interpolation/) | Game-oriented interpolation uses additional resources such as depth/motion data. An encoded movie is not automatically compatible with that integration contract. |
+| R21 | [SVPlayer product/manual page](https://www.svp-team.com/wiki/SVPlayer) | A mobile player integrates SVP motion estimation/compensation, target rates and flexible controls; it also documents substantial CPU and battery demands and optional desktop offload. |
+| R22 | [madVR Envy MotionAI user guide](https://madvrenvy.com/wp-content/uploads/madVR-Envy-MotionAI-User-Guide.pdf) | Describes output-rate selection, model/strength/blur profiles and instant/split-screen comparisons, and says evaluators should disable TV interpolation. This dedicated processor is not a reusable app SDK. |
+| R23 | [Kodi video settings](https://kodi.wiki/view/Settings/Player/Videos) | Separates display-rate matching from playback-to-display sync and notes the audio-passthrough tradeoff. This is cadence correction, not motion-compensated frame creation. |
+| R24 | [Android frame-rate guide](https://developer.android.com/media/optimize/performance/frame-rate) and [Surface.setFrameRate](https://developer.android.com/reference/android/view/Surface#setFrameRate(float,int,int)) | The app communicates intended source cadence; Android arbitrates display mode. The API does not make an app produce interpolated frames or guarantee a mode change. |
+| R25 | [Apple AVDisplayManager guide](https://developer.apple.com/videos/play/tech-talks/503/) and [AVDisplayCriteria](https://developer.apple.com/documentation/avfoundation/avdisplaycriteria) | tvOS display matching is a system-mode negotiation with user-setting and display-capability gates; it does not add intermediate motion samples. |
 
-## 2. Decisions and rejected shortcuts
+## 2. Reference implementation comparison
+
+| Approach | What it does well | What it cannot establish |
+| --- | --- | --- |
+| mpv temporal interpolation (implemented engine) | Display-synchronous temporal convolution; tunable kernels; interpolation only when cadence mismatch crosses a threshold; compact native renderer path. | It does not estimate object motion, generate correct occlusion boundaries or restore exposure detail. Kernel choice trades blending against softness or ringing. |
+| SVP / SVPlayer | Motion-vector search and motion-compensated synthesis; target-rate and interpolation-ratio choices; adaptive per-frame modes based on vector confidence; masking and explicit scene-change handling. SVPlayer brings this to Android/iOS and documents desktop offload. | CPU/GPU load, power use and artifacts rise with stronger motion search and more generated frames. Vendor requirements are SVP estimates, not PlezyNG benchmarks or universal thresholds. |
+| RIFE through SVP | Learned intermediate-flow synthesis with selectable model/backend/device, scene-change threshold and model/performance tradeoffs. | SVP documents high real-time GPU demands at 1080p/4K. An offline or desktop result does not prove sustained mobile/TV playback. |
+| madVR Envy MotionAI | Dedicated GPU processor exposes output-rate, model, strength and blur profiles, quick/split-screen A/B comparison, and fast profile switching. Its guide treats film appearance as a separate user choice. | It is a proprietary external processor; its vendor claims are not independent proof. Its configuration does not give PlezyNG decoded-frame access or panel scanout. |
+| Kodi and platform refresh matching | Requests source-compatible display cadence and provides playback/display sync choices. This removes avoidable pulldown judder on compatible displays without synthesizing object motion. | The OS can decline mode requests; matched cadence does not add unique motion positions. Audio passthrough can limit sync correction. |
+
+### PlezyNG coverage and gaps
+
+| Capability | Current PR coverage | Next engineering step |
+| --- | --- | --- |
+| Native-rate display matching | Existing Android/Windows/tvOS paths remain separate from this feature and should be used when the user enables them. | Add one coordinator that negotiates an output multiple when interpolation is active while honoring HDR, resolution, user choice and panel capability. |
+| Low-cost cadence blending | Implemented with mpv display sync, temporal interpolation, selectable kernels and threshold. Spatial shaders remain independent. Custom kernel/threshold share the profile's global/library/title scope, resolved before each media source opens so the decoder can prepare its surface pool. | Measure actual output cadence, drops, audio drift and per-device costs; add a safe mode fallback. |
+| In-player comparison | Quick A/B switch temporarily bypasses only temporal blending and leaves display sync, scaling and audio configuration active. | Add split-screen comparison only if the renderer can preserve the same source time and color pipeline on both sides. |
+| Motion-compensated synthesis | Not implemented by this PR. | Add native decoded-frame adapter, bounded timestamped queue, scene/cut/occlusion handling, a classical ME/MC baseline, then an optional licensed neural engine. |
+| Restraint and artifact policy | Profiles, manual temporal kernel/threshold and a quick A/B control are provided; this remains temporal convolution, not per-pixel motion inference. | Extend to confidence-aware interpolation, unreliable-vector masking, film-look controls and content-aware fallback. |
+| Hardware adaptation | Renderer route is checked; decoder look-ahead is bounded; displayed rate is explicitly labeled renderer-reported. | Probe sustained GPU/decoder/memory/battery headroom, count generated frames and deadlines, and reduce processing before playback deadlines are missed. |
+| Blur and scaling | Existing spatial shader controls stay independent. No deblur or BFI is implemented. | Evaluate restoration as a separate experimental SDR path and qualify it with interpolation, scaler and color stages. Software BFI remains panel/output-specific and limited by brightness/flicker. |
+
+## 3. Decisions and rejected shortcuts
 
 | Option | Decision | Reason / confidence |
 | --- | --- | --- |
@@ -42,7 +69,7 @@ TV comparison was run in this planning task.
 | Cinema timing curve / lower distinct cadence | Controlled experiment with film-look gate | Makes smoothness semantics explicit without pixel crossfades; perceived improvement unknown |
 | Sharpening branded as deblur | Reject | Edge contrast does not recover exposure detail; high |
 | Repeating frames branded as 120 fps reconstruction | Reject | Does not create extra motion positions; high |
-| mpv interpolation flag alone | Reject as the implementation | Temporal mixing is not this motion reconstruction pipeline; high |
+| mpv interpolation flag alone | Keep as a low-cost cadence fallback; reject it as the motion-compensated implementation | Temporal mixing is not motion reconstruction; high |
 | Per-object independent time warping as default | Reject initially | Risks broken occlusions/contact and inconsistent temporal appearance; moderate |
 | Full AI restoration in every preset | Reject | Changes grain/detail and risks hallucination/flicker/colour damage; moderate |
 | FSR/DLSS game frame generation dropped into movie playback | Reject as a shortcut | Movies lack the expected engine buffers/contracts; a separate adaptation would need qualification; high |
@@ -51,7 +78,7 @@ TV comparison was run in this planning task.
 | Precomputed/companion stream | Optional constrained-device route | Useful when local compute/frame access is unavailable, but introduces encode/storage/latency and cannot bypass output caps; high in concept |
 | “No soap opera effect” from better AI alone | Reject as a guarantee | Temporal appearance itself changes even with perfect reconstruction; high |
 
-## 3. Novelty and success criteria
+## 4. Novelty and success criteria
 
 Frame interpolation, deblurring, adaptive quality and motion grading all have
 prior implementations. This plan does not claim a new invention, patent novelty,
@@ -65,7 +92,7 @@ from those properties. It must compete with simpler alternatives in the same stu
 Likewise, model selection is based on held-out motion/artifact/colour/performance
 results, not labels such as AI, latest, flagship or ultra.
 
-## 4. Evidence not obtained during planning
+## 5. Evidence not obtained during planning
 
 No physical TV comparison, GPU inference benchmark, restored-video quality test,
 native SDK decoded-frame probe, model download/hash verification, packaged build,

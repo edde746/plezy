@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import '../mpv/player/player.dart';
 import '../models/motion_clarity.dart';
 import '../utils/app_logger.dart';
@@ -14,6 +12,8 @@ class MotionClarityApplyResult {
   final bool isSupported;
   final bool isConfigured;
   final bool requiresSourceReload;
+  final bool isComparisonBypass;
+  final bool audioPassthroughActive;
   final String? outputDriver;
   final double? displayFps;
   final String? reason;
@@ -22,6 +22,8 @@ class MotionClarityApplyResult {
     required this.isSupported,
     required this.isConfigured,
     this.requiresSourceReload = false,
+    this.isComparisonBypass = false,
+    this.audioPassthroughActive = false,
     this.outputDriver,
     this.displayFps,
     this.reason,
@@ -55,6 +57,7 @@ class MotionClarityService {
   bool _capturedOriginalValues = false;
   bool _sourceHasOpened = false;
   bool _requiresSourceReload = false;
+  bool _comparisonBypass = false;
   MotionClarityPreset _currentPreset = MotionClarityPreset.original;
   MotionTemporalKernel _currentKernel = MotionTemporalKernel.linear;
   int _currentThresholdPercent = 1;
@@ -82,6 +85,7 @@ class MotionClarityService {
     }
     final driver = await _readOutputDriver();
     final fps = double.tryParse((await _readProperty('display-fps') ?? '').trim());
+    final passthroughActive = _player.audioPassthroughActive;
     if (driver != null && driver.isNotEmpty && !_supportedOutputs.contains(driver)) {
       return MotionClarityApplyResult(
         isSupported: false,
@@ -89,6 +93,7 @@ class MotionClarityService {
         requiresSourceReload: false,
         outputDriver: driver,
         displayFps: fps,
+        audioPassthroughActive: passthroughActive,
         reason: 'The active mpv output ($driver) does not expose temporal interpolation.',
       );
     }
@@ -96,6 +101,8 @@ class MotionClarityService {
       isSupported: true,
       isConfigured: _currentPreset.interpolationEnabled,
       requiresSourceReload: _requiresSourceReload,
+      isComparisonBypass: _comparisonBypass,
+      audioPassthroughActive: passthroughActive,
       outputDriver: driver,
       displayFps: fps,
       reason: driver == null || driver.isEmpty
@@ -122,15 +129,18 @@ class MotionClarityService {
     await _captureOriginalValues();
     final driver = await _readOutputDriver();
     final fps = double.tryParse((await _readProperty('display-fps') ?? '').trim());
+    final passthroughActive = _player.audioPassthroughActive;
     if (driver != null && driver.isNotEmpty && !_supportedOutputs.contains(driver)) {
       if (_currentPreset.interpolationEnabled) await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _comparisonBypass = false;
       _requiresSourceReload = false;
       final result = MotionClarityApplyResult(
         isSupported: false,
         isConfigured: false,
         outputDriver: driver,
         displayFps: fps,
+        audioPassthroughActive: passthroughActive,
         reason: 'The active mpv output ($driver) does not expose temporal interpolation.',
       );
       return result;
@@ -139,6 +149,7 @@ class MotionClarityService {
     if (!preset.interpolationEnabled) {
       await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _comparisonBypass = false;
       _requiresSourceReload = false;
       _currentKernel = kernel;
       _currentThresholdPercent = thresholdPercent.clamp(0, 10).toInt();
@@ -147,6 +158,7 @@ class MotionClarityService {
         isConfigured: false,
         outputDriver: driver,
         displayFps: fps,
+        audioPassthroughActive: passthroughActive,
       );
       return result;
     }
@@ -155,6 +167,11 @@ class MotionClarityService {
     final effectiveThreshold = preset == MotionClarityPreset.custom
         ? thresholdPercent.clamp(0, 10).toInt()
         : preset.defaultThresholdPercent;
+    // mpv documents -1 as the explicit always-interpolate sentinel. The UI
+    // exposes this as threshold 0%, so translate that choice directly.
+    final mpvThreshold = effectiveThreshold == 0
+        ? '-1'
+        : (effectiveThreshold / 100).toStringAsFixed(2);
     final requiresReload = !beforeSourceOpen &&
         _sourceHasOpened &&
         !_currentPreset.interpolationEnabled;
@@ -162,10 +179,10 @@ class MotionClarityService {
     final writes = <(String, String)>[
       // Keep encoded audio passthrough intact; decoded PCM can use mpv's
       // audio-resampling display sync for tighter cadence matching.
-      ('video-sync', _player.audioPassthroughActive ? 'display-vdrop' : 'display-resample'),
+      ('video-sync', passthroughActive ? 'display-vdrop' : 'display-resample'),
       ('interpolation', 'yes'),
       ('tscale', effectiveKernel.mpvName),
-      ('interpolation-threshold', (effectiveThreshold / 100).toStringAsFixed(2)),
+      ('interpolation-threshold', mpvThreshold),
       // Suppress temporal ringing at moving edges. This can add a small amount
       // of softness; the user can choose a sharper temporal kernel above.
       ('tscale-clamp', '1'),
@@ -182,6 +199,7 @@ class MotionClarityService {
       appLogger.w('MotionClarityService: could not configure temporal interpolation', error: error, stackTrace: stackTrace);
       await _restoreOriginalValues();
       _currentPreset = MotionClarityPreset.original;
+      _comparisonBypass = false;
       _requiresSourceReload = false;
       final result = MotionClarityApplyResult(
         isSupported: false,
@@ -189,12 +207,14 @@ class MotionClarityService {
         requiresSourceReload: false,
         outputDriver: driver,
         displayFps: fps,
+        audioPassthroughActive: passthroughActive,
         reason: 'The mpv engine refused one or more interpolation options.',
       );
       return result;
     }
 
     _currentPreset = preset;
+    _comparisonBypass = false;
     if (beforeSourceOpen) {
       _requiresSourceReload = false;
     } else if (requiresReload) {
@@ -206,6 +226,8 @@ class MotionClarityService {
       isSupported: true,
       isConfigured: true,
       requiresSourceReload: _requiresSourceReload,
+      isComparisonBypass: false,
+      audioPassthroughActive: passthroughActive,
       outputDriver: driver,
       displayFps: fps,
       reason: driver == null || driver.isEmpty
@@ -215,11 +237,49 @@ class MotionClarityService {
     return result;
   }
 
-  bool get _eligiblePlayer =>
-      _player.playerType == 'mpv' &&
-      !Platform.isIOS &&
-      !Platform.isMacOS &&
-      !PlatformDetector.usesNativeTvMedia();
+  /// Temporarily disables only mpv's temporal filter for a quick A/B check.
+  /// Display synchronization, spatial shaders, and audio settings stay active.
+  /// Comparison is available only when interpolation is configured and its
+  /// decoder reference pool was prepared before the current source opened.
+  Future<MotionClarityApplyResult> setComparisonBypass(bool bypass) async {
+    final current = await inspect();
+    if (!current.isSupported ||
+        !_currentPreset.interpolationEnabled ||
+        _requiresSourceReload ||
+        bypass == _comparisonBypass) {
+      return current;
+    }
+
+    try {
+      await _player.setProperty('interpolation', bypass ? 'no' : 'yes');
+      _comparisonBypass = bypass;
+    } catch (error, stackTrace) {
+      appLogger.w('MotionClarityService: could not switch comparison mode', error: error, stackTrace: stackTrace);
+      return MotionClarityApplyResult(
+        isSupported: current.isSupported,
+        isConfigured: current.isConfigured,
+        requiresSourceReload: current.requiresSourceReload,
+        isComparisonBypass: _comparisonBypass,
+        audioPassthroughActive: current.audioPassthroughActive,
+        outputDriver: current.outputDriver,
+        displayFps: current.displayFps,
+        reason: 'The mpv renderer refused the comparison toggle.',
+      );
+    }
+
+    return MotionClarityApplyResult(
+      isSupported: current.isSupported,
+      isConfigured: current.isConfigured,
+      requiresSourceReload: current.requiresSourceReload,
+      isComparisonBypass: _comparisonBypass,
+      audioPassthroughActive: current.audioPassthroughActive,
+      outputDriver: current.outputDriver,
+      displayFps: current.displayFps,
+      reason: current.reason,
+    );
+  }
+
+  bool get _eligiblePlayer => _player.playerType == 'mpv' && !PlatformDetector.usesNativeTvMedia();
 
   Future<void> _captureOriginalValues() async {
     if (_capturedOriginalValues) return;

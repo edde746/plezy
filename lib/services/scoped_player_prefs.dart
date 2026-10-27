@@ -73,6 +73,23 @@ abstract final class ScopedPlayerPrefs {
     (preset) => preset.name,
   );
 
+  /// Custom motion controls share the profile's configured scope so per-title
+  /// and per-library edits never silently fall back to global kernel values.
+  static final motionClarityKernel = ScopedPlayerPref<MotionTemporalKernel>._(
+    'motion_clarity_kernel',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityKernel,
+    _decodeMotionTemporalKernel,
+    (kernel) => kernel.name,
+  );
+
+  static final motionClarityThreshold = ScopedPlayerPref<int>._(
+    'motion_clarity_threshold_percent',
+    SettingsService.motionClarityScope,
+    SettingsService.motionClarityThreshold,
+    _decodeMotionClarityThreshold,
+  );
+
   static final audioSyncOffset = ScopedPlayerPref<int>._(
     'audio_sync_offset',
     SettingsService.syncOffsetScope,
@@ -242,4 +259,10 @@ abstract final class ScopedPlayerPrefs {
 
   static MotionClarityPreset? _decodeMotionClarityPreset(Object? raw) =>
       raw is String ? MotionClarityPreset.values.asNameMap()[raw] : null;
+
+  static MotionTemporalKernel? _decodeMotionTemporalKernel(Object? raw) =>
+      raw is String ? MotionTemporalKernel.values.asNameMap()[raw] : null;
+
+  static int? _decodeMotionClarityThreshold(Object? raw) =>
+      raw is int ? raw.clamp(0, 10).toInt() : null;
 }

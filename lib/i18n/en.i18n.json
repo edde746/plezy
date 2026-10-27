@@ -2733,6 +2733,12 @@
     "motionClarityOutputUnsupported": "The current video output does not expose mpv's GPU interpolation stage.",
     "motionClarityRestartRequired": "This decoder was opened without interpolation buffers. Restart playback to use the full temporal filter.",
     "motionClarityConfigured": "Interpolation options were accepted. Presented frame rate depends on the active renderer and display.",
+    "motionClarityReportedDisplayRate": "Renderer-reported display rate",
+    "motionClarityPassthroughWarning": "Audio passthrough uses a different sync mode; very small refresh mismatches can periodically interrupt blending. Set threshold to 0 to keep it active, or use decoded audio.",
+    "motionClarityCompareWithoutBlending": "Compare without temporal blending",
+    "motionClarityReturnToBlending": "Return to temporal blending",
+    "motionClarityCompareDescription": "Temporarily bypass blending while keeping display synchronization, scaling and audio settings unchanged.",
+    "motionClarityCompareFailed": "The renderer couldn't switch comparison mode. Playback settings were left as they are.",
     "motionClaritySaveFailed": "Couldn't save motion clarity settings."
   },
   "performanceOverlay": {

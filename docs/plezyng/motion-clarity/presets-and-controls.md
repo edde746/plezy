@@ -52,7 +52,14 @@ These are kernel choices over mpv's temporal axis, not optical-flow strength val
 not a percentage of synthetic frames and not the complete target presets above.
 The setting follows mpv's detected display clock; it does not choose or switch a
 30/60/120/144 Hz display mode. Higher-rate modes, frame presentation and visual
-quality need separate platform and device qualification.
+quality need separate platform and device qualification. The displayed Hz value
+is renderer-reported, not a measurement of panel scanout. A threshold of 0 maps
+to mpv's documented always-interpolate sentinel. The in-player sheet offers a
+quick A/B toggle that disables only the temporal filter; it is not a split-screen
+comparison and does not change the selected or saved profile. With audio
+passthrough, display-vdrop preserves the encoded audio path, but tiny refresh
+mismatches can still periodically interrupt blending; the sheet explains this
+and offers the continuous threshold setting.
 
 ## 2. Preset definitions
 
@@ -92,10 +99,12 @@ mapping. Unknown media uses the saved preset. Per-title choices always win.
 
 ## 3. Ordinary controls
 
-The primary sheet shows Preset, Quality, Compare, and Advanced. Quality options:
-Auto, Efficient, High. A custom engine/model choice expands Expert controls and
-changes Quality to Custom. Efficient/High influence processing resources and
-reconstruction quality, not the selected motion appearance.
+The current sheet exposes Preset and Custom temporal controls, renderer status, and
+a quick A/B switch when the temporal filter is active. The planned full engine
+adds Quality, Compare, and Advanced controls. Quality options: Auto, Efficient,
+High. A custom engine/model choice expands Expert controls and changes Quality to
+Custom. Efficient/High influence processing resources and reconstruction quality,
+not the selected motion appearance.
 
 Every control has a localized one-line explanation; secondary help uses the
 existing `?`/help affordance. A remote can focus and open help, and a screen reader
@@ -161,7 +170,9 @@ lab-only BFI experiment requires fixed verified scanout and separate measurement
 
 ## 5. Preview and applying a change
 
-Use the existing full video viewport. `Compare` offers:
+Use the existing full video viewport. The current PR's quick A/B command toggles
+mpv temporal blending while retaining display synchronization, scaling and audio
+settings. The future `Compare` flow offers:
 
 - **Hold Original:** show original video while held, return on release. Support
   pointer, keyboard and D-pad; also provide a toggle for users who cannot hold.
@@ -186,8 +197,13 @@ Original`, `Try Efficient`, or a relevant device/output explanation.
 
 ## 6. Settings scope and precedence
 
-Order: current comparison/session override -> explicit title -> library -> device
-default. Preserve the repository's server-scoped media identity and existing
+The target precedence is current comparison/session override -> explicit title ->
+library -> device default. The current implementation follows the repository's
+configured single scope, then global fallback; a per-title edit is not accidentally
+shadowed by an older library entry. The profile, temporal kernel and threshold now
+share that configured scope. The media and live-stream open paths resolve those values before a source opens
+so decoder look-ahead is configured in time. Preserve server-scoped
+media identity and existing
 `ScopedPlayerPrefs` behavior. Do not accidentally introduce a new profile-isolated
 store: the existing scoped player store is explicitly shared across app profiles.
 Document that behavior in the settings scope help. Source files without a stable

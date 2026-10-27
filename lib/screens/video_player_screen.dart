@@ -2328,8 +2328,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         final motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _currentMetadata);
         final motionResult = await MotionClarityService.forPlayer(currentPlayer).configure(
           preset: motionPreset,
-          kernel: settingsService.read(SettingsService.motionClarityKernel),
-          thresholdPercent: settingsService.read(SettingsService.motionClarityThreshold),
+          kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _currentMetadata),
+          thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _currentMetadata),
           beforeSourceOpen: true,
         );
         if (!motionResult.isSupported && motionResult.reason != null) {

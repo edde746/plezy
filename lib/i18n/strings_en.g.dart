@@ -6363,7 +6363,19 @@ class Translations$videoSettings$en {
 
 	/// en: 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.'
 	String get motionClarityConfigured => 'Interpolation options were accepted. Presented frame rate depends on the active renderer and display.';
-	/// en: 'Couldn't save motion clarity settings.'
+	/// en: 'Renderer-reported display rate'
+	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
+	/// en: 'Audio passthrough uses a different sync mode; very small refresh mismatches can periodically interrupt blending. Set threshold to 0 to keep it active, or use decoded audio.'
+	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different sync mode; very small refresh mismatches can periodically interrupt blending. Set threshold to 0 to keep it active, or use decoded audio.';
+	/// en: 'Compare without temporal blending'
+	String get motionClarityCompareWithoutBlending => 'Compare without temporal blending';
+	/// en: 'Return to temporal blending'
+	String get motionClarityReturnToBlending => 'Return to temporal blending';
+	/// en: 'Temporarily bypass blending while keeping display synchronization, scaling and audio settings unchanged.'
+	String get motionClarityCompareDescription => 'Temporarily bypass blending while keeping display synchronization, scaling and audio settings unchanged.';
+	/// en: 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.'
+	String get motionClarityCompareFailed => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.';
+	/// en: 'Couldn\'t save motion clarity settings.'
 	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
 }
 
