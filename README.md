@@ -258,7 +258,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 
 ## plezy:// links
 
-Links start Plezy from outside the app. Any link may add `profile=<profile>`: a profile id, a Plex Home user UUID, or a display name (ignoring case; it must match one profile). Plezy switches to that profile first, and a protected profile still asks for its PIN. A link replaces whatever is playing.
+PlezyNG accepts both `plezy://` and `plezxyng://` schemes; links shown by the app continue using `plezy://` for compatibility. Use either scheme with the hosts and parameters below. Links start Plezy from outside the app. Any link may add `profile=<profile>`: a profile id, a Plex Home user UUID, or a display name (ignoring case; it must match one profile). Plezy switches to that profile first, and a protected profile still asks for its PIN. A link replaces whatever is playing.
 
 | Link | Does |
 |---|---|

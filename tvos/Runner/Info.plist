@@ -106,10 +106,11 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>plezy</string>
+				<string>plezxyng</string>
 			</array>
 		</dict>
 	</array>
-	<!-- plezy:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
+	<!-- plezy:// and plezxyng:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
 	     Flutter's router must not also push them as named routes. -->
 	<key>FlutterDeepLinkingEnabled</key>
 	<false/>

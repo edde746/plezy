@@ -70,25 +70,22 @@
 			<string>org.snapetech.plezyng</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>plezy</string>
 				<string>plezyng-source</string>
 			</array>
 		</dict>
-	</array>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>CFBundleURLTypes</key>
-	<array>
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>com.edde746.plezy</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>plezy</string>
+				<string>plezxyng</string>
 			</array>
 		</dict>
 	</array>
-	<!-- plezy:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- plezy:// and plezxyng:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
 	     Flutter's router must not also push them as named routes. -->
 	<key>FlutterDeepLinkingEnabled</key>
 	<false/>

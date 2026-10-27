@@ -5,15 +5,15 @@
   import FlutterMacOS
 #endif
 
-/// Answers `com.plezy/deep_link` on iOS, iPadOS, tvOS and macOS: hands every `plezy:` URL the
-/// system opens the app with to Dart unchanged.
+/// Answers `com.plezy/deep_link` on iOS, iPadOS, tvOS and macOS. It hands every `plezy:` or
+/// `plezxyng:` URL the system opens to Dart unchanged.
 ///
 /// Dart owns the link grammar (lib/services/deep_links/deep_link.dart), so only the scheme is
 /// checked here. A link stays retained until Dart takes it: `getInitialLink` returns it and
 /// switches the engine to live delivery, after which `onLink` delivers each new link and only a
 /// `true` reply clears it. Compiled into the iOS, tvOS and macOS Runners.
 final class DeepLinkPlugin: NSObject, FlutterPlugin {
-  private static let scheme = "plezy"
+  private static let schemes: Set<String> = ["plezy", "plezxyng"]
   // Process-wide so a link received before a (re)created engine registers is not lost.
   private static let delivery = DeepLinkDeliveryCoordinator()
   private static var channel: FlutterMethodChannel?
@@ -38,7 +38,8 @@ final class DeepLinkPlugin: NSObject, FlutterPlugin {
 
   /// The string Dart receives for `url`, or nil when it is not a Plezy link.
   static func forwardedLink(for url: URL) -> String? {
-    url.scheme?.lowercased() == scheme ? url.absoluteString : nil
+    guard let scheme = url.scheme?.lowercased(), schemes.contains(scheme) else { return nil }
+    return url.absoluteString
   }
 
   /// Takes `url` when it is a Plezy link, delivering it now or retaining it for Dart.
