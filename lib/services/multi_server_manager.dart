@@ -205,6 +205,7 @@ class MultiServerManager {
   Future<void>? _activeReconnect;
   int _profileRefreshEpoch = 0;
   final Map<String, int> _profileRefreshGenerations = {};
+  Set<String> _startupWaitExcludedServerIds = const {};
 
   /// Re-fetches one Plex account's server list (connection URIs and
   /// per-server tokens) from plex.tv and applies it through
@@ -799,15 +800,53 @@ class MultiServerManager {
         _markRefusal(serverId, e);
         _connectProgressController.add((serverId: serverId, online: false));
       }
-    });
-    await Future.wait(futures);
-    if (isStale()) return const {};
+    }).toList();
+    final waitedFutures = [
+      for (var i = 0; i < futures.length; i++)
+        if (!_startupWaitExcludedServerIds.contains('plex:${connection.servers[i].clientIdentifier}')) futures[i],
+    ];
+    var backgroundServersPending = false;
+    var allFuturesSettled = false;
+    var callerSettled = false;
+    void clearGenerationWhenSettled() {
+      if (allFuturesSettled && callerSettled && _profileRefreshGenerations[accountId] == generation) {
+        _profileRefreshGenerations.remove(accountId);
+      }
+    }
+
+    if (waitedFutures.length == futures.length) {
+      await Future.wait(futures);
+    } else {
+      backgroundServersPending = true;
+      unawaited(
+        Future.wait(futures).whenComplete(() {
+          allFuturesSettled = true;
+          if (callerSettled && !isStale()) _emitStatus();
+          clearGenerationWhenSettled();
+        }),
+      );
+      await Future.wait(waitedFutures);
+    }
+    if (isStale()) {
+      callerSettled = true;
+      clearGenerationWhenSettled();
+      return const {};
+    }
     _emitStatus();
     if (bound.isNotEmpty && _connectivitySubscription == null) {
       _startNetworkMonitoring();
     }
-    _profileRefreshGenerations.remove(accountId);
-    return bound;
+    if (backgroundServersPending) {
+      callerSettled = true;
+      clearGenerationWhenSettled();
+    } else {
+      _profileRefreshGenerations.remove(accountId);
+    }
+    return Set.of(bound);
+  }
+
+  void setStartupWaitExcludedServerIds(Set<String> serverIds) {
+    _startupWaitExcludedServerIds = Set.unmodifiable(serverIds);
   }
 
   /// Add a MediaBrowser server backed by an authenticated

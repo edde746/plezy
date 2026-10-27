@@ -9,6 +9,7 @@ import '../exceptions/media_server_exceptions.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import 'active_profile_provider.dart';
 import 'plex_home_switch.dart';
@@ -27,21 +28,25 @@ class _ProfileBindResult {
   const _ProfileBindResult({
     required this.visibleServerIds,
     required this.expectedServerIds,
+    this.pendingServerIds = const {},
     this.discoveredMembership = const {},
   });
 
   const _ProfileBindResult.empty()
     : visibleServerIds = const {},
       expectedServerIds = const {},
+      pendingServerIds = const {},
       discoveredMembership = const {};
 
   _ProfileBindResult.visible(Set<String> ids)
     : visibleServerIds = Set.unmodifiable(ids),
       expectedServerIds = Set.unmodifiable(ids),
+      pendingServerIds = const {},
       discoveredMembership = const {};
 
   final Set<String> visibleServerIds;
   final Set<String> expectedServerIds;
+  final Set<String> pendingServerIds;
 
   /// Server ids per Plex connection id, for connections whose plex.tv
   /// resource refresh succeeded in this bind. Authoritative: they replace the
@@ -383,6 +388,7 @@ class ActiveProfileBinder {
       ]);
       if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
+      final pendingServerIds = <String>{};
       final discoveredMembership = <String, Set<String>>{for (final result in results) ...result.discoveredMembership};
       // A successful resource refresh is authoritative for its connection:
       // servers plex.tv no longer lists must not stay expected (and so
@@ -400,6 +406,7 @@ class ActiveProfileBinder {
         );
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
+        pendingServerIds.addAll(result.pendingServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
       }
 
@@ -436,7 +443,8 @@ class ActiveProfileBinder {
       }
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       multiServerProvider.setVisibleServerIds(visibleServerIds);
-      success = (profile.isLocal && !localProfileHasJoinRows) || visibleServerIds.isNotEmpty;
+      success =
+          (profile.isLocal && !localProfileHasJoinRows) || visibleServerIds.isNotEmpty || pendingServerIds.isNotEmpty;
       if (!success) {
         // A failed pass that expected servers, reached none (`!success`
         // implies `visibleServerIds.isEmpty` here), and saw no refusal is
@@ -659,12 +667,19 @@ class ActiveProfileBinder {
     }
     final results = await Future.wait(futures);
     final discovered = <String, Set<String>>{};
+    final pending = <String>{};
     for (final result in results) {
       visible.addAll(result.visibleServerIds);
       expected.addAll(result.expectedServerIds);
+      pending.addAll(result.pendingServerIds);
       discovered.addAll(result.discoveredMembership);
     }
-    return _ProfileBindResult(visibleServerIds: visible, expectedServerIds: expected, discoveredMembership: discovered);
+    return _ProfileBindResult(
+      visibleServerIds: visible,
+      expectedServerIds: expected,
+      pendingServerIds: pending,
+      discoveredMembership: discovered,
+    );
   }
 
   Future<_ProfileBindResult> _bindLocalPlexConnection({
@@ -935,6 +950,9 @@ class ActiveProfileBinder {
     }
     final stopwatch = Stopwatch()..start();
     final updatedConn = account.copyWith(servers: servers);
+    final excluded =
+        (SettingsService.instanceOrNull?.read(SettingsService.startupWaitExcludedServers) ?? const <String>[]).toSet();
+    serverManager.setStartupWaitExcludedServerIds(excluded);
     final boundIds = await serverManager.refreshTokensForProfile(updatedConn, profileId: profileId);
     appLogger.i(
       'ActiveProfileBinder: bound ${boundIds.length}/${servers.length} Plex servers for $profileLabel',
@@ -946,6 +964,10 @@ class ActiveProfileBinder {
     return _ProfileBindResult(
       visibleServerIds: boundIds,
       expectedServerIds: servers.map((server) => server.clientIdentifier).toSet(),
+      pendingServerIds: {
+        for (final server in servers)
+          if (excluded.contains('plex:${server.clientIdentifier}')) server.clientIdentifier,
+      },
     );
   }
 
@@ -1174,6 +1196,9 @@ class ActiveProfileBinder {
     // offline. Newly-online expected servers are promoted into the visibility
     // filter by MultiServerProvider when the status emission this triggers
     // lands.
+    final excluded =
+        (SettingsService.instanceOrNull?.read(SettingsService.startupWaitExcludedServers) ?? const <String>[]).toSet();
+    serverManager.setStartupWaitExcludedServerIds(excluded);
     await serverManager.refreshTokensForProfile(account.copyWith(servers: fresh), profileId: profileId);
   }
 
@@ -1182,6 +1207,16 @@ class ActiveProfileBinder {
     required String profileId,
     required int generation,
   }) async {
+    final excluded =
+        SettingsService.instanceOrNull?.read(SettingsService.startupWaitExcludedServers) ?? const <String>[];
+    if (excluded.contains('mediabrowser:${conn.serverMachineId}')) {
+      unawaited(serverManager.addJellyfinConnection(conn));
+      return _ProfileBindResult(
+        visibleServerIds: const {},
+        expectedServerIds: {conn.serverMachineId},
+        pendingServerIds: {conn.serverMachineId},
+      );
+    }
     final ok = await serverManager.addJellyfinConnection(conn);
     if (!_isCurrentBind(profileId, generation)) {
       return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});

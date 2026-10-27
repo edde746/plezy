@@ -15,6 +15,7 @@ import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
+import 'server_startup_settings_screen.dart';
 import 'settings_utils.dart';
 
 /// App-level preferences that are not about looks or playback: language,
@@ -36,6 +37,12 @@ class GeneralSettingsScreen extends StatelessWidget {
           title: t.settings.startup,
           children: [
             _startupSectionSelector(),
+            SettingNavigationTile(
+              icon: Symbols.dns_rounded,
+              title: t.settings.dontWaitForServers,
+              subtitle: t.settings.dontWaitForServersDescription,
+              destinationBuilder: (_) => const ServerStartupSettingsScreen(),
+            ),
             if (hasMultipleProfiles)
               SettingSwitchTile(
                 pref: SettingsService.requireProfileSelectionOnOpen,
