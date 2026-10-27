@@ -16,6 +16,7 @@ import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../models/shader_preset.dart';
 import '../../../models/motion_clarity.dart';
+import '../../../models/player_setting_scope.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_file_info.dart';
 import '../../../media/media_item.dart';
@@ -433,12 +434,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioEqualizerGains = SettingsService.audioEqualizerBandPrefs
         .map((pref) => SettingsService.instance.read(pref))
         .toList(growable: false);
-    _motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _state.metadata);
-    _motionKernel = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _state.metadata);
-    _motionThresholdPercent = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata);
-    _motionEngine = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _state.metadata);
-    _motionOutputRate = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _state.metadata);
-    _motionMciQuality = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _state.metadata);
+    final motionSessionOnly =
+        SettingsService.instance.read(SettingsService.motionClarityScope) == PlayerSettingScope.off;
+    final motionService = MotionClarityService.forPlayer(widget.player);
+    _motionPreset = motionSessionOnly
+        ? motionService.currentPreset
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _state.metadata);
+    _motionKernel = motionSessionOnly
+        ? motionService.currentKernel
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _state.metadata);
+    _motionThresholdPercent = motionSessionOnly
+        ? motionService.currentThresholdPercent
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata);
+    _motionEngine = motionSessionOnly
+        ? motionService.currentEngine
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _state.metadata);
+    _motionOutputRate = motionSessionOnly
+        ? motionService.currentOutputRate
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _state.metadata);
+    _motionMciQuality = motionSessionOnly
+        ? motionService.currentMciQuality
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _state.metadata);
     unawaited(_refreshMotionClarityStatus());
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
