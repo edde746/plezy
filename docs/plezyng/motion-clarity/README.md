@@ -17,12 +17,15 @@ with TV interpolation off. The player must actually deliver the processed frames
 at the negotiated output rate, retain audio/subtitle synchronization and picture
 format, and preserve ordinary playback whenever processing is unavailable.
 
-This PR adds two optional mpv processing paths. It exposes Original, Cinema,
-Balanced, Smooth, Animation, Sports and Custom profiles in Playback Settings and
+This PR adds two optional mpv processing paths. It exposes Original, Cinema, Balanced,
+Smooth, Animation, Sports, OLED and Custom profiles in Playback Settings and
 the in-player settings sheet. Temporal blend exposes a temporal kernel and
 interpolation threshold. Experimental motion compensation uses FFmpeg
 `minterpolate`, with a generated-rate choice and Fast/Balanced/High motion-search
-effort. The settings share one global, library or title scope. VOD and live-stream
+effort. The opt-in OLED profile selects motion compensation at the current renderer-reported
+display cadence when available. This can reduce perceived OLED sample-and-hold blur,
+but it is not panel calibration; full-rate interpolation can look video-like and the
+renderer-reported rate does not prove physical scanout. The settings share one global, library or title scope. VOD and live-stream
 startup resolve those values before opening the decoder. The in-player sheet has
 a quick A/B control that bypasses the active motion filter while keeping the
 selected display mode, spatial scaling and audio settings in place. Original
@@ -54,8 +57,10 @@ search-effort tiers change computation cost rather than interpolation strength.
 Neither path has automatic device benchmarking or a soap-opera-free guarantee.
 The operating system and renderer determine whether generated cadence is presented.
 
-This PR does not remove OLED sample-and-hold persistence blur or camera/exposure
-blur already recorded in a source. It does not add neural RIFE interpolation,
+The OLED profile can reduce perceived sample-and-hold blur by supplying distinct
+intermediate pictures toward the active display rate. It cannot change the panel's
+physical emission time or remove camera/exposure blur already captured in the source.
+OLED refresh modes, response, processing limits and viewing conditions vary by set; It does not add neural RIFE interpolation,
 NAFNet deblur/restoration, a hardware resource governor, native decoded-frame
 adapters, Dolby Vision processing or webOS/Tizen frame access. MCI output-rate and
 search-effort choices are manual and unqualified. No TV superiority, image-quality,
@@ -97,7 +102,10 @@ once. This PR implements cadence blending only.**
 ## Binding design decisions
 
 - Product name: **Motion & clarity**. Presets: Original, Cinema, Balanced,
-  Smooth, Animation, Sports; Custom appears after an edit. Quality and motion
+  Smooth, Animation, Sports, OLED; Custom appears after an edit. OLED is an
+  opt-in display strategy, not an automatic panel detector or per-model calibration.
+  It targets the renderer-reported current cadence through MCI and may produce a
+  video-like look; users can switch to Cinema or Original at any time. Quality and motion
   appearance are independent. Do not use proprietary TV preset names as our own.
 - Existing installs and fresh installs start at **Original**, preserving current
   processing behavior and refresh preferences. The suggested opt-in is Cinema.
