@@ -288,7 +288,7 @@ jobs:
           echo "No draft release is created."
 
   build-android:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     timeout-minutes: 360
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-android"]}}', github.run_id)) }}
@@ -431,7 +431,7 @@ jobs:
           if-no-files-found: warn
 
   build-webos:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'webos-validation' || (needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_build == 'true')) }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && (needs.validate-trusted-ref.outputs.mode == 'webos-validation' || (needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_build == 'true')) }}
     needs: validate-trusted-ref
     name: Build WebOS TV package (ARMv7)
     timeout-minutes: 360
@@ -545,7 +545,7 @@ jobs:
           retention-days: 14
 
   build-tizen:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_tizen_build == 'true' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_tizen_build == 'true' }}
     needs: validate-trusted-ref
     name: Build Samsung Tizen TV package (ARM)
     permissions:
@@ -559,7 +559,7 @@ jobs:
       include_seller_office_handoff: false
 
   build-ios:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
     permissions:
@@ -758,7 +758,7 @@ jobs:
           if-no-files-found: error
 
   build-tvos:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build tvOS developer package (arm64)
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
@@ -972,7 +972,7 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:
@@ -1242,7 +1242,7 @@ jobs:
             macos-dmg-size.txt
 
   build-windows:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
@@ -1386,7 +1386,7 @@ jobs:
           path: build/windows/${{ matrix.arch }}/runner/Release/
 
   package-windows:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: [validate-trusted-ref, build-windows]
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-package-windows"]}}', github.run_id)) }}
     permissions:
@@ -1604,7 +1604,7 @@ jobs:
           path: release-packages/plezyng.*.nupkg
 
   build-linux:
-    if: ${{ needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
+    if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
     runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","arm64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) }}
@@ -1902,7 +1902,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-webos, build-tizen, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.outputs.runner_pool == 'private' && needs.validate-trusted-ref.outputs.action == 'release' && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (needs.validate-trusted-ref.outputs.include_webos_build != 'true' && needs.validate-trusted-ref.outputs.include_webos_release != 'true' && needs.build-webos.result == 'skipped')) && (needs.build-tizen.result == 'success' || (needs.validate-trusted-ref.outputs.include_tizen_build != 'true' && needs.build-tizen.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ always() && inputs.runner_pool == 'private' && inputs.action == 'release' && needs.validate-trusted-ref.outputs.runner_pool == 'private' && needs.validate-trusted-ref.outputs.action == 'release' && needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.result == 'success' && needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-tvos.result == 'success' && needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.package-windows.result == 'success' && needs.build-linux.result == 'success' && (needs.build-webos.result == 'success' || (needs.validate-trusted-ref.outputs.include_webos_build != 'true' && needs.validate-trusted-ref.outputs.include_webos_release != 'true' && needs.build-webos.result == 'skipped')) && (needs.build-tizen.result == 'success' || (needs.validate-trusted-ref.outputs.include_tizen_build != 'true' && needs.build-tizen.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write
