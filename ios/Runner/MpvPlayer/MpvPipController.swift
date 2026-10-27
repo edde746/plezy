@@ -73,10 +73,12 @@ protocol MpvPipDelegate: AnyObject {
     private let retryScheduler: (@escaping () -> Void) -> Void
     private let startTimeoutScheduler: (@escaping () -> Void) -> Void
     private var autoStartEnabled = false
-    /// Start and length of the last range handed to PiP, on the display
-    /// layer's timeline; nil while PiP has none or a live one.
+    /// Start, length and playback position of the last range handed to PiP,
+    /// on the display layer's timeline; start is nil while PiP has none or a
+    /// live one.
     private var timelineStart: CMTime?
     private var timelineDuration = 0.0
+    private var timelinePosition = 0.0
     private var timelineTimer: Timer?
     /// How far PiP's elapsed time may drift from mpv's position before the
     /// range is re-sent, and how often that is checked while PiP is up.
@@ -368,22 +370,29 @@ protocol MpvPipDelegate: AnyObject {
     /// presentation runs that timebase on mpv's clock at 1x, not on the
     /// playback position, so the range starts at (timebase now - position).
     /// While playing, a seek, a speed other than 1x or a stall moves the two
-    /// apart and `checkTimeline` re-sends the range.
+    /// apart; while paused, a seek from outside PiP moves mpv's position.
+    /// `checkTimeline` catches both and re-sends the range.
     fileprivate func playbackTimeRange() -> CMTimeRange {
       guard let timebase = sampleBufferLayer?.controlTimebase,
         let delegate, delegate.pipDuration > 0
       else {
         timelineStart = nil
         timelineDuration = 0
+        timelinePosition = 0
         return Self.liveTimeRange
       }
       let duration = delegate.pipDuration
-      let position = min(max(delegate.pipPosition, 0), duration)
+      let position = Self.clampedPosition(delegate.pipPosition, duration: duration)
       let start = CMTimeSubtract(
         CMTimebaseGetTime(timebase), CMTime(seconds: position, preferredTimescale: 1_000_000_000))
       timelineStart = start
       timelineDuration = duration
+      timelinePosition = position
       return CMTimeRange(start: start, duration: CMTime(seconds: duration, preferredTimescale: 1_000_000_000))
+    }
+
+    private static func clampedPosition(_ position: Double, duration: Double) -> Double {
+      min(max(position, 0), duration)
     }
 
     private func startTimelineTracking() {
@@ -400,6 +409,7 @@ protocol MpvPipDelegate: AnyObject {
       timelineTimer = nil
       timelineStart = nil
       timelineDuration = 0
+      timelinePosition = 0
     }
 
     private func checkTimeline() {
@@ -409,13 +419,21 @@ protocol MpvPipDelegate: AnyObject {
         if delegate.pipDuration > 0 { invalidatePlaybackState() }
         return
       }
-      // Paused, PiP holds the elapsed time it last computed, and the pause
-      // change itself re-sent the range; the running timebase is moot.
-      guard delegate.isPipPlaying else { return }
-      let shown = CMTimeGetSeconds(CMTimeSubtract(CMTimebaseGetTime(timebase), start))
-      if abs(shown - delegate.pipPosition) > Self.timelineTolerance
-        || delegate.pipDuration != timelineDuration
-      {
+      let duration = delegate.pipDuration
+      guard duration == timelineDuration else {
+        invalidatePlaybackState()
+        return
+      }
+      // Playing, PiP shows the running timebase minus the range start.
+      // Paused, it holds the elapsed time from when the range was last sent
+      // (the pause itself re-sends it), so a seek from outside PiP, such as
+      // Control Center, Watch Together or the companion remote, only shows
+      // once the range is sent again.
+      let shown =
+        delegate.isPipPlaying
+        ? CMTimeGetSeconds(CMTimeSubtract(CMTimebaseGetTime(timebase), start))
+        : timelinePosition
+      if abs(shown - Self.clampedPosition(delegate.pipPosition, duration: duration)) > Self.timelineTolerance {
         invalidatePlaybackState()
       }
     }
