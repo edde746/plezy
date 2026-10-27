@@ -57,7 +57,9 @@ an explicit 48–144 fps target; Android mpv uses the generated rate for its fir
 mode request, while other routes may keep the display's existing mode. The displayed
 Hz is renderer-reported, not measured panel scanout. MCI's Fast/Balanced/High
 choices alter FFmpeg block-search effort and variable-block refinement; higher
-effort costs more CPU and does not dial the soap-opera effect up or down. OLED is
+effort costs more CPU and does not dial the soap-opera effect up or down. The
+generated-rate target is the motion-strength control: lower rates preserve more
+source cadence, while higher rates look smoother and more video-like. OLED is
 the exception to the general preset mapping: it routes through MCI at the current
 renderer-reported display rate when that rate is usable. This is a user-selected
 strategy, not OLED detection or calibration. A high generated rate can create a

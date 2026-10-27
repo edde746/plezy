@@ -1656,6 +1656,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(t.videoSettings.motionClarityOutputRate, style: Theme.of(context).textTheme.titleSmall),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                t.videoSettings.motionClarityOutputRateDescription,
+                style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+              ),
+            ),
             for (final rate in MotionClarityOutputRate.values)
               FocusableListTile(
                 title: Text(_motionOutputRateTitle(rate), style: TextStyle(color: _motionOutputRate == rate ? primary : null)),

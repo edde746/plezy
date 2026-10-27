@@ -6394,6 +6394,8 @@ class Translations$videoSettings$en {
 	String get motionClarityMotionCompensatedDescription => 'FFmpeg block-motion synthesis creates in-between frames. It can use substantial CPU, especially at high resolution or frame rate, and may warp or ghost moving edges. Choose a non-Original profile below to enable it.';
 	/// en: 'Generated frame-rate target'
 	String get motionClarityOutputRate => 'Generated frame-rate target';
+	/// en: 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.'
+	String get motionClarityOutputRateDescription => 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.';
 	/// en: 'Match current display'
 	String get motionClarityOutputCurrentDisplay => 'Match current display';
 	/// en: '48 fps'
@@ -6416,18 +6418,18 @@ class Translations$videoSettings$en {
 	String get motionClarityMciProfileDescription => 'Cinema, Smooth and the other profiles tune temporal blend only. In this mode, choose Original to turn processing off; use motion search effort and generated frame rate here.';
 	/// en: 'Motion search effort'
 	String get motionClarityMciQuality => 'Motion search effort';
-	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.'
-	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained output drops can temporarily lower the active search tier; your saved choice stays unchanged.';
-	/// en: 'Repeated dropped frames. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
-	String get motionClarityGuardReduced => 'Repeated dropped frames. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
+	/// en: 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained late-frame or dropped-frame reports can temporarily lower the active search tier; your saved choice stays unchanged.'
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement. It may improve difficult matches, but it does not reduce smoothing and is not automatically benchmarked for your hardware. Sustained late-frame or dropped-frame reports can temporarily lower the active search tier; your saved choice stays unchanged.';
+	/// en: 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
+	String get motionClarityGuardReduced => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
 	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
 	String get motionClarityGuardFallback => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.';
 	/// en: 'Motion compensation could not keep up, and temporal fallback could not be enabled.'
 	String get motionClarityGuardFallbackFailed => 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
 	/// en: 'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.'
-	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose a usable dropped-frame counter; automatic overload fallback is unavailable.';
+	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.';
 	/// en: 'Playback is dropping frames; motion compensation may not be keeping up.'
-	String get motionClarityGuardFailure => 'Playback is dropping frames; motion compensation may not be keeping up.';
+	String get motionClarityGuardFailure => 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.';
 	/// en: 'Low search effort'
 	String get motionClarityMciFast => 'Low search effort';
 	/// en: 'Balanced search effort'
@@ -6435,7 +6437,7 @@ class Translations$videoSettings$en {
 	/// en: 'High search effort'
 	String get motionClarityMciHigh => 'High search effort';
 	/// en: 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.'
-	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A dropped-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.';
+	String get motionClarityMciConfigured => 'Experimental motion compensation is configured. Check performance and moving-edge artifacts. A late-frame guard can reduce search effort, but it does not qualify hardware or guarantee real-time playback.';
 	/// en: 'Compare without motion processing'
 	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
 	/// en: 'Return to motion processing'
