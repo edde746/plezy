@@ -110,7 +110,7 @@ void main() {
       methodChannelName: 'com.plezy/mpv_player',
       eventChannelName: 'com.plezy/mpv_player/events',
       testBody: () async {
-        await startOnPartOne(tester, player, client);
+        final key = await startOnPartOne(tester, player, client);
 
         player.setPosition(const Duration(minutes: 50));
         player.emitCompleted();
@@ -123,7 +123,11 @@ void main() {
           offset: const Duration(minutes: 50),
           duration: const Duration(minutes: 90),
         ));
-        expect(find.text('Browse'), findsNothing, reason: 'the movie goes on in its second file');
+        expect(
+          ModalRoute.of(key.currentContext!)?.isCurrent,
+          isTrue,
+          reason: 'the transparent player route stays current while the second file plays',
+        );
 
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
