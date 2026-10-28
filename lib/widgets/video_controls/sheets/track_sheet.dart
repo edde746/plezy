@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'dart:io' show Directory, File;
+
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, ValueListenableBuilder;
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
 
@@ -9,6 +14,7 @@ import '../../../media/ids.dart';
 import '../../../services/settings_service.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/file_picker_service.dart';
+import '../../../services/incoming_subtitle_share_service.dart';
 import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/subtitle_archive_importer.dart';
 import '../../../services/track_selection_service.dart';
@@ -40,7 +46,7 @@ class TrackSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Tracks>(
+    final sheet = StreamBuilder<Tracks>(
       stream: player.streams.tracks,
       initialData: player.state.tracks,
       builder: (context, tracksSnapshot) {
@@ -144,6 +150,14 @@ class TrackSheet extends StatelessWidget {
         );
       },
     );
+    if (const {TargetPlatform.android, TargetPlatform.linux, TargetPlatform.macOS, TargetPlatform.windows}
+        .contains(defaultTargetPlatform)) {
+      return DropTarget(
+        onDragDone: (details) => unawaited(_stageDroppedSubtitleFiles(context, player, details.files)),
+        child: sheet,
+      );
+    }
+    return sheet;
   }
 }
 
@@ -508,6 +522,23 @@ class _SubtitleColumn extends StatelessWidget {
 
 List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state, Player player) {
   final actions = <Widget>[];
+  if (player.supportsSecondarySubtitles) {
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.replay_rounded),
+        title: const Text('Replay current subtitle'),
+        onTap: () => _replayCurrentSubtitle(context, player),
+      ),
+    );
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.replay_rounded),
+        title: const Text('Replay current secondary subtitle'),
+        onTap: () => _replayCurrentSubtitle(context, player, secondary: true),
+      ),
+    );
+  }
+
   if (state.canSearchSubtitles) {
     actions.add(
       FocusableListTile(
@@ -527,6 +558,20 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
       ),
     );
   }
+
+  actions.add(
+    ValueListenableBuilder<int>(
+      valueListenable: IncomingSubtitleShareService.pendingCount,
+      builder: (context, count, _) {
+        if (count == 0 || defaultTargetPlatform != TargetPlatform.android) return const SizedBox.shrink();
+        return FocusableListTile(
+          leading: const AppIcon(Symbols.move_to_inbox_rounded),
+          title: Text('Import shared subtitle ($count)'),
+          onTap: () => _importSharedSubtitleFiles(context, player),
+        );
+      },
+    ),
+  );
 
   if (player.supportedLocalSubtitleExtensions.isNotEmpty) {
     actions.add(
@@ -715,6 +760,161 @@ Future<void> _attachSubtitleFile(BuildContext context, TrackControlsState state)
   } catch (error, stackTrace) {
     appLogger.w('Could not attach subtitle to media library', error: error, stackTrace: stackTrace);
     if (context.mounted) showErrorSnackBar(context, 'Could not attach subtitle to the server library.');
+  }
+}
+
+Future<void> _replayCurrentSubtitle(
+  BuildContext context,
+  Player player, {
+  bool secondary = false,
+}) async {
+  try {
+    final prefix = secondary ? 'secondary-sub' : 'sub';
+    final text = (await player.getProperty('$prefix-text'))?.trim() ?? '';
+    final start = double.tryParse(await player.getProperty('$prefix-start') ?? '');
+    final end = double.tryParse(await player.getProperty('$prefix-end') ?? '');
+    if (text.isEmpty || start == null || !start.isFinite || end == null || !end.isFinite || end <= start) {
+      if (context.mounted) showSnackBar(context, 'No active text subtitle cue is available to replay.');
+      return;
+    }
+    if (!player.state.seekable) {
+      if (context.mounted) showSnackBar(context, 'This player cannot seek to replay the subtitle.');
+      return;
+    }
+    final startMs = (start * 1000).round();
+    await player.seek(Duration(milliseconds: (startMs - 500).clamp(0, 1 << 31).toInt()));
+  } catch (error, stackTrace) {
+    appLogger.w('Could not replay the active subtitle cue', error: error, stackTrace: stackTrace);
+    if (context.mounted) showSnackBar(context, 'This player does not expose the active subtitle cue timing.');
+  }
+}
+
+Future<void> _stageDroppedSubtitleFiles(
+  BuildContext context,
+  Player player,
+  List<DropItemFile> files,
+) async {
+  final supported = player.supportedLocalSubtitleExtensions;
+  final candidates = files.where((file) {
+    final extension = p.extension(file.name).toLowerCase().replaceFirst('.', '');
+    return extension == 'zip' || supported.contains(extension);
+  }).take(12);
+  if (candidates.isEmpty) return;
+
+  final staged = <String>[];
+  final batchPrefix = DateTime.now().microsecondsSinceEpoch;
+  final directory = await getTemporaryDirectory();
+  final targetDirectory = Directory(p.join(directory.path, 'plezyng_subtitle_drop'));
+  await targetDirectory.create(recursive: true);
+  for (final file in candidates) {
+    final extension = p.extension(file.name).toLowerCase();
+    final maximumBytes = extension == '.zip' ? 50 * 1024 * 1024 : 32 * 1024 * 1024;
+    final bookmark = file.extraAppleBookmark;
+    var accessed = false;
+    try {
+      if (bookmark != null && bookmark.isNotEmpty) {
+        accessed = await DesktopDrop.instance.startAccessingSecurityScopedResource(bookmark: bookmark);
+        if (!accessed) continue;
+      }
+      final length = await file.length();
+      if (length <= 0 || length > maximumBytes) continue;
+      final name = p.basename(file.name).replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_');
+      final destination = p.join(
+        targetDirectory.path,
+        '${batchPrefix}_$name',
+      );
+      await file.saveTo(destination);
+      staged.add(destination);
+    } catch (error, stackTrace) {
+      appLogger.w('Could not stage dropped subtitle', error: error, stackTrace: stackTrace);
+    } finally {
+      if (accessed && bookmark != null) {
+        await DesktopDrop.instance.stopAccessingSecurityScopedResource(bookmark: bookmark);
+      }
+    }
+  }
+  await _importSubtitlePaths(context, player, staged);
+}
+
+Future<void> _importSharedSubtitleFiles(BuildContext context, Player player) async {
+  final paths = await IncomingSubtitleShareService.instance.takeAll();
+  await _importSubtitlePaths(context, player, paths);
+}
+
+Future<void> _importSubtitlePaths(BuildContext context, Player player, List<String> paths) async {
+  if (paths.isEmpty || !context.mounted) return;
+  final supported = player.supportedLocalSubtitleExtensions.toList()..sort();
+  final candidates = <({String path, String name})>[];
+  for (final path in paths) {
+    final name = p.basename(path);
+    final extension = p.extension(name).toLowerCase().replaceFirst('.', '');
+    if (extension == 'zip') {
+      final file = File(path);
+      final size = await file.length();
+      final extracted = await _selectArchivedSubtitle(
+        context,
+        PlatformFile(name: name, path: path, size: size),
+        supported,
+      );
+      if (extracted != null) candidates.add((path: extracted, name: name));
+    } else if (supported.contains(extension)) {
+      candidates.add((path: path, name: name));
+    }
+    if (!context.mounted) return;
+  }
+  final idxStems = candidates
+      .where((candidate) => p.extension(candidate.path).toLowerCase() == '.idx')
+      .map((candidate) => p.basenameWithoutExtension(candidate.path).toLowerCase())
+      .toSet();
+  final subStems = candidates
+      .where((candidate) => p.extension(candidate.path).toLowerCase() == '.sub')
+      .map((candidate) => p.basenameWithoutExtension(candidate.path).toLowerCase())
+      .toSet();
+  candidates.removeWhere((candidate) {
+    final extension = p.extension(candidate.path).toLowerCase();
+    final stem = p.basenameWithoutExtension(candidate.path).toLowerCase();
+    if (extension == '.idx') return !subStems.contains(stem);
+    return extension == '.sub' && idxStems.contains(stem);
+  });
+  if (candidates.isEmpty) {
+    showErrorSnackBar(context, 'No subtitle in the shared files is supported by this player.');
+    return;
+  }
+
+  final chosen = candidates.length == 1
+      ? candidates.single
+      : await showDialog<({String path, String name})>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Choose a subtitle'),
+            content: SizedBox(
+              width: 520,
+              height: 420,
+              child: ListView(
+                children: [
+                  for (final candidate in candidates)
+                    ListTile(
+                      title: Text(candidate.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      onTap: () => Navigator.of(dialogContext).pop(candidate),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(t.common.cancel),
+              ),
+            ],
+          ),
+        );
+  if (chosen == null || !context.mounted) return;
+  try {
+    await player.command(['sub-add', chosen.path, 'select']);
+    if (context.mounted) OverlaySheetController.of(context).close();
+  } catch (error, stackTrace) {
+    appLogger.w('Could not import shared subtitle', error: error, stackTrace: stackTrace);
+    if (context.mounted) showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
   }
 }
 

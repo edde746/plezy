@@ -107,6 +107,8 @@ dependencies:
   flutter_secure_storage_webos:
     path: packages/webos_plugins/flutter_secure_storage_webos
   file_picker: ^11.0.2
+  desktop_drop: 0.8.4
+  receive_sharing_intent: 1.8.1
   saf_util:
     # Vendored 3.1.0: fixes upstream's duplicate MethodChannel result.
     path: packages/saf_util

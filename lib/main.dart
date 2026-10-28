@@ -82,6 +82,7 @@ import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
+import 'services/incoming_subtitle_share_service.dart';
 import 'services/connectivity_probe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
@@ -157,6 +158,7 @@ void _registerTvosPlatformPlugins() {
 
 void main([List<String> args = const <String>[]]) {
   final binding = PlezyWidgetsBinding.ensureInitialized();
+  unawaited(IncomingSubtitleShareService.instance.start());
   for (final argument in args) {
     final normalized = argument.toLowerCase();
     if (normalized.startsWith('plezy://') || normalized.startsWith('plezxyng://')) {
