@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/iptv_copy.dart';
 import '../../media/media_backend.dart';
 import '../../media/media_browser_dialect.dart';
 import '../../theme/mono_tokens.dart';
@@ -13,6 +14,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'add_direct_plex_screen.dart';
 import 'add_jellyfin_screen.dart';
+import '../iptv/add_iptv_source_screen.dart';
 import 'add_plex_account_screen.dart';
 
 /// Picker shown when the user taps "Add connection".
@@ -72,6 +74,13 @@ class AddConnectionScreen extends StatelessWidget {
             : t.addServer.connectToMediaBrowserCardSubtitle,
         builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: embyDialect),
       ),
+      _BackendOption(
+        backend: null,
+        leadingIcon: Symbols.live_tv_rounded,
+        title: t.iptv.addSource,
+        subtitle: t.iptv.addSourceDescription,
+        builder: (_) => AddIptvSourceScreen(targetProfile: targetProfile),
+      ),
       if (scoped)
         _BackendOption(
           backend: null,
@@ -98,7 +107,7 @@ class AddConnectionScreen extends StatelessWidget {
                   borderRadius: groupItemRadii(context, i, options.length),
                   leading: options[i].backend != null
                       ? BackendBadge(backend: options[i].backend!, size: 28)
-                      : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
+                      : AppIcon(options[i].leadingIcon ?? Symbols.share_rounded, fill: 1, size: 28),
                   title: options[i].title,
                   subtitle: options[i].subtitle,
                   onTap: () async {
@@ -120,11 +129,18 @@ class AddConnectionScreen extends StatelessWidget {
 class _BackendOption {
   /// Null for the borrow option (renders a share icon instead of a badge).
   final MediaBackend? backend;
+  final IconData? leadingIcon;
   final String title;
   final String subtitle;
   final WidgetBuilder builder;
 
-  const _BackendOption({required this.backend, required this.title, required this.subtitle, required this.builder});
+  const _BackendOption({
+    required this.backend,
+    required this.title,
+    required this.subtitle,
+    required this.builder,
+    this.leadingIcon,
+  });
 }
 
 class _BackendCard extends StatelessWidget {

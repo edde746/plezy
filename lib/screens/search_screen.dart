@@ -14,6 +14,8 @@ import '../media/media_kind.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_person.dart';
 import '../media/search_hit.dart';
+import '../iptv/iptv_models.dart';
+import '../iptv/iptv_source_repository.dart';
 import '../integrations/integration_contracts.dart';
 import '../integrations/integration_identity_store.dart';
 import '../mixins/debounced_media_search.dart';
@@ -47,11 +49,14 @@ import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/search_input_field.dart';
+import '../widgets/optimized_media_image.dart';
+import '../focus/focusable_wrapper.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/person_search_row.dart';
 import '../widgets/seerr_request_sheet.dart';
 import 'libraries/state_messages.dart';
+import 'iptv/iptv_vod_screen.dart';
 import 'main_screen.dart';
 import 'sources/source_detail_screen.dart';
 import 'sources/source_widgets.dart';
@@ -81,6 +86,8 @@ class _SearchScreenState extends State<SearchScreen>
     List<MediaItem> seerr,
     List<MediaItem> catalogs,
     List<SourceEntry> files,
+    List<IptvVodItem> iptvVod,
+    String? iptvVodProfileId,
     bool partial,
     bool fileSearchFailed,
   })?
@@ -106,6 +113,8 @@ class _SearchScreenState extends State<SearchScreen>
   /// library hits in every view (never ranked into them) so a title that is
   /// not on the server can still be found, and requested, from Search.
   List<MediaItem> _seerrResults = const [];
+  List<IptvVodItem> _iptvVodResults = const [];
+  String? _iptvVodProfileId;
   List<MediaItem> _catalogResults = const [];
   final Map<String, _CatalogSearchCacheEntry> _catalogSearchCache = {};
   final Map<String, _CatalogSearchSourceHealth> _catalogSearchHealth = {};
@@ -114,6 +123,7 @@ class _SearchScreenState extends State<SearchScreen>
   String _catalogSourceSignature = '';
   late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
   late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
+  late final FocusNode _firstIptvVodFocusNode = FocusNode(debugLabel: 'SearchFirstIptvVodResult');
   final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
   final Map<CatalogSourceId, FocusNode> _catalogChipFocusNodes = {};
 
@@ -185,6 +195,7 @@ class _SearchScreenState extends State<SearchScreen>
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
+    _firstIptvVodFocusNode.dispose();
     for (final node in _kindChipFocusNodes.values) {
       node.dispose();
     }
@@ -255,17 +266,19 @@ class _SearchScreenState extends State<SearchScreen>
         return null;
       }
     }();
+    final iptvVodFuture = _searchIptvVod(query);
     try {
       final result = await serversFuture;
       final files = await filesFuture;
       final seerr = await seerrFuture;
+      final iptvVod = await iptvVodFuture;
       final catalogSearch = await catalogsFuture;
       final crosswalks = await crosswalksFuture;
       abort.throwIfAborted();
       if (!mounted) return const [];
       if (profileId != context.read<ActiveProfileProvider?>()?.activeId) return const [];
       final serverSucceeded = result?.succeededServerIds.isNotEmpty ?? false;
-      if (!serverSucceeded && !files.available && seerr == null && !catalogSearch.succeeded) {
+      if (!serverSucceeded && !files.available && seerr == null && !catalogSearch.succeeded && !iptvVod.available) {
         if (result != null && result.failedServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
           throw MediaServerHttpException(
             type: MediaServerHttpErrorType.cancelled,
@@ -290,6 +303,8 @@ class _SearchScreenState extends State<SearchScreen>
         seerr: seerr ?? const [],
         catalogs: catalogItems,
         files: files.entries,
+        iptvVod: iptvVod.items,
+        iptvVodProfileId: iptvVod.profileId,
         partial: partial,
         fileSearchFailed: files.failed,
       );
@@ -304,6 +319,19 @@ class _SearchScreenState extends State<SearchScreen>
       ];
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
+    }
+  }
+
+  Future<({List<IptvVodItem> items, String? profileId, bool available})> _searchIptvVod(String query) async {
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    if (profileId == null) return (items: const [], profileId: null, available: false);
+    try {
+      final repository = context.read<IptvSourceRepository>();
+      final sources = await repository.vodSources(profileId);
+      final items = await repository.searchVod(profileId, query);
+      return (items: items, profileId: profileId, available: sources.isNotEmpty);
+    } on Object {
+      return (items: const [], profileId: profileId, available: false);
     }
   }
 
@@ -573,12 +601,16 @@ class _SearchScreenState extends State<SearchScreen>
     _activeSearchAbort?.abort();
     _activeSearchAbort = null;
     _pendingSearchOutcome = null;
+    _iptvVodResults = const [];
+    _iptvVodProfileId = null;
   }
 
   @override
   void onSearchError(Object error) {
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
+    _iptvVodResults = const [];
+    _iptvVodProfileId = null;
     _resetFilter();
     final message = error is _SearchUnavailableException
         ? t.errors.searchUnavailable
@@ -632,6 +664,8 @@ class _SearchScreenState extends State<SearchScreen>
             if (hit case PersonSearchHit(:final person)) person,
         ];
     _sourceCandidates = matchedOutcome?.files ?? const [];
+    _iptvVodResults = matchedOutcome?.iptvVod ?? const [];
+    _iptvVodProfileId = matchedOutcome?.iptvVodProfileId;
     _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults, ..._catalogResults]);
     if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
     _filteredResults = _rankFilteredResults(_selectedFilter, query);
@@ -644,9 +678,11 @@ class _SearchScreenState extends State<SearchScreen>
 
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
-    if (results.isEmpty) return;
     if (searchController.text.trim() != query) return; // user kept editing
-    FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+    FocusUtils.requestFocusAfterBuild(
+      this,
+      results.isNotEmpty ? firstResultFocusNode : _firstIptvVodFocusNode,
+    );
   }
 
   /// OSK "Search" / hardware Enter on TV additionally focuses the results
@@ -883,6 +919,8 @@ class _SearchScreenState extends State<SearchScreen>
     _candidateKinds = const [];
     _filteredResults = null;
     _seerrResults = const [];
+    _iptvVodResults = const [];
+    _iptvVodProfileId = null;
     _catalogResults = const [];
     _catalogSearchCache.clear();
   }
@@ -1231,6 +1269,80 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  List<Widget> _buildIptvVodResults() {
+    final profileId = _iptvVodProfileId;
+    if (profileId == null || _iptvVodResults.isEmpty) return const [];
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, searchResults.isEmpty ? 12 : 20, 16, 8),
+          child: Row(
+            children: [
+              const AppIcon(Symbols.live_tv_rounded, size: 18),
+              const SizedBox(width: 8),
+              Text(t.iptv.iptvSearchResults, style: Theme.of(context).textTheme.titleSmall),
+            ],
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        sliver: SliverList.builder(
+          itemCount: _iptvVodResults.length,
+          itemBuilder: (context, index) {
+            final item = _iptvVodResults[index];
+            final itemKind = item.kind == IptvVodKind.movie ? t.iptv.movies : t.iptv.series;
+            final metadata = [itemKind, if (item.year != null) '${item.year}', 'IPTV'].join(' · ');
+            final onSelect = () => unawaited(
+              Navigator.of(context).push<void>(
+                MaterialPageRoute(builder: (_) => IptvVodDetailsScreen(profileId: profileId, item: item)),
+              ),
+            );
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: FocusableWrapper(
+                focusNode: index == 0 ? _firstIptvVodFocusNode : null,
+                semanticLabel: item.title,
+                onSelect: onSelect,
+                onNavigateLeft: _navigateToSidebar,
+                onNavigateUp: index == 0
+                    ? (searchResults.isNotEmpty
+                          ? () => firstResultFocusNode.requestFocus()
+                          : _showFilterChips
+                          ? _focusFilterChips
+                          : focusSearchInput)
+                    : null,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(tokens(context).radiusMd),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    canRequestFocus: false,
+                    onTap: onSelect,
+                    child: ListTile(
+                      leading: SizedBox(
+                        width: 44,
+                        height: 58,
+                        child: OptimizedMediaImage.poster(
+                          imagePath: item.posterUrl,
+                          width: 44,
+                          height: 58,
+                        ),
+                      ),
+                      title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(metadata, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: const AppIcon(Symbols.chevron_right_rounded),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1247,8 +1359,10 @@ class _SearchScreenState extends State<SearchScreen>
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
                 onNavigateLeft: _navigateToSidebar,
-                onNavigateDown: searchResults.isNotEmpty && !isSearching
-                    ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
+                onNavigateDown: (searchResults.isNotEmpty || _iptvVodResults.isNotEmpty) && !isSearching
+                    ? (searchResults.isNotEmpty
+                          ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
+                          : _firstIptvVodFocusNode.requestFocus)
                     : null,
                 onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
                 onBack: () {
@@ -1275,7 +1389,7 @@ class _SearchScreenState extends State<SearchScreen>
               SliverFillRemaining(
                 child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
               )
-            else if (searchResults.isEmpty)
+            else if (searchResults.isEmpty && _iptvVodResults.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,
@@ -1286,7 +1400,8 @@ class _SearchScreenState extends State<SearchScreen>
               )
             else ...[
               if (_showFilterChips) _buildFilterChips(),
-              _buildResultsList(context),
+              if (searchResults.isNotEmpty) _buildResultsList(context),
+              ..._buildIptvVodResults(),
             ],
           ],
         ),

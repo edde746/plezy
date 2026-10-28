@@ -1760,7 +1760,7 @@ class SourceStreamGateway {
   final _secret = SourceOAuthService.randomSecret();
   final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
   final Map<String, ContentLease> _leases = {};
-  final LinkedHashMap<String, Uri> _directUris = LinkedHashMap();
+  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, String cacheKey})> _directUris = LinkedHashMap();
   final Map<String, String> _directIdsByUri = {};
   var _directCounter = 0;
   final _abort = Completer<void>();
@@ -1783,7 +1783,7 @@ class SourceStreamGateway {
   /// capability. The native player sees only localhost; credentials and
   /// signed query strings stay in this in-memory proxy and are never logged by
   /// the player or written to the source database.
-  Future<Uri> registerUri(Uri uri) async {
+  Future<Uri> registerUri(Uri uri, {Map<String, String> headers = const {}}) async {
     if (!valid()) throw const SourceException(SourceFailure.cancelled);
     if (uri.hasFragment || uri.userInfo.isNotEmpty || !const {'http', 'https'}.contains(uri.scheme)) {
       throw const SourceException(SourceFailure.permission);
@@ -1791,15 +1791,17 @@ class SourceStreamGateway {
     SourceTransport(allowHttp: uri.scheme == 'http').validate(uri);
     await _ensureServer();
     final uriText = uri.toString();
-    final existing = _directIdsByUri[uriText];
+    final sortedHeaders = headers.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final cacheKey = '$uriText\u0000${jsonEncode(sortedHeaders.map((entry) => [entry.key, entry.value]).toList())}';
+    final existing = _directIdsByUri[cacheKey];
     if (existing != null) return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
     final id = sourceDigest('direct:$_secret:${_directCounter++}');
-    _directUris[id] = uri;
-    _directIdsByUri[uriText] = id;
+    _directUris[id] = (uri: uri, headers: Map.unmodifiable(Map.of(headers)), cacheKey: cacheKey);
+    _directIdsByUri[cacheKey] = id;
     while (_directUris.length > 4096) {
       final oldest = _directUris.keys.first;
       final removed = _directUris.remove(oldest);
-      if (removed != null) _directIdsByUri.remove(removed.toString());
+      if (removed != null) _directIdsByUri.remove(removed.cacheKey);
     }
     return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
   }
@@ -1819,12 +1821,12 @@ class SourceStreamGateway {
       }
       final ref = _files[segments[1]];
       if (ref == null) {
-        final uri = _directUris[segments[1]];
-        if (uri == null) {
+        final direct = _directUris[segments[1]];
+        if (direct == null) {
           request.response.statusCode = 404;
           return;
         }
-        await _serveDirect(request, uri);
+        await _serveDirect(request, direct.uri, headers: direct.headers);
         return;
       }
       final range = request.headers.value(HttpHeaders.rangeHeader);
@@ -1931,7 +1933,7 @@ class SourceStreamGateway {
     }
   }
 
-  Future<String> _registerManifestUri(Uri base, String value) async {
+  Future<String> _registerManifestUri(Uri base, String value, {Map<String, String> headers = const {}}) async {
     final raw = value.trim();
     final uri = base.resolve(raw);
     final scheme = uri.scheme.toLowerCase();
@@ -1942,11 +1944,11 @@ class SourceStreamGateway {
     if (!const {'http', 'https'}.contains(scheme) || (base.scheme == 'https' && scheme != 'https')) {
       throw const SourceException(SourceFailure.permission);
     }
-    final local = await registerUri(uri);
+    final local = await registerUri(uri, headers: sameSourceOrigin(base, uri) ? headers : const {});
     return local.toString();
   }
 
-  Future<String> _rewriteHlsManifest(String value, Uri base) async {
+  Future<String> _rewriteHlsManifest(String value, Uri base, {Map<String, String> headers = const {}}) async {
     final lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     var rewrittenUris = 0;
     final attributeUri = RegExp(r'URI="([^"]+)"');
@@ -1954,12 +1956,12 @@ class SourceStreamGateway {
       var line = lines[index];
       if (line.trim().isEmpty) continue;
       if (!line.startsWith('#')) {
-        line = await _registerManifestUri(base, line);
+        line = await _registerManifestUri(base, line, headers: headers);
         rewrittenUris++;
       } else {
         final matches = attributeUri.allMatches(line).toList();
         for (final match in matches.reversed) {
-          final local = await _registerManifestUri(base, match.group(1)!);
+          final local = await _registerManifestUri(base, match.group(1)!, headers: headers);
           line = line.replaceRange(match.start, match.end, 'URI="$local"');
           rewrittenUris++;
         }
@@ -1970,7 +1972,7 @@ class SourceStreamGateway {
     return lines.join('\n');
   }
 
-  Future<void> _serveDirect(HttpRequest request, Uri uri) async {
+  Future<void> _serveDirect(HttpRequest request, Uri uri, {Map<String, String> headers = const {}}) async {
     final range = request.headers.value(HttpHeaders.rangeHeader);
     if (range != null && !RegExp(r'^bytes=(\d+-\d*|-\d+)$').hasMatch(range)) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
@@ -1981,7 +1983,7 @@ class SourceStreamGateway {
       final upstream = await transport.send(
         request.method,
         uri,
-        headers: {HttpHeaders.rangeHeader: ?range},
+        headers: {...headers, HttpHeaders.rangeHeader: ?range},
         redirects: true,
         abort: _abort.future,
       );
@@ -2023,7 +2025,8 @@ class SourceStreamGateway {
       }
       final manifest = utf8.decode(bytes, allowMalformed: true);
       final manifestBase = upstream.request?.url ?? uri;
-      final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase));
+      final manifestHeaders = sameSourceOrigin(uri, manifestBase) ? headers : const <String, String>{};
+      final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase, headers: manifestHeaders));
       request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
       await request.response.addStream(Stream<List<int>>.value(rewritten));
     } finally {
