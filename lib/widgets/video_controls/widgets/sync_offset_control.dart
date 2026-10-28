@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -199,6 +200,103 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     _longPressTimer = null;
   }
 
+  String get _syncTitle => widget.propertyName == PlayerSyncOffsets.subtitleProperty
+      ? t.videoSettings.subtitleSync
+      : t.videoSettings.audioSync;
+
+  Future<void> _editExactOffset() async {
+    final formKey = GlobalKey<FormState>();
+    final controller = TextEditingController(text: _currentOffset.round().toString());
+    final offset = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        void submit() {
+          if (!(formKey.currentState?.validate() ?? false)) return;
+          Navigator.of(dialogContext).pop(int.parse(controller.text.trim()));
+        }
+
+        return AlertDialog(
+          title: Text(_syncTitle),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(signed: true),
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: _syncTitle,
+                hintText: formatSyncOffset(_currentOffset),
+                helperText: t.validationErrorDuration(
+                  min: ScopedPlayerPrefs.minimumSyncOffsetMs,
+                  max: ScopedPlayerPrefs.maximumSyncOffsetMs,
+                  unit: 'ms',
+                ),
+                suffixText: 'ms',
+              ),
+              validator: (value) {
+                final parsed = int.tryParse(value?.trim() ?? '');
+                if (parsed == null) return t.validationErrorEnterNumber;
+                if (parsed < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+                    parsed > ScopedPlayerPrefs.maximumSyncOffsetMs) {
+                  return t.validationErrorDuration(
+                    min: ScopedPlayerPrefs.minimumSyncOffsetMs,
+                    max: ScopedPlayerPrefs.maximumSyncOffsetMs,
+                    unit: 'ms',
+                  );
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => submit(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(t.common.cancel),
+            ),
+            TextButton(onPressed: submit, child: Text(t.common.save)),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (!mounted || offset == null) return;
+    setState(() => _currentOffset = offset.toDouble());
+    _applyOffset(offset.toDouble());
+  }
+
+  Widget _buildExactOffsetButton() {
+    return FocusableWrapper(
+      onSelect: _editExactOffset,
+      borderRadius: 8,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      child: Semantics(
+        button: true,
+        label: _syncTitle,
+        value: formatSyncOffset(_currentOffset),
+        child: GestureDetector(
+          onTap: _editExactOffset,
+          child: Container(
+            width: 80,
+            height: 36,
+            alignment: Alignment.center,
+            child: Text(
+              formatSyncOffset(_currentOffset),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: .bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStepButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -263,14 +361,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             onLongPressStart: _startLongPressIncrement,
           ),
           const SizedBox(width: 12),
-          SizedBox(
-            width: 80,
-            child: Text(
-              formatSyncOffset(_currentOffset),
-              style: const TextStyle(fontSize: 16, fontWeight: .bold),
-              textAlign: TextAlign.center,
-            ),
-          ),
+          _buildExactOffsetButton(),
           const SizedBox(width: 8),
           FocusableWrapper(
             focusNode: widget.resetFocusNode,
