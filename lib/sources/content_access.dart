@@ -227,8 +227,9 @@ Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descr
         ? '/v1.0/me/drive/items/$encodedFileId'
         : '/v1.0/drives/$encodedDriveId/items/$encodedFileId';
     final metadata = await _renewalJson(
-      Uri.parse('https://graph.microsoft.com$path')
-          .replace(queryParameters: const {'\$select': 'id,size,eTag,cTag,@microsoft.graph.downloadUrl'}),
+      Uri.parse(
+        'https://graph.microsoft.com$path',
+      ).replace(queryParameters: const {'\$select': 'id,size,eTag,cTag,@microsoft.graph.downloadUrl'}),
       method: 'GET',
       headers: {'Authorization': 'Bearer $accessToken'},
     );
