@@ -44,6 +44,7 @@ class ConnectorBrandMark extends StatelessWidget {
     'rakuten-tv': 'rakuten',
     'kobo': 'rakutenkobo',
     'kobo-audiobooks': 'rakutenkobo',
+    'kobo-comics': 'rakutenkobo',
     'indigo': 'indigo',
     'google-play-books': 'googleplay',
     'apple-books': 'apple',
@@ -82,6 +83,13 @@ class ConnectorBrandMark extends StatelessWidget {
     'dropbox': 'dropbox',
   };
 
+  String? get _resolvedIconName {
+    final explicit = _iconNames[providerId];
+    if (explicit != null) return explicit;
+    final exactSlug = providerId.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return SimpleIcons.values.containsKey(exactSlug) ? exactSlug : null;
+  }
+
   String get _monogram {
     final words = name.trim().split(RegExp(r'[^A-Za-z0-9]+')).where((part) => part.isNotEmpty).toList();
     if (words.isEmpty) return '?';
@@ -91,7 +99,7 @@ class ConnectorBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconName = _iconNames[providerId];
+    final iconName = _resolvedIconName;
     final icon = iconName == null ? null : SimpleIcons.values[iconName];
     if (icon == null) {
       final scheme = Theme.of(context).colorScheme;
