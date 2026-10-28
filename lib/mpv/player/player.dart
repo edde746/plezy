@@ -152,6 +152,9 @@ abstract class Player {
   /// not advertise a format unless they can parse and select it at runtime.
   Set<String> get supportedLocalSubtitleExtensions;
 
+  /// Whether the backend can apply in-player subtitle appearance changes.
+  bool get supportsSubtitleStyleControls;
+
   /// Whether the backend detects container fps from rendered frame
   /// timestamps, so `container-fps` only becomes available a few frames
   /// after playback starts (retry the property read instead of giving up).

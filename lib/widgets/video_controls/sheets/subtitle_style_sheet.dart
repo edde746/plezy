@@ -10,9 +10,10 @@ import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/app_logger.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../../../widgets/setting_tile.dart';
 import 'base_video_control_sheet.dart';
 
-/// Compact subtitle size/position controls available without leaving playback.
+/// Subtitle appearance controls available without leaving playback.
 class InPlayerSubtitleStyleSheet extends StatefulWidget {
   const InPlayerSubtitleStyleSheet({super.key, required this.player});
 
@@ -43,25 +44,67 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
     });
   }
 
+  String _safeColor(String value, String fallback) =>
+      RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(value) ? value : fallback;
+
+  Future<void> _setMpvProperty(String name, String value) async {
+    try {
+      await widget.player.setProperty(name, value);
+    } catch (error, stackTrace) {
+      appLogger.w('Could not apply subtitle style property $name', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _apply() async {
     final settings = await SettingsService.getInstance();
     try {
       if (widget.player.playerType == 'exoplayer') {
         await widget.player.setSubtitleStyle(
           fontSize: _fontSize.toDouble(),
-          textColor: settings.read(SettingsService.subtitleTextColor),
+          textColor: _safeColor(
+            settings.read(SettingsService.subtitleTextColor),
+            SettingsService.subtitleTextColor.defaultValue,
+          ),
           borderSize: settings.read(SettingsService.subtitleBorderSize).toDouble(),
-          borderColor: settings.read(SettingsService.subtitleBorderColor),
-          bgColor: settings.read(SettingsService.subtitleBackgroundColor),
-          bgOpacity: settings.read(SettingsService.subtitleBackgroundOpacity),
+          borderColor: _safeColor(
+            settings.read(SettingsService.subtitleBorderColor),
+            SettingsService.subtitleBorderColor.defaultValue,
+          ),
+          bgColor: _safeColor(
+            settings.read(SettingsService.subtitleBackgroundColor),
+            SettingsService.subtitleBackgroundColor.defaultValue,
+          ),
+          bgOpacity: settings.read(SettingsService.subtitleBackgroundOpacity).clamp(0, 100).toInt(),
           subtitlePosition: _position,
           bold: settings.read(SettingsService.subtitleBold),
           italic: settings.read(SettingsService.subtitleItalic),
           anchorToScreen: settings.read(SettingsService.subtitleAnchorToScreen),
         );
       } else {
-        await widget.player.setProperty('sub-font-size', formatDecimal(_fontSize, maximumDecimals: 0));
-        await widget.player.setProperty('sub-pos', '$_position');
+        final textColor = _safeColor(
+          settings.read(SettingsService.subtitleTextColor),
+          SettingsService.subtitleTextColor.defaultValue,
+        );
+        final borderColor = _safeColor(
+          settings.read(SettingsService.subtitleBorderColor),
+          SettingsService.subtitleBorderColor.defaultValue,
+        );
+        final backgroundColor = _safeColor(
+          settings.read(SettingsService.subtitleBackgroundColor),
+          SettingsService.subtitleBackgroundColor.defaultValue,
+        );
+        final backgroundOpacity = settings.read(SettingsService.subtitleBackgroundOpacity).clamp(0, 100).toInt();
+        final alpha = (backgroundOpacity * 255 / 100).round().toRadixString(16).padLeft(2, '0').toUpperCase();
+
+        await _setMpvProperty('sub-font-size', formatDecimal(_fontSize, maximumDecimals: 0));
+        await _setMpvProperty('sub-pos', '$_position');
+        await _setMpvProperty('sub-color', textColor);
+        await _setMpvProperty('sub-bold', settings.read(SettingsService.subtitleBold) ? 'yes' : 'no');
+        await _setMpvProperty('sub-italic', settings.read(SettingsService.subtitleItalic) ? 'yes' : 'no');
+        await _setMpvProperty('sub-border-size', settings.read(SettingsService.subtitleBorderSize).toString());
+        await _setMpvProperty('sub-border-color', borderColor);
+        await _setMpvProperty('sub-back-color', '#' + alpha + backgroundColor.substring(1));
+        await _setMpvProperty('sub-border-style', backgroundOpacity > 0 ? 'background-box' : 'outline-and-shadow');
       }
     } catch (error, stackTrace) {
       appLogger.w('Could not update subtitle style during playback', error: error, stackTrace: stackTrace);
@@ -82,7 +125,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
       onBack: OverlaySheetController.of(context).pop,
       child: !_loaded
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -114,6 +157,62 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                       unawaited(_apply());
                     },
                     onChangeEnd: (_) => unawaited(_save()),
+                  ),
+                  const Divider(height: 28),
+                  SettingColorTile(
+                    pref: SettingsService.subtitleTextColor,
+                    icon: Symbols.format_color_text_rounded,
+                    title: t.subtitlingStyling.textColor,
+                    description: t.subtitlingStyling.textColorDescription,
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingSwitchTile(
+                    pref: SettingsService.subtitleBold,
+                    icon: Symbols.format_bold_rounded,
+                    title: t.subtitlingStyling.bold,
+                    subtitle: t.subtitlingStyling.boldDescription,
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingSwitchTile(
+                    pref: SettingsService.subtitleItalic,
+                    icon: Symbols.format_italic_rounded,
+                    title: t.subtitlingStyling.italic,
+                    subtitle: t.subtitlingStyling.italicDescription,
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingNumberTile(
+                    pref: SettingsService.subtitleBorderSize,
+                    icon: Symbols.border_style_rounded,
+                    title: t.subtitlingStyling.borderSize,
+                    description: t.subtitlingStyling.borderSizeDescription,
+                    subtitleBuilder: (value) => formatDecimal(value, maximumDecimals: 0),
+                    labelText: t.subtitlingStyling.borderSize,
+                    suffixText: '',
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingColorTile(
+                    pref: SettingsService.subtitleBorderColor,
+                    icon: Symbols.border_color_rounded,
+                    title: t.subtitlingStyling.borderColor,
+                    description: t.subtitlingStyling.borderColorDescription,
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingNumberTile(
+                    pref: SettingsService.subtitleBackgroundOpacity,
+                    icon: Symbols.opacity_rounded,
+                    title: t.subtitlingStyling.backgroundOpacity,
+                    description: t.subtitlingStyling.backgroundOpacityDescription,
+                    subtitleBuilder: (value) => formatPercent(value / 100),
+                    labelText: t.subtitlingStyling.backgroundOpacity,
+                    suffixText: '%',
+                    onAfterWrite: (_) => _apply(),
+                  ),
+                  SettingColorTile(
+                    pref: SettingsService.subtitleBackgroundColor,
+                    icon: Symbols.format_color_fill_rounded,
+                    title: t.subtitlingStyling.backgroundColor,
+                    description: t.subtitlingStyling.backgroundColorDescription,
+                    onAfterWrite: (_) => _apply(),
                   ),
                 ],
               ),

@@ -74,6 +74,9 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
   bool get supportsSecondarySubtitles => false;
 
   @override
+  bool get supportsSubtitleStyleControls => true;
+
+  @override
   Set<String> get supportedLocalSubtitleExtensions =>
       _isLive ? const <String>{} : const {'srt', 'ass', 'ssa', 'vtt'};
 

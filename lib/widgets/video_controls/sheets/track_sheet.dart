@@ -530,13 +530,15 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
     );
   }
 
-  actions.add(
-    FocusableListTile(
-      leading: const AppIcon(Symbols.format_size_rounded),
-      title: Text(t.screens.subtitleStyling),
-      onTap: () => OverlaySheetController.of(context).push(builder: (_) => InPlayerSubtitleStyleSheet(player: player)),
-    ),
-  );
+  if (player.supportsSubtitleStyleControls) {
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.format_size_rounded),
+        title: Text(t.screens.subtitleStyling),
+        onTap: () => OverlaySheetController.of(context).push(builder: (_) => InPlayerSubtitleStyleSheet(player: player)),
+      ),
+    );
+  }
 
   if (actions.isEmpty) return const [];
   return [Divider(height: 1, color: Theme.of(context).dividerColor), ...actions];
