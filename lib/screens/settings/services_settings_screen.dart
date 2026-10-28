@@ -402,6 +402,7 @@ class _ConnectorCategoryCard extends StatelessWidget {
                           providerId: destination.id,
                           name: destination.name,
                           size: 24,
+                          logoDomain: destination.host,
                         ),
                         const SizedBox(width: 6),
                       ],

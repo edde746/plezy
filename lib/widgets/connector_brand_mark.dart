@@ -5,19 +5,51 @@ import 'package:simple_icons/simple_icons.dart';
 /// Brand marks used for official provider hand-offs and connection actions.
 ///
 /// The icon glyphs come from Simple Icons and are kept in their published
-/// shapes and brand colors. When that library has no mark for a provider, the
-/// widget uses a neutral name monogram; it never substitutes another brand.
+/// shapes and brand colors. When neither a bundled asset nor Simple Icons has
+/// the provider's mark, the widget can hotlink its official-domain logo from
+/// Brandfetch when the build has been configured with a public client ID.
 class ConnectorBrandMark extends StatelessWidget {
   const ConnectorBrandMark({
     super.key,
     required this.providerId,
     required this.name,
     this.size = 24,
+    this.logoDomain,
   });
 
   final String providerId;
   final String name;
   final double size;
+
+  /// Curated official domain for directory entries whose provider ID is not
+  /// itself a domain. Caller supplied values are validated before use.
+  final String? logoDomain;
+
+  /// Brandfetch documents this as a public client ID for its Logo API.
+  static const String _brandfetchClientId = String.fromEnvironment('BRANDFETCH_CLIENT_ID');
+
+  /// Some providers explicitly reserve reproduction rights in their terms.
+  /// Their domains require a separate build-time approval after an agreement.
+  static const String _brandfetchApprovedDomains = String.fromEnvironment('BRANDFETCH_APPROVED_DOMAINS');
+  static const Set<String> _explicitApprovalDomains = {'alldebrid.com', 'torbox.app'};
+
+  /// Official domains for connection-only providers without a directory host.
+  static const Map<String, String> _logoDomains = {
+    'hardcover': 'hardcover.app',
+    'real-debrid': 'real-debrid.com',
+    'all-debrid': 'alldebrid.com',
+    'premiumize': 'premiumize.me',
+    'torbox': 'torbox.app',
+    'stremio': 'stremio.com',
+    'plex': 'plex.tv',
+    'plex-streaming': 'plex.tv',
+    'jellyfin': 'jellyfin.org',
+    'emby': 'emby.media',
+    'seerr': 'seerr.dev',
+    'komga': 'komga.org',
+    'audiobookshelf': 'audiobookshelf.org',
+    'discord': 'discord.com',
+  };
 
   /// Provider IDs map to the corresponding Simple Icons slug. This is the
   /// shared mapping for title hand-offs, Watchmode results, and commerce links.
@@ -111,6 +143,72 @@ class ConnectorBrandMark extends StatelessWidget {
     return (words.first.substring(0, 1) + words[1].substring(0, 1)).toUpperCase();
   }
 
+  String? get _brandfetchUrl {
+    if (_brandfetchClientId.trim().isEmpty) return null;
+    final domain = _normalizeDomain(logoDomain ?? _logoDomains[providerId]);
+    if (domain == null) return null;
+
+    final requiresApproval = _explicitApprovalDomains.any(
+      (protectedDomain) => domain == protectedDomain || domain.endsWith('.$protectedDomain'),
+    );
+    final approvedDomains = _brandfetchApprovedDomains
+        .split(',')
+        .map((entry) => entry.trim().toLowerCase())
+        .where((entry) => entry.isNotEmpty)
+        .toSet();
+    if (requiresApproval && !approvedDomains.contains(domain)) return null;
+
+    return Uri.https('cdn.brandfetch.io', '/domain/$domain', {'c': _brandfetchClientId.trim()}).toString();
+  }
+
+  static String? _normalizeDomain(String? value) {
+    if (value == null) return null;
+    var domain = value.trim().toLowerCase();
+    domain = domain.replaceFirst(RegExp(r'^https?://'), '').split('/').first;
+    if (!RegExp(r'^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$').hasMatch(domain)) {
+      return null;
+    }
+    return domain;
+  }
+
+  Widget _monogramMark(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(size * .24),
+      ),
+      child: Text(
+        _monogram,
+        maxLines: 1,
+        style: TextStyle(
+          color: scheme.onSurfaceVariant,
+          fontSize: size * .36,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _brandfetchMark(BuildContext context, String url) {
+    final placeholder = _monogramMark(context);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.network(
+        url,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        loadingBuilder: (context, child, progress) => progress == null ? child : placeholder,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final assetName = _assetNames[providerId];
@@ -138,8 +236,9 @@ class ConnectorBrandMark extends StatelessWidget {
 
     final iconName = _resolvedIconName;
     final icon = iconName == null ? null : SimpleIcons.values[iconName];
-    if (icon == null) {
-      final scheme = Theme.of(context).colorScheme;
+    if (icon != null) {
+      final brandColor = SimpleIconColors.values[iconName] ?? Theme.of(context).colorScheme.onSurface;
+      final needsLightSurface = brandColor.computeLuminance() < .16;
       return Semantics(
         label: name,
         image: true,
@@ -148,38 +247,19 @@ class ConnectorBrandMark extends StatelessWidget {
           height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: needsLightSurface ? const Color(0xfff4f4f4) : Colors.transparent,
             borderRadius: BorderRadius.circular(size * .24),
           ),
-          child: Text(
-            _monogram,
-            maxLines: 1,
-            style: TextStyle(
-              color: scheme.onSurfaceVariant,
-              fontSize: size * .36,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -.4,
-            ),
-          ),
+          child: Icon(icon, size: size * .74, color: brandColor),
         ),
       );
     }
 
-    final brandColor = SimpleIconColors.values[iconName] ?? Theme.of(context).colorScheme.onSurface;
-    final needsLightSurface = brandColor.computeLuminance() < .16;
+    final brandfetchUrl = _brandfetchUrl;
     return Semantics(
       label: name,
       image: true,
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: needsLightSurface ? const Color(0xfff4f4f4) : Colors.transparent,
-          borderRadius: BorderRadius.circular(size * .24),
-        ),
-        child: Icon(icon, size: size * .74, color: brandColor),
-      ),
+      child: brandfetchUrl == null ? _monogramMark(context) : _brandfetchMark(context, brandfetchUrl),
     );
   }
 }

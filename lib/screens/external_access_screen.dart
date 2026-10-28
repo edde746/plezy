@@ -359,6 +359,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                 leading: ConnectorBrandMark(
                   providerId: _watchmodeDestination(source)?.id ?? '',
                   name: source.name,
+                  logoDomain: _watchmodeDestination(source)?.host,
                 ),
                 title: Text(source.name),
                 subtitle: Text(
@@ -658,7 +659,11 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                       children: [
                         for (final destination in destinationsByCategory[category]!)
                           FocusableListTile(
-                            leading: ConnectorBrandMark(providerId: destination.id, name: destination.name),
+                            leading: ConnectorBrandMark(
+                              providerId: destination.id,
+                              name: destination.name,
+                              logoDomain: destination.host,
+                            ),
                             title: Text(destination.name),
                             subtitle: Text(
                               [

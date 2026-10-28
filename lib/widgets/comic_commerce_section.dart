@@ -183,7 +183,12 @@ class _ComicCommerceSectionState extends State<ComicCommerceSection> {
     onPressed: _opening ? null : () => unawaited(_open(destination)),
     child: OutlinedButton.icon(
       onPressed: _opening ? null : () => unawaited(_open(destination)),
-      icon: ConnectorBrandMark(providerId: destination.id, name: destination.name, size: 20),
+      icon: ConnectorBrandMark(
+        providerId: destination.id,
+        name: destination.name,
+        size: 20,
+        logoDomain: destination.host,
+      ),
       label: Text(t.explore.detail.openOn(site: destination.name)),
     ),
   );
