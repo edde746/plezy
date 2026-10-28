@@ -2607,6 +2607,8 @@ class _Translations$hotkeys$actions$bg extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Нулирай мащаба';
 	@override String get subSeekNext => 'Отиди до следващ субтитър';
 	@override String get subSeekPrev => 'Отиди до предишен субтитър';
+	@override String get subtitleDelayIncrease => 'Измести субтитрите по-късно';
+	@override String get subtitleDelayDecrease => 'Измести субтитрите по-рано';
 	@override String get shaderToggle => 'Превключи шейдъри';
 	@override String get skipMarker => 'Прескочи интро/финални надписи';
 	@override String get screenshot => 'Направи екранна снимка';
@@ -3960,6 +3962,8 @@ extension on TranslationsBg {
 			'hotkeys.actions.zoomReset' => 'Нулирай мащаба',
 			'hotkeys.actions.subSeekNext' => 'Отиди до следващ субтитър',
 			'hotkeys.actions.subSeekPrev' => 'Отиди до предишен субтитър',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Измести субтитрите по-късно',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Измести субтитрите по-рано',
 			'hotkeys.actions.shaderToggle' => 'Превключи шейдъри',
 			'hotkeys.actions.skipMarker' => 'Прескочи интро/финални надписи',
 			'hotkeys.actions.screenshot' => 'Направи екранна снимка',
@@ -4418,10 +4422,10 @@ extension on TranslationsBg {
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
 			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
-			'connections.addConnection' => 'Добави връзка',
-			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Добави връзка',
+			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сесиите за ${count} сървъра са изтекли',
@@ -4932,10 +4936,10 @@ extension on TranslationsBg {
 			'liveTv.recordSettings.keepUpTo' => 'Епизоди за запазване',
 			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
 			'liveTv.failedToStartChannel' => 'Каналът на живо не можа да бъде пуснат',
 			'liveTv.failedToBuildStreamUrl' => 'URL за потока не можа да бъде създаден',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Каналът не можа да бъде стартиран: ${reason}',
@@ -5446,10 +5450,10 @@ extension on TranslationsBg {
 			'performanceOverlay.decoderSoftware' => 'Софтуерен',
 			'performanceOverlay.decoderHardware' => 'Хардуерен',
 			'performanceOverlay.tunnelingActive' => 'Активно',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
-			'externalPlayer.title' => 'Външен плеър',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
+			'externalPlayer.title' => 'Външен плеър',
 			'externalPlayer.useExternalPlayer' => 'Използвай външен плеър',
 			'externalPlayer.useExternalPlayerDescription' => 'Отваряй видеата в друго приложение',
 			'externalPlayer.selectPlayer' => 'Избери плейър',

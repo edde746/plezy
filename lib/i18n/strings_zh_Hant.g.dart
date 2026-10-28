@@ -2598,6 +2598,8 @@ class _Translations$hotkeys$actions$zh_Hant extends Translations$hotkeys$actions
 	@override String get zoomReset => '重設縮放';
 	@override String get subSeekNext => '跳轉至下一句字幕';
 	@override String get subSeekPrev => '跳轉至上一句字幕';
+	@override String get subtitleDelayIncrease => '延遲字幕';
+	@override String get subtitleDelayDecrease => '提前字幕';
 	@override String get shaderToggle => '切換著色器';
 	@override String get skipMarker => '跳過片頭/片尾';
 	@override String get screenshot => '螢幕截圖';
@@ -3949,6 +3951,8 @@ extension on TranslationsZhHant {
 			'hotkeys.actions.zoomReset' => '重設縮放',
 			'hotkeys.actions.subSeekNext' => '跳轉至下一句字幕',
 			'hotkeys.actions.subSeekPrev' => '跳轉至上一句字幕',
+			'hotkeys.actions.subtitleDelayIncrease' => '延遲字幕',
+			'hotkeys.actions.subtitleDelayDecrease' => '提前字幕',
 			'hotkeys.actions.shaderToggle' => '切換著色器',
 			'hotkeys.actions.skipMarker' => '跳過片頭/片尾',
 			'hotkeys.actions.screenshot' => '螢幕截圖',
@@ -4407,10 +4411,10 @@ extension on TranslationsZhHant {
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
-			'connections.addConnection' => '新增連線',
-			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '新增連線',
+			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
@@ -4921,10 +4925,10 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
 			'liveTv.failedToBuildStreamUrl' => '無法建立串流 URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '無法開始播放此頻道：${reason}',
@@ -5435,10 +5439,10 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderSoftware' => '軟體',
 			'performanceOverlay.decoderHardware' => '硬體',
 			'performanceOverlay.tunnelingActive' => '已啟用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
-			'externalPlayer.title' => '外部播放器',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
+			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他應用程式中開啟影片',
 			'externalPlayer.selectPlayer' => '選擇播放器',

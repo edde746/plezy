@@ -2607,6 +2607,8 @@ class _Translations$hotkeys$actions$hu extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Nagyítás alaphelyzetbe állítása';
 	@override String get subSeekNext => 'Ugrás a következő feliratra';
 	@override String get subSeekPrev => 'Ugrás az előző feliratra';
+	@override String get subtitleDelayIncrease => 'Feliratok késleltetése';
+	@override String get subtitleDelayDecrease => 'Feliratok előrehozása';
 	@override String get shaderToggle => 'Shaderek be- és kikapcsolása';
 	@override String get skipMarker => 'Intró/stáblista átugrása';
 	@override String get screenshot => 'Képernyőkép készítése';
@@ -3960,6 +3962,8 @@ extension on TranslationsHu {
 			'hotkeys.actions.zoomReset' => 'Nagyítás alaphelyzetbe állítása',
 			'hotkeys.actions.subSeekNext' => 'Ugrás a következő feliratra',
 			'hotkeys.actions.subSeekPrev' => 'Ugrás az előző feliratra',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Feliratok késleltetése',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Feliratok előrehozása',
 			'hotkeys.actions.shaderToggle' => 'Shaderek be- és kikapcsolása',
 			'hotkeys.actions.skipMarker' => 'Intró/stáblista átugrása',
 			'hotkeys.actions.screenshot' => 'Képernyőkép készítése',
@@ -4418,10 +4422,10 @@ extension on TranslationsHu {
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
-			'connections.addConnection' => 'Kapcsolat hozzáadása',
-			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Kapcsolat hozzáadása',
+			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
@@ -4932,10 +4936,10 @@ extension on TranslationsHu {
 			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
 			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			'liveTv.failedToStartChannel' => 'Nem sikerült elindítani az élő csatornát',
 			'liveTv.failedToBuildStreamUrl' => 'Nem sikerült összeállítani a stream URL-címét',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nem sikerült elindítani a csatornát: ${reason}',
@@ -5446,10 +5450,10 @@ extension on TranslationsHu {
 			'performanceOverlay.decoderSoftware' => 'Szoftveres',
 			'performanceOverlay.decoderHardware' => 'Hardveres',
 			'performanceOverlay.tunnelingActive' => 'Aktív',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
-			'externalPlayer.title' => 'Külső lejátszó',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
+			'externalPlayer.title' => 'Külső lejátszó',
 			'externalPlayer.useExternalPlayer' => 'Külső lejátszó használata',
 			'externalPlayer.useExternalPlayerDescription' => 'Videók megnyitása egy másik alkalmazásban',
 			'externalPlayer.selectPlayer' => 'Lejátszó kiválasztása',

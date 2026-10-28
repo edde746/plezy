@@ -68,6 +68,8 @@ enum ShortcutAction {
     HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
     requiresPlayback: true,
   ),
+  subtitleDelayIncrease('subtitle_delay_increase', HotKey(key: PhysicalKeyboardKey.keyX), repeatable: true),
+  subtitleDelayDecrease('subtitle_delay_decrease', HotKey(key: PhysicalKeyboardKey.keyZ), repeatable: true),
   shaderToggle('shader_toggle', HotKey(key: PhysicalKeyboardKey.keyG), requiresShaderSupport: true),
   skipMarker('skip_marker', HotKey(key: PhysicalKeyboardKey.enter), requiresPlayback: true),
   screenshot('screenshot', HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]));
@@ -133,6 +135,8 @@ enum ShortcutAction {
     ShortcutAction.zoomReset => t.hotkeys.actions.zoomReset,
     ShortcutAction.subSeekNext => t.hotkeys.actions.subSeekNext,
     ShortcutAction.subSeekPrev => t.hotkeys.actions.subSeekPrev,
+    ShortcutAction.subtitleDelayIncrease => t.hotkeys.actions.subtitleDelayIncrease,
+    ShortcutAction.subtitleDelayDecrease => t.hotkeys.actions.subtitleDelayDecrease,
     ShortcutAction.shaderToggle => t.hotkeys.actions.shaderToggle,
     ShortcutAction.skipMarker => t.hotkeys.actions.skipMarker,
     ShortcutAction.screenshot => t.hotkeys.actions.screenshot,

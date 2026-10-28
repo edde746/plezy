@@ -597,6 +597,8 @@
       "zoomReset": "ズームをリセット",
       "subSeekNext": "次の字幕にシーク",
       "subSeekPrev": "前の字幕にシーク",
+      "subtitleDelayIncrease": "字幕を遅らせる",
+      "subtitleDelayDecrease": "字幕を早める",
       "shaderToggle": "シェーダー切替",
       "skipMarker": "イントロ/クレジットをスキップ",
       "screenshot": "スクリーンショットを撮る"

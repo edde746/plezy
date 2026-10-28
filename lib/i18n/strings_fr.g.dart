@@ -2607,6 +2607,8 @@ class _Translations$hotkeys$actions$fr extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Réinitialiser le zoom';
 	@override String get subSeekNext => 'Rechercher le sous-titre suivant';
 	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
+	@override String get subtitleDelayIncrease => 'Retarder les sous-titres';
+	@override String get subtitleDelayDecrease => 'Avancer les sous-titres';
 	@override String get shaderToggle => 'Activer/désactiver les shaders';
 	@override String get skipMarker => 'Passer l\'intro/le générique';
 	@override String get screenshot => 'Prendre une capture d\'écran';
@@ -3960,6 +3962,8 @@ extension on TranslationsFr {
 			'hotkeys.actions.zoomReset' => 'Réinitialiser le zoom',
 			'hotkeys.actions.subSeekNext' => 'Rechercher le sous-titre suivant',
 			'hotkeys.actions.subSeekPrev' => 'Rechercher le sous-titre précédent',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Retarder les sous-titres',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Avancer les sous-titres',
 			'hotkeys.actions.shaderToggle' => 'Activer/désactiver les shaders',
 			'hotkeys.actions.skipMarker' => 'Passer l\'intro/le générique',
 			'hotkeys.actions.screenshot' => 'Prendre une capture d\'écran',
@@ -4418,10 +4422,10 @@ extension on TranslationsFr {
 			'profiles.pinsDontMatch' => 'Les PIN ne correspondent pas',
 			'profiles.tokenIdentityMismatch' => 'Le jeton du profil Plex correspond à un serveur inattendu',
 			'connections.sectionTitle' => 'Connexions',
-			'connections.addConnection' => 'Ajouter une connexion',
-			'connections.addConnectionSubtitleNoProfile' => 'Connectez-vous avec Plex ou connectez un serveur Jellyfin ou Emby',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Ajouter une connexion',
+			'connections.addConnectionSubtitleNoProfile' => 'Connectez-vous avec Plex ou connectez un serveur Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Ajouter à ${displayName} : Plex, Jellyfin, Emby ou une autre connexion de profil',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expirée pour ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expirée pour ${count} serveurs',
@@ -4932,10 +4936,10 @@ extension on TranslationsFr {
 			'liveTv.recordSettings.keepUpTo' => 'Épisodes à conserver',
 			'liveTv.recordSettings.keepUpToHint' => '0 conserve tous les épisodes',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Commence dans ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} à ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} à ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides',
 			'liveTv.failedToStartChannel' => 'Impossible de lancer la chaîne en direct',
 			'liveTv.failedToBuildStreamUrl' => 'Impossible de générer l’URL du flux',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Impossible de démarrer la chaîne : ${reason}',
@@ -5446,10 +5450,10 @@ extension on TranslationsFr {
 			'performanceOverlay.decoderSoftware' => 'Logiciel',
 			'performanceOverlay.decoderHardware' => 'Matériel',
 			'performanceOverlay.tunnelingActive' => 'Actif',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} échecs)',
-			'externalPlayer.title' => 'Lecteur externe',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} échecs)',
+			'externalPlayer.title' => 'Lecteur externe',
 			'externalPlayer.useExternalPlayer' => 'Utiliser un lecteur externe',
 			'externalPlayer.useExternalPlayerDescription' => 'Ouvrir les vidéos dans une autre application',
 			'externalPlayer.selectPlayer' => 'Sélectionner le lecteur',

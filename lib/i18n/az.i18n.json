@@ -597,6 +597,8 @@
       "zoomReset": "Miqyası sıfırla",
       "subSeekNext": "Növbəti altyazıya sar",
       "subSeekPrev": "Əvvəlki altyazıya sar",
+      "subtitleDelayIncrease": "Altyazını gecikdir",
+      "subtitleDelayDecrease": "Altyazını irəli çək",
       "shaderToggle": "Şeyderləri aç/bağla",
       "skipMarker": "Girişi/Titrləri ötür",
       "screenshot": "Ekran şəkli çək"

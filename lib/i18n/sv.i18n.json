@@ -597,6 +597,8 @@
       "zoomReset": "Återställ zoom",
       "subSeekNext": "Hoppa till nästa undertext",
       "subSeekPrev": "Hoppa till föregående undertext",
+      "subtitleDelayIncrease": "Fördröj undertexter",
+      "subtitleDelayDecrease": "Tidigarelägg undertexter",
       "shaderToggle": "Växla shaders",
       "skipMarker": "Hoppa över intro/eftertexter",
       "screenshot": "Ta skärmbild"
