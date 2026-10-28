@@ -18,7 +18,7 @@
  
 --- a/platforms/android/lib/src/main/cpp/session.cpp
 +++ b/platforms/android/lib/src/main/cpp/session.cpp
-@@ -57,3 +57,33 @@
+@@ -57,3 +57,34 @@
  SessionGuard::~SessionGuard() {
    if (session) pthread_rwlock_unlock(&session->admission);
  }
@@ -27,12 +27,13 @@
 +// pointer, crosses into the application. SessionGuard admits each read through
 +// its final mpv use, so session retirement cannot free a live PCM consumer.
 +#include <dlfcn.h>
++#include <mpv/plezy_audio_tap.h>
 +#include <cmath>
 +namespace {
 +struct PlezyTapApi {
 +  int (*version)() = reinterpret_cast<int(*)()>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_version"));
 +  int (*enable)(mpv_handle*, int) = reinterpret_cast<int(*)(mpv_handle*, int)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_enable"));
-+  int (*read)(mpv_handle*, double, void*, size_t) = reinterpret_cast<int(*)(mpv_handle*, double, void*, size_t)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
++  int (*read)(mpv_handle*, double, mpv_plezy_audio_block*, size_t) = reinterpret_cast<int(*)(mpv_handle*, double, mpv_plezy_audio_block*, size_t)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
 +  bool available() const { return version && enable && read && version() == 1; }
 +};
 +PlezyTapApi& plezy_tap() { static PlezyTapApi api; return api; }
@@ -49,7 +50,7 @@
 +  try { SessionGuard guard(static_cast<jlong>(id));
 +    if (!guard.mpv || !plezy_tap().available()) return MPV_ERROR_UNINITIALIZED;
 +    const auto pts = guard.session->visualization_pts.load();
-+    return std::isfinite(pts) ? plezy_tap().read(guard.mpv, pts, output, size) : 0;
++    return std::isfinite(pts) ? plezy_tap().read(guard.mpv, pts, static_cast<mpv_plezy_audio_block*>(output), size) : 0;
 +  } catch (...) { return MPV_ERROR_GENERIC; }
 +}
 --- a/platforms/android/lib/src/main/cpp/event.cpp

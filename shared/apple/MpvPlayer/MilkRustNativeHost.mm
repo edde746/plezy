@@ -2,6 +2,7 @@
 #import "MilkRustNativeHost.h"
 #import <TargetConditionals.h>
 #import <ImageIO/ImageIO.h>
+#import <CoreGraphics/CoreGraphics.h>
 #if TARGET_OS_OSX
 #import <OpenGL/OpenGL.h>
 #else
@@ -11,11 +12,12 @@
 #include <dlfcn.h>
 
 using namespace plezy::visualization;
+struct mpv_handle;
 namespace {
 struct TapApi {
   int (*version)() = reinterpret_cast<int(*)()>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_version"));
-  int (*enable)(void*, int) = reinterpret_cast<int(*)(void*, int)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_enable"));
-  int (*read)(void*, double, void*, size_t) = reinterpret_cast<int(*)(void*, double, void*, size_t)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
+  int (*enable)(mpv_handle*, int) = reinterpret_cast<int(*)(mpv_handle*, int)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_enable"));
+  int (*read)(mpv_handle*, double, mpv_plezy_audio_block*, size_t) = reinterpret_cast<int(*)(mpv_handle*, double, mpv_plezy_audio_block*, size_t)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
   bool available() const { return version && enable && read && version() == MPV_PLEZY_AUDIO_TAP_ABI; }
 };
 TapApi& Tap() { static TapApi api; return api; }
@@ -138,11 +140,11 @@ void SetError(NSError** error, const std::exception& ex) {
 }
 BOOL PlezyVisualizationTapAvailable() { return Tap().available(); }
 int PlezyVisualizationTapEnable(void* player, BOOL enabled) {
-  return player && Tap().available() ? Tap().enable(player, enabled ? 1 : 0) : MPV_PLEZY_AUDIO_UNSUPPORTED;
+  return player && Tap().available() ? Tap().enable(static_cast<mpv_handle*>(player), enabled ? 1 : 0) : MPV_PLEZY_AUDIO_UNSUPPORTED;
 }
 int PlezyVisualizationTapRead(void* player, double pts, void* output, size_t size) {
   return player && std::isfinite(pts) && size == sizeof(mpv_plezy_audio_block) && Tap().available()
-      ? Tap().read(player, pts, output, size) : (std::isfinite(pts) ? MPV_PLEZY_AUDIO_UNSUPPORTED : 0);
+      ? Tap().read(static_cast<mpv_handle*>(player), pts, static_cast<mpv_plezy_audio_block*>(output), size) : (std::isfinite(pts) ? MPV_PLEZY_AUDIO_UNSUPPORTED : 0);
 }
 @implementation PlezyMilkRustHost {
   std::unique_ptr<NativeWorker> _worker;
