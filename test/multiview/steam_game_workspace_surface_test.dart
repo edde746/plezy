@@ -241,6 +241,7 @@ void main() {
     expect(session.creationParams, containsPair('port', 27036));
     expect(session.creationParams, containsPair('appId', '0'));
     expect(session.creationParams, containsPair('touchControls', false));
+    expect(session.creationParams, containsPair('audioChannels', 2));
     expect(session.creationParams.keys, isNot(contains('password')));
     expect(SteamGameWorkspaceSession.channelNameForViewId(7), 'com.plezy/games/steam_stream/7');
     expect(session.workspaceSurface().key, same(session.workspaceSurface().key));

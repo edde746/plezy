@@ -18,7 +18,7 @@ Runtime::Runtime() {
 }
 Runtime::~Runtime() {
   clearFrames();
-  if (opus_) opus_decoder_destroy(opus_);
+  audio_.reset();
   // Keys never enter logs, Dart preferences, or an activity intent.
   volatile uint8_t* key = paired_.key.data();
   for (size_t i = 0; i < paired_.key.size(); ++i) key[i] = 0;
@@ -115,7 +115,8 @@ int Runtime::run(
   IHS_StreamingRequest request{};
   request.streamingEnable = {true, true, true};
   request.maxResolution = {options.width, options.height};
-  request.audioChannelCount = 2;
+  requestedAudioChannels_ = options.audioChannels;
+  request.audioChannelCount = options.audioChannels;
   request.streamingInterface = IHS_StreamInterfaceBigPicture;
   request.gameId = game;
   request.gamepadCount = options.controllerCount;
@@ -143,6 +144,7 @@ int Runtime::run(
       [](IHS_Session*, IHS_SessionConfig* c, void* ctx) {
         auto* state = static_cast<SessionContext*>(ctx);
         c->enableAudio = true;
+        c->audioChannels = state->options.audioChannels;
         c->enableHevc = state->hevc;
         c->enablePyrowave = state->pyrowave;
         c->maxBitrateKbps = state->options.bitrateKbps;
@@ -288,29 +290,31 @@ IHS_StreamVideoSubmitResult Runtime::videoSubmit(
 int Runtime::audioStart(IHS_Session*, const IHS_StreamAudioConfig* c, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
   audioStop(nullptr, ctx);
-  if (!c || c->codec != IHS_StreamAudioCodecOpus || c->channels < 1 || c->channels > 2 || c->frequency != 48000)
+  if (!c || c->codec != IHS_StreamAudioCodecOpus || c->channels > unsigned(self->requestedAudioChannels_) ||
+      !self->audio_.start(c->channels, c->frequency, c->codecData, c->codecDataLen) ||
+      !self->sink_->audio(c->channels, c->frequency)) {
+    self->audio_.reset();
+    self->sink_->audioUnavailable();
     return -1;
-  int error = 0;
-  self->channels_ = c->channels;
-  self->opus_ = opus_decoder_create(48000, c->channels, &error);
-  if (error != OPUS_OK || !self->sink_->audio(c->channels, c->frequency)) return -1;
+  }
   std::lock_guard<std::mutex> lock(self->frameMutex_);
   self->metrics_.audioChannels = c->channels;
   return 0;
 }
 int Runtime::audioSubmit(IHS_Session*, IHS_Buffer* b, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
-  if (!self->opus_ || !b || b->size > 16384 || self->cancelled_) return -1;
-  std::array<int16_t, 5760 * 2> pcm{};
-  int samples = opus_decode(self->opus_, IHS_BufferPointer(b), static_cast<opus_int32>(b->size), pcm.data(), 5760, 0);
+  if (!b || self->cancelled_) return -1;
+  std::array<int16_t, AudioDecoder::maxSamples> pcm{};
+  int samples = self->audio_.decode(IHS_BufferPointer(b), b->size, pcm.data());
   if (samples < 0) return -1;
-  self->sink_->samples(pcm.data(), samples * self->channels_);
+  if (samples) self->sink_->samples(pcm.data(), samples);
   return 0;
 }
 void Runtime::audioStop(IHS_Session*, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
-  if (self->opus_) opus_decoder_destroy(self->opus_);
-  self->opus_ = nullptr;
+  self->audio_.reset();
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.audioChannels = 0;
 }
 void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) {
   padSeat(0, axes, buttons);

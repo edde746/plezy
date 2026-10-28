@@ -30,6 +30,7 @@ class SteamGameWorkspaceSession {
     this.quality = SteamStreamQuality.balanced,
     this.codec = SteamStreamCodec.automatic,
     this.controllerCount = 1,
+    this.audio = SteamStreamAudio.stereo,
     this.onFirstFrame,
   }) {
     if (controllerCount < 1 || controllerCount > 4) throw ArgumentError.value(controllerCount, 'controllerCount');
@@ -51,6 +52,7 @@ class SteamGameWorkspaceSession {
   final SteamStreamQuality quality;
   final SteamStreamCodec codec;
   final int controllerCount;
+  final SteamStreamAudio audio;
   final VoidCallback? onFirstFrame;
   bool _reportedFirstFrame = false;
   bool _disposed = false;
@@ -80,6 +82,7 @@ class SteamGameWorkspaceSession {
     ...quality.nativeArguments,
     'allowHevc': codec == SteamStreamCodec.automatic,
     'controllerCount': controllerCount,
+    'audioChannels': audio.channels,
     'touchLabel': t.games.touchControls,
     'connecting': t.games.connecting,
     'error': t.games.unavailable,

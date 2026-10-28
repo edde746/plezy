@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** Bounded optional arguments; older Flutter/Activity callers retain defaults. */
 final class SteamStreamOptions {
-  final int width, height, fps, bitrateKbps, controllerCount;
+  final int width, height, fps, bitrateKbps, controllerCount, audioChannels;
   final boolean allowHevc;
 
   private SteamStreamOptions(Map<?, ?> args) {
@@ -14,6 +14,9 @@ final class SteamStreamOptions {
     fps = integer(args, "streamFps", 60, 15, 60);
     bitrateKbps = integer(args, "streamBitrateKbps", 30000, 1000, 50000);
     controllerCount = integer(args, "controllerCount", 1, 1, 4);
+    audioChannels = integer(args, "audioChannels", 2, 2, 6);
+    if (audioChannels != 2 && audioChannels != 4 && audioChannels != 6)
+      throw new IllegalArgumentException("Invalid audio layout");
     if (width % 2 != 0 || height % 2 != 0) throw new IllegalArgumentException("Invalid stream dimensions");
     Object hevc = args.get("allowHevc");
     if (hevc != null && !(hevc instanceof Boolean)) throw new IllegalArgumentException("Invalid codec option");

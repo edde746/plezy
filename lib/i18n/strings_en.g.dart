@@ -10083,6 +10083,21 @@ class Translations$games$en {
 
 	/// en: 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.'
 	String get allowHostInstallHelp => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.';
+
+	/// en: 'Steam audio'
+	String get streamAudio => 'Steam audio';
+
+	/// en: 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.'
+	String get streamAudioHelp => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.';
+
+	/// en: 'Stereo'
+	String get audioStereo => 'Stereo';
+
+	/// en: 'Quad (4 speakers)'
+	String get audioQuad => 'Quad (4 speakers)';
+
+	/// en: 'Surround (5.1)'
+	String get audioSurround51 => 'Surround (5.1)';
 }
 
 // Path: deepLinks
@@ -16208,6 +16223,11 @@ extension on Translations {
 			'games.allowHostActionsHelp' => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.',
 			'games.allowHostInstall' => 'Allow Steam install requests',
 			'games.allowHostInstallHelp' => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.',
+			'games.streamAudio' => 'Steam audio',
+			'games.streamAudioHelp' => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.',
+			'games.audioStereo' => 'Stereo',
+			'games.audioQuad' => 'Quad (4 speakers)',
+			'games.audioSurround51' => 'Surround (5.1)',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

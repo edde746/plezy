@@ -18,3 +18,14 @@ enum SteamStreamQuality {
 }
 
 enum SteamStreamCodec { automatic, h264 }
+
+/// The receiver may negotiate fewer channels or retry with stereo when the
+/// host omits a verifiable multichannel mapping or the output cannot open it.
+enum SteamStreamAudio {
+  stereo(2),
+  quad(4),
+  surround51(6);
+
+  const SteamStreamAudio(this.channels);
+  final int channels;
+}

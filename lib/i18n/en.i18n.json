@@ -4007,7 +4007,12 @@
     "allowHostActions": "Allow paired remotes to control Steam",
     "allowHostActionsHelp": "Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.",
     "allowHostInstall": "Allow Steam install requests",
-    "allowHostInstallHelp": "Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default."
+    "allowHostInstallHelp": "Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.",
+    "streamAudio": "Steam audio",
+    "streamAudioHelp": "Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.",
+    "audioStereo": "Stereo",
+    "audioQuad": "Quad (4 speakers)",
+    "audioSurround51": "Surround (5.1)"
   },
   "deepLinks": {
     "invalid": "This Plezy link isn't valid.",
