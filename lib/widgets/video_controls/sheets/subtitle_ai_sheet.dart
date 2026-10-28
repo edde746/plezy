@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show File, Platform;
 import 'dart:typed_data';
 
@@ -40,12 +41,20 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   bool _translationSupported = false;
   bool _allowMobileData = false;
   bool _requestTranslationCuda = false;
+  bool _bilingualTranslation = false;
+  final TextEditingController _glossaryController = TextEditingController();
   bool _playbackCaptureSupported = false;
   String? _status;
   String? _error;
   SubtitleInferenceProvider _provider = SubtitleInferenceProvider.cpu;
   TranslateLanguage _sourceLanguage = TranslateLanguage.english;
   TranslateLanguage _targetLanguage = TranslateLanguage.spanish;
+
+  @override
+  void dispose() {
+    _glossaryController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -275,6 +284,23 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     await _showApplied();
   });
 
+  Map<String, String> _parseGlossary() {
+    final source = _glossaryController.text.trim();
+    if (source.isEmpty) return const {};
+    final decoded = jsonDecode(source);
+    if (decoded is! Map) {
+      throw const FormatException('Glossary must be a JSON object mapping source terms to translated terms.');
+    }
+    final glossary = <String, String>{};
+    for (final entry in decoded.entries) {
+      if (entry.key is! String || entry.value is! String) {
+        throw const FormatException('Every glossary key and value must be a string.');
+      }
+      glossary[entry.key as String] = entry.value as String;
+    }
+    return glossary;
+  }
+
   Future<void> _translate() => _run(() async {
     if (!await SubtitleTranslationService.isSupportedOnCurrentDevice()) {
       throw UnsupportedError(
@@ -294,6 +320,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       targetLanguage: _targetLanguage,
       allowMobileData: _allowMobileData,
       requestDesktopCuda: _requestTranslationCuda,
+      bilingual: _bilingualTranslation,
+      glossary: _parseGlossary(),
       onProgress: (completed, total) {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
@@ -532,6 +560,26 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 ),
               ],
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Bilingual subtitle output'),
+              subtitle: const Text('Show the original line followed by its translation in each cue'),
+              value: _bilingualTranslation,
+              onChanged: _busy ? null : (value) => setState(() => _bilingualTranslation = value),
+            ),
+            TextField(
+              controller: _glossaryController,
+              minLines: 2,
+              maxLines: 4,
+              enabled: !_busy,
+              decoration: const InputDecoration(
+                labelText: 'Translation glossary (JSON)',
+                hintText: '{"TARDIS":"TARDIS","The Doctor":"El Doctor"}',
+                helperText: 'Protects up to 200 whole terms. Source subtitle text is never changed.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
             if (SubtitleTranslationService.mobilePlatformSupported)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

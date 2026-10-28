@@ -83,6 +83,8 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     required TranslateLanguage targetLanguage,
     bool allowMobileData = false,
     bool requestDesktopCuda = false,
+    bool bilingual = false,
+    Map<String, String> glossary = const {},
     void Function(int completed, int total)? onProgress,
   }) async {
     if (!await isSupportedOnCurrentDevice()) {
@@ -92,6 +94,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
             : 'On-device translation is available on supported phones and tablets only.',
       );
     }
+    final normalizedGlossary = _validateGlossary(glossary);
     if (sourceLanguage == targetLanguage) {
       throw ArgumentError('Choose different source and target languages.');
     }
@@ -109,6 +112,8 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
         sourceCode: sourceLanguage.bcpCode.toLowerCase().split('-').first,
         targetCode: targetLanguage.bcpCode.toLowerCase().split('-').first,
         requestCuda: requestDesktopCuda,
+        bilingual: bilingual,
+        glossary: normalizedGlossary,
         onProgress: onProgress,
       );
     }
@@ -124,17 +129,25 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     final translator = OnDeviceTranslator(sourceLanguage: sourceLanguage, targetLanguage: targetLanguage);
     final translated = <SubtitleCue>[];
     var translatedBytes = 0;
+    var protectedInputBytes = 0;
     try {
       for (var index = 0; index < cues.length; index++) {
         final source = cues[index];
-        final text = await _translateMarkupAware(translator, source.text);
-        if (text.trim().isEmpty) {
+        final protected = _protectGlossaryMarkupAware(source.text, normalizedGlossary, source.index);
+        protectedInputBytes += utf8.encode(protected.text).length;
+        if (protectedInputBytes > SubtitleRetimer.maximumInputBytes) {
+          throw const FormatException('Glossary placeholders expand subtitle input beyond the 5 MiB translation bound.');
+        }
+        final machineText = await _translateMarkupAware(translator, protected.text);
+        final translatedText = _restoreGlossary(machineText, protected.markers);
+        if (translatedText.trim().isEmpty) {
           throw FormatException('Translation returned empty text for cue ${source.index}.');
         }
-        if (text.length > 4000) {
+        final outputText = _composeBilingual(source.text, translatedText, bilingual);
+        if (outputText.length > 4000) {
           throw FormatException('Translation expanded cue ${source.index} beyond the 4000-character limit.');
         }
-        translatedBytes += utf8.encode(text).length;
+        translatedBytes += utf8.encode(outputText).length;
         if (translatedBytes > SubtitleRetimer.maximumInputBytes) {
           throw const FormatException('Translated subtitles exceed the 5 MiB output bound.');
         }
@@ -142,7 +155,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
           index: index + 1,
           startMs: source.startMs,
           endMs: source.endMs,
-          text: text,
+          text: outputText,
         ));
         if ((index + 1) % 5 == 0 || index + 1 == cues.length) onProgress?.call(index + 1, cues.length);
       }
@@ -174,18 +187,28 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     required String sourceCode,
     required String targetCode,
     required bool requestCuda,
+    required bool bilingual,
+    required Map<String, String> glossary,
     void Function(int completed, int total)? onProgress,
   }) async {
     final pieces = <List<(bool, String)>>[];
+    final protectedCues = <_ProtectedGlossary>[];
     final textToTranslate = <String>[];
+    var protectedInputBytes = 0;
     final markup = RegExp(r'<[^>]{0,160}>|\{[^}]{0,160}\}|\\[Nnh]');
     for (final cue in cues) {
-      final matches = markup.allMatches(cue.text).toList(growable: false);
+      final protected = _protectGlossaryMarkupAware(cue.text, glossary, cue.index);
+      protectedInputBytes += utf8.encode(protected.text).length;
+      if (protectedInputBytes > SubtitleRetimer.maximumInputBytes) {
+        throw const FormatException('Glossary placeholders expand subtitle input beyond the 5 MiB translation bound.');
+      }
+      protectedCues.add(protected);
+      final matches = markup.allMatches(protected.text).toList(growable: false);
       final row = <(bool, String)>[];
       var cursor = 0;
       for (final match in matches) {
         if (match.start > cursor) {
-          final text = cue.text.substring(cursor, match.start);
+          final text = protected.text.substring(cursor, match.start);
           if (text.trim().isEmpty) {
             row.add((false, text));
           } else {
@@ -197,8 +220,8 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
         row.add((false, match.group(0)!));
         cursor = match.end;
       }
-      if (cursor < cue.text.length) {
-        final text = cue.text.substring(cursor);
+      if (cursor < protected.text.length) {
+        final text = protected.text.substring(cursor);
         if (text.trim().isEmpty) {
           row.add((false, text));
         } else {
@@ -209,7 +232,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       }
       if (row.isEmpty) {
         final index = textToTranslate.length;
-        textToTranslate.add(cue.text);
+        textToTranslate.add(protected.text);
         row.add((true, '$index'));
       }
       pieces.add(row);
@@ -242,15 +265,19 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       for (final piece in pieces[cueIndex]) {
         output.write(piece.$1 ? translatedText[int.parse(piece.$2)] : piece.$2);
       }
-      final text = output.toString();
-      if (text.trim().isEmpty || text.length > 4000) {
+      final restoredText = _restoreGlossary(output.toString(), protectedCues[cueIndex].markers);
+      if (restoredText.trim().isEmpty) {
         throw FormatException('Local translation returned invalid text for cue ${source.index}.');
       }
-      translatedBytes += utf8.encode(text).length;
+      final outputText = _composeBilingual(source.text, restoredText, bilingual);
+      if (outputText.length > 4000) {
+        throw FormatException('Local translation expanded cue ${source.index} beyond the 4000-character limit.');
+      }
+      translatedBytes += utf8.encode(outputText).length;
       if (translatedBytes > SubtitleRetimer.maximumInputBytes) {
         throw const FormatException('Translated subtitles exceed the 5 MiB output bound.');
       }
-      translated.add(SubtitleCue(index: cueIndex + 1, startMs: source.startMs, endMs: source.endMs, text: text));
+      translated.add(SubtitleCue(index: cueIndex + 1, startMs: source.startMs, endMs: source.endMs, text: outputText));
     }
     onProgress?.call(cues.length, cues.length);
     return SubtitleTranslationResult(
@@ -303,6 +330,89 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     }
   }
 
+  static Map<String, String> _validateGlossary(Map<String, String> glossary) {
+    if (glossary.length > 200) {
+      throw const FormatException('A translation glossary may contain at most 200 terms.');
+    }
+    final output = <String, String>{};
+    final normalizedTerms = <String>{};
+    for (final entry in glossary.entries) {
+      final source = entry.key.trim();
+      final target = entry.value.trim();
+      if (source.isEmpty ||
+          target.isEmpty ||
+          source.runes.length > 128 ||
+          target.runes.length > 128 ||
+          source.contains('\n') ||
+          source.contains('\r') ||
+          target.contains('\n') ||
+          target.contains('\r')) {
+        throw const FormatException('Glossary terms and translations must be single-line text of at most 128 characters.');
+      }
+      if (!normalizedTerms.add(source.toLowerCase())) {
+        throw const FormatException('Glossary source terms must be unique without regard to case.');
+      }
+      output[source] = target;
+    }
+    return Map.unmodifiable(output);
+  }
+
+  static _ProtectedGlossary _protectGlossaryMarkupAware(
+    String source,
+    Map<String, String> glossary,
+    int cueIndex,
+  ) {
+    if (glossary.isEmpty) return _ProtectedGlossary(source, const {});
+    final entries = glossary.entries.toList()
+      ..sort((left, right) => right.key.runes.length.compareTo(left.key.runes.length));
+    var markerPrefix = '<QXPLEZYTERM${cueIndex}X';
+    while (source.contains(markerPrefix)) {
+      markerPrefix += 'X';
+    }
+    final markers = <String, String>{};
+    final markup = RegExp(r'<[^>]{0,160}>|\{[^}]{0,160}\}|\\[Nnh]');
+
+    String protectPlainText(String text) {
+      var protectedText = text;
+      for (final entry in entries) {
+        final pattern = RegExp(
+          r'(?<![\p{L}\p{N}\p{M}\p{Pc}])' + RegExp.escape(entry.key) + r'(?![\p{L}\p{N}\p{M}\p{Pc}])',
+          caseSensitive: false,
+          unicode: true,
+        );
+        protectedText = protectedText.replaceAllMapped(pattern, (_) {
+          final marker = '$markerPrefix${markers.length}QX>';
+          markers[marker] = entry.value;
+          return marker;
+        });
+      }
+      return protectedText;
+    }
+
+    final output = StringBuffer();
+    var cursor = 0;
+    for (final match in markup.allMatches(source)) {
+      if (match.start > cursor) output.write(protectPlainText(source.substring(cursor, match.start)));
+      output.write(match.group(0));
+      cursor = match.end;
+    }
+    if (cursor < source.length) output.write(protectPlainText(source.substring(cursor)));
+    return _ProtectedGlossary(output.toString(), Map.unmodifiable(markers));
+  }
+
+  static String _restoreGlossary(String text, Map<String, String> markers) {
+    for (final marker in markers.entries) {
+      if (marker.key.allMatches(text).length != 1) {
+        throw const FormatException('Translation changed a protected glossary term; the source subtitle was left intact.');
+      }
+      text = text.replaceFirst(marker.key, marker.value);
+    }
+    return text;
+  }
+
+  static String _composeBilingual(String source, String translation, bool bilingual) =>
+      bilingual ? '$source\n$translation' : translation;
+
   static Future<String> _translateMarkupAware(OnDeviceTranslator translator, String source) async {
     final markup = RegExp(r'<[^>]{0,160}>|\{[^}]{0,160}\}|\\[Nnh]');
     final matches = markup.allMatches(source).toList(growable: false);
@@ -324,4 +434,12 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     }
     return output.toString();
   }
+}
+
+
+final class _ProtectedGlossary {
+  const _ProtectedGlossary(this.text, this.markers);
+
+  final String text;
+  final Map<String, String> markers;
 }
