@@ -61,3 +61,7 @@ The [Find your next handoff](swipe/README.md) specifies an artwork-led discovery
 ## Planned cross-media Multiview and app-owned PiP
 
 The [Multiview implementation handoff](multiview/README.md) makes Plezy-owned floating PiP and split views the primary cross-platform experience, with native OS PiP as an optional outside-app extension. It specifies persistent video/music/reader/game sessions, quick swaps, audio and input ownership, native/GPU/software rendering paths, portable TV readers, desktop pop-outs, accessibility and recovery. The handoff includes 22 ordered implementation packages, 64 verification scenarios, a pinned source audit and theme-based layout wireframes. This is a documentation-only plan for Luna; application implementation and device qualification remain outstanding.
+
+## Planned service integrations and commerce
+
+The [service integration audit and Luna handoff](service-integrations/README.md) evaluates streaming and rental services, book and audiobook stores, public libraries, music and podcasts, self-hosted sources, games, tracking and device connections. It distinguishes native playback, approved SDKs, official app handoffs, file imports and affiliate commerce; maps the work to existing PlezyNG screens and owners; and includes 16 work packages, 30 acceptance scenarios and 65 source-register entries. This is a research and implementation plan, not newly enabled service support. Reconcile the current debrid/Stremio work and obtain the specific provider/platform approvals before enabling gated capabilities.
