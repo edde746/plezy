@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
@@ -28,6 +27,8 @@ import '../providers/seerr_account_provider.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../sources/source_controller.dart';
+import '../sources/source_models.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -46,6 +47,8 @@ import '../widgets/seerr_request_sheet.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
+import 'sources/source_detail_screen.dart';
+import 'sources/source_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -66,7 +69,12 @@ class _SearchScreenState extends State<SearchScreen>
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
-  ({String query, SearchAggregationResult result, List<MediaItem> seerr})? _pendingSearchOutcome;
+  ({String query, SearchAggregationResult? result, List<MediaItem> seerr, List<SourceEntry> files, bool partial})?
+  _pendingSearchOutcome;
+  SourceController? _sourceController;
+  int? _sourceGeneration;
+  List<SourceEntry> _sourceCandidates = const [];
+  final Map<SourceItemKind, FocusNode> _sourceChipFocusNodes = {};
 
   /// Filter over the current results: everything, one media kind, or only
   /// people. Chips and the filtered views derive from [_searchCandidates] and
@@ -99,7 +107,29 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final sources = context.read<SourceController?>();
+    if (identical(sources, _sourceController)) return;
+    _sourceController?.removeListener(_onSourceScopeChanged);
+    _sourceController = sources;
+    _sourceGeneration = sources?.generation;
+    sources?.addListener(_onSourceScopeChanged);
+  }
+
+  void _onSourceScopeChanged() {
+    if (!mounted || _sourceGeneration == _sourceController?.generation) return;
+    _sourceGeneration = _sourceController?.generation;
+    // Profile changes must invalidate even a completed Files-only search.
+    fullRefresh();
+  }
+
+  @override
   void dispose() {
+    _sourceController?.removeListener(_onSourceScopeChanged);
+    for (final node in _sourceChipFocusNodes.values) {
+      node.dispose();
+    }
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
@@ -139,44 +169,77 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   Future<List<SearchHit>> performSearchQuery(String query) async {
-    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    if (!multiServerProvider.hasConnectedServers) {
-      throw const _SearchUnavailableException();
-    }
-
-    // Hidden-library keys must be hydrated before the first query, or a cold
-    // start would filter nothing. Read before any await: the profile subtree
-    // can be torn down mid-search.
-    final hiddenLibraries = context.read<HiddenLibrariesProvider>();
-    // Seerr runs alongside the servers and never fails the search.
-    final seerrFuture = _searchSeerr(query);
-    await hiddenLibraries.ensureInitialized();
-    if (!mounted) return const [];
-
+    final multiServer = context.read<MultiServerProvider>();
+    final hidden = context.read<HiddenLibrariesProvider>();
+    final sources = context.read<SourceController?>();
     final abort = AbortController();
     _activeSearchAbort = abort;
+    final hadServers = multiServer.hasConnectedServers;
+
+    // Every leg settles independently. A broken server must not discard
+    // playable indexed files, and a locked Files profile must not hide titles.
+    final filesFuture = _searchIndex(sources, query);
+    final seerrFuture = _searchSeerr(query);
+    final serversFuture = () async {
+      if (!hadServers) return null;
+      try {
+        await hidden.ensureInitialized();
+        abort.throwIfAborted();
+        return await multiServer.aggregationService.searchAcrossServers(
+          query,
+          hiddenLibraryKeys: hidden.hiddenLibraryKeys,
+          abort: abort,
+        );
+      } catch (_) {
+        abort.throwIfAborted();
+        return null;
+      }
+    }();
     try {
-      final result = await multiServerProvider.aggregationService.searchAcrossServers(
-        query,
-        hiddenLibraryKeys: hiddenLibraries.hiddenLibraryKeys,
-        abort: abort,
-      );
+      final result = await serversFuture;
+      final files = await filesFuture;
+      final seerr = await seerrFuture;
       abort.throwIfAborted();
-      if (result.succeededServerIds.isEmpty && result.failedServerIds.isNotEmpty) {
+      if (!mounted) return const [];
+      final serverSucceeded = result?.succeededServerIds.isNotEmpty ?? false;
+      if (!serverSucceeded && !files.available && seerr == null) {
         throw const _SearchUnavailableException();
       }
-      if (result.succeededServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
-        throw MediaServerHttpException(
-          type: MediaServerHttpErrorType.cancelled,
-          message: 'Search was cancelled before any server completed',
-        );
-      }
-      final seerr = await seerrFuture ?? const <MediaItem>[];
-      abort.throwIfAborted();
-      _pendingSearchOutcome = (query: query, result: result, seerr: seerr);
-      return [...result.hits, for (final item in seerr) MediaSearchHit(item)];
+      final partial =
+          files.failed ||
+          (hadServers && (result == null || result.failedServerIds.isNotEmpty || result.cancelledServerIds.isNotEmpty));
+      _pendingSearchOutcome = (
+        query: query,
+        result: result,
+        seerr: seerr ?? const [],
+        files: files.entries,
+        partial: partial,
+      );
+      return [
+        ...rankSearchHits(
+          [...?result?.hits, for (final entry in files.entries) SourceSearchHit(entry)],
+          query,
+          limit: defaultMediaSearchLimit,
+        ),
+        for (final item in seerr ?? const <MediaItem>[]) MediaSearchHit(item),
+      ];
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
+    }
+  }
+
+  Future<({List<SourceEntry> entries, bool available, bool failed})> _searchIndex(
+    SourceController? sources,
+    String query,
+  ) async {
+    if (sources == null) return (entries: const [], available: false, failed: false);
+    try {
+      final entries = await sources.searchIndex(query);
+      return (entries: entries, available: sources.sources.isNotEmpty, failed: false);
+    } on SourceException catch (error) {
+      return (entries: const [], available: false, failed: error.reason != SourceFailure.cancelled);
+    } catch (_) {
+      return (entries: const [], available: false, failed: true);
     }
   }
 
@@ -284,11 +347,12 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case PersonSearchHit(:final person)) person,
         ];
+    _sourceCandidates = matchedOutcome?.files ?? const [];
     _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults]);
     if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
     _filteredResults = _rankFilteredResults(_selectedFilter, query);
 
-    if (matched != null && matched.failedServerIds.isNotEmpty) {
+    if (matchedOutcome?.partial ?? false) {
       showAppSnackBar(context, t.messages.searchPartialResults);
     }
 
@@ -451,17 +515,20 @@ class _SearchScreenState extends State<SearchScreen>
   List<_SearchFilter> get _filterOptions => [
     const _AllResults(),
     for (final kind in _candidateKinds) _KindResults(kind),
+    for (final kind in SourceItemKind.values)
+      if (_sourceCandidates.any((entry) => entry.kind == kind)) _SourceKindResults(kind),
     if (_searchPeople.isNotEmpty) const _PeopleResults(),
   ];
 
   /// "All" plus a single other option (one kind, or only people) has nothing
   /// to filter.
-  bool get _showFilterChips => _candidateKinds.length + (_searchPeople.isEmpty ? 0 : 1) > 1;
+  bool get _showFilterChips => _filterOptions.length > 2;
 
   bool _hasCandidatesFor(_SearchFilter filter) => switch (filter) {
     _AllResults() => true,
     _KindResults(:final kind) => _candidateKinds.contains(kind),
     _PeopleResults() => _searchPeople.isNotEmpty,
+    _SourceKindResults(:final kind) => _sourceCandidates.any((entry) => entry.kind == kind),
   };
 
   /// The selected filter's pool re-ranked with the full display budget, or
@@ -481,6 +548,15 @@ class _SearchScreenState extends State<SearchScreen>
           for (final item in _seerrResults)
             if (item.kind == kind) MediaSearchHit(item),
         ];
+      case _SourceKindResults(:final kind):
+        return rankSearchHits(
+          [
+            for (final entry in _sourceCandidates)
+              if (entry.kind == kind) SourceSearchHit(entry),
+          ],
+          query,
+          limit: defaultMediaSearchLimit,
+        );
       case _PeopleResults():
         return [
           for (final person in rankPeopleSearchResults(_searchPeople, query, limit: defaultMediaSearchLimit))
@@ -501,6 +577,7 @@ class _SearchScreenState extends State<SearchScreen>
     _selectedFilter = const _AllResults();
     _searchCandidates = const [];
     _searchPeople = const [];
+    _sourceCandidates = const [];
     _candidateKinds = const [];
     _filteredResults = null;
     _seerrResults = const [];
@@ -513,6 +590,10 @@ class _SearchScreenState extends State<SearchScreen>
       () => FocusNode(debugLabel: 'SearchKindChip_${kind.id}'),
     ),
     _PeopleResults() => _peopleChipFocusNode,
+    _SourceKindResults(:final kind) => _sourceChipFocusNodes.putIfAbsent(
+      kind,
+      () => FocusNode(debugLabel: 'SearchSourceKind_${kind.name}'),
+    ),
   };
 
   /// D-pad landing point for the chip row: the chip that is currently active.
@@ -526,6 +607,14 @@ class _SearchScreenState extends State<SearchScreen>
     _AllResults() => t.libraries.groupings.all,
     _KindResults(:final kind) => _kindFilterLabel(kind),
     _PeopleResults() => t.search.people,
+    _SourceKindResults(:final kind) => switch (kind) {
+      SourceItemKind.ebook => t.fileSources.ebooks,
+      SourceItemKind.audiobook => t.fileSources.audiobooks,
+      SourceItemKind.comic => t.fileSources.comics,
+      SourceItemKind.music => t.downloads.music,
+      SourceItemKind.video => t.fileSources.video,
+      SourceItemKind.folder || SourceItemKind.unknown => t.fileSources.title,
+    },
   };
 
   String _kindFilterLabel(MediaKind kind) => switch (kind) {
@@ -699,6 +788,24 @@ class _SearchScreenState extends State<SearchScreen>
             showServerName: showServerName,
             libraryName: libraries.libraryLabelFor(item),
           ),
+          SourceSearchHit(:final entry) => SourceTile(
+            key: Key('source:${entry.key}'),
+            title: entry.displayTitle,
+            subtitle: [
+              t.fileSources.title,
+              for (final source in _sourceController?.sources ?? const <FileSource>[])
+                if (source.id == entry.sourceId) source.name,
+              if (entry.author.isNotEmpty) entry.author,
+              if (entry.series.isNotEmpty) entry.series,
+            ].join(' · '),
+            icon: sourceItemIcon(entry.kind),
+            focusNode: isFirst ? firstResultFocusNode : null,
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateUp: onNavigateUp,
+            onTap: () => unawaited(
+              Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => SourceDetailScreen(entry: entry))),
+            ),
+          ),
           PersonSearchHit(:final person) => PersonSearchRow(
             key: Key(person.globalKey),
             person: person,
@@ -803,4 +910,16 @@ final class _KindResults extends _SearchFilter {
 
 final class _PeopleResults extends _SearchFilter {
   const _PeopleResults();
+}
+
+final class _SourceKindResults extends _SearchFilter {
+  final SourceItemKind kind;
+
+  const _SourceKindResults(this.kind);
+
+  @override
+  bool operator ==(Object other) => other is _SourceKindResults && other.kind == kind;
+
+  @override
+  int get hashCode => kind.hashCode;
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
@@ -140,6 +141,7 @@ List<String> _hitIds(SearchAggregationResult result) => [
   for (final hit in result.hits)
     switch (hit) {
       MediaSearchHit(:final item) => item.id,
+      SourceSearchHit(:final entry) => entry.key,
       PersonSearchHit(:final person) => 'person:${person.id}',
     },
 ];

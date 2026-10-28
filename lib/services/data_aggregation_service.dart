@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../media/ids.dart';
 
 import '../media/media_hub.dart';
@@ -949,6 +950,9 @@ class DataAggregationService {
           titles.add(item);
         case PersonSearchHit(:final person):
           people.add(person);
+        case SourceSearchHit():
+          // File sources join after server aggregation, never through a client.
+          break;
       }
     }
     // Before ranking, so hidden results cannot spend the `resultLimit` budget

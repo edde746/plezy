@@ -23,8 +23,10 @@ void main() {
         expect(play.target, ItemPlayTarget(serverId: ServerId('s1'), itemId: 'i1'));
         expect(play.profile, 'Kids');
         expect(DeepLink.tryParse('${scheme.toUpperCase()}://OPEN'), isA<OpenLink>());
-        expect(DeepLink.tryParse('$scheme://open-media?url=https%3A%2F%2Fmedia.example%2Ffilm.mp4'),
-            isA<OpenMediaLink>());
+        expect(
+          DeepLink.tryParse('$scheme://open-media?url=https%3A%2F%2Fmedia.example%2Ffilm.mp4'),
+          isA<OpenMediaLink>(),
+        );
         expect(DeepLink.tryParse('$scheme://open-media?url=http%3A%2F%2Fmedia.example%2Ffilm.mp4'), isNull);
         expect(DeepLink.tryParse('$scheme://play?server=s1'), isNull);
       });
