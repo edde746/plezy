@@ -10,12 +10,14 @@ class DiscoveryDecision {
     required this.previousSaved,
     required this.wasSeen,
     required this.savedChanged,
+    this.createdAtMs,
   });
   final DiscoveryDecisionAction action;
   final DiscoveryChoice choice;
   final DiscoveryChoice? previousSaved;
   final bool wasSeen;
   final bool savedChanged;
+  final int? createdAtMs;
 
   Map<String, dynamic> toJson() => {
     'action': action.name,
@@ -23,6 +25,7 @@ class DiscoveryDecision {
     'previousSaved': previousSaved?.toSnapshot(),
     'wasSeen': wasSeen,
     'savedChanged': savedChanged,
+    'createdAtMs': createdAtMs,
   };
 
   factory DiscoveryDecision.fromJson(Map<String, dynamic> json) => DiscoveryDecision(
@@ -33,7 +36,14 @@ class DiscoveryDecision {
         : null,
     wasSeen: json['wasSeen'] == true,
     savedChanged: json['savedChanged'] == true,
+    createdAtMs: _validTimestamp(json['createdAtMs']),
   );
+
+  static int? _validTimestamp(Object? value) {
+    if (value is! num || !value.isFinite) return null;
+    final timestamp = value.toInt();
+    return timestamp > 0 && timestamp <= 253402300799999 ? timestamp : null;
+  }
 }
 
 class DiscoveryState {
@@ -120,6 +130,7 @@ class DiscoveryStore {
         previousSaved: savedChanged ? previous : null,
         wasSeen: wasSeen,
         savedChanged: savedChanged,
+        createdAtMs: DateTime.now().toUtc().millisecondsSinceEpoch,
       );
       final seen = {...current.seen, choice.id};
       final history = [...current.history, decision];

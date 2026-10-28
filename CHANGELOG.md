@@ -5,6 +5,7 @@
 - Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
 - Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
 - Add household readiness checks and a QR support flow that drafts a privacy-safe GitHub issue, with optional redacted log upload.
+- Add profile-local Find your next review history with localized timestamps and safe detail revalidation.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.

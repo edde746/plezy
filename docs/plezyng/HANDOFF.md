@@ -62,7 +62,7 @@ The results below belong to an earlier feature checkout and do not qualify the c
 
 ## Cross-media swipe discovery
 
-The first [Find your next runtime slice](swipe/README.md) is implemented in the current app: a bounded mixed-media deck, profile-local saved picks and Undo, time and medium filters, visible actions alongside swipe, and entry points from Discover, Libraries, Explore and Downloads. The full 16-package enhancement plan is not complete. Sample isolation, verified adaptation matching, discovery cloud sync, lending candidates, AI reranking and physical-device qualification remain future work. Use the [delivery status](swipe/DELIVERY.md) as the source of truth and extend the shipped slice without rebuilding it.
+The current [Find your next runtime slice](swipe/README.md) includes a bounded mixed-media deck, profile-local saved picks, Undo and timestamped review history, time and medium filters, visible actions alongside swipe, and entry points from Discover, Libraries, Explore and Downloads. The full 16-package enhancement plan is not complete. Sample isolation, verified adaptation matching, shortlist comparison, discovery cloud sync, lending candidates, AI reranking and physical-device qualification remain future work. Use the [delivery status](swipe/DELIVERY.md) as the source of truth and extend the shipped slice without rebuilding it.
 
 ## Planned cross-media Multiview and app-owned PiP
 
