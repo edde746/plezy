@@ -152,7 +152,7 @@ class DiscoveryReranker {
                   'content': jsonEncode({
                     'moment': {
                       'media': _bounded(mediaFamily, 24),
-                      'maxMinutes': maxMinutes == null ? null : maxMinutes.clamp(1, 600),
+                      'maxMinutes': maxMinutes?.clamp(1, 600),
                       'genre': genre == null ? null : _bounded(genre, 48),
                       'mood': mood == null ? null : _bounded(mood, 32),
                       'familiarity': _bounded(familiarity, 24),

@@ -393,6 +393,12 @@ class Translations$common$en {
 	/// en: 'Search'
 	String get search => 'Search';
 
+	/// en: 'Copy'
+	String get copy => 'Copy';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
 	/// en: 'Home'
 	String get home => 'Home';
 
@@ -12488,6 +12494,8 @@ extension on Translations {
 			'common.resume' => 'Resume',
 			'common.error' => 'Error',
 			'common.search' => 'Search',
+			'common.copy' => 'Copy',
+			'common.preview' => 'Preview',
 			'common.home' => 'Home',
 			'common.back' => 'Back',
 			'common.settings' => 'Settings',

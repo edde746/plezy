@@ -1608,7 +1608,7 @@ class _ImportTransfer {
 /// A bounded, temporary, cancel-on-close file used only by a sample preview.
 /// It is intentionally separate from publication downloads and progress.
 class SourcePreviewSession {
-  SourcePreviewSession(this._adapter, this.file, {required void Function() check}) : _check = check;
+  SourcePreviewSession(this._adapter, this.file, {required this._check});
 
   static const int maxBytes = 128 * 1024 * 1024;
   final SourceAdapter _adapter;

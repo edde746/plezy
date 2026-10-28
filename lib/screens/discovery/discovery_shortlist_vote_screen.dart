@@ -6,7 +6,7 @@ import '../../discovery/discovery_choice.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../utils/formatters.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../widgets/app_icon.dart';
 
 /// Private pass-the-device voting. Ballots live only in this route's memory.

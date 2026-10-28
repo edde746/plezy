@@ -1188,7 +1188,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
                           if (filtered.isEmpty) {
                             return Padding(
                               padding: const EdgeInsets.all(20),
-                              child: Center(child: Text(t.common.noResultsFound)),
+                              child: Center(child: Text(t.messages.noResultsFound)),
                             );
                           }
                           final value = filtered[index - 1];
@@ -3218,14 +3218,14 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(facts.title, style: theme.textTheme.titleMedium, maxLines: 3, overflow: TextOverflow.ellipsis),
-            field(t.common.mediaType, facts.type),
+            field(t.fileInfo.mediaType, facts.type),
             if (widget.syncSavedPicks)
               field(t.discover.findNext.syncSavedPicks, facts.localOnly ? t.discover.findNext.localOnly : t.common.yes),
             field(
-              t.common.duration,
+              t.fileInfo.duration,
               facts.duration == null ? t.common.notAvailable : formatDurationTextual(facts.duration!),
             ),
-            field(t.common.language, facts.language),
+            field(t.fileInfo.language, facts.language),
             field(t.fileSources.narrator, facts.narrator),
             field(t.fileSources.editions, facts.edition),
             field(t.discover.findNext.availability, facts.availability),
@@ -3281,7 +3281,7 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
               )
             : Text(
                 _compareMode || _voteMode
-                    ? t.discover.selection.selectedCount(count: localizeDecimalDigits('${_comparisonIds.length}'))
+                    ? t.libraries.selection.selectedCount(count: localizeDecimalDigits('${_comparisonIds.length}'))
                     : t.discover.findNext.saved,
               ),
         actions: [

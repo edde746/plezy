@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:uuid/uuid.dart';
 
 import '../media/media_kind.dart';
@@ -296,15 +294,6 @@ class DiscoverySync {
           history: state.history,
         ).toJson(),
       );
-    }
-  }
-
-  void _refreshConflicts(_DiscoverySyncCache cache) {
-    conflicts.clear();
-    for (final record in cache.document.records.entries) {
-      if (!cache.document.conflicted(record.key)) continue;
-      final choice = _choiceFromValue(record.value.first.value, record.key);
-      conflicts[record.key] = DiscoverySyncConflict(record.key, choice, record.value);
     }
   }
 

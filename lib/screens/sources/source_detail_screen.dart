@@ -36,6 +36,14 @@ import 'source_player_screen.dart';
 import 'source_sync_screen.dart';
 import 'source_widgets.dart';
 
+Widget _focusedLendingButton({
+  required VoidCallback? onPressed,
+  required Widget Function(VoidCallback? onPressed) buildButton,
+  bool primary = false,
+}) {
+  return FocusableButton(onPressed: onPressed, useBackgroundFocus: primary, child: buildButton(onPressed));
+}
+
 class SourceDetailScreen extends StatefulWidget {
   const SourceDetailScreen({super.key, required this.entry});
   final SourceEntry entry;
