@@ -8,7 +8,6 @@ import '../../discovery/discovery_choice.dart';
 import '../../discovery/discovery_store.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
-import '../../media/media_kind.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
@@ -144,7 +143,7 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
                       IconButton(
                         tooltip: t.discover.findNext.details,
                         onPressed: profileChanged ? null : () => widget.onDetails(choice),
-                        icon: const AppIcon(Symbols.info_outline_rounded),
+                        icon: const AppIcon(Symbols.info_rounded),
                       ),
                       IconButton(
                         tooltip: t.common.retry,

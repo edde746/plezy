@@ -138,10 +138,10 @@ class _GameCardState extends State<GameCard> {
           ),
         if (widget.onFavorite != null)
           AppMenuItem(
-          value: 'favorite',
-          label: widget.favorite ? t.games.unfavorite : t.games.favorite,
-          icon: widget.favorite ? Symbols.favorite_rounded : Symbols.favorite_border_rounded,
-        ),
+            value: 'favorite',
+            label: widget.favorite ? t.games.unfavorite : t.games.favorite,
+            icon: widget.favorite ? Symbols.favorite_rounded : Symbols.favorite_border_rounded,
+          ),
         AppMenuItem(value: 'storefronts', label: t.explore.detail.links, icon: Symbols.open_in_new_rounded),
       ],
     );
@@ -155,10 +155,8 @@ class _GameCardState extends State<GameCard> {
         Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
-            builder: (_) => ExternalAccessScreen(
-              title: widget.game.name,
-              categories: const [ExternalAccessCategory.games],
-            ),
+            builder: (_) =>
+                ExternalAccessScreen(title: widget.game.name, categories: const [ExternalAccessCategory.games]),
           ),
         ),
       );
@@ -175,7 +173,6 @@ class _GameCardState extends State<GameCard> {
   @override
   Widget build(BuildContext context) {
     final radius = tokens(context).radiusSm;
-    final enabled = widget.onPlay != null;
     return Padding(
       padding: const EdgeInsets.all(6),
       child: FocusableWrapper(
@@ -226,9 +223,9 @@ class _GameCardState extends State<GameCard> {
                                 color: Colors.black.withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(radius),
                               ),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Text('Steam', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                child: Text(t.games.steamSource, style: TextStyle(color: Colors.white, fontSize: 12)),
                               ),
                             ),
                           ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -509,12 +510,12 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
       final page = more ? _page + 1 : 1, service = widget.service, library = widget.library;
       final result = library == null
           ? _catalogProvider == 'googleBooks'
-              ? await service.googleBooksSearch(
-                  _search.text.trim(),
-                  page: page,
-                  country: Localizations.localeOf(context).countryCode ?? 'CA',
-                )
-              : await service.openLibrarySearch(_search.text.trim(), page: page)
+                ? await service.googleBooksSearch(
+                    _search.text.trim(),
+                    page: page,
+                    country: Localizations.localeOf(context).countryCode ?? 'CA',
+                  )
+                : await service.openLibrarySearch(_search.text.trim(), page: page)
           : _shelf == 'catalogue'
           ? await service.search(library, _search.text.trim(), page: page)
           : await service.shelf(library, holds: _shelf == 'holds');
@@ -630,7 +631,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                     suffixIcon: IconButton(
                       onPressed: _busy ? null : () => _load(),
                       icon: AppIcon(
-                        Directionality.of(context) == TextDirection.rtl
+                        Directionality.of(context) == ui.TextDirection.rtl
                             ? Symbols.arrow_back_rounded
                             : Symbols.arrow_forward_rounded,
                       ),
@@ -703,9 +704,9 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                         NumberFormat.simpleCurrency(name: book.currency).format(book.price),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.primary),
                       ),
                     if (book.due != null)
                       Text(

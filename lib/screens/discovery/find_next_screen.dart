@@ -705,16 +705,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
                             return FocusableListTile(
                               title: Text(t.discover.findNext.filterAnything),
                               trailing: selected == null ? const AppIcon(Symbols.check_rounded) : null,
-                              onTap: () => OverlaySheetController.popAdaptive(
-                                sheetContext,
-                                (applied: true, value: null),
-                              ),
+                              onTap: () =>
+                                  OverlaySheetController.popAdaptive(sheetContext, (applied: true, value: null)),
                             );
                           }
                           if (filtered.isEmpty) {
                             return Padding(
                               padding: const EdgeInsets.all(20),
-                              child: Center(child: Text(t.common.noResultsFound)),
+                              child: Center(child: Text(t.messages.noResultsFound)),
                             );
                           }
                           final value = filtered[index - 1];
@@ -722,10 +720,8 @@ class _FindNextScreenState extends State<FindNextScreen> {
                           return FocusableListTile(
                             title: Text(isolateDisplayText(value), maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: isSelected ? const AppIcon(Symbols.check_rounded) : null,
-                            onTap: () => OverlaySheetController.popAdaptive(
-                              sheetContext,
-                              (applied: true, value: value),
-                            ),
+                            onTap: () =>
+                                OverlaySheetController.popAdaptive(sheetContext, (applied: true, value: value)),
                           );
                         },
                       ),
@@ -755,11 +751,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (shownGenres.length == 48) shownGenres.removeLast();
       shownGenres.insert(0, selectedGenre);
     }
-    final availableSources = _choices
-        .map((choice) => choice.reason)
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
+    final availableSources = _choices.map((choice) => choice.reason).where((value) => value.isNotEmpty).toSet().toList()
       ..sort((left, right) => left.toLowerCase().compareTo(right.toLowerCase()));
     final selectedSource = sourceReason;
     final shownSources = availableSources.take(48).toList();
@@ -767,198 +759,196 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (shownSources.length == 48) shownSources.removeLast();
       shownSources.insert(0, selectedSource);
     }
-    final result = await OverlaySheetController.showAdaptive<
-      ({_DiscoveryFamily family, int? minutes, String? genre, String? sourceReason})
-    >(
-      context,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.68),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.discover.findNext.filters, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+    final result =
+        await OverlaySheetController.showAdaptive<
+          ({_DiscoveryFamily family, int? minutes, String? genre, String? sourceReason})
+        >(
+          context,
+          showDragHandle: true,
+          builder: (sheetContext) => StatefulBuilder(
+            builder: (context, setSheetState) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.68),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final item in _DiscoveryFamily.values)
-                        FocusableButton(
-                          onPressed: () => setSheetState(() => family = item),
-                          autoScroll: false,
-                          child: ChoiceChip(
-                            label: Text(_familyLabel(item)),
-                            selected: item == family,
-                            onSelected: (_) => setSheetState(() => family = item),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(child: Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall)),
-                      if (availableSources.length > shownSources.length)
-                        TextButton(
-                          onPressed: () async {
-                            final selection = await _pickFilterValue(
-                              title: t.fileSources.source,
-                              options: availableSources,
-                              selected: sourceReason,
-                            );
-                            if (selection != null && selection.applied) {
-                              final value = selection.value;
-                              if (value != null && !shownSources.contains(value)) {
-                                if (shownSources.length == 48) shownSources.removeLast();
-                                shownSources.insert(0, value);
-                              }
-                              setSheetState(() => sourceReason = value);
-                            }
-                          },
-                          child: Text(t.common.viewAll),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        for (final item in <String?>[null, ...shownSources])
-                          FocusableButton(
-                            onPressed: () => setSheetState(() => sourceReason = item),
-                            autoScroll: false,
-                            child: ChoiceChip(
-                              label: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
-                                child: Text(
-                                  item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      Text(t.discover.findNext.filters, style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final item in _DiscoveryFamily.values)
+                            FocusableButton(
+                              onPressed: () => setSheetState(() => family = item),
+                              autoScroll: false,
+                              child: ChoiceChip(
+                                label: Text(_familyLabel(item)),
+                                selected: item == family,
+                                onSelected: (_) => setSheetState(() => family = item),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall)),
+                          if (availableSources.length > shownSources.length)
+                            TextButton(
+                              onPressed: () async {
+                                final selection = await _pickFilterValue(
+                                  title: t.fileSources.source,
+                                  options: availableSources,
+                                  selected: sourceReason,
+                                );
+                                if (selection != null && selection.applied) {
+                                  final value = selection.value;
+                                  if (value != null && !shownSources.contains(value)) {
+                                    if (shownSources.length == 48) shownSources.removeLast();
+                                    shownSources.insert(0, value);
+                                  }
+                                  setSheetState(() => sourceReason = value);
+                                }
+                              },
+                              child: Text(t.common.viewAll),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final item in <String?>[null, ...shownSources])
+                              FocusableButton(
+                                onPressed: () => setSheetState(() => sourceReason = item),
+                                autoScroll: false,
+                                child: ChoiceChip(
+                                  label: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
+                                    child: Text(
+                                      item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  selected: item == sourceReason,
+                                  onSelected: (_) => setSheetState(() => sourceReason = item),
                                 ),
                               ),
-                              selected: item == sourceReason,
-                              onSelected: (_) => setSheetState(() => sourceReason = item),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              t.libraries.filterCategories.genre,
+                              style: Theme.of(context).textTheme.titleSmall,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(t.libraries.filterCategories.genre, style: Theme.of(context).textTheme.titleSmall),
+                          if (availableGenres.length > shownGenres.length)
+                            TextButton(
+                              onPressed: () async {
+                                final selection = await _pickFilterValue(
+                                  title: t.libraries.filterCategories.genre,
+                                  options: availableGenres,
+                                  selected: genre,
+                                );
+                                if (selection != null && selection.applied) {
+                                  final value = selection.value;
+                                  if (value != null &&
+                                      !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
+                                    if (shownGenres.length == 48) shownGenres.removeLast();
+                                    shownGenres.insert(0, value);
+                                  }
+                                  setSheetState(() => genre = value);
+                                }
+                              },
+                              child: Text(t.common.viewAll),
+                            ),
+                        ],
                       ),
-                      if (availableGenres.length > shownGenres.length)
-                        TextButton(
-                          onPressed: () async {
-                            final selection = await _pickFilterValue(
-                              title: t.libraries.filterCategories.genre,
-                              options: availableGenres,
-                              selected: genre,
-                            );
-                            if (selection != null && selection.applied) {
-                              final value = selection.value;
-                              if (value != null &&
-                                  !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
-                                if (shownGenres.length == 48) shownGenres.removeLast();
-                                shownGenres.insert(0, value);
-                              }
-                              setSheetState(() => genre = value);
-                            }
-                          },
-                          child: Text(t.common.viewAll),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        for (final item in <String?>[null, ...shownGenres])
-                          FocusableButton(
-                            onPressed: () => setSheetState(() => genre = item),
-                            autoScroll: false,
-                            child: ChoiceChip(
-                              label: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
-                                child: Text(
-                                  item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final item in <String?>[null, ...shownGenres])
+                              FocusableButton(
+                                onPressed: () => setSheetState(() => genre = item),
+                                autoScroll: false,
+                                child: ChoiceChip(
+                                  label: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
+                                    child: Text(
+                                      item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  selected: item == genre,
+                                  onSelected: (_) => setSheetState(() => genre = item),
                                 ),
                               ),
-                              selected: item == genre,
-                              onSelected: (_) => setSheetState(() => genre = item),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(t.discover.findNext.timeAvailable, style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final item in <int?>[null, 20, 45, 90])
+                            FocusableButton(
+                              onPressed: () => setSheetState(() => maxMinutes = item),
+                              autoScroll: false,
+                              child: ChoiceChip(
+                                label: Text(
+                                  localizeDecimalDigits(switch (item) {
+                                    null => t.discover.findNext.anyTime,
+                                    20 => t.discover.findNext.twentyMinutes,
+                                    45 => t.discover.findNext.fortyFiveMinutes,
+                                    _ => t.discover.findNext.ninetyMinutes,
+                                  }),
+                                ),
+                                selected: item == maxMinutes,
+                                onSelected: (_) => setSheetState(() => maxMinutes = item),
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(t.discover.findNext.timeAvailable, style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final item in <int?>[null, 20, 45, 90])
-                        FocusableButton(
-                          onPressed: () => setSheetState(() => maxMinutes = item),
-                          autoScroll: false,
-                          child: ChoiceChip(
-                            label: Text(
-                              localizeDecimalDigits(switch (item) {
-                                null => t.discover.findNext.anyTime,
-                                20 => t.discover.findNext.twentyMinutes,
-                                45 => t.discover.findNext.fortyFiveMinutes,
-                                _ => t.discover.findNext.ninetyMinutes,
-                              }),
-                            ),
-                            selected: item == maxMinutes,
-                            onSelected: (_) => setSheetState(() => maxMinutes = item),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: FocusableButton(
+                          onPressed: () => Navigator.of(
+                            sheetContext,
+                          ).pop((family: family, minutes: maxMinutes, genre: genre, sourceReason: sourceReason)),
+                          useBackgroundFocus: true,
+                          child: FilledButton(
+                            onPressed: () => Navigator.of(
+                              sheetContext,
+                            ).pop((family: family, minutes: maxMinutes, genre: genre, sourceReason: sourceReason)),
+                            child: Text(t.discover.findNext.apply),
                           ),
                         ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: FocusableButton(
-                      onPressed: () => Navigator.of(sheetContext).pop((
-                        family: family,
-                        minutes: maxMinutes,
-                        genre: genre,
-                        sourceReason: sourceReason,
-                      )),
-                      useBackgroundFocus: true,
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop((
-                          family: family,
-                          minutes: maxMinutes,
-                          genre: genre,
-                          sourceReason: sourceReason,
-                        )),
-                        child: Text(t.discover.findNext.apply),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
     if (!mounted || result == null) return;
     setState(() {
       _restoredChoice = null;
@@ -1632,10 +1622,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
               IconButton(
                 tooltip: t.discover.findNext.filters,
                 onPressed: profileChanged || _loading ? null : _showFilters,
-                icon: Badge(
-                  isLabelVisible: _hasActiveFilters,
-                  child: const AppIcon(Symbols.tune_rounded),
-                ),
+                icon: Badge(isLabelVisible: _hasActiveFilters, child: const AppIcon(Symbols.tune_rounded)),
               ),
               IconButton(
                 tooltip: t.fileSources.history,

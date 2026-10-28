@@ -32,9 +32,13 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
 
     init {
       channel.setMethodCallHandler(this)
-      invoke("setOnStateChanged", arrayOf(Runnable::class.java), Runnable {
-        channel.invokeMethod("sessionState", target.javaClass.getMethod("getSessionState").invoke(target))
-      })
+      invoke(
+        "setOnStateChanged",
+        arrayOf(Runnable::class.java),
+        Runnable {
+          channel.invokeMethod("sessionState", target.javaClass.getMethod("getSessionState").invoke(target))
+        }
+      )
     }
 
     override fun getView(): View = view
@@ -47,8 +51,11 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
             Thread({
               val stopped = runCatching { invoke("awaitTermination") }.isSuccess
               Handler(Looper.getMainLooper()).post {
-                if (stopped) result.success(null)
-                else result.error("STREAM_STOP_PENDING", "The previous stream is still stopping", null)
+                if (stopped) {
+                  result.success(null)
+                } else {
+                  result.error("STREAM_STOP_PENDING", "The previous stream is still stopping", null)
+                }
               }
             }, "PlezySteamDisconnect").apply { isDaemon = true }.start()
             return

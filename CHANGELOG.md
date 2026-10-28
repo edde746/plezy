@@ -28,6 +28,7 @@
 - Let people shuffle a saved pick back onto the deck for a deliberate action, without auto-starting playback.
 - Clear all active Find your next filters directly from a no-match result.
 - Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
+- Fix compile errors in discovery, source details and issue reporting by using existing translations and framework symbols; localize the Steam source badge.
 - Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
 - Include the startup phase and exception type in its reviewed GitHub issue draft while excluding the raw message and stack trace from the QR payload.
 - Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
