@@ -15,11 +15,13 @@ final class SubtitleTranslationResult {
     required this.cues,
     required this.backendLabel,
     required this.fellBackToCpu,
+    required this.qualityWarnings,
   });
 
   final List<SubtitleCue> cues;
   final String backendLabel;
   final bool fellBackToCpu;
+  final List<String> qualityWarnings;
 }
 
 abstract final class SubtitleTranslationService {
@@ -207,6 +209,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       );
     }
     final normalizedGlossary = _validateGlossary(glossary);
+    final glossaryChecks = _buildGlossaryChecks(normalizedGlossary);
     if (sourceLanguage == targetLanguage) {
       throw ArgumentError('Choose different source and target languages.');
     }
@@ -226,6 +229,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
         requestCuda: requestDesktopCuda,
         bilingual: bilingual,
         glossary: normalizedGlossary,
+        glossaryChecks: glossaryChecks,
         onProgress: onProgress,
       );
     }
@@ -242,6 +246,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     final translated = <SubtitleCue>[];
     var translatedBytes = 0;
     var protectedInputBytes = 0;
+    final qualityWarnings = <String>[];
     try {
       for (var index = 0; index < cues.length; index++) {
         final source = cues[index];
@@ -252,6 +257,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
         }
         final machineText = await _translateMarkupAware(translator, protected.text);
         final translatedText = _restoreGlossary(machineText, protected.markers);
+        _collectGlossaryWarnings(source, translatedText, glossaryChecks, qualityWarnings);
         if (translatedText.trim().isEmpty) {
           throw FormatException('Translation returned empty text for cue ${source.index}.');
         }
@@ -278,6 +284,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       cues: List.unmodifiable(translated),
       backendLabel: 'ML Kit on-device; CPU/GPU placement is not reported',
       fellBackToCpu: false,
+      qualityWarnings: List.unmodifiable(qualityWarnings),
     );
   }
 
@@ -301,6 +308,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     required bool requestCuda,
     required bool bilingual,
     required Map<String, String> glossary,
+    required List<_GlossaryTermCheck> glossaryChecks,
     void Function(int completed, int total)? onProgress,
   }) async {
     final pieces = <List<(bool, String)>>[];
@@ -370,6 +378,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       throw const FormatException('Local translation returned an unexpected number of text segments.');
     }
     final translated = <SubtitleCue>[];
+    final qualityWarnings = <String>[];
     var translatedBytes = 0;
     for (var cueIndex = 0; cueIndex < cues.length; cueIndex++) {
       final source = cues[cueIndex];
@@ -378,6 +387,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
         output.write(piece.$1 ? translatedText[int.parse(piece.$2)] : piece.$2);
       }
       final restoredText = _restoreGlossary(output.toString(), protectedCues[cueIndex].markers);
+      _collectGlossaryWarnings(source, restoredText, glossaryChecks, qualityWarnings);
       if (restoredText.trim().isEmpty) {
         throw FormatException('Local translation returned invalid text for cue ${source.index}.');
       }
@@ -396,6 +406,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       cues: List.unmodifiable(translated),
       backendLabel: backendLabel,
       fellBackToCpu: fellBack,
+      qualityWarnings: List.unmodifiable(qualityWarnings),
     );
   }
 
@@ -439,6 +450,34 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       return value.cast<String>();
     } finally {
       if (!processFinished) process.kill();
+    }
+  }
+
+  static List<_GlossaryTermCheck> _buildGlossaryChecks(Map<String, String> glossary) =>
+      List.unmodifiable(glossary.entries.map((entry) {
+        RegExp pattern(String value) => RegExp(
+              r'(?<![\p{L}\p{N}\p{M}\p{Pc}])' +
+                  RegExp.escape(value) +
+                  r'(?![\p{L}\p{N}\p{M}\p{Pc}])',
+              caseSensitive: false,
+              unicode: true,
+            );
+        return _GlossaryTermCheck(entry.key, entry.value, pattern(entry.key), pattern(entry.value));
+      }));
+
+  static void _collectGlossaryWarnings(
+    SubtitleCue source,
+    String translatedText,
+    List<_GlossaryTermCheck> checks,
+    List<String> warnings,
+  ) {
+    for (final check in checks) {
+      if (warnings.length >= 100) return;
+      if (check.sourcePattern.hasMatch(source.text) && !check.targetPattern.hasMatch(translatedText)) {
+        warnings.add(
+          'Cue ' + source.index.toString() + ': “' + check.source + '” may be missing its glossary translation “' + check.target + '”.',
+        );
+      }
     }
   }
 
@@ -552,6 +591,15 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
   }
 }
 
+
+final class _GlossaryTermCheck {
+  const _GlossaryTermCheck(this.source, this.target, this.sourcePattern, this.targetPattern);
+
+  final String source;
+  final String target;
+  final RegExp sourcePattern;
+  final RegExp targetPattern;
+}
 
 final class _ProtectedGlossary {
   const _ProtectedGlossary(this.text, this.markers);

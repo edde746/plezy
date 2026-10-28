@@ -527,6 +527,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       operationLabel: 'Translated subtitles',
       operationLanguageCode: _targetLanguage.bcpCode,
       sourceCues: selected.$1,
+      reviewWarnings: result.qualityWarnings,
     )) return;
     if (!mounted) return;
     setState(() {
@@ -798,6 +799,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     required String operationLabel,
     String? operationLanguageCode,
     List<SubtitleCue>? sourceCues,
+    List<String> reviewWarnings = const [],
   }) async {
     if (cues.isEmpty || cues.length > SubtitleRetimer.maximumCueCount) {
       throw const FormatException('Subtitle result has no cues or exceeds the 50000 cue processing bound.');
@@ -834,6 +836,33 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text('${cues.length} cues are ready. Review this sample before attaching the generated SRT.'),
+                if (reviewWarnings.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Glossary check found ${reviewWarnings.length} possible mismatch${reviewWarnings.length == 1 ? '' : 'es'}. Review these cues before attaching.',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        ...reviewWarnings.take(3).map(
+                              (warning) => Text(warning, style: Theme.of(context).textTheme.bodySmall),
+                            ),
+                        if (reviewWarnings.length > 3)
+                          Text(
+                            'And ${reviewWarnings.length - 3} more.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
+                  ),
                 TextButton.icon(
                   onPressed: () => unawaited(
                     _showFullCueEditor(
