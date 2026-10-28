@@ -54,9 +54,9 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 - Google Cast needs validation against physical receivers on both platforms. The generic receiver does not use Plex's private receiver app and cannot add custom authorization headers; server adapters therefore provide self-contained HTTP(S) URLs, and playback is limited to formats supported by the receiver.
 - The live TV time-shift, local transcoding, and device-specific UI paths require real-device or server validation before release.
 
-## Planned cross-media swipe discovery
+## Cross-media swipe discovery
 
-The [Find your next handoff](swipe/README.md) specifies an artwork-led discovery route for all supported media, with moment-based choices, reversible saves/skips, isolated samples, exact editions, a useful shortlist and native touch/desktop/TV interaction. It includes 16 ordered implementation packages and 38 acceptance scenarios. This is a plan for Luna, not a completed feature. Follow its current dependency audit, existing DESIGN/UX contracts and capability-specific release gates.
+The first [Find your next runtime slice](swipe/README.md) is implemented in the current app: a bounded mixed-media deck, profile-local saved picks and Undo, time and medium filters, visible actions alongside swipe, and entry points from Discover, Libraries, Explore and Downloads. The full 16-package enhancement plan is not complete. Sample isolation, verified adaptation matching, discovery cloud sync, lending candidates, AI reranking and physical-device qualification remain future work. Use the [delivery status](swipe/DELIVERY.md) as the source of truth and extend the shipped slice without rebuilding it.
 
 ## Planned cross-media Multiview and app-owned PiP
 
