@@ -647,6 +647,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             icon: icon,
             player: widget.player,
             propertyName: propertyName,
+            contentIdentity: _state.metadata?.globalKey,
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             initialSubtitleRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncRate, _state.metadata),
@@ -1771,6 +1772,7 @@ class _CompactSyncBar extends StatefulWidget {
   final IconData icon;
   final Player player;
   final String propertyName;
+  final String? contentIdentity;
   final int initialOffset;
   final double initialSubtitleRate;
   final Future<void> Function(double rate)? onSubtitleRateChanged;
@@ -1782,6 +1784,7 @@ class _CompactSyncBar extends StatefulWidget {
     required this.icon,
     required this.player,
     required this.propertyName,
+    required this.contentIdentity,
     required this.initialOffset,
     required this.initialSubtitleRate,
     required this.onSubtitleRateChanged,
@@ -1816,6 +1819,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
           child: SyncOffsetControl(
             player: widget.player,
             propertyName: widget.propertyName,
+            contentIdentity: widget.contentIdentity,
             initialOffset: widget.initialOffset,
             initialSubtitleRate: widget.initialSubtitleRate,
             onSubtitleRateChanged: widget.onSubtitleRateChanged,

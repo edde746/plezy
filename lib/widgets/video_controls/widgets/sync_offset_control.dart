@@ -21,6 +21,7 @@ import '../../../utils/latest_async_write.dart';
 class SyncOffsetControl extends StatefulWidget {
   final Player player;
   final String propertyName; // 'audio-delay' or 'sub-delay'
+  final String? contentIdentity;
   final int initialOffset;
   final double initialSubtitleRate;
   final Future<void> Function(double rate)? onSubtitleRateChanged;
@@ -42,6 +43,7 @@ class SyncOffsetControl extends StatefulWidget {
     super.key,
     required this.player,
     required this.propertyName,
+    this.contentIdentity,
     required this.initialOffset,
     this.initialSubtitleRate = 1.0,
     this.onSubtitleRateChanged,
@@ -93,17 +95,30 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   @override
   void didUpdateWidget(SyncOffsetControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialOffset != oldWidget.initialOffset ||
+    final bindingChanged =
         widget.player != oldWidget.player ||
         widget.propertyName != oldWidget.propertyName ||
-        widget.initialSubtitleRate != oldWidget.initialSubtitleRate) {
+        widget.contentIdentity != oldWidget.contentIdentity;
+    final valuesChanged =
+        widget.initialOffset != oldWidget.initialOffset ||
+        widget.initialSubtitleRate != oldWidget.initialSubtitleRate;
+    if (bindingChanged || valuesChanged) {
+      final offsetMatchesCurrentIntent = widget.initialOffset == _currentOffset.round();
+      final offsetIsUnchanged = widget.initialOffset == oldWidget.initialOffset;
+      final rateMatchesCurrentIntent = (widget.initialSubtitleRate - _currentSubtitleRate).abs() <= 0.001;
+      final rateIsUnchanged = widget.initialSubtitleRate == oldWidget.initialSubtitleRate;
+      final valuesMatchCurrentIntent =
+          (offsetMatchesCurrentIntent || offsetIsUnchanged) &&
+          (rateMatchesCurrentIntent || rateIsUnchanged);
       ++_writeGeneration;
       ++_bindingGeneration;
       _currentOffset = widget.initialOffset.toDouble();
       _confirmedOffset = _currentOffset;
       _currentSubtitleRate = widget.initialSubtitleRate;
       _confirmedSubtitleRate = _currentSubtitleRate;
-      _undoSubtitleCalibration = null;
+      if (bindingChanged || !valuesMatchCurrentIntent) {
+        _undoSubtitleCalibration = null;
+      }
     }
   }
 
@@ -460,6 +475,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   Future<void> _undoLastSubtitleCalibration() async {
     final previous = _undoSubtitleCalibration;
     if (previous == null) return;
+    setState(() {
+      _currentOffset = previous.delayMs.toDouble();
+      _currentSubtitleRate = previous.timestampMultiplier;
+    });
     await _applySubtitleCalibration(previous);
     if (!mounted) return;
     final restored =
