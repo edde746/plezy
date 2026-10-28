@@ -50,6 +50,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:plezy/utils/formatters.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -399,7 +400,7 @@ void main() {
       );
 
       await _openMenu(tester, menuKey);
-      await tester.tap(find.text(t.common.addTo));
+      await _tapMenuEntry(tester, t.common.addTo);
       await tester.pumpAndSettle();
 
       expect(
@@ -425,7 +426,7 @@ void main() {
       );
 
       await _openMenu(tester, menuKey);
-      await tester.tap(find.text(t.common.addTo));
+      await _tapMenuEntry(tester, t.common.addTo);
       await tester.pumpAndSettle();
 
       expect(find.text(t.playlists.playlist), findsOneWidget);
@@ -457,7 +458,9 @@ void main() {
       expect(
         find.descendant(
           of: dialog,
-          matching: find.text(t.mediaMenu.confirmDeleteTarget(title: 'Breaking Bad · S1 E2 · Cat in the Bag')),
+          matching: find.text(
+            t.mediaMenu.confirmDeleteTarget(title: 'Breaking Bad · ${formatSeasonEpisodeLabel(1, 2)} · Cat in the Bag'),
+          ),
         ),
         findsOneWidget,
         reason: 'the confirmation must name the episode; displayTitle would render only "Breaking Bad"',
@@ -563,7 +566,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
-      expect(find.textContaining('S1 E3'), findsOneWidget);
+      expect(find.textContaining(formatSeasonEpisodeLabel(1, 3)!), findsOneWidget);
 
       await tester.tap(find.text(t.mediaMenu.deleteEpisodeConfirm));
       await tester.pumpAndSettle();
@@ -775,7 +778,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
-      expect(find.textContaining('S1 E3'), findsOneWidget);
+      expect(find.textContaining(formatSeasonEpisodeLabel(1, 3)!), findsOneWidget);
     });
 
     testWidgets('flags an unverified scope when the sibling lookup fails, and still deletes', (tester) async {
