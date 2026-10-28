@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
+
 - Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.
 
 - Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.
