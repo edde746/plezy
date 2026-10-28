@@ -65,6 +65,7 @@
 ### Release automation
 
 - Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
+- Retry transient Flathub disconnects while preparing the Linux release runtime and SDK.
 
 ### Platform integration
 
