@@ -24,12 +24,14 @@ class DiscoveryHistoryScreen extends StatefulWidget {
     required this.store,
     required this.includeCatalog,
     required this.onDetails,
+    required this.onRestoreToDeck,
   });
 
   final String profileId;
   final DiscoveryStore store;
   final bool includeCatalog;
   final ValueChanged<DiscoveryChoice> onDetails;
+  final Future<void> Function(DiscoveryChoice) onRestoreToDeck;
 
   @override
   State<DiscoveryHistoryScreen> createState() => _DiscoveryHistoryScreenState();
@@ -38,6 +40,7 @@ class DiscoveryHistoryScreen extends StatefulWidget {
 class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
   DiscoveryState _state = const DiscoveryState();
   bool _loading = true;
+  final Set<String> _restoring = {};
 
   @override
   void initState() {
@@ -87,6 +90,16 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
     DiscoveryChoiceType.liveProgram => Symbols.live_tv_rounded,
   };
 
+  Future<void> _restoreToDeck(DiscoveryChoice choice) async {
+    if (_restoring.contains(choice.id) || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+    setState(() => _restoring.add(choice.id));
+    try {
+      await widget.onRestoreToDeck(choice);
+    } finally {
+      if (mounted) setState(() => _restoring.remove(choice.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileChanged = context.watch<ActiveProfileProvider>().active?.id != widget.profileId;
@@ -125,10 +138,22 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
                   title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(details, maxLines: 2, overflow: TextOverflow.ellipsis),
                   onTap: profileChanged ? null : () => widget.onDetails(choice),
-                  trailing: IconButton(
-                    tooltip: t.discover.findNext.details,
-                    onPressed: profileChanged ? null : () => widget.onDetails(choice),
-                    icon: const AppIcon(Symbols.info_outline_rounded),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: t.discover.findNext.details,
+                        onPressed: profileChanged ? null : () => widget.onDetails(choice),
+                        icon: const AppIcon(Symbols.info_outline_rounded),
+                      ),
+                      IconButton(
+                        tooltip: t.common.retry,
+                        onPressed: profileChanged || _restoring.contains(choice.id)
+                            ? null
+                            : () => unawaited(_restoreToDeck(choice)),
+                        icon: const AppIcon(Symbols.replay_rounded),
+                      ),
+                    ],
                   ),
                 );
               },

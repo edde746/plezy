@@ -1106,12 +1106,41 @@ class _FindNextScreenState extends State<FindNextScreen> {
           store: _store,
           includeCatalog: _catalogAllowed,
           onDetails: (choice) => _openChoice(choice, detailsOnly: true),
+          onRestoreToDeck: (choice) => _restoreHistoryChoice(choice, profileId),
         ),
       ),
     );
     if (mounted && context.read<ActiveProfileProvider>().active?.id == profileId) {
       _state = await _store.load(profileId);
       setState(() {});
+    }
+  }
+
+  Future<void> _restoreHistoryChoice(DiscoveryChoice choice, String profileId) async {
+    final sources = context.read<SourceController>();
+    if (!mounted ||
+        context.read<ActiveProfileProvider>().active?.id != profileId ||
+        _ownerProfileId != profileId ||
+        !sources.current(_sourceGeneration)) {
+      return;
+    }
+    try {
+      final state = await _store.restoreToDeck(profileId, choice.id);
+      if (!mounted ||
+          context.read<ActiveProfileProvider>().active?.id != profileId ||
+          _ownerProfileId != profileId ||
+          !sources.current(_sourceGeneration)) {
+        return;
+      }
+      final currentVersion = _choices.where((item) => item.id == choice.id).firstOrNull;
+      setState(() {
+        _state = state;
+        _restoredChoice = currentVersion ?? choice;
+        _feedback = null;
+      });
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
     }
   }
 

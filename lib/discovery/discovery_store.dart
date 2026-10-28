@@ -169,6 +169,13 @@ class DiscoveryStore {
   Future<DiscoveryState> startFreshSession(String profileId) =>
       _update(profileId, (current) => DiscoveryState(saved: current.saved, history: current.history));
 
+  /// Makes one reviewed item eligible for the deck again without changing its
+  /// saved membership or rewriting the decision history.
+  Future<DiscoveryState> restoreToDeck(String profileId, String choiceId) => _update(profileId, (current) {
+    final seen = {...current.seen}..remove(choiceId);
+    return DiscoveryState(saved: current.saved, seen: seen, history: current.history);
+  });
+
   Future<DiscoveryState> _update(String profileId, DiscoveryState Function(DiscoveryState) update) async {
     final value = await _sources.updatePreferenceAtomically(profileId, _preferenceKey, (raw) {
       return update(DiscoveryState.fromJson(raw)).toJson();

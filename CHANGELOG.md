@@ -16,6 +16,7 @@
 - Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
 - Include the startup phase and exception type in its reviewed GitHub issue draft while excluding the raw message and stack trace from the QR payload.
 - Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
+- Retry an individual Find your next history pick into the deck without changing its Saved picks membership or launching playback.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.

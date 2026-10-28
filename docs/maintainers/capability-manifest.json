@@ -66,7 +66,7 @@
       "area": "Find your next",
       "status": "partial",
       "evidence": ["docs/plezyng/swipe/DELIVERY.md", "lib/discovery"],
-      "open": "The bounded mixed-media deck, searchable profile-local saved picks with a no-fetch Home entry, medium/time/source/metadata-backed genre filters with quick chips and searchable full source/genre pickers, direct reset on no matches, canonical actions, Undo, timestamped profile-local decision history, and non-launching saved-pick Shuffle are implemented. Genre/source filtering, history, Shuffle, saved search and filter recovery have not run their feature acceptance suite. Isolated samples, verified adaptation matching, shortlist comparison, mood/familiarity filters, discovery cloud sync, lending candidates, AI reranking, and physical-device qualification remain open. No research-cohort feature is in scope."
+      "open": "The bounded mixed-media deck, searchable profile-local saved picks with a no-fetch Home entry, medium/time/source/metadata-backed genre filters with quick chips and searchable full source/genre pickers, direct reset on no matches, canonical actions, Undo, timestamped profile-local decision history with per-item Retry into the deck, and non-launching saved-pick Shuffle are implemented. Genre/source filtering, history, Retry, Shuffle, saved search and filter recovery have not run their feature acceptance suite. Isolated samples, verified adaptation matching, shortlist comparison, mood/familiarity filters, discovery cloud sync, lending candidates, AI reranking, and physical-device qualification remain open. No research-cohort feature is in scope."
     },
     {
       "area": "Comics",
