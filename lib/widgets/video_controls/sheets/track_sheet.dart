@@ -1,13 +1,17 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../media/media_source_info.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/playback_subtitle_resolver.dart';
+import '../../../services/subtitle_archive_importer.dart';
 import '../../../services/track_selection_service.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/formatters.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -545,21 +549,73 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
 }
 
 Future<void> _loadSubtitleFile(BuildContext context, Player player) async {
+  final supportedExtensions = player.supportedLocalSubtitleExtensions.toList()..sort();
   final result = await FilePickerService.instance.pickFiles(
     type: FileType.custom,
-    allowedExtensions: player.supportedLocalSubtitleExtensions.toList()..sort(),
+    allowedExtensions: {...supportedExtensions, if (!kIsWeb) 'zip'}.toList()..sort(),
   );
   if (result == null || result.files.isEmpty || !context.mounted) return;
-  final path = result.files.first.path;
-  if (path == null) {
-    showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
-    return;
-  }
+  final pickedFile = result.files.first;
+
   try {
-    await player.command(['sub-add', path, 'select']);
+    final selectedPath = p.extension(pickedFile.name).toLowerCase() == '.zip'
+        ? await _selectArchivedSubtitle(context, pickedFile, supportedExtensions)
+        : pickedFile.path;
+    if (selectedPath == null || !context.mounted) return;
+    await player.command(['sub-add', selectedPath, 'select']);
     if (context.mounted) OverlaySheetController.of(context).close();
   } catch (error, stackTrace) {
     appLogger.w('Could not load local subtitle file', error: error, stackTrace: stackTrace);
     if (context.mounted) showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
   }
+}
+
+Future<String?> _selectArchivedSubtitle(
+  BuildContext context,
+  PlatformFile pickedFile,
+  List<String> supportedExtensions,
+) async {
+  final bytes = await SubtitleArchiveImporter.readPickedArchive(pickedFile);
+  final document = SubtitleArchiveImporter.open(
+    bytes,
+    supportedExtensions: supportedExtensions.toSet(),
+  );
+  if (!context.mounted) return null;
+
+  final selected = document.candidates.length == 1
+      ? document.candidates.single
+      : await showDialog<SubtitleArchiveCandidate>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(t.videoControls.loadSubtitleFile),
+            content: SizedBox(
+              width: 520,
+              height: 420,
+              child: ListView.builder(
+                itemCount: document.candidates.length,
+                itemBuilder: (context, index) {
+                  final candidate = document.candidates[index];
+                  return ListTile(
+                    title: Text(
+                      isolateDisplayText(candidate.displayName),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => Navigator.of(dialogContext).pop(candidate),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(t.common.cancel),
+              ),
+            ],
+          ),
+        );
+  if (selected == null || !context.mounted) return null;
+  final paths = await document.materialize(selected);
+  if (paths.isEmpty) return null;
+  return paths.first;
 }
