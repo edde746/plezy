@@ -131,6 +131,36 @@ until that evidence exists.
 
 ## External contracts
 
+### Access review for the expanded implementation request
+
+Rechecked against Valve's primary documentation on 2026-10-28. These are
+implementation dependencies, not completed features or a reason to remove
+requested work from scope.
+
+| Requested area | Available integration path | Required completion evidence |
+| --- | --- | --- |
+| Desktop / Apple receivers | Port the embedded transport, native trust storage, decoder, presentation, audio and input adapters | Build each target; pair, render, reconnect and retire profiles on real hosts/devices |
+| Direct GPU Pyrowave / HDR / 4:4:4 | Implement platform GPU presentation and negotiate only validated decoder/display combinations | No CPU readback on the direct path; color correctness, synchronization, fallback, frame timing and resource measurements |
+| Advanced audio/controllers / adaptive streaming | Extend transport negotiation and native output/input ownership; drive adaptation from observed metrics | Channel layout, hotplug, seat isolation, neutralization, loss/recovery and adaptation tests |
+| Achievements | Server-mediated GetPlayerAchievements and GetSchemaForGame with authenticated identity and privacy-aware unavailable states | Identity binding, response bounds, cache isolation, private profiles and live API exercise |
+| News and social context | Separate public content from authenticated/private account context | Explicit scopes, safe content rendering, bounded caching and account-switch isolation |
+| Steam Input / Together | Game-side SDK/overlay facilities must not be represented as a general remote-client API | Establish applicable SDK access and host-side integration; verify real controller/overlay behavior |
+| Installation / cloud / family actions | Keep Steam authoritative; establish an authenticated host implementation for each action | Per-action permission, current host result, cancellation, entitlement/conflict handling; no inferred readiness |
+| Companion game control | Extend the existing authenticated channel with versioned capabilities and operation-specific permission | Replay protection, denied commands, bounded requests, host identity and profile retirement tests |
+| Automatic internet streaming | Provide PlezyNG-owned authenticated signaling, traversal and relay infrastructure unless separately granted Valve access | Deployment, relay authorization/expiry, abuse limits, encryption, restricted NAT and failure-path testing |
+
+[ISteamRemotePlay](https://partner.steamgames.com/doc/api/ISteamRemotePlay)
+exposes game-session information and game-side Together functions. Its presence
+does not supply an embedded receiver. The
+[Web API overview](https://partner.steamgames.com/doc/webapi_overview) distinguishes
+public and protected methods and the public and partner API hosts.
+[ISteamUserStats](https://partner.steamgames.com/doc/webapi/ISteamUserStats)
+documents player achievements and game schemas with Web API authentication.
+The [SDR requirements](https://partner.steamgames.com/doc/features/multiplayer/steamdatagramrelay)
+explicitly state that the open-source networking code does not grant access to
+Valve's relay network. PlezyNG must not claim that service without the applicable
+access; a separately deployed transport remains in scope.
+
 - [OpenID and identity](https://partner.steamgames.com/doc/features/auth)
 - [Public library API](https://partner.steamgames.com/doc/webapi/IPlayerService)
 - [Remote Play game APIs](https://partner.steamgames.com/doc/api/isteamremoteplay)
