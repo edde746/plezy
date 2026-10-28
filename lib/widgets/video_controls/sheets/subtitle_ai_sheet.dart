@@ -20,6 +20,7 @@ import '../../../services/subtitle_ai_service.dart';
 import '../../../services/subtitle_retimer.dart';
 import '../../../services/subtitle_sync_service.dart';
 import '../../../services/subtitle_translation_service.dart';
+import '../../../services/settings_service.dart';
 import '../../../services/subtitle_playback_transcription_service.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
@@ -80,6 +81,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     unawaited(_refreshCapabilityState());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_loadGlossaryForCurrentPair());
+      if (mounted) unawaited(_loadSpeechLanguageForProfile());
     });
   }
 
@@ -389,6 +391,30 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   String _currentGlossaryPairKey() {
     String code(TranslateLanguage language) => language.bcpCode.toLowerCase().split('-').first;
     return '${code(_sourceLanguage)}>${code(_targetLanguage)}';
+  }
+
+  Future<void> _loadSpeechLanguageForProfile() async {
+    final profileId = _activeProfileId;
+    if (profileId == null) return;
+    try {
+      final code = SettingsService.instance.read(SettingsService.subtitleSpeechLanguageForProfile(profileId));
+      if (!mounted) return;
+      if (code == 'auto' || _whisperLanguagesByCode().containsKey(code)) {
+        setState(() => _speechLanguageCode = code);
+      }
+    } catch (_) {
+      // A corrupt or stale preference should not block subtitle generation.
+    }
+  }
+
+  Future<void> _saveSpeechLanguageForProfile(String code) async {
+    final profileId = _activeProfileId;
+    if (profileId == null) return;
+    try {
+      await SettingsService.instance.write(SettingsService.subtitleSpeechLanguageForProfile(profileId), code);
+    } catch (_) {
+      if (mounted) setState(() => _status = 'Could not save the speech language preference for this profile.');
+    }
   }
 
   Future<void> _loadGlossaryForCurrentPair() async {
@@ -1008,7 +1034,11 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               ],
               onChanged: _busy || !supportsOverride
                   ? null
-                  : (value) => setState(() => _speechLanguageCode = value ?? 'auto'),
+                  : (value) {
+                      final code = value ?? 'auto';
+                      setState(() => _speechLanguageCode = code);
+                      unawaited(_saveSpeechLanguageForProfile(code));
+                    },
             ),
           ),
         ),
@@ -1059,6 +1089,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                             _provider != SubtitleInferenceProvider.desktopGpu) {
                           _translateSpeechToEnglish = false;
                            _speechLanguageCode = 'auto';
+                           unawaited(_saveSpeechLanguageForProfile('auto'));
                         }
                       }),
               ),

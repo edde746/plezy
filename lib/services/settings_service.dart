@@ -1288,6 +1288,14 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Translation terminology saved locally for one profile, keyed by
   /// normalized source/target language pair. Oldest pairs are evicted by the
   /// writer after the 16-pair bound; series identity is handled separately.
+  /// The speech language used by local subtitle generation, scoped to one profile.
+  static StringPref subtitleSpeechLanguageForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return StringPref(profileScopedPrefsKey(profileId, 'subtitle_speech_language_v1'), defaultValue: 'auto');
+  }
+
   static JsonPref<Map<String, Map<String, String>>> subtitleTranslationGlossariesForProfile(String profileId) {
     if (profileId.trim().isEmpty) {
       throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
