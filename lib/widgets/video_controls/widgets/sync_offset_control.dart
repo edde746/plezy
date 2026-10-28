@@ -178,9 +178,26 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             propertyName != widget.propertyName) {
           return;
         }
-        setState(() {
-          _currentOffset = _confirmedOffset;
-        });
+        final rollbackOffset = _confirmedOffset.round();
+        try {
+          await targetPlayer.setProperty(propertyName, (rollbackOffset / 1000.0).toString());
+          PlayerSyncOffsets.of(targetPlayer).recordApplied(propertyName, rollbackOffset);
+          await persistOffset(rollbackOffset);
+        } on Object catch (rollbackError, rollbackStackTrace) {
+          appLogger.w(
+            'Could not restore subtitle timing after sync save failed',
+            error: rollbackError,
+            stackTrace: rollbackStackTrace,
+          );
+        }
+        if (mounted &&
+            generation == _writeGeneration &&
+            targetPlayer == widget.player &&
+            propertyName == widget.propertyName) {
+          setState(() {
+            _currentOffset = _confirmedOffset;
+          });
+        }
       }
     }());
   }

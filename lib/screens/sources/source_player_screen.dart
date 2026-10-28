@@ -19,6 +19,7 @@ import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
 import '../../utils/formatters.dart';
 import '../../services/open_subtitles_client.dart';
+import '../../services/player_sync_offsets.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
@@ -38,6 +39,7 @@ import 'source_notes_screen.dart';
 import 'standalone_subtitle_search_sheet.dart';
 import 'source_widgets.dart';
 import '../../widgets/video_controls/sheets/picture_adjustments_sheet.dart';
+import '../../widgets/video_controls/widgets/sync_offset_control.dart';
 
 class SourcePlayerScreen extends StatefulWidget {
   const SourcePlayerScreen({super.key});
@@ -360,6 +362,77 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
   }
 
+  Future<void> _openExternalSubtitleSync(SourcePlayback playback) async {
+    final targetPlayer = playback.player;
+    if (targetPlayer == null || !playback.hasSelectedPersistentExternalSubtitle) return;
+    final initial = await playback.activeExternalSubtitleSync();
+    if (!mounted || playback.player != targetPlayer || initial == null) return;
+    final identity = playback.activeExternalSubtitleIdentity;
+    if (identity == null) return;
+    var closeScheduled = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => AnimatedBuilder(
+        animation: playback,
+        builder: (context, _) {
+          if (playback.activeExternalSubtitleIdentity != identity && !closeScheduled) {
+            closeScheduled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (sheetContext.mounted) Navigator.of(sheetContext).maybePop();
+            });
+          }
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.videoSettings.subtitleSync,
+                          style: Theme.of(sheetContext).textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: t.common.close,
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const AppIcon(Symbols.close_rounded),
+                      ),
+                    ],
+                  ),
+                  SyncOffsetControl(
+                    player: targetPlayer,
+                    propertyName: PlayerSyncOffsets.subtitleProperty,
+                    contentIdentity: identity,
+                    initialOffset: initial.delayMs,
+                    initialSubtitleRate: initial.rate,
+                    onOffsetChanged: (offset) {
+                      if (playback.activeExternalSubtitleIdentity != identity) {
+                        throw const SourceException(SourceFailure.cancelled);
+                      }
+                      return playback.persistExternalSubtitleSync(delayMs: offset);
+                    },
+                    onSubtitleRateChanged: (rate) {
+                      if (playback.activeExternalSubtitleIdentity != identity) {
+                        throw const SourceException(SourceFailure.cancelled);
+                      }
+                      return playback.persistExternalSubtitleSync(rate: rate);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget controls(SourcePlayback s) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -607,6 +680,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceListeningSettings())),
             icon: const AppIcon(Symbols.tune_rounded),
           ),
+          if (s.video && s.hasSelectedPersistentExternalSubtitle)
+            IconButton(
+              tooltip: t.videoSettings.subtitleSync,
+              onPressed: () => sourceAction(context, () => _openExternalSubtitleSync(s)),
+              icon: const AppIcon(Symbols.sync_rounded),
+            ),
           if (s.video && !s.isTransientInput)
             IconButton(
               tooltip: t.videoControls.searchSubtitles,
