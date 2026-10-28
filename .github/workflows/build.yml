@@ -1,7 +1,7 @@
 # ng-runner-policy: private-jit-only-v1
 # packer-windows-jit-v1
 name: PlezyNG Release
-run-name: ${{ inputs.action == 'release' && format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, github.ref_name) || format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
+run-name: ${{ inputs.action == 'release' && format('action:{0}:pool:{1}:tag:v{2}', inputs.action, inputs.runner_pool, inputs.build_version) || format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ on:
           - macos-validation
         default: release
       build_version:
-        description: Semantic version for artifact names; leave blank to use pubspec.yaml (release action uses the selected v* tag)
+        description: Semantic version for artifact names; release requires the existing v* tag to point to this exact main commit
         required: false
         type: string
       include_webos_build:
@@ -138,12 +138,16 @@ jobs:
             exit 1
           fi
           if [[ "$ACTION" == "release" ]]; then
-            RELEASE_TAG="$REF_NAME"
-            if [[ "$REF_TYPE" != "tag" || ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "The release action must dispatch against a vMAJOR.MINOR.PATCH tag." >&2
+            if [[ "$REF_TYPE" != "branch" || "$REF_NAME" != "main" ]]; then
+              echo "The release action must dispatch from refs/heads/main so the private main-ref runner policy applies." >&2
               exit 1
             fi
-            VERSION="${RELEASE_TAG#v}"
+            VERSION="$BUILD_VERSION_INPUT"
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "The release action requires build_version=MAJOR.MINOR.PATCH." >&2
+              exit 1
+            fi
+            RELEASE_TAG="v$VERSION"
           else
             RELEASE_TAG="$BUILD_VERSION_INPUT"
             if [[ -z "$RELEASE_TAG" && ( "$MODE" == "release" || "$MODE" == "macos-validation" ) ]]; then
@@ -207,13 +211,25 @@ jobs:
             exit 1
           fi
 
-      - name: Require the release tag to point to main
+      - name: Require the release tag to match the trusted main commit
         if: ${{ inputs.action == 'release' }}
         shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.request.outputs.release_tag }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF_TYPE" != tag || ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release actions must select an exact vMAJOR.MINOR.PATCH tag." >&2
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release actions must run from refs/heads/main." >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release actions require an exact vMAJOR.MINOR.PATCH tag." >&2
+            exit 1
+          fi
+          git fetch --no-tags origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          release_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+          if [[ "$release_commit" != "$GITHUB_SHA" ]]; then
+            echo "Release tag $RELEASE_TAG resolves to $release_commit, not dispatched main commit $GITHUB_SHA." >&2
             exit 1
           fi
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
@@ -2197,6 +2213,64 @@ jobs:
         if: ${{ needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         run: mv artifacts/webos/SHA256SUMS.txt artifacts/webos/webos-SHA256SUMS.txt
 
+      - name: Download Tizen ARM tester handoff
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: plezyng-tizen-arm-experimental
+          path: artifacts/tizen
+
+      - name: Verify and archive Tizen tester handoff
+        env:
+          EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          package_dir=artifacts/tizen
+          package_name=PlezyNG-tizen-arm-tester.tpk
+          (
+            cd "$package_dir"
+            sha256sum --check "$package_name.sha256"
+          )
+          python3 - "$package_dir" "$EXPECTED_SOURCE_COMMIT" <<'PY'
+          import json
+          import pathlib
+          import sys
+          import zipfile
+
+          package_dir = pathlib.Path(sys.argv[1])
+          expected_commit = sys.argv[2]
+          package_name = "PlezyNG-tizen-arm-tester.tpk"
+          required = [
+              package_name,
+              package_name + ".sha256",
+              package_name + ".json",
+              "pubspec-tizen.lock",
+              "native-build.json",
+              "PlezyNG-tizen-arm-native-sources.tar.gz",
+              "package.py",
+              "toolchain.json",
+              "tizen-tester.md",
+          ]
+          missing = [name for name in required if not (package_dir / name).is_file()]
+          if missing:
+              raise SystemExit(f"Tizen tester handoff is missing: {missing}")
+
+          report = json.loads((package_dir / (package_name + ".json")).read_text())
+          if report.get("source_commit") != expected_commit:
+              raise SystemExit("Tizen tester package was built from a different source commit")
+          if report.get("source_dirty") is not False:
+              raise SystemExit("Tizen tester package source tree was not clean")
+          if report.get("signing") != "development-only-requires-tv-resigning":
+              raise SystemExit("Tizen tester package has unexpected signing status")
+          if report.get("tv_install_verified") is not False:
+              raise SystemExit("Tizen tester package must remain explicitly unqualified")
+
+          destination = package_dir / "PlezyNG-tizen-arm-tester-handoff.zip"
+          with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              for name in required:
+                  archive.write(package_dir / name, arcname=name)
+          print(f"Verified Tizen tester package source and created {destination}")
+          PY
+
       - name: Download iOS artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -2263,6 +2337,9 @@ jobs:
         with:
           name: linux-x64-appimage
           path: artifacts/linux-x64
+
+      - name: Verify Tizen handoff before publication
+        run: test -s artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
@@ -2408,6 +2485,7 @@ jobs:
             fi
             echo artifacts/windows-chocolatey/plezyng.*.nupkg
             echo "artifacts/plezyng-winget-manifests-${RELEASE_VERSION}.zip"
+            echo artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip
             if [ -f artifacts/android-apk/plezyng-android-play.aab ]; then
               echo artifacts/android-apk/plezyng-android-play.aab
             fi

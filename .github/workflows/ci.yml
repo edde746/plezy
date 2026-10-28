@@ -537,9 +537,17 @@ jobs:
         if: matrix.platform == 'iOS'
         run: flutter build ios --config-only --simulator --debug --no-pub
 
+      - name: Refresh pinned iOS Swift packages
+        if: matrix.platform == 'iOS'
+        run: scripts/refresh_apple_spm.sh ios
+
       - name: Prepare macOS Flutter build settings
         if: matrix.platform == 'macOS'
         run: flutter build macos --config-only --debug --no-pub
+
+      - name: Refresh pinned macOS Swift packages
+        if: matrix.platform == 'macOS'
+        run: scripts/refresh_apple_spm.sh macos
 
       - name: Prepare tvOS Flutter engine
         if: matrix.platform == 'tvOS'
@@ -567,6 +575,9 @@ jobs:
         run: |
           ruby tvos/scripts/test_wire_mpv.rb
           ruby tvos/scripts/test_wire_top_shelf.rb
+
+      - name: Resolve pinned Apple Swift packages for native tests
+        run: xcodebuild -resolvePackageDependencies -workspace "${{ matrix.workspace }}" -scheme Runner
 
       - name: Select Apple test destination
         env:

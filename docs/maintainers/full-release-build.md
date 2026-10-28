@@ -21,8 +21,12 @@ SHA-256 in the Android header build, and runs
 `scripts/set_native_revision.sh` for the published artifact-manifest commit.
 It pushes that focused pin update to PlezyNG `main`, waits for CI on that exact
 commit, creates the matching `v<version>` tag, and dispatches the all-platform
-release build. The release build includes the webOS and Tizen ARM candidates by
-default. Apple jobs refresh their SwiftPM mirror after the native pin changes.
+release build. The release build compiles the webOS and Tizen ARM candidates by
+default. The validated Tizen tester package and its re-signing handoff are
+attached to the versioned release. The webOS IPK remains excluded from public
+release assets until the existing artifact eligibility gate passes and the
+operator opts in. Apple jobs refresh their SwiftPM mirror after the native pin
+changes.
 Before publication, the orchestrator checks that every required release asset
 exists. `--publish` then promotes the GitHub draft and sequentially dispatches
 the configured store, package, container, appcast, and Discord workflows. It

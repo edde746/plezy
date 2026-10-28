@@ -2,11 +2,8 @@
 
 ## [Unreleased]
 
-### Release automation
-
-- Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
-- Add integrated VLC-inspired media capture, private-LAN HLS sharing, consent-based search extensions and the `plezyctl` helper, with accessible cues, deep links, platform registrations and setup documentation.
-- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
+- Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
+- Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 
 ## [3.0.0] - 2026-10-27
 
@@ -17,6 +14,8 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 #### Release automation
 
 - Add one-command native dependency refresh and all-platform private-JIT release orchestration.
+- Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
+- Validate all platform assets before publishing and dispatch configured release channels through the private-JIT orchestrator.
 - Include ARM webOS and Tizen tester builds in versioned releases, with pinned SDK and host-tool setup for Android, webOS and Tizen.
 - Provision pinned Android SDK packages and install hash-verified Python/Ninja plus host prerequisites for Android, webOS and Tizen private JIT builds.
 
@@ -27,6 +26,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 #### Universal media tools
 
 - Add one Open media workspace for direct streams, playlists, local files and desktop discs, plus desktop conversion, live-stream recording, Wi-Fi transfer, and MPV picture tools. Preserve live `#EXTINF` entries with playlist metadata, and keep favorites and nested launchers in the existing focus-aware Files and books rows.
+- Add integrated VLC-inspired media capture, private-LAN HLS sharing, consent-based search extensions and the `plezyctl` helper, with accessible cues, deep links, platform registrations and setup documentation.
 
 #### Playback and downloads
 
@@ -73,6 +73,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Add experimental LG webOS TV playback with OLED sign-in, OS-backed credentials and app-private artwork caching, plus ARM package build tooling; keep its IPK out of public artifacts until redistribution and exact-device qualification are approved.
 - Add experimental Samsung Tizen TV playback, signed TPK packaging and a disabled Apps2Samsung catalog recipe.
 - Add PlezyNG-branded cross-platform release packaging, versioned private-JIT builds, checksums and credential-gated submissions for mobile, desktop and TV stores, plus Linux packages, Windows package-manager submissions and multi-architecture relay images.
+- Attach a downloadable ARM Samsung Tizen tester handoff with its checksum, source and toolchain evidence; label it as development-signed and requiring TV re-signing.
 - Add a seven-day full-app trial followed by a one-time lifetime unlock, a public privacy notice and PlezyNG branding across app icons, launchers, TV and store artwork.
 
 ### Security
@@ -95,6 +96,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 ### Changed
 
 - Complete locale catalogs, record explicit fallbacks for new Steam account copy, fix release validation, and configure Gradle to use the private JIT runner's HTTPS proxy.
+- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows deep-link forwarding for the native toolchain.
 - Keep settings import and reset feedback visible when root rebuilds for locale or TV-mode changes.
 - Route Windows release packaging through PlezyNG's private Windows runner.
 - Use shared focus controls for Home row dialogs, subtitle styling and video equalizer sliders, with TV text input for Home row names.
