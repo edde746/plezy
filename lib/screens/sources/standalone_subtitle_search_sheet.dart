@@ -11,6 +11,8 @@ import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
+import '../../services/settings_service.dart';
+import '../../services/subtitle_rejection_service.dart';
 import '../../services/subtitle_retimer.dart';
 import '../../utils/formatters.dart';
 import '../../utils/language_codes.dart';
@@ -86,6 +88,10 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
   String _language = 'en';
   bool _languageInitialized = false;
   List<SubtitleSearchResult> _results = const [];
+  List<SubtitleSearchResult> _allResults = const [];
+  final Set<String> _sessionRejectedRevisions = <String>{};
+  int _hiddenRejectedRevisionCount = 0;
+  bool _showRejectedRevisions = false;
   bool _searching = false;
   bool _hasSearched = false;
   String? _error;
@@ -136,7 +142,10 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
       );
       if (!mounted || generation != _generation) return;
       setState(() {
-        _results = results;
+        _allResults = results;
+        final filtered = _filterRejectedResults(results);
+        _results = _showRejectedRevisions ? results : filtered.visible;
+        _hiddenRejectedRevisionCount = filtered.hidden;
         _searching = false;
       });
     } catch (_) {
@@ -146,6 +155,99 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
         _searching = false;
         _hasSearched = true;
       });
+    }
+  }
+
+
+  String get _rejectionItemId => [
+    widget.movieHash?.trim() ?? '',
+    widget.imdbId?.trim() ?? '',
+    widget.tmdbId?.trim() ?? '',
+    widget.year?.toString() ?? '',
+    widget.title.trim().toLowerCase(),
+  ].join('|');
+
+  String _revisionKey(SubtitleSearchResult result) => SubtitleRejectionService.revisionKey(
+    serverId: 'standalone-opensubtitles',
+    itemId: _rejectionItemId,
+    mediaIndex: 0,
+    result: result,
+  );
+
+  bool _isRejected(SubtitleSearchResult result) {
+    if (_sessionRejectedRevisions.contains(_revisionKey(result))) return true;
+    final settings = SettingsService.instanceOrNull;
+    return settings != null &&
+        SubtitleRejectionService.isRejected(
+          settings,
+          serverId: 'standalone-opensubtitles',
+          itemId: _rejectionItemId,
+          mediaIndex: 0,
+          result: result,
+        );
+  }
+
+  ({List<SubtitleSearchResult> visible, int hidden}) _filterRejectedResults(
+    List<SubtitleSearchResult> results,
+  ) {
+    final visible = <SubtitleSearchResult>[];
+    var hidden = 0;
+    for (final result in results) {
+      if (_isRejected(result)) {
+        hidden++;
+      } else {
+        visible.add(result);
+      }
+    }
+    return (visible: visible, hidden: hidden);
+  }
+
+  void _toggleRejectedRevisionVisibility() {
+    final nextShowRejected = !_showRejectedRevisions;
+    final filtered = _filterRejectedResults(_allResults);
+    setState(() {
+      _showRejectedRevisions = nextShowRejected;
+      _results = nextShowRejected ? _allResults : filtered.visible;
+      _hiddenRejectedRevisionCount = filtered.hidden;
+    });
+  }
+
+  Future<void> _setRevisionRejected(SubtitleSearchResult result, {required bool rejected}) async {
+    if (result.key.trim().isEmpty) return;
+    final settings = SettingsService.instanceOrNull;
+    try {
+      if (settings != null) {
+        if (rejected) {
+          await SubtitleRejectionService.reject(
+            settings,
+            serverId: 'standalone-opensubtitles',
+            itemId: _rejectionItemId,
+            mediaIndex: 0,
+            result: result,
+          );
+        } else {
+          await SubtitleRejectionService.restore(
+            settings,
+            serverId: 'standalone-opensubtitles',
+            itemId: _rejectionItemId,
+            mediaIndex: 0,
+            result: result,
+          );
+        }
+      }
+      if (!mounted) return;
+      if (rejected) {
+        _sessionRejectedRevisions.add(_revisionKey(result));
+      } else {
+        _sessionRejectedRevisions.remove(_revisionKey(result));
+      }
+      final filtered = _filterRejectedResults(_allResults);
+      setState(() {
+        _results = _showRejectedRevisions ? _allResults : filtered.visible;
+        _hiddenRejectedRevisionCount = filtered.hidden;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not save the subtitle revision choice.');
     }
   }
 
@@ -315,44 +417,105 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
               const SizedBox(height: 8),
               Expanded(
                 flex: 3,
-                child: _hasSearched && _results.isEmpty && !_searching && _error == null
-                    ? Semantics(liveRegion: true, child: Center(child: Text(t.sourceSetup.subtitleNoMatches)))
-                    : ListView.separated(
-                        itemCount: _results.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final result = _results[index];
-                          final title = result.displayTitle?.trim().isNotEmpty == true
-                              ? result.displayTitle!.trim()
-                              : result.title ?? t.sourceSetup.subtitle;
-                          final tags = <String>[
-                            if (result.language?.isNotEmpty == true) LanguageCodes.getDisplayName(result.language!),
-                            if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
-                            if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
-                            if (result.forced) t.fileInfo.flagForced,
-                            if (result.score != null)
-                              t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
-                          ];
-                          final active = _downloading == result.key;
-                          return FocusableListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            title: Text(isolateDisplayText(title), maxLines: 2, overflow: TextOverflow.ellipsis),
-                            subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),
-                            trailing: active
-                                ? Semantics(
-                                    label: t.sourceSetup.subtitleDownloading(title: isolateDisplayText(title)),
-                                    liveRegion: true,
-                                    child: const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  )
-                                : AppIcon(Symbols.download_rounded, semanticLabel: t.sourceSetup.downloadSubtitle),
-                            onTap: _downloading == null ? () => _download(result) : null,
-                          );
-                        },
+                child: Column(
+                  children: [
+                    if (_hiddenRejectedRevisionCount > 0)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _toggleRejectedRevisionVisibility,
+                          child: Text(
+                            _showRejectedRevisions
+                                ? 'Hide $_hiddenRejectedRevisionCount ignored revision(s)'
+                                : 'Show $_hiddenRejectedRevisionCount ignored revision(s)',
+                          ),
+                        ),
                       ),
+                    Expanded(
+                      child: _hasSearched && _results.isEmpty && !_searching && _error == null
+                          ? Semantics(
+                              liveRegion: true,
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _hiddenRejectedRevisionCount > 0
+                                          ? 'All matching subtitle revisions are hidden.'
+                                          : t.sourceSetup.subtitleNoMatches,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (_hiddenRejectedRevisionCount > 0)
+                                      TextButton(
+                                        onPressed: _toggleRejectedRevisionVisibility,
+                                        child: Text('Show $_hiddenRejectedRevisionCount hidden revision(s)'),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: _results.length,
+                              separatorBuilder: (_, _) => const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final result = _results[index];
+                                final title = result.displayTitle?.trim().isNotEmpty == true
+                                    ? result.displayTitle!.trim()
+                                    : result.title ?? t.sourceSetup.subtitle;
+                                final ignored = _isRejected(result);
+                                final tags = <String>[
+                                  if (result.language?.isNotEmpty == true) LanguageCodes.getDisplayName(result.language!),
+                                  if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
+                                  if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
+                                  if (result.forced) t.fileInfo.flagForced,
+                                  if (result.score != null)
+                                    t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
+                                  if (ignored) 'Ignored revision',
+                                ];
+                                final active = _downloading == result.key;
+                                return FocusableListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  title: Text(isolateDisplayText(title), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),
+                                  trailing: active
+                                      ? Semantics(
+                                          label: t.sourceSetup.subtitleDownloading(title: isolateDisplayText(title)),
+                                          liveRegion: true,
+                                          child: const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        )
+                                      : Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (result.key.trim().isNotEmpty)
+                                              IconButton(
+                                                tooltip: ignored
+                                                    ? 'Show this subtitle revision again'
+                                                    : 'Hide this subtitle revision',
+                                                visualDensity: VisualDensity.compact,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                                onPressed: () => unawaited(
+                                                  _setRevisionRejected(result, rejected: !ignored),
+                                                ),
+                                                icon: Icon(
+                                                  ignored ? Icons.undo_rounded : Icons.visibility_off_outlined,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                            AppIcon(Symbols.download_rounded, semanticLabel: t.sourceSetup.downloadSubtitle),
+                                          ],
+                                        ),
+                                  onTap: _downloading == null ? () => _download(result) : null,
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
