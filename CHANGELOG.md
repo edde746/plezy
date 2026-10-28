@@ -31,6 +31,7 @@
 - Import backend-supported subtitle files from bounded ZIP archives; validate safe entry paths, reject symbolic links, and materialize only the selected subtitle or paired IDX/SUB files into a temporary app cache.
 - Add previous/next subtitle cue alignment on MPV, persisting the player-reported offset through the existing scoped controls.
 - Expand in-player subtitle readability controls with text color, weight, outline, and background adjustments on MPV and ExoPlayer; hide the style action on unsupported backends. Add a one-tap reset to stored style defaults.
+- Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.
 
 - Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.
 
