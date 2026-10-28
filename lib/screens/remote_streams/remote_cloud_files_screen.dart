@@ -187,16 +187,19 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
           sourceController.profileId != profileId) {
         return;
       }
-      final fileId = sourceDigest('${widget.service.name}\u0000${item.id}');
       final file = PublicationFile(
-        id: fileId,
-        name: resolved.fileName,
-        mimeType: _safeMimeType(item.mimeType, resolved.fileName),
-        size: resolved.size ?? item.size,
+        // Keep the same source/file identity and edition fingerprint as the
+        // shared Files & books adapter. This screen remains a brief account
+        // reconciliation fallback, so progress saved here must resume from
+        // the canonical source browser once that virtual source is published.
+        id: item.id,
+        name: item.name,
+        mimeType: _safeMimeType(item.mimeType, item.name),
+        size: item.size,
         streamOnly: true,
       );
       final entry = SourceEntry(
-        sourceId: 'debrid:${widget.service.name}:${item.accountId}',
+        sourceId: 'remote-cloud:${item.accountId}',
         id: item.id,
         title: item.name,
         kind: SourceItemKind.video,
