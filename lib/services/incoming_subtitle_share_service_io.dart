@@ -40,6 +40,7 @@ final class IncomingSubtitleShareService {
     'vtt',
     'xml',
     'zip',
+    'tar',
   };
 
   StreamSubscription<List<SharedMediaFile>>? _subscription;
@@ -101,7 +102,7 @@ final class IncomingSubtitleShareService {
         final extension = p.extension(entity.path).toLowerCase().replaceFirst('.', '');
         if (!_extensions.contains(extension)) continue;
         final length = await entity.length();
-        final maximum = extension == 'zip' ? _maximumArchiveBytes : _maximumSubtitleBytes;
+        final maximum = const {'zip', 'tar'}.contains(extension) ? _maximumArchiveBytes : _maximumSubtitleBytes;
         if (length == 0 || length > maximum || restored.length >= _maximumFiles) continue;
         if (bytes + length > _maximumPendingBytes) continue;
         restored.add(entity);

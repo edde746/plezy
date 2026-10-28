@@ -28,7 +28,7 @@
 - Add bounded two-anchor subtitle drift calibration for MPV text tracks. Capture matching playback positions, fit one timestamp multiplier plus delay, persist both in the existing scope, and exclude unsupported players and known bitmap subtitle codecs.
 - Add exact millisecond audio/subtitle sync entry and backend-aware local subtitle import: MPV keeps its existing formats, Android ExoPlayer accepts SRT/ASS/SSA/VTT on VOD, and Tizen/webOS add SRT/VTT overlays.
 - Add a separately persisted sync offset for MPV's secondary subtitle track, using the existing scoped timing controls.
-- Import backend-supported subtitle files from bounded ZIP archives; validate safe entry paths, reject symbolic links, and materialize only the selected subtitle or paired IDX/SUB files into a temporary app cache.
+- Import backend-supported subtitle files from bounded ZIP or plain TAR archives; validate safe entry paths, reject links and unsupported TAR extensions, and materialize only the selected subtitle or paired IDX/SUB files into a temporary app cache.
 - Add previous/next subtitle cue alignment on MPV, persisting the player-reported offset through the existing scoped controls.
 - Expand in-player subtitle readability controls with text color, weight, outline, and background adjustments on MPV and ExoPlayer; hide the style action on unsupported backends. Add a one-tap reset to stored style defaults.
 - Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.

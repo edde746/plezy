@@ -702,13 +702,13 @@ Future<void> _loadSubtitleFile(BuildContext context, Player player) async {
   final supportedExtensions = player.supportedLocalSubtitleExtensions.toList()..sort();
   final result = await FilePickerService.instance.pickFiles(
     type: FileType.custom,
-    allowedExtensions: {...supportedExtensions, if (!kIsWeb) 'zip'}.toList()..sort(),
+    allowedExtensions: {...supportedExtensions, if (!kIsWeb) ...{'zip', 'tar'}}.toList()..sort(),
   );
   if (result == null || result.files.isEmpty || !context.mounted) return;
   final pickedFile = result.files.first;
 
   try {
-    final selectedPath = p.extension(pickedFile.name).toLowerCase() == '.zip'
+    final selectedPath = const {'.zip', '.tar'}.contains(p.extension(pickedFile.name).toLowerCase())
         ? await _selectArchivedSubtitle(context, pickedFile, supportedExtensions)
         : pickedFile.path;
     if (selectedPath == null || !context.mounted) return;
@@ -889,7 +889,7 @@ Future<void> _stageDroppedSubtitleFiles(
   final supported = player.supportedLocalSubtitleExtensions;
   final candidates = files.where((file) {
     final extension = p.extension(file.name).toLowerCase().replaceFirst('.', '');
-    return extension == 'zip' || supported.contains(extension);
+    return const {'zip', 'tar'}.contains(extension) || supported.contains(extension);
   }).take(12);
   if (candidates.isEmpty) return;
 
@@ -900,7 +900,7 @@ Future<void> _stageDroppedSubtitleFiles(
   await targetDirectory.create(recursive: true);
   for (final file in candidates) {
     final extension = p.extension(file.name).toLowerCase();
-    final maximumBytes = extension == '.zip' ? 50 * 1024 * 1024 : 32 * 1024 * 1024;
+    final maximumBytes = const {'.zip', '.tar'}.contains(extension) ? 50 * 1024 * 1024 : 32 * 1024 * 1024;
     final bookmark = file.extraAppleBookmark;
     var accessed = false;
     try {
@@ -940,7 +940,7 @@ Future<void> _importSubtitlePaths(BuildContext context, Player player, List<Stri
   for (final path in paths) {
     final name = p.basename(path);
     final extension = p.extension(name).toLowerCase().replaceFirst('.', '');
-    if (extension == 'zip') {
+    if (const {'zip', 'tar'}.contains(extension)) {
       final file = File(path);
       final size = await file.length();
       final extracted = await _selectArchivedSubtitle(
@@ -1018,6 +1018,7 @@ Future<String?> _selectArchivedSubtitle(
   final bytes = await SubtitleArchiveImporter.readPickedArchive(pickedFile);
   final document = SubtitleArchiveImporter.open(
     bytes,
+    fileName: pickedFile.name,
     supportedExtensions: supportedExtensions.toSet(),
   );
   if (!context.mounted) return null;
