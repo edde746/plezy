@@ -31,4 +31,22 @@ void main() {
       }
     }
   });
+
+  test('untranslated Steam experience labels use the English fallback', () async {
+    final english = await AppLocale.en.build();
+
+    for (final locale in AppLocale.values.where((locale) => locale != AppLocale.en)) {
+      final translations = await locale.build();
+      expect(
+        translations.games.gameDetails,
+        english.games.gameDetails,
+        reason: '${locale.languageTag} must use the English fallback for untranslated Steam copy',
+      );
+      expect(
+        translations.games.steamBetaTitle,
+        english.games.steamBetaTitle,
+        reason: '${locale.languageTag} must use English for revised Steam copy awaiting translation review',
+      );
+    }
+  });
 }

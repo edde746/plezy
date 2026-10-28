@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,12 +10,14 @@ import '../../games/game_artwork.dart';
 import '../../games/game_models.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/external_access_directory.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/sliver_cross_axis_layout_builder.dart';
+import '../external_access_screen.dart';
 
 /// Games share the media browser's packing, gutters and poster focus treatment.
 /// They keep their own model and actions instead of masquerading as films.
@@ -116,7 +119,7 @@ class _GameCardState extends State<GameCard> {
 
   Future<void> _menu() async {
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null || widget.onPlay == null) return;
+    if (box == null) return;
     final action = await showAdaptiveAppMenu<String>(
       context,
       title: isolateDisplayText(widget.game.name),
@@ -125,18 +128,21 @@ class _GameCardState extends State<GameCard> {
       entries: [
         if (widget.onDetails != null)
           AppMenuItem(value: 'details', label: t.games.gameDetails, icon: Symbols.info_rounded),
-        AppMenuItem(value: 'play', label: widget.playLabel ?? t.games.play, icon: Symbols.play_arrow_rounded),
+        if (widget.onPlay != null)
+          AppMenuItem(value: 'play', label: widget.playLabel ?? t.games.play, icon: Symbols.play_arrow_rounded),
         if (widget.onPlayInWorkspace != null)
           AppMenuItem(
             value: 'play_in_workspace',
             label: t.videoControls.openMiniPlayer,
             icon: Symbols.picture_in_picture_alt_rounded,
           ),
-        AppMenuItem(
+        if (widget.onFavorite != null)
+          AppMenuItem(
           value: 'favorite',
           label: widget.favorite ? t.games.unfavorite : t.games.favorite,
           icon: widget.favorite ? Symbols.favorite_rounded : Symbols.favorite_border_rounded,
         ),
+        AppMenuItem(value: 'storefronts', label: t.explore.detail.links, icon: Symbols.open_in_new_rounded),
       ],
     );
     if (!mounted) return;
@@ -144,6 +150,19 @@ class _GameCardState extends State<GameCard> {
     if (action == 'play') widget.onPlay?.call();
     if (action == 'play_in_workspace') widget.onPlayInWorkspace?.call();
     if (action == 'favorite') widget.onFavorite?.call();
+    if (action == 'storefronts') {
+      unawaited(
+        Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => ExternalAccessScreen(
+              title: widget.game.name,
+              categories: const [ExternalAccessCategory.games],
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _placeholder(BuildContext context) => ColoredBox(
@@ -167,13 +186,13 @@ class _GameCardState extends State<GameCard> {
         semanticLabel: '${isolateDisplayText(widget.game.name)}, ${isolateDisplayText(_subtitle)}',
         semanticValue: widget.favorite ? t.games.favorites : null,
         onSelect: widget.onPlay,
-        onLongPress: enabled ? _menu : null,
-        enableLongPress: enabled,
+        onLongPress: _menu,
+        enableLongPress: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: widget.onPlay,
-          onLongPress: enabled ? _menu : null,
-          onSecondaryTap: enabled ? _menu : null,
+          onLongPress: _menu,
+          onSecondaryTap: _menu,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

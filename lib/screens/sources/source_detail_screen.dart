@@ -14,6 +14,7 @@ import '../../i18n/presentation_formats.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
+import '../../services/external_access_directory.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -28,6 +29,7 @@ import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
+import '../external_access_screen.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
@@ -52,6 +54,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   final Map<String, PublicationProgress> _conflicts = {};
   final Set<String> _offline = {};
   final Map<String, double?> _transfers = {};
+
+  List<ExternalAccessCategory> get _externalAccessCategories => switch (_entry.kind) {
+    SourceItemKind.ebook => const [ExternalAccessCategory.books, ExternalAccessCategory.audiobooks],
+    SourceItemKind.audiobook => const [ExternalAccessCategory.audiobooks, ExternalAccessCategory.books],
+    SourceItemKind.comic => const [ExternalAccessCategory.comics, ExternalAccessCategory.books],
+    SourceItemKind.music => const [ExternalAccessCategory.music],
+    SourceItemKind.video => const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
+    SourceItemKind.folder || SourceItemKind.unknown => const [],
+  };
   @override
   void initState() {
     super.initState();
@@ -724,6 +735,24 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                               spacing: 12,
                               runSpacing: 12,
                               children: [
+                                if (_externalAccessCategories.isNotEmpty)
+                                  _focusedLendingButton(
+                                    onPressed: () => Navigator.push<void>(
+                                      context,
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ExternalAccessScreen(
+                                          title: _entry.displayTitle,
+                                          creator: _entry.author,
+                                          categories: _externalAccessCategories,
+                                        ),
+                                      ),
+                                    ),
+                                    buildButton: (onPressed) => OutlinedButton.icon(
+                                      onPressed: onPressed,
+                                      icon: const AppIcon(Symbols.open_in_new_rounded),
+                                      label: Text(t.explore.detail.links),
+                                    ),
+                                  ),
                                 if (_entry.ebooks.isNotEmpty)
                                   FilledButton.icon(
                                     onPressed: PlatformDetector.isTV()

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -493,6 +494,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   final _search = TextEditingController();
   List<LendingBook> _books = [];
   String _shelf = 'catalogue';
+  String _catalogProvider = 'openLibrary';
   int _page = 1, _request = 0;
   bool _busy = false, _more = false;
   Object? _error;
@@ -506,7 +508,13 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
     try {
       final page = more ? _page + 1 : 1, service = widget.service, library = widget.library;
       final result = library == null
-          ? await service.openLibrarySearch(_search.text.trim(), page: page)
+          ? _catalogProvider == 'googleBooks'
+              ? await service.googleBooksSearch(
+                  _search.text.trim(),
+                  page: page,
+                  country: Localizations.localeOf(context).countryCode ?? 'CA',
+                )
+              : await service.openLibrarySearch(_search.text.trim(), page: page)
           : _shelf == 'catalogue'
           ? await service.search(library, _search.text.trim(), page: page)
           : await service.shelf(library, holds: _shelf == 'holds');
@@ -542,7 +550,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
 
   @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
-    title: Text(widget.library?.name ?? 'Open Library'),
+    title: Text(widget.library?.name ?? (_catalogProvider == 'googleBooks' ? 'Google Books' : 'Open Library')),
     focusableAppBarActions: true,
     actions: [
       if (widget.library != null)
@@ -582,6 +590,30 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                                     _more = false;
                                   });
                                   unawaited(_load());
+                                },
+                        ),
+                    ],
+                  ),
+                ),
+              if (widget.library == null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final source in const [('openLibrary', 'Open Library'), ('googleBooks', 'Google Books')])
+                        ChoiceChip(
+                          label: Text(source.$2),
+                          selected: _catalogProvider == source.$1,
+                          onSelected: _busy
+                              ? null
+                              : (_) {
+                                  setState(() {
+                                    _catalogProvider = source.$1;
+                                    _books = [];
+                                    _more = false;
+                                  });
+                                  if (_search.text.trim().isNotEmpty) unawaited(_load());
                                 },
                         ),
                     ],
@@ -666,6 +698,15 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                     ),
+                    if (book.price != null && book.currency != null)
+                      Text(
+                        NumberFormat.simpleCurrency(name: book.currency).format(book.price),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     if (book.due != null)
                       Text(
                         t.lending.due(date: formatAbbreviatedDate(book.due!.toLocal().toIso8601String())),
@@ -793,7 +834,7 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
     final expired = book.due?.isBefore(DateTime.now()) ?? false;
     final available = _availability?['available'] == true;
     return FocusedScrollScaffold(
-      title: Text(library?.name ?? 'Open Library'),
+      title: Text(library?.name ?? (book.data['source'] == 'googleBooks' ? 'Google Books' : 'Open Library')),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(24),
@@ -813,6 +854,10 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(color: tokens(context).textMuted),
                     ),
+                    if (book.price != null && book.currency != null) ...[
+                      const SizedBox(height: 8),
+                      Text(NumberFormat.simpleCurrency(name: book.currency).format(book.price)),
+                    ],
                     const SizedBox(height: 24),
                     if (book.due != null)
                       Text(
@@ -930,6 +975,17 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                               onPressed: onPressed,
                               icon: const AppIcon(Symbols.open_in_new_rounded),
                               label: Text(t.lending.continueService),
+                            ),
+                          ),
+                        if (book.purchaseLink != null)
+                          _focusedLendingButton(
+                            onPressed: _busy
+                                ? null
+                                : () => sourceAction(context, () => widget.service.openPage(book.purchaseLink!)),
+                            buildButton: (onPressed) => OutlinedButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.shopping_bag_rounded),
+                              label: Text(t.explore.detail.openOn(site: 'Google Books')),
                             ),
                           ),
                         if (library != null && !book.loan && !book.hold && !_changed) ...[

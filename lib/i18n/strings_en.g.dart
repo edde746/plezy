@@ -109,6 +109,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 	late final Translations$games$en games = Translations$games$en.internal(_root);
 	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
+	late final Translations$householdSetup$en householdSetup = Translations$householdSetup$en.internal(_root);
+	late final Translations$issueReport$en issueReport = Translations$issueReport$en.internal(_root);
 }
 
 // Path: app
@@ -9712,9 +9714,6 @@ class Translations$games$en {
 	/// en: 'Steam account linked. Its library is private or unavailable, so no games were imported.'
 	String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
 
-	/// en: 'Steam App ID'
-	String get steamAppId => 'Steam App ID';
-
 	/// en: 'Steam could not refresh the library. Showing the last available catalog.'
 	String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 
@@ -9732,9 +9731,6 @@ class Translations$games$en {
 
 	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
 	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-
-	/// en: 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.'
-	String get steamLibraryHint => 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.';
 
 	/// en: 'Game details'
 	String get gameDetails => 'Game details';
@@ -10101,6 +10097,42 @@ class Translations$deepLinks$en {
 
 	/// en: 'Link copied'
 	String get copied => 'Link copied';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$en {
+	Translations$householdSetup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Household setup'
+	String get title => 'Household setup';
+}
+
+// Path: issueReport
+class Translations$issueReport$en {
+	Translations$issueReport$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Report a problem'
+	String get title => 'Report a problem';
+
+	/// en: 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.'
+	String get instructions => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.';
+
+	/// en: 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.'
+	String get privacy => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.';
+
+	/// en: 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.'
+	String get logPrivacy => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.';
+
+	/// en: 'Open GitHub draft'
+	String get openDraft => 'Open GitHub draft';
 }
 
 // Path: appIcon.names
@@ -16040,14 +16072,12 @@ extension on Translations {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.',
 			'games.gameDetails' => 'Game details',
 			'games.chooseComputer' => 'Choose computer',
 			'games.connectComputer' => 'Connect a computer',
@@ -16056,10 +16086,10 @@ extension on Translations {
 			'games.steamSource' => 'From Steam',
 			'games.disconnected' => 'Disconnected',
 			'games.installed' => 'Installed',
-			_ => null,
-		} ?? switch (path) {
 			'games.installationIncomplete' => 'Installation incomplete',
 			'games.notInstalled' => 'Not in the last inventory',
+			_ => null,
+		} ?? switch (path) {
 			'games.installationUnknown' => 'Installation not checked',
 			'games.allComputers' => 'All computers',
 			'games.importInstalledGames' => 'Import installed games',
@@ -16169,6 +16199,12 @@ extension on Translations {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Open as ${name}',
 			'deepLinks.copy' => 'Copy',
 			'deepLinks.copied' => 'Link copied',
+			'householdSetup.title' => 'Household setup',
+			'issueReport.title' => 'Report a problem',
+			'issueReport.instructions' => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.',
+			'issueReport.privacy' => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.',
+			'issueReport.logPrivacy' => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.',
+			'issueReport.openDraft' => 'Open GitHub draft',
 			_ => null,
 		};
 	}

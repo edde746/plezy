@@ -3884,14 +3884,12 @@
     "unlinkSteamAccountConfirm": "Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.",
     "steamAccountLinked": "Steam account linked. Games imported.",
     "steamLibraryPrivate": "Steam account linked. Its library is private or unavailable, so no games were imported.",
-    "steamAppId": "Steam App ID",
     "steamLibraryStale": "Steam could not refresh the library. Showing the last available catalog.",
     "steamLibraryTruncated": "Showing up to 2,000 games. The Steam catalog was truncated.",
     "connecting": "Connecting…",
     "disconnect": "Disconnect",
     "streamControls": "Stream controls",
     "steamPairInstructions": "Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.",
-    "steamLibraryHint": "Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.",
     "gameDetails": "Game details",
     "chooseComputer": "Choose computer",
     "connectComputer": "Connect a computer",
@@ -4013,5 +4011,15 @@
     "openAsProfile": "Open as ${name}",
     "copy": "Copy",
     "copied": "Link copied"
+  },
+  "householdSetup": {
+    "title": "Household setup"
+  },
+  "issueReport": {
+    "title": "Report a problem",
+    "instructions": "Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.",
+    "privacy": "The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.",
+    "logPrivacy": "Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.",
+    "openDraft": "Open GitHub draft"
   }
 }

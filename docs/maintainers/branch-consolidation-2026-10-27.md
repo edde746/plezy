@@ -65,9 +65,11 @@ runner matrix routing, build/release guards, and fixtures for merged functionali
 - Git whitespace/conflict-marker checks passed.
 
 This does not claim device/NAS/pixel qualification or a complete release build.
-The strict localization coverage check still reports new keys lacking translations;
-the runtime fallback is generated, but those locales require language review.
-No release or platform build was dispatched as part of code integration.
+The Steam connected-experience strings with no reviewed translation are listed in
+`lib/i18n/english_fallbacks.json`; Slang uses the English source at runtime and the
+localization gate reports the fallback debt. Missing strings outside that list
+still fail validation. Language review remains outstanding. No release or platform
+build was dispatched as part of code integration.
 
 ## Recovery inventory
 

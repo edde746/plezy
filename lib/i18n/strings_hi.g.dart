@@ -109,6 +109,8 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$hi comics = _Translations$comics$hi._(_root);
 	@override late final _Translations$games$hi games = _Translations$games$hi._(_root);
 	@override late final _Translations$deepLinks$hi deepLinks = _Translations$deepLinks$hi._(_root);
+	@override late final _Translations$householdSetup$hi householdSetup = _Translations$householdSetup$hi._(_root);
+	@override late final _Translations$issueReport$hi issueReport = _Translations$issueReport$hi._(_root);
 }
 
 // Path: app
@@ -3723,7 +3725,6 @@ class _Translations$games$hi extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3748,7 +3749,6 @@ class _Translations$games$hi extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3780,8 +3780,6 @@ class _Translations$games$hi extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3789,14 +3787,12 @@ class _Translations$games$hi extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3823,6 +3819,30 @@ class _Translations$deepLinks$hi extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} के रूप में खोलें';
 	@override String get copy => 'कॉपी करें';
 	@override String get copied => 'लिंक कॉपी करें';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$hi extends Translations$householdSetup$en {
+	_Translations$householdSetup$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'घर का सेटअप';
+}
+
+// Path: issueReport
+class _Translations$issueReport$hi extends Translations$issueReport$en {
+	_Translations$issueReport$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'समस्या की रिपोर्ट करें';
+	@override String get instructions => 'पहले से भरा GitHub ड्राफ़्ट खोलने के लिए QR कोड स्कैन करें। भेजने से पहले उसे देख लें।';
+	@override String get privacy => 'ड्राफ़्ट में ऐप संस्करण, प्लेटफ़ॉर्म और कनेक्शन की संख्या होती है। इसमें सर्वर पते, खाते या प्रोफ़ाइल के नाम, मीडिया शीर्षक या फ़ाइल पथ शामिल नहीं होते।';
+	@override String get logPrivacy => 'लॉग वैकल्पिक हैं। अपलोड करने से पहले उन्हें देखें। उनका ID ड्राफ़्ट में जुड़ता है, जो सार्वजनिक हो सकता है।';
+	@override String get openDraft => 'GitHub ड्राफ़्ट खोलें';
 }
 
 // Path: appIcon.names
@@ -8452,7 +8472,6 @@ extension on TranslationsHi {
 			'comics.collections' => 'संग्रह',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8477,7 +8496,6 @@ extension on TranslationsHi {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8509,8 +8527,6 @@ extension on TranslationsHi {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8518,14 +8534,12 @@ extension on TranslationsHi {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'यह Plezy लिंक वैध नहीं है।',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'कोई प्रोफ़ाइल "${profile}" से मेल नहीं खाता है।',
 			'deepLinks.serverUnavailable' => 'मैं इस लिंक के लिए सर्वर तक नहीं पहुंच सकता था।',
@@ -8534,17 +8548,23 @@ extension on TranslationsHi {
 			'deepLinks.noLiveTv' => 'इस लिंक के लिए कोई लाइव टीवी सर्वर उपलब्ध नहीं है।',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'चैनल "${channel}" नहीं मिल सकता था।',
 			'deepLinks.showLink' => 'लिंक दिखाएं',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'प्रोफ़ाइल लिंक दिखाएं',
 			'deepLinks.dialogTitle' => 'लिंक',
 			'deepLinks.showHint' => 'इस लिंक को खोलने से अगले एपिसोड खेला जाता है. shuffle पर शो खेलने के लिए &mode=shuffle जोड़ें.',
 			'deepLinks.movieHint' => 'इस लिंक को खोलने से फिल्म खेलती है।',
 			'deepLinks.episodeHint' => 'इस लिंक को खोलने से यह एपिसोड खेला जाता है।',
 			'deepLinks.profileHint' => 'इस लिंक को खोलने से इस प्रोफ़ाइल के लिए स्विच होता है।',
+			_ => null,
+		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} के रूप में खोलें',
 			'deepLinks.copy' => 'कॉपी करें',
 			'deepLinks.copied' => 'लिंक कॉपी करें',
+			'householdSetup.title' => 'घर का सेटअप',
+			'issueReport.title' => 'समस्या की रिपोर्ट करें',
+			'issueReport.instructions' => 'पहले से भरा GitHub ड्राफ़्ट खोलने के लिए QR कोड स्कैन करें। भेजने से पहले उसे देख लें।',
+			'issueReport.privacy' => 'ड्राफ़्ट में ऐप संस्करण, प्लेटफ़ॉर्म और कनेक्शन की संख्या होती है। इसमें सर्वर पते, खाते या प्रोफ़ाइल के नाम, मीडिया शीर्षक या फ़ाइल पथ शामिल नहीं होते।',
+			'issueReport.logPrivacy' => 'लॉग वैकल्पिक हैं। अपलोड करने से पहले उन्हें देखें। उनका ID ड्राफ़्ट में जुड़ता है, जो सार्वजनिक हो सकता है।',
+			'issueReport.openDraft' => 'GitHub ड्राफ़्ट खोलें',
 			_ => null,
 		};
 	}

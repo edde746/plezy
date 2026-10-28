@@ -19,6 +19,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_rating.dart';
@@ -29,6 +30,7 @@ import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
+import '../providers/offline_mode_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
@@ -36,6 +38,7 @@ import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/external_access_directory.dart';
 import '../services/settings_service.dart';
 import '../services/video_decode_capabilities.dart';
 import '../models/transcode_quality_preset.dart';
@@ -62,6 +65,7 @@ import '../widgets/overlay_sheet.dart';
 import '../widgets/seerr_request_sheet.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/stat_chip.dart';
+import 'external_access_screen.dart';
 
 /// Detail screen for a catalog item (Explore tab). Renders from provider
 /// data — no media server required — and resolves library availability in
@@ -113,6 +117,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   List<MediaItem>? _matches;
   Set<String> _verifiedOfflineCopies = const {};
   Map<String, PlaybackCopyRank> _copyRanks = const {};
+  MultiServerProvider? _copyServers;
+  OfflineModeProvider? _copyNetwork;
 
   /// Coverage belongs to the newest launched (detail-enriched) query, not the
   /// union of historical successes. Verified copies are merged independently.
@@ -136,6 +142,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _copyServers = context.read<MultiServerProvider>()..addListener(_onPlaybackEnvironmentChanged);
+    _copyNetwork = context.read<OfflineModeProvider?>();
+    _copyNetwork?.addListener(_onPlaybackEnvironmentChanged);
     _syncDetailCollections(widget.item);
     unawaited(_resolveMatches(widget.item));
     unawaited(_loadDetail());
@@ -155,6 +164,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   @override
   void dispose() {
+    _copyServers?.removeListener(_onPlaybackEnvironmentChanged);
+    _copyNetwork?.removeListener(_onPlaybackEnvironmentChanged);
     _backButtonFocusNode.dispose();
     _spoilerTagFocusNode.dispose();
     _overviewFocusNode.dispose();
@@ -172,6 +183,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onPlaybackEnvironmentChanged() {
+    if (mounted && _matches != null) _mergeMatches(const []);
   }
 
   void _onWatchlistChanged() {
@@ -238,16 +253,28 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void _mergeMatches(List<MediaItem> matches) {
     if (!mounted) return;
     final focused = _libraryMatchNodesByKey.values.firstWhereOrNull((node) => node.hasPrimaryFocus);
+    final servers = context.read<MultiServerProvider>();
+    final settings = SettingsService.instanceOrNull;
     final ranks = rankPlaybackCopies(
       mergeLibraryCopies(_matches ?? const [], matches),
-      onlineServerIds: context.read<MultiServerProvider>().onlineServerIds.toSet(),
+      onlineServerIds: servers.onlineServerIds.toSet(),
       verifiedOfflineKeys: _verifiedOfflineCopies,
       refusedVideoCodecs: {
         for (final codec in RankedVideoCodec.values)
           if (!VideoDecodeCapabilities.accepts(codec)) codec.id,
       },
-      quality:
-          SettingsService.instanceOrNull?.read(SettingsService.defaultQualityPreset) ?? TranscodeQualityPreset.original,
+      qualityForItem: (copy) {
+        final server = serverIdOrNull(copy.serverId);
+        if (settings == null || server == null) return TranscodeQualityPreset.original;
+        return TranscodeQualityPreset.resolveStartupDefault(
+          serverSupportsTranscoding: servers.getClientForServer(server)?.capabilities.videoTranscoding ?? false,
+          onCellularOnly: _copyNetwork?.isCellularOnly ?? false,
+          cellularDefault: settings.read(SettingsService.cellularQualityPreset),
+          generalDefault: settings.read(SettingsService.defaultQualityPreset),
+          onRemoteConnection: servers.serverManager.isRemoteConnection(server),
+          remoteDefault: settings.read(SettingsService.remoteQualityPreset),
+        );
+      },
     );
     _copyRanks = {for (final rank in ranks) rank.item.globalKey: rank};
     final merged = [for (final rank in ranks) rank.item];
@@ -296,6 +323,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final otherLinks = <CatalogLink>[];
     for (final link in item.links ?? const <CatalogLink>[]) {
       if (link.label.trim().isEmpty || link.url.trim().isEmpty) continue;
+      if (ExternalAccessDirectory.isExcludedStreamingLink(label: link.label, url: link.url)) continue;
       (link.isStreaming ? streamingLinks : otherLinks).add(link);
     }
     for (final node in _linkFocusNodes) {
@@ -392,7 +420,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  bool get _hasAccessDirectory => ExternalAccessDirectory.forMediaKind(_item.kind) != null;
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer || _hasAccessDirectory;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -688,11 +718,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
-  /// The technical label of a copy's best version, e.g. "4K HEVC MKV
-  /// (45.0 Mbps)". Library names are user-chosen and need not mention
-  /// resolution, which is exactly the question two copies of one movie pose
-  /// (#1754), so the row states it outright. Omitted when the backend
-  /// reported no resolution at all, rather than showing "Unknown".
+  /// Show the practical version selected by the current device/network
+  /// constraints, or verified local availability. The row geometry is shared
+  /// with the existing library-copy list.
   String? _libraryMatchQuality(MediaItem match) {
     final rank = _copyRanks[match.globalKey];
     if (rank?.reason == PlaybackCopyReason.offline) return t.fileSources.offline;
@@ -1501,6 +1529,29 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                     ? t.explore.removeFromWatchlist
                                                     : t.explore.addToWatchlist,
                                                 onPressed: () => unawaited(_toggleWatchlist()),
+                                              ),
+                                            if (ExternalAccessDirectory.forMediaKind(item.kind)
+                                                case final accessCategory?)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_external_access',
+                                                icon: Symbols.open_in_new_rounded,
+                                                tooltip: t.explore.detail.links,
+                                                onPressed: () => unawaited(
+                                                  Navigator.push<void>(
+                                                    hostContext,
+                                                    MaterialPageRoute<void>(
+                                                      builder: (_) => ExternalAccessScreen(
+                                                        title: item.title,
+                                                        categories: accessCategory == ExternalAccessCategory.video
+                                                            ? const [
+                                                                ExternalAccessCategory.video,
+                                                                ExternalAccessCategory.rentals,
+                                                              ]
+                                                            : const [ExternalAccessCategory.music],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr when tmdbId != null)
                                               FocusableAction(

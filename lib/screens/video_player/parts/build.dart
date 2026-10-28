@@ -103,6 +103,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   /// up and Flutter drops a later autofocus request once the scope already
   /// has a focused child. See [VideoPlayerScreenState._initializationErrorFocusNode].
   Widget _buildPlaybackFailure(String message, {required VoidCallback onRetry}) {
+    void reportProblem() {
+      unawaited(Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const IssueReportScreen())));
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -138,6 +142,15 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                FocusableButton(
+                  onPressed: reportProblem,
+                  child: TextButton.icon(
+                    onPressed: reportProblem,
+                    icon: const Icon(Symbols.qr_code_2_rounded),
+                    label: Text(t.issueReport.title),
+                  ),
                 ),
               ],
             ),

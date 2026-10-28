@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
+import '../screens/settings/issue_report_screen.dart';
 import '../services/app_exit_service.dart';
 import '../services/log_upload_service.dart';
 import '../services/startup_diagnostics.dart';
@@ -19,6 +20,7 @@ const startupBootstrapRetryKey = Key('startup-bootstrap-retry');
 const startupFailureDetailsKey = Key('startup-failure-details');
 const startupFailureCopyKey = Key('startup-failure-copy');
 const startupFailureUploadKey = Key('startup-failure-upload');
+const startupFailureReportKey = Key('startup-failure-report');
 const startupFailureRepairKey = Key('startup-failure-repair');
 const startupFailureRestartKey = Key('startup-failure-restart');
 const startupFailureQuitKey = Key('startup-failure-quit');
@@ -248,6 +250,33 @@ class _StartupFailureViewState extends State<StartupFailureView> {
                       key: startupFailureUploadKey,
                       onPressed: enabled ? () => _uploadDetails() : null,
                       child: Text(t.startup.uploadDetails),
+                    ),
+                  ),
+                  FocusableButton(
+                    onPressed: enabled
+                        ? () => Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder: (_) => IssueReportScreen(
+                                startupPhase: widget.failure.phaseId,
+                                startupErrorType: widget.failure.errorType,
+                              ),
+                            ),
+                          )
+                        : null,
+                    child: OutlinedButton.icon(
+                      key: startupFailureReportKey,
+                      onPressed: enabled
+                          ? () => Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => IssueReportScreen(
+                                  startupPhase: widget.failure.phaseId,
+                                  startupErrorType: widget.failure.errorType,
+                                ),
+                              ),
+                            )
+                          : null,
+                      icon: const AppIcon(Symbols.qr_code_2_rounded),
+                      label: Text(t.issueReport.title),
                     ),
                   ),
                 ],
