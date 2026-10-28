@@ -2,6 +2,7 @@
 #include "steam_runtime.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace plezy::steam {
@@ -337,6 +338,7 @@ void Runtime::key(uint32_t usage, bool down) {
   }
 }
 void Runtime::mouse(float x, float y, int button, bool down) {
+  if (!std::isfinite(x) || !std::isfinite(y)) return;
   std::lock_guard<std::mutex> lock(apiMutex_);
   if (!session_) return;
   IHS_SessionSendMousePosition(session_, std::clamp(x, 0.f, 1.f), std::clamp(y, 0.f, 1.f));
@@ -346,6 +348,11 @@ void Runtime::mouse(float x, float y, int button, bool down) {
     else
       IHS_SessionSendMouseUp(session_, static_cast<IHS_StreamInputMouseButton>(button));
   }
+}
+void Runtime::mouseWheel(int direction) {
+  if (direction < IHS_MOUSE_WHEEL_UP || direction > IHS_MOUSE_WHEEL_RIGHT) return;
+  std::lock_guard<std::mutex> lock(apiMutex_);
+  if (session_) IHS_SessionSendMouseWheel(session_, static_cast<IHS_StreamInputMouseWheelDirection>(direction));
 }
 void Runtime::text(const std::string& text) {
   std::lock_guard<std::mutex> lock(apiMutex_);

@@ -38,6 +38,10 @@ import MediaPlayer
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PlezySteamPlugin") {
+      PlezySteamPlugin.register(with: registrar)
+    }
+
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvPlayerPlugin") {

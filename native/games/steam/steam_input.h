@@ -68,14 +68,30 @@ class InputState {
       auto it = keys.find(n);
       if (it != keys.end()) usage = it->second;
     }
-    if (!usage) return;
+    hidKey(runtime, usage, down);
+  }
+  void hidKey(Runtime& runtime, uint32_t usage, bool down) {
+    if (!enabled_ || usage < 4 || usage > 231) return;
     if (down) keys_.insert(usage); else keys_.erase(usage);
     runtime.key(usage, down);
+  }
+  void mouse(Runtime& runtime, double x, double y, int button, bool down) {
+    if (!enabled_ || !std::isfinite(x) || !std::isfinite(y) ||
+        (button != 0 && button != 1 && button != 2 && button != 16)) return;
+    mouseX_ = float(std::clamp(x, 0.0, 1.0)); mouseY_ = float(std::clamp(y, 0.0, 1.0));
+    if (button) { if (down) mouseButtons_.insert(button); else mouseButtons_.erase(button); }
+    runtime.mouse(mouseX_, mouseY_, button, down);
+  }
+  void wheel(Runtime& runtime, int direction) { if (enabled_) runtime.mouseWheel(direction); }
+  void releasePointer(Runtime& runtime) {
+    for (int button : mouseButtons_) runtime.mouse(mouseX_, mouseY_, button, false);
+    mouseButtons_.clear();
   }
   void reset(Runtime& runtime) {
     for (unsigned seat = 0; seat < count_; ++seat) { pads_[seat] = {}; runtime.padSeat(seat, {}, 0); }
     for (auto key : keys_) runtime.key(key, false);
     keys_.clear();
+    releasePointer(runtime);
   }
  private:
   static std::string normalize(const std::string& s) {
@@ -100,6 +116,8 @@ class InputState {
   std::array<Pad,4> pads_{};
   std::map<int64_t,unsigned> seats_;
   std::set<uint32_t> keys_;
+  std::set<int> mouseButtons_;
+  float mouseX_ = 0.5f, mouseY_ = 0.5f;
   unsigned count_;
   bool enabled_ = false;
 };

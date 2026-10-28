@@ -589,7 +589,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (!mounted || !c.current) return;
     if (!capability.embeddedSurface ||
         host.protocol != GameProtocol.steam ||
-        (!Platform.isAndroid && !Platform.isLinux)) {
+        !PlatformDetector.supportsEmbeddedGameStreaming()) {
       await _engineUnavailable(host);
       return;
     }

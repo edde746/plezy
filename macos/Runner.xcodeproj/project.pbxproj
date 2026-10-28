@@ -47,6 +47,9 @@
 /* Begin GeneratedLocale PBXBuildFile */
 		21AED7A498355F9DB397AFDF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A493F82FB5C2FB40143D7566 /* InfoPlist.strings */; };
 /* End GeneratedLocale PBXBuildFile */
+		7F2BF6AFB99069BAB06494E4 /* PlezySteamPlugin.mm in Sources */ = {isa = PBXBuildFile; fileRef = FE0F1353ACD461F20BE3E7B9 /* PlezySteamPlugin.mm */; };
+		7D5F3FCB885EA9492B70B8F7 /* SteamAppleSink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 18314D10B686B469A0C226EC /* SteamAppleSink.mm */; };
+		F42652A27746793350EE6DEE /* SteamAppleSinkTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -160,6 +163,11 @@
 		3B77BC70A67F8391EA045009 /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh"; path = "Runner/zh.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
 		EC5A2A9877BEA36011B1A26C /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "Runner/zh-Hant.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
 /* End GeneratedLocale PBXFileReference */
+		FE0F1353ACD461F20BE3E7B9 /* PlezySteamPlugin.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/PlezySteamPlugin.mm"; sourceTree = SOURCE_ROOT; };
+		18314D10B686B469A0C226EC /* SteamAppleSink.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSink.mm"; sourceTree = SOURCE_ROOT; };
+		8442147075951A0D36D0835F /* PlezySteamPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/PlezySteamPlugin.h"; sourceTree = SOURCE_ROOT; };
+		EB0BAC8E1FF8B446B4EAEF07 /* SteamAppleSink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamAppleSink.h"; sourceTree = SOURCE_ROOT; };
+		DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSinkTests.mm"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,6 +271,12 @@
 		33FAB671232836740065AC1E /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */,
+				FE0F1353ACD461F20BE3E7B9 /* PlezySteamPlugin.mm */,
+				18314D10B686B469A0C226EC /* SteamAppleSink.mm */,
+				8442147075951A0D36D0835F /* PlezySteamPlugin.h */,
+				EB0BAC8E1FF8B446B4EAEF07 /* SteamAppleSink.h */,
+
 				A493F82FB5C2FB40143D7566 /* InfoPlist.strings */,
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
@@ -334,6 +348,7 @@
 			buildConfigurationList = 33CC10FB2044A3C60003C045 /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
 				5E41E5A55F14C910C5BEEE03 /* [CP] Check Pods Manifest.lock */,
+				66082DF2D9B2E84DE42C4474 /* Build Steam transport */,
 				33CC10E92044A3C60003C045 /* Sources */,
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
@@ -562,6 +577,18 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		66082DF2D9B2E84DE42C4474 /* Build Steam transport */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			name = "Build Steam transport";
+			inputPaths = ();
+			outputPaths = ("$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a",);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\npython3 \"$SRCROOT/../scripts/games/build_steam_apple.py\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -569,6 +596,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F42652A27746793350EE6DEE /* SteamAppleSinkTests.mm in Sources */,
 				331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -577,6 +605,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F2BF6AFB99069BAB06494E4 /* PlezySteamPlugin.mm in Sources */,
+				7D5F3FCB885EA9492B70B8F7 /* SteamAppleSink.mm in Sources */,
+
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
@@ -674,6 +705,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8EBAA3429D388D3763D6B06B /* Pods-RunnerTests.debug.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -689,6 +723,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 10C0002C657183E0886559B6 /* Pods-RunnerTests.release.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -704,6 +741,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B94440F7FE93A00B39D27ADF /* Pods-RunnerTests.profile.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -782,13 +822,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					PIP,
-				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
 				SWIFT_VERSION = 5.0;
 			};
 			name = Profile;
@@ -924,13 +963,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					PIP,
-				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -954,13 +992,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					PIP,
-				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

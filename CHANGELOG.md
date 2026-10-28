@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add Apple Steam receiver source and Xcode integration using VideoToolbox pixel-buffer textures, Keychain pairing, bounded multichannel Core Audio and acknowledged teardown; add a real H.264 decoder test for Apple runners. SDK builds and device playback remain qualification gates.
+- Route desktop/Apple Steam pointer, scroll and full keyboard input through workspace ownership; release held controls on focus changes and provide Shift+Escape to return to workspace menus.
+
 - Add capability-negotiated Steam Input and game-properties actions on paired computers, plus confirmed Cloud files and Families destinations in the existing adaptive Steam menu.
 
 - Add an embedded Linux Steam receiver with OS-keyring pairing, dedicated H.264/HEVC and PCM decoding, retained Flutter textures, controller seats, connection details and acknowledged reconnect; bundle its fixed GStreamer plugins with Linux releases.

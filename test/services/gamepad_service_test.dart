@@ -146,6 +146,36 @@ void main() {
     expect(keyboardEvents, hasLength(2));
   });
 
+  test('workspace captures letter keys without Steam desktop-layout emulation', () {
+    GamepadService.debugSteamInputInjectsKeys = false;
+    addTearDown(() => GamepadService.debugSteamInputInjectsKeys = null);
+    final service = GamepadService.forTesting();
+    final events = <KeyEvent>[];
+    final binding = WorkspaceGameInputBinding(service: service, onEvent: (_) {}, onNativeKeyEvent: events.add);
+    addTearDown(binding.dispose);
+    binding.setEnabled(true);
+    expect(service.debugHandleNativeKeyEvent(_keyDown(LogicalKeyboardKey.keyW)), isTrue);
+    expect(service.debugHandleNativeKeyEvent(_keyUp(LogicalKeyboardKey.keyW)), isTrue);
+    service.debugSetWindowFocused(false);
+    expect(service.debugHandleNativeKeyEvent(_keyDown(LogicalKeyboardKey.keyA)), isFalse);
+    service.debugSetWindowFocused(true);
+    binding.setEnabled(false);
+    expect(service.debugHandleNativeKeyEvent(_keyDown(LogicalKeyboardKey.keyD)), isFalse);
+    expect(events.map((event) => event.logicalKey), [LogicalKeyboardKey.keyW, LogicalKeyboardKey.keyW]);
+  });
+
+  testWidgets('Shift Escape remains available to release the workspace input lease', (tester) async {
+    final service = GamepadService.forTesting();
+    final events = <KeyEvent>[];
+    final binding = WorkspaceGameInputBinding(service: service, onEvent: (_) {}, onNativeKeyEvent: events.add);
+    addTearDown(binding.dispose);
+    binding.setEnabled(true);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    expect(service.debugHandleNativeKeyEvent(_keyDown(LogicalKeyboardKey.escape)), isFalse);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    expect(events, isEmpty);
+  });
+
   testWidgets('taking gamepad ownership releases app navigation repeats', (tester) async {
     final keyEvents = await _pumpKeyEventRecorder(tester);
     final service = GamepadService.forTesting(duplicateInputGuard: GamepadDuplicateInputGuard(enabled: () => false));

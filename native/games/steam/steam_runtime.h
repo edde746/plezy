@@ -75,6 +75,7 @@ class Runtime {
   void padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons);
   void key(uint32_t usage, bool down);
   void mouse(float x, float y, int button, bool down);
+  void mouseWheel(int direction);
   void text(const std::string& value);
   void frameComplete(uint32_t id, bool displayed);
   StreamMetrics metrics();

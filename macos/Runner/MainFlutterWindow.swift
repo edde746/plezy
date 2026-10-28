@@ -46,6 +46,8 @@ class MainFlutterWindow: NSWindow {
     DeepLinkPlugin.register(
       with: flutterViewController.registrar(forPlugin: "DeepLinkPlugin"))
 
+    PlezySteamPlugin.register(with: flutterViewController.registrar(forPlugin: "PlezySteamPlugin"))
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     self.setFrameAutosaveName("org.snapetech.plezyng.MainWindow")

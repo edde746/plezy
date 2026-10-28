@@ -141,6 +141,10 @@ import wakelock_plus
   // UIScene creates the storyboard's Flutter engine after application launch.
   // Register plugins against that engine instead of creating a second one.
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PlezySteamPlugin") {
+      PlezySteamPlugin.register(with: registrar)
+    }
+
     let pluginRegistry = engineBridge.pluginRegistry
 
     if let r = pluginRegistry.registrar(forPlugin: "SharedPreferencesPlugin") {

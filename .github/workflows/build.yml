@@ -810,6 +810,14 @@ jobs:
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-ios-pods-${{ hashFiles('**/Podfile.lock') }}
 
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
+
       - name: Install CocoaPods
         shell: bash
         run: |
@@ -1008,6 +1016,14 @@ jobs:
         with:
           path: ~/.cache/flutter-tvos-engine
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-${{ hashFiles('tvos/engine.version', 'tvos/engine.sha256') }}
+
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
 
       - name: Install CocoaPods
         shell: bash
@@ -1225,6 +1241,14 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
 
       - name: Install CocoaPods
         shell: bash

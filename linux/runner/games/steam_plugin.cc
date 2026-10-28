@@ -52,6 +52,12 @@ bool boolean(FlValue* map, const char* key, bool fallback = false) {
   if (fl_value_get_type(value) != FL_VALUE_TYPE_BOOL) throw std::invalid_argument("Invalid boolean");
   return fl_value_get_bool(value);
 }
+double real(FlValue* map, const char* key) {
+  auto* value = field(map, key);
+  if (!value || fl_value_get_type(value) != FL_VALUE_TYPE_FLOAT || !std::isfinite(fl_value_get_float(value)))
+    throw std::invalid_argument("Invalid coordinate");
+  return fl_value_get_float(value);
+}
 Host hostFrom(FlValue* args) {
   return {text(args, "address"), uint16_t(number(args, "port", 27036, 1, 65535)), identifier(text(args, "hostId"))};
 }
@@ -378,7 +384,16 @@ void Session::method(FlMethodCall* call) {
     if (runtime) input.enabled(*runtime, boolean(args, "enabled") && state == "playing");
   } else if (method == "resetInput") { if (runtime) input.reset(*runtime);
   } else if (method == "inputKey") {
-    if (runtime && active && runtime->metrics().epoch == renderedEpoch) input.key(*runtime, text(args, "key"), boolean(args, "down"));
+    if (runtime && active && runtime->metrics().epoch == renderedEpoch) {
+      if (field(args, "usage")) input.hidKey(*runtime, number(args,"usage",0,4,231), boolean(args,"down"));
+      else input.key(*runtime, text(args, "key"), boolean(args, "down"));
+    }
+  } else if (method == "inputMouse" || method == "inputWheel" || method == "releasePointer") {
+    if (runtime && active && runtime->metrics().epoch == renderedEpoch) {
+      if (method == "releasePointer") input.releasePointer(*runtime);
+      else if (method == "inputWheel") input.wheel(*runtime,number(args,"direction",0,1,4));
+      else input.mouse(*runtime,real(args,"x"),real(args,"y"),number(args,"button",0,0,16),boolean(args,"down"));
+    }
   } else if (method == "disconnectController" || method == "setControllerDeviceState") {
     auto* device = field(args, "deviceId");
     if (!device || fl_value_get_type(device) != FL_VALUE_TYPE_INT) throw std::invalid_argument("Invalid device");

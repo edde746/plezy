@@ -18,10 +18,10 @@ The implemented slices below are not substitutes for the remaining scope.
 | Catalog refresh and revocation | Implemented, Go race tests pass | Relay deployment and live account exercise |
 | Grid, details, routes and filtering | Implemented using existing app components | Device accessibility, RTL, controller and visual qualification; new strings currently use the English fallback |
 | Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
-| Native Steam transport | Portable Linux build and 40 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
-| View-independent stream lifetime | Retained Android PlatformView and Linux texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
+| Native Steam transport | Portable Linux build and 41 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
+| View-independent stream lifetime | Retained Android PlatformView and Linux/Apple texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
 | Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, multichannel mapping/host qualification and physical multi-controller qualification |
-| Other embedded receiver platforms | Linux embedded receiver, texture lifecycle, native decoder and input tests implemented | Full Linux/SteamOS packaging and host qualification; Windows, macOS, iOS/iPadOS/tvOS receivers |
+| Other embedded receiver platforms | Linux receiver implemented; Apple VideoToolbox/Core Audio and Xcode integration source added | Full Linux/SteamOS packaging and host qualification; Apple SDK/device qualification; Windows receiver |
 | Rich Steam / host features | Achievements/news/optional friends-playing, Input/properties host actions, and confirmed Cloud/Families destinations implemented | Live API qualification, host cloud/family state APIs, live Steam Input configuration, Together and captures |
 | Companion game control / internet transport | Inventory, permissioned host launch/install/views, and active stream audio/fullscreen/disconnect controls implemented | Signaling/NAT/relay, internet connection diagnostics and actual host/device qualification |
 
@@ -434,3 +434,51 @@ sign-in may differ from PlezyNG's linked account. Cloud downloads and family
 invites/permissions run on Steam's own account pages. This does not claim
 programmatic cloud-conflict resolution, automatic family entitlement discovery,
 or general cross-game Cloud OAuth authority. No Steam cookies are imported.
+
+
+### Apple receiver and shared input
+
+The macOS, iOS/iPadOS and tvOS Runner targets register the same Steam Games
+capability and per-session channels as Linux. Xcode builds the pinned portable
+transport without Vulkan, then compiles the shared Objective-C++ adapter. This
+is source implementation, **not evidence of a successful Apple SDK build or
+playback qualification**. Every target includes an XCTest decoding a real 64×64
+H.264 frame and checking pixels and teardown; those tests must run on private
+JIT Apple capacity before merge/release.
+
+VideoToolbox decodes H.264 and, after a hardware capability check, HEVC. Its
+IOSurface-backed BGRA pixel buffer is retained directly by Flutter's texture
+registry. Production rendering does not read the pixels back to the CPU.
+Compressed frames and PCM have separate bounded queues; frame completion is
+reported only when Flutter consumes a texture. Decoder/configuration changes,
+late frames, backgrounding and acknowledged disconnect retire ownership before
+reconnect. Codec parameters are parsed with explicit size/count limits and
+validated against the negotiated resolution before decoder allocation.
+
+The current Apple texture path is **SDR, at most 1080p60**. It rejects PQ/HLG
+instead of clipping HDR into BGRA. This is not a Metal Pyrowave implementation.
+Hardware/software decoder reporting uses the documented properties only on
+supported OS versions; older mobile systems keep an unknown decoder-kind
+value. The existing deployment floors are unchanged.
+
+Core Audio uses explicit mono/stereo/quad/5.1 layouts at 48 kHz with bounded
+AudioQueue buffers. Unsupported audio requests retry stereo; HEVC failure
+retries H.264. Retries only remove capabilities and are capped at three. The
+workspace audio lease controls volume independently of input ownership.
+Speaker routing, Bluetooth changes and TV/HDMI output require device tests.
+
+Pairing trust remains in the OS Keychain with device-only accessibility, never
+Dart preferences, settings backup or logs. Resolution uses cancellable
+Network.framework IPv4 endpoints; pairing/forget operations are serialized.
+The adapter preserves current native Steam pairing and encrypted transport.
+It does not open ports, configure a router or confer internet relay access.
+
+Desktop/Apple texture surfaces map pointer coordinates inside the video
+rectangle, coalesce motion to one update per Flutter frame, and forward mouse
+buttons and wheel directions. Touch can position/click the host pointer.
+Physical USB keyboard usages preserve keyboard layout semantics, with named
+key fallback. Controller seats, pointer buttons and held keys all release on
+focus/lease reset. Shift+Escape releases game input to the existing workspace
+controls; details dialogs suspend it without reclaiming another pane's lease.
+Apple on-screen gamepad controls are a separate follow-up; physical gamepads,
+keyboard and direct pointer input are the current adapters.

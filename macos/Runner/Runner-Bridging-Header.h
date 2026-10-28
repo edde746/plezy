@@ -30,3 +30,5 @@
 - (void)pipActionStop:(PIPViewController*)pip;
 
 @end
+
+#import "../../native/games/apple/PlezySteamPlugin.h"

@@ -33,6 +33,28 @@ void main() {
 
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
+  test('disconnect acknowledgement permits reconnect after a texture channel retires', () async {
+    var stops = 0;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getSessionState') return 'playing';
+      if (call.method == 'disconnect') {
+        stops++;
+        messenger.setMockMethodCallHandler(channel, null);
+      }
+      return null;
+    });
+    final stream = session();
+    addTearDown(stream.dispose);
+    stream.attachPlatformView(99);
+    await state('playing');
+    await stream.disconnect();
+    expect(stream.sessionState.value, 'disconnected');
+    await stream.reconnect();
+    expect(stops, 1);
+    expect(stream.sessionState.value, 'connecting');
+    expect(stream.surfaceGeneration.value, 1);
+  });
+
   test('closing diagnostics cannot reclaim a retired input lease', () async {
     final commands = <MethodCall>[];
     messenger.setMockMethodCallHandler(channel, (call) async {
@@ -57,6 +79,46 @@ void main() {
     closed.complete();
     await dialog;
     expect(commands.last.arguments, {'enabled': false});
+  });
+
+  test('pointer and keyboard input require a playing lease and bounded coordinates', () async {
+    final commands = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      commands.add(call);
+      return call.method == 'getSessionState' ? 'playing' : null;
+    });
+    final stream = session();
+    addTearDown(stream.dispose);
+    stream.attachPlatformView(99);
+    await state('playing');
+    commands.clear();
+    stream.handlePointer(const Offset(.5, .5), button: 1, down: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(commands, isEmpty);
+    await stream.setInputEnabled(true);
+    commands.clear();
+    stream.handlePointer(const Offset(-2, 9), button: 1, down: true);
+    stream.handlePointer(const Offset(double.nan, .5));
+    stream.handlePointer(const Offset(.5, .5), button: 9);
+    stream.handleWheel(2);
+    stream.handleWheel(99);
+    stream.handleNativeKey(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.keyW,
+        logicalKey: LogicalKeyboardKey.keyW,
+        timeStamp: Duration.zero,
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(commands.map((c) => c.method), ['inputMouse', 'inputWheel', 'inputKey']);
+    expect(commands.first.arguments, {'x': 0.0, 'y': 1.0, 'button': 1, 'down': true});
+    expect((commands.last.arguments as Map)['usage'], 26);
+    await stream.setInputEnabled(false);
+    commands.clear();
+    stream.handleWheel(1);
+    stream.handlePointer(const Offset(.5, .5));
+    await Future<void>.delayed(Duration.zero);
+    expect(commands, isEmpty);
   });
 
   test('missing metrics support preserves the stream', () async {

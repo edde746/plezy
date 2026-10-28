@@ -195,3 +195,24 @@ security, action-pin and architecture checks passed; no runner routing changed.
   translations are available.
 - Live Steam Input/properties URI behavior, browser sign-in and account changes
   were not exercised. No cloud save was written and no family membership changed.
+
+
+### Apple source and texture-input follow-up
+
+- Portable native Debug build with Vulkan/GStreamer enabled: **41 tests pass**,
+  including the new H.264/HEVC framing parser, real encoded H.264 fixture,
+  malformed-input bounds and transactional parameter-set updates.
+- Portable build with Vulkan disabled: 40 tests passed before the shared pointer
+  additions; this validates the transport/parser dependency split, not Apple
+  system frameworks.
+- Focused shared input/texture/platform tests: **43 Dart/widget tests pass**.
+  They cover full keyboard routing, inactive lease suppression, Shift+Escape,
+  pointer bounds, physical usage codes, texture retention and reconnect after
+  a channel has been retired.
+- Xcode project structure is checked locally; a VideoToolbox XCTest is added
+  to each RunnerTests target. Apple SDK compile, Swift/Objective-C++ linkage,
+  simulator test execution, real host pairing, color correctness, performance,
+  HDR output and surround speaker routing have **not** been run here.
+- The Apple source uses a direct CVPixelBuffer texture path for conventional
+  SDR codecs. Direct Pyrowave, HDR/4:4:4, Windows receivers and automatic
+  internet traversal remain separate unfinished work.

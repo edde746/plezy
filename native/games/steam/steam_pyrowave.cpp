@@ -6,8 +6,10 @@
 #include <new>
 #include <stdexcept>
 
+#if PLEZY_STEAM_PYROWAVE
 #include <vulkan/vulkan.h>
 #include <pyrowave.h>
+#endif
 
 namespace plezy::steam {
 namespace {
@@ -112,6 +114,7 @@ void convertPyrowave420ToArgb(const uint8_t* y, size_t yStride, const uint8_t* c
   }
 }
 
+#if PLEZY_STEAM_PYROWAVE
 struct PyrowaveDecoder::Impl {
   pyrowave_device device = nullptr;
   pyrowave_decoder decoder = nullptr;
@@ -228,4 +231,16 @@ PyrowaveDecodeStatus PyrowaveDecoder::decode(const uint8_t* bytes, size_t length
 }
 
 void PyrowaveDecoder::reset() { impl_->reset(); }
+#else
+// Builds without a Vulkan backend never advertise or accept Pyrowave.
+struct PyrowaveDecoder::Impl {};
+PyrowaveDecoder::PyrowaveDecoder() : impl_(std::make_unique<Impl>()) {}
+PyrowaveDecoder::~PyrowaveDecoder() = default;
+bool PyrowaveDecoder::probe() { return false; }
+bool PyrowaveDecoder::start(int, int, const uint8_t*, size_t) { return false; }
+PyrowaveDecodeStatus PyrowaveDecoder::decode(const uint8_t*, size_t, std::vector<uint8_t>&) {
+  return PyrowaveDecodeStatus::invalid;
+}
+void PyrowaveDecoder::reset() {}
+#endif
 }  // namespace plezy::steam

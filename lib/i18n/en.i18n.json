@@ -3856,6 +3856,7 @@
     "timeout": "Connection timed out. Check the computer, pairing code and network before trying again.",
     "libraryHint": "Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.",
     "touchControls": "On-screen controller",
+    "inputReleaseHint": "Press Shift+Escape to release game input and return to the workspace controls.",
     "touchDescription": "Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.",
     "touchSetup": "On-screen controls",
     "touchSetupHint": "Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.",

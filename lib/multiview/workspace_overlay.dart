@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -383,6 +384,11 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         final moving = controller.positioningSessionId == id;
         if (event.logicalKey == LogicalKeyboardKey.escape) {
+          if (HardwareKeyboard.instance.isShiftPressed && registration.descriptor.acceptsInput) {
+            unawaited(controller.setInputSession(null));
+            _focusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
           if (moving) {
             controller.finishPositioning(cancel: true);
             return KeyEventResult.handled;

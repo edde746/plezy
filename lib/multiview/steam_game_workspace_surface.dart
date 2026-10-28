@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -19,8 +21,8 @@ import 'workspace_game_input.dart';
 
 const steamGamePlatformViewType = 'com.plezy/games/steam_stream';
 
-/// One retained Android Steam session. The workspace owns its audio/input
-/// leases; the native PlatformView owns the decoder and disconnects on dispose.
+/// One retained Steam session. The workspace owns audio/input leases; the
+/// native surface owns the decoder and acknowledges teardown before reconnect.
 class SteamGameWorkspaceSession {
   SteamGameWorkspaceSession({
     required this.host,
@@ -65,6 +67,7 @@ class SteamGameWorkspaceSession {
   bool _audioEnabled = false;
   bool _inputEnabled = false;
   int _inputSuspensions = 0;
+  int _inputRevision = 0;
   bool get _canInput => !_disposed && _inputEnabled && _inputSuspensions == 0 && sessionState.value == 'playing';
   late final WorkspaceGameInputBinding _inputBinding;
   final GlobalKey _surfaceKey = GlobalKey();
@@ -130,15 +133,36 @@ class SteamGameWorkspaceSession {
 
   void handleNativeKey(KeyEvent event) {
     if (!_canInput) return;
+    final usage = event.physicalKey.usbHidUsage;
     unawaited(
       _invoke('inputKey', {
-        'key': event.logicalKey.debugName ?? event.logicalKey.keyLabel,
+        'key': event.logicalKey.keyLabel.length == 1
+            ? event.logicalKey.keyLabel
+            : event.logicalKey.debugName ?? event.logicalKey.keyLabel,
+        if ((usage >> 16) == 7 && (usage & 0xffff) >= 4 && (usage & 0xffff) <= 231) 'usage': usage & 0xffff,
         'down': event is! KeyUpEvent,
       }),
     );
   }
 
+  void handlePointer(Offset position, {int button = 0, bool down = false}) {
+    if (!_canInput || !position.dx.isFinite || !position.dy.isFinite || !{0, 1, 2, 16}.contains(button)) return;
+    unawaited(
+      _invoke('inputMouse', {
+        'x': position.dx.clamp(0.0, 1.0),
+        'y': position.dy.clamp(0.0, 1.0),
+        'button': button,
+        'down': down,
+      }),
+    );
+  }
+
+  void handleWheel(int direction) {
+    if (_canInput && direction >= 1 && direction <= 4) unawaited(_invoke('inputWheel', {'direction': direction}));
+  }
+
   void resetInput() {
+    _inputRevision++;
     unawaited(_invoke('resetInput'));
   }
 
@@ -173,7 +197,7 @@ class SteamGameWorkspaceSession {
   }
 
   Widget build() {
-    if (Platform.isLinux) {
+    if (Platform.isLinux || Platform.isMacOS || Platform.isIOS) {
       return ValueListenableBuilder<int>(
         valueListenable: surfaceGeneration,
         builder: (_, generation, _) => _SteamTextureSurface(key: ValueKey(generation), session: this),
@@ -286,7 +310,10 @@ class SteamGameWorkspaceSession {
     _inputBinding.setEnabled(false);
     try {
       await _channel?.invokeMethod<void>('disconnect').timeout(const Duration(seconds: 6));
-      if (!_disposed) sessionState.value = 'disconnected';
+      if (!_disposed) {
+        detach(); // Texture adapters retire their channel after acknowledging.
+        sessionState.value = 'disconnected';
+      }
     } catch (_) {
       if (!_disposed) sessionState.value = 'failed';
     } finally {
@@ -338,6 +365,53 @@ class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
   int? _id, _texture;
   Timer? _deadline;
   bool _expired = false;
+  int _buttons = 0;
+  int? _touchPointer;
+  Offset? _pendingMove;
+  int? _moveCallback;
+  int _pointerRevision = -1;
+
+  void _pointer(PointerEvent event, Size size, {bool ending = false}) {
+    if (size.isEmpty) return;
+    if (_pointerRevision != widget.session._inputRevision) {
+      _pointerRevision = widget.session._inputRevision;
+      _buttons = 0;
+      _touchPointer = null;
+    }
+    final touch = event.kind == PointerDeviceKind.touch || event.kind == PointerDeviceKind.stylus;
+    if (touch) {
+      if (event is PointerDownEvent) _touchPointer ??= event.pointer;
+      if (_touchPointer != event.pointer) return;
+      if (ending) _touchPointer = null;
+    }
+    final position = Offset(event.localPosition.dx / size.width, event.localPosition.dy / size.height);
+    final buttons = ending
+        ? 0
+        : touch
+        ? kPrimaryMouseButton
+        : event.buttons;
+    final changed = _buttons ^ buttons;
+    _buttons = buttons;
+    if (changed != 0) {
+      _pendingMove = null;
+      for (final entry in {kPrimaryMouseButton: 1, kSecondaryMouseButton: 2, kMiddleMouseButton: 16}.entries) {
+        if ((changed & entry.key) != 0) {
+          widget.session.handlePointer(position, button: entry.value, down: (buttons & entry.key) != 0);
+        }
+      }
+    } else {
+      // Pointer devices can produce thousands of moves per second. Keep one
+      // latest move per Flutter frame; button transitions retain ordering.
+      _pendingMove = position;
+      final revision = widget.session._inputRevision;
+      _moveCallback ??= SchedulerBinding.instance.scheduleFrameCallback((_) {
+        _moveCallback = null;
+        final move = _pendingMove;
+        _pendingMove = null;
+        if (mounted && move != null && revision == widget.session._inputRevision) widget.session.handlePointer(move);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -382,6 +456,8 @@ class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
   void dispose() {
     _expired = true;
     _deadline?.cancel();
+    if (_moveCallback case final callback?) SchedulerBinding.instance.cancelFrameCallbackWithId(callback);
+    unawaited(widget.session._invoke('releasePointer'));
     if (_id case final id?) unawaited(_retire(id));
     super.dispose();
   }
@@ -396,7 +472,26 @@ class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
               valueListenable: widget.session.streamAspectRatio,
               builder: (_, ratio, _) => AspectRatio(
                 aspectRatio: ratio,
-                child: Texture(textureId: _texture!),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (event) => _pointer(event, constraints.biggest),
+                    onPointerMove: (event) => _pointer(event, constraints.biggest),
+                    onPointerHover: (event) => _pointer(event, constraints.biggest),
+                    onPointerUp: (event) => _pointer(event, constraints.biggest, ending: true),
+                    onPointerCancel: (event) => _pointer(event, constraints.biggest, ending: true),
+                    onPointerSignal: (event) {
+                      if (event is PointerScrollEvent && widget.session._canInput) {
+                        GestureBinding.instance.pointerSignalResolver.register(event, (_) {
+                          final delta = event.scrollDelta;
+                          if (delta.dy != 0) widget.session.handleWheel(delta.dy < 0 ? 1 : 2);
+                          if (delta.dx != 0) widget.session.handleWheel(delta.dx < 0 ? 3 : 4);
+                        });
+                      }
+                    },
+                    child: Texture(textureId: _texture!),
+                  ),
+                ),
               ),
             ),
           ),
@@ -448,7 +543,7 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
-    if (!Platform.isAndroid && !Platform.isLinux) return session.build();
+    if (!Platform.isAndroid && !Platform.isLinux && !Platform.isMacOS && !Platform.isIOS) return session.build();
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -505,7 +600,7 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
                 : FocusableButton(
                     onPressed: _detailsOpen ? null : _showDetails,
                     child: IconButton.filledTonal(
-                      tooltip: t.games.streamDetails,
+                      tooltip: '${t.games.streamDetails}\n${t.games.inputReleaseHint}',
                       onPressed: _detailsOpen ? null : _showDetails,
                       icon: const AppIcon(Symbols.monitoring_rounded),
                     ),

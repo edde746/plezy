@@ -47,6 +47,7 @@
     "games.includeFriends",
     "games.includeFriendsHelp",
     "games.inputOnComputer",
+    "games.inputReleaseHint",
     "games.installOnComputer",
     "games.installationIncomplete",
     "games.installationUnknown",

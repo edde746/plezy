@@ -9630,6 +9630,9 @@ class Translations$games$en {
 	/// en: 'On-screen controller'
 	String get touchControls => 'On-screen controller';
 
+	/// en: 'Press Shift+Escape to release game input and return to the workspace controls.'
+	String get inputReleaseHint => 'Press Shift+Escape to release game input and return to the workspace controls.';
+
 	/// en: 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
 	String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 
@@ -16122,6 +16125,7 @@ extension on Translations {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			'games.inputReleaseHint' => 'Press Shift+Escape to release game input and return to the workspace controls.',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -16165,9 +16169,9 @@ extension on Translations {
 			'games.disconnected' => 'Disconnected',
 			'games.installed' => 'Installed',
 			'games.installationIncomplete' => 'Installation incomplete',
-			'games.notInstalled' => 'Not in the last inventory',
 			_ => null,
 		} ?? switch (path) {
+			'games.notInstalled' => 'Not in the last inventory',
 			'games.installationUnknown' => 'Installation not checked',
 			'games.allComputers' => 'All computers',
 			'games.importInstalledGames' => 'Import installed games',
