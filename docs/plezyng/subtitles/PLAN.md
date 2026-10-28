@@ -286,7 +286,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | Q08 | Import files by picker, drop, or platform share intent where supported; validate paired IDX/SUB files. mpv picker import is existing; PR #53 adds ExoPlayer VOD SRT/ASS/SSA/VTT and Tizen/webOS SRT/VTT, plus ZIP-contained formats supported by the active backend. Drop/share remains open; archive IDX/SUB is accepted only as a validated pair. | M2 |
 | Q09 | Support separate subtitle roots and source-relative discovery without moving originals. | M2 |
 | Q10 | PR #53 adds bounded ZIP scanning for backend-supported subtitle entries. It rejects symlinks, absolute/traversal/duplicate paths; caps archives at 50 MiB, 4096 entries, and each selected member at 32 MiB; extracts only the chosen entry (paired IDX/SUB as a set) into a unique temporary cache path. TAR/7z, test verification, and device qualification remain open; parse/import failures surface the existing subtitle-load error. | M2 |
-| Q11 | Normalize encoding/BOM/line endings with a preview for uncertain legacy encodings; never corrupt the original. | M2 |
+| Q11 | The bounded cue parser and corrected export now read UTF-8, UTF-8 BOM, and BOM-marked UTF-16LE/BE, preserving the detected encoding/BOM and line endings in exported copies. Legacy code pages still need an explicit encoding-preview choice; imported originals remain unchanged. | M1 |
 | Q12 | Refresh/retry missing or expired sidecars through the owning source transport. | M2 |
 | Q13 | Preference rules support ordered languages, script, forced/full, SDH, source audio, and explicit exceptions. | M1 |
 | Q14 | Keep secondary choices local when servers expose only one selected subtitle; no accidental server overwrite. | M1 |

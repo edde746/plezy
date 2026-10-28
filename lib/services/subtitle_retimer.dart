@@ -31,12 +31,105 @@ final class SubtitleCue {
   final String text;
 }
 
+
+enum _SubtitleTextEncoding { utf8, utf8Bom, utf16LittleEndian, utf16BigEndian }
+
+final class _DecodedSubtitleText {
+  const _DecodedSubtitleText(this.text, this.encoding);
+
+  final String text;
+  final _SubtitleTextEncoding encoding;
+}
+
 /// Loss-aware SRT/WebVTT and guarded ASS/SSA retimer with bounded cue inspection.
 ///
 /// MPV applies subtitle timing as `sourceTime * sub-speed + sub-delay`.
 /// The exporter uses that affine transform, preserving cue payload,
 /// WebVTT cue settings, identifiers, and file line endings.
 abstract final class SubtitleRetimer {
+  static _DecodedSubtitleText _decodeText(List<int> bytes) {
+    if (bytes.any((byte) => byte < 0 || byte > 255)) {
+      throw const FormatException('Subtitle contains a byte outside the 0–255 range.');
+    }
+    if (bytes.length >= 2 && bytes[0] == 0xff && bytes[1] == 0xfe) {
+      if ((bytes.length - 2).isOdd) {
+        throw const FormatException('UTF-16LE subtitle ends with an incomplete code unit.');
+      }
+      return _DecodedSubtitleText(_decodeUtf16(bytes, littleEndian: true), _SubtitleTextEncoding.utf16LittleEndian);
+    }
+    if (bytes.length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) {
+      if ((bytes.length - 2).isOdd) {
+        throw const FormatException('UTF-16BE subtitle ends with an incomplete code unit.');
+      }
+      return _DecodedSubtitleText(_decodeUtf16(bytes, littleEndian: false), _SubtitleTextEncoding.utf16BigEndian);
+    }
+    final hasUtf8Bom = bytes.length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf;
+    final payload = hasUtf8Bom ? bytes.skip(3).toList(growable: false) : bytes;
+    return _DecodedSubtitleText(
+      utf8.decode(payload, allowMalformed: false),
+      hasUtf8Bom ? _SubtitleTextEncoding.utf8Bom : _SubtitleTextEncoding.utf8,
+    );
+  }
+
+  static String _decodeUtf16(List<int> bytes, {required bool littleEndian}) {
+    final codePoints = <int>[];
+    for (var index = 2; index < bytes.length; index += 2) {
+      final first = bytes[index];
+      final second = bytes[index + 1];
+      final unit = littleEndian ? first | (second << 8) : (first << 8) | second;
+      if (unit >= 0xd800 && unit <= 0xdbff) {
+        if (index + 3 >= bytes.length) {
+          throw const FormatException('UTF-16 subtitle ends with an unpaired high surrogate.');
+        }
+        final nextFirst = bytes[index + 2];
+        final nextSecond = bytes[index + 3];
+        final next = littleEndian ? nextFirst | (nextSecond << 8) : (nextFirst << 8) | nextSecond;
+        if (next < 0xdc00 || next > 0xdfff) {
+          throw const FormatException('UTF-16 subtitle contains an invalid surrogate pair.');
+        }
+        codePoints.add(0x10000 + ((unit - 0xd800) << 10) + (next - 0xdc00));
+        index += 2;
+      } else if (unit >= 0xdc00 && unit <= 0xdfff) {
+        throw const FormatException('UTF-16 subtitle contains an unpaired low surrogate.');
+      } else {
+        codePoints.add(unit);
+      }
+    }
+    return String.fromCharCodes(codePoints);
+  }
+
+  static List<int> _encodeText(String text, _SubtitleTextEncoding encoding) {
+    if (encoding == _SubtitleTextEncoding.utf8) return utf8.encode(text);
+    if (encoding == _SubtitleTextEncoding.utf8Bom) {
+      return [0xef, 0xbb, 0xbf, ...utf8.encode(text)];
+    }
+
+    final bytes = <int>[];
+    final littleEndian = encoding == _SubtitleTextEncoding.utf16LittleEndian;
+    bytes.addAll(littleEndian ? const [0xff, 0xfe] : const [0xfe, 0xff]);
+    for (final rune in text.runes) {
+      if (rune <= 0xffff) {
+        _appendUtf16Unit(bytes, rune, littleEndian);
+      } else {
+        final scalar = rune - 0x10000;
+        _appendUtf16Unit(bytes, 0xd800 + (scalar >> 10), littleEndian);
+        _appendUtf16Unit(bytes, 0xdc00 + (scalar & 0x3ff), littleEndian);
+      }
+    }
+    return bytes;
+  }
+
+  static void _appendUtf16Unit(List<int> bytes, int unit, bool littleEndian) {
+    if (littleEndian) {
+      bytes
+        ..add(unit & 0xff)
+        ..add(unit >> 8);
+    } else {
+      bytes
+        ..add(unit >> 8)
+        ..add(unit & 0xff);
+    }
+  }
   static const int maximumInputBytes = 5 * 1024 * 1024;
   static const int maximumCueCount = 50000;
   static const int maximumTimeMs = 60 * 24 * 60 * 60 * 1000;
@@ -70,8 +163,7 @@ abstract final class SubtitleRetimer {
     }
     if (format == '.ass' || format == '.ssa') return _parseAssCues(sourceBytes);
 
-    var source = utf8.decode(sourceBytes, allowMalformed: false);
-    if (source.startsWith('\uFEFF')) source = source.substring(1);
+    var source = _decodeText(sourceBytes).text;
     if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
     final lines = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     final isVtt = format == '.vtt';
@@ -154,9 +246,8 @@ abstract final class SubtitleRetimer {
       return _retimeAss(sourceBytes: sourceBytes, delayMs: delayMs, rate: rate, format: format);
     }
 
-    var source = utf8.decode(sourceBytes, allowMalformed: false);
-    final hasBom = source.startsWith('\uFEFF');
-    if (hasBom) source = source.substring(1);
+    final decoded = _decodeText(sourceBytes);
+    var source = decoded.text;
     if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
     final newline = source.contains('\r\n')
         ? '\r\n'
@@ -237,7 +328,7 @@ abstract final class SubtitleRetimer {
 
     final result = output.join(newline);
     return SubtitleRetimingResult(
-      bytes: utf8.encode('${hasBom ? '\uFEFF' : ''}$result'),
+      bytes: _encodeText(result, decoded.encoding),
       retimedCueCount: retimedCueCount,
       clippedCueCount: clippedCueCount,
       format: isVtt ? 'WebVTT' : 'SRT',
@@ -250,9 +341,8 @@ abstract final class SubtitleRetimer {
     required double rate,
     required String format,
   }) {
-    var source = utf8.decode(sourceBytes, allowMalformed: false);
-    final hasBom = source.startsWith('\uFEFF');
-    if (hasBom) source = source.substring(1);
+    final decoded = _decodeText(sourceBytes);
+    var source = decoded.text;
     if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
     final newline = source.contains('\r\n')
         ? '\r\n'
@@ -339,9 +429,9 @@ abstract final class SubtitleRetimer {
     }
     if (retimedCueCount == 0) throw const FormatException('No valid ASS dialogue cues were found.');
 
-    final outputText = (hasBom ? '\uFEFF' : '') + output.join(newline);
+    final outputText = output.join(newline);
     return SubtitleRetimingResult(
-      bytes: utf8.encode(outputText),
+      bytes: _encodeText(outputText, decoded.encoding),
       retimedCueCount: retimedCueCount,
       clippedCueCount: clippedCueCount,
       format: format == '.ssa' ? 'SSA' : 'ASS',
@@ -365,8 +455,7 @@ abstract final class SubtitleRetimer {
   }
 
   static List<SubtitleCue> _parseAssCues(List<int> sourceBytes) {
-    var source = utf8.decode(sourceBytes, allowMalformed: false);
-    if (source.startsWith('\uFEFF')) source = source.substring(1);
+    var source = _decodeText(sourceBytes).text;
     if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
 
     final cues = <SubtitleCue>[];
