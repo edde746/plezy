@@ -169,9 +169,10 @@ class OpdsSourceAdapter extends SourceAdapter {
         final rels = _rels(link);
         if (!_supportedFileAcquisition(rels) || link['href'] is! String) continue;
         final mime = link['type'] as String? ?? '';
-        final name = '${_label(meta['title'])}${_extension(mime)}';
-        final ref = _fileRef(uri, id, uri.resolve(link['href'] as String), mime);
-        _acquisitions[ref] = uri.resolve(link['href'] as String);
+        final acquisition = uri.resolve(link['href'] as String);
+        final name = '${_label(meta['title'])}${_extension(mime, acquisition)}';
+        final ref = _fileRef(uri, id, acquisition, mime);
+        _acquisitions[ref] = acquisition;
         files.add(
           PublicationFile(
             id: ref,
@@ -260,12 +261,13 @@ class OpdsSourceAdapter extends SourceAdapter {
         final rel = link.getAttribute('rel') ?? '', mime = link.getAttribute('type') ?? '';
         final rels = [rel];
         if (_supportedFileAcquisition(rels)) {
-          final ref = _fileRef(uri, id, uri.resolve(href), mime);
-          _acquisitions[ref] = uri.resolve(href);
+          final acquisition = uri.resolve(href);
+          final ref = _fileRef(uri, id, acquisition, mime);
+          _acquisitions[ref] = acquisition;
           files.add(
             PublicationFile(
               id: ref,
-              name: '$title${_extension(mime)}',
+              name: '$title${_extension(mime, acquisition)}',
               mimeType: mime,
               sample: _sampleAcquisition(rels),
             ),
@@ -343,14 +345,23 @@ class OpdsSourceAdapter extends SourceAdapter {
     return uri == null ? null : ContentLease(uri, headers: await _headers(uri));
   }
 
-  String _extension(String type) => switch (type.split(';').first) {
-    'application/epub+zip' => '.epub',
-    'application/pdf' => '.pdf',
-    'application/vnd.comicbook+zip' => '.cbz',
-    'audio/mpeg' => '.mp3',
-    'audio/mp4' => '.m4b',
-    _ => '',
-  };
+  String _extension(String type, Uri acquisition) {
+    final declared = switch (type.split(';').first.trim().toLowerCase()) {
+      'application/epub+zip' => '.epub',
+      'application/pdf' => '.pdf',
+      'application/vnd.comicbook+zip' => '.cbz',
+      'audio/mpeg' => '.mp3',
+      'audio/mp4' => '.m4b',
+      _ => null,
+    };
+    if (declared != null) return declared;
+    final path = acquisition.pathSegments.lastOrNull ?? '';
+    final suffix = RegExp(r'\.([A-Za-z0-9]{1,8})$').firstMatch(path)?.group(1)?.toLowerCase();
+    if (suffix == null) return '';
+    final extension = '.$suffix';
+    return classifySourceFile('file$extension') == SourceItemKind.unknown ? '' : extension;
+  }
+
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
     if (file.streamOnly) throw const SourceException(SourceFailure.unsupported);
