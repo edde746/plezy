@@ -402,7 +402,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 | ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
-| X01 | Searchable transcript seeks to the correct source time and optionally hides future dialogue. | M3 |
+| X01 | Android ExoPlayer watched-portion transcripts are searchable and virtualized; selecting a cue seeks to its source start, and an optional filter hides dialogue after the current playhead. Transcript data stays in session memory and covers only captured portions; persistence and cross-provider transcript browsing remain open. | M3 |
 | X02 | Copy/select text and dictionary lookup operate on text-backed cues; bitmap tracks offer OCR explicitly. | M7 |
 | X03 | Replay current line, auto-pause, sentence loops, and adjustable gaps work with remote and keyboard. | M7 |
 | X04 | Save vocabulary/bookmarks with source attribution and optional flashcard export. | M8 |

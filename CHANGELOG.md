@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Browse captured Android ExoPlayer transcripts with search, cue-level seeking, and an optional hide-future-dialogue filter.
+
 - Let subtitle AI review save the edited or generated result as a separate SRT file without attaching it to playback or modifying the source.
 
 - Show SDH/closed-caption role markers in playback track labels and identify AI-generated, translated, and synchronized local tracks.
