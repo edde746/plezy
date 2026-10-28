@@ -1,6 +1,8 @@
 # Validation and qualification plan
 
-Status: qualification remains outstanding. Synthetic fixture suites now cover offer/evidence contracts, exact-scope availability lookup, profile-scoped preference/crosswalk behavior, Audiobookshelf legacy/JWT refresh, and OPDS JSON/Atom acquisition rules. They have not been executed; repository policy permits GitHub Actions only on compatible private ephemeral JIT runners, and no authorized run receipt is recorded here. No live provider/server/feed/device qualification is claimed. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: all code remains implemented but unqualified. Existing synthetic fixtures cover prior contracts and source behavior but have not been executed for this closeout. No live provider, signed iOS build, relay deployment, or device qualification is claimed. The Watchmode and MusicKit paths must remain disabled until their activation and acceptance checks pass. No test, analyzer, or platform build result is recorded here.
+
+**High confidence:** these boundary checks protect against false entitlement, accidental purchase/circulation actions, profile leakage, credential exposure, and unsupported playback claims.
 
 ## Functional acceptance matrix
 
@@ -50,6 +52,9 @@ Status: qualification remains outstanding. Synthetic fixture suites now cover of
 | V42 | Switch profiles, clear preferences, remove an identity link, or attempt a conflicting remap | Preferences/crosswalks remain profile-scoped and reversible; no progress/entitlement merge occurs | W02/W09 |
 | V43 | OPDS JSON/Atom entry contains open-access, sample, generic purchase, and mixed supported formats | Only explicit open-access/sample files enter the ordinary source path; generic purchase stays external; preview and first supported file kind are preserved | W07 |
 
+
+| V44 | Watchmode gate is off, key is missing, or region/title lookup changes while a request is in flight | No request/offer is shown when disabled; exact typed movie/TV ID and profile country are sent when enabled; stale country results clear; only curated HTTPS providers open; 429/timeout/missing links produce a safe empty or retry state | W04/W06 |
+| V45 | Apple MusicKit flag off, authorization denied, subscription unavailable, audio interrupted, or profile switches during playback | Existing official handoff remains when off; no catalog playback without authorization/subscription; selected track stays Apple-owned; PlezyNG audio stops before native playback and profile switch stops the native session; no progress/ownership is written | W11 |
 
 ## Existing regression owners
 
