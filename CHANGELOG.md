@@ -51,6 +51,9 @@
 - Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
 - Fix the macOS native reliability target to import the `PlezyNG` app module.
 - Require Android host native-test tools to be provisioned on the private runner before CI starts.
+- Include the Steam audio labels in the explicit English fallback manifest used by strict localization checks.
+- Set ThreadSanitizer ASLR entropy through the disposable runner's authorized sysctl.
+- Prepare an ephemeral default keychain for the optional Xcode cloud-signing path for iOS App Store builds.
 
 ## [3.0.0] - 2026-10-27
 
