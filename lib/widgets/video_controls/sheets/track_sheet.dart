@@ -592,7 +592,12 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
         title: const Text('Generate, sync, or translate subtitles'),
         subtitle: const Text('Generate, sync, and translate WAV-based subtitle tracks'),
         onTap: () => OverlaySheetController.of(context).push(
-          builder: (_) => SubtitleAiSheet(player: player),
+          builder: (_) => SubtitleAiSheet(
+            player: player,
+            serverId: state.serverId,
+            ratingKey: state.ratingKey.isEmpty ? null : state.ratingKey,
+            mediaIndex: state.selectedMediaIndex,
+          ),
         ),
       ),
     );

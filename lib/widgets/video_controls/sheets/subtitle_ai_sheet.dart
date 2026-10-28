@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import '../../../mpv/mpv.dart';
+import '../../../media/ids.dart';
 import '../../../profiles/active_profile_provider.dart';
 import '../../../mpv/player/platform/player_android.dart';
 import '../../../services/file_picker_service.dart';
@@ -20,6 +21,7 @@ import '../../../services/subtitle_retimer.dart';
 import '../../../services/subtitle_sync_service.dart';
 import '../../../services/subtitle_translation_service.dart';
 import '../../../services/subtitle_playback_transcription_service.dart';
+import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -28,10 +30,21 @@ import 'base_video_control_sheet.dart';
 /// Reviewable local subtitle operations. The source file is never modified;
 /// every generated, translated, or synchronized result is written to a new
 /// temporary SRT and attached as a separate external track.
+enum _SubtitleReviewChoice { discard, player, serverAndPlayer }
+
 class SubtitleAiSheet extends StatefulWidget {
-  const SubtitleAiSheet({super.key, required this.player});
+  const SubtitleAiSheet({
+    super.key,
+    required this.player,
+    this.serverId,
+    this.ratingKey,
+    this.mediaIndex = 0,
+  });
 
   final Player player;
+  final String? serverId;
+  final String? ratingKey;
+  final int mediaIndex;
 
   @override
   State<SubtitleAiSheet> createState() => _SubtitleAiSheetState();
@@ -47,6 +60,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   final TextEditingController _glossaryController = TextEditingController();
   final Map<String, String> _glossaryDrafts = <String, String>{};
   bool _playbackCaptureSupported = false;
+  bool _lastResultUploadedToServer = false;
   String? _status;
   String? _error;
   SubtitleInferenceProvider _provider = SubtitleInferenceProvider.cpu;
@@ -187,7 +201,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         setState(() => _status = '$phase$percent');
       },
     );
-    if (!await _writeAndApply(result.cues, operationLabel: 'Generated subtitles')) return;
+    if (!await _writeAndApply(result.cues, operationLabel: 'Generated subtitles', operationLanguageCode: result.translatedToEnglish ? 'en' : result.detectedLanguage)) return;
     if (!mounted) return;
     final providerLabel = result.fellBackToCpu
         ? '${result.requestedProvider.displayName} request unavailable; CPU fallback'
@@ -195,7 +209,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     setState(() {
       _status = 'Generated ${result.cues.length} cues from ${(result.durationMs / 60000).ceil()} minutes of audio. '
           '${result.translatedToEnglish ? 'Speech translated to English' : 'Detected language: ${result.detectedLanguage}'}. '
-          'Requested/initialized backend: $providerLabel. Original audio remains unchanged.';
+          'Requested/initialized backend: $providerLabel. Original audio remains unchanged.'
+          '${_lastResultUploadedToServer ? ' Uploaded to the server library.' : ''}';
     });
     await _showApplied();
   });
@@ -225,6 +240,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     if (!await _writeAndApply(
       aligned.cues,
       operationLabel: repairCuts ? 'Cut repair' : 'Automatic sync',
+      operationLanguageCode: transcription.detectedLanguage,
     )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
@@ -233,7 +249,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
           'of ${aligned.totalCueCount} cues ($percent% match confidence). '
           '${aligned.discontinuityCount} timing discontinuities detected; '
           'rate ${aligned.appliedRate.toStringAsFixed(4)}×, base offset ${aligned.globalOffsetMs} ms. '
-          'Original: ${selected.$2}.';
+          'Original: ${selected.$2}.'
+          '${_lastResultUploadedToServer ? ' Uploaded to the server library.' : ''}';
     });
     await _showApplied();
   });
@@ -298,7 +315,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       _status = '${repairCuts ? 'Cut repair' : 'Subtitle-reference sync'} applied to '
           '${aligned.matchedCueCount} of ${aligned.totalCueCount} cues ($percent% match confidence). '
           '${aligned.discontinuityCount} timing discontinuities detected. '
-          'Reference: ${reference.$2}. Original: ${target.$2}.';
+          'Reference: ${reference.$2}. Original: ${target.$2}.'
+          '${_lastResultUploadedToServer ? ' Uploaded to the server library.' : ''}';
     });
     await _showApplied();
   });
@@ -323,6 +341,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     if (!await _writeAndApply(
       aligned.cues,
       operationLabel: repairCuts ? 'Captured-playback cut repair' : 'Captured-playback sync',
+      operationLanguageCode: transcript.detectedLanguage,
     )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
@@ -332,7 +351,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
           ' cues (' + percent.toString() + '% match confidence). ' +
           aligned.discontinuityCount.toString() + ' timing discontinuities detected. ' +
           (repairCuts ? 'Cues outside captured evidence kept their original timing. ' : '') +
-          'Original: ' + selected.$2 + '.';
+          'Original: ' + selected.$2 + '.' + (_lastResultUploadedToServer ? ' Uploaded to the server library.' : '');
     });
     await _showApplied();
   });
@@ -356,6 +375,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
 
   String? get _activeProfileId {
     try {
+      await File(path).writeAsBytes(bytes, flush: true);
       return context.read<ActiveProfileProvider>().activeId;
     } catch (_) {
       return null;
@@ -453,13 +473,14 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
     );
-    if (!await _writeAndApply(result.cues, operationLabel: 'Translated subtitles')) return;
+    if (!await _writeAndApply(result.cues, operationLabel: 'Translated subtitles', operationLanguageCode: _targetLanguage.bcpCode)) return;
     if (!mounted) return;
     setState(() {
       _status = 'Translated ${result.cues.length} cues from '
           '${SubtitleTranslationService.languageLabel(_sourceLanguage)} to '
           '${SubtitleTranslationService.languageLabel(_targetLanguage)}. '
-          'Timing and original subtitle file were preserved. ${result.backendLabel}.';
+          'Timing and original subtitle file were preserved. ${result.backendLabel}.'
+          '${_lastResultUploadedToServer ? ' Uploaded to the server library.' : ''}';
     });
     await _showApplied();
   });
@@ -565,8 +586,43 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
   }
 
-  Future<bool> _writeAndApply(List<SubtitleCue> cues, {required String operationLabel}) async {
+  String? _normalizedUploadLanguage(String? languageCode) {
+    final code = languageCode?.trim().toLowerCase().split(RegExp(r'[-_]')).first ?? '';
+    return RegExp(r'^[a-z]{2,3}$').hasMatch(code) ? code : null;
+  }
+
+
+  Future<void> _uploadSubtitleToServer(Uint8List bytes, String languageCode) async {
+    final serverId = widget.serverId;
+    final ratingKey = widget.ratingKey;
+    if (serverId == null || serverId.isEmpty || ratingKey == null || ratingKey.isEmpty) {
+      throw StateError('This playback item is not linked to a server library entry.');
+    }
+    final client = context.tryGetMediaClientForServer(ServerId(serverId));
+    if (client == null) throw StateError('The media server is offline or unavailable.');
+    final uploaded = await client.attachSubtitle(
+      ratingKey,
+      bytes: bytes,
+      fileName: 'PlezyNG.$languageCode.srt',
+      format: 'srt',
+      language: languageCode,
+      mediaIndex: widget.mediaIndex,
+    );
+    if (!uploaded) {
+      throw UnsupportedError('The server refused this subtitle upload or does not support library attachment.');
+    }
+  }
+
+  Future<bool> _writeAndApply(
+    List<SubtitleCue> cues, {
+    required String operationLabel,
+    String? operationLanguageCode,
+  }) async {
     final reviewedCues = List<SubtitleCue>.from(cues);
+    _lastResultUploadedToServer = false;
+    final uploadLanguage = _normalizedUploadLanguage(operationLanguageCode);
+    final canUploadToServer =
+        uploadLanguage != null && widget.serverId?.isNotEmpty == true && widget.ratingKey?.isNotEmpty == true;
     final List<int> previewIndexes;
     if (cues.length <= 12) {
       previewIndexes = List<int>.generate(cues.length, (index) => index);
@@ -578,78 +634,108 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       };
       previewIndexes = sample.toList()..sort();
     }
-    final accepted = await showDialog<bool>(
+    final choice = await showDialog<_SubtitleReviewChoice>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text('Review $operationLabel'),
-        content: SizedBox(
-          width: 560,
-          height: (MediaQuery.sizeOf(dialogContext).height - 220).clamp(240.0, 420.0).toDouble(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('${cues.length} cues are ready. Review this sample before attaching the generated SRT.'),
-              const SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: previewIndexes.length,
-                  itemBuilder: (context, index) {
-                    final cueIndex = previewIndexes[index];
-                    final cue = reviewedCues[cueIndex];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${_formatCueTime(cue.startMs)} – ${_formatCueTime(cue.endMs)}',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                          const SizedBox(height: 2),
-                          SelectableText(cue.text),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                final edited = await _editCueForReview(dialogContext, cue);
-                                if (edited != null && mounted) setDialogState(() => reviewedCues[cueIndex] = edited);
-                              },
-                              icon: const Icon(Icons.edit_outlined),
-                              label: const Text('Edit sample cue'),
+          content: SizedBox(
+            width: 560,
+            height: (MediaQuery.sizeOf(dialogContext).height - 220).clamp(240.0, 420.0).toDouble(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('${cues.length} cues are ready. Review this sample before attaching the generated SRT.'),
+                if (canUploadToServer)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Upload + attach stores this SRT on the active library item when the server allows it.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: previewIndexes.length,
+                    itemBuilder: (context, index) {
+                      final cueIndex = previewIndexes[index];
+                      final cue = reviewedCues[cueIndex];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${_formatCueTime(cue.startMs)} – ${_formatCueTime(cue.endMs)}',
+                              style: Theme.of(context).textTheme.labelMedium,
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            const SizedBox(height: 2),
+                            SelectableText(cue.text),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () async {
+                                  final edited = await _editCueForReview(dialogContext, cue);
+                                  if (edited != null && mounted) {
+                                    setDialogState(() => reviewedCues[cueIndex] = edited);
+                                  }
+                                },
+                                icon: const Icon(Icons.edit_outlined),
+                                label: const Text('Edit sample cue'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.discard),
+              child: const Text('Discard'),
+            ),
+            if (canUploadToServer)
+              OutlinedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.serverAndPlayer),
+                child: const Text('Upload + attach'),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Discard'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Attach subtitle'),
-          ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.player),
+              child: const Text('Attach to player'),
+            ),
           ],
         ),
       ),
     );
-    if (!mounted || accepted != true) {
-      if (mounted) setState(() => _status = 'Subtitle result discarded; the current track and source file are unchanged.');
+    if (!mounted || choice == null || choice == _SubtitleReviewChoice.discard) {
+      if (mounted) {
+        setState(() => _status = 'Subtitle result discarded; the current track and source file are unchanged.');
+      }
       return false;
     }
     final bytes = SubtitleSyncService.writeSrt(reviewedCues);
+    if (choice == _SubtitleReviewChoice.serverAndPlayer) {
+      final languageCode = uploadLanguage;
+      if (languageCode == null) throw StateError('The result language could not be identified for server upload.');
+      await _uploadSubtitleToServer(bytes, languageCode);
+      _lastResultUploadedToServer = true;
+    }
     final directory = await getTemporaryDirectory();
     final path = p.join(directory.path, 'plezyng_subtitle_${DateTime.now().microsecondsSinceEpoch}.srt');
-    await File(path).writeAsBytes(bytes, flush: true);
-    await widget.player.command(['sub-add', path, 'select']);
+    try {
+      await File(path).writeAsBytes(bytes, flush: true);
+      await widget.player.command(['sub-add', path, 'select']);
+    } catch (error) {
+      if (_lastResultUploadedToServer) {
+        throw StateError('Uploaded to the server library, but could not attach the local copy: $error');
+      }
+      rethrow;
+    }
     return true;
   }
 
