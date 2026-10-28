@@ -24,8 +24,9 @@ List<PlaybackCopyRank> rankPlaybackCopies(
   Set<String> verifiedOfflineKeys = const {},
   Set<String> refusedVideoCodecs = const {},
   TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  TranscodeQualityPreset Function(MediaItem)? qualityForItem,
 }) {
-  List<int> versionPriority(MediaVersion version) {
+  List<int> versionPriority(MediaVersion version, TranscodeQualityPreset quality) {
     final codec = switch (version.videoCodec?.toLowerCase()) {
       'h265' || 'hev1' => 'hevc',
       'avc' || 'avc1' => 'h264',
@@ -41,13 +42,14 @@ List<PlaybackCopyRank> rankPlaybackCopies(
 
   final ranked = <PlaybackCopyRank>[];
   for (final item in copies) {
+    final itemQuality = qualityForItem?.call(item) ?? quality;
     final versions = [...?item.mediaVersions]
       ..sort((a, b) {
-        final result = _comparePriority(versionPriority(a), versionPriority(b));
+        final result = _comparePriority(versionPriority(a, itemQuality), versionPriority(b, itemQuality));
         return result == 0 ? a.id.compareTo(b.id) : result;
       });
     final version = versions.firstOrNull;
-    final priority = version == null ? [0, 0, 0, 0] : versionPriority(version);
+    final priority = version == null ? [0, 0, 0, 0] : versionPriority(version, itemQuality);
     final offline = verifiedOfflineKeys.contains(item.globalKey);
     final online = onlineServerIds.contains(item.serverId);
     final reason = offline
