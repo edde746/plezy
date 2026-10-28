@@ -117,6 +117,25 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
     await settings.write(SettingsService.subtitlePosition, _position);
   }
 
+  Future<void> _resetAppearance() async {
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.subtitleFontSize, SettingsService.subtitleFontSize.defaultValue);
+    await settings.write(SettingsService.subtitlePosition, SettingsService.subtitlePosition.defaultValue);
+    await settings.write(SettingsService.subtitleTextColor, SettingsService.subtitleTextColor.defaultValue);
+    await settings.write(SettingsService.subtitleBold, SettingsService.subtitleBold.defaultValue);
+    await settings.write(SettingsService.subtitleItalic, SettingsService.subtitleItalic.defaultValue);
+    await settings.write(SettingsService.subtitleBorderSize, SettingsService.subtitleBorderSize.defaultValue);
+    await settings.write(SettingsService.subtitleBorderColor, SettingsService.subtitleBorderColor.defaultValue);
+    await settings.write(SettingsService.subtitleBackgroundOpacity, SettingsService.subtitleBackgroundOpacity.defaultValue);
+    await settings.write(SettingsService.subtitleBackgroundColor, SettingsService.subtitleBackgroundColor.defaultValue);
+    if (!mounted) return;
+    setState(() {
+      _fontSize = SettingsService.subtitleFontSize.defaultValue;
+      _position = SettingsService.subtitlePosition.defaultValue;
+    });
+    await _apply();
+  }
+
   @override
   Widget build(BuildContext context) {
     return BaseVideoControlSheet(
@@ -213,6 +232,15 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                     title: t.subtitlingStyling.backgroundColor,
                     description: t.subtitlingStyling.backgroundColorDescription,
                     onAfterWrite: (_) => _apply(),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton.icon(
+                      onPressed: _resetAppearance,
+                      icon: const Icon(Symbols.restart_alt_rounded),
+                      label: Text(t.common.reset),
+                    ),
                   ),
                 ],
               ),

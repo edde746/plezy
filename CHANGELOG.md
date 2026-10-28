@@ -4,7 +4,7 @@
 
 - Add exact millisecond audio/subtitle sync entry and backend-aware local subtitle import: MPV keeps its existing formats, Android ExoPlayer accepts SRT/ASS/SSA/VTT on VOD, and Tizen/webOS add SRT/VTT overlays.
 - Add a separately persisted sync offset for MPV's secondary subtitle track, using the existing scoped timing controls.
-- Expand in-player subtitle readability controls with text color, weight, outline, and background adjustments on MPV and ExoPlayer; hide the style action on unsupported backends.
+- Expand in-player subtitle readability controls with text color, weight, outline, and background adjustments on MPV and ExoPlayer; hide the style action on unsupported backends. Add a one-tap reset to stored style defaults.
 
 - Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
 
