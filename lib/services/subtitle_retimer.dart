@@ -31,10 +31,10 @@ final class SubtitleCue {
   final String text;
 }
 
-/// Loss-aware SRT/WebVTT retimer with bounded SRT/VTT/ASS/SSA cue inspection.
+/// Loss-aware SRT/WebVTT and guarded ASS/SSA retimer with bounded cue inspection.
 ///
 /// MPV applies subtitle timing as `sourceTime * sub-speed + sub-delay`.
-/// This exporter uses that same affine transform, preserving cue payload,
+/// The exporter uses that affine transform, preserving cue payload,
 /// WebVTT cue settings, identifiers, and file line endings.
 abstract final class SubtitleRetimer {
   static const int maximumInputBytes = 5 * 1024 * 1024;
@@ -48,6 +48,7 @@ abstract final class SubtitleRetimer {
   static final RegExp _timingLine = RegExp(r'^([ \t]*)(\S+)([ \t]+-->[ \t]+)(\S+)(.*)$');
   static final RegExp _assDialogueLine = RegExp(r'^\s*Dialogue\s*:', caseSensitive: false);
   static final RegExp _assTimeExpression = RegExp(r'^(\d{1,6}):([0-5]\d):([0-5]\d)\.(\d{2})$');
+  static final RegExp _assTimedTag = RegExp(r'\\(?:kf|ko|kt|k|t|move|fad|fade)(?=[0-9(]|$)', caseSensitive: false);
 
   /// Parses bounded SRT, WebVTT, ASS, or SSA timing and payload for an interactive cue
   /// picker. The source bytes remain untouched and cues retain display text.
@@ -136,8 +137,8 @@ abstract final class SubtitleRetimer {
     required double rate,
   }) {
     final format = extension.toLowerCase();
-    if (format != '.srt' && format != '.vtt') {
-      throw ArgumentError.value(extension, 'extension', 'Only SRT and WebVTT export is supported.');
+    if (format != '.srt' && format != '.vtt' && format != '.ass' && format != '.ssa') {
+      throw ArgumentError.value(extension, 'extension', 'Only SRT, WebVTT, ASS, and SSA export is supported.');
     }
     if (sourceBytes.isEmpty || sourceBytes.length > maximumInputBytes) {
       throw FormatException('Subtitle input is empty or larger than the 5 MiB processing bound.');
@@ -147,6 +148,10 @@ abstract final class SubtitleRetimer {
     }
     if (!rate.isFinite || rate < minimumRate || rate > maximumRate) {
       throw RangeError.range(rate, minimumRate, maximumRate, 'rate');
+    }
+
+    if (format == '.ass' || format == '.ssa') {
+      return _retimeAss(sourceBytes: sourceBytes, delayMs: delayMs, rate: rate, format: format);
     }
 
     var source = utf8.decode(sourceBytes, allowMalformed: false);
@@ -237,6 +242,126 @@ abstract final class SubtitleRetimer {
       clippedCueCount: clippedCueCount,
       format: isVtt ? 'WebVTT' : 'SRT',
     );
+  }
+
+  static SubtitleRetimingResult _retimeAss({
+    required List<int> sourceBytes,
+    required int delayMs,
+    required double rate,
+    required String format,
+  }) {
+    var source = utf8.decode(sourceBytes, allowMalformed: false);
+    final hasBom = source.startsWith('\uFEFF');
+    if (hasBom) source = source.substring(1);
+    if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
+    final newline = source.contains('\r\n')
+        ? '\r\n'
+        : source.contains('\r')
+        ? '\r'
+        : '\n';
+    final lines = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+    final output = <String>[];
+    List<String>? formatFields;
+    var inEvents = false;
+    var retimedCueCount = 0;
+    var clippedCueCount = 0;
+
+    String formatFieldTime(String original, int timeMs) {
+      final leading = RegExp(r'^\s*').firstMatch(original)!.group(0)!;
+      final trailing = RegExp(r'\s*$').firstMatch(original)!.group(0)!;
+      return leading + _formatAssTime(timeMs) + trailing;
+    }
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        inEvents = trimmed.toLowerCase() == '[events]';
+        formatFields = null;
+        output.add(line);
+        continue;
+      }
+      if (inEvents && trimmed.toLowerCase().startsWith('format:')) {
+        formatFields = trimmed.substring('format:'.length).split(',').map((field) => field.trim().toLowerCase()).toList();
+        if (!formatFields.contains('start') ||
+            !formatFields.contains('end') ||
+            !formatFields.contains('text') ||
+            formatFields.last != 'text') {
+          throw const FormatException('ASS event format must end in a text field and include start and end.');
+        }
+        output.add(line);
+        continue;
+      }
+      if (!inEvents || !_assDialogueLine.hasMatch(line)) {
+        output.add(line);
+        continue;
+      }
+
+      final fields = formatFields;
+      if (fields == null) throw const FormatException('ASS dialogue appears before its event format.');
+      final colonIndex = line.indexOf(':');
+      final values = _splitAssFields(line.substring(colonIndex + 1), fields.length);
+      final textIndex = fields.indexOf('text');
+      final text = values[textIndex];
+      if (_assTimedTag.hasMatch(text)) {
+        throw const FormatException('ASS dialogue contains karaoke or animated timing tags and cannot be retimed safely.');
+      }
+      final effectIndex = fields.indexOf('effect');
+      if (effectIndex >= 0 && values[effectIndex].trim().isNotEmpty) {
+        throw const FormatException('ASS dialogue effects cannot be retimed safely.');
+      }
+      final startIndex = fields.indexOf('start');
+      final endIndex = fields.indexOf('end');
+      final start = _parseAssTime(values[startIndex].trim());
+      final end = _parseAssTime(values[endIndex].trim());
+      if (start == null || end == null) {
+        throw const FormatException('ASS cue contains an invalid timestamp.');
+      }
+      if (end <= start) throw const FormatException('ASS cue end must be after its start.');
+      retimedCueCount++;
+
+      final transformedStart = (start * rate).round() + delayMs;
+      final transformedEnd = (end * rate).round() + delayMs;
+      if (transformedEnd <= 0) {
+        clippedCueCount++;
+        continue;
+      }
+      if (transformedStart > maximumTimeMs || transformedEnd > maximumTimeMs) {
+        throw const FormatException('Retimed subtitle cue is outside the supported range.');
+      }
+      final visibleStart = transformedStart < 0 ? 0 : transformedStart;
+      if (transformedEnd <= visibleStart) {
+        throw const FormatException('Retimed subtitle cue has no visible duration.');
+      }
+
+      values[startIndex] = formatFieldTime(values[startIndex], visibleStart);
+      values[endIndex] = formatFieldTime(values[endIndex], transformedEnd);
+      output.add(line.substring(0, colonIndex + 1) + values.join(','));
+    }
+    if (retimedCueCount == 0) throw const FormatException('No valid ASS dialogue cues were found.');
+
+    final outputText = (hasBom ? '\uFEFF' : '') + output.join(newline);
+    return SubtitleRetimingResult(
+      bytes: utf8.encode(outputText),
+      retimedCueCount: retimedCueCount,
+      clippedCueCount: clippedCueCount,
+      format: format == '.ssa' ? 'SSA' : 'ASS',
+    );
+  }
+
+  static String _formatAssTime(int timeMs) {
+    final centiseconds = (timeMs / 10).round();
+    final totalMs = centiseconds * 10;
+    final hours = totalMs ~/ 3600000;
+    final minutes = (totalMs ~/ 60000) % 60;
+    final seconds = (totalMs ~/ 1000) % 60;
+    final subsecond = centiseconds % 100;
+    return hours.toString() +
+        ':' +
+        minutes.toString().padLeft(2, '0') +
+        ':' +
+        seconds.toString().padLeft(2, '0') +
+        '.' +
+        subsecond.toString().padLeft(2, '0');
   }
 
   static List<SubtitleCue> _parseAssCues(List<int> sourceBytes) {

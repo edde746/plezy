@@ -10,7 +10,7 @@
 - Add one-step undo for the most recent applied MPV subtitle drift calibration or reset, including its prior scoped rate and delay.
 - Retain downloaded OpenSubtitles text subtitles for standalone MPV VOD, bound to profile, source item, edition and file fingerprint; verify content hashes when restoring and enforce per-file asset limits. Preserve session-only cleanup for transient and live playback.
 - Roll back native sync timing when saving an offset fails, keeping player state, confirmation state and persisted settings consistent.
-- Export synchronized SRT/WebVTT copies for standalone MPV VOD subtitles, preserve cue payload and settings, and confirm before removing cues wholly before playback starts.
+- Export affine-corrected SRT/WebVTT and simple ASS/SSA copies for standalone MPV VOD subtitles; preserve source metadata and cue payload, confirm before removing cues wholly before playback starts, and refuse ASS/SSA karaoke/animation or Effect timing the exporter cannot safely preserve.
 - Align a selected SRT/WebVTT cue to the current standalone MPV playback position and persist the one-anchor correction for the active subtitle and audio stream.
 - Preview actual cue times and text before applying direct OpenSubtitles SRT, WebVTT, ASS, and SSA downloads on standalone file playback.
 - Add subtitle sync controls to standalone MPV VOD OpenSubtitles assets. Persist delay and drift rate by the current audio descriptor, reapply only matching audio calibration after a track switch, and restore corrections only when edition, source file, and subtitle digest still match.
