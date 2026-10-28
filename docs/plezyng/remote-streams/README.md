@@ -5,9 +5,12 @@ Status: the connected-stream feature is on
 a durable cloud-file source, a bounded cloud-video index and Home poster row,
 encrypted background download renewal, and a persisted debrid preparation
 journal. The branch is not publish-ready: an embedded native P2P engine and
-platform packaging are absent, and remote viewing still uses the separate
-`SourcePlayback` player contract rather than Plezy's server video queue/chrome.
-See [IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
+platform packaging are absent. Streams and verified cloud-file matches opened
+from a server movie or episode use the shared video player and server queue;
+catalog-only playback and standalone cloud files still use the separate
+`SourcePlayback` player contract. External viewing queues local resume updates
+without starting a false server now-playing session. See
+[IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
 qualification boundary.
 
 Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
@@ -71,13 +74,16 @@ index; signed playback URLs remain memory-only. Eligible files use the existing
 durable Downloads queue. Android/iOS native transfers store an encrypted
 provider recipe and request the same provider file again after link expiry.
 Torrent preparation jobs persist non-secret provider checkpoints and
-automatically resume up to two recoverable jobs after profile restore, outside
-the stream picker. Recovery reuses saved provider job identities and never
-stores a signed stream URL. TorBox recovery polls the saved torrent ID and does
-not create a replacement. Transient failures receive a capped retry with
-backoff. It runs in the app runtime, so OS suspension can pause it; this is not
-an OS-scheduled background worker, and jobs without a reusable provider ID
-still need a user action. A Stremio choice from a matched server item now uses
+automatically reconcile every recoverable job after profile restore, outside
+the stream picker, with at most two jobs running concurrently. Recovery reuses
+saved provider job identities and never stores a signed stream URL. TorBox
+recovery polls the saved torrent ID and does not create a replacement.
+Transient failures receive a capped retry with backoff. The queue is cancelable
+from the existing streaming settings screen; cancel stops local polling and
+retries but leaves provider-side work untouched. Recovery runs in the app
+runtime, so OS suspension can pause it; this is not an OS-scheduled background
+worker, and jobs without a reusable provider ID still need a user action. A
+Stremio choice from a matched server item now uses
 the normal video player and queue, with resume offsets reconciled through the
 existing watch queue. This does not merge cloud files into server library
 cards or make the standalone source player queue-aware. Preparation remains

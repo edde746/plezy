@@ -413,6 +413,21 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     await context.read<RemoteStreamingProvider>().removeAccount(service);
   }
 
+  Future<void> _cancelPreparation(String id) async {
+    try {
+      await context.read<RemoteStreamingProvider>().cancelPreparation(id);
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.settingsLoadFailed);
+    }
+  }
+
+  String _providerName(RemoteStreamService service) => switch (service) {
+    RemoteStreamService.realDebrid => t.streaming.realDebrid,
+    RemoteStreamService.allDebrid => t.streaming.allDebrid,
+    RemoteStreamService.premiumize => t.streaming.premiumize,
+    RemoteStreamService.torbox => t.streaming.torbox,
+  };
+
   Future<void> _clearUnreadableSettings() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -525,6 +540,12 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
         final allDebrid = streaming.accountFor(RemoteStreamService.allDebrid);
         final premiumize = streaming.accountFor(RemoteStreamService.premiumize);
         final torbox = streaming.accountFor(RemoteStreamService.torbox);
+        final pendingPreparations = streaming.preparationJobs
+            .where(
+              (job) =>
+                  job.state == RemotePreparationState.preparing || job.state == RemotePreparationState.interrupted,
+            )
+            .toList(growable: false);
         return FocusedScrollScaffold(
           title: Text(t.streaming.title),
           slivers: [
@@ -697,6 +718,32 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                     ),
                   ],
                 ),
+                if (pendingPreparations.isNotEmpty)
+                  SettingsGroup(
+                    title: t.common.queue,
+                    children: [
+                      for (final job in pendingPreparations)
+                        FocusableListTile(
+                          leading: job.state == RemotePreparationState.preparing
+                              ? const SizedBox.square(
+                                  dimension: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const AppIcon(Symbols.cloud_queue_rounded),
+                          title: Text(job.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          subtitle: Text(
+                            '${_providerName(job.service)} · ${job.state == RemotePreparationState.preparing ? t.streaming.streamPrepare : t.streaming.streamPrepareFailed}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: IconButton(
+                            tooltip: t.common.cancel,
+                            onPressed: streaming.isReady ? () => unawaited(_cancelPreparation(job.id)) : null,
+                            icon: const AppIcon(Symbols.cancel_rounded),
+                          ),
+                        ),
+                    ],
+                  ),
                 const SizedBox(height: 24),
               ]),
             ),

@@ -35,6 +35,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
   bool _disposed = false;
   RemoteStreamSnapshot _snapshot = const RemoteStreamSnapshot();
   Future<void> _mutationQueue = Future.value();
+  final Set<String> _cancelledPreparationIds = {};
 
   String? get profileId => _profileId;
   bool get isReady => !loading && !loadFailed && _profileId != null;
@@ -42,6 +43,37 @@ class RemoteStreamingProvider extends ChangeNotifier {
   List<StremioAddonInstallation> get addons => _snapshot.addons;
   List<RemotePreparationJob> get preparationJobs => _snapshot.preparations;
   final Map<String, Future<ResolvedRemoteStream>> _activeTorrentPreparations = {};
+
+  /// Stops this device from polling or retrying a preparation. This does not
+  /// delete the corresponding torrent or file from the remote provider.
+  Future<void> cancelPreparation(String id) async {
+    final (profile, generation) = _requireProfile();
+    final job = _snapshot.preparations.where((candidate) => candidate.id == id).firstOrNull;
+    if (job == null ||
+        (job.state != RemotePreparationState.preparing && job.state != RemotePreparationState.interrupted)) {
+      return;
+    }
+
+    // Signal first so active provider polling stops without waiting for I/O.
+    _cancelledPreparationIds.add(id);
+    final cancelledAt = DateTime.now().millisecondsSinceEpoch;
+    await _commit(profile, generation, (current) => current.copyWith(
+      preparations: [
+        for (final candidate in current.preparations)
+          if (candidate.id == id &&
+              (candidate.state == RemotePreparationState.preparing ||
+                  candidate.state == RemotePreparationState.interrupted))
+            candidate.copyWith(
+              state: RemotePreparationState.cancelled,
+              stage: 'cancelled',
+              updatedAt: cancelledAt,
+              clearErrorCode: true,
+            )
+          else
+            candidate,
+      ],
+    ));
+  }
 
   RemoteStreamAccount? accountFor(RemoteStreamService service) =>
       accounts.where((account) => account.service == service).firstOrNull;
@@ -51,6 +83,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       if (_profileId != null || loading) {
         _profileId = null;
         _generation++;
+        _cancelledPreparationIds.clear();
         loading = false;
         loadFailed = false;
         settingsUnreadable = false;
@@ -61,6 +94,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     }
     if (_profileId == profileId) return;
     _profileId = profileId;
+    _cancelledPreparationIds.clear();
     final generation = ++_generation;
     loading = true;
     loadFailed = false;
@@ -136,9 +170,15 @@ class RemoteStreamingProvider extends ChangeNotifier {
   ) async {
     // A tiny concurrency cap keeps profile startup responsive and limits
     // provider pressure if several preparation requests were interrupted.
-    await Future.wait([
-      for (final job in jobs.take(2)) _recoverWithBackoff(profile, generation, job),
-    ]);
+    var nextJob = 0;
+    Future<void> runWorker() async {
+      while (_current(profile, generation) && nextJob < jobs.length) {
+        final job = jobs[nextJob++];
+        await _recoverWithBackoff(profile, generation, job);
+      }
+    }
+
+    await Future.wait([runWorker(), runWorker()]);
   }
 
   Future<void> _recoverWithBackoff(
@@ -178,7 +218,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     int generation,
     RemotePreparationJob job,
   ) async {
-    if (!_current(profile, generation)) return;
+    if (_shouldCancelPreparation(profile, generation, job.id)) return;
     final saved = _snapshot.preparations.where((candidate) => candidate.id == job.id).firstOrNull;
     if (saved == null || saved.state != RemotePreparationState.interrupted || saved.providerJobId == null) return;
     final account = _snapshot.accounts
@@ -191,7 +231,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       await _commit(profile, generation, (current) => current.copyWith(
         preparations: [
           for (final candidate in current.preparations)
-            if (candidate.id == saved.id)
+            if (candidate.id == saved.id && !_cancelledPreparationIds.contains(saved.id))
               candidate.copyWith(
                 state: RemotePreparationState.preparing,
                 stage: 'reconnecting',
@@ -205,11 +245,13 @@ class RemoteStreamingProvider extends ChangeNotifier {
     } on Object {
       return;
     }
-    if (!_current(profile, generation)) return;
+    if (_shouldCancelPreparation(profile, generation, saved.id)) return;
 
     String lastStage = 'reconnecting';
     Future<void> onProgress({required String stage, String? providerJobId}) async {
-      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      if (_shouldCancelPreparation(profile, generation, saved.id)) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
       final normalized = _journalText(stage, 64, 'preparing');
       if (providerJobId != null &&
           (providerJobId.isEmpty || providerJobId.length > 128 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(providerJobId))) {
@@ -241,7 +283,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               saved.infoHash,
               fileIndex: saved.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, saved.id),
               onProgress: onProgress,
               existingJobId: saved.providerJobId,
             );
@@ -255,7 +297,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               saved.infoHash,
               fileIndex: saved.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, saved.id),
               onProgress: onProgress,
               existingJobId: saved.providerJobId,
             );
@@ -269,7 +311,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               saved.infoHash,
               fileIndex: saved.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, saved.id),
               onProgress: onProgress,
               existingJobId: saved.providerJobId,
               allowCreate: false,
@@ -286,11 +328,14 @@ class RemoteStreamingProvider extends ChangeNotifier {
       if (resolved.uri.scheme != 'https' || resolved.uri.userInfo.isNotEmpty) {
         throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
       }
+      if (_shouldCancelPreparation(profile, generation, saved.id)) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
       final completedAt = DateTime.now().millisecondsSinceEpoch;
       await _commit(profile, generation, (current) => current.copyWith(
         preparations: [
           for (final candidate in current.preparations)
-            if (candidate.id == saved.id)
+            if (candidate.id == saved.id && !_cancelledPreparationIds.contains(saved.id))
               candidate.copyWith(
                 state: RemotePreparationState.ready,
                 stage: 'ready',
@@ -303,6 +348,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       ));
     } on Object catch (error) {
       if (!_current(profile, generation)) return;
+      if (_cancelledPreparationIds.contains(saved.id)) return;
       final failedAt = DateTime.now().millisecondsSinceEpoch;
       final code = error is RemoteProviderException
           ? error.reason.name
@@ -313,7 +359,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
         await _commit(profile, generation, (current) => current.copyWith(
           preparations: [
             for (final candidate in current.preparations)
-              if (candidate.id == saved.id)
+              if (candidate.id == saved.id && !_cancelledPreparationIds.contains(saved.id))
                 candidate.copyWith(
                   state: RemotePreparationState.interrupted,
                   stage: 'resume_failed',
@@ -614,7 +660,9 @@ class RemoteStreamingProvider extends ChangeNotifier {
     String? lastStage = 'starting';
     String? lastProviderJobId = job.providerJobId;
     Future<void> onProgress({required String stage, String? providerJobId}) async {
-      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      if (_shouldCancelPreparation(profile, generation, job.id)) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
       final normalized = stage.trim();
       final safeStage = normalized.isEmpty
           ? 'preparing'
@@ -650,7 +698,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               hash,
               fileIndex: candidate.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
               onProgress: onProgress,
               existingJobId: job.providerJobId,
             );
@@ -664,7 +712,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               hash,
               fileIndex: candidate.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
               onProgress: onProgress,
               existingJobId: job.providerJobId,
             );
@@ -678,7 +726,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               hash,
               fileIndex: candidate.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
               onProgress: onProgress,
             );
           } finally {
@@ -691,7 +739,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
             resolved = await client.resolveTorrentHash(
               hash,
               fileIndex: candidate.fileIndex,
-              shouldCancel: () => !_current(profile, generation),
+              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
               onProgress: onProgress,
               existingJobId: job.providerJobId,
             );
@@ -700,12 +748,14 @@ class RemoteStreamingProvider extends ChangeNotifier {
           }
           break;
       }
-      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      if (_shouldCancelPreparation(profile, generation, job.id)) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
       final completedAt = DateTime.now().millisecondsSinceEpoch;
       await _commit(profile, generation, (current) => current.copyWith(
         preparations: [
           for (final old in current.preparations)
-            if (old.id == job.id)
+            if (old.id == job.id && !_cancelledPreparationIds.contains(job.id))
               old.copyWith(state: RemotePreparationState.ready, stage: 'ready', updatedAt: completedAt)
             else
               old,
@@ -713,7 +763,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       ));
       return resolved;
     } on Object catch (error) {
-      if (_current(profile, generation)) {
+      if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
         final cancelled = (error is RemoteProviderException && error.reason == RemoteProviderFailure.cancelled) ||
             (error is RealDebridException && error.reason == RealDebridFailure.cancelled);
         final failedAt = DateTime.now().millisecondsSinceEpoch;
@@ -951,6 +1001,8 @@ class RemoteStreamingProvider extends ChangeNotifier {
     await RemoteStreamStore.save(profile, snapshot);
     if (!_current(profile, generation)) return;
     _snapshot = snapshot;
+    final retainedIds = snapshot.preparations.map((job) => job.id).toSet();
+    _cancelledPreparationIds.removeWhere((id) => !retainedIds.contains(id));
     _notify();
   });
 
@@ -984,6 +1036,11 @@ class RemoteStreamingProvider extends ChangeNotifier {
   }
 
   bool _current(String profile, int generation) => !_disposed && _profileId == profile && _generation == generation;
+
+  bool _shouldCancelPreparation(String profile, int generation, String id) {
+    if (!_current(profile, generation) || _cancelledPreparationIds.contains(id)) return true;
+    return _snapshot.preparations.where((job) => job.id == id).firstOrNull?.state == RemotePreparationState.cancelled;
+  }
 
   void _notify() {
     if (!_disposed) notifyListeners();
