@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.
+
 - Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.
 
 - Verify publication tools supplied by the private runner bootstrap without requiring administrator access in restricted metadata jobs.
