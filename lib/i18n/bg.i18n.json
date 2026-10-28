@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Филтри (${count})",
     "noRecommendations": "Няма налични препоръки",
     "noCollections": "Няма колекции в тази библиотека",
+    "noGenres": "",
     "noFoldersFound": "Не са намерени папки",
     "folders": "папки",
     "tabs": {
       "recommended": "Препоръчани",
       "browse": "Преглед",
       "collections": "Колекции",
+      "genres": "",
       "playlists": "Плейлисти"
     },
     "groupings": {

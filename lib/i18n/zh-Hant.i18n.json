@@ -1274,12 +1274,14 @@
     "filtersWithCount": "篩選器（${count}）",
     "noRecommendations": "目前沒有推薦",
     "noCollections": "此媒體庫中沒有收藏集",
+    "noGenres": "",
     "noFoldersFound": "找不到資料夾",
     "folders": "資料夾",
     "tabs": {
       "recommended": "推薦",
       "browse": "瀏覽",
       "collections": "收藏集",
+      "genres": "",
       "playlists": "播放清單"
     },
     "groupings": {

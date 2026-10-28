@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtres (${count})",
     "noRecommendations": "Aucune recommandation disponible",
     "noCollections": "Aucune collection dans cette bibliothèque",
+    "noGenres": "",
     "noFoldersFound": "Aucun dossier trouvé",
     "folders": "dossiers",
     "tabs": {
       "recommended": "Recommandé",
       "browse": "Parcourir",
       "collections": "Collections",
+      "genres": "",
       "playlists": "Playlists"
     },
     "groupings": {

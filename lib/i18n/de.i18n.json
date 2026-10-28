@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filter (${count})",
     "noRecommendations": "Keine Empfehlungen verfügbar",
     "noCollections": "Keine Sammlungen in dieser Mediathek",
+    "noGenres": "",
     "noFoldersFound": "Keine Ordner gefunden",
     "folders": "Ordner",
     "tabs": {
       "recommended": "Empfohlen",
       "browse": "Durchsuchen",
       "collections": "Sammlungen",
+      "genres": "",
       "playlists": "Wiedergabelisten"
     },
     "groupings": {

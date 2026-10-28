@@ -1274,12 +1274,14 @@
     "filtersWithCount": "필터 (${count})",
     "noRecommendations": "추천 없음",
     "noCollections": "이 미디어 라이브러리에는 컬렉션이 없습니다",
+    "noGenres": "",
     "noFoldersFound": "폴더를 찾을 수 없습니다",
     "folders": "폴더",
     "tabs": {
       "recommended": "추천",
       "browse": "찾아보기",
       "collections": "컬렉션",
+      "genres": "",
       "playlists": "재생 목록"
     },
     "groupings": {

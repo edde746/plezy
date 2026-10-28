@@ -11,6 +11,8 @@ import '../../focus/input_mode_tracker.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
+import '../../media/library_genre.dart';
+import '../../media/media_kind.dart';
 import '../../media/media_library.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -32,14 +34,21 @@ import 'state_messages.dart';
 import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
+import 'tabs/library_genres_tab.dart';
 import 'tabs/library_playlists_tab.dart';
 import 'tabs/base_library_tab.dart';
 
-enum LibraryTabType { recommended, browse, collections, playlists }
+enum LibraryTabType { recommended, browse, collections, playlists, genres }
 
 List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
-  return LibraryTabType.values;
+  // Genres filter the library's own type; only movie and show libraries
+  // browse a type both backends tag with genres.
+  final hasGenres = library.kind == MediaKind.movie || library.kind == MediaKind.show;
+  return [
+    for (final tab in LibraryTabType.values)
+      if (tab != LibraryTabType.genres || hasGenres) tab,
+  ];
 }
 
 class LibrariesScreen extends StatefulWidget {
@@ -65,6 +74,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
+  final _genresTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
 
   String? _selectedLibraryGlobalKey;
@@ -316,6 +326,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       LibraryTabType.recommended => _recommendedTabKey.currentState,
       LibraryTabType.browse => _browseTabKey.currentState,
       LibraryTabType.collections => _collectionsTabKey.currentState,
+      LibraryTabType.genres => _genresTabKey.currentState,
       LibraryTabType.playlists => _playlistsTabKey.currentState,
     };
   }
@@ -333,6 +344,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _handleBrowseFiltersActiveChanged(bool active) {
     if (_browseFiltersActive == active) return;
     setState(() => _browseFiltersActive = active);
+  }
+
+  /// Show [genre] in Browse: persist it as the selection, reload a Browse
+  /// page that is already built, and switch to it. A user switch like a chip
+  /// tap, so the Browse tab is saved and focus follows the load.
+  Future<void> _openGenre(MediaLibrary library, LibraryGenre genre, {required bool canGroupByFolders}) async {
+    final libraryGlobalKey = library.globalKey;
+    await saveGenreBrowseSelection(library, genre, canGroupByFolders: canGroupByFolders);
+    if (!mounted || _selectedLibraryGlobalKey != libraryGlobalKey) return;
+    final browseIndex = _visibleTabs.indexOf(LibraryTabType.browse);
+    if (browseIndex < 0) return;
+    final Object? browse = _browseTabKey.currentState;
+    if (browse is Refreshable) browse.refresh();
+    tabController.animateTo(browseIndex);
   }
 
   /// Handle when a tab's data has finished loading
@@ -406,6 +431,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     LibraryTabType.recommended => t.libraries.tabs.recommended,
     LibraryTabType.browse => t.libraries.tabs.browse,
     LibraryTabType.collections => t.libraries.tabs.collections,
+    LibraryTabType.genres => t.libraries.tabs.genres,
     LibraryTabType.playlists => t.libraries.tabs.playlists,
   };
 
@@ -444,6 +470,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         suppressAutoFocus: suppressAutoFocus,
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
         onBack: focusTabBar,
+      ),
+      LibraryTabType.genres => LibraryGenresTab(
+        key: _genresTabKey,
+        library: library,
+        isActive: isActive,
+        suppressAutoFocus: suppressAutoFocus,
+        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+        onBack: focusTabBar,
+        onGenreSelected: (genre) => unawaited(_openGenre(library, genre, canGroupByFolders: canGroupByFolders)),
       ),
       LibraryTabType.playlists => LibraryPlaylistsTab(
         key: _playlistsTabKey,

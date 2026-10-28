@@ -12,6 +12,7 @@ import '../media/account_preferences.dart';
 import '../media/artist_discography.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
+import '../media/library_genre.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
 import 'live_session_tracker.dart';

@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtrlər (${count})",
     "noRecommendations": "Tövsiyə yoxdur",
     "noCollections": "Bu kitabxanada kolleksiya yoxdur",
+    "noGenres": "",
     "noFoldersFound": "Qovluq tapılmadı",
     "folders": "qovluqlar",
     "tabs": {
       "recommended": "Tövsiyə olunanlar",
       "browse": "Baxış",
       "collections": "Kolleksiyalar",
+      "genres": "",
       "playlists": "Oynatma siyahıları"
     },
     "groupings": {

@@ -10,6 +10,7 @@ import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
+import '../media/library_genre.dart';
 import '../media/library_first_character.dart';
 import '../media/library_query.dart';
 import '../media/live_tv_support.dart';
@@ -4141,6 +4142,43 @@ class PlexClient
     }
     final legacy = await getLibraryFilters(libraryId);
     return LibraryFilterResult(filters: legacy, cachedValues: const {});
+  }
+
+  /// Plex Web's Categories tab: one row per genre, keyed by the genre filter
+  /// that selects it (`/library/sections/2/all?genre=239`).
+  ///
+  /// PMS composes each tile image itself as
+  /// `/photo/:/transcode?blendColor=RRGGBB&width=2560&height=1440&url=<art>`.
+  /// The art and the tint are split back apart so the tile fetches the art at
+  /// its own size through [thumbnailUrl] and paints the tint itself, as it
+  /// does for backends that publish none.
+  @override
+  Future<List<LibraryGenre>> fetchLibraryGenres(String libraryId, {required MediaKind libraryKind}) async {
+    final response = await _getWithFailover('/library/sections/$libraryId/categories');
+    final directories = _getMediaContainer(response)?['Directory'];
+    if (directories is! List) return const [];
+    final genres = <LibraryGenre>[];
+    for (final entry in directories.whereType<Map<String, dynamic>>()) {
+      final title = entry['title'];
+      final key = entry['key'];
+      if (title is! String || title.isEmpty || key is! String) continue;
+      final value = Uri.tryParse(key)?.queryParameters[MediaFilterField.genre];
+      if (value == null || value.isEmpty) continue;
+      final (:artPath, :accentRgb) = _splitCategoryThumb(entry['thumb']);
+      genres.add(LibraryGenre(title: title, filterValue: value, artPath: artPath, accentRgb: accentRgb));
+    }
+    return genres;
+  }
+
+  static ({String? artPath, int? accentRgb}) _splitCategoryThumb(Object? thumb) {
+    if (thumb is! String || thumb.isEmpty) return (artPath: null, accentRgb: null);
+    final query = Uri.tryParse(thumb)?.queryParameters ?? const <String, String>{};
+    final art = query['url'];
+    final blend = query['blendColor'];
+    return (
+      artPath: art != null && art.isNotEmpty ? art : thumb,
+      accentRgb: blend == null ? null : int.tryParse(blend, radix: 16),
+    );
   }
 
   /// Parse `Meta.Type[].Field[]` (the filterable fields for the browsed type)

@@ -11,6 +11,7 @@ import 'artist_discography.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
+import 'library_genre.dart';
 import 'library_change_event.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
@@ -199,6 +200,13 @@ abstract class MediaServerClient {
   /// has no opinion. [libraryType] disambiguates Plex's per-type sort
   /// lists (movie vs show).
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType});
+
+  /// The genres of [libraryId] its Browse tab can filter by, in display
+  /// order. Plex reads `/library/sections/{id}/categories`, which is already
+  /// scoped to the section's own type; Jellyfin and Emby read `/Genres`
+  /// scoped by [libraryKind] to the item type Browse lists, so every genre
+  /// selects at least one Browse row. Failures throw.
+  Future<List<LibraryGenre>> fetchLibraryGenres(String libraryId, {required MediaKind libraryKind});
 
   /// Queue a metadata refresh for [libraryId]. The id is the backend-native
   /// library identifier (Plex section id / Jellyfin view item id, both

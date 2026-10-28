@@ -3528,6 +3528,9 @@ class Translations$libraries$en {
 	/// en: 'No collections in this library'
 	String get noCollections => 'No collections in this library';
 
+	/// en: 'No genres in this library'
+	String get noGenres => 'No genres in this library';
+
 	/// en: 'No folders found'
 	String get noFoldersFound => 'No folders found';
 
@@ -6709,6 +6712,9 @@ class Translations$libraries$tabs$en {
 	/// en: 'Collections'
 	String get collections => 'Collections';
 
+	/// en: 'Genres'
+	String get genres => 'Genres';
+
 	/// en: 'Playlists'
 	String get playlists => 'Playlists';
 }
@@ -9275,11 +9281,13 @@ extension on Translations {
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
+			'libraries.noGenres' => 'No genres in this library',
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
+			'libraries.tabs.genres' => 'Genres',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
@@ -9630,10 +9638,10 @@ extension on Translations {
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
-			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
-			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
+			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
@@ -10144,10 +10152,10 @@ extension on Translations {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Software',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',

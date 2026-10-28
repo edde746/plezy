@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Szűrők (${count})",
     "noRecommendations": "Nincsenek elérhető ajánlások",
     "noCollections": "Nincsenek gyűjtemények ebben a könyvtárban",
+    "noGenres": "",
     "noFoldersFound": "Nem találhatók mappák",
     "folders": "mappák",
     "tabs": {
       "recommended": "Ajánlott",
       "browse": "Böngészés",
       "collections": "Gyűjtemények",
+      "genres": "",
       "playlists": "Lejátszási listák"
     },
     "groupings": {

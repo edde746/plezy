@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtros (${count})",
     "noRecommendations": "Nenhuma recomendação disponível",
     "noCollections": "Nenhuma coleção nesta biblioteca",
+    "noGenres": "",
     "noFoldersFound": "Nenhuma pasta encontrada",
     "folders": "pastas",
     "tabs": {
       "recommended": "Recomendados",
       "browse": "Navegar",
       "collections": "Coleções",
+      "genres": "",
       "playlists": "Playlists"
     },
     "groupings": {

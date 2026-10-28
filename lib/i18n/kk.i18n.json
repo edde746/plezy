@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Фильтрлер (${count})",
     "noRecommendations": "Ұсыныстар жоқ",
     "noCollections": "Бұл кітапханада топтамалар жоқ",
+    "noGenres": "",
     "noFoldersFound": "Қапшықтар табылмады",
     "folders": "қапшықтар",
     "tabs": {
       "recommended": "Ұсынылатындар",
       "browse": "Шолу",
       "collections": "Топтамалар",
+      "genres": "",
       "playlists": "Ойнату тізімдері"
     },
     "groupings": {

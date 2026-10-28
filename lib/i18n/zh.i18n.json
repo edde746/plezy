@@ -1274,12 +1274,14 @@
     "filtersWithCount": "筛选器（${count}）",
     "noRecommendations": "暂无推荐",
     "noCollections": "此媒体库中没有合集",
+    "noGenres": "",
     "noFoldersFound": "未找到文件夹",
     "folders": "文件夹",
     "tabs": {
       "recommended": "推荐",
       "browse": "浏览",
       "collections": "合集",
+      "genres": "",
       "playlists": "播放列表"
     },
     "groupings": {

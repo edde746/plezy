@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtreler (${count})",
     "noRecommendations": "Öneri bulunmuyor",
     "noCollections": "Bu kitaplıkta koleksiyon yok",
+    "noGenres": "",
     "noFoldersFound": "Klasör bulunamadı",
     "folders": "klasörler",
     "tabs": {
       "recommended": "Önerilenler",
       "browse": "Göz At",
       "collections": "Koleksiyonlar",
+      "genres": "",
       "playlists": "Oynatma Listeleri"
     },
     "groupings": {

@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filters (${count})",
     "noRecommendations": "Geen aanbevelingen beschikbaar",
     "noCollections": "Geen collecties in deze bibliotheek",
+    "noGenres": "",
     "noFoldersFound": "Geen mappen gevonden",
     "folders": "mappen",
     "tabs": {
       "recommended": "Aanbevolen",
       "browse": "Bladeren",
       "collections": "Collecties",
+      "genres": "",
       "playlists": "Afspeellijsten"
     },
     "groupings": {

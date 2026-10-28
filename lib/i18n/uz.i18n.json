@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtrlar (${count})",
     "noRecommendations": "Tavsiyalar yoʻq",
     "noCollections": "Ushbu kutubxonada toʻplamlar yoʻq",
+    "noGenres": "",
     "noFoldersFound": "Jildlar topilmadi",
     "folders": "jildlar",
     "tabs": {
       "recommended": "Tavsiya etilganlar",
       "browse": "Koʻrib chiqish",
       "collections": "Toʻplamlar",
+      "genres": "",
       "playlists": "Ijro roʻyxatlari"
     },
     "groupings": {

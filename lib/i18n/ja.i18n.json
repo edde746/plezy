@@ -1274,12 +1274,14 @@
     "filtersWithCount": "フィルター (${count})",
     "noRecommendations": "おすすめがありません",
     "noCollections": "このライブラリにコレクションがありません",
+    "noGenres": "",
     "noFoldersFound": "フォルダが見つかりません",
     "folders": "フォルダ",
     "tabs": {
       "recommended": "おすすめ",
       "browse": "ブラウズ",
       "collections": "コレクション",
+      "genres": "",
       "playlists": "プレイリスト"
     },
     "groupings": {

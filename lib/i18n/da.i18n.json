@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filtre (${count})",
     "noRecommendations": "Ingen anbefalinger tilgængelige",
     "noCollections": "Ingen samlinger i dette bibliotek",
+    "noGenres": "",
     "noFoldersFound": "Ingen mapper fundet",
     "folders": "mapper",
     "tabs": {
       "recommended": "Anbefalet",
       "browse": "Gennemse",
       "collections": "Samlinger",
+      "genres": "",
       "playlists": "Playlister"
     },
     "groupings": {

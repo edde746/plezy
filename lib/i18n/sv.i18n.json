@@ -1279,12 +1279,14 @@
     "filtersWithCount": "Filter (${count})",
     "noRecommendations": "Inga rekommendationer tillgängliga",
     "noCollections": "Inga samlingar i det här biblioteket",
+    "noGenres": "",
     "noFoldersFound": "Inga mappar hittades",
     "folders": "mappar",
     "tabs": {
       "recommended": "Rekommenderat",
       "browse": "Bläddra",
       "collections": "Samlingar",
+      "genres": "",
       "playlists": "Spellistor"
     },
     "groupings": {
