@@ -40,11 +40,7 @@ Widget _focusedLendingButton({
   required VoidCallback? onPressed,
   required Widget Function(VoidCallback? onPressed) buildButton,
   bool primary = false,
-}) => FocusableButton(
-  onPressed: onPressed,
-  useBackgroundFocus: primary,
-  child: buildButton(onPressed),
-);
+}) => FocusableButton(onPressed: onPressed, useBackgroundFocus: primary, child: buildButton(onPressed));
 
 class SourceDetailScreen extends StatefulWidget {
   const SourceDetailScreen({super.key, required this.entry});
@@ -65,27 +61,14 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   final Set<String> _offline = {};
   final Map<String, double?> _transfers = {};
 
-  List<ExternalAccessCategory> get _externalAccessCategories =>
-      switch (_entry.kind) {
-        SourceItemKind.ebook => const [
-          ExternalAccessCategory.books,
-          ExternalAccessCategory.audiobooks,
-        ],
-        SourceItemKind.audiobook => const [
-          ExternalAccessCategory.audiobooks,
-          ExternalAccessCategory.books,
-        ],
-        SourceItemKind.comic => const [
-          ExternalAccessCategory.comics,
-          ExternalAccessCategory.books,
-        ],
-        SourceItemKind.music => const [ExternalAccessCategory.music],
-        SourceItemKind.video => const [
-          ExternalAccessCategory.video,
-          ExternalAccessCategory.rentals,
-        ],
-        SourceItemKind.folder || SourceItemKind.unknown => const [],
-      };
+  List<ExternalAccessCategory> get _externalAccessCategories => switch (_entry.kind) {
+    SourceItemKind.ebook => const [ExternalAccessCategory.books, ExternalAccessCategory.audiobooks],
+    SourceItemKind.audiobook => const [ExternalAccessCategory.audiobooks, ExternalAccessCategory.books],
+    SourceItemKind.comic => const [ExternalAccessCategory.comics, ExternalAccessCategory.books],
+    SourceItemKind.music => const [ExternalAccessCategory.music],
+    SourceItemKind.video => const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
+    SourceItemKind.folder || SourceItemKind.unknown => const [],
+  };
   @override
   void initState() {
     super.initState();
@@ -99,8 +82,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       await sources.ready;
       sources.requireSession();
       final epoch = sources.generation, profile = sources.profileId!;
-      if (!_entry.id.startsWith('group:') &&
-          sources.sources.any((s) => s.id == _entry.sourceId)) {
+      if (!_entry.id.startsWith('group:') && sources.sources.any((s) => s.id == _entry.sourceId)) {
         try {
           _entry = await sources.hydrate(_entry);
         } catch (_) {
@@ -118,23 +100,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (_entry.audio.isNotEmpty)
           PublicationProgress(
             entryKey: _entry.key,
-            edition: sourceDigest(
-              jsonEncode(_entry.audio.map((f) => f.fingerprint).toList()),
-            ),
+            edition: sourceDigest(jsonEncode(_entry.audio.map((f) => f.fingerprint).toList())),
             mode: PublicationMode.listening,
             session: const Uuid().v4(),
           ),
-        if (_entry.kind == SourceItemKind.video &&
-            _entry.files.any((f) => !f.sampleOnly))
+        if (_entry.kind == SourceItemKind.video && _entry.files.any((f) => !f.sampleOnly))
           PublicationProgress(
             entryKey: _entry.key,
             edition: sourceDigest(
-              jsonEncode(
-                _entry.files
-                    .where((f) => !f.sampleOnly)
-                    .map((f) => f.fingerprint)
-                    .toList(),
-              ),
+              jsonEncode(_entry.files.where((f) => !f.sampleOnly).map((f) => f.fingerprint).toList()),
             ),
             mode: PublicationMode.watching,
             session: const Uuid().v4(),
@@ -143,21 +117,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       for (final seed in seeds) {
         await sources.openProgress(_entry, seed);
       }
-      final progresses = (await sources.repository.allProgress(profile))
-          .where((p) => p.entryKey == _entry.key)
-          .toList();
+      final progresses = (await sources.repository.allProgress(
+        profile,
+      )).where((p) => p.entryKey == _entry.key).toList();
       _conflicts.clear();
       for (final progress in progresses) {
-        final conflict = await sources.repository.remoteConflict(
-          profile,
-          progress.key,
-        );
+        final conflict = await sources.repository.remoteConflict(profile, progress.key);
         if (conflict != null) _conflicts[progress.key] = conflict;
       }
       _offline.clear();
       for (final file in _entry.files.where((file) => !file.sampleOnly)) {
-        if (await sources.downloads.local(profile, _entry.sourceId, file) !=
-            null) {
+        if (await sources.downloads.local(profile, _entry.sourceId, file) != null) {
           _offline.add(file.id);
         }
       }
@@ -173,14 +143,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     }
   }
 
-  Future<void> _identifyStandaloneMetadata(
-    SourceController sources,
-    int epoch,
-  ) async {
+  Future<void> _identifyStandaloneMetadata(SourceController sources, int epoch) async {
     if (_entry.kind != SourceItemKind.video) return;
-    final source = sources.sources
-        .where((item) => item.id == _entry.sourceId)
-        .firstOrNull;
+    final source = sources.sources.where((item) => item.id == _entry.sourceId).firstOrNull;
     if (source == null || source.options['onlineMetadata'] != 'true') return;
     final entryKey = _entry.key;
     setState(() {
@@ -196,12 +161,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       setState(() {
         _entry = matched;
         _metadataLookupPending = false;
-        _metadataNoMatch =
-            matched.onlineMetadataProvider == null &&
-            matched.onlineMetadataCheckedAt != null;
-        _metadataLookupFailed =
-            matched.onlineMetadataProvider == null &&
-            matched.onlineMetadataCheckedAt == null;
+        _metadataNoMatch = matched.onlineMetadataProvider == null && matched.onlineMetadataCheckedAt != null;
+        _metadataLookupFailed = matched.onlineMetadataProvider == null && matched.onlineMetadataCheckedAt == null;
       });
     } on Object {
       // Online metadata is an enhancement; offline details stay usable.
@@ -217,9 +178,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Future<void> _qualifyNfsRead() async {
     final controller = context.read<SourceController>();
     if (_entry.files.isEmpty) return;
-    final file = _entry.files.reduce(
-      (a, b) => (a.size ?? 0) >= (b.size ?? 0) ? a : b,
-    );
+    final file = _entry.files.reduce((a, b) => (a.size ?? 0) >= (b.size ?? 0) ? a : b);
     setState(() => _busy = true);
     try {
       final result = await controller.qualifyNfsRead(_entry.sourceId, file);
@@ -250,11 +209,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             ],
           ),
           actions: [
-            DialogActionButton(
-              autofocus: true,
-              onPressed: () => Navigator.pop(dialogContext),
-              label: t.common.close,
-            ),
+            DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(dialogContext), label: t.common.close),
           ],
         ),
       );
@@ -289,13 +244,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                 textCapitalization: TextCapitalization.none,
                 autocorrect: false,
                 enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: t.sourceSetup.sharedEntryId,
-                ),
+                decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
                 validator: (value) {
                   final id = value?.trim() ?? '';
-                  if (id.isEmpty ||
-                      RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) {
+                  if (id.isEmpty || RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) {
                     return null;
                   }
                   return t.sourceSetup.sharedLibraryInvalid;
@@ -320,10 +272,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           ),
         ),
         actions: [
-          DialogActionButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            label: t.common.cancel,
-          ),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
           DialogActionButton(
             isPrimary: true,
             onPressed: () {
@@ -340,14 +289,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     sharedId.dispose();
     if (save != true || !mounted) return;
     try {
-      await controller.setSharedEntryMapping(
-        _entry,
-        value.isEmpty ? null : value,
-      );
+      await controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value);
     } on Object catch (error) {
       if (!mounted) return;
-      final message =
-          error is SourceException && error.reason == SourceFailure.conflict
+      final message = error is SourceException && error.reason == SourceFailure.conflict
           ? t.sourceSetup.sharedEntryConflict
           : sourceFailureText(error);
       showErrorSnackBar(context, message);
@@ -371,23 +316,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               controller: controller,
               autofocus: true,
               textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                labelText: t.metadataEdit.title,
-                hintText: t.search.hint,
-              ),
-              onSubmitted: (_) =>
-                  Navigator.pop(dialogContext, controller.text.trim()),
+              decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
+              onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
             ),
           ],
         ),
         actions: [
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
           DialogActionButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            label: t.common.cancel,
-          ),
-          DialogActionButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
             label: t.common.search,
             isPrimary: true,
           ),
@@ -398,77 +335,67 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     return query;
   }
 
-  Future<TraktCatalogEntry?> _chooseMetadataMatch(
-    List<TraktCatalogEntry> candidates,
-  ) => showModalBottomSheet<TraktCatalogEntry>(
-    context: context,
-    isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(sheetContext).height * .72,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      t.sourceSetup.chooseMatch,
-                      style: Theme.of(sheetContext).textTheme.titleLarge,
-                    ),
+  Future<TraktCatalogEntry?> _chooseMetadataMatch(List<TraktCatalogEntry> candidates) =>
+      showModalBottomSheet<TraktCatalogEntry>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * .72,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(t.sourceSetup.chooseMatch, style: Theme.of(sheetContext).textTheme.titleLarge),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(t.sourceSetup.metadataMatchHelp),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(t.sourceSetup.metadataMatchHelp),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: candidates.length,
-                itemBuilder: (context, index) {
-                  final candidate = candidates[index];
-                  final media = candidate.media!;
-                  final title = media.title?.trim() ?? '';
-                  return FocusableListTile(
-                    title: Text(
-                      media.year == null
-                          ? isolateDisplayText(title)
-                          : '${isolateDisplayText(title)} (${formatDecimal(media.year!, maximumDecimals: 0)})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: media.overview?.trim().isNotEmpty == true
-                        ? Text(
-                            isolateDisplayText(media.overview!),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        : null,
-                    trailing: media.rating == null
-                        ? null
-                        : Semantics(
-                            label: t.sourceSetup.subtitleRating(
-                              rating: isolateDisplayText(
-                                '${formatRating(media.rating!)}/${formatDecimal(10, maximumDecimals: 0)}',
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: candidates.length,
+                    itemBuilder: (context, index) {
+                      final candidate = candidates[index];
+                      final media = candidate.media!;
+                      final title = media.title?.trim() ?? '';
+                      return FocusableListTile(
+                        title: Text(
+                          media.year == null
+                              ? isolateDisplayText(title)
+                              : '${isolateDisplayText(title)} (${formatDecimal(media.year!, maximumDecimals: 0)})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: media.overview?.trim().isNotEmpty == true
+                            ? Text(isolateDisplayText(media.overview!), maxLines: 2, overflow: TextOverflow.ellipsis)
+                            : null,
+                        trailing: media.rating == null
+                            ? null
+                            : Semantics(
+                                label: t.sourceSetup.subtitleRating(
+                                  rating: isolateDisplayText(
+                                    '${formatRating(media.rating!)}/${formatDecimal(10, maximumDecimals: 0)}',
+                                  ),
+                                ),
+                                child: ExcludeSemantics(child: Text('★ ${formatRating(media.rating!)}')),
                               ),
-                            ),
-                            child: ExcludeSemantics(
-                              child: Text('★ ${formatRating(media.rating!)}'),
-                            ),
-                          ),
-                    onTap: () => Navigator.pop(sheetContext, candidate),
-                  );
-                },
-              ),
+                        onTap: () => Navigator.pop(sheetContext, candidate),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   Future<void> _searchOnlineMetadata() async {
     final client = context.read<TrackersProvider>().traktCatalogClient;
@@ -495,9 +422,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       final media = selected.media;
       final traktId = media?.ids.trakt;
       if (media == null || traktId == null) return;
-      final type = selected.show != null
-          ? TraktCatalogType.shows
-          : TraktCatalogType.movies;
+      final type = selected.show != null ? TraktCatalogType.shows : TraktCatalogType.movies;
       var cast = <String>[];
       try {
         final people = await client.getPeople(type, traktId.toString());
@@ -505,9 +430,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             .map((credit) {
               final name = credit.person?.name?.trim();
               if (name == null || name.isEmpty) return null;
-              final character = credit.characters?.isNotEmpty == true
-                  ? credit.characters!.first.trim()
-                  : '';
+              final character = credit.characters?.isNotEmpty == true ? credit.characters!.first.trim() : '';
               return character.isEmpty ? name : '$name — $character';
             })
             .whereType<String>()
@@ -545,10 +468,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Uri? get _trailerUri {
     final uri = Uri.tryParse(_entry.trailerUrl ?? '');
     final host = uri?.host.toLowerCase();
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        host == null ||
-        uri.userInfo.isNotEmpty) {
+    if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) {
       return null;
     }
     if (host == 'youtu.be' ||
@@ -569,21 +489,16 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Future<void> _play(List<PublicationFile> files) async {
     final playback = context.read<SourcePlayback>();
     final sources = context.read<SourceController>();
-    final sampleOnly =
-        files.isNotEmpty && files.every((file) => file.sampleOnly);
+    final sampleOnly = files.isNotEmpty && files.every((file) => file.sampleOnly);
     if (sampleOnly && files.length != 1) {
       throw const SourceException(SourceFailure.unsupported);
     }
     await playback.start(
       _entry,
       files,
-      playbackMode: files.first.kind == SourceItemKind.video
-          ? PublicationMode.watching
-          : PublicationMode.listening,
+      playbackMode: files.first.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening,
       persistProgress: !sampleOnly,
-      samplePreview: sampleOnly
-          ? sources.beginPreview(_entry, files.single)
-          : null,
+      samplePreview: sampleOnly ? sources.beginPreview(_entry, files.single) : null,
     );
     if (mounted) {
       await Navigator.push(
@@ -606,8 +521,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       PageRouteBuilder<void>(
         settings: const RouteSettings(name: 'publication-reader'),
         opaque: false,
-        pageBuilder: (_, _, _) =>
-            PublicationReaderScreen(entry: _entry, file: file),
+        pageBuilder: (_, _, _) => PublicationReaderScreen(entry: _entry, file: file),
       ),
     );
     if (mounted) await _load();
@@ -622,9 +536,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         file,
         onProgress: (done, total) {
           if (mounted) {
-            setState(
-              () => _transfers[file.id] = total == null ? null : done / total,
-            );
+            setState(() => _transfers[file.id] = total == null ? null : done / total);
           }
         },
       );
@@ -637,8 +549,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _removeDownload(PublicationFile file) async {
-    final sources = context.read<SourceController>(),
-        profile = sourcesProfile(context);
+    final sources = context.read<SourceController>(), profile = sourcesProfile(context);
     if (!await showConfirmDialog(
       context,
       title: t.fileSources.removeDownload,
@@ -653,12 +564,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     await _load();
   }
 
-  Future<void> _changeProgress(
-    PublicationProgress progress,
-    String action,
-  ) async {
-    final sources = context.read<SourceController>(),
-        profile = sourcesProfile(context);
+  Future<void> _changeProgress(PublicationProgress progress, String action) async {
+    final sources = context.read<SourceController>(), profile = sourcesProfile(context);
     await context.read<SourcePlayback>().stop();
     final current = await sources.repository.progress(profile, progress.key);
     if (current == null) return;
@@ -676,8 +583,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _history(PublicationProgress progress) async {
-    final sources = context.read<SourceController>(),
-        profile = sourcesProfile(context);
+    final sources = context.read<SourceController>(), profile = sourcesProfile(context);
     final history = await sources.repository.history(profile, progress.key);
     if (!mounted) return;
     final restore = await Navigator.push<PublicationProgress>(
@@ -692,20 +598,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                 itemCount: history.length,
                 itemBuilder: (context, index) {
                   final row = history[index],
-                      p = PublicationProgress.fromJson(
-                        sourceMap(
-                          jsonDecode(history[index]['payload'] as String),
-                        ),
-                      );
+                      p = PublicationProgress.fromJson(sourceMap(jsonDecode(history[index]['payload'] as String)));
                   return SourceTile(
                     title: p.mode == PublicationMode.reading
                         ? '${(p.fraction * 100).round()}%'
                         : sourceTime(p.positionMs),
-                    subtitle: formatDateTime(
-                      DateTime.fromMillisecondsSinceEpoch(
-                        row['created'] as int,
-                      ),
-                    ),
+                    subtitle: formatDateTime(DateTime.fromMillisecondsSinceEpoch(row['created'] as int)),
                     icon: Symbols.history_rounded,
                     index: index,
                     count: history.length,
@@ -751,15 +649,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final editionFiles = _entry.files
         .where((file) => !file.sampleOnly || file.previewableSample)
         .toList(growable: false);
-    final hasTrakt =
-        context.watch<TrackersProvider>().traktCatalogClient != null;
-    final source = context
-        .watch<SourceController>()
-        .sources
-        .where((item) => item.id == _entry.sourceId)
-        .firstOrNull;
-    final automaticMetadataEnabled =
-        source?.options['onlineMetadata'] == 'true';
+    final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
+    final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
+    final automaticMetadataEnabled = source?.options['onlineMetadata'] == 'true';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
@@ -767,17 +659,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (source?.kind == FileSourceKind.nfs && _entry.files.isNotEmpty)
           IconButton(
             tooltip: t.sourceSetup.nfsReadTest,
-            onPressed: _busy
-                ? null
-                : () => sourceAction(context, _qualifyNfsRead),
+            onPressed: _busy ? null : () => sourceAction(context, _qualifyNfsRead),
             icon: const AppIcon(Symbols.speed_rounded),
           ),
         if (_entry.kind == SourceItemKind.video && hasTrakt)
           IconButton(
             tooltip: t.sourceSetup.metadataSearch,
-            onPressed: _busy
-                ? null
-                : () => sourceAction(context, _searchOnlineMetadata),
+            onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
             icon: const AppIcon(Symbols.search_rounded),
           ),
         if (source?.options['syncLibrary']?.trim().isNotEmpty == true &&
@@ -785,14 +673,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             !_entry.id.startsWith('group:'))
           FocusableButton(
             autoScroll: false,
-            onPressed: _busy
-                ? null
-                : () => sourceAction(context, _editSharedEntryMapping),
+            onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
             child: IconButton(
               tooltip: t.sourceSetup.sharedEntryPair,
-              onPressed: _busy
-                  ? null
-                  : () => sourceAction(context, _editSharedEntryMapping),
+              onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
               icon: const AppIcon(Symbols.link_rounded),
             ),
           ),
@@ -800,19 +684,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           tooltip: t.audiobook.syncTitle,
           icon: const AppIcon(Symbols.cloud_sync_rounded),
           onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SourceSyncScreen()),
-            );
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
             if (mounted) await _load();
           },
         ),
         IconButton(
           tooltip: t.fileSources.bookmarks,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => SourceNotesScreen(entry: _entry)),
-          ),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SourceNotesScreen(entry: _entry))),
           icon: const AppIcon(Symbols.bookmarks_rounded),
         ),
         if (_entry.id.startsWith('group:'))
@@ -834,55 +712,36 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                   children: [
                     LayoutBuilder(
                       builder: (context, size) {
-                        final cover = SizedBox(
-                          width: 180,
-                          height: 270,
-                          child: SourceCover(entry: _entry),
-                        );
+                        final cover = SizedBox(width: 180, height: 270, child: SourceCover(entry: _entry));
                         final details = Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              isolateDisplayText(_entry.displayTitle),
-                              style: theme.textTheme.headlineMedium,
-                            ),
+                            Text(isolateDisplayText(_entry.displayTitle), style: theme.textTheme.headlineMedium),
                             if (_entry.author.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 12),
-                                child: Text(
-                                  isolateDisplayText(_entry.author),
-                                  style: theme.textTheme.titleLarge,
-                                ),
+                                child: Text(isolateDisplayText(_entry.author), style: theme.textTheme.titleLarge),
                               ),
                             if (_entry.narrator.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
                                   '${t.fileSources.narrator} · ${isolateDisplayText(_entry.narrator)}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: tk.textMuted,
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
                               ),
                             if (_entry.series.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  isolateDisplayText(_entry.series),
-                                  style: theme.textTheme.bodyMedium,
-                                ),
+                                child: Text(isolateDisplayText(_entry.series), style: theme.textTheme.bodyMedium),
                               ),
-                            if (_entry.releaseYear != null ||
-                                _entry.rating != null)
+                            if (_entry.releaseYear != null || _entry.rating != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 10),
                                 child: Text(
                                   [
                                     if (_entry.releaseYear != null)
-                                      formatDecimal(
-                                        _entry.releaseYear!,
-                                        maximumDecimals: 0,
-                                      ),
+                                      formatDecimal(_entry.releaseYear!, maximumDecimals: 0),
                                     if (_entry.rating != null)
                                       t.sourceSetup.subtitleRating(
                                         rating: isolateDisplayText(
@@ -890,9 +749,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                         ),
                                       ),
                                   ].join(' · '),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: tk.textMuted,
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
                               ),
                             if (_entry.genres.isNotEmpty)
@@ -900,9 +757,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
                                   _entry.genres.join(' · '),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: tk.textMuted,
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
                               ),
                             const SizedBox(height: 24),
@@ -922,87 +777,48 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                         ),
                                       ),
                                     ),
-                                    buildButton: (onPressed) =>
-                                        OutlinedButton.icon(
-                                          onPressed: onPressed,
-                                          icon: const AppIcon(
-                                            Symbols.open_in_new_rounded,
-                                          ),
-                                          label: Text(t.explore.detail.links),
-                                        ),
+                                    buildButton: (onPressed) => OutlinedButton.icon(
+                                      onPressed: onPressed,
+                                      icon: const AppIcon(Symbols.open_in_new_rounded),
+                                      label: Text(t.explore.detail.links),
+                                    ),
                                   ),
                                 if (_entry.ebooks.isNotEmpty)
                                   FilledButton.icon(
                                     onPressed: PlatformDetector.isTV()
                                         ? null
-                                        : () => sourceAction(
-                                            context,
-                                            () => _read(_entry.ebooks.first),
-                                          ),
-                                    icon: const AppIcon(
-                                      Symbols.menu_book_rounded,
-                                    ),
+                                        : () => sourceAction(context, () => _read(_entry.ebooks.first)),
+                                    icon: const AppIcon(Symbols.menu_book_rounded),
                                     label: Text(t.fileSources.read),
                                   ),
                                 if (audio.isNotEmpty)
                                   FilledButton.icon(
-                                    onPressed: () => sourceAction(
-                                      context,
-                                      () => _play(audio),
-                                    ),
-                                    icon: const AppIcon(
-                                      Symbols.headphones_rounded,
-                                    ),
+                                    onPressed: () => sourceAction(context, () => _play(audio)),
+                                    icon: const AppIcon(Symbols.headphones_rounded),
                                     label: Text(t.fileSources.listen),
                                   ),
-                                if (_entry.kind == SourceItemKind.video &&
-                                    _entry.files.any(
-                                      (file) => !file.sampleOnly,
-                                    ))
+                                if (_entry.kind == SourceItemKind.video && _entry.files.any((file) => !file.sampleOnly))
                                   FilledButton.icon(
                                     onPressed: () => sourceAction(
                                       context,
-                                      () => _play(
-                                        _entry.files
-                                            .where((file) => !file.sampleOnly)
-                                            .toList(),
-                                      ),
+                                      () => _play(_entry.files.where((file) => !file.sampleOnly).toList()),
                                     ),
-                                    icon: const AppIcon(
-                                      Symbols.play_arrow_rounded,
-                                      fill: 1,
-                                    ),
+                                    icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
                                     label: Text(t.fileSources.play),
                                   ),
                                 if (_trailerUri != null)
                                   OutlinedButton.icon(
-                                    onPressed: () =>
-                                        sourceAction(context, _openTrailer),
+                                    onPressed: () => sourceAction(context, _openTrailer),
                                     icon: const AppIcon(Symbols.movie_rounded),
                                     label: Text(t.tooltips.playTrailer),
                                   ),
-                                if (source?.options['syncLibrary']
-                                        ?.trim()
-                                        .isNotEmpty ==
-                                    true)
+                                if (source?.options['syncLibrary']?.trim().isNotEmpty == true)
                                   FocusableButton(
-                                    onPressed: _busy
-                                        ? null
-                                        : () => sourceAction(
-                                            context,
-                                            _editSharedEntryMapping,
-                                          ),
+                                    onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
                                     child: TextButton.icon(
-                                      onPressed: _busy
-                                          ? null
-                                          : () => sourceAction(
-                                              context,
-                                              _editSharedEntryMapping,
-                                            ),
+                                      onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
                                       icon: const AppIcon(Symbols.link_rounded),
-                                      label: Text(
-                                        t.sourceSetup.sharedEntryPair,
-                                      ),
+                                      label: Text(t.sourceSetup.sharedEntryPair),
                                     ),
                                   ),
                               ],
@@ -1045,17 +861,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           liveRegion: true,
                           child: Row(
                             children: [
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
+                              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
                               SizedBox(width: 12),
-                              Expanded(
-                                child: Text(t.sourceSetup.metadataLoading),
-                              ),
+                              Expanded(child: Text(t.sourceSetup.metadataLoading)),
                             ],
                           ),
                         ),
@@ -1068,10 +876,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           child: Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: Chip(
-                              avatar: const AppIcon(
-                                Symbols.public_rounded,
-                                size: 18,
-                              ),
+                              avatar: const AppIcon(Symbols.public_rounded, size: 18),
                               label: Text(t.sourceSetup.metadataFromTrakt),
                             ),
                           ),
@@ -1083,19 +888,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                t.sourceSetup.metadataNoAutomaticMatch,
-                              ),
-                            ),
+                            Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataNoAutomaticMatch)),
                             TextButton.icon(
-                              onPressed: _busy
-                                  ? null
-                                  : () => sourceAction(
-                                      context,
-                                      _searchOnlineMetadata,
-                                    ),
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
@@ -1108,26 +903,16 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(t.sourceSetup.metadataFailed),
-                            ),
+                            Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataFailed)),
                             TextButton.icon(
-                              onPressed: _busy
-                                  ? null
-                                  : () => sourceAction(
-                                      context,
-                                      _searchOnlineMetadata,
-                                    ),
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
                         ),
                       ),
-                    if (_entry.kind == SourceItemKind.video &&
-                        hasTrakt &&
-                        !automaticMetadataEnabled)
+                    if (_entry.kind == SourceItemKind.video && hasTrakt && !automaticMetadataEnabled)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Column(
@@ -1135,17 +920,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           children: [
                             Text(
                               '${t.sourceSetup.automaticMetadata} · ${t.common.off}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                             TextButton.icon(
-                              onPressed: _busy
-                                  ? null
-                                  : () => sourceAction(
-                                      context,
-                                      _searchOnlineMetadata,
-                                    ),
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
@@ -1160,22 +938,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           children: [
                             Text(
                               t.sourceSetup.metadataSearchPrivacy,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                             TextButton.icon(
                               onPressed: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      const ServicesSettingsScreen(),
-                                ),
+                                MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                               ),
                               icon: const AppIcon(Symbols.link_rounded),
-                              label: Text(
-                                '${t.common.connect} ${t.trakt.title}',
-                              ),
+                              label: Text('${t.common.connect} ${t.trakt.title}'),
                             ),
                           ],
                         ),
@@ -1183,31 +954,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: SourceErrorMessage(
-                          message: sourceFailureText(_error!),
-                        ),
+                        child: SourceErrorMessage(message: sourceFailureText(_error!)),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          _entry.description,
-                          style: theme.textTheme.bodyLarge,
-                        ),
+                        child: Text(_entry.description, style: theme.textTheme.bodyLarge),
                       ),
                     if (_entry.cast.isNotEmpty) ...[
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          t.discover.cast,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
+                      Semantics(header: true, child: Text(t.discover.cast, style: theme.textTheme.titleMedium)),
                       const SizedBox(height: 8),
-                      Text(
-                        _entry.cast.join(', '),
-                        style: theme.textTheme.bodyMedium,
-                      ),
+                      Text(_entry.cast.join(', '), style: theme.textTheme.bodyMedium),
                     ],
                     for (final progress in _progress) ...[
                       if (_conflicts.containsKey(progress.key))
@@ -1223,17 +980,14 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 children: [
                                   for (final remote in [false, true])
                                     OutlinedButton(
-                                      onPressed: () =>
-                                          sourceAction(context, () async {
-                                            await context
-                                                .read<SourceController>()
-                                                .resolveConflict(
-                                                  _entry,
-                                                  progress,
-                                                  useRemote: remote,
-                                                );
-                                            await _load();
-                                          }),
+                                      onPressed: () => sourceAction(context, () async {
+                                        await context.read<SourceController>().resolveConflict(
+                                          _entry,
+                                          progress,
+                                          useRemote: remote,
+                                        );
+                                        await _load();
+                                      }),
                                       child: Text(
                                         '${remote ? t.fileSources.useRemote : t.fileSources.useLocal} · ${progress.mode == PublicationMode.reading ? '${(((remote ? _conflicts[progress.key]! : progress).fraction) * 100).round()}%' : sourceTime((remote ? _conflicts[progress.key]! : progress).positionMs)}',
                                       ),
@@ -1263,11 +1017,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         onTap: progress.mode == PublicationMode.watching
                             ? () => sourceAction(
                                 context,
-                                () => _play(
-                                  _entry.files
-                                      .where((file) => !file.sampleOnly)
-                                      .toList(),
-                                ),
+                                () => _play(_entry.files.where((file) => !file.sampleOnly).toList()),
                               )
                             : null,
                         trailing: AppMenuButton<String>(
@@ -1277,33 +1027,20 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           entriesBuilder: (_) => [
                             AppMenuItem(
                               value: 'finished',
-                              label: progress.finished
-                                  ? t.fileSources.markUnfinished
-                                  : t.fileSources.markFinished,
+                              label: progress.finished ? t.fileSources.markUnfinished : t.fileSources.markFinished,
                             ),
-                            AppMenuItem(
-                              value: 'reset',
-                              label: t.fileSources.startOver,
-                            ),
-                            AppMenuItem(
-                              value: 'history',
-                              label: t.fileSources.history,
-                            ),
+                            AppMenuItem(value: 'reset', label: t.fileSources.startOver),
+                            AppMenuItem(value: 'history', label: t.fileSources.history),
                           ],
                           onSelected: (action) => sourceAction(
                             context,
-                            () => action == 'history'
-                                ? _history(progress)
-                                : _changeProgress(progress, action),
+                            () => action == 'history' ? _history(progress) : _changeProgress(progress, action),
                           ),
                         ),
                       ),
                     ],
                     const SizedBox(height: 24),
-                    Text(
-                      t.fileSources.editions,
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text(t.fileSources.editions, style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
                     for (var i = 0; i < editionFiles.length; i++)
                       Builder(
@@ -1319,12 +1056,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             icon: sourceItemIcon(f.kind),
                             index: i,
                             count: editionFiles.length,
-                            progress: _transfers.containsKey(f.id)
-                                ? _transfers[f.id] ?? 0
-                                : null,
-                            onTap:
-                                (f.kind == SourceItemKind.ebook ||
-                                    f.kind == SourceItemKind.comic)
+                            progress: _transfers.containsKey(f.id) ? _transfers[f.id] ?? 0 : null,
+                            onTap: (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)
                                 ? () => sourceAction(context, () => _read(f))
                                 : () => sourceAction(context, () => _play([f])),
                             trailing: f.streamOnly || f.sampleOnly
@@ -1333,9 +1066,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : IconButton(
                                     tooltip: _offline.contains(f.id)
@@ -1343,9 +1074,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                         : t.fileSources.download,
                                     onPressed: () => sourceAction(
                                       context,
-                                      () => _offline.contains(f.id)
-                                          ? _removeDownload(f)
-                                          : _download(f),
+                                      () => _offline.contains(f.id) ? _removeDownload(f) : _download(f),
                                     ),
                                     icon: AppIcon(
                                       _offline.contains(f.id)
@@ -1390,12 +1119,7 @@ class _AudioOrderState extends State<_AudioOrder> {
   Widget build(BuildContext context) => FocusedScrollScaffold(
     title: Text(t.fileSources.order),
     focusableAppBarActions: true,
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, _files),
-        child: Text(t.fileSources.save),
-      ),
-    ],
+    actions: [TextButton(onPressed: () => Navigator.pop(context, _files), child: Text(t.fileSources.save))],
     slivers: [
       SliverPadding(
         padding: const EdgeInsets.all(24),

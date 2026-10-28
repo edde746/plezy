@@ -33,6 +33,7 @@
     "discover.findNext.inProgress",
     "discover.findNext.libraryCatalog",
     "discover.findNext.libraryCatalogHint",
+    "discover.findNext.openLibraryName",
     "discover.findNext.localOnly",
     "discover.findNext.maybe",
     "discover.findNext.mood",

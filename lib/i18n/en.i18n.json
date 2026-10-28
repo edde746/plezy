@@ -1561,6 +1561,7 @@
       "availabilityNotChecked": "Check again when opened",
       "libraryCatalog": "Find a library catalog pick",
       "libraryCatalogHint": "Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.",
+      "openLibraryName": "Open Library",
       "catalogOnly": "Catalog record · availability not checked",
       "aiRanking": "Optional AI ranking",
       "aiRankingHelp": "An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.",

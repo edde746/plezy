@@ -17,11 +17,7 @@ import '../../widgets/settings_section.dart';
 import 'logs_screen.dart';
 
 class IssueReportScreen extends StatefulWidget {
-  const IssueReportScreen({
-    super.key,
-    this.startupPhase,
-    this.startupErrorType,
-  });
+  const IssueReportScreen({super.key, this.startupPhase, this.startupErrorType});
 
   /// Stable, non-user-controlled diagnostic identifiers from the startup
   /// failure record. Raw messages and stack traces are intentionally excluded
@@ -45,14 +41,8 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
     }
   }
 
-  Uri _issueUri({
-    required PackageInfo? package,
-    required int online,
-    required int expected,
-  }) {
-    final version = package == null
-        ? 'unknown'
-        : '${package.version} (${package.buildNumber})';
+  Uri _issueUri({required PackageInfo? package, required int online, required int expected}) {
+    final version = package == null ? 'unknown' : '${package.version} (${package.buildNumber})';
     final body = [
       '### App and device',
       '- PlezyNG: $version',
@@ -79,10 +69,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
   }
 
   String _safeDiagnosticId(String? value) {
-    final safe = (value ?? 'unknown').replaceAll(
-      RegExp(r'[^A-Za-z0-9_.-]'),
-      '',
-    );
+    final safe = (value ?? 'unknown').replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '');
     return safe.isEmpty ? 'unknown' : String.fromCharCodes(safe.runes.take(64));
   }
 
@@ -106,11 +93,9 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
   }
 
   Future<void> _attachLogs() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (_) => const LogsScreen(returnUploadedLogId: true),
-      ),
-    );
+    final id = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const LogsScreen(returnUploadedLogId: true)));
     if (!mounted || id == null) return;
     setState(() => _logId = id);
   }
@@ -124,13 +109,8 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
     return FutureBuilder<PackageInfo?>(
       future: _packageInfo,
       builder: (context, snapshot) {
-        final packageInfoReady =
-            snapshot.connectionState != ConnectionState.waiting;
-        final uri = _issueUri(
-          package: snapshot.data,
-          online: online,
-          expected: expected,
-        );
+        final packageInfoReady = snapshot.connectionState != ConnectionState.waiting;
+        final uri = _issueUri(package: snapshot.data, online: online, expected: expected);
         return FocusedScrollScaffold(
           title: Text(t.issueReport.title),
           slivers: [
@@ -140,10 +120,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      t.issueReport.instructions,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+                    Text(t.issueReport.instructions, style: Theme.of(context).textTheme.bodyMedium),
                     const SizedBox(height: 16),
                     Center(
                       child: Container(
@@ -160,18 +137,10 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                                   backgroundColor: Colors.white,
                                 ),
                               )
-                            : const SizedBox.square(
-                                dimension: 240,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
+                            : const SizedBox.square(dimension: 240, child: Center(child: CircularProgressIndicator())),
                       ),
                     ),
-                    if (_logId != null) ...[
-                      const SizedBox(height: 12),
-                      SelectableText('${t.messages.logId}: $_logId'),
-                    ],
+                    if (_logId != null) ...[const SizedBox(height: 12), SelectableText('${t.messages.logId}: $_logId')],
                     const SizedBox(height: 16),
                     SettingsGroup(
                       children: [
@@ -179,17 +148,13 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                           icon: Symbols.open_in_new_rounded,
                           title: t.issueReport.openDraft,
                           subtitle: t.issueReport.instructions,
-                          onTap: packageInfoReady
-                              ? () => _openIssue(uri)
-                              : null,
+                          onTap: packageInfoReady ? () => _openIssue(uri) : null,
                         ),
                         SettingNavigationTile(
                           icon: Symbols.content_copy_rounded,
                           title: t.watchLink.copy,
                           subtitle: t.issueReport.openDraft,
-                          onTap: packageInfoReady
-                              ? () => _copyIssue(uri)
-                              : null,
+                          onTap: packageInfoReady ? () => _copyIssue(uri) : null,
                         ),
                         SettingNavigationTile(
                           icon: Symbols.upload_rounded,
@@ -228,11 +193,7 @@ class _PrivacyNote extends StatelessWidget {
         AppIcon(Symbols.info_rounded, size: 18, color: colors.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: colors.onSurfaceVariant),
-          ),
+          child: Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
         ),
       ],
     );

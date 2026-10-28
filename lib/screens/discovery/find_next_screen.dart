@@ -2405,7 +2405,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
                             const SizedBox(height: 12),
                             FocusableListTile(
                               leading: const AppIcon(Symbols.menu_book_rounded),
-                              title: const Text('Open Library'),
+                              title: Text(t.discover.findNext.openLibraryName),
                               subtitle: Text(t.discover.findNext.catalogOnly),
                               onTap: () => Navigator.of(sheetContext).pop((publicCatalog: true, library: null)),
                             ),

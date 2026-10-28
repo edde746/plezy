@@ -11103,6 +11103,9 @@ class Translations$discover$findNext$en {
 	/// en: 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.'
 	String get libraryCatalogHint => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.';
 
+	/// en: 'Open Library'
+	String get openLibraryName => 'Open Library';
+
 	/// en: 'Catalog record · availability not checked'
 	String get catalogOnly => 'Catalog record · availability not checked';
 
@@ -14347,6 +14350,7 @@ extension on Translations {
 			'discover.findNext.availabilityNotChecked' => 'Check again when opened',
 			'discover.findNext.libraryCatalog' => 'Find a library catalog pick',
 			'discover.findNext.libraryCatalogHint' => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.',
+			'discover.findNext.openLibraryName' => 'Open Library',
 			'discover.findNext.catalogOnly' => 'Catalog record · availability not checked',
 			'discover.findNext.aiRanking' => 'Optional AI ranking',
 			'discover.findNext.aiRankingHelp' => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.',
@@ -14424,9 +14428,9 @@ extension on Translations {
 			'discover.director' => 'Director',
 			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
-			'discover.tvShow' => 'TV Show',
 			_ => null,
 		} ?? switch (path) {
+			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} title', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titles', ), 
@@ -14938,9 +14942,9 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
-			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
 			'music.goToArtist' => 'Go to artist',
@@ -15452,9 +15456,9 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			'performanceOverlay.player' => 'Player',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
@@ -15966,9 +15970,9 @@ extension on Translations {
 			'universalMedia.pictureHelp' => 'These picture changes affect only this playback. They reset when playback ends.',
 			'universalMedia.resetPicture' => 'Reset picture',
 			'universalMedia.brightness' => 'Brightness',
-			'universalMedia.contrast' => 'Contrast',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.contrast' => 'Contrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
 			'universalMedia.saturation' => 'Saturation',
@@ -16480,9 +16484,9 @@ extension on Translations {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
-			'sourceSetup.sharedEntryPair' => 'Pair this item',
 			_ => null,
 		} ?? switch (path) {
+			'sourceSetup.sharedEntryPair' => 'Pair this item',
 			'sourceSetup.sharedEntryPairHelp' => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.',
 			'sourceSetup.sharedEntryId' => 'Shared item ID',
 			'sourceSetup.generateSharedEntryId' => 'Generate shared item ID',
