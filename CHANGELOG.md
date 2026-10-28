@@ -35,6 +35,8 @@
 
 - Keep a bounded, device-local revision history of reviewed subtitles per profile and server library item. Restore, export, or delete prior results; word/token timing records are retained where available.
 
+- Add a desktop/TV connector hub for servers, file sources and categorized provider hand-offs, using provider marks while preserving the existing setup flows.
+
 - Import bounded gzip-compressed TAR subtitle archives (`.tar.gz` and `.tgz`) through the picker, desktop drop, and Android share flows.
 
 - Browse captured Android ExoPlayer transcripts with search, cue-level seeking, and an optional hide-future-dialogue filter.

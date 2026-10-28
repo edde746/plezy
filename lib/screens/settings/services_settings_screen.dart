@@ -1,4 +1,6 @@
 import '../../profiles/active_profile_provider.dart';
+import '../../focus/focusable_wrapper.dart';
+import '../../media/media_backend.dart';
 import '../../utils/platform_detector.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -13,11 +15,16 @@ import '../../services/external_access_directory.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/catalog_source_logo.dart';
+import '../../widgets/backend_badge.dart';
+import '../../widgets/connector_brand_mark.dart';
+import '../../widgets/provider_mark.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
+import 'add_connection_screen.dart';
 import 'hardcover_settings_screen.dart';
+import '../sources/add_source_screen.dart';
 import 'integration_matches_screen.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
@@ -43,13 +50,53 @@ class ServicesSettingsScreen extends StatelessWidget {
               child: SettingsHelpHint(text: t.services.hubSubtitle),
             ),
             SettingsGroup(
-              children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr(), _remoteStreaming()],
+              children: [
+                FocusableListTile(
+                  leading: const _MediaServerMarks(),
+                  title: Text(t.addServer.addConnectionTitle),
+                  subtitle: Text(t.addServer.addConnectionSubtitleNoProfile),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () => Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute<bool>(builder: (_) => const AddConnectionScreen()),
+                  ),
+                ),
+                FocusableListTile(
+                  leading: const _FileSourceMarks(),
+                  title: Text(t.fileSources.title),
+                  subtitle: Text(t.fileSources.subtitle),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () => Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute<bool>(builder: (_) => const AddSourceScreen()),
+                  ),
+                ),
+              ],
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text(t.explore.detail.links, style: Theme.of(context).textTheme.titleMedium),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _ConnectorCategoryGrid(
+                onCategorySelected: (category) => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ExternalAccessScreen(title: '', categories: [category]),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             SettingsGroup(
               title: t.services.integrations,
               children: [
+                for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
+                _seerr(),
+                _remoteStreaming(),
                 FocusableListTile(
-                  leading: const AppIcon(Symbols.menu_book_rounded, fill: 1),
+                  leading: ConnectorBrandMark(providerId: 'hardcover', name: t.services.hardcover),
                   title: Text(t.services.hardcover),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: profileId == null
@@ -204,6 +251,173 @@ class _ServiceHubRow extends StatelessWidget {
       ),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
+    );
+  }
+}
+
+class _MediaServerMarks extends StatelessWidget {
+  const _MediaServerMarks();
+
+  @override
+  Widget build(BuildContext context) => const Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      BackendBadge(backend: MediaBackend.plex, size: 22),
+      SizedBox(width: 4),
+      BackendBadge(backend: MediaBackend.jellyfin, size: 22),
+      SizedBox(width: 4),
+      BackendBadge(backend: MediaBackend.emby, size: 22),
+    ],
+  );
+}
+
+class _FileSourceMarks extends StatelessWidget {
+  const _FileSourceMarks();
+
+  @override
+  Widget build(BuildContext context) => const Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ProviderMark('google_drive.png', size: 22),
+      SizedBox(width: 3),
+      ProviderMark('onedrive.svg', size: 22),
+      SizedBox(width: 3),
+      ProviderMark('dropbox.png', size: 22),
+    ],
+  );
+}
+
+class _ConnectorCategoryGrid extends StatelessWidget {
+  const _ConnectorCategoryGrid({required this.onCategorySelected});
+
+  final ValueChanged<ExternalAccessCategory> onCategorySelected;
+
+  String _label(ExternalAccessCategory category) => switch (category) {
+    ExternalAccessCategory.video => t.explore.detail.watchOn,
+    ExternalAccessCategory.rentals => t.explore.detail.links,
+    ExternalAccessCategory.books => t.fileSources.ebooks,
+    ExternalAccessCategory.audiobooks => t.fileSources.audiobooks,
+    ExternalAccessCategory.comics => t.fileSources.comics,
+    ExternalAccessCategory.music => t.explore.format.music,
+    ExternalAccessCategory.games => t.games.title,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 480.0;
+        final columns = width >= 900 ? 3 : width >= 620 ? 2 : 1;
+        const gap = 12.0;
+        final cardWidth = (width - (gap * (columns - 1))) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final category in ExternalAccessCategory.values)
+              SizedBox(
+                width: cardWidth,
+                child: _ConnectorCategoryCard(
+                  category: category,
+                  label: _label(category),
+                  onTap: () => onCategorySelected(category),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ConnectorCategoryCard extends StatelessWidget {
+  const _ConnectorCategoryCard({
+    required this.category,
+    required this.label,
+    required this.onTap,
+  });
+
+  final ExternalAccessCategory category;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final destinations = ExternalAccessDirectory.forCategory(category).toList(growable: false);
+    final preview = destinations.take(4).toList(growable: false);
+    final radius = BorderRadius.circular(20);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: .65)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: FocusableWrapper(
+        borderRadii: radius,
+        semanticLabel: label,
+        onSelect: onTap,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: SizedBox(
+            height: 106,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          destinations.length.toString(),
+                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      for (final destination in preview) ...[
+                        ConnectorBrandMark(
+                          providerId: destination.id,
+                          name: destination.name,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      const Spacer(),
+                      Icon(
+                        Symbols.chevron_right_rounded,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

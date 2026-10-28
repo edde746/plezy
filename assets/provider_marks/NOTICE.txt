@@ -11,3 +11,5 @@ Libby and OverDrive are trademarks of OverDrive, Inc. The Libby icon is the unmo
 These assets are used to identify and link to the services. This does not assert partner or API approval. Confirm partner branding terms with OverDrive before enabling native circulation in a production release.
 
 sources.json records the exact official asset locations and SHA-256 hashes. No provider artwork has been recoloured, redrawn, or used as PlezyNG's app identity. Generic protocols (WebDAV, OPDS, S3-compatible storage) use PlezyNG's existing Material Symbols; they do not imply a particular vendor.
+
+The connectors hub also renders provider marks from the bundled simple_icons 16.23.0 package (Simple Icons: https://simpleicons.org/ and https://github.com/jlnrrg/simple_icons). Shapes and published brand colors are used without redrawing. Provider names and marks remain their owners' trademarks; follow each provider's brand guidance and do not imply endorsement. When no mark is present in the bundled collection, the app uses a neutral name monogram rather than another provider's logo.

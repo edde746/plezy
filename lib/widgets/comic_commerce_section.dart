@@ -15,6 +15,7 @@ import '../services/comic_commerce_link_client.dart';
 import '../services/external_access_directory.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
+import 'connector_brand_mark.dart';
 
 /// Title-aware comic storefront actions embedded in the existing publication
 /// detail. The local Read action remains the primary action; these links never
@@ -182,7 +183,7 @@ class _ComicCommerceSectionState extends State<ComicCommerceSection> {
     onPressed: _opening ? null : () => unawaited(_open(destination)),
     child: OutlinedButton.icon(
       onPressed: _opening ? null : () => unawaited(_open(destination)),
-      icon: const AppIcon(Symbols.open_in_new_rounded),
+      icon: ConnectorBrandMark(providerId: destination.id, name: destination.name, size: 20),
       label: Text(t.explore.detail.openOn(site: destination.name)),
     ),
   );

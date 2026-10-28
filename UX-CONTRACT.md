@@ -55,6 +55,27 @@ Cloud passwords/card PINs are entered only at a supported provider-hosted author
 
 Archive content is untrusted: bounded extraction, no traversal/symlinks, no publication scripts or external network access. The reader and stream server bind to loopback and require session capabilities. A profile transition retires readers, authorization and streams; neither expired sessions nor deleted profiles may publish new state. Provider tokens never enter publication JavaScript, native player URLs or cross-origin artwork requests.
 
+# Service connectors and partner hand-offs
+
+ServicesSettingsScreen is the shared connector hub. Desktop and TV side
+navigation pin its card-grid action at the bottom; mobile keeps the existing
+Settings → Services entry. Server sign-in, file-source setup, tracker accounts,
+requests, debrid services and reading integrations continue to route through
+their owning screens and providers.
+
+ExternalAccessDirectory remains the source of truth for title-aware vendor
+destinations. Category cards open those same destinations. Their buttons are
+official-site hand-offs; they do not imply an account connection, title
+availability, entitlement, playback, borrowing or fulfillment. A full-directory
+view remains available for cross-category search.
+
+Use ConnectorBrandMark for provider hand-off and connection actions, and
+ProviderMark or BackendBadge for their existing local asset sets. Keep bundled
+brand shapes and colors intact. Never substitute one provider's logo for a
+different provider. If the bundled brand set has no mark, show a neutral
+provider-name monogram; generic protocols continue to use neutral Material
+Symbols without implying a vendor.
+
 # Accessibility across the app
 
 Settings → Appearance → Accessibility adds to operating-system preferences, never disables them. Additional text scaling preserves the platform's nonlinear text scaler. Bold text, stronger contrast and larger shared controls apply at the app shell, including inherited screens. Custom source/provider artwork stays unaltered.

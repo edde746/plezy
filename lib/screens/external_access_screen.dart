@@ -18,6 +18,7 @@ import '../services/watchmode_availability_client.dart';
 import '../services/external_access_directory.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/connector_brand_mark.dart';
 import '../widgets/focused_scroll_scaffold.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/settings_section.dart';
@@ -355,7 +356,10 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
           children: [
             for (final source in sources)
               FocusableListTile(
-                leading: const AppIcon(Symbols.play_circle_outline_rounded),
+                leading: ConnectorBrandMark(
+                  providerId: _watchmodeDestination(source)?.id ?? '',
+                  name: source.name,
+                ),
                 title: Text(source.name),
                 subtitle: Text(
                   [
@@ -489,14 +493,6 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     ExternalAccessCategory.comics => t.fileSources.read,
     ExternalAccessCategory.music => t.fileSources.listen,
     ExternalAccessCategory.games => t.games.title,
-  };
-
-  IconData _icon(ExternalAccessCategory category) => switch (category) {
-    ExternalAccessCategory.video => Symbols.tv_rounded,
-    ExternalAccessCategory.rentals => Symbols.shopping_bag_rounded,
-    ExternalAccessCategory.books || ExternalAccessCategory.comics => Symbols.menu_book_rounded,
-    ExternalAccessCategory.audiobooks || ExternalAccessCategory.music => Symbols.headphones_rounded,
-    ExternalAccessCategory.games => Symbols.sports_esports_rounded,
   };
 
   @override
@@ -662,7 +658,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                       children: [
                         for (final destination in destinationsByCategory[category]!)
                           FocusableListTile(
-                            leading: AppIcon(_icon(category)),
+                            leading: ConnectorBrandMark(providerId: destination.id, name: destination.name),
                             title: Text(destination.name),
                             subtitle: Text(
                               [

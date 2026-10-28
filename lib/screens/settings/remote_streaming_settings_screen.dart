@@ -16,6 +16,7 @@ import '../../services/remote_streams/stremio_addon_client.dart';
 import '../../sources/source_controller.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/connector_brand_mark.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/pending_auth_dialog.dart';
@@ -492,6 +493,13 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     }
   }
 
+  String _providerId(RemoteStreamService service) => switch (service) {
+    RemoteStreamService.realDebrid => 'real-debrid',
+    RemoteStreamService.allDebrid => 'all-debrid',
+    RemoteStreamService.premiumize => 'premiumize',
+    RemoteStreamService.torbox => 'torbox',
+  };
+
   Widget _providerTile({
     required RemoteStreamService service,
     required String label,
@@ -501,15 +509,16 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     required Future<void> Function() onConnect,
     required Future<void> Function() onBrowse,
   }) => FocusableListTile(
-    leading: const AppIcon(Symbols.cloud_rounded),
+    leading: ConnectorBrandMark(providerId: _providerId(service), name: label),
     title: Text(label),
     subtitle: Text(account == null ? description : t.streaming.accountConnected(username: account.displayName)),
     trailing: account == null
         ? _connecting
               ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2))
-              : TextButton(
+              : TextButton.icon(
                   onPressed: canConnect ? onConnect : null,
-                  child: Text(
+                  icon: ConnectorBrandMark(providerId: _providerId(service), name: label, size: 18),
+                  label: Text(
                     service == RemoteStreamService.realDebrid
                         ? t.streaming.connectRealDebrid
                         : service == RemoteStreamService.allDebrid
@@ -651,7 +660,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                         onPressed: streaming.isReady && !_connecting ? _importFromStremio : null,
                         icon: _connecting
                             ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const AppIcon(Symbols.qr_code_rounded),
+                            : const ConnectorBrandMark(providerId: 'stremio', name: 'Stremio', size: 20),
                         label: Text(t.streaming.importFromStremio),
                       ),
                     ),

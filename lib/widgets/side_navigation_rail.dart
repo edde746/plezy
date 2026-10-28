@@ -79,6 +79,28 @@ KeyEventResult _handleRailItemKey(
   return KeyEventResult.ignored;
 }
 
+
+class _ConnectorDrawerIcon extends StatelessWidget {
+  const _ConnectorDrawerIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const side = 28.0;
+    return Container(
+      width: side,
+      height: side,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: .7)),
+      ),
+      child: const AppIcon(Symbols.grid_view_rounded, fill: 1, size: 17),
+    );
+  }
+}
+
 /// Reusable navigation rail item widget that handles focus, selection, and interaction.
 ///
 /// Renders the two M3 Expressive destination layouts and morphs between them:
@@ -407,6 +429,9 @@ class SideNavigationRail extends StatefulWidget {
   final ValueChanged<NavigationTabId> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
+  /// Opens the shared connector and provider hub.
+  final VoidCallback? onOpenConnectors;
+
   /// Called when RIGHT arrow is pressed to navigate to content without selecting.
   final VoidCallback? onNavigateToContent;
 
@@ -428,6 +453,7 @@ class SideNavigationRail extends StatefulWidget {
     this.isReconnecting = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
+    this.onOpenConnectors,
     this.onNavigateToContent,
     this.onFloatingPanelChanged,
     this.onReconnect,
@@ -483,6 +509,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
+  static const _kConnectors = 'connectors';
   static const _kReconnect = 'reconnect';
   static const _kFullscreen = 'fullscreen';
   static const _kHiddenLibraries = 'hiddenLibraries';
@@ -709,6 +736,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       if (hasGames) 'games',
       if (_showDownloads) _kDownloads,
       _kSettings,
+      if (widget.onOpenConnectors != null) _kConnectors,
       _kReconnect,
       if (hasHiddenLibraries) _kHiddenLibraries,
       if (_showFullscreenToggle) _kFullscreen,
@@ -809,6 +837,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       if (hasGames) 'games',
       if (_showDownloads) _kDownloads,
       _kSettings,
+      if (widget.onOpenConnectors != null) _kConnectors,
       if (_showFullscreenToggle) _kFullscreen,
     ];
   }
@@ -1166,6 +1195,23 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                 ),
                               ),
                             ),
+                            if (widget.onOpenConnectors != null)
+                              AnimatedPadding(
+                                padding: .fromLTRB(horizontalPadding, 0, horizontalPadding, 8),
+                                duration: expandDuration,
+                                curve: expandCurve,
+                                child: _buildNavItem(
+                                  icon: Symbols.grid_view_rounded,
+                                  selectedIcon: Symbols.grid_view_rounded,
+                                  iconWidget: const _ConnectorDrawerIcon(),
+                                  iconSize: 28,
+                                  label: Translations.of(context).services.title,
+                                  isSelected: false,
+                                  onTap: widget.onOpenConnectors!,
+                                  focusNode: _focusTracker.get(_kConnectors),
+                                  isCollapsed: isCollapsed,
+                                ),
+                              ),
                             if (_showFullscreenToggle)
                               AnimatedPadding(
                                 padding: .fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
@@ -1195,12 +1241,16 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required VoidCallback onTap,
     required FocusNode focusNode,
     required bool isCollapsed,
+    Widget? iconWidget,
+    double iconSize = 22,
     bool autofocus = false,
   }) {
     final t = tokens(context);
 
     return NavigationRailItem(
       icon: icon,
+      iconWidget: iconWidget,
+      iconSize: iconSize,
       selectedIcon: selectedIcon,
       label: Text(
         label,

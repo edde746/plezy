@@ -127,6 +127,7 @@ dependencies:
   # 1.2.1: Windows IPC no longer blocks the UI isolate while Discord stalls (#2518).
   dart_discord_presence: ^1.2.1
   flutter_svg: ^2.2.3
+  simple_icons: ^16.23.0
   # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
   # survives a host with no documents directory (Linux without xdg-user-dirs);
   # 7f500a1 reads real macOS volume capacity and skips unknown capacity on
