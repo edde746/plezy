@@ -241,7 +241,8 @@ final class AppleMusicKitPlugin: NSObject, FlutterPlugin {
         return
       }
       do {
-        result(try await MusicSubscription.current.canPlayCatalogContent)
+        let subscription = try await MusicSubscription.current
+        result(subscription.canPlayCatalogContent)
       } catch {
         result(FlutterError(code: "SUBSCRIPTION_UNAVAILABLE", message: "Apple Music subscription status is unavailable.", details: nil))
       }
