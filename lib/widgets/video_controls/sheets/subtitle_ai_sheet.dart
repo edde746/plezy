@@ -865,7 +865,15 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                         ),
                         const SizedBox(height: 4),
                         ...reviewWarnings.take(3).map(
-                              (warning) => Text(warning, style: Theme.of(context).textTheme.bodySmall),
+                              (warning) => Tooltip(
+                                message: warning,
+                                child: Text(
+                                  warning,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ),
                         if (reviewWarnings.length > 3)
                           Text(
