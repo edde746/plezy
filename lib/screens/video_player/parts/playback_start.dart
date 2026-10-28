@@ -33,7 +33,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Start the session inside the player for both backends (loading
         // spinner covers Plex's tune / Jellyfin's stream negotiation).
         final channel = widget.live!.channel;
-        final session = await _startLiveSession(channel);
+        final session = await _startLiveSession(channel, program: widget.live!.initialProgram);
         if (session == null) {
           throw PlaybackException(t.liveTv.failedToStartChannel, reason: PlaybackFailureReason.serverUnavailable);
         }
@@ -110,6 +110,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           currentPlayer,
           streamUrl,
           targetEpoch: targetEpoch,
+          iptvSession: session is IptvLiveTvPlaybackSession ? session : null,
+          enableLocalTimeShift: session is IptvLiveTvPlaybackSession ? session.localTimeShiftEnabled : false,
           play: !holdPlaybackStart && !PlatformDetector.isAutomotive(),
           isCurrent: () => attempt.isCurrent && identical(_live.session, session),
           timeShifted: requestedEpoch != null,
@@ -144,6 +146,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           await _playWithPlaybackIntent(currentPlayer);
         }
         committed = attempt.isCurrent;
+        if (committed && openedStream != null) unawaited(_recordIptvRecentChannel(channel));
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));

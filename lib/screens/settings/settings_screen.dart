@@ -14,6 +14,7 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/iptv_copy.dart';
 import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
@@ -70,6 +71,7 @@ import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
 import 'services_settings_screen.dart';
+import '../iptv/iptv_sources_settings_screen.dart';
 import 'settings_utils.dart';
 import 'supporter_settings_tile.dart';
 import 'tracker_service_info.dart';
@@ -461,6 +463,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           onTap: () {
             final active = context.read<ActiveProfileProvider>().active;
             Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
+          },
+        ),
+        SettingNavigationTile(
+          icon: Symbols.live_tv_rounded,
+          title: t.iptv.sourcesTitle,
+          subtitle: t.iptv.sourcesDescription,
+          onTap: () {
+            final active = context.read<ActiveProfileProvider>().active;
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => IptvSourcesSettingsScreen(profileId: active?.id)),
+            );
           },
         ),
         _buildProfilesTile(context),

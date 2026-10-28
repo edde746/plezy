@@ -72,9 +72,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  Map<String, Map<String, String>> _localOverrideHeaders = const {};
   Map<String, String> _directPlayerAddresses = const {};
   Map<String, String> _localPlayerOptions = const {};
   bool _persistProgress = true;
+  Future<void> Function(PublicationProgress progress)? _onTransientProgress;
   bool _liveInput = false;
   List<File> _temporaryMediaFiles = const [];
   SourcePreviewSession? _previewSession;
@@ -447,7 +449,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     List<PublicationFile> selected, {
     PublicationMode? playbackMode,
     Map<String, Uri> localOverrides = const {},
+    Map<String, Map<String, String>> localOverrideHeaders = const {},
     bool persistProgress = true,
+    int initialPositionMs = 0,
+    Future<void> Function(PublicationProgress progress)? onTransientProgress,
     bool liveInput = false,
     List<File> temporaryMediaFiles = const [],
     SourcePreviewSession? samplePreview,
@@ -528,12 +533,16 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       entry = item;
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(effectiveOverrides);
+      _localOverrideHeaders = Map.unmodifiable({
+        for (final entry in localOverrideHeaders.entries) entry.key: Map.unmodifiable(entry.value),
+      });
       _queueOrder = List<int>.generate(files.length, (index) => index);
       _queueShuffled = false;
       _queueRepeatMode = MusicRepeatMode.off;
       _directPlayerAddresses = Map.unmodifiable(directPlayerAddresses);
       _localPlayerOptions = Map.unmodifiable(localPlayerOptions);
       _persistProgress = persistProgress;
+      _onTransientProgress = onTransientProgress;
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
@@ -560,7 +569,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         }
         sources.holdProgress(initial.key);
       } else {
-        progress = initial;
+        final duration = _durations[0] ?? 0;
+        final position = initialPositionMs.clamp(0, duration > 0 ? duration : 14 * 24 * 60 * 60 * 1000).toInt();
+        progress = initial.copyWith(
+          positionMs: position,
+          filePositionMs: position,
+          fraction: duration > 0 ? (position / duration).clamp(0.0, 1.0) : 0,
+        );
       }
       _undoSeek = null;
       if (persistProgress && progress!.finished) {
@@ -821,7 +836,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       if (_localOverrides[file.id] != null) {
         final override = _localOverrides[file.id]!;
         resolvedUri = const {'http', 'https'}.contains(override.scheme)
-            ? await _gateway!.registerUri(override)
+            ? await _gateway!.registerUri(override, headers: _localOverrideHeaders[file.id] ?? const {})
             : override;
       } else if (cached != null) {
         resolvedUri = cached.uri;
@@ -905,25 +920,41 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _persist({bool? finished}) {
-    if (!_persistProgress || opening) return Future.value();
-    final item = entry, profile = _profile, current = progress, native = player;
-    if (item == null || profile == null || current == null || native == null) return Future.value();
+    if (opening) return Future.value();
+    final profile = _profile, current = progress, native = player;
+    if (profile == null || current == null || native == null) return Future.value();
     final index = _fileIndex, position = positionMs, filePosition = currentFilePositionMs;
     final fraction = hasCompleteTimeline && durationMs > 0
         ? (positionMs / durationMs).clamp(0.0, 1.0)
         : current.fraction;
+    final snapshot = current.copyWith(
+      positionMs: position,
+      filePositionMs: filePosition,
+      fileIndex: index,
+      fraction: fraction,
+      finished: finished,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    if (!_persistProgress) {
+      final persist = _onTransientProgress;
+      if (persist == null) return Future.value();
+      final future = _writes.then((_) async {
+        final latest = progress;
+        if (latest == null || latest.key != current.key || persist != _onTransientProgress) return;
+        await persist(snapshot);
+        progress = snapshot;
+      });
+      _writes = future.catchError((Object error) {
+        appLogger.w('Transient source playback progress could not be saved', error: error);
+      });
+      return _writes;
+    }
     final future = _writes.then((_) async {
       final latest = progress;
       if (latest == null || latest.key != current.key) return;
       progress = await sources.repository.saveProgress(
         profile,
-        latest.copyWith(
-          positionMs: position,
-          filePositionMs: filePosition,
-          fileIndex: index,
-          fraction: fraction,
-          finished: finished,
-        ),
+        snapshot,
         kind: finished == true ? 'finished' : 'position',
       );
     });
@@ -1363,9 +1394,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _queueShuffled = false;
     _queueRepeatMode = MusicRepeatMode.off;
     _localOverrides = const {};
+    _localOverrideHeaders = const {};
     _directPlayerAddresses = const {};
     _localPlayerOptions = const {};
     _persistProgress = true;
+    _onTransientProgress = null;
     _liveInput = false;
     progress = null;
     _lastKnownFilePositionMs = 0;

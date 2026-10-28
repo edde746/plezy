@@ -798,6 +798,17 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
+  static JsonPref<Map<String, int>> iptvRecentChannelsForProfile(String profileId) => JsonPref<Map<String, int>>(
+    profileScopedPrefsKey(profileId, 'iptv_recent_channels'),
+    defaultValue: const {},
+    encode: jsonEncode,
+    decode: (value) => value is Map
+        ? <String, int>{
+            for (final entry in value.entries)
+              if (entry.key is String && entry.value is int) entry.key as String: entry.value as int,
+          }
+        : const {},
+  );
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'notify_new_episodes'), defaultValue: false);
   static StringPref newEpisodeSnapshotForProfile(String profileId, String serverId, String libraryId) => StringPref(
@@ -834,6 +845,8 @@ class SettingsService extends BaseSharedPreferencesService {
   /// (see HomeLayoutSyncService). Off by default; a device left off keeps
   /// its own layout and neither sends nor receives changes.
   static const homeLayoutSyncEnabled = BoolPref('home_layout_sync_enabled', defaultValue: false);
+  /// Optional Plex account sync for IPTV VOD watch positions only.
+  static const iptvVodProgressSyncEnabled = BoolPref('iptv_vod_progress_sync_enabled', defaultValue: false);
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const hideEmptyLibraries = BoolPref('hide_empty_libraries', defaultValue: false);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
