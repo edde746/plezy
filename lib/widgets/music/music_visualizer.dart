@@ -12,6 +12,7 @@ import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../focus/focusable_button.dart';
 import '../app_icon.dart';
+import 'visualizer_library_sheet.dart';
 import 'music_visualizer_painter.dart';
 import 'music_visualizer_preset.dart';
 
@@ -329,10 +330,30 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
                   icon: const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 22),
                 ),
               ),
+              FocusableButton(
+                onPressed: () => _showLibrary(context),
+                child: IconButton(
+                  tooltip: 'Browse and download presets',
+                  onPressed: () => _showLibrary(context),
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  icon: const AppIcon(Symbols.library_music_rounded, fill: 1, size: 20),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showLibrary(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const VisualizerLibrarySheet(),
     );
   }
 
