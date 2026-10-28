@@ -260,7 +260,13 @@ class _SourcesScreenState extends State<SourcesScreen> {
       return;
     }
     final remoteSource = sources.sources
-        .where((source) => source.kind == FileSourceKind.remoteCloud && source.options['accountId'] == account.id)
+        .where(
+          (source) =>
+              source.kind == FileSourceKind.remoteCloud &&
+              source.options['accountId'] == account.id &&
+              source.options['service'] == account.service.name &&
+              source.profileId == profileId,
+        )
         .firstOrNull;
     await Navigator.push(
       context,

@@ -187,6 +187,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           (source) =>
               source.kind == FileSourceKind.remoteCloud &&
               source.options['accountId'] == account.id &&
+              source.options['service'] == service.name &&
+              source.profileId == profileId &&
               sourceController.profileId == profileId,
         )
         .firstOrNull;
