@@ -193,6 +193,7 @@ class PublicationFile {
     this.durationMs,
     this.primary = true,
     this.streamOnly = false,
+    this.sample = false,
   });
   final String id;
   final String name;
@@ -202,6 +203,7 @@ class PublicationFile {
   final int? durationMs;
   final bool primary;
   final bool streamOnly;
+  final bool sample;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
   // Delivery permissions do not change the content edition or its saved progress.
   String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
@@ -214,6 +216,7 @@ class PublicationFile {
     'durationMs': durationMs,
     'primary': primary,
     'streamOnly': streamOnly,
+    if (sample) 'sample': true,
   };
   factory PublicationFile.fromJson(Map<String, dynamic> j) => PublicationFile(
     id: j['id'] as String,
@@ -224,6 +227,7 @@ class PublicationFile {
     durationMs: sourceInt(j['durationMs']),
     primary: j['primary'] as bool? ?? true,
     streamOnly: j['streamOnly'] as bool? ?? false,
+    sample: j['sample'] as bool? ?? false,
   );
 }
 

@@ -1,6 +1,6 @@
 # Validation and qualification plan
 
-Status: qualification remains outstanding. This branch adds title-search handoffs, public Google Books search, OpenSubsonic/Subsonic music sources, and podcast RSS/Atom with OPML, but does not certify provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: qualification remains outstanding. This branch adds title-search handoffs, public Google Books search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom with OPML, Audiobookshelf JWT session renewal and explicit OPDS open-access/sample classification. The new Audiobookshelf and OPDS paths have not been run against live server/feed versions. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
 
 ## Functional acceptance matrix
 
@@ -24,8 +24,8 @@ Status: qualification remains outstanding. This branch adds title-search handoff
 | V16 | OverDrive disabled build | Coming soon retained; no native auth/circulation requests; external Libby works where qualified | W08 |
 | V17 | Borrow/hold request times out after server accepted it | Reconcile state; no duplicate mutation from retry/double tap | W08 |
 | V18 | Hold ready/pickup, suspend/resume, return, expiry, revoked card, changed collection | Provider-advertised actions only; confirmed mutation; correct due state and reader destination | W08 |
-| V19 | Audiobookshelf supported legacy and new auth flows, token expiry and server upgrade | Preserved source/history, single refresh or reconnect, no exposed credentials | W07 |
-| V20 | OPDS XML/JSON feed: open access, sample, buy, borrow, subscription, license and comic stream | Correct relation/format classification; partial feed still safe; no invalid owned-file promotion | W07 |
+| V19 | Audiobookshelf supported legacy and new auth flows, token expiry and server upgrade | Code supports JWT login/rotation and legacy bearer credentials; qualification must show preserved source/history, one refresh/reconnect, and no exposed credentials | W07; not run |
+| V20 | OPDS XML/JSON feed: open access, sample, buy, borrow, subscription, license and comic stream | Code admits only explicit open-access/sample relations; qualification must verify feed parsing and no invalid owned-file promotion | W07; not run |
 | V21 | Private podcast feed or signed asset redirects to another origin | No credential leakage; private URL absent from telemetry/exports; only approved redirects | W10 |
 | V22 | Official music SDK stops, loses entitlement, backgrounds or switches profile | One audio owner; truthful commands; proper teardown and progress source | W11 |
 | V23 | External launch or preview returns without qualified media playback | No tracker scrobble, watched completion or fabricated progress | W03/W11/W12 |

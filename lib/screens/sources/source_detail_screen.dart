@@ -1012,7 +1012,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           final f = _entry.files[i];
                           return SourceTile(
                             title: f.name,
-                            subtitle: _offline.contains(f.id) ? t.fileSources.offline : f.mimeType,
+                            subtitle: [
+                              if (f.sample) t.themeEditor.preview,
+                              if (_offline.contains(f.id)) t.fileSources.offline else f.mimeType,
+                            ].join(' · '),
                             icon: sourceItemIcon(f.kind),
                             index: i,
                             count: _entry.files.length,

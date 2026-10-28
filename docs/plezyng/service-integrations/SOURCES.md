@@ -188,7 +188,7 @@ Kavita: [API/authentication guide](https://wiki.kavitareader.com/guides/api/). C
 
 ## S46
 
-Audiobookshelf: [current API-key guidance](https://audiobookshelf.org/docs/documentation/server-management/api-keys/), [third-party-app guidance](https://audiobookshelf.org/docs/documentation/community/community-apps/), [old API reference](https://api.audiobookshelf.org/). Current documentation directs third-party apps to standard JWT auth; old reference explicitly says it is unmaintained. High reason for a compatibility audit; no live breakage was measured.
+Audiobookshelf: [current API-key guidance](https://audiobookshelf.org/docs/documentation/server-management/api-keys/), [third-party-app guidance](https://audiobookshelf.org/docs/documentation/community/community-apps/), [old API reference](https://api.audiobookshelf.org/), and the [maintainer's JWT endpoint contract](https://github.com/advplyr/audiobookshelf/discussions/4460). Current docs direct third-party apps to JWT login/refresh and reserve API keys for server-to-server automation; the old API reference is unmaintained. This branch implements the mobile token flow, but server/version/runtime compatibility remains unqualified.
 
 ## S47
 

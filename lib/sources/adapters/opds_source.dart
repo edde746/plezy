@@ -57,11 +57,11 @@ class OpdsSourceAdapter extends SourceAdapter {
     'entry': id,
     'link': sourceDigest(jsonEncode([_identity(download), type])),
   });
-  bool _downloadable(String rel) => const {
-    'http://opds-spec.org/acquisition',
-    'http://opds-spec.org/acquisition/open-access',
-    'http://opds-spec.org/acquisition/sample',
-  }.contains(rel);
+  bool _sampleAcquisition(Iterable<String> rels) => rels.contains('http://opds-spec.org/acquisition/sample');
+  bool _openAccessAcquisition(Iterable<String> rels) =>
+      rels.contains('http://opds-spec.org/acquisition/open-access');
+  bool _supportedFileAcquisition(Iterable<String> rels) =>
+      _sampleAcquisition(rels) || _openAccessAcquisition(rels);
 
   @override
   SourceCapabilities get capabilities => const SourceCapabilities();
@@ -150,7 +150,7 @@ class OpdsSourceAdapter extends SourceAdapter {
       final links = sourceList(j['links']).map(sourceMap).toList();
       final self = links.where((l) => _rels(l).contains('self')).firstOrNull?['href'];
       final id =
-          '${meta['identifier'] ?? (self == null ? sourceDigest(jsonEncode([uri.toString(), meta['title'], meta['author'], links.where((l) => _rels(l).any(_downloadable)).map((l) => _identity(uri.resolve(l['href'] as String))).toList()])) : _identity(uri.resolve(self as String)))}';
+          '${meta['identifier'] ?? (self == null ? sourceDigest(jsonEncode([uri.toString(), meta['title'], meta['author'], links.where((l) => _supportedFileAcquisition(_rels(l))).map((l) => _identity(uri.resolve(l['href'] as String))).toList()])) : _identity(uri.resolve(self as String)))}';
       final image = sourceList(j['images']).map(sourceMap).where((i) => i['href'] is String).firstOrNull;
       if (image != null) _covers[id] = uri.resolve(image['href'] as String);
       final files = <PublicationFile>[];
@@ -165,12 +165,21 @@ class OpdsSourceAdapter extends SourceAdapter {
       }
       for (var index = 0; index < links.length; index++) {
         final link = links[index];
-        if (!_rels(link).any((r) => _downloadable(r)) || link['href'] is! String) continue;
+        final rels = _rels(link);
+        if (!_supportedFileAcquisition(rels) || link['href'] is! String) continue;
         final mime = link['type'] as String? ?? '';
         final name = '${_label(meta['title'])}${_extension(mime)}';
         final ref = _fileRef(uri, id, uri.resolve(link['href'] as String), mime);
         _acquisitions[ref] = uri.resolve(link['href'] as String);
-        files.add(PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length'])));
+        files.add(
+          PublicationFile(
+            id: ref,
+            name: name,
+            mimeType: mime,
+            size: sourceInt(link['length']),
+            sample: _sampleAcquisition(rels),
+          ),
+        );
       }
       if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) {
         files.add(_streamFile(uri, id, _label(meta['title'])));
@@ -217,7 +226,7 @@ class OpdsSourceAdapter extends SourceAdapter {
                 title,
                 text('author'),
                 links
-                    .where((l) => _downloadable(l.getAttribute('rel') ?? ''))
+                    .where((l) => _supportedFileAcquisition([l.getAttribute('rel') ?? '']))
                     .map((l) => _identity(uri.resolve(l.getAttribute('href') ?? '')))
                     .toList(),
               ]),
@@ -247,10 +256,18 @@ class OpdsSourceAdapter extends SourceAdapter {
         final link = links[index], href = link.getAttribute('href');
         if (href == null) continue;
         final rel = link.getAttribute('rel') ?? '', mime = link.getAttribute('type') ?? '';
-        if (_downloadable(rel)) {
+        final rels = [rel];
+        if (_supportedFileAcquisition(rels)) {
           final ref = _fileRef(uri, id, uri.resolve(href), mime);
           _acquisitions[ref] = uri.resolve(href);
-          files.add(PublicationFile(id: ref, name: '$title${_extension(mime)}', mimeType: mime));
+          files.add(
+            PublicationFile(
+              id: ref,
+              name: '$title${_extension(mime)}',
+              mimeType: mime,
+              sample: _sampleAcquisition(rels),
+            ),
+          );
         } else if ((rel == 'subsection' || rel == 'alternate' || rel.isEmpty) &&
             (mime.contains('atom') || mime.contains('opds'))) {
           result.add(

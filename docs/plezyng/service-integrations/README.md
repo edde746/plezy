@@ -1,6 +1,6 @@
 # PlezyNG service integration audit and Luna handoff
 
-Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-10-28**: the three explicitly excluded streaming services are removed from PlezyNG's provider directory and catalog-launch surface. The code now includes broad official-site handoffs, an in-app Google Books search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom playback, and OPML import/export. It does not create partner accounts or affiliate tracking.
+Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-10-28**: the three explicitly excluded streaming services are removed from PlezyNG's provider directory and catalog-launch surface. The code now includes broad official-site handoffs, an in-app Google Books search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom playback, OPML import/export, Audiobookshelf JWT session renewal with legacy-token compatibility, and OPDS open-access/sample classification. Server/feed qualification, partner accounts and affiliate tracking remain outstanding.
 
 **Recommendation — high confidence:** make PlezyNG the place to find a title, see the copies/subscriptions/loans/offers available to the active profile, and choose the right way to use it. Implement native playback where a supported content API or SDK permits it; use official app/site handoff elsewhere. Keep the current navigation, artwork-led presentation, profiles, readers and player owners.
 
@@ -35,6 +35,7 @@ Sources and precise limits are in [PROVIDERS.md](PROVIDERS.md), [COMMERCIAL.md](
 - Catalog-supplied streaming links to the excluded services are filtered. Native server/file playback and existing library flows retain their own state and actions.
 - The existing public library catalogue can switch between Open Library and the unauthenticated Google Books public catalogue API. Google sale metadata is shown only when the API supplies a provider purchase link, price and currency; purchase opens Google Books.
 - OpenSubsonic/Subsonic-compatible servers now appear as music sources with artist, album, recent-album and search browsing, streaming through the existing audio player, and profile-local resume progress (optionally synced through a configured WebDAV state folder). Podcast RSS/Atom feeds can be added directly or transferred in bulk through OPML; private feed URLs and Basic credentials stay encrypted at rest. Neither adapter claims provider-side scrobbling or universal server/device qualification.
+- Audiobookshelf can sign in with server username/password and refresh rotating JWT sessions through the encrypted source vault; existing bearer-token entries remain supported. OPDS now admits only explicit open-access/sample file relations, labels samples as previews, and leaves generic acquisition, lending and licensed fulfillment outside the unrestricted reader/download path.
 - No third-party provider account, entitlement, playback, live price comparison, affiliate attribution or commission is claimed by the handoff directory.
 
 ## Product rules to carry into implementation

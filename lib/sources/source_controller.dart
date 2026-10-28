@@ -92,6 +92,7 @@ class SourceController extends ChangeNotifier {
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
   final Map<String, _ImportTransfer> _importTransfers = {};
+  final Map<String, Future<void>> _sourceCredentialWrites = {};
   final Map<String, Future<File?>> _covers = {};
   final Map<String, Future<SourceEntry>> _onlineLookups = {};
   final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
@@ -154,6 +155,16 @@ class SourceController extends ChangeNotifier {
       transfer.cancellation.cancel();
     }
     await Future.wait(transfers.map((transfer) => transfer.finished.future));
+  }
+
+  Future<void> _settleSourceCredentialWrite(String sourceId) async {
+    final pending = _sourceCredentialWrites[sourceId];
+    if (pending == null) return;
+    try {
+      await pending;
+    } on Object {
+      // Source removal or an account switch may cancel a token rotation.
+    }
   }
 
   Future<void> _initialize(SourceRepository? provided) async {
@@ -507,6 +518,9 @@ class SourceController extends ChangeNotifier {
       await migration;
       requireSession(epoch);
     }
+    _adapters.remove(source.id)?.close();
+    await _settleSourceCredentialWrite(source.id);
+    requireSession(epoch);
     await repository.saveSource(source, credentials);
     requireSession(epoch);
     _sourceSyncSucceeded(source.id);
@@ -592,6 +606,7 @@ class SourceController extends ChangeNotifier {
 
   Future<void> reconnect(String id) async {
     _adapters.remove(id)?.close();
+    await _settleSourceCredentialWrite(id);
     _sourceSyncSucceeded(id);
   }
 
@@ -609,6 +624,8 @@ class SourceController extends ChangeNotifier {
     await downloads.cancelSource(profile, source.id);
     requireSession(epoch);
     _adapters.remove(source.id)?.close();
+    await _settleSourceCredentialWrite(source.id);
+    requireSession(epoch);
     _sourceSyncSucceeded(source.id);
     await repository.removeSource(profile, source.id);
     requireSession(epoch);
@@ -652,6 +669,33 @@ class SourceController extends ChangeNotifier {
     }
 
     Future<Map<String, String>> backgroundCredentials() => credentials();
+    Future<void> persistSourceCredentials(Map<String, String> value) async {
+      checkOwner();
+      if (transport.isClosed) throw const SourceException(SourceFailure.cancelled);
+      final previous = _sourceCredentialWrites[source.id];
+      late final Future<void> write;
+      write = Future<void>(() async {
+        if (previous != null) {
+          try {
+            await previous;
+          } on Object {
+            // A failed earlier token write must not block the latest rotation.
+          }
+        }
+        checkOwner();
+        if (transport.isClosed) throw const SourceException(SourceFailure.cancelled);
+        await repository.saveSource(source, value);
+        checkOwner();
+      });
+      _sourceCredentialWrites[source.id] = write;
+      try {
+        await write;
+      } finally {
+        if (identical(_sourceCredentialWrites[source.id], write)) {
+          _sourceCredentialWrites.remove(source.id);
+        }
+      }
+    }
     return switch (source.kind) {
       FileSourceKind.local => LocalSourceAdapter(source, transport),
       FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
@@ -666,7 +710,12 @@ class SourceController extends ChangeNotifier {
       FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
       FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
       FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
-      FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
+      FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(
+        source,
+        transport,
+        credentials,
+        persistCredentials: persistSourceCredentials,
+      ),
       FileSourceKind.openSubsonic => OpenSubsonicSourceAdapter(source, transport, credentials),
       FileSourceKind.podcastRss => PodcastRssSourceAdapter(source, transport, credentials),
     };

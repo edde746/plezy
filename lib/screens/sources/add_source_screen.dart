@@ -225,6 +225,15 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     return t.fileSources.errorAuthentication;
   }
 
+  String? _validateAudiobookshelfCredentials(String? _) {
+    if (widget.existing?.kind == FileSourceKind.audiobookshelf ||
+        field('token').text.trim().isNotEmpty ||
+        (field('username').text.trim().isNotEmpty && field('password').text.isNotEmpty)) {
+      return null;
+    }
+    return t.fileSources.errorAuthentication;
+  }
+
   String? _validateSharedLibrary(String? value) {
     final id = value?.trim() ?? '';
     if (id.isEmpty) return null;
@@ -414,7 +423,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           ],
           FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
-          FileSourceKind.audiobookshelf => const ['token'],
+          FileSourceKind.audiobookshelf => const ['token', 'username', 'password'],
           FileSourceKind.openSubsonic => const ['username', 'password', 'apiKey'],
           FileSourceKind.komga => const ['username', 'password', 'token'],
           _ => const <String>[],
@@ -607,6 +616,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.webdav,
                       FileSourceKind.opds,
                       FileSourceKind.komga,
+                      FileSourceKind.audiobookshelf,
                       FileSourceKind.openSubsonic,
                       FileSourceKind.smb,
                       FileSourceKind.ftp,
@@ -805,7 +815,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         ),
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
-                      input('token', t.fileSources.token, secret: true, required: widget.existing == null),
+                      input('token', t.fileSources.token, secret: true, validator: _validateAudiobookshelfCredentials),
                     if (_kind == FileSourceKind.openSubsonic) ...[
                       input('apiKey', t.sourceSetup.apiKey, secret: true, validator: _validateOpenSubsonicCredentials),
                     ],
