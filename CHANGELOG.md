@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
-- Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and quality limits before resolution, within the existing copy list.
+- Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.
 - Verify downloaded representations on disk before showing offline availability, require all audiobook/video parts, and reject server versions with a known missing part.
 - Include indexed Files and books in main Search with shared relevance, media-kind filters, TV focus, partial-failure results and profile-switch invalidation.

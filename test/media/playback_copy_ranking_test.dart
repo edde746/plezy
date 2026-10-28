@@ -53,6 +53,19 @@ void main() {
     expect(ranked.last.reason, PlaybackCopyReason.qualityLimit);
   });
 
+  test('per-server startup limits can differ between local and remote copies', () {
+    final local = testMediaItem(id: 'local-4k', serverId: 'lan', mediaVersions: [uhd]);
+    final remote = testMediaItem(id: 'remote-4k', serverId: 'wan', mediaVersions: [uhd]);
+    final ranked = rankPlaybackCopies(
+      [remote, local],
+      onlineServerIds: {'lan', 'wan'},
+      qualityForItem: (item) =>
+          item.serverId == 'wan' ? TranscodeQualityPreset.p1080_8mbps : TranscodeQualityPreset.original,
+    );
+    expect(ranked.first.item, same(local));
+    expect(ranked.last.reason, PlaybackCopyReason.qualityLimit);
+  });
+
   test('a missing second part cannot win on resolution', () {
     final broken = testMediaItem(
       id: 'broken',
