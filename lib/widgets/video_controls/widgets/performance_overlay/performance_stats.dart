@@ -2,7 +2,7 @@ import '../../../../i18n/strings.g.dart';
 import '../../../../utils/codec_utils.dart';
 
 /// What decodes a Dolby Vision file on Android mpv. Wire ids match the
-/// Kotlin `GpuVoPolicy.DvRoute`.
+/// mpv-android library's `com.edde746.mpv.GpuVoPolicy.DvRoute`.
 enum DvRoute {
   /// The Dolby Vision MediaCodec decoder takes the stream as it is.
   dvDecoder('dv-decoder'),

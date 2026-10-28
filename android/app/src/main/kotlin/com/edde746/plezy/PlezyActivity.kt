@@ -27,6 +27,7 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import com.edde746.mpv.MediaCodecQuery
 import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.deeplink.DeepLinkPlugin
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
@@ -34,7 +35,6 @@ import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
-import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity

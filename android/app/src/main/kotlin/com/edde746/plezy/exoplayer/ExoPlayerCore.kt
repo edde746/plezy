@@ -68,6 +68,7 @@ import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
+import com.edde746.mpv.MediaCodecQuery
 import com.edde746.plezy.AndroidRuntimeDiagnostics
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
@@ -76,7 +77,6 @@ import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
-import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerSurfaceHost
 import com.edde746.plezy.shared.SurfacePlayerCore
 import java.util.concurrent.Executors
