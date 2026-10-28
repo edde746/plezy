@@ -1,4 +1,5 @@
 import '../media/media_kind.dart';
+import '../integrations/integration_contracts.dart';
 import 'book_identifiers.dart';
 
 /// Types of title-aware provider lookups that can be handed off to an
@@ -30,6 +31,7 @@ class ExternalAccessDestination {
     String creator = '',
     String region = 'CA',
     Map<String, String> identifiers = const {},
+    Map<String, String> gamePlatformIds = const {},
   }) {
     final upperRegion = region.toUpperCase();
     final safeRegion = RegExp(r'^[A-Z]{2}$').hasMatch(upperRegion) ? upperRegion.toLowerCase() : 'ca';
@@ -37,6 +39,15 @@ class ExternalAccessDestination {
     final cleanCreator = _cleanQuery(creator);
     final isbn = category == ExternalAccessCategory.books ? BookIdentifiers.preferred(identifiers) : null;
     final term = isbn ?? [cleanTitle, if (cleanCreator.isNotEmpty) cleanCreator].join(' ');
+    if (id == 'steam-store') {
+      final appId = gamePlatformIds['steam'];
+      if (appId != null && RegExp(r'^[1-9]\d{0,9}$').hasMatch(appId)) {
+        final parsed = int.tryParse(appId);
+        if (parsed != null && parsed <= 0xffffffff) {
+          return Uri.https(host, '/app/$parsed/');
+        }
+      }
+    }
     return Uri.https(hostForRegion(safeRegion), pathForRegion(safeRegion), {
       ...fixedQuery,
       if (id == 'google-play-books') 'gl': safeRegion.toUpperCase(),
@@ -106,6 +117,39 @@ class ExternalAccessDestination {
     }
     if (id == 'xbox-store') return '/en-${region.toUpperCase()}/Search/Results';
     return path;
+  }
+
+  ProviderDefinition integrationDefinition(String region) {
+    final normalizedRegion = RegExp(r'^[a-z]{2}$').hasMatch(region) ? region : 'ca';
+    final entityKinds = switch (category) {
+      ExternalAccessCategory.video || ExternalAccessCategory.rentals => const {
+        IntegrationEntityKind.movie,
+        IntegrationEntityKind.series,
+        IntegrationEntityKind.season,
+        IntegrationEntityKind.episode,
+      },
+      ExternalAccessCategory.books => const {IntegrationEntityKind.bookWork, IntegrationEntityKind.bookEdition},
+      ExternalAccessCategory.audiobooks => const {
+        IntegrationEntityKind.bookWork,
+        IntegrationEntityKind.audiobookEdition,
+      },
+      ExternalAccessCategory.comics => const {
+        IntegrationEntityKind.comicSeries,
+        IntegrationEntityKind.comicIssue,
+      },
+      ExternalAccessCategory.music => const {
+        IntegrationEntityKind.musicRelease,
+        IntegrationEntityKind.musicRecording,
+      },
+      ExternalAccessCategory.games => const {IntegrationEntityKind.game, IntegrationEntityKind.gameEdition},
+    };
+    return ProviderDefinition(
+      id: id,
+      displayName: name,
+      officialHosts: {host.toLowerCase(), hostForRegion(normalizedRegion).toLowerCase()},
+      entityKinds: entityKinds,
+      capabilities: const {ProviderCapability.officialHandoff},
+    );
   }
 }
 

@@ -138,12 +138,19 @@ class _GameCardState extends State<GameCard> {
           MaterialPageRoute<void>(
             builder: (_) => ExternalAccessScreen(
               title: widget.game.name,
+              gamePlatformIds: _steamAppId == null ? const {} : {'steam': '$_steamAppId'},
               categories: const [ExternalAccessCategory.games],
             ),
           ),
         ),
       );
     }
+  }
+
+  int? get _steamAppId {
+    if (widget.host.protocol != GameProtocol.steam || !RegExp(r'^[1-9]\d{0,9}$').hasMatch(widget.game.id)) return null;
+    final appId = int.tryParse(widget.game.id);
+    return appId != null && appId <= 0xffffffff ? appId : null;
   }
 
   Widget _placeholder(BuildContext context) => ColoredBox(

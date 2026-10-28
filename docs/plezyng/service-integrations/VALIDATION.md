@@ -1,6 +1,6 @@
 # Validation and qualification plan
 
-Status: qualification remains outstanding. This branch adds title-search handoffs, public Google Books search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom with OPML, Audiobookshelf JWT session renewal and explicit OPDS open-access/sample classification. The new Audiobookshelf and OPDS paths have not been run against live server/feed versions. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: qualification remains outstanding. Current code also adds typed integration contracts and profile-scoped preferences/crosswalks, connected-catalog global Search, Hardcover read-only shelf snapshots with guarded status export, country-aware official handoffs and exact Steam AppID storefront routing. The new integrations and previous Audiobookshelf/OPDS/OpenSubsonic/podcast paths have not been run against live provider/server/feed versions. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
 
 ## Functional acceptance matrix
 
@@ -38,6 +38,12 @@ Status: qualification remains outstanding. This branch adds title-search handoff
 | V30 | Offline with playable files and unavailable remote services | Existing files/resume remain available; no false offline entitlement or hidden local result | W02/W04/W15 |
 | V31 | Public-catalog or OPDS book carries a valid, invalid, or missing ISBN | Valid checksum-verified ISBN is used for book-store search; invalid/missing identifiers fall back to title and creator; no price, stock, purchase, or ownership state is inferred | W05/W07 |
 | V32 | Amazon Books/Kindle handoff from a supported country locale | Search opens the mapped official marketplace with a title or validated ISBN; unknown locales keep the existing Canada fallback | W03/W05 |
+| V33 | Connected catalog times out or returns duplicate server/Seerr IDs during global Search | Local/server/Files and Seerr paths remain available; catalog failures stay isolated; only exact same-kind ID matches are suppressed | W09 |
+| V34 | Hardcover import/export with duplicate ISBNs, changed local progress, changed remote status, account switch and undo | Ambiguous ISBNs are not joined; imports remain read-only snapshots; exports are previewed/status-only, rechecked immediately before mutation and reversible only while remote state still matches | W02/W12 |
+| V35 | Steam shortcut with valid, invalid, non-Steam or absent AppID | Only a valid Steam protocol ID opens the exact Steam Store app page; all other cases use title search and never create a host Play route | W13 |
+| V36 | Find Next with active and additional connected catalogs, one timed-out source, duplicates by exact ID and a confirmed crosswalk | Other catalogs still contribute bounded candidates; exact same-kind copies and confirmed same-work crosswalks appear once; detail routes remain provider-owned | W09 |
+| V37 | Link two same-kind search results, switch profiles, then remove the link from Services | The confirmed mapping is profile-scoped and reversible; Search and Find Next stop suppressing the linked catalog duplicate after removal; progress and entitlement remain independent | W02/W09 |
+| V38 | Set, edit, clear and profile-switch a provider plan note | The note follows its profile and is shown only as user-entered text; no connected state or verified access appears | W02/W04 |
 
 ## Existing regression owners
 
@@ -97,4 +103,4 @@ This assessment must not trigger CI, enroll partner accounts or deploy a gateway
 
 ## Validation performed for this implementation branch
 
-Static review and `git diff --check` were performed. ISBN capture/search routing, Amazon marketplace routing, OPDS media-type fallback, mixed-format shelf selection and the Project Gutenberg endpoint preset have not been exercised against retailer sites, ISBN fixtures or live feeds. Dart and Flutter SDKs are unavailable in the current workspace, so no formatter, analyzer, localization generation, platform build or tests were run. No live music-server/feed device playback, paid-service login, partner sandbox circulation or storefront conversion was performed. Planned runtime cases above are not executed claims.
+Static review and `git diff --check` were performed. ISBN capture/search routing, country-aware handoffs, connected-catalog Search, Hardcover GraphQL mutations, Steam AppID routing, OPDS media-type fallback, mixed-format shelf selection and the Project Gutenberg endpoint preset have not been exercised against fixtures, live APIs, retailer sites or feeds. Dart and Flutter SDKs are unavailable in the current workspace, so no formatter, analyzer, localization generation, platform build or tests were run. No live music-server/feed device playback, paid-service login, partner sandbox circulation or storefront conversion was performed. Planned runtime cases above are not executed claims.

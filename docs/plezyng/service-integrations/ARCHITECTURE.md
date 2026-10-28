@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: partner/account/offer architecture remains proposed. Shipped code now includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, and OPML transfer through existing source, profile, player and progress owners. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: partner/availability architecture remains proposed. Shipped code now includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, OPML transfer, and an initial typed integration layer. `lib/integrations/integration_contracts.dart` defines entity/identifier/relation/offer/evidence/target/connection references and a deny-by-default commerce policy; `integration_preferences_store.dart` and `integration_identity_store.dart` store non-secret profile-scoped preferences and reversible confirmed crosswalks. These contracts are not yet a universal account registry or licensed offer backend. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 

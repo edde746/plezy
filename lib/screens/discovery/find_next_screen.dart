@@ -11,6 +11,8 @@ import '../../focus/focusable_button.dart';
 import '../../discovery/discovery_store.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
+import '../../integrations/integration_contracts.dart';
+import '../../integrations/integration_identity_store.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -31,7 +33,9 @@ import '../../screens/sources/source_detail_screen.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../services/settings_service.dart';
+import '../../services/catalog/catalog_source.dart';
 import '../../utils/formatters.dart';
+import '../../utils/external_ids.dart';
 import '../../utils/catalog_navigation_helper.dart';
 import '../../utils/global_key_utils.dart';
 import '../../utils/layout_constants.dart';
@@ -105,6 +109,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
   String? _genre;
   String? _sourceReason;
   late DiscoveryStore _store;
+  final IntegrationIdentityStore _identityStore = IntegrationIdentityStore();
 
   bool get _catalogAllowed {
     final profileId = _ownerProfileId;
@@ -324,27 +329,108 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
     }
 
-    // Reuse the active Explore provider's bounded, profile-owned catalog rows.
+    // Reuse the selected Explore provider's cached, bounded rows first, then
+    // sample a small number of rows from every other connected catalog.
     // Catalog entries are discovery/detail choices only: they are never
     // presented as owned or directly playable media.
     if (!offlineOnly && _catalogAllowed) {
+      final confirmedCrosswalks = await _loadIdentityCrosswalks(profileId);
+      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+      final seenCatalogIds = <MediaKind, List<ExternalIds>>{};
+      for (final choice in result) {
+        final media = choice.mediaItem;
+        if (media == null) continue;
+        final ids = _externalIdsForMedia(media);
+        if (ids.hasCatalogIds) seenCatalogIds.putIfAbsent(media.kind, () => []).add(ids);
+      }
+      void appendCatalogItem(CatalogItem item) {
+        if (_matchesConfirmedCatalogCrosswalk(item, result, confirmedCrosswalks)) return;
+        final ids = item.ids.toExternalIds();
+        if (item.season == null && ids.hasCatalogIds) {
+          final seen = seenCatalogIds.putIfAbsent(item.kind, () => []);
+          if (seen.any(ids.intersects)) return;
+          seen.add(ids);
+        }
+        final choice = _choiceForCatalog(item);
+        if (choice != null && candidateIds.add(choice.id)) result.add(choice);
+      }
+
+      var activeExploreLoaded = false;
       if (explore != null) {
         try {
-          await explore.load();
+          await explore.load().timeout(const Duration(seconds: 8));
           if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+          activeExploreLoaded = explore.state == ExploreLoadState.loaded;
           if (_catalogAllowed) {
             for (final row in explore.rowHubs) {
               for (final media in row.hub.items) {
                 final item = media.catalogItem;
                 if (item == null) continue;
-                final choice = _choiceForCatalog(item);
-                if (choice != null && candidateIds.add(choice.id)) result.add(choice);
+                appendCatalogItem(item);
               }
             }
           }
         } catch (_) {
           // Catalog rows are an optional discovery source.
         }
+      }
+
+      final catalogProvider = context.read<CatalogSourcesProvider?>();
+      final activeSource = explore?.activeSource;
+      const discoveryRows = [
+        CatalogRowId.recommendedMovies,
+        CatalogRowId.recommendedShows,
+        CatalogRowId.suggestedAnime,
+        CatalogRowId.trendingAnime,
+        CatalogRowId.airingAnime,
+        CatalogRowId.trendingMovies,
+        CatalogRowId.trendingShows,
+        CatalogRowId.popularAnime,
+        CatalogRowId.popularMovies,
+        CatalogRowId.popularShows,
+        CatalogRowId.trending,
+      ];
+      final requests = <({CatalogSource source, CatalogRowId row})>[];
+      for (final source in catalogProvider?.connectedSources ?? const <CatalogSource>[]) {
+        if (identical(source, activeSource) && activeExploreLoaded) continue;
+        final supported = source.supportedRows;
+        CatalogRowId? selectedRow;
+        for (final row in discoveryRows) {
+          if (supported.contains(row)) {
+            selectedRow = row;
+            break;
+          }
+        }
+        selectedRow ??= supported.contains(CatalogRowId.watchlist) ? CatalogRowId.watchlist : null;
+        if (selectedRow != null) requests.add((source: source, row: selectedRow));
+      }
+      for (var start = 0; start < requests.length; start += 4) {
+        final batch = requests.skip(start).take(4);
+        await Future.wait([
+          for (final catalogRequest in batch)
+            () async {
+              try {
+                final page = await catalogRequest.source
+                    .fetchRow(catalogRequest.row, limit: 20)
+                    .timeout(const Duration(seconds: 6));
+                if (!mounted ||
+                    !_sessionCurrent(profileId, sourceGeneration, request) ||
+                    !_catalogAllowed ||
+                    !(context.read<CatalogSourcesProvider?>()?.connectedSources.any(
+                          (source) => identical(source, catalogRequest.source),
+                        ) ??
+                        false)) {
+                  return;
+                }
+                for (final item in page.items) {
+                  appendCatalogItem(item);
+                }
+              } catch (_) {
+                // An unavailable provider does not block the remaining deck.
+              }
+            }(),
+        ]);
+        if (!_sessionCurrent(profileId, sourceGeneration, request)) return result;
       }
     }
 
@@ -473,6 +559,98 @@ class _FindNextScreenState extends State<FindNextScreen> {
       catalogItem: item,
       artworkPath: item.posterFor(640),
     );
+  }
+
+  Future<List<IdentityCrosswalk>> _loadIdentityCrosswalks(String profileId) async {
+    try {
+      return await _identityStore.load(profileId);
+    } on Object {
+      return const [];
+    }
+  }
+
+  static bool _matchesConfirmedCatalogCrosswalk(
+    CatalogItem item,
+    List<DiscoveryChoice> choices,
+    List<IdentityCrosswalk> crosswalks,
+  ) {
+    final catalogRef = _catalogEntityRef(item);
+    if (catalogRef == null) return false;
+    for (final choice in choices) {
+      final media = choice.mediaItem;
+      if (media == null || media.kind != item.kind) continue;
+      final serverRef = _serverEntityRef(media);
+      if (serverRef == null) continue;
+      if (crosswalks.any((match) {
+        if (match.method != IdentifierMatchMethod.userConfirmed || match.relation != EntityRelationKind.sameWork) {
+          return false;
+        }
+        return (_sameEntity(match.from, catalogRef) && _sameEntity(match.to, serverRef)) ||
+            (_sameEntity(match.from, serverRef) && _sameEntity(match.to, catalogRef));
+      })) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static IntegrationEntityRef? _catalogEntityRef(CatalogItem item) {
+    final kind = _integrationEntityKind(item.kind);
+    final entryKey = item.ids.entryKey;
+    if (kind == null || entryKey == null || entryKey.trim().isEmpty) return null;
+    final reference = IntegrationEntityRef(
+      providerId: item.source.name,
+      nativeId: '${item.kind.id}/$entryKey',
+      kind: kind,
+    );
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityRef? _serverEntityRef(MediaItem item) {
+    final kind = _integrationEntityKind(item.kind);
+    final serverId = item.serverId;
+    if (kind == null || serverId == null || serverId.trim().isEmpty || item.id.trim().isEmpty) return null;
+    final reference = IntegrationEntityRef(
+      providerId: 'server.${item.backend.id}',
+      nativeId: sourceDigest('$serverId\u0000${item.id}'),
+      kind: kind,
+    );
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityKind? _integrationEntityKind(MediaKind kind) => switch (kind) {
+    MediaKind.movie => IntegrationEntityKind.movie,
+    MediaKind.show => IntegrationEntityKind.series,
+    MediaKind.season => IntegrationEntityKind.season,
+    MediaKind.episode => IntegrationEntityKind.episode,
+    MediaKind.artist ||
+    MediaKind.album ||
+    MediaKind.track ||
+    MediaKind.collection ||
+    MediaKind.playlist ||
+    MediaKind.clip ||
+    MediaKind.photo ||
+    MediaKind.folder ||
+    MediaKind.unknown => null,
+  };
+
+  static bool _sameEntity(IntegrationEntityRef left, IntegrationEntityRef right) =>
+      left.providerId == right.providerId &&
+      left.nativeId == right.nativeId &&
+      left.kind == right.kind &&
+      left.editionId == right.editionId;
+
+  static ExternalIds _externalIdsForMedia(MediaItem item) {
+    if (item is PlexMediaItem) {
+      final guids = item.raw?['Guid'];
+      return ExternalIds.fromGuids(guids is List ? guids : const []).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
+    }
+    final providerIds = item.raw?['ProviderIds'];
+    if (providerIds is! Map) return const ExternalIds();
+    return ExternalIds.fromJellyfinProviderIds({
+      for (final entry in providerIds.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    });
   }
 
   Future<DiscoveryChoice?> _choiceForSource(
