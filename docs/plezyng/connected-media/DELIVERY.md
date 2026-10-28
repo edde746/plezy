@@ -38,13 +38,11 @@ source player. It preserves their layouts, playback routes and profile boundarie
 
 Validated with Flutter 3.47.1 and Dart 3.13.1:
 
-- 276 tests passed across deep links, search and relevance, offline readiness,
+- 287 tests passed across 18 test files after rebasing onto merged main: deep
+  links, search and relevance, offline readiness,
   downloads, source playback, database migrations, source state/screens, media
   versions and copy ranking, catalog detail, navigation, main-screen layout and
-  data aggregation.
-- After the final network-aware ranking refinement, 64 tests passed across copy
-  ranking, catalog detail and transcode-quality presets. This run overlaps the
-  earlier regression run; the counts are not a unique-test total.
+  data aggregation, including network-aware ranking and transcode-quality presets.
 - The repository analyzer passed with zero diagnostics, including after the final
   refinement. Localization validation passed for 37 locales and 3,593 messages.
 - `bash scripts/ci_guard_checks.sh` passed, including the deep-link registration
