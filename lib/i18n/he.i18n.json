@@ -2937,7 +2937,11 @@
     "titleHint": "כותרת",
     "yearHint": "שנה",
     "search": "חיפוש",
-    "noMatchesFound": "לא נמצאו משחקים"
+    "noMatchesFound": "לא נמצאו משחקים",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "משימות שרת",
@@ -3011,6 +3015,12 @@
     "title": "שירותים",
     "hubSubtitle": "סינכרון עוקב אחר ההתקדמות ולבקש כותרות חדשות.",
     "integrations": "אינטגרציה",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "לא מחוברים",
     "connectedAs": "קישור כ @${username}",
     "scrobble": "עקוב אחר ההתקדמות באופן אוטומטי",
@@ -3811,6 +3821,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "אישור השרת השמור",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "יש להזין כתובת NFS, למשל nfs://nas:2049/export.",
     "dlnaNone": "לא נמצאו שרתי DLNA. יש להזין ידנית את כתובת תיאור ההתקן.",
     "dlnaServers": "שרתי מדיה של DLNA",

@@ -2912,7 +2912,11 @@
     "titleHint": "Tajuk",
     "yearHint": "Tahun yang",
     "search": "Pencarian",
-    "noMatchesFound": "Tiada perlawanan yang ditemui"
+    "noMatchesFound": "Tiada perlawanan yang ditemui",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Tugas Pelayan",
@@ -2986,6 +2990,12 @@
     "title": "Perkhidmatan",
     "hubSubtitle": "Sync menonton kemajuan dan meminta tajuk baru.",
     "integrations": "Integrasi",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Tidak terhubung",
     "connectedAs": "Terhubung dengan @${username}",
     "scrobble": "Menjejaki kemajuan secara automatik",
@@ -3778,6 +3788,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Sijil pelayan yang disimpan",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Masukkan URL NFS, contohnya nfs://nas:2049/export.",
     "dlnaNone": "Tiada pelayan DLNA ditemukan. Masukkan URL perihalan peranti secara manual.",
     "dlnaServers": "Pelayan media DLNA",

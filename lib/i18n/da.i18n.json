@@ -2933,7 +2933,11 @@
     "titleHint": "Titel",
     "yearHint": "År",
     "search": "Søg",
-    "noMatchesFound": "Ingen match fundet"
+    "noMatchesFound": "Ingen match fundet",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Serveropgaver",
@@ -3007,6 +3011,12 @@
     "title": "Tjenester",
     "hubSubtitle": "Synkroniser dit visningsfremskridt, og anmod om nye titler.",
     "integrations": "Integrationer",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Ikke forbundet",
     "connectedAs": "Forbundet som @${username}",
     "scrobble": "Registrer fremgang automatisk",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Gemt servercertifikat",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Angiv en NFS-URL, f.eks. nfs://nas:2049/export.",
     "dlnaNone": "Ingen DLNA-servere fundet. Angiv URL’en til enhedsbeskrivelsen manuelt.",
     "dlnaServers": "DLNA-medieservere",

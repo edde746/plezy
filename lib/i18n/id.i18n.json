@@ -2912,7 +2912,11 @@
     "titleHint": "Judul",
     "yearHint": "Tahun",
     "search": "Cari",
-    "noMatchesFound": "Tidak ditemukan pertandingan"
+    "noMatchesFound": "Tidak ditemukan pertandingan",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Tugas Server",
@@ -2986,6 +2990,12 @@
     "title": "Layanan",
     "hubSubtitle": "Sync menonton kemajuan dan meminta judul baru.",
     "integrations": "Integrasi",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Tidak terhubung",
     "connectedAs": "Terhubung dengan @${username}",
     "scrobble": "Menjejaki kemajuan secara otomatis",
@@ -3778,6 +3788,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Sertifikat server tersimpan",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Masukkan URL NFS, misalnya nfs://nas:2049/export.",
     "dlnaNone": "Tidak ada server DLNA yang ditemukan. Masukkan URL deskripsi perangkat secara manual.",
     "dlnaServers": "Server media DLNA",

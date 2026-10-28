@@ -2929,7 +2929,11 @@
     "titleHint": "제목",
     "yearHint": "연도",
     "search": "검색",
-    "noMatchesFound": "일치하는 항목이 없습니다"
+    "noMatchesFound": "일치하는 항목이 없습니다",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "서버 작업",
@@ -3003,6 +3007,12 @@
     "title": "서비스",
     "hubSubtitle": "시청 진행률을 동기화하고 새 작품을 요청하세요.",
     "integrations": "연동",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "연결되지 않음",
     "connectedAs": "@${username}(으)로 연결됨",
     "scrobble": "진행률 자동 추적",
@@ -3798,6 +3808,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "저장된 서버 인증서",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export와 같은 NFS URL을 입력하세요.",
     "dlnaNone": "DLNA 서버를 찾지 못했습니다. 장치 설명 URL을 직접 입력하세요.",
     "dlnaServers": "DLNA 미디어 서버",

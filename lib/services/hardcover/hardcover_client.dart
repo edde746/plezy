@@ -80,12 +80,7 @@ class HardcoverRead {
 }
 
 class HardcoverEditionMatch {
-  const HardcoverEditionMatch({
-    required this.editionId,
-    required this.bookId,
-    required this.title,
-    required this.isbn,
-  });
+  const HardcoverEditionMatch({required this.editionId, required this.bookId, required this.title, required this.isbn});
 
   final int editionId;
   final int bookId;
@@ -178,7 +173,9 @@ class HardcoverBookRecord {
     addIdentifiers(edition);
     final activeReads = sourceList(json['active_reads'] ?? json['user_book_reads']).map(sourceMap).toList();
     final recentReads = sourceList(json['latest_reads']).map(sourceMap).toList();
-    final status = json['user_book_status'] is Map ? HardcoverStatus.fromJson(sourceMap(json['user_book_status'])) : null;
+    final status = json['user_book_status'] is Map
+        ? HardcoverStatus.fromJson(sourceMap(json['user_book_status']))
+        : null;
     return HardcoverBookRecord(
       userBookId: sourceInt(json['id']) ?? 0,
       bookId: sourceInt(json['book_id']) ?? sourceInt(book['id']) ?? 0,
@@ -202,7 +199,9 @@ class HardcoverBookRecord {
 /// user's Personal API token and never includes request/response bodies in
 /// errors or logs.
 class HardcoverClient {
-  HardcoverClient({required String token, http.Client? client}) : _token = _cleanToken(token), _client = client ?? http.Client();
+  HardcoverClient({required String token, http.Client? client})
+    : _token = _cleanToken(token),
+      _client = client ?? http.Client();
 
   final String _token;
   final http.Client _client;
@@ -366,7 +365,8 @@ mutation HardcoverUpdateStatus(\$id: Int!, \$statusId: Int!) {
     final isbn = BookIdentifiers.normalize(value);
     if (isbn == null) throw const SourceException(SourceFailure.invalidData);
     final field = isbn.length == 13 ? 'isbn_13' : 'isbn_10';
-    final query = '''
+    final query =
+        '''
 query HardcoverEditionByIsbn(\$isbn: String!) {
   editions(where: {$field: {_eq: \$isbn}}, limit: 10) {
     id isbn_10 isbn_13 book_id book { id title }
@@ -404,11 +404,7 @@ query HardcoverEditionsByIsbn(\$isbn10s: [String!]!, \$isbn13s: [String!]!, \$li
   }
 }
 ''';
-      final data = await _query(query, {
-        'isbn10s': isbn10s,
-        'isbn13s': isbn13s,
-        'limit': resultLimit,
-      });
+      final data = await _query(query, {'isbn10s': isbn10s, 'isbn13s': isbn13s, 'limit': resultLimit});
       final rows = sourceList(data['editions']);
       if (rows.length >= resultLimit) {
         for (final isbn in batch) {

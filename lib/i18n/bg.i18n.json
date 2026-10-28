@@ -2933,7 +2933,11 @@
     "titleHint": "Заглавие",
     "yearHint": "Година",
     "search": "Търсене",
-    "noMatchesFound": "Няма намерени съвпадения"
+    "noMatchesFound": "Няма намерени съвпадения",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Задачи на сървъра",
@@ -3007,6 +3011,12 @@
     "title": "Услуги",
     "hubSubtitle": "Синхронизирай прогреса на гледане и заявявай нови заглавия.",
     "integrations": "Интеграции",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Няма връзка",
     "connectedAs": "Свързан като @${username}",
     "scrobble": "Проследявай прогреса автоматично",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Запазен сертификат на сървъра",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Въведете NFS URL, например nfs://nas:2049/export.",
     "dlnaNone": "Не са намерени DLNA сървъри. Въведете ръчно URL адреса на описанието на устройството.",
     "dlnaServers": "DLNA медийни сървъри",

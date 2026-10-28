@@ -18,11 +18,7 @@ class ComicCommerceLinkClient {
 
   void dispose() => _http.close();
 
-  Future<Uri?> resolve({
-    required String providerId,
-    required Uri destination,
-    String? isbn,
-  }) async {
+  Future<Uri?> resolve({required String providerId, required Uri destination, String? isbn}) async {
     if (destination.scheme != 'https' || destination.userInfo.isNotEmpty || destination.fragment.isNotEmpty) {
       return null;
     }

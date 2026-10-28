@@ -38,7 +38,7 @@ void main() {
 
   testWidgets('NFS setup exposes mount and RPC TLS controls without account fields', (tester) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.physicalSize = const Size(1200, 1600);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     const nfs = FileSource(
@@ -69,7 +69,6 @@ void main() {
     expect(find.text(t.fileSources.username), findsNothing);
     expect(find.text(t.fileSources.password), findsNothing);
 
-    await tester.ensureVisible(find.text(t.sourceSetup.nfsEncryption));
     await tester.tap(find.text(t.sourceSetup.nfsEncryption));
     await tester.pumpAndSettle();
     expect(find.text(t.sourceSetup.nfsTrustCertificate), findsOneWidget);

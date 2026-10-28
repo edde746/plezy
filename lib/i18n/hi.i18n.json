@@ -2933,7 +2933,11 @@
     "titleHint": "शीर्षक",
     "yearHint": "वर्ष",
     "search": "खोज",
-    "noMatchesFound": "कोई मैच नहीं मिला"
+    "noMatchesFound": "कोई मैच नहीं मिला",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "सर्वर कार्य",
@@ -3007,6 +3011,12 @@
     "title": "सेवाएं",
     "hubSubtitle": "सिंक्रनाइज़ेशन प्रगति की निगरानी करता है और नए शीर्षकों की मांग करता है।",
     "integrations": "एकीकरण",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "नहीं जुड़े",
     "connectedAs": "@${username} के रूप में कनेक्ट",
     "scrobble": "प्रगति को स्वचालित रूप से ट्रैक करें",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "सहेजा गया सर्वर प्रमाणपत्र",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export जैसा NFS URL दर्ज करें।",
     "dlnaNone": "कोई DLNA सर्वर नहीं मिला। डिवाइस विवरण का URL खुद दर्ज करें।",
     "dlnaServers": "DLNA मीडिया सर्वर",

@@ -2933,7 +2933,11 @@
     "titleHint": "Nomi",
     "yearHint": "Yil",
     "search": "Qidiruv",
-    "noMatchesFound": "Mosliklar topilmadi"
+    "noMatchesFound": "Mosliklar topilmadi",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Server vazifalari",
@@ -3007,6 +3011,12 @@
     "title": "Xizmatlar",
     "hubSubtitle": "Koʻrish jarayonini sinxronlang va yangi kontent soʻrang.",
     "integrations": "Integratsiyalar",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Ulanmagan",
     "connectedAs": "@${username} sifatida ulandi",
     "scrobble": "Jarayonni avtomatik kuzatish",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Saqlangan server sertifikati",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export kabi NFS URL manzilini kiriting.",
     "dlnaNone": "DLNA serverlari topilmadi. Qurilma tavsifining URL manzilini qo‘lda kiriting.",
     "dlnaServers": "DLNA media serverlari",

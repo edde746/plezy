@@ -2969,7 +2969,11 @@
     "titleHint": "Назва",
     "yearHint": "Рік",
     "search": "Пошук",
-    "noMatchesFound": "Не знайдено матчів"
+    "noMatchesFound": "Не знайдено матчів",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Сервіс завдань",
@@ -3043,6 +3047,12 @@
     "title": "Сервіси",
     "hubSubtitle": "Sync спостерігає за прогресом і запитує нові заголовки.",
     "integrations": "Інтеграції",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Не пов'язані",
     "connectedAs": "Зв'язаний як @${username}",
     "scrobble": "Слідкуйте за прогресом автоматично",
@@ -3847,6 +3857,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Збережений сертифікат сервера",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Введіть URL NFS, наприклад nfs://nas:2049/export.",
     "dlnaNone": "Серверів DLNA не знайдено. Введіть URL опису пристрою вручну.",
     "dlnaServers": "Медіасервери DLNA",

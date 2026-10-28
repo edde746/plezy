@@ -54,11 +54,7 @@ class IdentityCrosswalk {
     final to = _entityFromJson(json['to']);
     final relationName = json['relation'];
     final methodName = json['method'];
-    if (from == null ||
-        to == null ||
-        relationName is! String ||
-        methodName is! String ||
-        json['confirmedAt'] is! int) {
+    if (from == null || to == null || relationName is! String || methodName is! String || json['confirmedAt'] is! int) {
       return null;
     }
     final relation = EntityRelationKind.values.where((value) => value.name == relationName).firstOrNull;
@@ -181,7 +177,12 @@ IntegrationEntityRef? _entityFromJson(Object? value) {
   if (kind == null) return null;
   final editionId = json['editionId'];
   if (editionId != null && editionId is! String) return null;
-  final entity = IntegrationEntityRef(providerId: providerId, nativeId: nativeId, kind: kind, editionId: editionId as String?);
+  final entity = IntegrationEntityRef(
+    providerId: providerId,
+    nativeId: nativeId,
+    kind: kind,
+    editionId: editionId as String?,
+  );
   return entity.isValid ? entity : null;
 }
 

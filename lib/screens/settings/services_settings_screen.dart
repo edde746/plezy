@@ -46,25 +46,23 @@ class ServicesSettingsScreen extends StatelessWidget {
               children: [
                 FocusableListTile(
                   leading: const AppIcon(Symbols.menu_book_rounded, fill: 1),
-                  title: const Text('Hardcover'),
+                  title: Text(t.services.hardcover),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: profileId == null
                       ? null
                       : () => Navigator.push<void>(
                           context,
-                          MaterialPageRoute<void>(builder: (_) => HardcoverSettingsScreen(profileId: profileId!)),
+                          MaterialPageRoute<void>(builder: (_) => HardcoverSettingsScreen(profileId: profileId)),
                         ),
                 ),
                 if (profileId != null)
                   FocusableListTile(
                     leading: const AppIcon(Symbols.link_rounded),
-                    title: const Text('Linked catalog titles'),
+                    title: Text(t.services.linkedCatalogTitles),
                     trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                     onTap: () => Navigator.push<void>(
                       context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => IntegrationMatchesScreen(profileId: profileId),
-                      ),
+                      MaterialPageRoute<void>(builder: (_) => IntegrationMatchesScreen(profileId: profileId)),
                     ),
                   ),
                 FocusableListTile(

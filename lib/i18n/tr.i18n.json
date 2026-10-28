@@ -2933,7 +2933,11 @@
     "titleHint": "Başlık",
     "yearHint": "Yıl",
     "search": "Ara",
-    "noMatchesFound": "Eşleşme bulunamadı"
+    "noMatchesFound": "Eşleşme bulunamadı",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Sunucu Görevleri",
@@ -3007,6 +3011,12 @@
     "title": "Servisler",
     "hubSubtitle": "İzleme ilerlemesini eşitleyin ve yeni başlıklar isteyin.",
     "integrations": "Entegrasyonlar",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Bağlı değil",
     "connectedAs": "@${username} olarak bağlandı",
     "scrobble": "İlerlemeyi otomatik takip et",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Kaydedilmiş sunucu sertifikası",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export gibi bir NFS URL’si girin.",
     "dlnaNone": "DLNA sunucusu bulunamadı. Aygıt açıklamasının URL’sini elle girin.",
     "dlnaServers": "DLNA medya sunucuları",

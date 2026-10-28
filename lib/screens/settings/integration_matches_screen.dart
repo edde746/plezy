@@ -56,7 +56,12 @@ class _IntegrationMatchesScreenState extends State<IntegrationMatchesScreen> {
     try {
       await _store.remove(widget.profileId, match.id);
       if (!mounted || !_isCurrentProfile) return;
-      setState(() => _matches = [for (final row in _matches) if (row.id != match.id) row]);
+      setState(
+        () => _matches = [
+          for (final row in _matches)
+            if (row.id != match.id) row,
+        ],
+      );
     } on Object {
       if (mounted && _isCurrentProfile) showErrorSnackBar(context, t.common.error);
     } finally {
@@ -65,15 +70,15 @@ class _IntegrationMatchesScreenState extends State<IntegrationMatchesScreen> {
   }
 
   String _providerLabel(String providerId) => switch (providerId) {
-    'plex' => 'Plex Discover',
+    'plex' => t.matchScreen.plexDiscover,
     'trakt' => 'Trakt',
     'mal' => 'MyAnimeList',
     'anilist' => 'AniList',
     'simkl' => 'Simkl',
     'mdblist' => 'MDBList',
-    'server.plex' => 'Plex library',
-    'server.jellyfin' => 'Jellyfin library',
-    'server.emby' => 'Emby library',
+    'server.plex' => t.matchScreen.plexLibrary,
+    'server.jellyfin' => t.matchScreen.jellyfinLibrary,
+    'server.emby' => t.matchScreen.embyLibrary,
     _ => providerId,
   };
 

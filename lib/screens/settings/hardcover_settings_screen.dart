@@ -209,7 +209,7 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
     final confirmed = await showScopedDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Hardcover'),
+        title: Text(t.services.hardcover),
         content: Text(t.libraries.confirmActionMessage),
         actions: [
           DialogActionButton(onPressed: () => Navigator.pop(dialogContext, false), label: t.common.cancel),
@@ -747,7 +747,7 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
   Widget build(BuildContext context) {
     final account = _account;
     return FocusedScrollScaffold(
-      title: const Text('Hardcover'),
+      title: Text(t.services.hardcover),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16),

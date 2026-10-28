@@ -43,12 +43,10 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
     }
   }
 
-  Future<Map<String, String>> _saveSession(
-    Map<String, String> saved,
-    Map<String, dynamic> response,
-  ) async {
+  Future<Map<String, String>> _saveSession(Map<String, String> saved, Map<String, dynamic> response) async {
     final user = sourceMap(response['user']);
-    final access = '${user['accessToken'] ?? response['accessToken'] ?? user['token'] ?? response['token'] ?? ''}'.trim();
+    final access = '${user['accessToken'] ?? response['accessToken'] ?? user['token'] ?? response['token'] ?? ''}'
+        .trim();
     final refresh = '${user['refreshToken'] ?? response['refreshToken'] ?? ''}'.trim();
     if (access.isEmpty) throw const SourceException(SourceFailure.authentication);
     final next = Map<String, String>.from(saved);
@@ -112,11 +110,7 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
   Future<Map<String, String>> _performRefresh(Map<String, String> saved) async {
     final refreshToken = saved['refreshToken']?.trim() ?? '';
     if (refreshToken.isEmpty) return _login(saved);
-    final response = await transport.json(
-      'POST',
-      _authUrl('auth/refresh'),
-      headers: {'x-refresh-token': refreshToken},
-    );
+    final response = await transport.json('POST', _authUrl('auth/refresh'), headers: {'x-refresh-token': refreshToken});
     return _saveSession(saved, response);
   }
 
@@ -156,19 +150,10 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
     return {'Authorization': 'Bearer $access'};
   }
 
-  Future<String> _requestText(
-    String method,
-    Uri uri, {
-    Map<String, String> headers = const {},
-    Object? body,
-  }) async {
+  Future<String> _requestText(String method, Uri uri, {Map<String, String> headers = const {}, Object? body}) async {
     var saved = await _authorizedCredentials();
-    Future<String> request(Map<String, String> auth) => transport.text(
-      method,
-      uri,
-      headers: {...auth, ...headers},
-      body: body,
-    );
+    Future<String> request(Map<String, String> auth) =>
+        transport.text(method, uri, headers: {...auth, ...headers}, body: body);
     try {
       return await request(await headersFor(saved));
     } on SourceException catch (error) {
@@ -199,6 +184,7 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
     final saved = await _savedCredentials();
     if (saved['refreshToken']?.isNotEmpty == true || _accessToken(saved) == null) await _renew(saved);
   }
+
   @override
   SourceCapabilities get capabilities =>
       const SourceCapabilities(audioProgress: true, readingProgress: true, annotations: true);

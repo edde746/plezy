@@ -152,14 +152,8 @@ class ExternalAccessDestination {
         IntegrationEntityKind.bookWork,
         IntegrationEntityKind.audiobookEdition,
       },
-      ExternalAccessCategory.comics => const {
-        IntegrationEntityKind.comicSeries,
-        IntegrationEntityKind.comicIssue,
-      },
-      ExternalAccessCategory.music => const {
-        IntegrationEntityKind.musicRelease,
-        IntegrationEntityKind.musicRecording,
-      },
+      ExternalAccessCategory.comics => const {IntegrationEntityKind.comicSeries, IntegrationEntityKind.comicIssue},
+      ExternalAccessCategory.music => const {IntegrationEntityKind.musicRelease, IntegrationEntityKind.musicRecording},
       ExternalAccessCategory.games => const {IntegrationEntityKind.game, IntegrationEntityKind.gameEdition},
     };
     return ProviderDefinition(
@@ -450,10 +444,7 @@ abstract final class ExternalAccessDirectory {
       host: 'therokuchannel.roku.com',
       path: '/search',
       queryParameter: 'query',
-      accessModels: {
-        ProviderAccessModel.freeAdSupported,
-        ProviderAccessModel.subscription,
-      },
+      accessModels: {ProviderAccessModel.freeAdSupported, ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'samsung-tv-plus',

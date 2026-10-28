@@ -52,7 +52,10 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
     final password = saved['password'] ?? '';
     final legacy = username.isNotEmpty && password.isNotEmpty ? _legacyAuth(saved) : null;
     if (_apiKeyRejected && legacy != null) return [legacy];
-    return [if (apiKey.isNotEmpty) {'apiKey': apiKey}, ?legacy];
+    return [
+      if (apiKey.isNotEmpty) {'apiKey': apiKey},
+      ?legacy,
+    ];
   }
 
   Future<Map<String, dynamic>> _request(String method, [Map<String, String> parameters = const {}]) async {
@@ -65,13 +68,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
         'POST',
         _method(method),
         headers: const {'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          ...modes[index],
-          ...parameters,
-          'v': _version,
-          'c': _client,
-          'f': 'json',
-        },
+        body: {...modes[index], ...parameters, 'v': _version, 'c': _client, 'f': 'json'},
       );
       final envelope = sourceMap(response['subsonic-response']);
       if (envelope['status'] == 'ok') return envelope;
@@ -142,9 +139,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
     final rawMime = '${row['contentType'] ?? ''}'.split(';').first.trim().toLowerCase();
     final candidateSuffix = '${row['suffix'] ?? ''}'.trim().toLowerCase().replaceFirst(RegExp(r'^\.'), '');
     final suffix = RegExp(r'^[a-z0-9]{1,8}$').hasMatch(candidateSuffix) ? candidateSuffix : '';
-    final mime = RegExp(r'^audio/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$').hasMatch(rawMime)
-        ? rawMime
-        : _mimeFor(suffix);
+    final mime = RegExp(r'^audio/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$').hasMatch(rawMime) ? rawMime : _mimeFor(suffix);
     final coverId = _validId(row['coverArt']) ? '${row['coverArt']}' : null;
     final extension = suffix.isNotEmpty ? '.$suffix' : _extensionFor(mime);
     final name = title.toLowerCase().endsWith(extension) ? title : '$title$extension';
@@ -165,10 +160,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
       series: '${row['album'] ?? ''}',
       seriesOrder: sourceInt(row['track'])?.toDouble(),
       releaseYear: sourceInt(row['year']),
-      identifiers: {
-        'subsonicId': id,
-        'coverArt': ?coverId,
-      },
+      identifiers: {'subsonicId': id, 'coverArt': ?coverId},
       files: [
         PublicationFile(
           id: id,
@@ -205,7 +197,11 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
 
   List<dynamic> _items(Map<String, dynamic> envelope, String key) => _asList(envelope[key]);
 
-  List<dynamic> _asList(Object? value) => value == null ? const [] : value is List ? value : [value];
+  List<dynamic> _asList(Object? value) => value == null
+      ? const []
+      : value is List
+      ? value
+      : [value];
 
   @override
   Future<SourcePage> browse({String? parent, String? cursor, String? query}) async {
@@ -343,10 +339,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
     final saved = await credentials();
-    return ContentLease(
-      _authenticatedUri('stream', {'id': file.id}, saved),
-      size: file.size,
-    );
+    return ContentLease(_authenticatedUri('stream', {'id': file.id}, saved), size: file.size);
   }
 
   @override

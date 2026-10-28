@@ -3017,7 +3017,11 @@
     "titleHint": "العنوان",
     "yearHint": "السنة",
     "search": "بحث",
-    "noMatchesFound": "لا توجد مباريات"
+    "noMatchesFound": "لا توجد مباريات",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "وظائف الخادم",
@@ -3091,6 +3095,12 @@
     "title": "الخدمات",
     "hubSubtitle": "يراقب Sync التقدم و يطلب عناوين جديدة.",
     "integrations": "الاندماج",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "غير متصل",
     "connectedAs": "اتصلت بـ @${username}",
     "scrobble": "تتبع التقدم تلقائيًا",
@@ -3903,6 +3913,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "شهادة الخادم المحفوظة",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "أدخل عنوان NFS مثل nfs://nas:2049/export.",
     "dlnaNone": "لم يُعثر على خوادم DLNA. أدخل عنوان وصف الجهاز يدويًا.",
     "dlnaServers": "خوادم وسائط DLNA",

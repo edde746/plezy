@@ -20,12 +20,7 @@ import 'app_icon.dart';
 /// detail. The local Read action remains the primary action; these links never
 /// claim that an issue is available, owned, or included in a subscription.
 class ComicCommerceSection extends StatefulWidget {
-  const ComicCommerceSection({
-    super.key,
-    required this.title,
-    this.creator = '',
-    this.identifiers = const {},
-  });
+  const ComicCommerceSection({super.key, required this.title, this.creator = '', this.identifiers = const {}});
 
   final String title;
   final String creator;
@@ -37,8 +32,28 @@ class ComicCommerceSection extends StatefulWidget {
 
 class _ComicCommerceSectionState extends State<ComicCommerceSection> {
   static const _supportedCountries = {
-    'AE', 'AU', 'BE', 'BR', 'CA', 'DE', 'EG', 'ES', 'FR', 'GB', 'IE', 'IN', 'IT', 'JP', 'MX', 'NL', 'PL', 'SA',
-    'SE', 'SG', 'TR', 'US',
+    'AE',
+    'AU',
+    'BE',
+    'BR',
+    'CA',
+    'DE',
+    'EG',
+    'ES',
+    'FR',
+    'GB',
+    'IE',
+    'IN',
+    'IT',
+    'JP',
+    'MX',
+    'NL',
+    'PL',
+    'SA',
+    'SE',
+    'SG',
+    'TR',
+    'US',
   };
   static const _featuredIds = ['globalcomix', 'drive-thru-comics', 'renta-comics', 'gumroad-comics'];
   static const _isbnProviders = {'ebooks-comics', 'bookshop-comics', 'kobo-comics'};
@@ -203,14 +218,18 @@ class _ComicCommerceSectionState extends State<ComicCommerceSection> {
               collapsedShape: const Border(),
               title: Text(t.common.viewAll, style: theme.textTheme.bodyMedium),
               children: [
-                Wrap(spacing: 8, runSpacing: 8, children: [for (final destination in remaining) _storeButton(destination)]),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [for (final destination in remaining) _storeButton(destination)],
+                ),
               ],
             ),
           if (destinations.any((destination) => destination.commerceProviderId != null))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                'PlezyNG may earn a commission from some links.',
+                t.services.commissionDisclosure,
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),

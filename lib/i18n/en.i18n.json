@@ -2933,7 +2933,11 @@
     "titleHint": "Title",
     "yearHint": "Year",
     "search": "Search",
-    "noMatchesFound": "No matches found"
+    "noMatchesFound": "No matches found",
+    "plexDiscover": "Plex Discover",
+    "plexLibrary": "Plex library",
+    "jellyfinLibrary": "Jellyfin library",
+    "embyLibrary": "Emby library"
   },
   "serverTasks": {
     "title": "Server Tasks",
@@ -3007,6 +3011,12 @@
     "title": "Services",
     "hubSubtitle": "Sync watch progress and request new titles.",
     "integrations": "Integrations",
+    "hardcover": "Hardcover",
+    "linkedCatalogTitles": "Linked catalog titles",
+    "planNote": "Optional plan note. This label is only for you; PlezyNG does not verify account access.",
+    "planLabel": "Plan label",
+    "setPlanLabel": "Set plan label",
+    "commissionDisclosure": "PlezyNG may earn a commission from some links.",
     "notConnected": "Not connected",
     "connectedAs": "Connected as @${username}",
     "scrobble": "Track progress automatically",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Saved server certificate",
+    "projectGutenberg": "Project Gutenberg",
     "nfsEndpointInvalid": "Enter an NFS URL such as nfs://nas:2049/export.",
     "dlnaNone": "No DLNA servers found. Enter the device description URL manually.",
     "dlnaServers": "DLNA media servers",

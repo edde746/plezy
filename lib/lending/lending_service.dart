@@ -466,12 +466,7 @@ class LendingService {
       author: sourceMap(data['primaryCreator'])['name'] as String? ?? '',
       cover: optional(sourceMap(images['cover300Wide'] ?? images['cover'])['href'] as String?),
       page: optional(sourceMap(sourceList(data['contentDetails']).firstOrNull)['href'] as String?),
-      identifiers: BookIdentifiers.fromValues([
-        data['identifiers'],
-        data['isbn'],
-        data['isbn10'],
-        data['isbn13'],
-      ]),
+      identifiers: BookIdentifiers.fromValues([data['identifiers'], data['isbn'], data['isbn10'], data['isbn13']]),
       data: data,
       loan: loan,
       hold: hold,

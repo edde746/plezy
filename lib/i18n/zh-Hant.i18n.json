@@ -2929,7 +2929,11 @@
     "titleHint": "標題",
     "yearHint": "年份",
     "search": "搜尋",
-    "noMatchesFound": "找不到符合的配對"
+    "noMatchesFound": "找不到符合的配對",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "伺服器工作",
@@ -3003,6 +3007,12 @@
     "title": "外部服務",
     "hubSubtitle": "同步觀看進度並請求新內容。",
     "integrations": "整合",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "未連線",
     "connectedAs": "已以 @${username} 身分連線",
     "scrobble": "自動同步播放進度",
@@ -3798,6 +3808,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "已儲存的伺服器憑證",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "請輸入 NFS 網址，例如 nfs://nas:2049/export。",
     "dlnaNone": "找不到 DLNA 伺服器。請手動輸入裝置描述檔的網址。",
     "dlnaServers": "DLNA 媒體伺服器",

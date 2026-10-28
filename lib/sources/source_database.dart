@@ -306,8 +306,7 @@ class SourceRepository {
           (uri.hasQuery || uri.pathSegments.any((part) => part == '.' || part == '..'))) {
         throw const SourceException(SourceFailure.permission);
       }
-      if (source.kind == FileSourceKind.podcastRss &&
-          ((uri.path.isNotEmpty && uri.path != '/') || uri.hasQuery)) {
+      if (source.kind == FileSourceKind.podcastRss && ((uri.path.isNotEmpty && uri.path != '/') || uri.hasQuery)) {
         // Podcast feed paths and signed query parameters belong only in the
         // encrypted credential record, never the public source configuration.
         throw const SourceException(SourceFailure.permission);

@@ -2912,7 +2912,11 @@
     "titleHint": "ชื่อเรื่อง",
     "yearHint": "ปี",
     "search": "ค้นหา",
-    "noMatchesFound": "ไม่พบการแข่งขัน"
+    "noMatchesFound": "ไม่พบการแข่งขัน",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "งานเซิร์ฟเวอร์",
@@ -2986,6 +2990,12 @@
     "title": "บริการ",
     "hubSubtitle": "Sync ดูการพัฒนาและขอชื่อใหม่",
     "integrations": "การรวมกัน",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "ไม่เชื่อมต่อ",
     "connectedAs": "เชื่อมต่อที่ @${username}",
     "scrobble": "ติดตามขั้นตอนโดยอัตโนมัติ",
@@ -3778,6 +3788,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "ใบรับรองเซิร์ฟเวอร์ที่บันทึกไว้",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "ป้อน URL ของ NFS เช่น nfs://nas:2049/export.",
     "dlnaNone": "ไม่พบเซิร์ฟเวอร์ DLNA ป้อน URL คำอธิบายอุปกรณ์ด้วยตนเอง",
     "dlnaServers": "เซิร์ฟเวอร์สื่อ DLNA",

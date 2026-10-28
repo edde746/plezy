@@ -564,11 +564,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                 : () => setState(() {
                                     field('endpoint').text = _projectGutenbergOpdsEndpoint;
                                     if (field('name').text.trim().isEmpty) {
-                                      field('name').text = 'Project Gutenberg';
+                                      field('name').text = t.sourceSetup.projectGutenberg;
                                     }
                                   }),
                             icon: const AppIcon(Symbols.menu_book_rounded),
-                            label: const Text('Project Gutenberg'),
+                            label: Text(t.sourceSetup.projectGutenberg),
                           ),
                         ),
                       ),
@@ -639,26 +639,29 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.komga,
                       FileSourceKind.audiobookshelf,
                       FileSourceKind.openSubsonic,
+                      FileSourceKind.nfs,
                       FileSourceKind.smb,
                       FileSourceKind.ftp,
                       FileSourceKind.sftp,
                       FileSourceKind.podcastRss,
                     }.contains(_kind)) ...[
-                      input(
-                        'username',
-                        t.fileSources.username,
-                        required: _kind == FileSourceKind.sftp && widget.existing == null,
-                      ),
-                      input(
-                        'password',
-                        t.fileSources.password,
-                        secret: true,
-                        validator: _kind == FileSourceKind.sftp && widget.existing == null
-                            ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
-                                  ? null
-                                  : t.sourceSetup.passwordOrKey
-                            : null,
-                      ),
+                      if (_kind != FileSourceKind.nfs) ...[
+                        input(
+                          'username',
+                          t.fileSources.username,
+                          required: _kind == FileSourceKind.sftp && widget.existing == null,
+                        ),
+                        input(
+                          'password',
+                          t.fileSources.password,
+                          secret: true,
+                          validator: _kind == FileSourceKind.sftp && widget.existing == null
+                              ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
+                                    ? null
+                                    : t.sourceSetup.passwordOrKey
+                              : null,
+                        ),
+                      ],
                       if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
                       if (_kind == FileSourceKind.sftp) ...[
                         input(

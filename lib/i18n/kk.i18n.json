@@ -2933,7 +2933,11 @@
     "titleHint": "Атауы",
     "yearHint": "Жыл",
     "search": "Іздеу",
-    "noMatchesFound": "Сәйкестіктер табылмады"
+    "noMatchesFound": "Сәйкестіктер табылмады",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Сервер тапсырмалары",
@@ -3007,6 +3011,12 @@
     "title": "Қызметтер",
     "hubSubtitle": "Көру барысын синхрондаңыз және жаңа мазмұн сұраңыз.",
     "integrations": "Интеграциялар",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Қосылмаған",
     "connectedAs": "@${username} ретінде қосылды",
     "scrobble": "Барысты автоматты бақылау",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Сақталған сервер сертификаты",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export сияқты NFS URL мекенжайын енгізіңіз.",
     "dlnaNone": "DLNA серверлері табылмады. Құрылғы сипаттамасының URL мекенжайын қолмен енгізіңіз.",
     "dlnaServers": "DLNA медиа серверлері",

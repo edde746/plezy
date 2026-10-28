@@ -2933,7 +2933,11 @@
     "titleHint": "عنوان",
     "yearHint": "سال",
     "search": "جستجو کردن",
-    "noMatchesFound": "هیچ مسابقه ای یافت نشد"
+    "noMatchesFound": "هیچ مسابقه ای یافت نشد",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "کارهای سرور",
@@ -3007,6 +3011,12 @@
     "title": "خدمات",
     "hubSubtitle": "Sync پیشرفت را مشاهده می کند و از عنوان های جدید درخواست می کند.",
     "integrations": "ادغام",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "نه متصل",
     "connectedAs": "به عنوان @${username} متصل شده است",
     "scrobble": "پیشرفت خودکار را ردیابی کنید",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "گواهی ذخیره‌شدهٔ سرور",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "یک نشانی NFS مانند nfs://nas:2049/export وارد کنید.",
     "dlnaNone": "سرور DLNA پیدا نشد. نشانی توضیحات دستگاه را دستی وارد کنید.",
     "dlnaServers": "سرورهای رسانهٔ DLNA",

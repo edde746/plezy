@@ -176,13 +176,13 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Optional plan note. This is your label only; PlezyNG does not verify account access.'),
+            Text(t.services.planNote),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               autofocus: true,
               maxLength: 80,
-              decoration: const InputDecoration(labelText: 'Plan label'),
+              decoration: InputDecoration(labelText: t.services.planLabel),
             ),
           ],
         ),
@@ -403,7 +403,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                                   ),
                                 ),
                                 IconButton(
-                                  tooltip: 'Set plan label',
+                                  tooltip: t.services.setPlanLabel,
                                   onPressed: () => unawaited(_editTier(destination)),
                                   icon: const AppIcon(Symbols.edit_rounded),
                                 ),

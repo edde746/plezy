@@ -2975,7 +2975,11 @@
     "titleHint": "Название",
     "yearHint": "Год",
     "search": "Поиск",
-    "noMatchesFound": "Совпадений не найдено"
+    "noMatchesFound": "Совпадений не найдено",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Задачи сервера",
@@ -3049,6 +3053,12 @@
     "title": "Сервисы",
     "hubSubtitle": "Синхронизируйте прогресс просмотра и запрашивайте новые фильмы и сериалы.",
     "integrations": "Интеграции",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Не подключено",
     "connectedAs": "Подключено как @${username}",
     "scrobble": "Автоматически отслеживать прогресс",
@@ -3853,6 +3863,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Сохранённый сертификат сервера",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Введите URL NFS, например nfs://nas:2049/export.",
     "dlnaNone": "Серверы DLNA не найдены. Введите URL описания устройства вручную.",
     "dlnaServers": "Медиасерверы DLNA",

@@ -11,50 +11,36 @@ import 'package:plezy/sources/source_transport.dart';
 
 void main() {
   test('source transport decodes top-level JSON arrays', () async {
-    final transport = SourceTransport(
-      client: MockClient((_) async => http.Response('[{"type":"movie"}]', 200)),
-    );
-    expect(
-      await transport.jsonValue(
-        'GET',
-        Uri.parse('https://catalog.example/search'),
-      ),
-      [
-        {'type': 'movie'},
-      ],
-    );
+    final transport = SourceTransport(client: MockClient((_) async => http.Response('[{"type":"movie"}]', 200)));
+    expect(await transport.jsonValue('GET', Uri.parse('https://catalog.example/search')), [
+      {'type': 'movie'},
+    ]);
     transport.close();
   });
 
-  test(
-    'stream-only publication files round-trip without changing identity',
-    () {
-      const streamed = PublicationFile(
-        id: 'stable-id',
-        name: 'book.cbz',
-        mimeType: 'application/vnd.comicbook+zip',
-        revision: 'revision-1',
-        size: 42,
-        streamOnly: true,
-      );
-      const archived = PublicationFile(
-        id: 'stable-id',
-        name: 'book.cbz',
-        mimeType: 'application/vnd.comicbook+zip',
-        revision: 'revision-1',
-        size: 42,
-      );
+  test('stream-only publication files round-trip without changing identity', () {
+    const streamed = PublicationFile(
+      id: 'stable-id',
+      name: 'book.cbz',
+      mimeType: 'application/vnd.comicbook+zip',
+      revision: 'revision-1',
+      size: 42,
+      streamOnly: true,
+    );
+    const archived = PublicationFile(
+      id: 'stable-id',
+      name: 'book.cbz',
+      mimeType: 'application/vnd.comicbook+zip',
+      revision: 'revision-1',
+      size: 42,
+    );
 
-      final restored = PublicationFile.fromJson(streamed.toJson());
-      expect(restored.streamOnly, isTrue);
-      expect(restored.fingerprint, archived.fingerprint);
-      expect(PublicationFile.fromJson(archived.toJson()).streamOnly, isFalse);
-      expect(
-        archived.fingerprint,
-        '7aa359edddc5b08b8c0bfc311d9c7e605c5a277f17db26c1c9b5d0827a0f226a',
-      );
-    },
-  );
+    final restored = PublicationFile.fromJson(streamed.toJson());
+    expect(restored.streamOnly, isTrue);
+    expect(restored.fingerprint, archived.fingerprint);
+    expect(PublicationFile.fromJson(archived.toJson()).streamOnly, isFalse);
+    expect(archived.fingerprint, '7aa359edddc5b08b8c0bfc311d9c7e605c5a277f17db26c1c9b5d0827a0f226a');
+  });
 
   test('cross-origin redirects strip authentication', () async {
     final requests = <http.Request>[];
@@ -62,22 +48,14 @@ void main() {
       client: MockClient((r) async {
         requests.add(r);
         return requests.length == 1
-            ? http.Response(
-                '',
-                302,
-                headers: {'location': 'https://cdn.example/file'},
-              )
+            ? http.Response('', 302, headers: {'location': 'https://cdn.example/file'})
             : http.Response('audio', 200);
       }),
     );
     await transport.text(
       'GET',
       Uri.parse('https://drive.example/file'),
-      headers: {
-        'Authorization': 'Bearer secret',
-        'Cookie': 'secret',
-        'Range': 'bytes=1-',
-      },
+      headers: {'Authorization': 'Bearer secret', 'Cookie': 'secret', 'Range': 'bytes=1-'},
       redirects: true,
     );
     expect(requests.last.headers.containsKey('Authorization'), isFalse);
@@ -85,30 +63,17 @@ void main() {
     expect(requests.last.headers['Range'], 'bytes=1-');
     transport.close();
   });
-  test(
-    'HTTPS redirect cannot downgrade even when LAN HTTP is allowed',
-    () async {
-      final transport = SourceTransport(
-        allowHttp: true,
-        client: MockClient(
-          (r) async => http.Response(
-            '',
-            302,
-            headers: {'location': 'http://example/file'},
-          ),
-        ),
-      );
-      await expectLater(
-        transport.text(
-          'GET',
-          Uri.parse('https://example/file'),
-          redirects: true,
-        ),
-        throwsA(isA<SourceException>()),
-      );
-      transport.close();
-    },
-  );
+  test('HTTPS redirect cannot downgrade even when LAN HTTP is allowed', () async {
+    final transport = SourceTransport(
+      allowHttp: true,
+      client: MockClient((r) async => http.Response('', 302, headers: {'location': 'http://example/file'})),
+    );
+    await expectLater(
+      transport.text('GET', Uri.parse('https://example/file'), redirects: true),
+      throwsA(isA<SourceException>()),
+    );
+    transport.close();
+  });
   test('OneDrive resolves fresh download URL without passing Graph credentials to CDN', () async {
     var calls = 0;
     final transport = SourceTransport(
@@ -116,29 +81,17 @@ void main() {
         calls++;
         expect(r.headers['Authorization'], 'Bearer private');
         return http.Response(
-          jsonEncode({
-            '@microsoft.graph.downloadUrl': 'https://cdn.example/signed-$calls',
-            'size': 12,
-          }),
+          jsonEncode({'@microsoft.graph.downloadUrl': 'https://cdn.example/signed-$calls', 'size': 12}),
           200,
         );
       }),
     );
     final source = OneDriveSourceAdapter(
-      const FileSource(
-        id: 'one',
-        profileId: 'p',
-        kind: FileSourceKind.oneDrive,
-        name: 'One',
-      ),
+      const FileSource(id: 'one', profileId: 'p', kind: FileSourceKind.oneDrive, name: 'One'),
       transport,
       ({bool refresh = false}) async => 'private',
     );
-    const file = PublicationFile(
-      id: 'item',
-      name: 'book.m4b',
-      mimeType: 'audio/mp4',
-    );
+    const file = PublicationFile(id: 'item', name: 'book.m4b', mimeType: 'audio/mp4');
     final a = await source.resolve(file), b = await source.resolve(file);
     expect(a.headers, isEmpty);
     expect(b.headers, isEmpty);
@@ -149,18 +102,11 @@ void main() {
     var calls = 0;
     final refreshes = <bool>[];
     final source = GoogleDriveSourceAdapter(
-      const FileSource(
-        id: 'g',
-        profileId: 'p',
-        kind: FileSourceKind.googleDrive,
-        name: 'Drive',
-      ),
+      const FileSource(id: 'g', profileId: 'p', kind: FileSourceKind.googleDrive, name: 'Drive'),
       SourceTransport(
         client: MockClient((r) async {
           calls++;
-          return calls == 1
-              ? http.Response('', 401)
-              : http.Response('{"files":[]}', 200);
+          return calls == 1 ? http.Response('', 401) : http.Response('{"files":[]}', 200);
         }),
       ),
       ({bool refresh = false}) async {
@@ -194,11 +140,9 @@ void main() {
                         'metadata': {'title': 'Book', 'identifier': 'book-1'},
                         'links': [
                           {
-                            'rel':
-                                'http://opds-spec.org/acquisition/open-access',
+                            'rel': 'http://opds-spec.org/acquisition/open-access',
                             'type': 'application/epub+zip',
-                            'href':
-                                'https://cdn.example/book?signature=private',
+                            'href': 'https://cdn.example/book?signature=private',
                           },
                         ],
                       },
@@ -211,54 +155,48 @@ void main() {
       () async => {'username': 'u', 'password': 'p'},
     );
     final page = await source.browse(), file = page.entries.single.files.single;
-    expect(
-      jsonEncode(page.entries.single.toJson()),
-      isNot(contains('signature=private')),
-    );
+    expect(jsonEncode(page.entries.single.toJson()), isNot(contains('signature=private')));
     final lease = await source.resolve(file);
     expect(lease.headers, isEmpty);
     removed = true;
     await expectLater(source.resolve(file), throwsA(isA<SourceException>()));
     source.close();
   });
-  test(
-    'OPDS does not treat borrowing or purchases as downloadable files',
-    () async {
-      final source = OpdsSourceAdapter(
-        const FileSource(
-          id: 'o',
-          profileId: 'p',
-          kind: FileSourceKind.opds,
-          name: 'Books',
-          endpoint: 'https://example/feed',
-        ),
-        SourceTransport(
-          client: MockClient(
-            (_) async => http.Response(
-              jsonEncode({
-                'publications': [
-                  {
-                    'metadata': {'title': 'Loan', 'identifier': 'id'},
-                    'links': [
-                      {
-                        'rel': 'http://opds-spec.org/acquisition/borrow',
-                        'type': 'application/epub+zip',
-                        'href': '/checkout',
-                      },
-                    ],
-                  },
-                ],
-              }),
-              200,
-            ),
+  test('OPDS does not treat borrowing or purchases as downloadable files', () async {
+    final source = OpdsSourceAdapter(
+      const FileSource(
+        id: 'o',
+        profileId: 'p',
+        kind: FileSourceKind.opds,
+        name: 'Books',
+        endpoint: 'https://example/feed',
+      ),
+      SourceTransport(
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'publications': [
+                {
+                  'metadata': {'title': 'Loan', 'identifier': 'id'},
+                  'links': [
+                    {
+                      'rel': 'http://opds-spec.org/acquisition/borrow',
+                      'type': 'application/epub+zip',
+                      'href': '/checkout',
+                    },
+                  ],
+                },
+              ],
+            }),
+            200,
           ),
         ),
-        () async => {},
-      );
-      expect((await source.browse()).entries, isEmpty);
-      source.close();
-    },
-  );
+      ),
+      () async => {},
+    );
+    expect((await source.browse()).entries, isEmpty);
+    source.close();
+  });
   test('OPDS marks provider-declared samples as isolated previews', () async {
     final source = OpdsSourceAdapter(
       const FileSource(
@@ -274,10 +212,7 @@ void main() {
             jsonEncode({
               'publications': [
                 {
-                  'metadata': {
-                    'title': 'Sampled book',
-                    'identifier': '9780306406157',
-                  },
+                  'metadata': {'title': 'Sampled book', 'identifier': '9780306406157'},
                   'links': [
                     {
                       'rel': 'http://opds-spec.org/acquisition http://opds-spec.org/acquisition/sample',
@@ -310,18 +245,11 @@ void main() {
     expect(files.first.toJson(), containsPair('sampleOnly', true));
     expect(files.first.toJson(), isNot(contains('sample')));
     expect(
-      PublicationFile.fromJson({
-        'id': 'legacy',
-        'name': 'sample.epub',
-        'sample': true,
-      }).sampleOnly,
+      PublicationFile.fromJson({'id': 'legacy', 'name': 'sample.epub', 'sample': true}).sampleOnly,
       isTrue,
       reason: 'cached data from the earlier sample schema remains preview-only',
     );
-    expect(
-      (await source.browse()).entries.single.identifiers,
-      containsPair('isbn13', '9780306406157'),
-    );
+    expect((await source.browse()).entries.single.identifiers, containsPair('isbn13', '9780306406157'));
     source.close();
   });
   test('WebDAV rejects traversal and external origins', () {
@@ -363,11 +291,7 @@ void main() {
         client: MockClient((r) async {
           requests.add(r);
           return r.method == 'GET'
-              ? http.Response(
-                  '{"version":1,"annotations":[{"id":"existing"}]}',
-                  200,
-                  headers: {'etag': '"revision1"'},
-                )
+              ? http.Response('{"version":1,"annotations":[{"id":"existing"}]}', 200, headers: {'etag': '"revision1"'})
               : http.Response('', 204);
         }),
       ),
@@ -389,10 +313,7 @@ void main() {
     await source.readProgress(entry, progress);
     await source.writeProgress(entry, progress);
     expect(requests.map((request) => request.method), ['GET', 'PUT']);
-    expect(
-      requests.last.url.path,
-      matches(RegExp(r'^/books/\.state/[a-f0-9]{64}\.json$')),
-    );
+    expect(requests.last.url.path, matches(RegExp(r'^/books/\.state/[a-f0-9]{64}\.json$')));
     expect(requests.last.url.path, isNot(contains('book.epub')));
     expect(requests.last.headers['If-Match'], '"revision1"');
     expect(jsonDecode(requests.last.body)['annotations'], hasLength(1));

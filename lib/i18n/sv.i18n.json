@@ -2933,7 +2933,11 @@
     "titleHint": "Titel",
     "yearHint": "År",
     "search": "Sök",
-    "noMatchesFound": "Inga matchningar hittades"
+    "noMatchesFound": "Inga matchningar hittades",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Serveruppgifter",
@@ -3007,6 +3011,12 @@
     "title": "Tjänster",
     "hubSubtitle": "Synkronisera visningsstatus och begär nya titlar.",
     "integrations": "Integrationer",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Inte ansluten",
     "connectedAs": "Ansluten som @${username}",
     "scrobble": "Spåra uppspelningen automatiskt",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Sparat servercertifikat",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Ange en NFS-URL, till exempel nfs://nas:2049/export.",
     "dlnaNone": "Inga DLNA-servrar hittades. Ange URL:en till enhetsbeskrivningen manuellt.",
     "dlnaServers": "DLNA-medieservrar",

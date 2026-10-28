@@ -2929,7 +2929,11 @@
     "titleHint": "标题",
     "yearHint": "年份",
     "search": "搜索",
-    "noMatchesFound": "未找到匹配项"
+    "noMatchesFound": "未找到匹配项",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "服务器任务",
@@ -3003,6 +3007,12 @@
     "title": "服务",
     "hubSubtitle": "同步观看进度并请求新内容。",
     "integrations": "集成",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "未连接",
     "connectedAs": "已以 @${username} 身份连接",
     "scrobble": "自动记录进度",
@@ -3798,6 +3808,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "已保存的服务器证书",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "请输入 NFS 地址，例如 nfs://nas:2049/export。",
     "dlnaNone": "未找到 DLNA 服务器。请手动输入设备描述文件的地址。",
     "dlnaServers": "DLNA 媒体服务器",

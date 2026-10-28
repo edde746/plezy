@@ -2929,7 +2929,11 @@
     "titleHint": "タイトル",
     "yearHint": "年",
     "search": "検索",
-    "noMatchesFound": "一致する項目がありません"
+    "noMatchesFound": "一致する項目がありません",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "サーバータスク",
@@ -3003,6 +3007,12 @@
     "title": "サービス",
     "hubSubtitle": "視聴の進捗を同期して、新しいタイトルをリクエストします。",
     "integrations": "インテグレーション",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "未接続",
     "connectedAs": "@${username} として接続済み",
     "scrobble": "進捗を自動で記録",
@@ -3798,6 +3808,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "保存済みのサーバー証明書",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export のような NFS URL を入力してください。",
     "dlnaNone": "DLNA サーバーが見つかりませんでした。デバイス記述の URL を手動で入力してください。",
     "dlnaServers": "DLNA メディアサーバー",

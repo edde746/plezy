@@ -2912,7 +2912,11 @@
     "titleHint": "Tiêu đề",
     "yearHint": "Năm",
     "search": "Tìm kiếm",
-    "noMatchesFound": "Không tìm thấy trận đấu"
+    "noMatchesFound": "Không tìm thấy trận đấu",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Server nhiệm vụ",
@@ -2986,6 +2990,12 @@
     "title": "Dịch vụ",
     "hubSubtitle": "Sync theo dõi tiến bộ và yêu cầu các tiêu đề mới.",
     "integrations": "Integration",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Không liên kết",
     "connectedAs": "Kết nối với @${username}",
     "scrobble": "Theo dõi tiến bộ tự động",
@@ -3778,6 +3788,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Chứng chỉ máy chủ đã lưu",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Nhập URL NFS, chẳng hạn nfs://nas:2049/export.",
     "dlnaNone": "Không tìm thấy máy chủ DLNA. Hãy nhập thủ công URL mô tả thiết bị.",
     "dlnaServers": "Máy chủ đa phương tiện DLNA",

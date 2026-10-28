@@ -48,21 +48,13 @@ class SourceException implements Exception {
   String toString() => 'SourceException(${reason.name}, $status)';
 }
 
-String sourceKey(String sourceId, String itemId) =>
-    jsonEncode([sourceId, itemId]);
-String sourceDigest(String value) =>
-    sha256.convert(utf8.encode(value)).toString();
-String sourceOrigin(Uri uri) => Uri(
-  scheme: uri.scheme,
-  host: uri.host,
-  port: uri.hasPort ? uri.port : null,
-).toString();
+String sourceKey(String sourceId, String itemId) => jsonEncode([sourceId, itemId]);
+String sourceDigest(String value) => sha256.convert(utf8.encode(value)).toString();
+String sourceOrigin(Uri uri) => Uri(scheme: uri.scheme, host: uri.host, port: uri.hasPort ? uri.port : null).toString();
 
-Map<String, dynamic> sourceMap(Object? value) =>
-    value is Map ? Map<String, dynamic>.from(value) : {};
+Map<String, dynamic> sourceMap(Object? value) => value is Map ? Map<String, dynamic>.from(value) : {};
 List<dynamic> sourceList(Object? value) => value is List ? value : const [];
-int? sourceInt(Object? value) =>
-    value is num ? value.toInt() : int.tryParse('$value');
+int? sourceInt(Object? value) => value is num ? value.toInt() : int.tryParse('$value');
 
 /// Signed acquisition URLs are transient. Public connection/catalogue records
 /// must not accidentally retain credentials pasted into a URL.
@@ -90,10 +82,7 @@ Uri validateSmbSourceEndpoint(String value) {
     final pathStart = value.indexOf('/', schemeEnd + 3);
     if (pathStart >= 0) {
       final pathEnd = value.indexOf(RegExp(r'[?#]'), pathStart);
-      rawPath = value.substring(
-        pathStart + 1,
-        pathEnd < 0 ? value.length : pathEnd,
-      );
+      rawPath = value.substring(pathStart + 1, pathEnd < 0 ? value.length : pathEnd);
     }
   }
   var unsafeRawSegment = false;
@@ -114,9 +103,7 @@ Uri validateSmbSourceEndpoint(String value) {
     }
   }
   final uri = Uri.tryParse(value);
-  final shares =
-      uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ??
-      const <String>[];
+  final shares = uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ?? const <String>[];
   if (unsafeRawSegment ||
       uri == null ||
       uri.scheme != 'smb' ||
@@ -175,8 +162,7 @@ class FileSource {
     name: json['name'] as String,
     endpoint: json['endpoint'] as String? ?? '',
     root: json['root'] as String? ?? '',
-    options: sourceMap(json['options'])
-        .map((key, value) => MapEntry(key, '$value')),
+    options: sourceMap(json['options']).map((key, value) => MapEntry(key, '$value')),
   );
 }
 
@@ -232,9 +218,7 @@ class PublicationFile {
         SourceItemKind.video,
       }.contains(kind);
   // Delivery permissions do not change the content edition or its saved progress.
-  String get fingerprint => sourceDigest(
-    jsonEncode(sampleOnly ? [id, revision, size, true] : [id, revision, size]),
-  );
+  String get fingerprint => sourceDigest(jsonEncode(sampleOnly ? [id, revision, size, true] : [id, revision, size]));
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -261,19 +245,11 @@ class PublicationFile {
 }
 
 class BookChapter {
-  const BookChapter({
-    required this.title,
-    required this.startMs,
-    required this.endMs,
-  });
+  const BookChapter({required this.title, required this.startMs, required this.endMs});
   final String title;
   final int startMs;
   final int endMs;
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'startMs': startMs,
-    'endMs': endMs,
-  };
+  Map<String, dynamic> toJson() => {'title': title, 'startMs': startMs, 'endMs': endMs};
   factory BookChapter.fromJson(Map<String, dynamic> j) => BookChapter(
     title: j['title'] as String? ?? '',
     startMs: sourceInt(j['startMs']) ?? 0,
@@ -383,10 +359,8 @@ class SourceEntry {
     onlinePosterUrl: onlinePosterUrl ?? this.onlinePosterUrl,
     trailerUrl: trailerUrl ?? this.trailerUrl,
     cast: cast ?? this.cast,
-    onlineMetadataProvider:
-        onlineMetadataProvider ?? this.onlineMetadataProvider,
-    onlineMetadataCheckedAt:
-        onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
+    onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
+    onlineMetadataCheckedAt: onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
     unavailable: unavailable ?? this.unavailable,
   );
 
@@ -406,22 +380,11 @@ class SourceEntry {
     return isFilename ? p.withoutExtension(title) : title;
   }
 
-  List<PublicationFile> get sampleFiles =>
-      files.where((f) => f.sampleOnly).toList(growable: false);
-  List<PublicationFile> get ebooks => files
-      .where(
-        (f) =>
-            !f.sampleOnly &&
-            (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic),
-      )
-      .toList();
+  List<PublicationFile> get sampleFiles => files.where((f) => f.sampleOnly).toList(growable: false);
+  List<PublicationFile> get ebooks =>
+      files.where((f) => !f.sampleOnly && (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
   List<PublicationFile> get audio => files
-      .where(
-        (f) =>
-            !f.sampleOnly &&
-            (f.kind == SourceItemKind.music ||
-                f.kind == SourceItemKind.audiobook),
-      )
+      .where((f) => !f.sampleOnly && (f.kind == SourceItemKind.music || f.kind == SourceItemKind.audiobook))
       .toList();
   Map<String, dynamic> toJson() => {
     'sourceId': sourceId,
@@ -447,10 +410,8 @@ class SourceEntry {
     if (onlinePosterUrl != null) 'onlinePosterUrl': onlinePosterUrl,
     if (trailerUrl != null) 'trailerUrl': trailerUrl,
     if (cast.isNotEmpty) 'cast': cast,
-    if (onlineMetadataProvider != null)
-      'onlineMetadataProvider': onlineMetadataProvider,
-    if (onlineMetadataCheckedAt != null)
-      'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
+    if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
+    if (onlineMetadataCheckedAt != null) 'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
     if (unavailable) 'unavailable': true,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
@@ -466,12 +427,8 @@ class SourceEntry {
     description: j['description'] as String? ?? '',
     language: j['language'] as String? ?? '',
     coverId: j['coverId'] as String?,
-    files: sourceList(j['files'])
-        .map((f) => PublicationFile.fromJson(sourceMap(f)))
-        .toList(),
-    chapters: sourceList(j['chapters'])
-        .map((c) => BookChapter.fromJson(sourceMap(c)))
-        .toList(),
+    files: sourceList(j['files']).map((f) => PublicationFile.fromJson(sourceMap(f))).toList(),
+    chapters: sourceList(j['chapters']).map((c) => BookChapter.fromJson(sourceMap(c))).toList(),
     identifiers: sourceMap(j['identifiers']).map((k, v) => MapEntry(k, '$v')),
     releaseYear: sourceInt(j['releaseYear']),
     rating: (j['rating'] as num?)?.toDouble(),
@@ -543,12 +500,7 @@ class ContentLease {
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
         uri.toString().length > 8192 ||
-        !const {
-          's3',
-          'googleDrive',
-          'oneDrive',
-          'dropbox',
-        }.contains(refresh['provider'])) {
+        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox'}.contains(refresh['provider'])) {
       return false;
     }
     try {
@@ -587,8 +539,7 @@ class ContentLease {
       } else if (name != 'if-match') {
         return false;
       }
-      if (entry.value.length > 8192 ||
-          RegExp(r'[\x00-\x1f\x7f]').hasMatch(entry.key + entry.value)) {
+      if (entry.value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(entry.key + entry.value)) {
         return false;
       }
     }
@@ -598,12 +549,7 @@ class ContentLease {
 
 /// Provider-native byte stream for sources without an HTTP media URL.
 class SourceByteStream {
-  const SourceByteStream({
-    required this.stream,
-    required this.size,
-    required this.offset,
-    required this.length,
-  });
+  const SourceByteStream({required this.stream, required this.size, required this.offset, required this.length});
   final Stream<List<int>> stream;
   final int size;
   final int offset;
@@ -611,25 +557,13 @@ class SourceByteStream {
 }
 
 class ReadingLocator {
-  const ReadingLocator({
-    required this.href,
-    this.cfi,
-    this.progression = 0,
-    this.page,
-    this.text = '',
-  });
+  const ReadingLocator({required this.href, this.cfi, this.progression = 0, this.page, this.text = ''});
   final String href;
   final String? cfi;
   final double progression;
   final int? page;
   final String text;
-  Map<String, dynamic> toJson() => {
-    'href': href,
-    'cfi': cfi,
-    'progression': progression,
-    'page': page,
-    'text': text,
-  };
+  Map<String, dynamic> toJson() => {'href': href, 'cfi': cfi, 'progression': progression, 'page': page, 'text': text};
   factory ReadingLocator.fromJson(Map<String, dynamic> j) => ReadingLocator(
     href: j['href'] as String? ?? '',
     cfi: j['cfi'] as String?,
@@ -714,25 +648,21 @@ class PublicationProgress {
     'speed': speed,
     'updatedAt': updatedAt,
   };
-  factory PublicationProgress.fromJson(Map<String, dynamic> j) =>
-      PublicationProgress(
-        entryKey: j['entryKey'] as String,
-        edition: j['edition'] as String,
-        mode: PublicationMode.values.byName(j['mode'] as String),
-        session: j['session'] as String,
-        revision: sourceInt(j['revision']) ?? 0,
-        positionMs: sourceInt(j['positionMs']) ?? 0,
-        fileIndex: sourceInt(j['fileIndex']) ?? 0,
-        filePositionMs:
-            sourceInt(j['filePositionMs']) ?? sourceInt(j['positionMs']) ?? 0,
-        locator: j['locator'] == null
-            ? null
-            : ReadingLocator.fromJson(sourceMap(j['locator'])),
-        fraction: ((j['fraction'] as num?)?.toDouble() ?? 0).clamp(0, 1),
-        finished: j['finished'] as bool? ?? false,
-        speed: ((j['speed'] as num?)?.toDouble() ?? 1).clamp(.25, 8),
-        updatedAt: sourceInt(j['updatedAt']) ?? 0,
-      );
+  factory PublicationProgress.fromJson(Map<String, dynamic> j) => PublicationProgress(
+    entryKey: j['entryKey'] as String,
+    edition: j['edition'] as String,
+    mode: PublicationMode.values.byName(j['mode'] as String),
+    session: j['session'] as String,
+    revision: sourceInt(j['revision']) ?? 0,
+    positionMs: sourceInt(j['positionMs']) ?? 0,
+    fileIndex: sourceInt(j['fileIndex']) ?? 0,
+    filePositionMs: sourceInt(j['filePositionMs']) ?? sourceInt(j['positionMs']) ?? 0,
+    locator: j['locator'] == null ? null : ReadingLocator.fromJson(sourceMap(j['locator'])),
+    fraction: ((j['fraction'] as num?)?.toDouble() ?? 0).clamp(0, 1),
+    finished: j['finished'] as bool? ?? false,
+    speed: ((j['speed'] as num?)?.toDouble() ?? 1).clamp(.25, 8),
+    updatedAt: sourceInt(j['updatedAt']) ?? 0,
+  );
 }
 
 class BookAnnotation {
@@ -784,9 +714,7 @@ class BookAnnotation {
     entryKey: j['entryKey'] as String,
     edition: j['edition'] as String,
     mode: PublicationMode.values.byName(j['mode'] as String),
-    locator: j['locator'] == null
-        ? null
-        : ReadingLocator.fromJson(sourceMap(j['locator'])),
+    locator: j['locator'] == null ? null : ReadingLocator.fromJson(sourceMap(j['locator'])),
     positionMs: sourceInt(j['positionMs']),
     fileIndex: sourceInt(j['fileIndex']),
     filePositionMs: sourceInt(j['filePositionMs']),
@@ -803,8 +731,7 @@ SourceItemKind classifySourceFile(String name, [String mime = '']) {
   if (ext == '.cbz' || mime == 'application/vnd.comicbook+zip') {
     return SourceItemKind.comic;
   }
-  if (const {'.epub', '.pdf'}.contains(ext) ||
-      const {'application/epub+zip', 'application/pdf'}.contains(mime)) {
+  if (const {'.epub', '.pdf'}.contains(ext) || const {'application/epub+zip', 'application/pdf'}.contains(mime)) {
     return SourceItemKind.ebook;
   }
   if (ext == '.m4b') return SourceItemKind.audiobook;

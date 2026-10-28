@@ -9,7 +9,11 @@ import '../utils/serial_future_queue.dart';
 /// User-declared service choices. These are relevance hints only; they never
 /// verify a subscription, ownership, loan or provider entitlement.
 class IntegrationPreferences {
-  const IntegrationPreferences({this.countryCode, this.preferredProviderIds = const [], this.subscriptionTiers = const {}});
+  const IntegrationPreferences({
+    this.countryCode,
+    this.preferredProviderIds = const [],
+    this.subscriptionTiers = const {},
+  });
 
   final String? countryCode;
   final List<String> preferredProviderIds;

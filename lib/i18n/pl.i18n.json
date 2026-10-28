@@ -2975,7 +2975,11 @@
     "titleHint": "Tytuł",
     "yearHint": "Rok",
     "search": "Szukaj",
-    "noMatchesFound": "Nie znaleziono dopasowań"
+    "noMatchesFound": "Nie znaleziono dopasowań",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Zadania serwera",
@@ -3049,6 +3053,12 @@
     "title": "Usługi",
     "hubSubtitle": "Synchronizuj postęp oglądania i zamawiaj nowe tytuły.",
     "integrations": "Integracje",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Nie połączono",
     "connectedAs": "Połączono jako @${username}",
     "scrobble": "Automatycznie śledź postęp",
@@ -3853,6 +3863,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Zapisany certyfikat serwera",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Wprowadź adres NFS, np. nfs://nas:2049/export.",
     "dlnaNone": "Nie znaleziono serwerów DLNA. Wprowadź ręcznie adres URL opisu urządzenia.",
     "dlnaServers": "Serwery multimediów DLNA",

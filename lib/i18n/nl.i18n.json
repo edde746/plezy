@@ -2933,7 +2933,11 @@
     "titleHint": "Titel",
     "yearHint": "Jaar",
     "search": "Zoeken",
-    "noMatchesFound": "Geen overeenkomsten gevonden"
+    "noMatchesFound": "Geen overeenkomsten gevonden",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Servertaken",
@@ -3007,6 +3011,12 @@
     "title": "Diensten",
     "hubSubtitle": "Synchroniseer kijkvoortgang en vraag nieuwe titels aan.",
     "integrations": "Integraties",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Niet verbonden",
     "connectedAs": "Verbonden als @${username}",
     "scrobble": "Voortgang automatisch volgen",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Opgeslagen servercertificaat",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Voer een NFS-URL in, zoals nfs://nas:2049/export.",
     "dlnaNone": "Geen DLNA-servers gevonden. Voer de URL van de apparaatbeschrijving handmatig in.",
     "dlnaServers": "DLNA-mediaservers",

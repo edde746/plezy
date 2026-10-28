@@ -2933,7 +2933,11 @@
     "titleHint": "Ad",
     "yearHint": "İl",
     "search": "Axtar",
-    "noMatchesFound": "Uyğunluq tapılmadı"
+    "noMatchesFound": "Uyğunluq tapılmadı",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Server tapşırıqları",
@@ -3007,6 +3011,12 @@
     "title": "Xidmətlər",
     "hubSubtitle": "İzləmə tərəqqisini eyniləşdirin və yeni başlıqlar sorğulayın.",
     "integrations": "İnteqrasiyalar",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Qoşulmayıb",
     "connectedAs": "@${username} olaraq qoşuldu",
     "scrobble": "Tərəqqini avtomatik izlə",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Yadda saxlanmış server sertifikatı",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export kimi NFS URL-i daxil edin.",
     "dlnaNone": "DLNA serveri tapılmadı. Cihazın təsvir URL-ini əl ilə daxil edin.",
     "dlnaServers": "DLNA media serverləri",

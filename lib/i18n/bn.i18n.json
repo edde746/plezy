@@ -2933,7 +2933,11 @@
     "titleHint": "Title নাম",
     "yearHint": "বছর",
     "search": "অনুসন্ধান",
-    "noMatchesFound": "খেলা খুঁজে পাওয়া যায় না"
+    "noMatchesFound": "খেলা খুঁজে পাওয়া যায় না",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "সার্ভার কাজ",
@@ -3007,6 +3011,12 @@
     "title": "পরিষেবা",
     "hubSubtitle": "সিনক উন্নয়ন দেখুন এবং নতুন টাইমের জন্য অনুরোধ করুন।",
     "integrations": "ইন্টারফেস",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "সংযুক্ত না",
     "connectedAs": "সংযুক্ত @${username}",
     "scrobble": "স্বয়ংক্রিয়ভাবে উন্নয়ন ট্র্যাক করুন",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "সংরক্ষিত সার্ভার সার্টিফিকেট",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "nfs://nas:2049/export-এর মতো একটি NFS URL লিখুন।",
     "dlnaNone": "কোনো DLNA সার্ভার পাওয়া যায়নি। ডিভাইসের বিবরণের URL নিজে লিখুন।",
     "dlnaServers": "DLNA মিডিয়া সার্ভার",

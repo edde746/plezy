@@ -2933,7 +2933,11 @@
     "titleHint": "Cím",
     "yearHint": "Év",
     "search": "Keresés",
-    "noMatchesFound": "Nincsenek egyezések"
+    "noMatchesFound": "Nincsenek egyezések",
+    "plexDiscover": "",
+    "plexLibrary": "",
+    "jellyfinLibrary": "",
+    "embyLibrary": ""
   },
   "serverTasks": {
     "title": "Szerverfeladatok",
@@ -3007,6 +3011,12 @@
     "title": "Szolgáltatások",
     "hubSubtitle": "Megtekintési haladás szinkronizálása és új tartalmak igénylése.",
     "integrations": "Integrációk",
+    "hardcover": "",
+    "linkedCatalogTitles": "",
+    "planNote": "",
+    "planLabel": "",
+    "setPlanLabel": "",
+    "commissionDisclosure": "",
     "notConnected": "Nincs csatlakoztatva",
     "connectedAs": "@${username} néven csatlakoztatva",
     "scrobble": "Haladás automatikus követése",
@@ -3803,6 +3813,7 @@
   },
   "sourceSetup": {
     "savedCertificate": "Mentett szervertanúsítvány",
+    "projectGutenberg": "",
     "nfsEndpointInvalid": "Adj meg egy NFS URL-t, például: nfs://nas:2049/export.",
     "dlnaNone": "Nem található DLNA-kiszolgáló. Add meg kézzel az eszközleírás URL-jét.",
     "dlnaServers": "DLNA-médiakiszolgálók",
