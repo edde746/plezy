@@ -10,7 +10,7 @@ The OneDrive product icon is supplied from Microsoft's product-icon CDN and iden
 Libby and OverDrive are trademarks of OverDrive, Inc. The Libby icon is the unmodified white-outline PNG from OverDrive's official Libby website-assets kit. The OverDrive wordmark is the official white SVG, used only on dark surfaces. https://resources.overdrive.com/library/marketing-outreach-community/libby-website-assets/
 These assets are used to identify and link to the services. This does not assert partner or API approval. Confirm partner branding terms with OverDrive before enabling native circulation in a production release.
 
-sources.json records the exact official asset locations and SHA-256 hashes. No provider artwork has been recoloured, redrawn, or used as PlezyNG's app identity. Generic protocols (WebDAV, OPDS, S3-compatible storage) use PlezyNG's existing Material Symbols; they do not imply a particular vendor.
+sources.json records the exact source locations and SHA-256 digests for official product artwork, plus upstream Git blob IDs for copied open-license SVG assets. No provider artwork has been recoloured, redrawn, or used as PlezyNG's app identity. Generic protocols (WebDAV, OPDS, S3-compatible storage) use PlezyNG's existing Material Symbols; they do not imply a particular vendor.
 
 The connectors hub also renders provider marks from the bundled simple_icons 16.23.0 package (Simple Icons: https://simpleicons.org/ and https://github.com/jlnrrg/simple_icons). Shapes and published brand colors are used without redrawing. Provider names and marks remain their owners' trademarks; follow each provider's brand guidance and do not imply endorsement. When no mark is present in the bundled collection, the app uses a neutral name monogram rather than another provider's logo.
 
@@ -19,3 +19,9 @@ Font Awesome Free 7.3.1 brand SVGs (CC BY 4.0; attribution: Fonticons, Inc., htt
 - fontawesome_xbox.svg is copied without path changes from https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/xbox.svg (upstream blob 85fac0a4c40d5612145c073eb40999bda5133d06).
 
 The marks are used only for Amazon- and Xbox-owned destinations. Their upstream SVG attribution comments are retained. License: https://creativecommons.org/licenses/by/4.0/ .
+
+selfh.st/icons marks (CC BY 4.0):
+- selfhst_hardcover.svg, selfhst_real_debrid.svg, selfhst_audiobookshelf.svg, and selfhst_komga.svg are copied without path changes from the URLs and upstream Git blob objects recorded in sources.json. Attribution: selfh.st/icons, https://github.com/selfhst/icons. License: https://creativecommons.org/licenses/by/4.0/ .
+
+Dashboard Icons marks (Apache-2.0):
+- dashboard_hulu.svg, dashboard_peacock.svg, and dashboard_premiumize.svg are copied from homarr-labs/dashboard-icons. Their source URLs and upstream blob IDs are recorded in sources.json. The provider marks remain the respective owners' trademarks and are used only to identify external destinations.

@@ -961,16 +961,25 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               liveRegion: true,
                               child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                             )
-                          : _kind == FileSourceKind.oneDrive
-                          ? Row(
+                          : Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const ProviderMark('microsoft.svg', size: 23),
+                                _kind == FileSourceKind.oneDrive
+                                    ? const ProviderMark('microsoft.svg', size: 23)
+                                    : FileSourceMark(_kind, size: 23),
                                 const SizedBox(width: 8),
-                                Flexible(child: Text(t.fileSources.microsoftSignIn, textAlign: TextAlign.center)),
+                                Flexible(
+                                  child: Text(
+                                    _kind == FileSourceKind.oneDrive
+                                        ? t.fileSources.microsoftSignIn
+                                        : oauth
+                                        ? t.fileSources.signIn
+                                        : t.fileSources.connect,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
                               ],
-                            )
-                          : Text(oauth ? t.fileSources.signIn : t.fileSources.connect),
+                            ),
                     ),
                   ],
                 ),

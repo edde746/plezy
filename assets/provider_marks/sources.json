@@ -33,5 +33,40 @@
     "url": "https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/xbox.svg",
     "upstream_blob": "85fac0a4c40d5612145c073eb40999bda5133d06",
     "sha256": "c0ca5594b6732847d7b97688662aef6dc25a11139bd14d2776578edcc734a96b"
+  },
+  "selfhst_hardcover.svg": {
+    "url": "https://github.com/selfhst/icons/blob/main/svg/hardcover.svg",
+    "upstream_git_blob_sha": "4c16af0d14d610a9a7b45573b1e071b5247e42e3",
+    "license": "CC BY 4.0"
+  },
+  "selfhst_real_debrid.svg": {
+    "url": "https://github.com/selfhst/icons/blob/main/svg/real-debrid.svg",
+    "upstream_git_blob_sha": "c926403d3dc1f070328db5767a19a15957a29b41",
+    "license": "CC BY 4.0"
+  },
+  "selfhst_audiobookshelf.svg": {
+    "url": "https://github.com/selfhst/icons/blob/main/svg/audiobookshelf.svg",
+    "upstream_git_blob_sha": "634b8535bbfc3fbf27062374bc0c2a8d4c406192",
+    "license": "CC BY 4.0"
+  },
+  "selfhst_komga.svg": {
+    "url": "https://github.com/selfhst/icons/blob/main/svg/komga.svg",
+    "upstream_git_blob_sha": "4498aa66249c3171acfb0f8231f3f8267b45455e",
+    "license": "CC BY 4.0"
+  },
+  "dashboard_hulu.svg": {
+    "url": "https://github.com/homarr-labs/dashboard-icons/blob/main/svg/hulu.svg",
+    "upstream_git_blob_sha": "e85f3bce552017c204dabc3337ad1b85a59ae8b3",
+    "license": "Apache-2.0"
+  },
+  "dashboard_peacock.svg": {
+    "url": "https://github.com/homarr-labs/dashboard-icons/blob/main/svg/peacock.svg",
+    "upstream_git_blob_sha": "e9e48051bd89315b3e77c7096ded0d6709e1fa17",
+    "license": "Apache-2.0"
+  },
+  "dashboard_premiumize.svg": {
+    "url": "https://github.com/homarr-labs/dashboard-icons/blob/main/svg/premiumize.svg",
+    "upstream_git_blob_sha": "805ff9c4686c2502de749151431f2bfab62f6496",
+    "license": "Apache-2.0"
   }
 }

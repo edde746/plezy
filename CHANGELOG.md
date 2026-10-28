@@ -4,6 +4,7 @@
 
 - Add attributed Amazon and Xbox marks to their matching external destinations.
 - Show the Discord brand mark on its rich-presence integration switch.
+- Add attribution-backed marks to additional service and file-source connection flows.
 - Apply the CI native formatting toolchain to C/C++/Objective-C and Kotlin sources; no behavior change.
 - Resolve newly added Apple plugins into the iOS, macOS and tvOS CocoaPods locks so deployment-mode installs succeed in release builds.
 - Omit Watchmode availability rows whose links are all unsafe or invalid, so the Links screen never shows a provider it cannot open.

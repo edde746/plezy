@@ -7,6 +7,8 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../media/media_backend.dart';
+import '../../models/catalog/catalog_item.dart';
 import '../../models/seerr/seerr_public_settings.dart';
 import '../../models/seerr/seerr_session.dart';
 import '../../providers/seerr_account_provider.dart';
@@ -16,6 +18,9 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/backend_badge.dart';
+import '../../widgets/catalog_source_logo.dart';
+import '../../widgets/connector_brand_mark.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
 import '../../widgets/quick_connect_code_panel.dart';
@@ -313,7 +318,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
         onPressed: busy ? null : _probe,
         child: FilledButton.icon(
           onPressed: busy ? null : _probe,
-          icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.travel_explore_rounded, fill: 1),
+          icon: busy ? const LoadingIndicatorBox() : const CatalogSourceLogo(CatalogSourceId.seerr, size: 20),
           label: Text(t.seerr.checkServer),
         ),
       ),
@@ -339,7 +344,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
             onPressed: busy ? null : _signInWithPlex,
             child: FilledButton.icon(
               onPressed: busy ? null : _signInWithPlex,
-              icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
+              icon: busy ? const LoadingIndicatorBox() : const ConnectorBrandMark(providerId: 'plex', name: 'Plex', size: 20),
               label: Text(t.auth.signInWithPlex),
             ),
           ),
@@ -349,10 +354,17 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
         if (showMediaOption)
           _buildMethodButton(
             label: mediaForm == _CredentialForm.emby ? t.seerr.signInWithEmby : t.seerr.signInWithJellyfin,
+            leading: mediaForm == _CredentialForm.emby
+                ? const BackendBadge(backend: MediaBackend.emby, size: 20)
+                : const BackendBadge(backend: MediaBackend.jellyfin, size: 20),
             onPressed: () => _switchForm(mediaForm),
           ),
         if (showLocalOption)
-          _buildMethodButton(label: t.seerr.signInWithLocal, onPressed: () => _switchForm(_CredentialForm.local)),
+          _buildMethodButton(
+            label: t.seerr.signInWithLocal,
+            leading: const CatalogSourceLogo(CatalogSourceId.seerr, size: 20),
+            onPressed: () => _switchForm(_CredentialForm.local),
+          ),
       ],
       ...buildInlineError(theme),
     ];
@@ -369,16 +381,30 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
     });
   }
 
-  Widget _buildMethodButton({required String label, required VoidCallback onPressed}) {
+  Widget _buildMethodButton({
+    required String label,
+    required Widget leading,
+    required VoidCallback onPressed,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: FocusableButton(
         useBackgroundFocus: true,
         onPressed: busy ? null : onPressed,
-        child: OutlinedButton(onPressed: busy ? null : onPressed, child: Text(label)),
+        child: OutlinedButton.icon(
+          onPressed: busy ? null : onPressed,
+          icon: leading,
+          label: Text(label),
+        ),
       ),
     );
   }
+
+  Widget _credentialMark(_CredentialForm form) => switch (form) {
+    _CredentialForm.jellyfin => const BackendBadge(backend: MediaBackend.jellyfin, size: 20),
+    _CredentialForm.emby => const BackendBadge(backend: MediaBackend.emby, size: 20),
+    _CredentialForm.local || _CredentialForm.none => const CatalogSourceLogo(CatalogSourceId.seerr, size: 20),
+  };
 
   List<Widget> _buildCredentialFields(ThemeData theme) {
     final isLocal = _form == _CredentialForm.local;
@@ -418,7 +444,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
         onPressed: busy ? null : _signInWithCredentials,
         child: FilledButton.icon(
           onPressed: busy ? null : _signInWithCredentials,
-          icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
+          icon: busy ? const LoadingIndicatorBox() : _credentialMark(_form),
           label: Text(t.addServer.signIn),
         ),
       ),
@@ -432,7 +458,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
           onPressed: busy ? null : _startQuickConnect,
           child: OutlinedButton.icon(
             onPressed: busy ? null : _startQuickConnect,
-            icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),
+            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 20),
             label: Text(t.auth.useQuickConnect),
           ),
         ),
