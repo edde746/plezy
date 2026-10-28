@@ -58,13 +58,18 @@ Cloud inventory is browsed on demand and warmed through a bounded background
 index; signed playback URLs remain memory-only. Eligible files use the existing
 durable Downloads queue. Android/iOS native transfers store an encrypted
 provider recipe and request the same provider file again after link expiry.
-Torrent preparation jobs persist non-secret provider checkpoints so a later
-user action can reconcile an interrupted request without blindly submitting a
-second one. Cloud progress stays in the profile-local Files and books journal
-and is not reported to Plex/Jellyfin/Emby. This does not add an always-running
-preparation worker, unified server playback queue, native torrent engine, or
-platform P2P packages. Home's cloud poster row is not currently shown in the
-dedicated TV spotlight composition.
+Torrent preparation jobs persist non-secret provider checkpoints and
+automatically resume up to two recoverable jobs after profile restore, outside
+the stream picker. Recovery reuses saved provider job identities and never
+stores a signed stream URL. TorBox recovery polls the saved torrent ID and does
+not create a replacement. Transient failures receive a capped retry with
+backoff. It runs in the app runtime, so OS suspension can pause it; this is not
+an OS-scheduled background worker, and jobs without a reusable provider ID
+still need a user action. Cloud progress stays in the profile-local Files and
+books journal and is not reported to Plex/Jellyfin/Emby. This does not add an
+always-running preparation worker, unified server playback queue, native
+torrent engine, or platform P2P packages. Home's cloud poster row is not
+currently shown in the dedicated TV spotlight composition.
 
 ## Target experience after full completion
 

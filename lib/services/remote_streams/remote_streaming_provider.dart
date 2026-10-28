@@ -20,6 +20,9 @@ class RemoteStreamSearchResult {
 /// Switching profile invalidates in-flight discovery before it can publish or
 /// persist results into the next profile.
 class RemoteStreamingProvider extends ChangeNotifier {
+  static const _maxAutomaticRecoveryAttempts = 3;
+  static const _retryableRecoveryErrors = {'unavailable', 'timeout', 'preparationFailed'};
+
   RemoteStreamingProvider({StremioAddonClient Function()? stremioAddonClientFactory})
     : _stremioAddonClientFactory = stremioAddonClientFactory ?? StremioAddonClient.new;
 
@@ -68,10 +71,26 @@ class RemoteStreamingProvider extends ChangeNotifier {
   }
 
   Future<void> _load(String profileId, int generation) async {
+    var recoverablePreparations = <RemotePreparationJob>[];
     try {
       final snapshot = await RemoteStreamStore.load(profileId);
       if (!_current(profileId, generation)) return;
       final now = DateTime.now().millisecondsSinceEpoch;
+      recoverablePreparations = snapshot.preparations
+          .where(
+            (job) =>
+                (job.state == RemotePreparationState.preparing ||
+                    (job.state == RemotePreparationState.interrupted &&
+                        ((job.stage == 'interrupted' && job.errorCode == null) ||
+                            (job.stage == 'resume_failed' &&
+                                _retryableRecoveryErrors.contains(job.errorCode) &&
+                                job.recoveryAttempts < _maxAutomaticRecoveryAttempts)))) &&
+                job.providerJobId != null &&
+                (job.service == RemoteStreamService.realDebrid ||
+                    job.service == RemoteStreamService.allDebrid ||
+                    job.service == RemoteStreamService.torbox),
+          )
+          .toList(growable: false);
       final recovered = snapshot.preparations
           .map(
             (job) => job.state == RemotePreparationState.preparing
@@ -100,6 +119,215 @@ class RemoteStreamingProvider extends ChangeNotifier {
       if (_current(profileId, generation)) {
         loading = false;
         _notify();
+        if (!loadFailed && recoverablePreparations.isNotEmpty) {
+          // Reconciliation is app-owned background work: it survives leaving
+          // the picker and resumes after process restart, but never stores a
+          // signed playback URL or starts a replacement provider job.
+          unawaited(_recoverInterruptedPreparations(profileId, generation, recoverablePreparations));
+        }
+      }
+    }
+  }
+
+  Future<void> _recoverInterruptedPreparations(
+    String profile,
+    int generation,
+    List<RemotePreparationJob> jobs,
+  ) async {
+    // A tiny concurrency cap keeps profile startup responsive and limits
+    // provider pressure if several preparation requests were interrupted.
+    await Future.wait([
+      for (final job in jobs.take(2)) _recoverWithBackoff(profile, generation, job),
+    ]);
+  }
+
+  Future<void> _recoverWithBackoff(
+    String profile,
+    int generation,
+    RemotePreparationJob job,
+  ) async {
+    var candidate = job;
+    while (_current(profile, generation) && candidate.recoveryAttempts < _maxAutomaticRecoveryAttempts) {
+      if (candidate.stage == 'resume_failed') {
+        final wait = _recoveryBackoff(candidate.recoveryAttempts) -
+            DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(candidate.updatedAt));
+        if (wait > Duration.zero) await Future<void>.delayed(wait);
+      }
+      if (!_current(profile, generation)) return;
+      await _recoverInterruptedPreparation(profile, generation, candidate);
+      final updated = _snapshot.preparations.where((item) => item.id == candidate.id).firstOrNull;
+      if (updated == null ||
+          updated.state != RemotePreparationState.interrupted ||
+          updated.stage != 'resume_failed' ||
+          !_retryableRecoveryErrors.contains(updated.errorCode)) {
+        return;
+      }
+      candidate = updated;
+    }
+  }
+
+  Duration _recoveryBackoff(int attempts) => Duration(seconds: switch (attempts) {
+    <= 0 => 15,
+    1 => 30,
+    2 => 60,
+    _ => 120,
+  });
+
+  Future<void> _recoverInterruptedPreparation(
+    String profile,
+    int generation,
+    RemotePreparationJob job,
+  ) async {
+    if (!_current(profile, generation)) return;
+    final saved = _snapshot.preparations.where((candidate) => candidate.id == job.id).firstOrNull;
+    if (saved == null || saved.state != RemotePreparationState.interrupted || saved.providerJobId == null) return;
+    final account = _snapshot.accounts
+        .where((candidate) => candidate.service == saved.service && candidate.id == saved.accountId)
+        .firstOrNull;
+    if (account == null) return;
+
+    final startedAt = DateTime.now().millisecondsSinceEpoch;
+    try {
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final candidate in current.preparations)
+            if (candidate.id == saved.id)
+              candidate.copyWith(
+                state: RemotePreparationState.preparing,
+                stage: 'reconnecting',
+                updatedAt: startedAt,
+                clearErrorCode: true,
+              )
+            else
+              candidate,
+        ],
+      ));
+    } on Object {
+      return;
+    }
+    if (!_current(profile, generation)) return;
+
+    String lastStage = 'reconnecting';
+    Future<void> onProgress({required String stage, String? providerJobId}) async {
+      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      final normalized = _journalText(stage, 64, 'preparing');
+      if (providerJobId != null &&
+          (providerJobId.isEmpty || providerJobId.length > 128 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(providerJobId))) {
+        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+      }
+      if (normalized == lastStage && providerJobId == saved.providerJobId) return;
+      lastStage = normalized;
+      final updatedAt = DateTime.now().millisecondsSinceEpoch;
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final candidate in current.preparations)
+            if (candidate.id == saved.id)
+              candidate.copyWith(stage: normalized, updatedAt: updatedAt, providerJobId: providerJobId)
+            else
+              candidate,
+        ],
+      ));
+    }
+
+    try {
+      late final ResolvedRemoteStream resolved;
+      switch (saved.service) {
+        case RemoteStreamService.realDebrid:
+          final client = RealDebridClient(
+            account: account,
+            onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
+          );
+          try {
+            resolved = await client.resolveTorrentHash(
+              saved.infoHash,
+              fileIndex: saved.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+              existingJobId: saved.providerJobId,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.allDebrid:
+          final client = AllDebridClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              saved.infoHash,
+              fileIndex: saved.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+              existingJobId: saved.providerJobId,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.torbox:
+          final client = TorBoxClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              saved.infoHash,
+              fileIndex: saved.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+              existingJobId: saved.providerJobId,
+              allowCreate: false,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.premiumize:
+          return;
+      }
+      // Keep only the durable job state. The newly resolved URL is a short-
+      // lived bearer capability and must never enter the journal.
+      if (resolved.uri.scheme != 'https' || resolved.uri.userInfo.isNotEmpty) {
+        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+      }
+      final completedAt = DateTime.now().millisecondsSinceEpoch;
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final candidate in current.preparations)
+            if (candidate.id == saved.id)
+              candidate.copyWith(
+                state: RemotePreparationState.ready,
+                stage: 'ready',
+                updatedAt: completedAt,
+                clearErrorCode: true,
+              )
+            else
+              candidate,
+        ],
+      ));
+    } on Object catch (error) {
+      if (!_current(profile, generation)) return;
+      final failedAt = DateTime.now().millisecondsSinceEpoch;
+      final code = error is RemoteProviderException
+          ? error.reason.name
+          : error is RealDebridException
+          ? error.reason.name
+          : 'unavailable';
+      try {
+        await _commit(profile, generation, (current) => current.copyWith(
+          preparations: [
+            for (final candidate in current.preparations)
+              if (candidate.id == saved.id)
+                candidate.copyWith(
+                  state: RemotePreparationState.interrupted,
+                  stage: 'resume_failed',
+                  updatedAt: failedAt,
+                  errorCode: code,
+                  recoveryAttempts: saved.recoveryAttempts + 1,
+                )
+              else
+                candidate,
+          ],
+        ));
+      } on Object {
+        // Leave the last durable checkpoint untouched if reconciliation cannot
+        // persist its retryable outcome.
       }
     }
   }
@@ -465,6 +693,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
               fileIndex: candidate.fileIndex,
               shouldCancel: () => !_current(profile, generation),
               onProgress: onProgress,
+              existingJobId: job.providerJobId,
             );
           } finally {
             client.close();

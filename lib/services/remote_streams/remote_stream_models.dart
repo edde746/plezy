@@ -244,6 +244,7 @@ class RemotePreparationJob {
     this.fileIndex,
     this.providerJobId,
     this.errorCode,
+    this.recoveryAttempts = 0,
   });
 
   final String id;
@@ -262,6 +263,7 @@ class RemotePreparationJob {
   final int? fileIndex;
   final String? providerJobId;
   final String? errorCode;
+  final int recoveryAttempts;
 
   RemotePreparationJob copyWith({
     RemotePreparationState? state,
@@ -269,6 +271,8 @@ class RemotePreparationJob {
     int? updatedAt,
     String? providerJobId,
     String? errorCode,
+    int? recoveryAttempts,
+    bool clearErrorCode = false,
   }) => RemotePreparationJob(
     id: id,
     accountId: accountId,
@@ -285,7 +289,8 @@ class RemotePreparationJob {
     updatedAt: updatedAt ?? this.updatedAt,
     fileIndex: fileIndex,
     providerJobId: providerJobId ?? this.providerJobId,
-    errorCode: errorCode ?? this.errorCode,
+    errorCode: clearErrorCode ? null : errorCode ?? this.errorCode,
+    recoveryAttempts: recoveryAttempts ?? this.recoveryAttempts,
   );
 
   Map<String, Object?> toJson() => {
@@ -305,6 +310,7 @@ class RemotePreparationJob {
     'fileIndex': fileIndex,
     'providerJobId': providerJobId,
     'errorCode': errorCode,
+    'recoveryAttempts': recoveryAttempts,
   };
 
   factory RemotePreparationJob.fromJson(Map<String, dynamic> json) => RemotePreparationJob(
@@ -324,6 +330,7 @@ class RemotePreparationJob {
     fileIndex: _optionalRemoteIndex(json['fileIndex']),
     providerJobId: _optionalRemoteText(json, 'providerJobId', 128),
     errorCode: _optionalRemoteText(json, 'errorCode', 64),
+    recoveryAttempts: _optionalRecoveryAttempts(json['recoveryAttempts']),
   );
 }
 
@@ -350,6 +357,12 @@ int? _optionalRemoteIndex(Object? value) {
   if (value == null) return null;
   if (value is int && value >= 0 && value <= 1000000) return value;
   throw const FormatException('Invalid file index');
+}
+
+int _optionalRecoveryAttempts(Object? value) {
+  if (value == null) return 0;
+  if (value is int && value >= 0 && value <= 10) return value;
+  throw const FormatException('Invalid recovery attempt count');
 }
 
 String _requiredRemoteHash(Map<String, dynamic> json) {

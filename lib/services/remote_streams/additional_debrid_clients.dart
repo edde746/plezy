@@ -116,7 +116,10 @@ class AllDebridClient {
     if (!RegExp(r'^\d{1,16}$').hasMatch(id)) {
       throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
     }
-    await onProgress?.call(stage: 'provider_job_created', providerJobId: id);
+    await onProgress?.call(
+      stage: existingJobId == null || existingJobId.isEmpty ? 'provider_job_created' : 'provider_job_found',
+      providerJobId: id,
+    );
 
     final deadline = DateTime.now().add(const Duration(minutes: 8));
     var ready = false;
@@ -452,27 +455,49 @@ class TorBoxClient {
     int? fileIndex,
     bool Function()? shouldCancel,
     RemotePreparationProgress? onProgress,
+    String? existingJobId,
+    bool allowCreate = true,
   }) async {
     if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash)) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
     if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
 
-    // Reuse a matching account item when available so repeated playback does
-    // not create another remote item. New items are admitted only when cached.
-    final listUri = Uri.parse('$_base/torrents/mylist').replace(queryParameters: {'bypass_cache': 'true', 'limit': '1000'});
-    final list = await _request('GET', listUri);
-    final rows = list['data'];
-    final existing = rows is List
-        ? rows.whereType<Map>().map((row) => Map<String, dynamic>.from(row)).where((row) =>
-            (row['hash'] as String?)?.toLowerCase() == hash.toLowerCase() && row['id'] != null,
-          ).firstOrNull
-        : null;
-    var torrent = existing;
-    if (torrent != null) {
-      await onProgress?.call(stage: 'provider_job_found', providerJobId: '${torrent['id']}');
+    Map<String, dynamic>? torrent;
+    if (existingJobId != null) {
+      if (!RegExp(r'^\d{1,16}$').hasMatch(existingJobId)) {
+        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+      }
+      torrent = await _loadTorrent(existingJobId);
+      _validateTorBoxHash(torrent, hash);
+      await onProgress?.call(stage: 'provider_job_found', providerJobId: existingJobId);
+    } else {
+      // Reuse a matching account item when available so repeated playback does
+      // not create another remote item. New items are admitted only when cached.
+      final listUri = Uri.parse('$_base/torrents/mylist').replace(queryParameters: {
+        'bypass_cache': 'true',
+        'limit': '1000',
+      });
+      final list = await _request('GET', listUri);
+      final rows = list['data'];
+      torrent = rows is List
+          ? rows
+                .whereType<Map>()
+                .map((row) => Map<String, dynamic>.from(row))
+                .where(
+                  (row) =>
+                      row['hash'] is String &&
+                      (row['hash'] as String).toLowerCase() == hash.toLowerCase() &&
+                      row['id'] != null,
+                )
+                .firstOrNull
+          : null;
+      if (torrent != null) {
+        await onProgress?.call(stage: 'provider_job_found', providerJobId: '${torrent['id']}');
+      }
     }
     if (torrent == null) {
+      if (!allowCreate) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
       final created = await _request(
         'POST',
         Uri.parse('$_base/torrents/createtorrent'),
@@ -492,9 +517,14 @@ class TorBoxClient {
       torrent = await _loadTorrent(id);
     }
     if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-    if (!_isTorBoxReady(torrent)) {
-      throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
-    }
+    final initialTorrent = torrent;
+    if (initialTorrent == null) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+    torrent = await _waitForTorrentReady(
+      initialTorrent,
+      hash: hash,
+      shouldCancel: shouldCancel,
+      onProgress: onProgress,
+    );
     await onProgress?.call(stage: 'files_ready', providerJobId: '${torrent['id']}');
     final rawFiles = torrent['files'];
     final files = <_DebridFile>[];
@@ -613,13 +643,78 @@ class TorBoxClient {
     final uri = Uri.parse('$_base/torrents/mylist').replace(queryParameters: {'id': id, 'bypass_cache': 'true'});
     final response = await _request('GET', uri);
     final data = response['data'];
-    if (data is Map) return Map<String, dynamic>.from(data);
-    if (data is List && data.isNotEmpty && data.first is Map) return Map<String, dynamic>.from(data.first as Map);
+    if (data is Map) {
+      final row = Map<String, dynamic>.from(data);
+      if (row['id']?.toString() == id) return row;
+    }
+    if (data is List) {
+      for (final raw in data.whereType<Map>()) {
+        final row = Map<String, dynamic>.from(raw);
+        if (row['id']?.toString() == id) return row;
+      }
+    }
     throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+  }
+
+  Future<Map<String, dynamic>> _waitForTorrentReady(
+    Map<String, dynamic> torrent, {
+    required String hash,
+    bool Function()? shouldCancel,
+    RemotePreparationProgress? onProgress,
+  }) async {
+    final rawId = torrent['id'];
+    if (rawId == null || !RegExp(r'^\d{1,16}$').hasMatch(rawId.toString())) {
+      throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+    }
+    final id = rawId.toString();
+    final deadline = DateTime.now().add(const Duration(minutes: 8));
+    var current = torrent;
+    _validateTorBoxHash(current, hash);
+    Object? lastStatus;
+    while (!_isTorBoxReady(current)) {
+      if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      if (_isTorBoxFailed(current)) throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
+      if (!DateTime.now().isBefore(deadline)) throw const RemoteProviderException(RemoteProviderFailure.timeout);
+
+      final status = current['download_state'] ?? current['status'];
+      if (status != lastStatus) {
+        lastStatus = status;
+        await onProgress?.call(stage: _torBoxProgressStage(status), providerJobId: id);
+      }
+      await Future<void>.delayed(const Duration(seconds: 3));
+      if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      current = await _loadTorrent(id);
+      _validateTorBoxHash(current, hash);
+    }
+    return current;
   }
 
   static bool _isTorBoxReady(Map<String, dynamic> row) =>
       row['cached'] == true || row['download_finished'] == true || row['status'] == 'cached';
+
+  static bool _isTorBoxFailed(Map<String, dynamic> row) {
+    final status = '${row['download_state'] ?? row['status'] ?? ''}'.toLowerCase();
+    return status == 'error' || status == 'failed' || status == 'magnet_error' || status == 'virus';
+  }
+
+  static String _torBoxProgressStage(Object? status) {
+    final normalized = '$status'.toLowerCase();
+    if (normalized.contains('meta')) return 'fetching_metadata';
+    if (normalized.contains('check')) return 'checking_files';
+    if (normalized.contains('stalled')) return 'waiting_for_peers';
+    if (normalized.contains('download')) return 'downloading';
+    return 'preparing';
+  }
+
+  static void _validateTorBoxHash(Map<String, dynamic> row, String expectedHash) {
+    final hash = row['hash'];
+    if (hash == null) return;
+    if (hash is! String ||
+        !RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash) ||
+        hash.toLowerCase() != expectedHash.toLowerCase()) {
+      throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+    }
+  }
 
   Future<Map<String, dynamic>> _request(
     String method,

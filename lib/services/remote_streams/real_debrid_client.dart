@@ -197,7 +197,10 @@ class RealDebridClient {
     if (!RegExp(r'^\d{1,32}$').hasMatch(torrentId)) {
       throw const RealDebridException(RealDebridFailure.invalidResponse);
     }
-    await onProgress?.call(stage: 'provider_job_created', providerJobId: torrentId);
+    await onProgress?.call(
+      stage: existingJobId == null || existingJobId.isEmpty ? 'provider_job_created' : 'provider_job_found',
+      providerJobId: torrentId,
+    );
 
     final deadline = DateTime.now().add(const Duration(minutes: 8));
     var selectedName = '';
