@@ -15,6 +15,7 @@ import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
 import '../../services/external_access_directory.dart';
+import '../../widgets/comic_commerce_section.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -741,7 +742,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                               spacing: 12,
                               runSpacing: 12,
                               children: [
-                                if (_externalAccessCategories.isNotEmpty)
+                                if (_externalAccessCategories.isNotEmpty && _entry.kind != SourceItemKind.comic)
                                   _focusedLendingButton(
                                     onPressed: () => Navigator.push<void>(
                                       context,
@@ -797,6 +798,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                   ),
                               ],
                             ),
+                            if (_entry.kind == SourceItemKind.comic)
+                              ComicCommerceSection(
+                                title: _entry.displayTitle,
+                                creator: _entry.author,
+                                identifiers: _entry.identifiers,
+                              ),
                           ],
                         );
                         return size.maxWidth > 620

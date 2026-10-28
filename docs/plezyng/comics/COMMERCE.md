@@ -4,7 +4,7 @@ Status: the handoff and link-broker code is implemented. Partner tracking is dis
 
 ## What ships
 
-PlezyNG keeps comic reading and local file ownership in the existing source and reader owners. The storefront screen opens official destinations. It does not take payment, assert that an issue is in stock, claim that a subscription covers an issue, proxy protected content, or mark an item purchased.
+PlezyNG keeps comic reading and local file ownership in the existing source and reader owners. Title-specific storefront actions are embedded in the existing source-backed comic detail beside the local Read action: the highest-priority options appear inline and View All expands the remaining official destinations without leaving the detail. The generic full destination directory remains for other service categories. It does not take payment, assert that an issue is in stock, claim that a subscription covers an issue, proxy protected content, or mark an item purchased.
 
 The new POST endpoint at /commerce/comic-link accepts a provider ID and that provider's curated HTTPS destination URL. It validates an exact host, path, and query contract, limits requests by source IP, applies CORS only for exact configured origins, sends no titles or credentials to logs, and returns a URL plus a tracked flag. It returns the direct official URL whenever an approval gate is closed or a network request fails. API tokens remain on the relay server.
 
