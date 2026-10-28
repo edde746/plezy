@@ -65,7 +65,12 @@ String _localizedChoiceType(DiscoveryChoice choice) {
 }
 
 class FindNextScreen extends StatefulWidget {
-  const FindNextScreen({super.key, this.libraryGlobalKey, this.includeCatalog = false});
+  const FindNextScreen({
+    super.key,
+    this.libraryGlobalKey,
+    this.includeCatalog = false,
+    this.openSavedPicksOnStart = false,
+  });
 
   /// Optional starting scope when entered from a library context.
   final String? libraryGlobalKey;
@@ -73,6 +78,9 @@ class FindNextScreen extends StatefulWidget {
   /// Catalog rows are included only when entered through Explore, after its
   /// normal profile visibility and PIN gate has admitted the user.
   final bool includeCatalog;
+
+  /// Opens profile-local Saved picks without fetching the discovery deck first.
+  final bool openSavedPicksOnStart;
 
   @override
   State<FindNextScreen> createState() => _FindNextScreenState();
@@ -88,6 +96,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
   bool _loading = true;
   bool _committing = false;
   bool _retired = false;
+  bool _openedInitialSavedPicks = false;
   String? _feedback;
   int _artworkRevision = 0;
   DiscoveryChoice? _restoredChoice;
@@ -179,6 +188,21 @@ class _FindNextScreenState extends State<FindNextScreen> {
       _store = DiscoveryStore(sources.repository);
       final state = fresh ? await _store.startFreshSession(profileId) : await _store.load(profileId);
       if (!_sessionCurrent(profileId, sourceGeneration, request)) return;
+
+      final openSavedPicks = widget.openSavedPicksOnStart && !_openedInitialSavedPicks;
+      if (openSavedPicks) {
+        _openedInitialSavedPicks = true;
+        setState(() {
+          _state = state;
+          _choices = const [];
+          _restoredChoice = null;
+          _position = 0;
+          _loading = false;
+        });
+        await _openSaved();
+        if (mounted && _restoredChoice == null) Navigator.of(context).pop();
+        return;
+      }
 
       final candidates = await _fetchCandidates(profileId, sourceGeneration, request);
       if (!_sessionCurrent(profileId, sourceGeneration, request)) return;
@@ -863,6 +887,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
             ? t.discover.findNext.savedFeedback
             : t.discover.findNext.skippedFeedback;
       });
+      if (widget.openSavedPicksOnStart && _choices.isEmpty) unawaited(_load());
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
     } finally {
@@ -1511,8 +1536,11 @@ class _SavedPicksScreen extends StatefulWidget {
 
 class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   DiscoveryState _state = const DiscoveryState();
+  final TextEditingController _searchController = TextEditingController();
   bool _loading = true;
   bool _busy = false;
+  bool _searching = false;
+  String _query = '';
 
   @override
   void initState() {
@@ -1561,23 +1589,64 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     }
   }
 
+  void _toggleSearch() {
+    if (_searching) _searchController.clear();
+    setState(() {
+      _searching = !_searching;
+      _query = '';
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileChanged = context.watch<ActiveProfileProvider>().active?.id != widget.profileId;
     final savedChoices = _state.saved
         .where((choice) => widget.includeCatalog || choice.catalogSourceId == null)
         .toList();
+    final query = _query.trim().toLowerCase();
+    final visibleChoices = query.isEmpty
+        ? savedChoices
+        : savedChoices
+              .where(
+                (choice) => [
+                  choice.title,
+                  choice.subtitle,
+                  choice.reason,
+                  _localizedChoiceType(choice),
+                ].join('\n').toLowerCase().contains(query),
+              )
+              .toList(growable: false);
     final canUndo =
         _state.history.isNotEmpty && (widget.includeCatalog || _state.history.last.choice.catalogSourceId == null);
     return Scaffold(
       appBar: AppBar(
-        title: Text(t.discover.findNext.saved),
+        title: _searching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(hintText: t.common.search, border: InputBorder.none, isDense: true),
+                onChanged: (value) => setState(() => _query = value),
+              )
+            : Text(t.discover.findNext.saved),
         actions: [
+          if (_searching || savedChoices.isNotEmpty)
+            IconButton(
+              tooltip: _searching ? t.common.close : t.common.search,
+              onPressed: profileChanged ? null : _toggleSearch,
+              icon: AppIcon(_searching ? Symbols.close_rounded : Symbols.search_rounded),
+            ),
           IconButton(
             tooltip: t.common.shuffle,
-            onPressed: _busy || savedChoices.isEmpty || profileChanged
+            onPressed: _busy || visibleChoices.isEmpty || profileChanged
                 ? null
-                : () => widget.onChooseForMe(savedChoices),
+                : () => widget.onChooseForMe(visibleChoices),
             icon: const AppIcon(Symbols.shuffle_rounded),
           ),
           FocusableButton(
@@ -1597,14 +1666,16 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
           ? const Center(child: CircularProgressIndicator())
           : savedChoices.isEmpty
           ? Center(child: Text(t.discover.findNext.noPicks))
+          : visibleChoices.isEmpty
+          ? Center(child: Text(t.messages.noResultsFound))
           : ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: savedChoices.length,
+              itemCount: visibleChoices.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final choice = savedChoices[index];
+                final choice = visibleChoices[index];
                 return FocusableListTile(
-                  autofocus: index == 0,
+                  autofocus: index == 0 && !_searching,
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
                   title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(

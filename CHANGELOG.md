@@ -8,6 +8,8 @@
 - Add profile-local Find your next review history with localized timestamps and safe detail revalidation.
 - Add exact genre filtering across server, catalog, and publication picks within the existing filter sheet.
 - Filter Find your next by its displayed source within the existing filter sheet.
+- Search Saved picks by title, source, type, or subtitle; Shuffle uses the matching shortlist.
+- Add a Home shortcut that opens Saved picks without loading the discovery deck.
 - Let people shuffle a saved pick back onto the deck for a deliberate action, without auto-starting playback.
 - Clear all active Find your next filters directly from a no-match result.
 - Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
