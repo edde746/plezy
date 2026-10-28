@@ -54,17 +54,17 @@ flowchart TD
   W08 --> W15
 ```
 
-The graph summarizes the main release path; the work-package table is authoritative for all dependencies. Partner research may proceed while implementation continues, but no approval is inferred from elapsed time.
+The graph summarizes the main release path; the work-package table is authoritative for all dependencies. Partner activation and qualification may proceed while code remains fail-closed; no approval is inferred from elapsed time.
 
 ## Implementation details by tranche
 
 ### W00–W02: avoid duplicate foundations
 
-Current main has fixed `CatalogSourceId` and separate `SourceEntry` identities. Remote-stream planning already proposes dynamic catalog keys and account registries. Decide whether that work has landed before changing types. Add adapters/projections around existing values first; migrate persisted catalog selections only with backward readers and fixture coverage.
+Current main keeps fixed `CatalogSourceId` and separate `SourceEntry` identities; the active debrid/Stremio account/source owner remains separate. Delivered integrations wrap existing source/profile/player owners. Do not introduce a duplicate account registry or migrate persisted keys without a backward reader and fixture evidence.
 
 Use the existing profile provider/`SourceController` generation patterns and vault. Do not reuse server `ProfileConnectionRegistry` rows for unrelated merchant preferences. The registry must distinguish service definition, user-selected subscription, authenticated account and catalog installation. Store no tokens in `FileSource.options`, analytics or offer caches.
 
-Initial fixtures must include one title with native and external access, a work with three different book formats, two conflicting ISBNs, a provider channel offer, a revoked account, stale price, unavailable handler and an unsupported protected file. These tests target integration boundaries, not trivial getters.
+The authored synthetic fixtures cover the new integration contracts and selected profile/source boundaries. The broader acceptance matrix remains the qualification checklist; no fixture suite or release result is represented as executed in this closeout.
 
 ### W03–W06: first useful experience
 
@@ -78,21 +78,21 @@ For availability, Watchmode is the implemented connector. The operator must have
 
 Audiobookshelf now logs in through the current JWT endpoint when username/password are supplied, stores access and rotating refresh tokens through the encrypted profile vault, refreshes before expiry, and retries one unauthorized request after renewal. Existing bearer token/API-key credentials remain accepted. OPDS also carries checksum-validated ISBN-10/13 identifiers into book-detail storefront handoffs. Validate the response shape and refresh behavior against supported server versions and reverse proxies; keep source identities and reading/listening history intact.
 
-Keep OPDS browse/acquisition separate from lending/auth. Only explicit `open-access` and `sample` relations enter the file path; generic acquisition, borrow, buy, subscribe and license links are excluded because their fulfillment may be protected or licensed. The sample relation is carried through cached source models and shown as a localized preview label. When one entry advertises several files, use the first recognized supported format for its shelf kind while retaining every file option. The source form offers the public Project Gutenberg OPDS endpoint as a preset. External fulfillment handoff is still a separate feature. Qualify content type, extension mismatch, redirect, expiry and duplicate-import behavior before release.
+Keep OPDS browse/acquisition separate from lending/auth. Only explicit `open-access` and `sample` relations enter the file path; generic acquisition, borrow, buy, subscribe and license links are excluded because their fulfillment may be protected or licensed. The sample relation is carried through cached source models and shown as a localized preview label. When one entry advertises several files, use the first recognized supported format for its shelf kind while retaining every file option. The source form offers the public Project Gutenberg OPDS endpoint as a preset. External fulfillment handoffs use the existing official destination directory and never import protected content. Qualify content type, extension mismatch, redirect, expiry and duplicate-import behavior before release.
 
-OverDrive uses the existing activation document. The required maintainer application is already described there; check its status rather than sending another request. Hoopla requires its own credentials and patron-auth contract. Reuse circulation UI structure only where semantics agree; do not reuse OverDrive token/scopes or make unsupported hold actions appear.
+OverDrive uses the existing activation document and remains disabled until assigned credentials, scopes, environments, IDs, and branding terms are approved. Hoopla requires a separate signed license, library-specific access, and explicit commercial-use permission; do not reuse OverDrive tokens/scopes or expose unsupported circulation actions.
 
 Palace/Cantook/cloudLibrary integrations require a concrete institution/vendor agreement. Implement one approved pilot before building a generic “all libraries” adapter. A library-authenticated OPDS feed can be useful without native DRM playback.
 
 ### W09–W13: broader connections
 
-Generalize progressive search only after useful detail-level offers work. Keep provider leg errors isolated and cached local sources first. Cross-media relations belong in detail navigation, while exact-copy deduplication requires the correct edition/episode/game identity.
+Connected-catalog Search and bounded Find Next are delivered with isolated provider failures, source chips, exact same-kind ID suppression, and confirmed catalog-to-server crosswalks. Keep local/server results first; preserve distinct edition, episode, and game identities.
 
 For OpenSubsonic, the initial adapter uses API-key or legacy MD5 auth, artist/album/search endpoints and the existing music session owner; qualify named server versions and formats before broad support claims. For podcasts, the initial RSS/Atom adapter uses feed-scoped GUID/enclosure identity, encrypted private feeds and explicit OPML import/export. Existing Audiobookshelf podcast support remains a separate route; do not duplicate its owner. Global Search federates every connected non-Seerr catalog with source chips and exact same-kind external-ID deduplication. Find Next uses the active Explore provider's bounded rows and one bounded row from each remaining connected provider; request failures/timeouts are isolated. A profile-confirmed catalog-to-server crosswalk suppresses that duplicate in Search and Find Next and can be removed from Settings → Services → Linked catalog titles. It relates the work only; progress, ownership and access stay separate.
 
 The iOS MusicKit pilot is implemented as one platform-specific native bridge and remains disabled by default. It keeps Apple as the protected audio owner, stops PlezyNG's local music session before Apple playback, and stops on profile switch. Signed-device/audio qualification is still required. Spotify, TIDAL, Qobuz, SoundCloud and other SDKs remain separate partner decisions; one SDK's approval does not grant another provider's rights.
 
-Tracker imports begin with preview-only/read-only behavior. Trakt movie history now has a user-confirmed local Letterboxd CSV export; it includes movie plays and calendar dates, excludes TV episodes and ratings, and does not upload or connect to Letterboxd. Optional tracker writes use idempotency/conflict handling, clear consent and existing tracker queue concepts. Source-file progress remains authoritative for local resume; tracker status is a separate projection. Hardcover page-position export is limited to an existing active read, an exact ISBN edition and a known local page, and uses a remote/local recheck with undo. Missing shelf entries are added only when ISBN lookup returns one exact Hardcover edition. Game offers use the existing grid/detail and never imply host installation.
+The current tracker slice delivers Hardcover shelf projection and guarded status/page sync plus a previewed local Trakt-to-Letterboxd movie CSV export. It does not connect a Letterboxd account or mutate local reading progress from a remote shelf. Source-file progress remains authoritative; tracker status is a separate projection. Missing Hardcover entries are added only for one exact ISBN edition, and guarded changes retain undo. Game offers use the existing grid/detail and never imply ownership or host installation.
 
 ### W14–W15: bounded experiments and release
 
