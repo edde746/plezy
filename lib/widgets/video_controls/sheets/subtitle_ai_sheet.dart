@@ -473,7 +473,22 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
     );
-    if (!await _writeAndApply(result.cues, operationLabel: 'Translated subtitles', operationLanguageCode: _targetLanguage.bcpCode)) return;
+    if (result.cues.length != selected.$1.length) {
+      throw StateError('Translation changed the cue count. No output was attached.');
+    }
+    for (var index = 0; index < result.cues.length; index++) {
+      final sourceCue = selected.$1[index];
+      final translatedCue = result.cues[index];
+      if (translatedCue.startMs != sourceCue.startMs || translatedCue.endMs != sourceCue.endMs) {
+        throw StateError('Translation changed cue timing at cue ${sourceCue.index}. No output was attached.');
+      }
+    }
+    if (!await _writeAndApply(
+      result.cues,
+      operationLabel: 'Translated subtitles',
+      operationLanguageCode: _targetLanguage.bcpCode,
+      sourceCues: selected.$1,
+    )) return;
     if (!mounted) return;
     setState(() {
       _status = 'Translated ${result.cues.length} cues from '
@@ -586,6 +601,115 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
   }
 
+  Future<void> _showFullCueEditor(
+    BuildContext dialogContext,
+    List<SubtitleCue> cues, {
+    List<SubtitleCue>? sourceCues,
+    VoidCallback? onChanged,
+  }) async {
+    final searchController = TextEditingController();
+    var query = '';
+    try {
+      await showDialog<void>(
+        context: dialogContext,
+        builder: (editorContext) => StatefulBuilder(
+          builder: (context, setEditorState) {
+            final normalizedQuery = query.trim().toLowerCase();
+            final visibleIndexes = List<int>.generate(cues.length, (index) => index).where((index) {
+              if (normalizedQuery.isEmpty) return true;
+              final output = cues[index].text.toLowerCase();
+              final original = sourceCues != null && index < sourceCues.length
+                  ? sourceCues[index].text.toLowerCase()
+                  : '';
+              return output.contains(normalizedQuery) || original.contains(normalizedQuery);
+            }).toList(growable: false);
+            return AlertDialog(
+              title: Text('Edit all ${cues.length} cues'),
+              content: SizedBox(
+                width: 720,
+                height: (MediaQuery.sizeOf(editorContext).height - 220).clamp(280.0, 560.0).toDouble(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Review or edit any output cue. Changes stay in this result until you attach it.'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: searchController,
+                      maxLength: 128,
+                      decoration: const InputDecoration(
+                        labelText: 'Find in source or output cues',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                        counterText: '',
+                      ),
+                      onChanged: (value) => setEditorState(() => query = value),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Showing ${visibleIndexes.length} of ${cues.length} cues.'),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: visibleIndexes.isEmpty
+                          ? const Center(child: Text('No cues match this search.'))
+                          : ListView.builder(
+                              itemCount: visibleIndexes.length,
+                              itemBuilder: (context, visibleIndex) {
+                                final cueIndex = visibleIndexes[visibleIndex];
+                                final cue = cues[cueIndex];
+                                final original = sourceCues != null && cueIndex < sourceCues.length
+                                    ? sourceCues[cueIndex].text
+                                    : null;
+                                Future<void> editCue() async {
+                                  final edited = await _editCueForReview(editorContext, cue);
+                                  if (edited != null && mounted) {
+                                    setEditorState(() => cues[cueIndex] = edited);
+                                    onChanged?.call();
+                                  }
+                                }
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    'Cue ${cue.index} · ${_formatCueTime(cue.startMs)} – ${_formatCueTime(cue.endMs)}',
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (original != null) ...[
+                                        Text('Original', style: Theme.of(context).textTheme.labelSmall),
+                                        SelectableText(original),
+                                        const SizedBox(height: 4),
+                                      ],
+                                      Text('Output', style: Theme.of(context).textTheme.labelSmall),
+                                      SelectableText(cue.text),
+                                    ],
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: 'Edit cue',
+                                    onPressed: editCue,
+                                    icon: const Icon(Icons.edit_outlined),
+                                  ),
+                                  onTap: editCue,
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(editorContext).pop(),
+                  child: const Text('Done'),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } finally {
+      searchController.dispose();
+    }
+  }
+
   String? _normalizedUploadLanguage(String? languageCode) {
     final code = languageCode?.trim().toLowerCase().split(RegExp(r'[-_]')).first ?? '';
     return RegExp(r'^[a-z]{2,3}$').hasMatch(code) ? code : null;
@@ -617,7 +741,14 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     List<SubtitleCue> cues, {
     required String operationLabel,
     String? operationLanguageCode,
+    List<SubtitleCue>? sourceCues,
   }) async {
+    if (cues.isEmpty || cues.length > SubtitleRetimer.maximumCueCount) {
+      throw const FormatException('Subtitle result has no cues or exceeds the 50000 cue processing bound.');
+    }
+    if (sourceCues != null && sourceCues.length != cues.length) {
+      throw StateError('Source and output cue counts do not match; no subtitle was attached.');
+    }
     final reviewedCues = List<SubtitleCue>.from(cues);
     _lastResultUploadedToServer = false;
     final uploadLanguage = _normalizedUploadLanguage(operationLanguageCode);
@@ -646,6 +777,18 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text('${cues.length} cues are ready. Review this sample before attaching the generated SRT.'),
+                TextButton.icon(
+                  onPressed: () => unawaited(
+                    _showFullCueEditor(
+                      dialogContext,
+                      reviewedCues,
+                      sourceCues: sourceCues,
+                      onChanged: () => setDialogState(() {}),
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit all cues'),
+                ),
                 if (canUploadToServer)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
@@ -671,6 +814,11 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                             const SizedBox(height: 2),
+                            if (sourceCues != null && cueIndex < sourceCues.length) ...[
+                              Text('Original', style: Theme.of(context).textTheme.labelSmall),
+                              SelectableText(sourceCues[cueIndex].text),
+                              const SizedBox(height: 2),
+                            ],
                             SelectableText(cue.text),
                             Align(
                               alignment: Alignment.centerRight,
