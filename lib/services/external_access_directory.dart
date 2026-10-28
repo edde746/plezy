@@ -971,8 +971,11 @@ abstract final class ExternalAccessDirectory {
   }
 
   static ExternalAccessCategory? forMediaKind(MediaKind kind) => switch (kind) {
-    MediaKind.movie || MediaKind.show || MediaKind.season || MediaKind.episode || MediaKind.clip =>
-      ExternalAccessCategory.video,
+    MediaKind.movie ||
+    MediaKind.show ||
+    MediaKind.season ||
+    MediaKind.episode ||
+    MediaKind.clip => ExternalAccessCategory.video,
     MediaKind.artist || MediaKind.album || MediaKind.track => ExternalAccessCategory.music,
     _ => null,
   };

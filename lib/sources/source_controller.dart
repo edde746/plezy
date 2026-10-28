@@ -211,9 +211,7 @@ class SourceController extends ChangeNotifier {
               if (!current(epoch)) return;
               final config = await cloudSync.config(id);
               if (!current(epoch)) return;
-              final profileSources = loadedSources
-                  .where((source) => source.profileId == id)
-                  .toList(growable: false);
+              final profileSources = loadedSources.where((source) => source.profileId == id).toList(growable: false);
               final stagedAdapters = <String, SourceAdapter>{};
               var committed = false;
               try {
@@ -371,9 +369,9 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
-    final result = (await repository.sources(profile))
-        .where((source) => source.profileId == profile)
-        .toList(growable: false);
+    final result = (await repository.sources(
+      profile,
+    )).where((source) => source.profileId == profile).toList(growable: false);
     if (!current(epoch)) return;
     final nextShelves = await _loadShelves(profile, result, epoch);
     if (!current(epoch)) return;
@@ -402,11 +400,7 @@ class SourceController extends ChangeNotifier {
     if (current(epoch)) shelves = nextShelves;
   }
 
-  Future<Set<PublicationShelf>> _loadShelves(
-    String profile,
-    List<FileSource> profileSources,
-    int epoch,
-  ) async {
+  Future<Set<PublicationShelf>> _loadShelves(String profile, List<FileSource> profileSources, int epoch) async {
     final cached = await Future.wait(
       PublicationShelf.values.map((shelf) => repository.hasShelfEntries(profile, shelf)),
     );

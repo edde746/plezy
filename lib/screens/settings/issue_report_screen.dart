@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -151,7 +152,7 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
                         ),
                         SettingNavigationTile(
                           icon: Symbols.content_copy_rounded,
-                          title: t.common.copy,
+                          title: t.watchLink.copy,
                           subtitle: t.issueReport.openDraft,
                           onTap: packageInfoReady ? () => _copyIssue(uri) : null,
                         ),

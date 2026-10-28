@@ -457,6 +457,13 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     return _enqueueAudioReconcile();
   }
 
+  /// Mute only this session's pending selection. An action on an old pane
+  /// must never cancel a newer request to listen to another media session.
+  Future<bool> muteSession(String id) {
+    if (_disposed || _requestedAudibleSessionId != id) return Future<bool>.value(false);
+    return setAudibleSession(null);
+  }
+
   Future<bool> _enqueueAudioReconcile() {
     final completer = Completer<bool>();
     _audioQueue = _audioQueue
