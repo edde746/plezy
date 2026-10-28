@@ -248,7 +248,12 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
 
     final generation = ++_availabilityGeneration;
     final region = (_countryCode ?? _defaultCountryCode()).toUpperCase();
-    if (mounted) setState(() => _watchmodeLoading = true);
+    if (mounted) {
+      setState(() {
+        _watchmodeLoading = true;
+        _watchmodeResult = null;
+      });
+    }
     final result = await _watchmode.lookup(tmdbType: type, tmdbId: tmdbId, region: region);
     if (!mounted || generation != _availabilityGeneration || region != (_countryCode ?? _defaultCountryCode())) {
       return;
@@ -334,24 +339,36 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
         if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
         return a.name.compareTo(b.name);
       });
-    return SettingsGroup(
-      title: t.explore.detail.watchOn,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final source in sources)
-          FocusableListTile(
-            leading: const AppIcon(Symbols.play_circle_outline_rounded),
-            title: Text(source.name),
-            subtitle: Text([
-              source.typeLabel,
-              source.region,
-              if (source.price case final price?) price,
-              if (source.format case final format?) format,
-            ].join(' · ')),
-            trailing: _watchmodeDestination(source) == null
-                ? null
-                : const AppIcon(Symbols.open_in_new_rounded),
-            onTap: _watchmodeDestination(source) == null ? null : () => _openWatchmodeSource(source),
+        SettingsGroup(
+          title: t.explore.detail.watchOn,
+          children: [
+            for (final source in sources)
+              FocusableListTile(
+                leading: const AppIcon(Symbols.play_circle_outline_rounded),
+                title: Text(source.name),
+                subtitle: Text([
+                  source.typeLabel,
+                  source.region,
+                  if (source.price case final price?) price,
+                  if (source.format case final format?) format,
+                ].join(' · ')),
+                trailing: _watchmodeDestination(source) == null
+                    ? null
+                    : const AppIcon(Symbols.open_in_new_rounded),
+                onTap: _watchmodeDestination(source) == null ? null : () => _openWatchmodeSource(source),
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 2, bottom: 8),
+          child: Text(
+            'Streaming availability powered by Watchmode',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
+        ),
       ],
     );
   }
