@@ -8,6 +8,8 @@
 
 - Add a Watchmode title-availability adapter behind server-side credentials and an explicit commercial-approval gate, plus an iOS-only Apple MusicKit catalog/playback pilot behind a build flag; provider, account and device qualification remains open.
 
+- Clear Watchmode availability rows and loading state when the title Links screen changes profiles.
+
 - Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.
 - Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
 
