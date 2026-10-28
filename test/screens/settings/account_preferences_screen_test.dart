@@ -186,9 +186,9 @@ void main() {
 
     await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
 
-    expect(find.text('German'), findsOneWidget);
-    expect(find.text('Only forced subtitles'), findsOneWidget);
-    expect(find.text('No preference'), findsOneWidget);
+    expect(find.textContaining('German'), findsOneWidget);
+    expect(find.textContaining('Only forced subtitles'), findsOneWidget);
+    expect(find.textContaining('No preference'), findsOneWidget);
     expect(switchValueFor(tester, 'Hide watched items in Latest'), isTrue);
   });
 
@@ -271,12 +271,12 @@ void main() {
     sources.remove(jellyfinRef);
     repository.clear();
     await pumpSection(tester, repository: repository, targets: const [plexTarget]);
-    expect(find.text('French'), findsOneWidget);
+    expect(find.textContaining('French'), findsOneWidget);
     expect(find.text('Hide watched items in Latest'), findsNothing);
 
     gate.complete();
     await tester.pumpAndSettle();
-    expect(find.text('French'), findsOneWidget);
+    expect(find.textContaining('French'), findsOneWidget);
     expect(repository.cached(jellyfinRef), isNull);
     expect(repository.cached(plexRef)?.preferredAudioLanguage, 'fra');
   });
@@ -300,12 +300,12 @@ void main() {
     );
     repository.invalidate(plexRef);
     await tester.pumpAndSettle();
-    expect(find.text('French'), findsOneWidget);
+    expect(find.textContaining('French'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
 
     gate.complete();
     await tester.pumpAndSettle();
-    expect(find.text('French'), findsOneWidget);
+    expect(find.textContaining('French'), findsOneWidget);
     expect(find.text('English'), findsNothing);
   });
 

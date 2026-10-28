@@ -252,14 +252,7 @@ class SourceRepository {
           .toList();
 
   Future<void> saveSource(FileSource source, Map<String, String> credentials) async {
-    if (const {
-      FileSourceKind.webdav,
-      FileSourceKind.opds,
-      FileSourceKind.s3,
-      FileSourceKind.audiobookshelf,
-    }.contains(source.kind)) {
-      validatePublicSourceUri(Uri.parse(source.endpoint), allowHttp: source.options['allowHttp'] == 'true');
-    }
+    _validateSourceEndpoint(source);
     final encrypted = await protect(jsonEncode(credentials));
     _writable(source.profileId);
     await database.customStatement('INSERT OR REPLACE INTO sources VALUES (?,?,?,?)', [
@@ -268,6 +261,57 @@ class SourceRepository {
       jsonEncode(source.toJson()),
       encrypted,
     ]);
+  }
+
+  Future<void> saveSources(List<(FileSource, Map<String, String>)> values) async {
+    if (values.length > 500) throw const SourceException(SourceFailure.invalidData);
+    final prepared = <(FileSource, String)>[];
+    final ids = <String>{};
+    for (final (source, credentials) in values) {
+      _validateSourceEndpoint(source);
+      if (!ids.add('${source.profileId}\u0000${source.id}')) throw const SourceException(SourceFailure.conflict);
+      prepared.add((source, await protect(jsonEncode(credentials))));
+    }
+    if (prepared.isEmpty) return;
+    final profile = prepared.first.$1.profileId;
+    if (prepared.any((item) => item.$1.profileId != profile)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    _writable(profile);
+    await database.transaction(() async {
+      for (final (source, encrypted) in prepared) {
+        await database.customStatement('INSERT OR REPLACE INTO sources VALUES (?,?,?,?)', [
+          source.profileId,
+          source.id,
+          jsonEncode(source.toJson()),
+          encrypted,
+        ]);
+      }
+    });
+  }
+
+  void _validateSourceEndpoint(FileSource source) {
+    if (const {
+      FileSourceKind.webdav,
+      FileSourceKind.opds,
+      FileSourceKind.s3,
+      FileSourceKind.audiobookshelf,
+      FileSourceKind.komga,
+      FileSourceKind.openSubsonic,
+      FileSourceKind.podcastRss,
+    }.contains(source.kind)) {
+      final uri = Uri.parse(source.endpoint);
+      validatePublicSourceUri(uri, allowHttp: source.options['allowHttp'] == 'true');
+      if (source.kind == FileSourceKind.openSubsonic &&
+          (uri.hasQuery || uri.pathSegments.any((part) => part == '.' || part == '..'))) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (source.kind == FileSourceKind.podcastRss && ((uri.path.isNotEmpty && uri.path != '/') || uri.hasQuery)) {
+        // Podcast feed paths and signed query parameters belong only in the
+        // encrypted credential record, never the public source configuration.
+        throw const SourceException(SourceFailure.permission);
+      }
+    }
   }
 
   Future<Map<String, String>> credentials(FileSource source) async {
@@ -486,6 +530,77 @@ class SourceRepository {
               (query == null || _entrySearchText(e).contains(query.trim().toLowerCase())),
         )
         .toList();
+  }
+
+  /// Finds locally indexed entries that carry one of the supplied public
+  /// identifiers. The JSON query narrows the candidate set in SQLite; callers
+  /// still compare the decoded identifiers exactly before opening anything.
+  Future<List<SourceEntry>> entriesByPublicIdentifiers(
+    String profile,
+    Map<String, String> identifiers, {
+    SourceItemKind? kind,
+    Set<String>? sourceIds,
+    int limit = 500,
+  }) async {
+    if (identifiers.isEmpty) return const [];
+    final configuredSourceIds = sourceIds?.where((id) => id.trim().isNotEmpty).toList(growable: false);
+    if (configuredSourceIds != null && configuredSourceIds.isEmpty) return const [];
+    const aliases = <String, List<String>>{
+      'imdb': ['imdb', 'imdbid'],
+      'tmdb': ['tmdb', 'tmdbid', 'themoviedb'],
+      'tvdb': ['tvdb', 'tvdbid', 'thetvdb'],
+      'mal': ['mal', 'malid', 'myanimelist'],
+      'anilist': ['anilist', 'anilistid'],
+      'simkl': ['simkl', 'simklid'],
+      'trakt': ['trakt', 'traktid'],
+      'isbn13': ['isbn', 'isbn13', 'isbn13id'],
+      'isbn10': ['isbn', 'isbn10', 'isbn10id'],
+      'asin': ['asin', 'asinid'],
+      'doi': ['doi', 'doiid'],
+    };
+    final clauses = <String>[];
+    final variables = <Variable<Object>>[Variable(profile)];
+    final predicates = <String>[];
+    if (kind != null) {
+      predicates.add("json_extract(entries.payload,'\$.kind')=?");
+      variables.add(Variable<Object>(kind.name));
+    }
+    if (configuredSourceIds != null) {
+      predicates.add('entries.source IN (${List.filled(configuredSourceIds.length, '?').join(',')})');
+      variables.addAll(configuredSourceIds.map((id) => Variable<Object>(id)));
+    }
+    final keyExpression = "lower(replace(replace(replace(identifier.key,'-',''),'_',''),' ',''))";
+    final valueExpression = "lower(trim(CAST(identifier.value AS TEXT)))";
+    for (final entry in identifiers.entries) {
+      final normalizedKey = entry.key.toLowerCase();
+      final keyAliases = aliases[normalizedKey];
+      if (keyAliases == null || entry.value.trim().isEmpty) continue;
+      final normalizedValue = normalizedKey == 'isbn10' || normalizedKey == 'isbn13'
+          ? entry.value.replaceAll(RegExp(r'[\s-]'), '').toLowerCase()
+          : entry.value.trim().toLowerCase();
+      final compareExpression = normalizedKey == 'isbn10' || normalizedKey == 'isbn13'
+          ? "lower(replace(replace(trim(CAST(identifier.value AS TEXT)),'-',''),' ',''))"
+          : valueExpression;
+      clauses.add(
+        '($keyExpression IN (${List.filled(keyAliases.length, '?').join(',')}) AND '
+        '($compareExpression=?${normalizedKey == 'doi' ? ' OR instr($valueExpression,?)>0' : ''}))',
+      );
+      variables.addAll(keyAliases.map((key) => Variable<Object>(key)));
+      variables.add(Variable<Object>(normalizedValue));
+      if (normalizedKey == 'doi') variables.add(Variable<Object>(normalizedValue));
+    }
+    if (clauses.isEmpty) return const [];
+    final rows = await database
+        .customSelect(
+          "SELECT DISTINCT entries.payload FROM entries, json_each(entries.payload, '\$.identifiers') AS identifier "
+          'WHERE entries.profile=?${predicates.isEmpty ? '' : ' AND ${predicates.join(' AND ')}'} '
+          'AND (${clauses.join(' OR ')}) LIMIT ?',
+          variables: [...variables, Variable(limit.clamp(1, 500).toInt())],
+        )
+        .get();
+    return rows
+        .map((row) => SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload')))))
+        .toList(growable: false);
   }
 
   /// Returns a bounded source-index slice. Only the selected payloads are
@@ -918,6 +1033,19 @@ class SourceRepository {
 
   Future<void> forgetPreference(String profile, String key) =>
       database.customStatement('DELETE FROM preferences WHERE profile=? AND key=?', [profile, key]);
+
+  /// Deletes a known set of private integration preferences across profiles
+  /// during app-wide sign-out without removing the profiles' source files.
+  Future<void> forgetPreferencesForAllProfiles(Set<String> keys) async {
+    if (keys.isEmpty) return;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    await database.transaction(
+      () => database.customStatement(
+        'DELETE FROM preferences WHERE key IN ($placeholders)',
+        keys.toList(growable: false),
+      ),
+    );
+  }
 
   Future<void> recordDownload(
     String profile,

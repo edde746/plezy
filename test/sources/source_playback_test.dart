@@ -6,9 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/mpv/player/player_state.dart';
+import 'package:plezy/sources/adapters/opds_source.dart';
+import 'package:plezy/sources/source_controller.dart' show SourcePreviewSession;
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
+import 'package:plezy/sources/source_transport.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 
 import '../services/music/music_playback_service_test.dart' show FakePlayer, FakeMediaControlsManager;
@@ -527,6 +530,51 @@ void main() {
     expect(controls.canSeek, isFalse);
     expect(await sources.repository.allProgress('alice'), isEmpty);
   }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
+
+  test('sample previews reject direct capture player configuration', () async {
+    final previewPlayer = _RecordingMpvPlayer();
+    native = previewPlayer;
+    const sampleFile = PublicationFile(
+      id: 'sample',
+      name: 'sample.epub',
+      mimeType: 'application/epub+zip',
+      sampleOnly: true,
+    );
+    const sampleEntry = SourceEntry(
+      sourceId: 'sample-source',
+      id: 'sampled-publication',
+      title: 'Sampled publication',
+      kind: SourceItemKind.ebook,
+      files: [sampleFile],
+    );
+    const sampleSource = FileSource(
+      id: 'sample-source',
+      profileId: 'alice',
+      kind: FileSourceKind.opds,
+      name: 'Samples',
+      endpoint: 'https://catalog.example/feed',
+    );
+    final adapter = OpdsSourceAdapter(sampleSource, SourceTransport(), () async => {});
+    final preview = SourcePreviewSession(adapter, sampleFile, check: sources.requireSession);
+    try {
+      await expectLater(
+        playback.start(
+          sampleEntry,
+          const [sampleFile],
+          persistProgress: false,
+          samplePreview: preview,
+          directPlayerAddresses: const {'sample': 'av://x11grab::0.0+0,0'},
+          localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30'},
+        ),
+        throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.permission)),
+      );
+      expect(previewPlayer.openedUris, isEmpty);
+      expect(await sources.repository.allProgress('alice'), isEmpty);
+    } finally {
+      await preview.dispose();
+      adapter.close();
+    }
+  });
 
   test('capture preview rejects arbitrary MPV input options before opening a device', () async {
     final capturePlayer = _RecordingMpvPlayer();

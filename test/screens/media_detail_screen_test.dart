@@ -72,15 +72,16 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
-  setUpAll(() => initializeDateFormatting('en'));
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+    LocaleSettings.setLocaleSync(AppLocale.en);
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
-    await initializeDateFormatting('en');
     TvDetectionService.debugSetAppleTVOverride(true);
-    LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
   tearDown(() {
@@ -230,7 +231,7 @@ void main() {
     expect(find.descendant(of: sheet, matching: find.text('80%')), findsOneWidget);
     expect(find.descendant(of: sheet, matching: find.text('69%')), findsOneWidget);
     expect(find.descendant(of: sheet, matching: find.text('7.4')), findsOneWidget);
-    expect(find.descendant(of: sheet, matching: find.textContaining('2026  •  PG-13  •  2h 25min')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.textContaining('2026  •  PG-13  •  2h 25m')), findsOneWidget);
     expect(find.descendant(of: sheet, matching: find.text('Science Fiction  •  Mystery  •  Action')), findsOneWidget);
 
     // D-pad back closes the sheet and restores focus to the hero block.
@@ -421,10 +422,10 @@ void main() {
 
     // Desktop chip order: year, certification, runtime.
     final fieldXs = [
-      for (final text in ['2017', 'PG-13', '1h 46min']) tester.getTopLeft(find.text(text)).dx,
+      for (final text in ['2017', 'PG-13', '1h 46m']) tester.getTopLeft(find.text(text)).dx,
     ];
     expect(fieldXs, orderedEquals([...fieldXs]..sort()));
-    expect(tester.getBottomRight(find.text('1h 46min')).dx, lessThanOrEqualTo(1280));
+    expect(tester.getBottomRight(find.text('1h 46m')).dx, lessThanOrEqualTo(1280));
 
     // The test font's 1 em/char advance roughly doubles text width, so at this
     // viewport most of the ratings slot legitimately gives way — shed as the
@@ -534,7 +535,7 @@ void main() {
 
     expect(find.text('Season 1'), findsOneWidget);
     expect(find.text('Specials'), findsNothing);
-    expect(find.text('S1E1'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FittedMetadataLine), matching: find.text('S1E1')), findsOneWidget);
   });
 
   testWidgets('TV detail exposes each season as its episode hub leading options item', (tester) async {
@@ -1158,20 +1159,20 @@ void main() {
     // and the subtitle identifies it by number and runtime — no show name.
     final cards = find.byType(MediaCard);
     expect(find.descendant(of: cards, matching: find.text('The One Where the Title Matters')), findsOneWidget);
-    expect(find.descendant(of: cards, matching: find.text('S1 E1 · 23min')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('S1 E1 · 23m')), findsOneWidget);
     expect(find.descendant(of: cards, matching: find.text('The One After')), findsOneWidget);
-    expect(find.descendant(of: cards, matching: find.text('S1 E2 · 25min')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('S1 E2 · 25m')), findsOneWidget);
     expect(find.descendant(of: cards, matching: find.text('The Show')), findsNothing);
 
     // Play agrees with the hero: the focused episode, not a stale on-deck.
-    expect(find.text('S1E1'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FittedMetadataLine), matching: find.text('S1E1')), findsOneWidget);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.widget<Text>(heroTitle).data, 'The One After');
-    expect(find.text('S1E2'), findsOneWidget);
-    expect(find.text('S1E1'), findsNothing);
+    expect(find.descendant(of: find.byType(FittedMetadataLine), matching: find.text('S1E2')), findsOneWidget);
+    expect(find.descendant(of: find.byType(FittedMetadataLine), matching: find.text('S1E1')), findsNothing);
     semantics.dispose();
   });
 
@@ -1597,7 +1598,7 @@ void main() {
       await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await settleSelection(tester);
-      expect(find.text('S1E2'), findsOneWidget);
+      expect(find.descendant(of: find.byType(FittedMetadataLine), matching: find.text('S1E2')), findsOneWidget);
       expect(status(tester), contains('4K'));
       expect(status(tester), contains('Japanese'));
       expect(status(tester), isNot(contains('English')));
@@ -2303,14 +2304,14 @@ void main() {
 
       // 1100 wide: everything fits (test font ~13px/char puts the full strip
       // near 740px against ~1068px of hero width).
-      expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', '7.4', '6.4', rate], absent: []);
+      expectChips(present: ['2017', 'PG-13', '1h 46m', '1080p', '9.2', '7.4', '6.4', rate], absent: []);
       final wideStrip = find.ancestor(of: find.text(rate), matching: find.byType(Wrap)).first;
       expect(find.descendant(of: wideStrip, matching: find.textContaining('Ends at')), findsOneWidget);
 
       // The new end-time chip also consumes room, so quality and scores drop
       // at this width while year, certification and runtime remain visible.
       await resizeTo(660);
-      expectChips(present: ['2017', 'PG-13', '1h 46min', rate], absent: ['1080p', '9.2', '7.4', '6.4']);
+      expectChips(present: ['2017', 'PG-13', '1h 46m', rate], absent: ['1080p', '9.2', '7.4', '6.4']);
 
       void expectScoresRow(List<String> scores) {
         final rateDy = tester.getCenter(find.text(rate)).dy;
@@ -2322,17 +2323,17 @@ void main() {
         }
       }
 
-      // Phone width: every score moves to its own row, and the strip sheds
+      // Narrow phone width: every score moves to its own row, and the strip sheds
       // the quality label and the certification — never the runtime, year,
       // or Rate.
-      await resizeTo(420);
-      expectChips(present: ['2017', '1h 46min', rate], absent: ['9.2', '7.4', '6.4', '1080p', 'PG-13']);
+      await resizeTo(390);
+      expectChips(present: ['2017', '1h 46m', rate], absent: ['9.2', '7.4', '6.4', '1080p', 'PG-13']);
       expectScoresRow(['9.2', '7.4', '6.4']);
 
-      // Down to the bone: the strip keeps the year and the interactive Rate
-      // chip, and the scores row still has room for all three.
+      // At minimum phone width the shorter localized runtime still fits with
+      // the year and interactive Rate chip, while the scores remain below.
       await resizeTo(320);
-      expectChips(present: ['2017', rate], absent: ['1h 46min', '1080p', 'PG-13', '9.2']);
+      expectChips(present: ['2017', '1h 46m', rate], absent: ['1080p', 'PG-13', '9.2']);
       expectScoresRow(['9.2', '7.4', '6.4']);
     });
 

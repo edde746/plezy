@@ -3546,7 +3546,6 @@ class _Translations$audiobook$th extends Translations$audiobook$en {
 	@override String get addSyncSource => 'เพิ่ม Google Drive, OneDrive, Dropbox, WebDAV หรือ S3 ในไฟล์และหนังสือแรก';
 	@override String get syncDestination => 'บัญชีการจัดเก็บ Sync';
 	@override String get syncFolder => 'ซิงค์โฟลเดอร์หรือ Prefix';
-	@override String get syncFolderHelp => 'ใช้โฟลเดอร์ที่มีอยู่แยกต่างหากภายในแหล่งข้อมูล WebDAV หรือ S3 ที่กําหนดเอง ไฟล์หนังสือจะไม่มีการเปลี่ยนแปลง';
 	@override String get syncCode => 'รหัสซิงค์ส่วนตัว';
 	@override String get syncCodeHelp => 'สร้างรหัสบนอุปกรณ์แรกของคุณแล้วใส่รหัสนั้นบนอุปกรณ์อื่น ๆ ของคุณ เก็บรหัสส่วนตัว: มันเป็นกุญแจสําหรับสถานะเข้ารหัสของคุณ ใช้รหัสที่แตกต่างกันสําหรับแต่ละคน';
 	@override String get showCode => 'แสดงหรือซ่อนรหัส sync';
@@ -3556,7 +3555,6 @@ class _Translations$audiobook$th extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'การลบแหล่งนี้จะปิดการอ่านและฟังซิงค์ที่นี่. ไฟล์ซิงค์เข้ารหัสจะยังคงอยู่ในผู้ให้บริการ';
 	@override String get syncReconnect => 'การเชื่อมต่อบัญชีเก็บข้อมูลใหม่';
 	@override String lastSynced({required Object time}) => 'ล่าสุดสังเคราะห์ที่ ${time}';
-	@override String get syncPrivacy => 'เท่านั้นการเข้ารหัสผ่านและการบันทึกจะถูกบันทึก ไฟล์เสียงและ ebook tokens และรหัสผ่านของบัญชีจะไม่ถูกอัปโหลด Google Drive และ OneDrive ใช้การบันทึกแอป Dropbox ใช้ PlezyNG Sync การเปิดใช้งานการเข้ารหัสผ่านอาจต้องการการเข้าถึงการเขียนเพิ่มเติม ในขณะที่เปิดใช้งานการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่าน';
 	@override String get syncConflicts => 'เลือกที่ที่จะรีไซเคิล';
 	@override String get conflictHelp => 'การเปลี่ยนแปลงเหล่านี้จะทําโดยอิสระ เลือกตําแหน่งหรือเวอร์ชันจดหมายเพื่อรักษา อัตราเวลาที่ถัดไปหรืออัตราส่วนที่สูงขึ้นจะไม่ชนะโดยอัตโนมัติ';
 	@override String syncDevice({required Object device}) => 'อุปกรณ์ ${device}';
@@ -8366,7 +8364,6 @@ extension on TranslationsTh {
 			'audiobook.addSyncSource' => 'เพิ่ม Google Drive, OneDrive, Dropbox, WebDAV หรือ S3 ในไฟล์และหนังสือแรก',
 			'audiobook.syncDestination' => 'บัญชีการจัดเก็บ Sync',
 			'audiobook.syncFolder' => 'ซิงค์โฟลเดอร์หรือ Prefix',
-			'audiobook.syncFolderHelp' => 'ใช้โฟลเดอร์ที่มีอยู่แยกต่างหากภายในแหล่งข้อมูล WebDAV หรือ S3 ที่กําหนดเอง ไฟล์หนังสือจะไม่มีการเปลี่ยนแปลง',
 			'audiobook.syncCode' => 'รหัสซิงค์ส่วนตัว',
 			'audiobook.syncCodeHelp' => 'สร้างรหัสบนอุปกรณ์แรกของคุณแล้วใส่รหัสนั้นบนอุปกรณ์อื่น ๆ ของคุณ เก็บรหัสส่วนตัว: มันเป็นกุญแจสําหรับสถานะเข้ารหัสของคุณ ใช้รหัสที่แตกต่างกันสําหรับแต่ละคน',
 			'audiobook.showCode' => 'แสดงหรือซ่อนรหัส sync',
@@ -8376,7 +8373,6 @@ extension on TranslationsTh {
 			'audiobook.syncSourceDisconnect' => 'การลบแหล่งนี้จะปิดการอ่านและฟังซิงค์ที่นี่. ไฟล์ซิงค์เข้ารหัสจะยังคงอยู่ในผู้ให้บริการ',
 			'audiobook.syncReconnect' => 'การเชื่อมต่อบัญชีเก็บข้อมูลใหม่',
 			'audiobook.lastSynced' => ({required Object time}) => 'ล่าสุดสังเคราะห์ที่ ${time}',
-			'audiobook.syncPrivacy' => 'เท่านั้นการเข้ารหัสผ่านและการบันทึกจะถูกบันทึก ไฟล์เสียงและ ebook tokens และรหัสผ่านของบัญชีจะไม่ถูกอัปโหลด Google Drive และ OneDrive ใช้การบันทึกแอป Dropbox ใช้ PlezyNG Sync การเปิดใช้งานการเข้ารหัสผ่านอาจต้องการการเข้าถึงการเขียนเพิ่มเติม ในขณะที่เปิดใช้งานการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่านการเข้ารหัสผ่าน',
 			'audiobook.syncConflicts' => 'เลือกที่ที่จะรีไซเคิล',
 			'audiobook.conflictHelp' => 'การเปลี่ยนแปลงเหล่านี้จะทําโดยอิสระ เลือกตําแหน่งหรือเวอร์ชันจดหมายเพื่อรักษา อัตราเวลาที่ถัดไปหรืออัตราส่วนที่สูงขึ้นจะไม่ชนะโดยอัตโนมัติ',
 			'audiobook.syncDevice' => ({required Object device}) => 'อุปกรณ์ ${device}',
@@ -8577,10 +8573,10 @@ extension on TranslationsTh {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

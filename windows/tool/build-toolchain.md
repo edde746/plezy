@@ -30,6 +30,12 @@ The default directory is `RUNNER_TEMP/plezyng-windows-toolchain` in CI, or
 uses a per-user installation in that directory and retains its installer log.
 A receipt records all installed payload hashes; later verification rejects
 changed or incomplete files. `-VerifyOnly` performs no downloads or installs.
+Inno's signed executables report `0.0.0.0` in their PE version metadata. The
+helper instead checks the compiler engine's version by parsing a tiny script
+from standard input with `/O-`; no installer is emitted. This also verifies that
+the compiler can load its engine and preprocessor. Inno's `/?` help command
+intentionally exits with status 1 and does not report the engine version.
+See the pinned [ISCC source](https://github.com/jrsoftware/issrc/blob/is-6_7_3/Projects/ISCC.dpr).
 An incomplete installation is retained for diagnosis; use a new task directory
 for a retry. Remove a task directory only after its consumers exit, preserving
 its installer log if the build failed. Local developer installations are reusable.

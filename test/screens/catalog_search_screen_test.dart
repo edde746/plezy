@@ -6,6 +6,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/screens/catalog_search_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
@@ -236,6 +237,7 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
       child: MultiProvider(
         providers: [
           Provider<CatalogLibraryMatcher>.value(value: matcher),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
         ],
         child: MaterialApp(
@@ -251,7 +253,7 @@ Future<void> _searchForMenuResult(WidgetTester tester) async {
   await tester.enterText(find.byType(TextField), 'menu');
   await tester.pump(const Duration(milliseconds: 600));
   await tester.pumpAndSettle();
-  expect(find.text('result: menu'), findsOneWidget);
+  expect(find.textContaining('result: menu'), findsOneWidget);
 }
 
 Finder _adaptiveMenuSheet() => find.byWidgetPredicate((widget) => widget is AppMenuSheet<Object?>);

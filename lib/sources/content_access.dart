@@ -733,10 +733,12 @@ class PublicationDownloads {
   }
 
   Future<File?> local(String profile, String sourceId, PublicationFile file) async =>
-      _verifiedLocal(profile, file, await repository.download(profile, key(sourceId, file)));
+      file.sampleOnly ? null : _verifiedLocal(profile, file, await repository.download(profile, key(sourceId, file)));
 
   Future<File?> _verifiedLocal(String profile, PublicationFile file, Map<String, dynamic>? record) async {
-    if (record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) return null;
+    if (file.sampleOnly || record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) {
+      return null;
+    }
     final value = File(record['path'] as String);
     final expected = p.join(directory.path, sourceDigest(profile));
     if (!p.isWithin(expected, value.path)) throw const SourceException(SourceFailure.permission);
@@ -898,6 +900,7 @@ class PublicationDownloads {
     String label = '',
     void Function(int, int?)? onProgress,
   }) async {
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final transferKey = sourceKey(profile, key(adapter.source.id, file));
     final existing = _pending[transferKey];
     if (existing != null) return existing;
@@ -963,6 +966,10 @@ class PublicationDownloads {
         } on Object {
           // Keep malformed rows removable; never derive a path from bad data.
         }
+        if (pendingFile?.sampleOnly == true) {
+          await _discardSampleDownload(profile, row, pendingFile!);
+          continue;
+        }
         final isContainedPartial =
             path.isNotEmpty &&
             p.isWithin(expectedRoot, path) &&
@@ -1005,6 +1012,15 @@ class PublicationDownloads {
         await repository.setDownloadState(profile, row['key'] as String, 'orphaned');
         continue;
       }
+      try {
+        final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (file.sampleOnly) {
+          await _discardSampleDownload(profile, row, file);
+          continue;
+        }
+      } on Object {
+        // Malformed legacy rows remain subject to the normal recovery checks.
+      }
       if (row['state'] != 'queued' && row['state'] != 'running') continue;
       try {
         final sourceId = row['source_id'] as String;
@@ -1029,6 +1045,50 @@ class PublicationDownloads {
       } on Object {
         await repository.setDownloadState(profile, row['key'] as String, 'failed');
       }
+    }
+  }
+
+  Future<void> _discardSampleDownload(String profile, Map<String, dynamic> row, PublicationFile file) async {
+    final sourceId = row['source_id'] as String? ?? '';
+    final rowKey = row['key'] as String? ?? '';
+    final complete = row['complete'] == 1;
+    if (sourceId.isEmpty || rowKey != key(sourceId, file) || row['fingerprint'] != file.fingerprint) {
+      if (complete) {
+        await repository.forgetDownload(profile, rowKey);
+      } else {
+        await repository.setDownloadState(profile, rowKey, 'failed');
+      }
+      return;
+    }
+
+    try {
+      await _removeNativeTask(_nativeTaskId(profile, sourceId, file));
+    } on Object {
+      await _pauseNativeTask(_nativeTaskId(profile, sourceId, file));
+      if (!complete) await repository.setDownloadState(profile, rowKey, 'failed');
+      return;
+    }
+    final profileRoot = p.join(directory.path, sourceDigest(profile));
+    final paths = <String>{row['path'] as String? ?? '', _target(profile, sourceId, file).path};
+    for (final path in paths) {
+      if (path.isEmpty || !p.isWithin(profileRoot, path)) continue;
+      try {
+        final target = File(path);
+        if (await target.exists() && (await target.stat()).type == FileSystemEntityType.file) {
+          await target.delete();
+        }
+      } on FileSystemException {
+        // A missing or locked cache file must not make the sample resumable.
+      }
+      if (path.endsWith('.partial')) {
+        final validator = File('${p.withoutExtension(path)}.validator');
+        if (p.isWithin(profileRoot, validator.path) && await validator.exists()) await validator.delete();
+      }
+    }
+    if (complete) {
+      await repository.forgetDownload(profile, rowKey);
+    } else {
+      await repository.setDownloadState(profile, rowKey, 'failed');
     }
   }
 
@@ -1117,6 +1177,7 @@ class PublicationDownloads {
     String label,
     void Function(int, int?)? onProgress,
   ) async {
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final recordKey = key(adapter.source.id, file);
     await repository.setDownloadState(profile, recordKey, 'running');
     final cached = await local(profile, adapter.source.id, file);

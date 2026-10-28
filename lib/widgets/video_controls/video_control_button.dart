@@ -16,6 +16,7 @@ class VideoControlButton extends StatelessWidget {
   final IconData icon;
 
   final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
 
   /// The color of the icon. Defaults to white, or amber if [isActive] is true.
   final Color? color;
@@ -60,6 +61,7 @@ class VideoControlButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onPressed,
+    this.onLongPress,
     this.color,
     this.iconSize = 24,
     this.tooltip,
@@ -80,48 +82,74 @@ class VideoControlButton extends StatelessWidget {
     final label = this.label;
     final effectiveSemanticLabel = semanticLabel ?? label ?? tooltip;
 
-    Widget button(Color iconColor) => label == null
-        ? IconButton(
-            icon: AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
-            iconSize: iconSize,
-            onPressed: onPressed,
-            tooltip: tooltip,
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          )
-        : Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: onPressed,
-              customBorder: const StadiumBorder(),
-              child: SizedBox(
-                height: 40,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: iconColor, fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
+    Widget button(Color iconColor) {
+      final Widget control;
+      if (label != null) {
+        control = Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onPressed,
+            onLongPress: onLongPress,
+            customBorder: const StadiumBorder(),
+            child: SizedBox(
+              height: 40,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        label!,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: iconColor, fontSize: 14, fontWeight: FontWeight.w600),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
+          ),
+        );
+      } else if (onLongPress != null) {
+        control = Material(
+          type: MaterialType.transparency,
+          child: InkResponse(
+            onTap: onPressed,
+            onLongPress: onLongPress,
+            containedInkWell: true,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Center(child: AppIcon(icon, fill: 1, color: iconColor, size: iconSize)),
+            ),
+          ),
+        );
+      } else {
+        control = IconButton(
+          icon: AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
+          iconSize: iconSize,
+          onPressed: onPressed,
+          tooltip: tooltip,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        );
+      }
+
+      if (tooltip == null || (label == null && onLongPress == null)) return control;
+      return Tooltip(message: tooltip!, child: control);
+    }
 
     if (focusNode != null) {
       return FocusableWrapper(
         focusNode: focusNode,
         onSelect: onPressed,
+        onLongPress: onLongPress,
+        enableLongPress: onLongPress != null,
         onKeyEvent: onKeyEvent,
         onFocusChange: onFocusChange,
         autofocus: autofocus,
@@ -148,6 +176,7 @@ class VideoControlButton extends StatelessWidget {
       enabled: onPressed != null,
       checked: checked,
       onTap: onPressed,
+      onLongPress: onLongPress,
       excludeSemantics: true,
       child: button(idleColor),
     );

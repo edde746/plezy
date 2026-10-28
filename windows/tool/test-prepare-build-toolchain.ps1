@@ -11,6 +11,11 @@ if ($errors.Count) { throw ($errors | Out-String) }
 $function = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Assert-PinnedFile' }, $true)
 if (-not $function) { throw 'Pinned-file verifier is missing.' }
 . ([scriptblock]::Create($function.Extent.Text))
+$innoVerifier = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Assert-InnoCompilerVersion' }, $true)
+if (-not $innoVerifier) { throw 'Inno compiler engine verifier is missing.' }
+. ([scriptblock]::Create($innoVerifier.Extent.Text))
+$script:innoProbe = [pscustomobject]@{ ExitCode = 0; Output = "Compiler engine version: Inno Setup 6.7.3`r`nSuccessful compile. Output was disabled." }
+function Invoke-InnoCompilerProbe { param([string]$Path) return $script:innoProbe }
 
 $directory = Join-Path ([IO.Path]::GetTempPath()) ('plezy-toolchain-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $directory | Out-Null
@@ -46,9 +51,19 @@ try {
     $script:signatureStatus = 'Valid'
     $pin.authenticodePublisher = 'Different Publisher'
     Expect-Rejection { Assert-PinnedFile $file $pin } 'Unexpected publisher*'
+    Assert-InnoCompilerVersion $file '6.7.3'
+    Expect-Rejection { Assert-InnoCompilerVersion $file '6.7.2' } 'Unexpected Inno compiler engine version*'
+    $script:innoProbe.Output = "Compiler engine version: Inno Setup 6.7.3`nCompiler engine version: Inno Setup 6.7.3"
+    Expect-Rejection { Assert-InnoCompilerVersion $file '6.7.3' } 'Unexpected Inno compiler engine version*'
+    $script:innoProbe.Output = 'Inno Setup 6 Command-Line Compiler'
+    Expect-Rejection { Assert-InnoCompilerVersion $file '6.7.3' } 'Unexpected Inno compiler engine version*'
+    $script:innoProbe.ExitCode = 2
+    Expect-Rejection { Assert-InnoCompilerVersion $file '6.7.3' } 'The pinned Inno compiler probe failed*'
     Remove-Item -LiteralPath $file
     Expect-Rejection { Assert-PinnedFile $file $pin } 'Missing pinned tool*'
+    Expect-Rejection { Assert-InnoCompilerVersion $file '6.7.3' } 'Missing installed tool*'
     Write-Host 'Pinned Windows download rejection checks passed (hash, signature, publisher, missing file).'
+    Write-Host 'Inno engine version checks passed (exact version, mismatch, duplicate, missing version, compiler failure).'
 } finally {
     $certificate.Dispose()
     $rsa.Dispose()

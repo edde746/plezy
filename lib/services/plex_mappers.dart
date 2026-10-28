@@ -1453,8 +1453,8 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
     mediaIndex = MediaVersion.findMatchingIndex(versions, {preferredVersionSignature}) ?? mediaIndex;
   }
   if (mediaIndex < 0 || mediaIndex >= versions.length) mediaIndex = 0;
-  if (preferPlayable && !versions[mediaIndex].isPlayable) {
-    final fallback = versions.indexWhere((v) => v.isPlayable);
+  if (preferPlayable && !versions[mediaIndex].hasPlayablePart) {
+    final fallback = versions.indexWhere((v) => v.hasPlayablePart);
     if (fallback >= 0) {
       onVersionFallback?.call(mediaIndex, fallback);
       mediaIndex = fallback;

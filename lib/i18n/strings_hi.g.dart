@@ -3569,7 +3569,6 @@ class _Translations$audiobook$hi extends Translations$audiobook$en {
 	@override String get addSyncSource => 'पहले फ़ाइलों और किताबों में Google ड्राइव, OneDrive, Dropbox, WebDAV या S3 जोड़ें।';
 	@override String get syncDestination => 'सिंक्रनाइज़ेशन खाता';
 	@override String get syncFolder => 'फ़ोल्डर सिंक्रनाइज़ेशन या Prefix';
-	@override String get syncFolderHelp => 'अपने WebDAV स्रोत के भीतर एक अलग मौजूदा फ़ोल्डर का उपयोग करें, या एक समर्पित S3 पूर्वावलोकन. पुस्तक फ़ाइलों को कभी नहीं बदला जाता है.';
 	@override String get syncCode => 'निजी सिंक्रनाइज़ेशन कोड';
 	@override String get syncCodeHelp => 'अपने पहले डिवाइस पर एक कोड बनाएं, फिर उस कोड को अपने अन्य डिवाइस पर दर्ज करें. एक निजी प्रति बनाए रखें: यह आपके एन्क्रिप्टेड स्टेट की कुंजी है. प्रत्येक व्यक्ति के लिए एक अलग कोड का उपयोग करें.';
 	@override String get showCode => 'प्रदर्शित करें या सिंक्रनाइज़ेशन कोड छिपाएं';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$hi extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'इस स्रोत को हटाने से यहां पढ़ने और सुनने के लिए सिंक्रनाइज़ेशन बंद हो जाएगा. एन्क्रिप्टेड सिंक्रनाइज़ेशन फ़ाइल प्रदाता में रहेंगे.';
 	@override String get syncReconnect => 'भंडारण खाते को फिर से कनेक्ट करें';
 	@override String lastSynced({required Object time}) => '${time} पर अंतिम संश्लेषण';
-	@override String get syncPrivacy => 'केवल एन्क्रिप्टेड प्रगति और नोट्स संग्रहीत किए जाते हैं. ऑडियो और ई-पुस्तक फ़ाइलें, खाता टोकन और पासवर्ड अपलोड नहीं किए जाते हैं. Google ड्राइव और OneDrive ऐप स्टोरेज का उपयोग करते हैं; ड्रॉपबॉक्स PlezyNG सिंक्रनाइज़ेशन का उपयोग करता है. सिंक्रनाइज़ेशन को सक्षम करने के लिए अतिरिक्त लिखित पहुंच की आवश्यकता हो सकती है. जबकि सक्षम है, इस गंतव्य में प्रगति सिंक्रनाइज़ेशन होता है; सर्वर प्रगति अलग रहती है. स्विच सिंक्रनाइज़ेशन स्थानीय इतिहास और दूरस्थ स्थिति बनाए रखता है.';
 	@override String get syncConflicts => 'कहां वापस जाने के लिए चुनना';
 	@override String get conflictHelp => 'इन परिवर्तनों को स्वतंत्र रूप से किया गया था. रखने के लिए स्थिति या नोटबुक संस्करण का चयन करें. एक बाद में टाइमस्टैम्प या एक उच्च प्रतिशत स्वचालित रूप से जीतता नहीं है.';
 	@override String syncDevice({required Object device}) => 'डिवाइस ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsHi {
 			'audiobook.addSyncSource' => 'पहले फ़ाइलों और किताबों में Google ड्राइव, OneDrive, Dropbox, WebDAV या S3 जोड़ें।',
 			'audiobook.syncDestination' => 'सिंक्रनाइज़ेशन खाता',
 			'audiobook.syncFolder' => 'फ़ोल्डर सिंक्रनाइज़ेशन या Prefix',
-			'audiobook.syncFolderHelp' => 'अपने WebDAV स्रोत के भीतर एक अलग मौजूदा फ़ोल्डर का उपयोग करें, या एक समर्पित S3 पूर्वावलोकन. पुस्तक फ़ाइलों को कभी नहीं बदला जाता है.',
 			'audiobook.syncCode' => 'निजी सिंक्रनाइज़ेशन कोड',
 			'audiobook.syncCodeHelp' => 'अपने पहले डिवाइस पर एक कोड बनाएं, फिर उस कोड को अपने अन्य डिवाइस पर दर्ज करें. एक निजी प्रति बनाए रखें: यह आपके एन्क्रिप्टेड स्टेट की कुंजी है. प्रत्येक व्यक्ति के लिए एक अलग कोड का उपयोग करें.',
 			'audiobook.showCode' => 'प्रदर्शित करें या सिंक्रनाइज़ेशन कोड छिपाएं',
@@ -8401,7 +8398,6 @@ extension on TranslationsHi {
 			'audiobook.syncSourceDisconnect' => 'इस स्रोत को हटाने से यहां पढ़ने और सुनने के लिए सिंक्रनाइज़ेशन बंद हो जाएगा. एन्क्रिप्टेड सिंक्रनाइज़ेशन फ़ाइल प्रदाता में रहेंगे.',
 			'audiobook.syncReconnect' => 'भंडारण खाते को फिर से कनेक्ट करें',
 			'audiobook.lastSynced' => ({required Object time}) => '${time} पर अंतिम संश्लेषण',
-			'audiobook.syncPrivacy' => 'केवल एन्क्रिप्टेड प्रगति और नोट्स संग्रहीत किए जाते हैं. ऑडियो और ई-पुस्तक फ़ाइलें, खाता टोकन और पासवर्ड अपलोड नहीं किए जाते हैं. Google ड्राइव और OneDrive ऐप स्टोरेज का उपयोग करते हैं; ड्रॉपबॉक्स PlezyNG सिंक्रनाइज़ेशन का उपयोग करता है. सिंक्रनाइज़ेशन को सक्षम करने के लिए अतिरिक्त लिखित पहुंच की आवश्यकता हो सकती है. जबकि सक्षम है, इस गंतव्य में प्रगति सिंक्रनाइज़ेशन होता है; सर्वर प्रगति अलग रहती है. स्विच सिंक्रनाइज़ेशन स्थानीय इतिहास और दूरस्थ स्थिति बनाए रखता है.',
 			'audiobook.syncConflicts' => 'कहां वापस जाने के लिए चुनना',
 			'audiobook.conflictHelp' => 'इन परिवर्तनों को स्वतंत्र रूप से किया गया था. रखने के लिए स्थिति या नोटबुक संस्करण का चयन करें. एक बाद में टाइमस्टैम्प या एक उच्च प्रतिशत स्वचालित रूप से जीतता नहीं है.',
 			'audiobook.syncDevice' => ({required Object device}) => 'डिवाइस ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsHi {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

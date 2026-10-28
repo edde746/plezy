@@ -75,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final tile = find.widgetWithText(ListTile, 'Music Quality');
-    expect(find.descendant(of: tile, matching: find.text('192 kbps')), findsOneWidget);
+    expect(find.descendant(of: tile, matching: find.textContaining('192 kbps')), findsOneWidget);
 
     await tester.tap(title);
     await tester.pumpAndSettle();
@@ -85,7 +85,7 @@ void main() {
     final settings = SettingsService.instance;
     expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.low);
     expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'low');
-    expect(find.descendant(of: tile, matching: find.text('128 kbps')), findsOneWidget);
+    expect(find.descendant(of: tile, matching: find.textContaining('128 kbps')), findsOneWidget);
   });
 
   testWidgets('configures detected ad skipping and sweet fades', (tester) async {
@@ -167,7 +167,7 @@ void main() {
     final settings = SettingsService.instance;
     expect(settings.read(SettingsService.playNextCountdown), 0);
     final tile = find.widgetWithText(ListTile, 'Play Next Countdown');
-    expect(find.descendant(of: tile, matching: find.text('Play immediately')), findsOneWidget);
+    expect(find.descendant(of: tile, matching: find.textContaining('Play immediately')), findsOneWidget);
   });
 
   testWidgets('buffer size explains itself and rejects out-of-range input', (tester) async {

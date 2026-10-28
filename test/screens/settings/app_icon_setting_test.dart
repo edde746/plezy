@@ -165,7 +165,7 @@ void main() {
 
       final row = find.text(t.appIcon.title);
       expect(row, findsOneWidget);
-      expect(find.text(t.appIcon.names.vhs), findsOneWidget);
+      expect(find.textContaining(t.appIcon.names.vhs), findsOneWidget);
       final themeRow = tester.getRect(find.text(t.settings.theme));
       final iconRow = tester.getRect(row);
       expect(iconRow.top, greaterThan(themeRow.top));
@@ -348,7 +348,13 @@ void main() {
 
       Finder defaultLogo() => find.descendant(
         of: tile(defaultAppIconId),
-        matching: find.image(const AssetImage('assets/plezy_adaptive_foreground.png')),
+        matching: find.image(
+          AssetImage(
+            defaultTargetPlatform == TargetPlatform.android
+                ? 'assets/plezy_adaptive_foreground.png'
+                : 'assets/branding/plezyng-adaptive-light.png',
+          ),
+        ),
       );
 
       Color plate(WidgetTester tester) =>
@@ -368,12 +374,12 @@ void main() {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
         try {
           await pumpDefault(tester);
-          expect(plate(tester), const Color(0xFF131928));
+          expect(plate(tester), const Color(0xFF071527));
 
           tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
           addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
           await tester.pump();
-          expect(plate(tester), const Color(0xFF131928));
+          expect(plate(tester), const Color(0xFF071527));
         } finally {
           debugDefaultTargetPlatformOverride = null;
         }

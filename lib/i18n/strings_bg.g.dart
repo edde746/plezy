@@ -3569,7 +3569,6 @@ class _Translations$audiobook$bg extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Първо добавете Google Drive, OneDrive, Dropbox, WebDAV или S3 в файлове и книги.';
 	@override String get syncDestination => 'Синхронизиране на акаунта';
 	@override String get syncFolder => 'Синхронизиране на папката или префикса';
-	@override String get syncFolderHelp => 'Използвайте отделен съществуващ папка в източника на WebDAV или специален S3 префикс. книжни файлове никога не се променят.';
 	@override String get syncCode => 'Приватния код за синхронизиране';
 	@override String get syncCodeHelp => 'Създайте код на първото си устройство, а след това въведете този код на другите устройства. Запазете лична копия: това е ключът към шифрованото ви състояние.';
 	@override String get showCode => 'Показване или скриване на синхронизиран код';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$bg extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Изтриването на този източник ще изключи четене и слушане синхронизиране тук. шифровани синхронизирани файлове ще останат в доставчика.';
 	@override String get syncReconnect => 'Възстановяване на сметката за съхранение';
 	@override String lastSynced({required Object time}) => 'Последният синхронизиран на ${time}';
-	@override String get syncPrivacy => 'Само шифровани напредък и бележки се съхраняват. аудио и ebook файлове, акаунт токове и пароли не се изтеглят. Google Drive и OneDrive използват приложението съхранение; Dropbox използва PlezyNG Sync. Удобряване на синхронизиране може да изисква допълнителен достъп до писане. Докато е включен, тази дестинация притежава синхронизиране на напредък; прогресът на сървъра остава отделен. Изтегляне на синхронизиране поддържа локалната история и отдалеченото състояние.';
 	@override String get syncConflicts => 'Изберете къде да се върнете';
 	@override String get conflictHelp => 'Тези промени са направени самостоятелно. Изберете позицията или версията на букмейкъра, за да запазите. По-късен часовен знак или по-висок процент автоматично не печели.';
 	@override String syncDevice({required Object device}) => 'Устройство ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsBg {
 			'audiobook.addSyncSource' => 'Първо добавете Google Drive, OneDrive, Dropbox, WebDAV или S3 в файлове и книги.',
 			'audiobook.syncDestination' => 'Синхронизиране на акаунта',
 			'audiobook.syncFolder' => 'Синхронизиране на папката или префикса',
-			'audiobook.syncFolderHelp' => 'Използвайте отделен съществуващ папка в източника на WebDAV или специален S3 префикс. книжни файлове никога не се променят.',
 			'audiobook.syncCode' => 'Приватния код за синхронизиране',
 			'audiobook.syncCodeHelp' => 'Създайте код на първото си устройство, а след това въведете този код на другите устройства. Запазете лична копия: това е ключът към шифрованото ви състояние.',
 			'audiobook.showCode' => 'Показване или скриване на синхронизиран код',
@@ -8401,7 +8398,6 @@ extension on TranslationsBg {
 			'audiobook.syncSourceDisconnect' => 'Изтриването на този източник ще изключи четене и слушане синхронизиране тук. шифровани синхронизирани файлове ще останат в доставчика.',
 			'audiobook.syncReconnect' => 'Възстановяване на сметката за съхранение',
 			'audiobook.lastSynced' => ({required Object time}) => 'Последният синхронизиран на ${time}',
-			'audiobook.syncPrivacy' => 'Само шифровани напредък и бележки се съхраняват. аудио и ebook файлове, акаунт токове и пароли не се изтеглят. Google Drive и OneDrive използват приложението съхранение; Dropbox използва PlezyNG Sync. Удобряване на синхронизиране може да изисква допълнителен достъп до писане. Докато е включен, тази дестинация притежава синхронизиране на напредък; прогресът на сървъра остава отделен. Изтегляне на синхронизиране поддържа локалната история и отдалеченото състояние.',
 			'audiobook.syncConflicts' => 'Изберете къде да се върнете',
 			'audiobook.conflictHelp' => 'Тези промени са направени самостоятелно. Изберете позицията или версията на букмейкъра, за да запазите. По-късен часовен знак или по-висок процент автоматично не печели.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Устройство ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsBg {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
