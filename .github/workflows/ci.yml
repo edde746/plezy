@@ -691,10 +691,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install 7-Zip
+      - name: Verify provisioned ARM64 7-Zip
         if: matrix.arch == 'arm64'
         shell: pwsh
-        run: choco install 7zip -y
+        run: |
+          $sevenZip = Get-Command 7z -CommandType Application -ErrorAction Stop
+          & $sevenZip.Source i
+          if ($LASTEXITCODE -ne 0) { throw 'The pinned private image 7-Zip is not usable' }
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'
