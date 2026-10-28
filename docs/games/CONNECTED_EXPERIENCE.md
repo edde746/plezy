@@ -354,3 +354,27 @@ Actual phone/receiver interoperability is still a release gate.
 Host launch/install inspection now uses monotonic deadlines plus an explicit
 active-operation guard. A scan that finishes after its timeout cannot launch a
 game later, even if the wall clock changes during the request.
+
+### Multichannel audio receiver
+
+The Android receiver can request stereo (default), quad or 5.1 per profile.
+The discovery request and streaming negotiation both carry the selected count.
+The common decoder accepts 48 kHz Opus, with a maximum of six channels and
+120 ms per packet. Legacy mono/stereo without codec metadata remains supported.
+Surround requires a valid RFC 7845 OpusHead family-1 mapping; unknown or missing
+multichannel mapping is deliberately rejected rather than guessed. Family-1
+Vorbis order is converted to FL/FR/FC/LFE/BL/BR for Android PCM. Header gain and
+pre-skip are applied. This is **not yet evidence that current Steam hosts supply
+this header**: host capture and surround speaker qualification remain required.
+
+AudioTrack uses the corresponding PCM channel mask. Queued packets retain the
+output they belong to, so an old packet cannot be played through a newly
+configured layout. Invalid layouts or unavailable outputs trigger one stereo
+retry after the previous transport exits; Pyrowave and audio fallbacks only
+remove capabilities and cannot create an infinite reconnect loop. Older JNI
+entry points continue requesting stereo. Diagnostics report negotiated input
+channels, not a guarantee about the OS's physical speaker routing.
+
+Validation includes actual Opus multistream encode/decode with distinct tones
+per channel, speaker isolation, malformed mapping/header rejection, request-wire
+channel count and legacy defaults. Device/AVR output is unqualified.

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** A retained Steam stream surface used by Plezy's app-owned workspace. */
-public final class SteamStreamView extends FrameLayout implements SurfaceHolder.Callback, SteamDecoder.Events, InputManager.InputDeviceListener {
+public final class SteamStreamView extends FrameLayout implements SurfaceHolder.Callback, InputManager.InputDeviceListener {
   private final Context context;
   private final Map<?, ?> args;
   private final SteamStreamOptions options;
@@ -255,37 +255,44 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
       record = trust.load(text("hostKey"));
       long user = ByteBuffer.wrap(record).order(ByteOrder.LITTLE_ENDIAN).getLong();
       key = Arrays.copyOfRange(record, 8, 40);
-      SteamDecoder sink = new SteamDecoder(session, holder, this);
-      decoder = sink;
-      sink.setVolume(requestedAudio ? 1.0f : 0.0f);
-      if (stopping) {
-        sink.close();
-        return;
-      }
       boolean pyrowave = Boolean.TRUE.equals(args.get("pyrowave")) && NativeSteam.pyrowaveSupported();
-      NativeSteam.runWithControllers(session, address, port(), hostId(), trust.device(), user, key, gameId(),
-          options.allowHevc && SteamDecoder.supportsHevc(), pyrowave,
-          options.width, options.height, options.fps, options.bitrateKbps, options.controllerCount, sink);
-      if (pyrowave && sink.consumePyrowaveFallback() && !stopping) {
+      int audioChannels = options.audioChannels;
+      // Each fallback removes a capability; at most three attempts, never a
+      // reconnect loop. The prior transport has returned before replacement.
+      for (int attempt = 0; attempt < 3 && !stopping; attempt++) {
+        SteamDecoder sink = new SteamDecoder(session, holder, decoderEvents(session));
+        decoder = sink;
+        sink.setVolume(requestedAudio ? 1.0f : 0.0f);
+        if (stopping) { sink.close(); break; }
+        Exception failure = null;
+        try {
+          NativeSteam.runWithAudio(session, address, port(), hostId(), trust.device(), user, key, gameId(),
+              options.allowHevc && SteamDecoder.supportsHevc(), pyrowave,
+              options.width, options.height, options.fps, options.bitrateKbps,
+              options.controllerCount, audioChannels, sink);
+        } catch (Exception error) { failure = error; }
+        boolean dropPyrowave = pyrowave && sink.consumePyrowaveFallback();
+        boolean dropSurround = audioChannels > 2 && sink.consumeAudioFallback();
+        if (stopping || (!dropPyrowave && !dropSurround)) {
+          if (failure != null) throw failure;
+          break;
+        }
+        if (dropPyrowave) pyrowave = false;
+        if (dropSurround) audioChannels = 2;
         sink.close();
         NativeSteam.destroy(session);
         session = NativeSteam.create();
         handle = session;
         if (session == 0) throw new IllegalStateException("Steam compatibility reconnect failed");
-        SteamDecoder fallback = new SteamDecoder(session, holder, this);
-        decoder = fallback;
-        fallback.setVolume(requestedAudio ? 1.0f : 0.0f);
         main.post(() -> {
           if (!stopping) {
+            shown = false;
             releaseInput();
             state("reconnecting");
             status.setText(label("connecting", "Connecting…"));
             status.setVisibility(View.VISIBLE);
           }
         });
-        NativeSteam.runWithControllers(session, address, port(), hostId(), trust.device(), user, key, gameId(),
-            options.allowHevc && SteamDecoder.supportsHevc(), false,
-            options.width, options.height, options.fps, options.bitrateKbps, options.controllerCount, fallback);
       }
     } catch (Exception error) {
       failOnMain();
@@ -324,9 +331,18 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
   @Override public void surfaceDestroyed(SurfaceHolder holder) { stop(); }
 
-  @Override public void size(int width, int height) {
+  private SteamDecoder.Events decoderEvents(final long source) {
+    return new SteamDecoder.Events() {
+      @Override public void size(int width, int height) { streamSize(source, width, height); }
+      @Override public void firstFrame() { streamFirstFrame(source); }
+      @Override public void failed() { failOnMain(source); }
+      @Override public void audioFailed() { compatibilityFallback(source); }
+      @Override public void pyrowaveFailed() { compatibilityFallback(source); }
+    };
+  }
+  private void streamSize(long source, int width, int height) {
     main.post(() -> {
-      if (stopping || width < 1 || height < 1) return;
+      if (stopping || source != handle || width < 1 || height < 1) return;
       int w = getWidth(), h = getHeight();
       if (w < 1 || h < 1) return;
       float scale = Math.min((float) w / width, (float) h / height);
@@ -334,29 +350,28 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     });
   }
 
-  @Override public void firstFrame() {
+  private void streamFirstFrame(long source) {
     main.post(() -> {
-      if (stopping) return;
+      if (stopping || source != handle) return;
       shown = true;
       status.setVisibility(View.GONE);
       state("playing");
     });
   }
 
-  @Override public void failed() { failOnMain(); }
-  @Override public void pyrowaveFailed() {
+  private void compatibilityFallback(long source) {
     main.post(() -> {
-      if (stopping) return;
+      if (stopping || source != handle) return;
       status.setText(label("connecting", "Connecting…"));
       status.setVisibility(View.VISIBLE);
-      long session = handle;
-      if (session != 0) NativeSteam.cancel(session);
+      if (source != 0) NativeSteam.cancel(source);
     });
   }
 
-  private void failOnMain() {
+  private void failOnMain() { failOnMain(handle); }
+  private void failOnMain(long source) {
     main.post(() -> {
-      if (stopping || failed) return;
+      if (stopping || failed || (source != 0 && source != handle)) return;
       failed = true;
       state("failed");
       status.setText(label("error", "The stream could not start. Check pairing and the host."));

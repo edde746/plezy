@@ -598,6 +598,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       quality: SettingsService.instance.read(SettingsService.steamQualityForProfile(c.profileId)),
       codec: SettingsService.instance.read(SettingsService.steamCodecForProfile(c.profileId)),
       controllerCount: SettingsService.instance.read(SettingsService.steamControllerCountForProfile(c.profileId)),
+      audio: SettingsService.instance.read(SettingsService.steamAudioForProfile(c.profileId)),
       host: host,
       game: game,
       touchControls:
@@ -1159,6 +1160,17 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                       const DialogOption(value: SteamStreamCodec.h264, title: 'H.264'),
                     ],
                   ),
+                  SettingSelectionTile<SteamStreamAudio>(
+                    pref: SettingsService.steamAudioForProfile(_profile!),
+                    icon: Symbols.surround_sound_rounded,
+                    title: t.games.streamAudio,
+                    subtitleBuilder: _audioLabel,
+                    description: t.games.streamAudioHelp,
+                    options: [
+                      for (final audio in SteamStreamAudio.values)
+                        DialogOption(value: audio, title: _audioLabel(audio)),
+                    ],
+                  ),
                   SettingSelectionTile<int>(
                     pref: SettingsService.steamControllerCountForProfile(_profile!),
                     icon: Symbols.sports_esports_rounded,
@@ -1241,6 +1253,12 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       ],
     );
   }
+
+  String _audioLabel(SteamStreamAudio audio) => switch (audio) {
+    SteamStreamAudio.stereo => t.games.audioStereo,
+    SteamStreamAudio.quad => t.games.audioQuad,
+    SteamStreamAudio.surround51 => t.games.audioSurround51,
+  };
 
   String _qualityLabel(SteamStreamQuality quality) => switch (quality) {
     SteamStreamQuality.balanced => t.games.qualityBalanced,

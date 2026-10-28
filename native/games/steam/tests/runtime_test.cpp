@@ -137,7 +137,8 @@ int main() {
   Runtime invalid;
   for (const auto& options : {StreamOptions{0, 1080, 60, 30000}, {1920, 1081, 60, 30000},
                               {1920, 1080, 120, 30000}, {1920, 1080, 60, 50001},
-                              {1920, 1080, 60, 30000, 0}, {1920, 1080, 60, 30000, 5}}) {
+                              {1920, 1080, 60, 30000, 0}, {1920, 1080, 60, 30000, 5},
+                              {1920, 1080, 60, 30000, 1, 3}}) {
     assert(invalid.run({"127.0.0.1", 27036, 1}, c, 620, false, false,
                        std::make_shared<NullSink>(), options) == -1);
   }
@@ -163,7 +164,7 @@ int main() {
   Runtime stream;
   auto run = std::async(std::launch::async, [&] {
     return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false,
-                      std::make_shared<NullSink>(), {1280, 720, 30, 12000, 4});
+                      std::make_shared<NullSink>(), {1280, 720, 30, 12000, 4, 6});
   });
   uint8_t bytes[4096];
   ssize_t length = recv(fd, bytes, sizeof(bytes), 0);
@@ -174,7 +175,7 @@ int main() {
   assert(16 + hs + ps == static_cast<size_t>(length));
   auto* request = cmsg_remote_device_streaming_request__unpack(nullptr, ps, bytes + 16 + hs);
   assert(request && request->has_gameid && request->gameid == 620);
-  assert(!request->stream_desktop && request->audio_channel_count == 2);
+  assert(!request->stream_desktop && request->audio_channel_count == 6);
   assert(request->gamepad_count == 4);
   assert(request->maximum_resolution_x == 1280 && request->maximum_resolution_y == 720);
   cmsg_remote_device_streaming_request__free_unpacked(request, nullptr);

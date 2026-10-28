@@ -768,6 +768,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: SteamStreamCodec.values,
     defaultValue: SteamStreamCodec.automatic,
   );
+  static EnumPref<SteamStreamAudio> steamAudioForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_audio'),
+    values: SteamStreamAudio.values,
+    defaultValue: SteamStreamAudio.stereo,
+  );
   static IntPref steamControllerCountForProfile(String profileId) => IntPref(
     profileScopedPrefsKey(profileId, 'steam_controller_count'),
     defaultValue: 1,

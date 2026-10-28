@@ -1,6 +1,6 @@
 -keep class org.snapetech.plezyng.games.steam.EmbeddedSteam { public static *; }
 -keep class org.snapetech.plezyng.games.steam.NativeSteam { *; }
--keep class org.snapetech.plezyng.games.steam.SteamDecoder { public boolean onVideo(...); public boolean onFrame(...); public boolean onAudio(...); public void onSamples(...); }
+-keep class org.snapetech.plezyng.games.steam.SteamDecoder { public boolean onVideo(...); public boolean onFrame(...); public boolean onAudio(...); public void onAudioUnavailable(); public void onSamples(...); }
 -keep class org.snapetech.plezyng.games.steam.SteamStreamView {
     public <init>(android.content.Context, java.util.Map);
     public void setAudioEnabled(boolean);

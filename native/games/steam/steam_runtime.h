@@ -11,6 +11,7 @@
 #include <vector>
 #include "steam_pyrowave.h"
 #include "steam_stream_options.h"
+#include "steam_audio.h"
 extern "C" {
 #include <ihslib.h>
 #include <ihslib/frame_ticket.h>
@@ -53,6 +54,7 @@ struct Sink {
   virtual bool video(int codec, int width, int height, const uint8_t* extra, size_t length) = 0;
   virtual bool frame(const uint8_t* bytes, size_t length, uint32_t id, bool key) = 0;
   virtual bool audio(int channels, int rate) = 0;
+  virtual void audioUnavailable() {}
   virtual void samples(const int16_t* pcm, size_t count) = 0;
 };
 
@@ -103,8 +105,8 @@ class Runtime {
   Credentials paired_{};
   std::shared_ptr<Sink> sink_;
   std::array<std::shared_ptr<PadState>, 4> pads_;
-  OpusDecoder* opus_ = nullptr;
-  int channels_ = 0;
+  AudioDecoder audio_;
+  int requestedAudioChannels_ = 2;
   bool pyrowaveEnabled_ = false;
   PyrowaveDecoder pyrowave_;
   std::mutex frameMutex_;

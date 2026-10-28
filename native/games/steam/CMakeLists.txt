@@ -61,7 +61,7 @@ target_compile_definitions(plezy_ihs PRIVATE _POSIX_C_SOURCE=200809L _DEFAULT_SO
 find_package(Threads REQUIRED)
 target_link_libraries(plezy_ihs PUBLIC plezy_protobuf_c mbedcrypto Threads::Threads m)
 
-add_library(plezy_steam_runtime STATIC steam_runtime.cpp steam_controller.cpp steam_pyrowave.cpp)
+add_library(plezy_steam_runtime STATIC steam_runtime.cpp steam_controller.cpp steam_pyrowave.cpp steam_audio.cpp)
 target_include_directories(plezy_steam_runtime BEFORE PRIVATE
   "${PYROWAVE_ROOT}/Granite/third_party/khronos/vulkan-headers/include")
 target_include_directories(plezy_steam_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" PRIVATE "${IHS_ROOT}/src")
@@ -109,4 +109,9 @@ if(PLEZY_STEAM_TESTS AND NOT ANDROID)
   target_compile_options(plezy_pyrowave_test PRIVATE -UNDEBUG)
   add_test(NAME plezy_pyrowave_bitstream COMMAND plezy_pyrowave_test)
   set_tests_properties(plezy_pyrowave_bitstream PROPERTIES TIMEOUT 15)
+  add_executable(plezy_audio_test tests/audio_test.cpp)
+  target_link_libraries(plezy_audio_test PRIVATE plezy_steam_runtime)
+  target_compile_options(plezy_audio_test PRIVATE -UNDEBUG)
+  add_test(NAME plezy_audio COMMAND plezy_audio_test)
+  set_tests_properties(plezy_audio PROPERTIES TIMEOUT 15)
 endif()
