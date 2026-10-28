@@ -9,6 +9,8 @@ PlezyNG is a downstream fork for feature requests that Plezy upstream has declin
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
+The [debrid, Stremio and remote-streaming implementation plan](docs/plezyng/remote-streams/README.md) documents the proposed provider integrations, native PlezyNG flows, architecture, and Luna delivery/validation handoff.
+
 ## Dolby Vision experiments
 
 PlezyNG has developed genuine Profile 7 FEL reconstruction alongside native and
