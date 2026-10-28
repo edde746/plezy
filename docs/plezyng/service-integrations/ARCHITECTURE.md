@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: proposed. Names below are implementation guidance, not classes delivered by this PR. **High-confidence design recommendation:** add capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: broader architecture proposed. This branch implements a curated external-destination directory and Google Books public search; the access-option, account, offer persistence and partner contracts below remain guidance for follow-up work. **High-confidence design recommendation:** add capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 

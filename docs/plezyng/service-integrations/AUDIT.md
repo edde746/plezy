@@ -6,7 +6,7 @@ Inspected `snapetech-org/PlezyNG` at **main `0d0626cc375b8fa95124775365a6b37e2a0
 
 Before publication, refreshed main to **`fb371d5046d16ecfaa7af9869b028b253f06ff83`** and compared the intervening changes. They affect the private-JIT Windows CI marker, its workflow guards/tests and changelog only; none of the audited application owners changed. This documentation branch incorporates that updated base.
 
-Also inspected the README and changed integration paths of **`codex/debrid-stremio-integration-20261028` at `5b7f8578b6dae95b8818cfcb5e50aca2052a13f6`**. Its source is separate from the inspected main baseline. No code from that branch is copied or merged here. Live branch heads can move; Luna must recheck before implementation.
+Also inspected the README and changed integration paths of **`codex/debrid-stremio-integration-20261028` at `5b7f8578b6dae95b8818cfcb5e50aca2052a13f6`**. Its source is separate from the inspected main baseline. No code from that branch is copied or merged here. Live branch heads can move; recheck before follow-up work that touches shared provider/source registries.
 
 Confidence is **high** for statements grounded in these files. Runtime behavior on real accounts/devices is **unknown** unless a cited existing delivery document explicitly records evidence; this planning PR did not reproduce those tests.
 

@@ -38,6 +38,7 @@ import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/external_access_directory.dart';
 import '../services/settings_service.dart';
 import '../services/video_decode_capabilities.dart';
 import '../models/transcode_quality_preset.dart';
@@ -64,6 +65,7 @@ import '../widgets/overlay_sheet.dart';
 import '../widgets/seerr_request_sheet.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/stat_chip.dart';
+import 'external_access_screen.dart';
 
 /// Detail screen for a catalog item (Explore tab). Renders from provider
 /// data — no media server required — and resolves library availability in
@@ -321,6 +323,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final otherLinks = <CatalogLink>[];
     for (final link in item.links ?? const <CatalogLink>[]) {
       if (link.label.trim().isEmpty || link.url.trim().isEmpty) continue;
+      if (ExternalAccessDirectory.isExcludedStreamingLink(label: link.label, url: link.url)) continue;
       (link.isStreaming ? streamingLinks : otherLinks).add(link);
     }
     for (final node in _linkFocusNodes) {
@@ -417,7 +420,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  bool get _hasAccessDirectory => ExternalAccessDirectory.forMediaKind(_item.kind) != null;
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer || _hasAccessDirectory;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -1524,6 +1529,29 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                     ? t.explore.removeFromWatchlist
                                                     : t.explore.addToWatchlist,
                                                 onPressed: () => unawaited(_toggleWatchlist()),
+                                              ),
+                                            if (ExternalAccessDirectory.forMediaKind(item.kind)
+                                                case final accessCategory?)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_external_access',
+                                                icon: Symbols.open_in_new_rounded,
+                                                tooltip: t.explore.detail.links,
+                                                onPressed: () => unawaited(
+                                                  Navigator.push<void>(
+                                                    hostContext,
+                                                    MaterialPageRoute<void>(
+                                                      builder: (_) => ExternalAccessScreen(
+                                                        title: item.title,
+                                                        categories: accessCategory == ExternalAccessCategory.video
+                                                            ? const [
+                                                                ExternalAccessCategory.video,
+                                                                ExternalAccessCategory.rentals,
+                                                              ]
+                                                            : const [ExternalAccessCategory.music],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr when tmdbId != null)
                                               FocusableAction(

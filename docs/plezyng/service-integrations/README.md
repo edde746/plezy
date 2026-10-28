@@ -1,6 +1,6 @@
 # PlezyNG service integration audit and Luna handoff
 
-Prepared **2026-10-27, America/Regina**. This is a research and implementation-plan change; it enables no providers, changes no runtime behavior, and creates no partner accounts.
+Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-10-28**: the three explicitly excluded streaming services are removed from PlezyNG's provider directory and catalog-launch surface. This branch adds broad official-site handoffs and an in-app Google Books search; it does not create partner accounts or affiliate tracking.
 
 **Recommendation — high confidence:** make PlezyNG the place to find a title, see the copies/subscriptions/loans/offers available to the active profile, and choose the right way to use it. Implement native playback where a supported content API or SDK permits it; use official app/site handoff elsewhere. Keep the current navigation, artwork-led presentation, profiles, readers and player owners.
 
@@ -8,7 +8,7 @@ Prepared **2026-10-27, America/Regina**. This is a research and implementation-p
 
 | Question | Assessment | Confidence |
 | --- | --- | --- |
-| Can we be a Netflix, Prime Video or Disney+ client? | A discovery and official-launch client: yes, subject to licensed availability data and platform launch qualification. A general replacement player using the current mpv pipeline: no supported public consumer playback route was established in this audit. A negotiated device/content partnership is a separate, uncertain business project. | High for the recommended boundary; unknown for obtaining a partnership |
+| What is excluded from this delivery? | Netflix, Prime Video and Disney+ are not offered as connected providers, title destinations or availability sources. Amazon Books, Kindle and Music storefront links remain distinct retail/music handoffs; they do not enable Prime Video. | Explicit product scope |
 | Can we connect to Kobo? | Affiliate storefront links and catalog feeds by agreement; official Kobo reading/Plus handoff; import exported DRM-free EPUB/PDF. Do not promise automatic account-library import or DRM playback. | High for exports and affiliate program; unknown for consumer account API access |
 | Amazon/Kindle/Audible? | Eligible Kindle DRM-free purchases now have an EPUB/PDF export path. Ordinary protected Kindle/Audible content stays in provider apps. Use Creators API for approved product-catalog work, not deprecated PA-API 5. Associates distribution restrictions make desktop/TV monetization a blocker under standard terms. | High; exact marketplace/product eligibility needs confirmation |
 | Indigo? | Offer Canadian print-book commerce and verified ebook offers. Current Indigo ebooks are Kobo fulfilled. Model seller and fulfillment provider separately. Affiliate participation is a commercial lead; PlezyNG-specific app approval and payout are unverified. | High for Kobo fulfillment; moderate for affiliate lead |
@@ -28,15 +28,22 @@ Sources and precise limits are in [PROVIDERS.md](PROVIDERS.md), [COMMERCIAL.md](
 7. [VALIDATION.md](VALIDATION.md): acceptance matrix, platform qualification and release evidence.
 8. [SOURCES.md](SOURCES.md): primary-source register, freshness and uncertainty.
 
+## Current code delivery
+
+- A region-aware official destination directory covers subscription/ad-supported video, rentals, books, audiobooks, comics, music and game storefronts. It is searchable and opens in the platform's official app/browser.
+- Explore details, media details, source-backed book/audio/video/comic details, game context menus and Settings → Services link into the same directory.
+- Catalog-supplied streaming links to the excluded services are filtered. Native server/file playback and existing library flows retain their own state and actions.
+- The existing public library catalogue can switch between Open Library and the unauthenticated Google Books public catalogue API. Google sale metadata is shown only when the API supplies a provider purchase link, price and currency; purchase opens Google Books.
+- No third-party provider account, entitlement, playback, live price comparison, affiliate attribution or commission is claimed by the handoff directory.
+
 ## Product rules to carry into implementation
 
 - Availability, subscription preference, verified entitlement, a local file and a playable session are separate facts.
-- “Open in Netflix” must never become an enabled native Play button merely because a catalog match exists.
 - An external launch is not evidence of playback, completion, purchase or a successful loan.
 - A book work, its print/ebook/audio editions and a film adaptation are related entities, not interchangeable copies or progress timelines.
 - Existing/offline access and free library choices remain visible irrespective of commission. Revenue does not determine default access ranking.
 - Extend Settings → Services, Libraries/Files and books, public-library screens, Search, Explore, details and Find your next. Do not add a top-level tab per vendor or a second media library implementation.
-- Protected fulfillment requires an explicitly supported DRM/SDK path. Installing Widevine alone does not authorize Netflix/Disney/Prime playback.
+- Protected fulfillment requires an explicitly supported DRM/SDK path. A system codec or DRM module alone does not authorize a service integration.
 - Every release claim is scoped by provider, territory, account type, platform, distribution channel and demonstrated capability.
 
 ## Initial release target

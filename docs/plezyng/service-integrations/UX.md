@@ -19,11 +19,11 @@ Status: proposed behavior. **High confidence:** the existing design and navigati
 
 ## Setup journeys
 
-### Streaming service with no account API
+### Official provider handoff
 
-Settings → Services → Add service → Netflix → select country and optional subscription tier → **Add to my services**. The result is a local preference. Copy: “Show titles available with your service. Watching opens Netflix.” Do not show a Netflix password field, OAuth success message or “Library synced.”
+Open **Links** from a media/source detail or Settings → Services → Integrations. Search the provider list, then choose a region-appropriate official destination. Title details prefill the provider search with the title (and creator for books/audio); the directory is not an account connector and does not save a subscription preference.
 
-On a title: **Open in Netflix**. If a verified title destination is unavailable, offer **Find on Netflix** only with a supported search/site route, and explain that the exact title link is unavailable. Do not turn a home-page launch into evidence that the title is available. Keep sign-in and account selection inside the official app/browser.
+The provider performs sign-in, territory, entitlement and final catalog search. Do not label a provider “connected,” infer that the exact title is available, or treat an external launch as playback. Netflix, Prime Video and Disney+ are out of this delivery scope.
 
 ### Library with supported native access
 
@@ -60,9 +60,9 @@ An access row contains an approved provider mark, provider/action, relevant form
 
 | State | Preferred user-facing language | Never imply |
 | --- | --- | --- |
-| Selected service, no account API | “In your services” / “Opens Disney+” | Verified subscription or synchronized library |
+| Official provider handoff | “Open on [provider]” | Verified subscription, title availability or synchronized library |
 | Supported auth verified | “Linked” and safe account label | All media types or countries automatically supported |
-| Data known but subscription unknown | “Available with Prime Video” plus channel/tier when supplied | “You own this” |
+| Data known but subscription unknown | Show the provider's supplied tier/channel with its provenance | “You own this” |
 | Protected fulfillment | “Read in Kobo” / “Listen in Audible” | Native Read/Listen in PlezyNG |
 | Store availability | “Buy paperback at Indigo” | Ebook access or local ownership |
 | Stale price | “Check price at store” or clearly dated permitted cached value | Current cheapest price |
@@ -96,9 +96,9 @@ Offline mode retains downloaded owned media and permitted cached metadata. Onlin
 
 ## Concrete walkthroughs for Luna
 
-- **Movie already on Plex and also on Netflix:** existing Play resumes Plex. Access section offers the other Plex versions and “Open in Netflix”; no Netflix authentication stored, no scrobble from external launch.
+- **Movie already on Plex and also discoverable on Crave:** existing Play resumes Plex. The external directory opens an official provider search; it does not store credentials or scrobble an external launch.
 - **Novel with Kobo ebook, Indigo paperback and Libro audiobook:** one work overview may link to three explicit format/edition details; each price and fulfillment stays attached to its own product. Listening progress never overwrites ebook location.
 - **Libby loan available, Kobo purchase also offered:** loan and expiry appear in Your libraries; official fulfillment is explicit. The paid offer remains discoverable without displacing the free borrowing path.
-- **Canadian title only available through a Prime channel:** display the actual channel requirement. Selecting Prime does not mark every channel available.
+- **Canadian title with a regional add-on offer:** display the supplied channel requirement and its source. A search handoff does not mark every title in the base subscription as available.
 - **Bandcamp album imported from FLAC files:** existing owned-music flow is authoritative. A store link is provenance/discovery, not required at every play.
 - **Steam game sold at Fanatical but no paired host has it installed:** show a store action if eligible; Play remains unavailable until a real host route exists.
