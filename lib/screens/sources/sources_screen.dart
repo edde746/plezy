@@ -58,6 +58,7 @@ String sourceTransportLabel(FileSource source) {
           : t.sourceSetup.checkEndpointSecurity,
     FileSourceKind.local => null,
     FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox => t.fileSources.signIn,
+    FileSourceKind.remoteCloud => t.streaming.cloudFiles,
   };
   return transport == null ? type : '$type · $transport';
 }
@@ -258,15 +259,23 @@ class _SourcesScreenState extends State<SourcesScreen> {
         streaming.accountFor(account.service)?.id != account.id) {
       return;
     }
+    final remoteSource = sources.sources
+        .where((source) => source.kind == FileSourceKind.remoteCloud && source.options['accountId'] == account.id)
+        .firstOrNull;
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RemoteCloudFilesScreen(
-          service: account.service,
-          onManageConnections: _manageRemoteStreaming,
-          expectedAccountId: account.id,
-          expectedProfileId: profileId,
-        ),
+        builder: (_) => remoteSource == null
+            ? RemoteCloudFilesScreen(
+                service: account.service,
+                onManageConnections: _manageRemoteStreaming,
+                expectedAccountId: account.id,
+                expectedProfileId: profileId,
+              )
+            : SourcesScreen(
+                source: remoteSource,
+                title: Text('${_remoteServiceName(account.service)} · ${account.displayName}'),
+              ),
       ),
     );
     if (mounted) await _load();
@@ -451,10 +460,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
   @override
   Widget build(BuildContext context) {
     final sources = context.watch<SourceController>();
-    final streaming = context.watch<RemoteStreamingProvider>();
-    final streamingReadyForSource = streaming.isReady && streaming.profileId == sources.profileId;
-    final remoteAccounts = streamingReadyForSource ? streaming.accounts : const <RemoteStreamAccount>[];
-    final remoteAddonCount = streamingReadyForSource ? streaming.addons.length : 0;
+    final streaming = context.watch<RemoteStreamingProvider?>();
+    final streamingReadyForSource = streaming?.isReady == true && streaming?.profileId == sources.profileId;
+    final remoteAccounts = streamingReadyForSource ? streaming!.accounts : const <RemoteStreamAccount>[];
+    final remoteAddonCount = streamingReadyForSource ? streaming!.addons.length : 0;
+    final configuredSources = sources.sources.where((source) => source.kind != FileSourceKind.remoteCloud).toList();
     final root = widget.source == null && !widget.offlineOnly && widget.shelf == null;
     final filtered = _entries
         .where(
@@ -632,7 +642,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   if (!streamingReadyForSource || remoteAccounts.isEmpty)
                     SourceTile(
                       title: t.streaming.manageConnections,
-                      subtitle: streaming.loadFailed
+                      subtitle: streaming?.loadFailed == true
                           ? t.streaming.settingsLoadFailed
                           : remoteAddonCount == 0
                           ? t.streaming.subtitle
@@ -657,9 +667,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                       ),
                     SourceTile(
                       title: t.streaming.manageConnections,
-                      subtitle: t.streaming.connectionsConfigured(
-                        count: remoteAccounts.length + remoteAddonCount,
-                      ),
+                      subtitle: t.streaming.connectionsConfigured(count: remoteAccounts.length + remoteAddonCount),
                       icon: Symbols.tune_rounded,
                       trailing: const AppIcon(Symbols.chevron_right_rounded),
                       index: remoteAccounts.length,
@@ -668,18 +676,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  for (var i = 0; i < sources.sources.length; i++)
+                  for (var i = 0; i < configuredSources.length; i++)
                     SourceTile(
-                      title: sources.sources[i].name,
-                      subtitle: sourceTransportLabel(sources.sources[i]),
+                      title: configuredSources[i].name,
+                      subtitle: sourceTransportLabel(configuredSources[i]),
                       icon: Symbols.cloud_queue_rounded,
-                      leading: FileSourceMark(sources.sources[i].kind),
+                      leading: FileSourceMark(configuredSources[i].kind),
                       index: i,
-                      count: sources.sources.length,
+                      count: configuredSources.length,
                       onTap: () async {
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => SourcesScreen(source: sources.sources[i])),
+                          MaterialPageRoute(builder: (_) => SourcesScreen(source: configuredSources[i])),
                         );
                         if (mounted) await _load();
                       },
@@ -689,15 +697,15 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         adaptiveSheet: true,
                         entriesBuilder: (_) => [
                           AppMenuItem(
-                            value: sources.scanning.containsKey(sources.sources[i].id) ? 'cancel-scan' : 'scan',
-                            label: sources.scanning.containsKey(sources.sources[i].id)
+                            value: sources.scanning.containsKey(configuredSources[i].id) ? 'cancel-scan' : 'scan',
+                            label: sources.scanning.containsKey(configuredSources[i].id)
                                 ? t.fileSources.cancelScan
                                 : t.fileSources.scan,
                           ),
                           AppMenuItem(value: 'reconnect', label: t.fileSources.reconnect),
                           AppMenuItem(value: 'remove', label: t.fileSources.removeSource, destructive: true),
                         ],
-                        onSelected: (value) => _sourceAction(value, sources.sources[i]),
+                        onSelected: (value) => _sourceAction(value, configuredSources[i]),
                       ),
                     ),
                   const SizedBox(height: 16),

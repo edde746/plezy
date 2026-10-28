@@ -1890,15 +1890,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
           dispose: (_, binder) => binder.dispose(),
         ),
-        // Download provider. Downloads are shared, but sync rules are scoped to
-        // the active profile and reload when the profile changes.
-        ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
-          create: (_) => SourceController(),
-          update: (_, active, previous) {
-            previous!.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
-            return previous;
-          },
-        ),
         ChangeNotifierProxyProvider<ActiveProfileProvider, RemoteStreamingProvider>(
           create: (_) => RemoteStreamingProvider(),
           update: (_, active, previous) {
@@ -1906,6 +1897,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return previous;
           },
         ),
+        // File sources project connected debrid inventories into the same
+        // profile-scoped file browser and progress journal.
+        ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
+          create: (context) => SourceController(remoteStreamingProvider: context.read<RemoteStreamingProvider>()),
+          update: (_, active, previous) {
+            final controller = previous!;
+            controller.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
+            return controller;
+          },
+        ),
+        // Download provider. Downloads are shared, but sync rules are scoped to
+        // the active profile and reload when the profile changes.
         ChangeNotifierProvider<SourcePlayback>(create: (context) => SourcePlayback(context.read<SourceController>())),
         ChangeNotifierProxyProvider<ActiveProfileProvider, DownloadProvider>(
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),

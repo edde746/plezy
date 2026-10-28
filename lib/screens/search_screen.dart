@@ -28,6 +28,9 @@ import '../providers/seerr_account_provider.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../sources/publication_shelf.dart';
+import '../sources/source_controller.dart';
+import '../sources/source_models.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -46,6 +49,8 @@ import '../widgets/seerr_request_sheet.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
+import 'sources/source_detail_screen.dart';
+import 'sources/source_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -66,7 +71,8 @@ class _SearchScreenState extends State<SearchScreen>
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
-  ({String query, SearchAggregationResult result, List<MediaItem> seerr})? _pendingSearchOutcome;
+  ({String query, SearchAggregationResult result, List<MediaItem> seerr, List<SourceEntry> sourceFiles})?
+  _pendingSearchOutcome;
 
   /// Filter over the current results: everything, one media kind, or only
   /// people. Chips and the filtered views derive from [_searchCandidates] and
@@ -78,6 +84,7 @@ class _SearchScreenState extends State<SearchScreen>
   List<MediaPerson> _searchPeople = const [];
   List<MediaKind> _candidateKinds = const [];
   List<SearchHit>? _filteredResults;
+  List<SourceEntry> _sourceFileResults = const [];
 
   /// Titles the connected Seerr instance found for the query that the media
   /// servers do not already have, as catalog stand-ins. They trail the
@@ -140,16 +147,29 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   Future<List<SearchHit>> performSearchQuery(String query) async {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    final sourceFilesFuture = _searchRemoteSourceFiles(query);
+    final seerrFuture = _searchSeerr(query);
     if (!multiServerProvider.hasConnectedServers) {
-      throw const _SearchUnavailableException();
+      final sourceFiles = await sourceFilesFuture;
+      final seerr = await seerrFuture ?? const <MediaItem>[];
+      if (!mounted) return const [];
+      if (sourceFiles.isEmpty && seerr.isEmpty) throw const _SearchUnavailableException();
+      const emptyResult = (
+        hits: <SearchHit>[],
+        candidates: <MediaItem>[],
+        people: <MediaPerson>[],
+        succeededServerIds: <String>{},
+        cancelledServerIds: <String>{},
+        failedServerIds: <String>{},
+      );
+      _pendingSearchOutcome = (query: query, result: emptyResult, seerr: seerr, sourceFiles: sourceFiles);
+      return [for (final item in seerr) MediaSearchHit(item)];
     }
 
     // Hidden-library keys must be hydrated before the first query, or a cold
     // start would filter nothing. Read before any await: the profile subtree
     // can be torn down mid-search.
     final hiddenLibraries = context.read<HiddenLibrariesProvider>();
-    // Seerr runs alongside the servers and never fails the search.
-    final seerrFuture = _searchSeerr(query);
     await hiddenLibraries.ensureInitialized();
     if (!mounted) return const [];
 
@@ -162,21 +182,89 @@ class _SearchScreenState extends State<SearchScreen>
         abort: abort,
       );
       abort.throwIfAborted();
-      if (result.succeededServerIds.isEmpty && result.failedServerIds.isNotEmpty) {
+      final sourceFiles = await sourceFilesFuture;
+      final seerr = await seerrFuture ?? const <MediaItem>[];
+      abort.throwIfAborted();
+      if (result.succeededServerIds.isEmpty &&
+          result.failedServerIds.isNotEmpty &&
+          sourceFiles.isEmpty &&
+          seerr.isEmpty) {
         throw const _SearchUnavailableException();
       }
-      if (result.succeededServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
+      if (result.succeededServerIds.isEmpty &&
+          result.cancelledServerIds.isNotEmpty &&
+          sourceFiles.isEmpty &&
+          seerr.isEmpty) {
         throw MediaServerHttpException(
           type: MediaServerHttpErrorType.cancelled,
           message: 'Search was cancelled before any server completed',
         );
       }
-      final seerr = await seerrFuture ?? const <MediaItem>[];
-      abort.throwIfAborted();
-      _pendingSearchOutcome = (query: query, result: result, seerr: seerr);
+      _pendingSearchOutcome = (query: query, result: result, seerr: seerr, sourceFiles: sourceFiles);
       return [...result.hits, for (final item in seerr) MediaSearchHit(item)];
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
+    }
+  }
+
+  /// Cloud files join global Search after they have been browsed once. The
+  /// source index stores stable file metadata only; signed playback links are
+  /// refreshed by SourceDetailScreen when a result is opened.
+  Future<List<SourceEntry>> _searchRemoteSourceFiles(String query) async {
+    final sources = context.read<SourceController?>();
+    if (sources == null || sources.blocked || query.trim().isEmpty) return const [];
+    try {
+      await sources.ready;
+      if (!mounted || sources.blocked || sources.profileId == null) return const [];
+      final profile = sources.profileId!;
+      final epoch = sources.generation;
+      final remoteSources = sources.sources.where((source) => source.kind == FileSourceKind.remoteCloud).toList();
+      if (remoteSources.isEmpty) return const [];
+      final pages = await Future.wait([
+        for (final source in remoteSources)
+          sources.repository.entriesPage(
+            profile,
+            source: source.id,
+            shelf: PublicationShelf.videos,
+            query: query,
+            limit: 12,
+          ),
+      ]);
+      if (!mounted || sources.blocked || !sources.current(epoch) || sources.profileId != profile) return const [];
+      final connectedSourceIds = sources.sources
+          .where((source) => source.kind == FileSourceKind.remoteCloud)
+          .map((source) => source.id)
+          .toSet();
+      final seen = <String>{};
+      final result = [
+        for (final page in pages)
+          for (final entry in page.items)
+            if (connectedSourceIds.contains(entry.sourceId) &&
+                entry.kind == SourceItemKind.video &&
+                !entry.unavailable &&
+                seen.add(entry.key))
+              entry,
+      ];
+      final normalizedQuery = normalizeSearchText(query);
+      result.sort((a, b) {
+        final aTitle = normalizeSearchText(a.displayTitle), bTitle = normalizeSearchText(b.displayTitle);
+        final aRank = aTitle == normalizedQuery
+            ? 0
+            : aTitle.startsWith(normalizedQuery)
+            ? 1
+            : 2;
+        final bRank = bTitle == normalizedQuery
+            ? 0
+            : bTitle.startsWith(normalizedQuery)
+            ? 1
+            : 2;
+        return aRank == bRank ? aTitle.compareTo(bTitle) : aRank.compareTo(bRank);
+      });
+      return result.take(48).toList(growable: false);
+    } on Object {
+      // The server and Seerr search paths remain useful if the local source
+      // index is unavailable or is being torn down with a profile change.
+      return const [];
     }
   }
 
@@ -278,6 +366,7 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case MediaSearchHit(:final item) when item.isCatalogItem) item,
         ];
+    _sourceFileResults = matchedOutcome?.sourceFiles ?? const [];
     _searchPeople =
         matched?.people ??
         [
@@ -294,7 +383,7 @@ class _SearchScreenState extends State<SearchScreen>
 
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
-    if (results.isEmpty) return;
+    if (results.isEmpty && _sourceFileResults.isEmpty) return;
     if (searchController.text.trim() != query) return; // user kept editing
     FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
   }
@@ -305,6 +394,10 @@ class _SearchScreenState extends State<SearchScreen>
   void handleSearchSubmit() {
     final query = searchController.text.trim();
     if (query.isEmpty) return;
+    if (_sourceFileResults.isNotEmpty && searchResults.isEmpty && !isSearching && query == lastSearchedQuery) {
+      FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+      return;
+    }
     if (searchResults.isEmpty || isSearching || query != lastSearchedQuery) {
       _focusResultsForQuery = query;
     }
@@ -504,6 +597,7 @@ class _SearchScreenState extends State<SearchScreen>
     _candidateKinds = const [];
     _filteredResults = null;
     _seerrResults = const [];
+    _sourceFileResults = const [];
   }
 
   FocusNode _chipFocusNode(_SearchFilter filter) => switch (filter) {
@@ -669,12 +763,48 @@ class _SearchScreenState extends State<SearchScreen>
     final showChips = _showFilterChips;
     final visible = _visibleResults;
     final firstSeerrIndex = visible.indexWhere((hit) => hit is MediaSearchHit && hit.item.isCatalogItem);
+    final showSourceFiles = _sourceFileResults.isNotEmpty && _selectedFilter is! _PeopleResults;
+    final sourceFilesStart = visible.length;
     return buildResultsSliver(
-      childCount: visible.length,
+      childCount: visible.length + (showSourceFiles ? _sourceFileResults.length + 1 : 0),
       // Half the default top padding when the chip strip sits directly above:
       // the strip already separates results from the search field.
       padding: showChips ? const EdgeInsets.fromLTRB(16, 8, 16, 16) : const EdgeInsets.all(16),
       (context, index) {
+        if (showSourceFiles && index >= sourceFilesStart) {
+          if (index == sourceFilesStart) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(8, visible.isEmpty ? 0 : 16, 8, 8),
+              child: Row(
+                children: [
+                  const AppIcon(Symbols.cloud_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Text(t.streaming.cloudFiles, style: Theme.of(context).textTheme.titleSmall),
+                ],
+              ),
+            );
+          }
+          final fileIndex = index - sourceFilesStart - 1;
+          final entry = _sourceFileResults[fileIndex];
+          final source = context
+              .read<SourceController?>()
+              ?.sources
+              .where((candidate) => candidate.id == entry.sourceId)
+              .firstOrNull;
+          final firstResult = visible.isEmpty && fileIndex == 0;
+          return SourceTile(
+            key: ValueKey(entry.key),
+            title: entry.displayTitle,
+            subtitle: _remoteSourceSubtitle(source),
+            icon: Symbols.movie_rounded,
+            index: fileIndex,
+            count: _sourceFileResults.length,
+            focusNode: firstResult ? firstResultFocusNode : null,
+            onNavigateUp: firstResult ? (_showFilterChips ? _focusFilterChips : focusSearchInput) : null,
+            onNavigateLeft: _navigateToSidebar,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SourceDetailScreen(entry: entry))),
+          );
+        }
         final isFirst = index == 0;
         final onNavigateUp = isFirst ? (showChips ? _focusFilterChips : focusSearchInput) : null;
         return switch (visible[index]) {
@@ -712,6 +842,18 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  String _remoteSourceSubtitle(FileSource? source) {
+    if (source == null) return t.streaming.cloudFiles;
+    final service = switch (source.options['service']) {
+      'realDebrid' => t.streaming.realDebrid,
+      'allDebrid' => t.streaming.allDebrid,
+      'premiumize' => t.streaming.premiumize,
+      'torbox' => t.streaming.torbox,
+      _ => t.streaming.cloudFiles,
+    };
+    return '${source.name} · $service';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -728,7 +870,7 @@ class _SearchScreenState extends State<SearchScreen>
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
                 onNavigateLeft: _navigateToSidebar,
-                onNavigateDown: searchResults.isNotEmpty && !isSearching
+                onNavigateDown: (searchResults.isNotEmpty || _sourceFileResults.isNotEmpty) && !isSearching
                     ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
                     : null,
                 onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
@@ -756,7 +898,7 @@ class _SearchScreenState extends State<SearchScreen>
               SliverFillRemaining(
                 child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
               )
-            else if (searchResults.isEmpty)
+            else if (searchResults.isEmpty && _sourceFileResults.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,

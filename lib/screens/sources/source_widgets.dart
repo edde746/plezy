@@ -69,6 +69,7 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.opds => 'OPDS',
   FileSourceKind.komga => 'Komga',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
+  FileSourceKind.remoteCloud => t.streaming.cloudFiles,
 };
 IconData sourceItemIcon(SourceItemKind kind) => switch (kind) {
   SourceItemKind.comic => Symbols.auto_stories_rounded,
@@ -98,6 +99,9 @@ class SourceTile extends StatelessWidget {
     this.trailing,
     this.leading,
     this.progress,
+    this.focusNode,
+    this.onNavigateUp,
+    this.onNavigateLeft,
     this.index = 0,
     this.count = 1,
   });
@@ -108,6 +112,9 @@ class SourceTile extends StatelessWidget {
   final Widget? trailing;
   final Widget? leading;
   final double? progress;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateLeft;
   final int index, count;
   @override
   Widget build(BuildContext context) {
@@ -121,6 +128,9 @@ class SourceTile extends StatelessWidget {
         child: FocusableWrapper(
           disableScale: true,
           useBackgroundFocus: true,
+          focusNode: focusNode,
+          onNavigateUp: onNavigateUp,
+          onNavigateLeft: onNavigateLeft,
           borderRadii: shape,
           onSelect: onTap,
           descendantsAreFocusable: trailing != null,

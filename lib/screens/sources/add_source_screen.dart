@@ -426,7 +426,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       initialValue: _kind,
                       decoration: InputDecoration(labelText: t.fileSources.source),
                       items: [
-                        for (final kind in FileSourceKind.values)
+                        for (final kind in FileSourceKind.values.where((kind) => kind != FileSourceKind.remoteCloud))
                           if ((kind != FileSourceKind.local || PlatformDetector.isDesktopOS()))
                             DropdownMenuItem(
                               value: kind,

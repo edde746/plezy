@@ -18,6 +18,11 @@ enum FileSourceKind {
   opds,
   audiobookshelf,
   komga,
+
+  /// A virtual source backed by one profile-scoped debrid account. Its
+  /// credentials stay in RemoteStreamStore; FileSource.options contains only
+  /// the stable account and service identifiers.
+  remoteCloud,
 }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }

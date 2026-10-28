@@ -20,16 +20,22 @@ import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
 import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
+import 'adapters/remote_cloud_source.dart';
 import 'content_access.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'source_oauth.dart';
 import '../services/standalone_video_metadata_client.dart';
+import '../services/remote_streams/remote_stream_models.dart';
+import '../services/remote_streams/remote_streaming_provider.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
 import 'sync/publication_sync.dart';
 import 'sync/sync_store.dart';
 import 'sync/sync_document.dart';
+
+// The public injection parameter maps to a private immutable dependency field.
+// ignore_for_file: prefer_initializing_formals
 
 Uri? _trustedOnlinePosterUri(String? value) {
   final uri = Uri.tryParse(value ?? '');
@@ -59,8 +65,12 @@ Uri? _trustedOnlineTrailerUri(String? value) {
 }
 
 class SourceController extends ChangeNotifier {
-  SourceController({SourceRepository? repository}) {
+  // The public injection name avoids exposing the provider as part of the
+  // SourceController interface; the backing dependency stays immutable.
+  SourceController({SourceRepository? repository, RemoteStreamingProvider? remoteStreamingProvider})
+    : _remoteStreamingProvider = remoteStreamingProvider {
     ready = _initialize(repository);
+    _remoteStreamingProvider?.addListener(_remoteStreamingChanged);
   }
   late final Future<void> ready;
   late SourceRepository repository;
@@ -89,6 +99,8 @@ class SourceController extends ChangeNotifier {
   final Map<String, Future<SourceEntry>> _onlineLookups = {};
   final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
   final Map<String, SourceAdapter> _adapters = {};
+  final RemoteStreamingProvider? _remoteStreamingProvider;
+  final Set<String> _remoteSourceIds = {};
   List<FileSource> sources = const [];
   Set<PublicationShelf> shelves = {};
   final Map<String, int> scanning = {};
@@ -133,6 +145,94 @@ class SourceController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  void _remoteStreamingChanged() {
+    if (_disposed || loading || blocked || profileId == null) return;
+    final epoch = generation;
+    unawaited(
+      _reconcileRemoteCloudSources(epoch).catchError((Object _) {
+        if (current(epoch)) {
+          failure = SourceFailure.unavailable;
+          _notify();
+        }
+      }),
+    );
+  }
+
+  Future<void> _reconcileRemoteCloudSources(int epoch) async {
+    await ready;
+    if (!current(epoch) || loading || blocked || profileId == null) return;
+    final remote = _remoteStreamingProvider;
+    if (remote == null || remote.profileId != profileId || remote.loading) return;
+    if (remote.loadFailed || !remote.isReady) {
+      final visible = sources.where((source) => source.kind != FileSourceKind.remoteCloud).toList(growable: false);
+      if (visible.length != sources.length) {
+        sources = visible;
+        for (final id in _remoteSourceIds) {
+          _adapters.remove(id)?.close();
+        }
+        await _shelves(profileId!, epoch);
+        _notify();
+      }
+      return;
+    }
+
+    final profile = profileId!;
+    final remoteSources = [
+      for (final account in remote.accounts)
+        FileSource(
+          id: 'remote-cloud:${account.id}',
+          profileId: profile,
+          kind: FileSourceKind.remoteCloud,
+          name: account.displayName,
+          endpoint: 'remote-cloud://${account.service.name}/${Uri.encodeComponent(account.id)}',
+          options: {'accountId': account.id, 'service': account.service.name},
+        ),
+    ];
+    final nextIds = remoteSources.map((source) => source.id).toSet();
+    final removedIds = _remoteSourceIds.difference(nextIds);
+    for (final id in removedIds) {
+      _adapters.remove(id)?.close();
+      await repository.removeSource(profile, id);
+      if (!current(epoch)) return;
+    }
+    if (!remote.isReady ||
+        remote.profileId != profile ||
+        remote.accounts.length != remoteSources.length ||
+        remote.accounts.any(
+          (account) => !remoteSources.any(
+            (source) =>
+                source.options['accountId'] == account.id &&
+                source.options['service'] == account.service.name &&
+                source.name == account.displayName,
+          ),
+        )) {
+      _remoteStreamingChanged();
+      return;
+    }
+    final nextSources = [...sources.where((source) => source.kind != FileSourceKind.remoteCloud), ...remoteSources];
+    _remoteSourceIds
+      ..clear()
+      ..addAll(nextIds);
+    final previousRemoteById = {
+      for (final source in sources.where((source) => source.kind == FileSourceKind.remoteCloud)) source.id: source,
+    };
+    final changed =
+        previousRemoteById.length != remoteSources.length ||
+        remoteSources.any((source) {
+          final previous = previousRemoteById[source.id];
+          return previous == null ||
+              previous.profileId != source.profileId ||
+              previous.name != source.name ||
+              previous.endpoint != source.endpoint ||
+              previous.options['service'] != source.options['service'] ||
+              previous.options['accountId'] != source.options['accountId'];
+        });
+    sources = nextSources;
+    if (!changed) return;
+    await _shelves(profile, epoch);
+    if (current(epoch)) _notify();
+  }
+
   void _cancelImports({String? sourceId}) {
     for (final transfer in _importTransfers.values) {
       if (sourceId == null || transfer.sourceId == sourceId) transfer.cancellation.cancel();
@@ -162,6 +262,7 @@ class SourceController extends ChangeNotifier {
 
   void attachProfile(String? id, {required bool blocked}) {
     if (profileId == id && this.blocked == blocked) return;
+    final profileChanged = profileId != id;
     _cancelImports();
     profileId = id;
     this.blocked = blocked;
@@ -172,6 +273,7 @@ class SourceController extends ChangeNotifier {
     syncConfig = null;
     sources = const [];
     shelves = {};
+    if (profileChanged) _remoteSourceIds.clear();
     scanning.clear();
     _scanSessions.clear();
     loading = true;
@@ -216,6 +318,7 @@ class SourceController extends ChangeNotifier {
             }
             if (current(epoch)) {
               loading = false;
+              await _reconcileRemoteCloudSources(epoch);
               _notify();
             }
           })
@@ -314,6 +417,7 @@ class SourceController extends ChangeNotifier {
     final result = await repository.sources(profileId!);
     if (current(epoch)) {
       sources = result;
+      await _reconcileRemoteCloudSources(epoch);
       await _shelves(profileId!, epoch);
       _notify();
     }
@@ -518,8 +622,51 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
+        FileSourceKind.remoteCloud => _remoteCloudAdapter(source, transport, epoch),
       };
     });
+  }
+
+  RemoteCloudSourceAdapter _remoteCloudAdapter(FileSource source, SourceTransport transport, int epoch) {
+    final remote = _remoteStreamingProvider;
+    final accountId = source.options['accountId'];
+    final serviceName = source.options['service'];
+    final service = RemoteStreamService.values.where((value) => value.name == serviceName).firstOrNull;
+    if (remote == null || accountId == null || service == null) {
+      throw const SourceException(SourceFailure.authentication);
+    }
+    void checkAccount() {
+      requireSession(epoch);
+      if (!remote.isReady || remote.profileId != source.profileId || remote.accountFor(service)?.id != accountId) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+    }
+
+    Future<RemoteCloudPage> loadPage({String? parentId, String? cursor}) async {
+      checkAccount();
+      final result = await remote.browseCloud(service, parentId: parentId, cursor: cursor);
+      checkAccount();
+      return result;
+    }
+
+    Future<ContentLease> resolveContent(RemoteCloudItem item) async {
+      checkAccount();
+      if (item.accountId != accountId || item.service != service) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      final resolved = await remote.resolveCloudFile(item);
+      checkAccount();
+      return ContentLease(resolved.uri, size: resolved.size ?? item.size);
+    }
+
+    return RemoteCloudSourceAdapter(
+      source,
+      transport,
+      service: service,
+      accountId: accountId,
+      loadPage: loadPage,
+      resolveContent: resolveContent,
+    );
   }
 
   Future<SourcePage> browse(String source, {String? parent, String? cursor, String? query}) async {
@@ -1432,6 +1579,7 @@ class SourceController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _remoteStreamingProvider?.removeListener(_remoteStreamingChanged);
     _cancelImports();
     _syncTimer?.cancel();
     _syncSoon?.cancel();

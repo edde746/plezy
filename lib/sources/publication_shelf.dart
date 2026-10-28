@@ -6,7 +6,8 @@ Set<PublicationShelf> defaultPublicationShelves(FileSourceKind kind) => {
   PublicationShelf.ebooks,
   PublicationShelf.audiobooks,
   if (kind == FileSourceKind.komga) PublicationShelf.comics,
-  if (kind == FileSourceKind.local || kind == FileSourceKind.smb) PublicationShelf.videos,
+  if (kind == FileSourceKind.local || kind == FileSourceKind.smb || kind == FileSourceKind.remoteCloud)
+    PublicationShelf.videos,
 };
 
 extension PublicationShelfContents on PublicationShelf {

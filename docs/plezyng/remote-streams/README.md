@@ -24,7 +24,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   Libraries rail row. Connected accounts live together in the screen's Cloud
   & add-on streaming group. Browse ready video files with the focused list,
   load more from paged provider inventories, refresh, and recover from empty or
-  unavailable states without losing account setup.
+  unavailable states without losing account setup. Each linked account also
+  appears as a virtual source in that same browser. Browsed video metadata is
+  cached without signed URLs, searchable from Search, and reopened through the
+  existing detail and player flow.
 - Browse supported Stremio add-on catalogs in the existing Explore source
   switcher; search catalogs and use each catalog's required choice or text
   filters from the existing View All filter sheet. Open installation-scoped
@@ -45,12 +48,14 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Read the authorization QR's service label and copy the activation code with
   assistive technology; use the Services/settings hub to manage connections.
 
-Cloud inventory is fetched on demand and is not indexed as poster rows in
-Libraries, Home, Search or Downloads. Remote playback does not report progress
-to the connected Plex/Jellyfin/Emby server. Remote job management,
-renewable/background leases, broad add-on configuration and an embedded P2P
-engine are not part of this implementation. Files and books shortcuts open
-the same cloud-file browser.
+Cloud inventory is fetched on demand. Search includes videos already browsed
+into the local metadata index; cloud titles are not poster rows in Libraries or
+Home, and do not appear in Downloads until a supported download flow is used.
+Signed playback URLs are memory-only and refreshed when a cached video is
+opened. Remote playback progress stays in the profile-local Files and books
+journal and is not reported to the connected Plex/Jellyfin/Emby server. Remote
+job management, renewable/background leases, broad add-on configuration and
+an embedded P2P engine are not part of this implementation.
 
 ## Target experience after full completion
 
