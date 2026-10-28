@@ -31,7 +31,7 @@ import 'base_video_control_sheet.dart';
 /// Reviewable local subtitle operations. The source file is never modified;
 /// every generated, translated, or synchronized result is written to a new
 /// SRT that viewers may export or attach as a separate external track.
-enum _SubtitleReviewChoice { discard, exportSrt, player, serverAndPlayer }
+enum _SubtitleReviewChoice { discard, exportSrt, exportJson, player, serverAndPlayer }
 
 class SubtitleAiSheet extends StatefulWidget {
   const SubtitleAiSheet({
@@ -457,7 +457,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       }
     }
     if (!mounted) return;
-    _glossaryController.text = draft ?? (saved.isEmpty ? '' : const JsonEncoder.withIndent('  ').convert(saved));
+    _glossaryController.text = draft ?? (saved.isEmpty ? '' : JsonEncoder.withIndent('  ').convert(saved));
   }
 
   void _changeTranslationLanguage({required bool source, required TranslateLanguage? value}) {
@@ -907,7 +907,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                     ),
                   ),
                 Text(
-                  'Save SRT exports the reviewed result without changing the active track or source subtitle.',
+                  'Save SRT or JSON exports the reviewed result without changing the active track or source subtitle.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 TextButton.icon(
@@ -1012,6 +1012,11 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               icon: const Icon(Icons.save_alt_outlined),
               label: const Text('Save SRT'),
             ),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.exportJson),
+              icon: const Icon(Icons.data_object_outlined),
+              label: const Text('Save JSON'),
+            ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.discard),
               child: const Text('Discard'),
@@ -1051,6 +1056,40 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         return false;
       }
       setState(() => _status = 'Reviewed subtitle exported as SRT.');
+      return false;
+    }
+    if (choice == _SubtitleReviewChoice.exportJson) {
+      final jsonBytes = Uint8List.fromList(utf8.encode(
+        JsonEncoder.withIndent('  ').convert({
+          'schema': 'plezyng.subtitle-cues.v1',
+          'generatedBy': 'PlezyNG',
+          'operation': operationLabel,
+          'language': operationLanguageCode,
+          'timebase': 'milliseconds',
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+          'cues': reviewedCues
+              .map((cue) => {
+                    'index': cue.index,
+                    'startMs': cue.startMs,
+                    'endMs': cue.endMs,
+                    'text': cue.text,
+                  })
+              .toList(growable: false),
+        }),
+      ));
+      final exportPath = await FilePickerService.instance.saveFile(
+        dialogTitle: 'Save reviewed subtitle cue JSON',
+        fileName: 'PlezyNG_${originToken}_${DateTime.now().microsecondsSinceEpoch}.json',
+        bytes: jsonBytes,
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      if (!mounted) return false;
+      if (exportPath == null) {
+        setState(() => _status = 'JSON export was cancelled; the active track and source subtitle are unchanged.');
+        return false;
+      }
+      setState(() => _status = 'Reviewed subtitle exported as versioned cue JSON.');
       return false;
     }
     if (choice == _SubtitleReviewChoice.serverAndPlayer) {
