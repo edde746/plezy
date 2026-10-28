@@ -75,7 +75,10 @@ class _FakePlayer implements Player {
   final List<Duration> seeks = [];
 
   @override
-  PlayerState get state => PlayerState(duration: const Duration(minutes: 30));
+  String get playerType => 'exoplayer';
+
+  @override
+  PlayerState get state => PlayerState(duration: const Duration(minutes: 30), seekable: true);
 
   @override
   PlayerStreams get streams => const PlayerStreams(

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Preserve localized error messages from Companion Remote pairing fallbacks.
+
 - Provision Android toolchains from every module's Gradle pins and configure both Java and Gradle downloads for the private runner proxy before SDK setup.
 
 - Retain checksum-verified webOS candidates and their exact source/run receipts in private storage after ephemeral runners exit, so device qualification can use the built package.

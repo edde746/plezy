@@ -28,7 +28,7 @@ void main() {
   /// Distance between the poster's bottom edge and the title's top edge.
   double posterTitleGap(WidgetTester tester) {
     final poster = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect));
-    return tester.getTopLeft(find.text('Test movie')).dy - tester.getRect(poster.first).bottom;
+    return tester.getTopLeft(find.textContaining('Test movie')).dy - tester.getRect(poster.first).bottom;
   }
 
   testWidgets('grid cells grow the poster→title gap with the spacing setting', (tester) async {
