@@ -112,15 +112,16 @@ jobs:
             [[ "$expected" == "$actual" ]] || { echo "Checksum mismatch for $asset" >&2; exit 1; }
           done
 
-      - name: Install package tools and import signing key
+      - name: Verify package tools and import signing key
         if: steps.settings.outputs.configured == 'true'
         id: signing
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential debhelper devscripts dpkg-dev dput gnupg
+          for tool in cc make dh debuild dpkg-buildpackage dput gpg; do
+            command -v "$tool" >/dev/null || { echo "Missing provisioned PPA tool: $tool" >&2; exit 1; }
+          done
           printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --import
           fingerprint="$(gpg --batch --list-secret-keys --with-colons | awk -F: '$1 == "fpr" { print $10; exit }')"
           test -n "$fingerprint"

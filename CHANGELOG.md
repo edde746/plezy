@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.
+
+- Verify publication tools supplied by the private runner bootstrap without requiring administrator access in restricted metadata jobs.
+
 - Publish checksum-verified Snap packages with the same pinned container toolchain used for packaging, preserving private proxy routing and keeping store credentials out of command arguments.
 
 - Prepare release-channel jobs for fresh private runners: explicit GitHub repository context before checkout, native Ruby extension prerequisites, and proxy routing for both BuildKit and container build downloads.

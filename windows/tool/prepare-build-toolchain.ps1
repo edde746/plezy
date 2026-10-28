@@ -79,6 +79,59 @@ function Assert-ToolVersion([string]$Path, [string]$Version) {
     }
 }
 
+function Invoke-InnoCompilerProbe([string]$Path) {
+    # ISCC's PE version resource is 0.0.0.0. The compiler engine reports its
+    # actual version when parsing a script; /O- disables all installer output.
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = [Diagnostics.ProcessStartInfo]@{
+        FileName = $Path
+        WorkingDirectory = [IO.Path]::GetDirectoryName($Path)
+        UseShellExecute = $false
+        CreateNoWindow = $true
+        RedirectStandardInput = $true
+        RedirectStandardOutput = $true
+        RedirectStandardError = $true
+    }
+    $process.StartInfo.ArgumentList.Add('/O-')
+    $process.StartInfo.ArgumentList.Add('-')
+    try {
+        if (-not $process.Start()) { throw "Unable to start the pinned Inno compiler: $Path" }
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        $process.StandardInput.WriteLine(@'
+[Setup]
+AppName=PlezyNG toolchain verification
+AppVersion=0
+DefaultDirName={tmp}\PlezyNGToolchainProbe
+Uninstallable=no
+Output=no
+OutputDir=.
+'@)
+        $process.StandardInput.Close()
+        if (-not $process.WaitForExit(30000)) {
+            $process.Kill($true)
+            $process.WaitForExit()
+            throw 'The pinned Inno compiler version probe timed out.'
+        }
+        return [pscustomobject]@{
+            ExitCode = $process.ExitCode
+            Output = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
+        }
+    } finally {
+        $process.Dispose()
+    }
+}
+
+function Assert-InnoCompilerVersion([string]$Path, [string]$Version) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Missing installed tool: $Path" }
+    $probe = Invoke-InnoCompilerProbe $Path
+    if ($probe.ExitCode -ne 0) { throw "The pinned Inno compiler probe failed ($($probe.ExitCode)): $($probe.Output)" }
+    $versions = [regex]::Matches($probe.Output, '(?m)^Compiler engine version: Inno Setup (\d+\.\d+\.\d+)\r?$')
+    if ($versions.Count -ne 1 -or $versions[0].Groups[1].Value -cne $Version) {
+        throw "Unexpected Inno compiler engine version; expected $Version. Output: $($probe.Output)"
+    }
+}
+
 function Publish-Environment([string]$Name, [string]$Value) {
     if ($Value.IndexOfAny([char[]]"`r`n") -ge 0) { throw 'Invalid environment value.' }
     [Environment]::SetEnvironmentVariable($Name, $Value, 'Process')
@@ -113,7 +166,7 @@ if ($IncludeInstaller) {
         $arguments = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CURRENTUSER /NOICONS /DIR="{0}" /LOG="{1}"' -f $innoRoot, $log
         $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
         if ($process.ExitCode -ne 0) { throw "Inno Setup installation failed ($($process.ExitCode)); see $log" }
-        Assert-ToolVersion $compiler $lock.innoSetup.version
+        Assert-InnoCompilerVersion $compiler $lock.innoSetup.version
         $files = @(Get-ChildItem -LiteralPath $innoRoot -File -Recurse | ForEach-Object {
             [ordered]@{ path = [IO.Path]::GetRelativePath($innoRoot, $_.FullName); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
         })
@@ -135,7 +188,7 @@ if ($IncludeInstaller) {
             throw "The installed Inno Setup payload changed: $path"
         }
     }
-    Assert-ToolVersion $compiler $lock.innoSetup.version
+    Assert-InnoCompilerVersion $compiler $lock.innoSetup.version
     Publish-Environment 'PLEZY_INNO_SETUP_COMPILER' $compiler
     Write-Host "Verified Inno Setup $($lock.innoSetup.version): $compiler"
 }
