@@ -1,6 +1,6 @@
 # Validation and qualification plan
 
-Status: qualification remains outstanding. Current code also adds typed integration contracts and profile-scoped preferences/crosswalks, connected-catalog global Search, Hardcover read-only shelf snapshots with guarded status export, country-aware official handoffs and exact Steam AppID storefront routing. The new integrations and previous Audiobookshelf/OPDS/OpenSubsonic/podcast paths have not been run against live provider/server/feed versions. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: qualification remains outstanding. Synthetic fixture suites now cover offer/evidence contracts, exact-scope availability lookup, profile-scoped preference/crosswalk behavior, Audiobookshelf legacy/JWT refresh, and OPDS JSON/Atom acquisition rules. They have not been executed; repository policy permits GitHub Actions only on compatible private ephemeral JIT runners, and no authorized run receipt is recorded here. No live provider/server/feed/device qualification is claimed. Nothing here certifies provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
 
 ## Functional acceptance matrix
 
@@ -44,6 +44,12 @@ Status: qualification remains outstanding. Current code also adds typed integrat
 | V36 | Find Next with active and additional connected catalogs, one timed-out source, duplicates by exact ID and a confirmed crosswalk | Other catalogs still contribute bounded candidates; exact same-kind copies and confirmed same-work crosswalks appear once; detail routes remain provider-owned | W09 |
 | V37 | Link two same-kind search results, switch profiles, then remove the link from Services | The confirmed mapping is profile-scoped and reversible; Search and Find Next stop suppressing the linked catalog duplicate after removal; progress and entitlement remain independent | W02/W09 |
 | V38 | Set, edit, clear and profile-switch a provider plan note | The note follows its profile and is shown only as user-entered text; no connected state or verified access appears | W02/W04 |
+| V39 | Availability adapter returns a stale offer, wrong edition, territory, channel, source, duplicate or malformed row | Reject the entire provider response; no unsupported access or purchase claim is created | W01/W06 |
+| V40 | Availability provider times out, rate-limits, or returns a transient server error | Other provider rows survive; each request stays inside its deadline; one short transient retry maximum; 429 retry time is surfaced without retrying; no data is cached | W06/W09 |
+| V41 | User reports a subscription, provider revokes access, or a loan expires | Self-reported/unknown/revoked/expired states never grant actions; verified loan actions expire at due time; purchase still requires current approval | W01/W04/W06/W08 |
+| V42 | Switch profiles, clear preferences, remove an identity link, or attempt a conflicting remap | Preferences/crosswalks remain profile-scoped and reversible; no progress/entitlement merge occurs | W02/W09 |
+| V43 | OPDS JSON/Atom entry contains open-access, sample, generic purchase, and mixed supported formats | Only explicit open-access/sample files enter the ordinary source path; generic purchase stays external; preview and first supported file kind are preserved | W07 |
+
 
 ## Existing regression owners
 
