@@ -158,6 +158,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     } on Object {
       if (mounted && _profileId == profileId) {
         setState(() => _countryCode = old);
+        unawaited(_loadWatchmodeAvailability());
         showErrorSnackBar(context, t.common.error);
       }
     } finally {

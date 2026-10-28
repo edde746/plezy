@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: live partner and availability delivery remains gated. Shipped code includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, OPML transfer, and a limited integration layer. `integration_contracts.dart` contains provider definitions, safe external targets and deny-by-default commerce policy; `integration_preferences_store.dart` and `integration_identity_store.dart` store non-secret profile-scoped preferences and reversible confirmed crosswalks. `integration_offers.dart` adds non-secret connection and evidence projections, normalized licensed-offer provenance, and a bounded no-cache availability lookup boundary. There is still no universal account registry, production availability adapter, licensed-offer cache or backend endpoint. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: the existing account, media, lending, tracker, and playback owners remain authoritative. The optional Watchmode server connector and iOS Apple MusicKit pilot now ship as isolated adapters in the existing Links flow. Watchmode uses exact typed TMDB IDs and country, a server-side key, bounded short-lived memory cache, and curated HTTPS destinations. Apple MusicKit uses a native iOS method channel and Apple’s ApplicationMusicPlayer. Both remain disabled until their documented setup and qualification gates are satisfied. There is no universal account registry, checkout, purchase sync, or third-party protected-media proxy. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 
@@ -22,7 +22,7 @@ Catalog browsing must work without obtaining playback leases. Reading an offer n
 
 ## Domain contracts and future target models
 
-The following table records the target model. `IntegrationConnectionRef`, `IntegrationAccessEvidence`, `LicensedOffer`, `LicensedOfferSource`, and the `AvailabilityProvider` boundary now ship as non-persistent Dart contracts. Provider-owned account state, licensed-offer caching, live adapters, and the remaining target rows are still gated; implement those only for a concrete approved provider.
+The following table records the target model. `IntegrationConnectionRef`, `IntegrationAccessEvidence`, `LicensedOffer`, `LicensedOfferSource`, and the `AvailabilityProvider` boundary ship as non-persistent Dart contracts. The Watchmode connector is an optional server-owned adapter; its bounded cache is in-memory and is not a shared offer database. Apple MusicKit is a platform-specific playback bridge, not a generic provider account. Other provider-owned account state, licensed-offer caches, and live adapters require a concrete approved provider.
 
 | Type | Minimum fields / purpose | Invariant |
 | --- | --- | --- |

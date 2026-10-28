@@ -1,6 +1,6 @@
 # Fit with PlezyNG's existing flow and style
 
-Status: design fit with partial code delivery. Settings → Services now routes to the searchable official-provider directory, Hardcover settings and reversible catalog-to-server matches. The directory stores profile-scoped country and preferred-provider ordering and optional plan notes; a favorite only changes ordering, and a plan note never links an account or verifies a subscription. Global Search includes connected catalog sources with the existing local/server/Files and Seerr results; Find Next samples all connected catalog providers within bounded requests, while Explore retains its existing selected-source model. **High confidence:** the existing design and navigation contracts are suitable. No new visual identity or top-level store/provider dashboard is needed.
+Status: the existing detail and source routes own the integration. Comic storefront actions are inline beside Read. Video availability rows and the optional iOS Apple Music search/play pilot are presented inside the existing title Links flow, opened from the current detail actions. The change adds no top-level storefront, framed commerce shell, or separate playback owner. User-owned copies and native Play/Read remain primary.
 
 ## Screen mapping
 
