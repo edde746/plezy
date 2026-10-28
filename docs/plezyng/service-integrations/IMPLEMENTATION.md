@@ -1,10 +1,10 @@
 # PlezyNG service integration implementation and delivery record
 
-Status updated **2026-10-28** for closeout branch `codex/service-roadmap-closeout-final-20261028`, based on current `main` at `6fba6ab6d0c257c20b9470adf39dea13ffa6495f` (including merged service work in PRs #58–#60). This closeout preserves the newer debrid/Stremio and remote-streaming work while completing the remaining code packages from the service roadmap.
+Status updated **2026-10-28** for closeout branch `codex/service-roadmap-closeout-final-20261028`, based on current `main` at `6fba6ab6d0c257c20b9470adf39dea13ffa6495f`. It preserves the current debrid/Stremio, remote-streaming, IPTV, player, and profile work while reconciling the service roadmap with the code already delivered.
 
-The branch delivers the Watchmode server connector and contextual availability rows, plus an iOS Apple MusicKit catalog/playback pilot inside the existing Links flow. Existing code also includes the official storefront and affiliate link broker, inline comic access, Open Library/Google Books, OverDrive behind its explicit flag, OpenSubsonic/Subsonic, podcasts/OPML, connected catalog search, Hardcover, Trakt-to-Letterboxd export, and exact Steam links. No provider account, entitlement, purchase, loan, or playback is inferred from a link or catalog row.
+Current main contains the Watchmode server connector and contextual availability rows, plus an iOS Apple MusicKit catalog/playback pilot inside the existing Links flow. It also includes the official storefront and affiliate link broker, inline comic access, Open Library/Google Books, OverDrive behind its explicit flag, OpenSubsonic/Subsonic, podcasts/OPML, connected catalog search, Hardcover, Trakt-to-Letterboxd export, and exact Steam links. This closeout reconciles those deliveries without inferring provider account, entitlement, purchase, loan, or playback from a link or catalog row.
 
-All code remains **implemented but unqualified** until local build/analyzer evidence, private-JIT results where applicable, partner setup, and device/provider checks are recorded. No tests, analyzer, platform build, live API, or device qualification were run for this closeout. Watchmode and MusicKit remain disabled until their exact setup requirements are met.
+Code within the selected first-release scope is **implemented but unqualified** until local build/analyzer evidence, private-JIT results where applicable, partner setup, and device/provider checks are recorded. No tests, analyzer, platform build, live API, or device qualification were run for this closeout. Watchmode and MusicKit remain disabled until their exact setup requirements are met.
 
 ## Closeout context
 
