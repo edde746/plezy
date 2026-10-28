@@ -6,6 +6,7 @@ import '../models/catalog/catalog_item.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_program.dart';
 import '../sources/source_models.dart';
+import '../utils/external_ids.dart';
 
 enum DiscoveryChoiceType { video, music, ebook, audiobook, comic, sourceVideo, liveProgram }
 
@@ -233,6 +234,112 @@ String discoveryMediaIdentity(MediaItem item) {
 String discoverySourceIdentity(SourceEntry entry) {
   if (entry.sourceId.trim().isEmpty || entry.id.trim().isEmpty) return '';
   return jsonEncode(['publication-edition', entry.sourceId, entry.id, entry.kind.name]);
+}
+
+/// Strong, cross-source identities for video choices. These keys are used to
+/// collapse a source copy into the server/catalog card that already represents
+/// the same movie or exact episode. Source-local IDs remain the playback and
+/// progress identity; these keys only coordinate browse projections.
+Set<String> discoveryCanonicalVideoIdentities(DiscoveryChoice choice) {
+  if (choice.type != DiscoveryChoiceType.video && choice.type != DiscoveryChoiceType.sourceVideo) {
+    return const {};
+  }
+
+  late final ExternalIds ids;
+  late final String mediaType;
+  String? episodeKey;
+
+  final media = choice.mediaItem;
+  if (media != null) {
+    ids = _externalIdsForMediaItem(media);
+    switch (media.kind) {
+      case MediaKind.movie:
+        mediaType = 'movie';
+        break;
+      case MediaKind.show:
+        mediaType = 'show';
+        break;
+      case MediaKind.episode:
+        final season = media.parentIndex;
+        final episode = media.index;
+        if (season == null || episode == null) return const {};
+        mediaType = 'episode';
+        episodeKey = 's${season}e$episode';
+        break;
+      case MediaKind.clip ||
+            MediaKind.artist ||
+            MediaKind.album ||
+            MediaKind.track ||
+            MediaKind.season ||
+            MediaKind.collection ||
+            MediaKind.playlist ||
+            MediaKind.photo ||
+            MediaKind.folder ||
+            MediaKind.unknown:
+        return const {};
+    }
+  } else {
+    final entry = choice.sourceEntry;
+    if (entry == null || entry.kind != SourceItemKind.video) return const {};
+    ids = _externalIdsForSourceEntry(entry);
+    final indexedType = entry.identifiers['plezyMediaType'];
+    if (indexedType == 'movie') {
+      mediaType = 'movie';
+    } else if (indexedType == 'show') {
+      final season = int.tryParse(entry.identifiers['plezySeason'] ?? '');
+      final episode = int.tryParse(entry.identifiers['plezyEpisode'] ?? '');
+      if (season != null && episode != null) {
+        mediaType = 'episode';
+        episodeKey = 's${season}e$episode';
+      } else {
+        mediaType = 'show';
+      }
+    } else {
+      return const {};
+    }
+  }
+
+  final suffix = episodeKey == null ? '' : '/$episodeKey';
+  return {
+    if (ids.imdb case final value?) '$mediaType/imdb:$value$suffix',
+    if (ids.tmdb case final value?) '$mediaType/tmdb:$value$suffix',
+    if (ids.tvdb case final value?) '$mediaType/tvdb:$value$suffix',
+  };
+}
+
+ExternalIds _externalIdsForMediaItem(MediaItem item) {
+  final raw = item.raw;
+  if (item is PlexMediaItem) {
+    final guidList = raw?['Guid'];
+    return ExternalIds.fromGuids(guidList is List ? guidList : const []).fillFrom(
+      ExternalIds.fromLegacyPlexGuid(item.guid),
+    );
+  }
+  final providerIds = _objectMap(raw?['ProviderIds']);
+  return providerIds == null ? const ExternalIds() : ExternalIds.fromJellyfinProviderIds(providerIds);
+}
+
+ExternalIds _externalIdsForSourceEntry(SourceEntry entry) {
+  String? value(String key) {
+    final raw = entry.identifiers[key]?.trim().toLowerCase();
+    if (raw == null || raw.isEmpty) return null;
+    final unprefixed = raw.startsWith('$key:') ? raw.substring(key.length + 1) : raw;
+    return unprefixed.isEmpty ? null : unprefixed;
+  }
+
+  return ExternalIds(
+    imdb: value('imdb'),
+    tmdb: int.tryParse(value('tmdb') ?? ''),
+    tvdb: int.tryParse(value('tvdb') ?? ''),
+  );
+}
+
+Map<String, Object?>? _objectMap(Object? value) {
+  if (value is! Map) return null;
+  return {
+    for (final entry in value.entries)
+      if (entry.key is String) entry.key as String: entry.value,
+  };
 }
 
 DiscoveryChoiceType? discoveryTypeForMediaKind(MediaKind kind) => switch (kind) {

@@ -62,6 +62,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   episode files must also match the requested season and episode.
   Keep the match local and profile-scoped; play it in the server queue when
   that server is online and renew the same account/file lease after expiry.
+- Find Next uses verified external IDs to avoid offering a cloud/source copy as
+  a second recommendation when the same movie or exact episode is already in
+  its bounded server sample. The selected server item remains the recommendation
+  and keeps its normal details, queue, and source-choice actions.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
   profile; use the existing source-player surface and local resume journal for
   catalog-only playback and standalone cloud files.
