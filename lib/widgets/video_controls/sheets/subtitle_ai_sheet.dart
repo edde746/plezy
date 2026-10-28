@@ -41,6 +41,7 @@ class SubtitleAiSheet extends StatefulWidget {
     this.ratingKey,
     this.mediaIndex = 0,
     this.seriesKey,
+    this.selectedSubtitleBurnedIn = false,
   });
 
   final Player player;
@@ -48,6 +49,7 @@ class SubtitleAiSheet extends StatefulWidget {
   final String? ratingKey;
   final int mediaIndex;
   final String? seriesKey;
+  final bool selectedSubtitleBurnedIn;
 
   @override
   State<SubtitleAiSheet> createState() => _SubtitleAiSheetState();
@@ -896,6 +898,14 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                   icon: const Icon(Icons.edit_outlined),
                   label: const Text('Edit all cues'),
                 ),
+                if (widget.selectedSubtitleBurnedIn)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'The currently selected captions are burned into this video image. Attaching generated subtitles adds a separate track and cannot erase those pixels.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
                 if (canUploadToServer)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),

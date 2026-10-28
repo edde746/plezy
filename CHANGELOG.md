@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Explain when burned-in captions remain part of the video image and when the active player cannot receive generated SRT subtitles.
+
 - Automatic preferred subtitle downloads now check the first three ordered languages concurrently and use the highest-priority language with an eligible provider result.
 
 - Show language/script, format, provider, and forced/SDH metadata in server and standalone subtitle search results.

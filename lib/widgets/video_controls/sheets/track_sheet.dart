@@ -654,24 +654,36 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
     );
   }
 
-  if (SubtitleAiService.supportedPlatform && player.supportedLocalSubtitleExtensions.contains('srt')) {
-    actions.add(
-      FocusableListTile(
-        leading: const AppIcon(Symbols.auto_awesome_rounded),
-        title: const Text('Generate, sync, or translate subtitles'),
-        subtitle: const Text('Generate, sync, and translate WAV-based subtitle tracks'),
-        onTap: () => OverlaySheetController.of(context).push(
-          builder: (_) => SubtitleAiSheet(
-            player: player,
-            serverId: state.serverId,
-            ratingKey: state.ratingKey.isEmpty ? null : state.ratingKey,
-            mediaIndex: state.selectedMediaIndex,
-            seriesKey: state.metadata?.seriesGlobalKey ??
-                (state.metadata?.kind == MediaKind.show ? state.metadata?.globalKey : null),
+  if (SubtitleAiService.supportedPlatform) {
+    if (player.supportedLocalSubtitleExtensions.contains('srt')) {
+      actions.add(
+        FocusableListTile(
+          leading: const AppIcon(Symbols.auto_awesome_rounded),
+          title: const Text('Generate, sync, or translate subtitles'),
+          subtitle: const Text('Generate, sync, and translate WAV-based subtitle tracks'),
+          onTap: () => OverlaySheetController.of(context).push(
+            builder: (_) => SubtitleAiSheet(
+              player: player,
+              serverId: state.serverId,
+              ratingKey: state.ratingKey.isEmpty ? null : state.ratingKey,
+              mediaIndex: state.selectedMediaIndex,
+              seriesKey: state.metadata?.seriesGlobalKey ??
+                  (state.metadata?.kind == MediaKind.show ? state.metadata?.globalKey : null),
+              selectedSubtitleBurnedIn: state.burnsSelectedSubtitle,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      actions.add(
+        ListTile(
+          dense: true,
+          leading: const AppIcon(Symbols.info_rounded),
+          title: const Text('AI subtitle attachment unavailable'),
+          subtitle: const Text('The active player cannot receive local SRT files. Switch to a player with SRT support to use this workflow.'),
+        ),
+      );
+    }
   }
 
   if (state.serverId != null && state.ratingKey.isNotEmpty) {
