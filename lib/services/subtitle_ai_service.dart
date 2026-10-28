@@ -13,6 +13,7 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../utils/app_logger.dart';
 import 'subtitle_retimer.dart';
+import 'subtitle_word_timing.dart';
 import 'subtitle_whisper_cpp_service.dart';
 
 enum SubtitleInferenceProvider { cpu, desktopGpu, coreMl, qnn, rknn }
@@ -43,9 +44,11 @@ final class SubtitleTranscriptionResult {
     required this.fellBackToCpu,
     required this.detectedLanguage,
     required this.translatedToEnglish,
+    this.wordTimings = const <SubtitleWordTiming>[],
   });
 
   final List<SubtitleCue> cues;
+  final List<SubtitleWordTiming> wordTimings;
   final int durationMs;
   final SubtitleInferenceProvider requestedProvider;
 
@@ -247,6 +250,7 @@ final class SubtitleAiService {
         fellBackToCpu: whisperResult.fellBackToCpu,
         detectedLanguage: whisperResult.detectedLanguage,
         translatedToEnglish: whisperResult.translatedToEnglish,
+        wordTimings: whisperResult.wordTimings,
       );
     }
     if (languageOverride != null && languageOverride != 'en') {

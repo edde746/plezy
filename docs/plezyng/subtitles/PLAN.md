@@ -364,7 +364,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | A06 | Sherpa's Moonshine path uses Silero VAD; Whisper configures a no-speech threshold. Fixture-based silence/music/repetition qualification remains open. | M4 |
 | A07 | Chunk overlap deduplicates words/cues and flushes final speech at EOS. | M4 |
 | A08 | Apply punctuation/casing and readable segmentation without unmarked content rewriting. | M4 |
-| A09 | Optional word timing is aligned and exported with its quality state. | M5 |
+| A09 | Whisper CPU/desktop GPU WAV transcription and Android ExoPlayer live capture request token timestamps and export cue-linked word/token records with mean token probability. Whitespace-delimited language segments are grouped into words; segments without reliable separators retain token spans instead of invented word boundaries. Moonshine accelerator requests do not return word timings. Whisper probabilities are not calibrated confidence. | M4–M6 |
 | A10 | Optional anonymous diarization is evaluated for overlap and speaker changes; names require evidence/user mapping. | M7 |
 | A11 | Alternate audio tracks have distinct analysis identities; no transcript from the previous dub leaks through. | M4 |
 | A12 | Keep passthrough playback intact while using a separate analysis decoder when necessary. | M4 |
@@ -423,7 +423,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | --- | --- | --- |
 | O01 | Imported OpenSubtitles originals are immutable and content-addressed; manifests use staged replacement and backup recovery. Corrected SRT/VTT and safe simple ASS/SSA copies are exportable; richer derived revisions remain open. | M2 |
 | O02 | Upload bounded user-selected SRT/VTT/ASS/SSA files to Plex, Jellyfin, and Emby library items; MediaBrowser metadata is explicit while Plex uses its supported title/format upload fields. AI-generated, translated, and audio-aligned SRT results now offer explicit server upload when the active library item and a validated language code are known, then attach locally; server permissions control acceptance. Standalone-source attachment and cross-device distribution remain open. This path is not test-verified or device-qualified. | M2 |
-| O03 | Standalone MPV VOD exports corrected SRT/VTT and simple ASS/SSA copies with clipping confirmation. AI-reviewed generated/translated/synchronized cues can also be saved as versioned local JSON with cue index, millisecond timebase, text, operation, and language. Timed ASS/SSA effects are refused; word-level timestamps, bitmap formats, and cross-platform server-library export remain. | M4 |
+| O03 | Standalone MPV VOD exports corrected SRT/VTT and simple ASS/SSA copies with clipping confirmation. AI-reviewed generated/translated/synchronized cues can also be saved as versioned local JSON with cue index, millisecond timebase, text, operation, and language, plus available token-derived word timings and cue links. Timed ASS/SSA effects are refused; word-level timestamps, bitmap formats, and cross-platform server-library export remain. | M4 |
 | O04 | Include selected subtitle assets and required fonts in offline downloads with quota accounting. | M6 |
 | O05 | Cross-device sync transfers manifests, corrections, preferences, and selected assets with conflict handling. | M8 |
 | O06 | Model packages have hashes, sizes, task/language metadata, compatibility, update rollback, and licenses. | M4 |

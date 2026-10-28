@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Export Whisper token timestamps as cue-linked word/token timing records in reviewed subtitle JSON; unsupported accelerators clearly return cue timing without word records.
+
 - Import bounded gzip-compressed TAR subtitle archives (`.tar.gz` and `.tgz`) through the picker, desktop drop, and Android share flows.
 
 - Browse captured Android ExoPlayer transcripts with search, cue-level seeking, and an optional hide-future-dialogue filter.

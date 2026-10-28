@@ -18,6 +18,7 @@ import '../../../mpv/player/platform/player_android.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/subtitle_ai_service.dart';
 import '../../../services/subtitle_retimer.dart';
+import '../../../services/subtitle_word_timing.dart';
 import '../../../services/subtitle_sync_service.dart';
 import '../../../services/subtitle_translation_service.dart';
 import '../../../services/settings_service.dart';
@@ -214,6 +215,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       result.cues,
       operationLabel: result.translatedToEnglish ? 'Speech translated to English' : 'Generated subtitles',
       operationLanguageCode: result.translatedToEnglish ? 'en' : result.detectedLanguage,
+      wordTimings: result.wordTimings,
     )) return;
     if (!mounted) return;
     final providerLabel = result.fellBackToCpu
@@ -255,6 +257,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       aligned.cues,
       operationLabel: repairCuts ? 'Cut repair' : 'Automatic sync',
       operationLanguageCode: transcription.detectedLanguage,
+      wordTimings: transcription.wordTimings,
     )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
@@ -367,6 +370,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       aligned.cues,
       operationLabel: repairCuts ? 'Captured-playback cut repair' : 'Captured-playback sync',
       operationLanguageCode: transcript.detectedLanguage,
+      wordTimings: transcript.wordTimings,
     )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
@@ -835,6 +839,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     String? operationLanguageCode,
     List<SubtitleCue>? sourceCues,
     List<String> reviewWarnings = const [],
+    List<SubtitleWordTiming> wordTimings = const <SubtitleWordTiming>[],
   }) async {
     if (cues.isEmpty || cues.length > SubtitleRetimer.maximumCueCount) {
       throw const FormatException('Subtitle result has no cues or exceeds the 50000 cue processing bound.');
@@ -843,6 +848,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       throw StateError('Source and output cue counts do not match; no subtitle was attached.');
     }
     final reviewedCues = List<SubtitleCue>.from(cues);
+    final reviewedWordTimings = SubtitleWordTimingBuilder.attachCueIndices(wordTimings, reviewedCues);
     final undoHistory = <(int, SubtitleCue)>[];
     _lastResultUploadedToServer = false;
     final uploadLanguage = _normalizedUploadLanguage(operationLanguageCode);
@@ -908,6 +914,12 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                   ),
                 Text(
                   'Save SRT or JSON exports the reviewed result without changing the active track or source subtitle.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  reviewedWordTimings.isEmpty
+                      ? 'This backend did not return token timestamps; cue timing remains available.'
+                      : 'JSON includes ${reviewedWordTimings.length} token-derived word timings. Whisper token confidence is not calibrated.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 TextButton.icon(
@@ -1061,7 +1073,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     if (choice == _SubtitleReviewChoice.exportJson) {
       final jsonBytes = Uint8List.fromList(utf8.encode(
         JsonEncoder.withIndent('  ').convert({
-          'schema': 'plezyng.subtitle-cues.v1',
+          'schema': 'plezyng.subtitle-cues.v2',
           'generatedBy': 'PlezyNG',
           'operation': operationLabel,
           'language': operationLanguageCode,
@@ -1073,6 +1085,17 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                     'startMs': cue.startMs,
                     'endMs': cue.endMs,
                     'text': cue.text,
+                  })
+              .toList(growable: false),
+          'wordTimingAvailability': reviewedWordTimings.isEmpty ? 'not-returned-by-backend' : 'whisper-token-timestamps',
+          'wordTimings': reviewedWordTimings
+              .map((word) => {
+                    'startMs': word.startMs,
+                    'endMs': word.endMs,
+                    'text': word.text,
+                    'unit': word.unit.name,
+                    'probability': word.confidence,
+                    'cueIndex': word.cueIndex,
                   })
               .toList(growable: false),
         }),

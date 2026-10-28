@@ -9,6 +9,7 @@ import '../mpv/player/platform/player_android.dart';
 import 'subtitle_ai_service.dart';
 import 'subtitle_retimer.dart';
 import 'subtitle_whisper_cpp_service.dart';
+import 'subtitle_word_timing.dart';
 
 @immutable
 final class SubtitleLiveCaption {
@@ -34,6 +35,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
   final ValueNotifier<SubtitleLiveCaption?> liveCaption = ValueNotifier<SubtitleLiveCaption?>(null);
   final List<double> _samples = <double>[];
   final List<SubtitleCue> _cues = <SubtitleCue>[];
+  final List<SubtitleWordTiming> _wordTimings = <SubtitleWordTiming>[];
 
   PlayerAndroid? _player;
   int? _playerGeneration;
@@ -98,6 +100,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
       _detectedLanguage = selectedLanguage;
       _samples.clear();
       _cues.clear();
+      _wordTimings.clear();
       _streamStartMs = null;
       _nextExpectedPtsUs = null;
       _lastSampleRate = null;
@@ -254,6 +257,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
     _audioGeneration++;
     _samples.clear();
     _cues.clear();
+    _wordTimings.clear();
     _streamStartMs = null;
     _nextExpectedPtsUs = null;
     _lastSampleRate = null;
@@ -441,6 +445,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
       config: whisper.WhisperTranscribeConfig(
         language: _languageCode,
         threads: 2,
+        tokenTimestamps: true,
         splitOnWord: true,
         noSpeechThreshold: 0.6,
       ),
@@ -448,6 +453,13 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
     if (!_isCurrentInference(generation)) return;
     final language = result.language.trim();
     if (language.isNotEmpty && language.toLowerCase() != 'auto') _detectedLanguage = language;
+    for (final word in SubtitleWordTimingBuilder.fromWhisperSegments(
+      result.segments,
+      durationMs: SubtitleRetimer.maximumTimeMs,
+      offsetMs: startMs,
+    )) {
+      _mergeWordTiming(word);
+    }
     for (final segment in result.segments) {
       final text = segment.text.trim().replaceAll(RegExp(r'\s+'), ' ');
       if (text.isEmpty || text.length > 600) continue;
@@ -456,6 +468,21 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
       if (start < 0 || end <= start || end > SubtitleRetimer.maximumTimeMs) continue;
       _mergeCue(SubtitleCue(index: 0, startMs: start, endMs: end, text: text));
     }
+  }
+
+  void _mergeWordTiming(SubtitleWordTiming timing) {
+    if (timing.text.isEmpty || timing.endMs <= timing.startMs) return;
+    final normalized = _normalize(timing.text);
+    for (var index = _wordTimings.length - 1; index >= 0; index--) {
+      final previous = _wordTimings[index];
+      if (previous.endMs < timing.startMs - 1200) break;
+      final overlap = math.max(0, math.min(previous.endMs, timing.endMs) - math.max(previous.startMs, timing.startMs));
+      final shorterDuration = math.max(1, math.min(previous.endMs - previous.startMs, timing.endMs - timing.startMs));
+      if (overlap / shorterDuration < 0.45 || _normalize(previous.text) != normalized) continue;
+      if (timing.confidence > previous.confidence) _wordTimings[index] = timing;
+      return;
+    }
+    if (_wordTimings.length < 250000) _wordTimings.add(timing);
   }
 
   void _mergeCue(SubtitleCue cue) {
@@ -505,6 +532,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
       fellBackToCpu: false,
       detectedLanguage: _detectedLanguage,
       translatedToEnglish: false,
+      wordTimings: SubtitleWordTimingBuilder.attachCueIndices(_wordTimings, _cues),
     );
     notifyListeners();
   }

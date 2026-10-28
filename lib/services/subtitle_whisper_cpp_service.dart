@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'subtitle_retimer.dart';
+import 'subtitle_word_timing.dart';
 
 final class SubtitleWhisperResult {
   const SubtitleWhisperResult({
@@ -16,9 +17,11 @@ final class SubtitleWhisperResult {
     required this.runtimeProvider,
     required this.fellBackToCpu,
     required this.translatedToEnglish,
+    this.wordTimings = const <SubtitleWordTiming>[],
   });
 
   final List<SubtitleCue> cues;
+  final List<SubtitleWordTiming> wordTimings;
   final int durationMs;
   final String detectedLanguage;
   final String runtimeProvider;
@@ -179,9 +182,14 @@ abstract final class SubtitleWhisperCppService {
           translate: translated,
           threads: Platform.numberOfProcessors.clamp(1, 8).toInt(),
           noSpeechThreshold: 0.6,
+          tokenTimestamps: true,
           splitOnWord: true,
         ),
         onProgress: (progress) => onProgress?.call('Whisper inference', progress, 100),
+      );
+      final wordTimings = SubtitleWordTimingBuilder.fromWhisperSegments(
+        result.segments,
+        durationMs: durationMs,
       );
       final cues = <SubtitleCue>[];
       for (final segment in result.segments) {
@@ -202,6 +210,7 @@ abstract final class SubtitleWhisperCppService {
         runtimeProvider: runtimeProvider,
         fellBackToCpu: fellBackToCpu,
         translatedToEnglish: translated,
+        wordTimings: wordTimings,
       );
     } finally {
       await session.dispose();
