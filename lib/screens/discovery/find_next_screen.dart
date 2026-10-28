@@ -659,6 +659,82 @@ class _FindNextScreenState extends State<FindNextScreen> {
     return duration != null && duration <= Duration(minutes: maxMinutes).inMilliseconds;
   }
 
+  Future<({bool applied, String? value})?> _pickFilterValue({
+    required String title,
+    required List<String> options,
+    required String? selected,
+  }) async {
+    final controller = TextEditingController();
+    var query = '';
+    try {
+      return await OverlaySheetController.pushAdaptive<({bool applied, String? value})>(
+        context,
+        showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheetState) {
+            final normalizedQuery = query.trim().toLowerCase();
+            final filtered = normalizedQuery.isEmpty
+                ? options
+                : options.where((value) => value.toLowerCase().contains(normalizedQuery)).toList(growable: false);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.72),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        prefixIcon: const AppIcon(Symbols.search_rounded),
+                        hintText: t.common.search,
+                      ),
+                      onChanged: (value) => setSheetState(() => query = value),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(child: Text(t.common.noResultsFound))
+                          : ListView.builder(
+                              itemCount: filtered.length + 1,
+                              itemBuilder: (context, index) {
+                                final isAnything = index == 0;
+                                final value = isAnything ? null : filtered[index - 1];
+                                final isSelected = value == null
+                                    ? selected == null
+                                    : value.toLowerCase() == selected?.toLowerCase();
+                                return FocusableListTile(
+                                  title: Text(
+                                    isAnything ? t.discover.findNext.filterAnything : isolateDisplayText(value!),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: isSelected ? const AppIcon(Symbols.check_rounded) : null,
+                                  onTap: () => OverlaySheetController.popAdaptive(
+                                    sheetContext,
+                                    (applied: true, value: value),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
   Future<void> _showFilters() async {
     var family = _family;
     var maxMinutes = _maxMinutes;
@@ -669,6 +745,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final shownGenres = availableGenres.take(48).toList();
     final selectedGenre = genre;
     if (selectedGenre != null && !shownGenres.any((value) => value.toLowerCase() == selectedGenre.toLowerCase())) {
+      if (shownGenres.length == 48) shownGenres.removeLast();
       shownGenres.insert(0, selectedGenre);
     }
     final availableSources = _choices
@@ -677,9 +754,12 @@ class _FindNextScreenState extends State<FindNextScreen> {
         .toSet()
         .toList()
       ..sort((left, right) => left.toLowerCase().compareTo(right.toLowerCase()));
-    final shownSources = availableSources.take(48).toList();
     final selectedSource = sourceReason;
-    if (selectedSource != null && !shownSources.contains(selectedSource)) shownSources.insert(0, selectedSource);
+    final shownSources = availableSources.take(48).toList();
+    if (selectedSource != null && !shownSources.contains(selectedSource)) {
+      if (shownSources.length == 48) shownSources.removeLast();
+      shownSources.insert(0, selectedSource);
+    }
     final result = await OverlaySheetController.showAdaptive<
       ({_DiscoveryFamily family, int? minutes, String? genre, String? sourceReason})
     >(
@@ -714,7 +794,25 @@ class _FindNextScreenState extends State<FindNextScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall),
+                  Row(
+                    children: [
+                      Expanded(child: Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall)),
+                      if (availableSources.length > shownSources.length)
+                        TextButton(
+                          onPressed: () async {
+                            final selection = await _pickFilterValue(
+                              title: t.fileSources.source,
+                              options: availableSources,
+                              selected: sourceReason,
+                            );
+                            if (selection != null && selection.applied) {
+                              setSheetState(() => sourceReason = selection.value);
+                            }
+                          },
+                          child: Text(t.common.viewAll),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 48,
@@ -742,7 +840,27 @@ class _FindNextScreenState extends State<FindNextScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(t.libraries.filterCategories.genre, style: Theme.of(context).textTheme.titleSmall),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(t.libraries.filterCategories.genre, style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                      if (availableGenres.length > shownGenres.length)
+                        TextButton(
+                          onPressed: () async {
+                            final selection = await _pickFilterValue(
+                              title: t.libraries.filterCategories.genre,
+                              options: availableGenres,
+                              selected: genre,
+                            );
+                            if (selection != null && selection.applied) {
+                              setSheetState(() => genre = selection.value);
+                            }
+                          },
+                          child: Text(t.common.viewAll),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 48,

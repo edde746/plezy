@@ -14,6 +14,7 @@
 - Clear all active Find your next filters directly from a no-match result.
 - Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
 - Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
+- Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.
