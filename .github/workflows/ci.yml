@@ -663,7 +663,7 @@ jobs:
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -679,6 +679,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1
+          .\windows\tool\prepare-build-toolchain.ps1 -VerifyOnly
 
       - name: Verify provisioned ARM64 7-Zip
         if: matrix.arch == 'arm64'
