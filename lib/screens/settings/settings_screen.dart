@@ -547,7 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
                 subtitle: Text(
                   '$currentPath · ${t.settings.downloadLocationDescription}',
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: .ellipsis,
                 ),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Provision Android toolchains from every module's Gradle pins and configure both Java and Gradle downloads for the private runner proxy before SDK setup.
+- Improve TV detail announcements with spaced episode labels and keep the download-location settings row compact.
 
 - Retain checksum-verified webOS candidates and their exact source/run receipts in private storage after ephemeral runners exit, so device qualification can use the built package.
 

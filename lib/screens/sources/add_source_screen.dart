@@ -536,22 +536,25 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.smb,
                       FileSourceKind.ftp,
                       FileSourceKind.sftp,
+                      FileSourceKind.nfs,
                     }.contains(_kind)) ...[
-                      input(
-                        'username',
-                        t.fileSources.username,
-                        required: _kind == FileSourceKind.sftp && widget.existing == null,
-                      ),
-                      input(
-                        'password',
-                        t.fileSources.password,
-                        secret: true,
-                        validator: _kind == FileSourceKind.sftp && widget.existing == null
-                            ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
-                                  ? null
-                                  : t.sourceSetup.passwordOrKey
-                            : null,
-                      ),
+                      if (_kind != FileSourceKind.nfs) ...[
+                        input(
+                          'username',
+                          t.fileSources.username,
+                          required: _kind == FileSourceKind.sftp && widget.existing == null,
+                        ),
+                        input(
+                          'password',
+                          t.fileSources.password,
+                          secret: true,
+                          validator: _kind == FileSourceKind.sftp && widget.existing == null
+                              ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
+                                    ? null
+                                    : t.sourceSetup.passwordOrKey
+                              : null,
+                        ),
+                      ],
                       if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
                       if (_kind == FileSourceKind.sftp) ...[
                         input(
