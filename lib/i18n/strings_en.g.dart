@@ -9514,8 +9514,8 @@ class Translations$games$en {
 	/// en: 'Show Games for this profile'
 	String get enable => 'Show Games for this profile';
 
-	/// en: 'Discover your gaming computers and play with an embedded streaming engine.'
-	String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+	/// en: 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.'
+	String get enableDescription => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.';
 
 	/// en: 'Your games, from your computers.'
 	String get subtitle => 'Your games, from your computers.';
@@ -9589,8 +9589,8 @@ class Translations$games$en {
 	/// en: 'Play'
 	String get play => 'Play';
 
-	/// en: 'Recently opened'
-	String get recent => 'Recently opened';
+	/// en: 'Recently played'
+	String get recent => 'Recently played';
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
@@ -9685,11 +9685,11 @@ class Translations$games$en {
 	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.'
 	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
 
-	/// en: 'Steam beta · Pyrowave'
-	String get steamBetaTitle => 'Steam beta · Pyrowave';
+	/// en: 'Pyrowave · experimental'
+	String get steamBetaTitle => 'Pyrowave · experimental';
 
-	/// en: 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.'
-	String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+	/// en: 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.'
+	String get steamBetaDescription => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.';
 
 	/// en: 'Steam library'
 	String get steamLibrary => 'Steam library';
@@ -9733,8 +9733,29 @@ class Translations$games$en {
 	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
 	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 
-	/// en: 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.'
-	String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+	/// en: 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.'
+	String get steamLibraryHint => 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.';
+
+	/// en: 'Game details'
+	String get gameDetails => 'Game details';
+
+	/// en: 'Choose computer'
+	String get chooseComputer => 'Choose computer';
+
+	/// en: 'Connect a computer'
+	String get connectComputer => 'Connect a computer';
+
+	/// en: 'Connect a gaming computer to play this game inside PlezyNG.'
+	String get connectToPlay => 'Connect a gaming computer to play this game inside PlezyNG.';
+
+	/// en: 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.'
+	String get availabilityHint => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.';
+
+	/// en: 'From Steam'
+	String get steamSource => 'From Steam';
+
+	/// en: 'Disconnected'
+	String get disconnected => 'Disconnected';
 }
 
 // Path: deepLinks
@@ -15668,7 +15689,7 @@ extension on Translations {
 			'comics.collections' => 'Collections',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.enableDescription' => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -15693,7 +15714,7 @@ extension on Translations {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
+			'games.recent' => 'Recently played',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -15725,8 +15746,8 @@ extension on Translations {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamBetaTitle' => 'Pyrowave · experimental',
+			'games.steamBetaDescription' => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -15741,8 +15762,17 @@ extension on Translations {
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'games.steamLibraryHint' => 'Link your Steam account to browse visible games here, or connect a computer to stream its Steam library. Account linking and device pairing are separate.',
+			'games.gameDetails' => 'Game details',
+			'games.chooseComputer' => 'Choose computer',
+			'games.connectComputer' => 'Connect a computer',
+			'games.connectToPlay' => 'Connect a gaming computer to play this game inside PlezyNG.',
+			'games.availabilityHint' => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.',
+			'games.steamSource' => 'From Steam',
+			'games.disconnected' => 'Disconnected',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
+			_ => null,
+		} ?? switch (path) {
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',
 			'deepLinks.notFound' => 'Couldn\'t find this title in your libraries.',
@@ -15750,8 +15780,6 @@ extension on Translations {
 			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
 			'deepLinks.showLink' => 'Show link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Show profile link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',

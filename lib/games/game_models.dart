@@ -77,26 +77,38 @@ void validateGameAddress(String value) {
 }
 
 class StreamGame {
-  StreamGame({required this.hostKey, required this.id, required this.name, this.hdr = false}) {
+  StreamGame({required this.hostKey, required this.id, required this.name, this.hdr = false, this.steamAppId}) {
     if (hostKey.isEmpty ||
         hostKey.length > 300 ||
         id.isEmpty ||
         id.length > 256 ||
         name.trim().isEmpty ||
         name.length > 256 ||
-        RegExp(r'[\x00-\x1f]').hasMatch(name)) {
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(id + name) ||
+        (steamAppId != null && !validSteamAppId(steamAppId!))) {
       throw const FormatException('Invalid game');
     }
   }
   final String hostKey, id, name;
   final bool hdr;
+
+  /// Explicit source identity for a Steam game served by another transport.
+  /// Never infer this from a title or a GameStream application ID.
+  final int? steamAppId;
   String get key => '$hostKey/${Uri.encodeComponent(id)}';
-  Map<String, dynamic> toJson() => {'hostKey': hostKey, 'id': id, 'name': name, 'hdr': hdr};
+  Map<String, dynamic> toJson() => {
+    'hostKey': hostKey,
+    'id': id,
+    'name': name,
+    'hdr': hdr,
+    if (steamAppId != null) 'steamAppId': steamAppId,
+  };
   factory StreamGame.fromJson(Map<String, dynamic> value) => StreamGame(
     hostKey: value['hostKey'] as String,
     id: value['id'] as String,
     name: value['name'] as String,
     hdr: value['hdr'] == true,
+    steamAppId: value['steamAppId'] as int?,
   );
 }
 
@@ -138,6 +150,7 @@ class GameLibrary {
     this.steamCatalogStale = false,
     this.steamCatalogTruncated = false,
     this.steamCatalog = const [],
+    this.preferredRoutes = const {},
   });
   final List<GameHost> hosts;
   final List<StreamGame> games;
@@ -150,6 +163,95 @@ class GameLibrary {
   final bool steamCatalogStale;
   final bool steamCatalogTruncated;
   final List<SteamCatalogGame> steamCatalog;
+
+  /// Successful route preferences, scoped to this profile. Not online state.
+  final Map<String, String> preferredRoutes;
+
+  String identityOf(StreamGame game) {
+    final host = hosts.where((h) => h.key == game.hostKey).firstOrNull;
+    final appId = game.steamAppId ?? (host?.protocol == GameProtocol.steam ? int.tryParse(game.id) : null);
+    return appId != null && validSteamAppId(appId) ? 'steam:$appId' : game.key;
+  }
+
+  /// A projection, not a second catalog to persist or synchronize.
+  List<LibraryGame> get entries {
+    final result = <String, LibraryGame>{};
+    for (final game in steamCatalog) {
+      result['steam:${game.appId}'] = LibraryGame(
+        key: 'steam:${game.appId}',
+        name: game.name,
+        steamAppId: game.appId,
+        inAccountCatalog: true,
+        routes: const [],
+      );
+    }
+    final hostMap = {for (final host in hosts) host.key: host};
+    for (final game in games) {
+      final host = hostMap[game.hostKey];
+      if (host == null || (host.protocol == GameProtocol.steam && game.id == '0')) continue;
+      final key = identityOf(game);
+      final old = result[key];
+      result[key] = LibraryGame(
+        key: key,
+        name: old?.name ?? game.name,
+        steamAppId: old?.steamAppId ?? (key.startsWith('steam:') ? int.tryParse(key.substring(6)) : null),
+        inAccountCatalog: old?.inAccountCatalog ?? false,
+        routes: [
+          ...?old?.routes,
+          GameRoute(host: host, game: game, savedShortcut: true),
+        ],
+      );
+    }
+    // Steam can launch a verified catalog AppID directly. A candidate route
+    // does not claim installation, reachability, pairing or entitlement.
+    return result.values
+        .map(
+          (entry) => LibraryGame(
+            key: entry.key,
+            name: entry.name,
+            steamAppId: entry.steamAppId,
+            inAccountCatalog: entry.inAccountCatalog,
+            routes: List.unmodifiable([
+              ...entry.routes,
+              if (entry.steamAppId != null)
+                for (final host in hosts)
+                  if (host.protocol == GameProtocol.steam && !entry.routes.any((r) => r.host.key == host.key))
+                    GameRoute(
+                      host: host,
+                      game: StreamGame(hostKey: host.key, id: '${entry.steamAppId}', name: entry.name),
+                    ),
+            ]),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  String canonicalKey(String key) {
+    final game = games.where((game) => game.key == key).firstOrNull;
+    return game == null ? key : identityOf(game);
+  }
+
+  Set<String> get favoriteKeys => favorites.map(canonicalKey).toSet();
+  List<String> get recentKeys => recent.map(canonicalKey).toSet().toList();
+
+  GameLibrary copyWith({
+    List<GameHost>? hosts,
+    List<StreamGame>? games,
+    List<String>? recent,
+    Set<String>? favorites,
+    Map<String, String>? preferredRoutes,
+  }) => GameLibrary(
+    hosts: hosts ?? this.hosts,
+    games: games ?? this.games,
+    recent: recent ?? this.recent,
+    favorites: favorites ?? this.favorites,
+    preferredRoutes: preferredRoutes ?? this.preferredRoutes,
+    steamAccountId: steamAccountId,
+    steamCatalogAvailable: steamCatalogAvailable,
+    steamCatalogStale: steamCatalogStale,
+    steamCatalogTruncated: steamCatalogTruncated,
+    steamCatalog: steamCatalog,
+  );
   Map<String, dynamic> toJson() => {
     'version': 2,
     'hosts': hosts.take(32).map((v) => v.toJson()).toList(),
@@ -161,6 +263,7 @@ class GameLibrary {
     'steamCatalogStale': steamCatalogStale,
     'steamCatalogTruncated': steamCatalogTruncated,
     'steamCatalog': steamCatalog.take(2000).map((v) => v.toJson()).toList(),
+    'preferredRoutes': Map.fromEntries(preferredRoutes.entries.take(2000)),
   };
   factory GameLibrary.fromJson(Map<String, dynamic> data) {
     if (data['version'] != 1 && data['version'] != 2) return const GameLibrary();
@@ -193,11 +296,30 @@ class GameLibrary {
         /* Recover other entries. */
       }
     }
+    final projection = GameLibrary(
+      hosts: hosts.values.toList(),
+      games: games.values.toList(),
+      steamCatalog: steamAccountId == null ? const [] : steamCatalog.values.toList(),
+    );
+    final identities = {for (final game in projection.entries) game.key};
+    bool validKey(String key) => games.containsKey(key) || identities.contains(key);
+    final routes = <String, String>{};
+    if (data['preferredRoutes'] case final Map values) {
+      final entries = {for (final entry in projection.entries) entry.key: entry};
+      for (final item in values.entries.take(2000)) {
+        if (item.key is String &&
+            item.value is String &&
+            (entries[item.key]?.routes.any((r) => r.key == item.value) ?? false)) {
+          routes[item.key as String] = item.value as String;
+        }
+      }
+    }
     return GameLibrary(
       hosts: hosts.values.toList(),
       games: games.values.toList(),
-      recent: _rows(data['recent']).whereType<String>().where(games.containsKey).toSet().take(30).toList(),
-      favorites: _rows(data['favorites']).whereType<String>().where(games.containsKey).take(500).toSet(),
+      recent: _rows(data['recent']).whereType<String>().where(validKey).toSet().take(30).toList(),
+      favorites: _rows(data['favorites']).whereType<String>().where(validKey).take(500).toSet(),
+      preferredRoutes: routes,
       steamAccountId: steamAccountId,
       steamCatalogAvailable: steamAccountId != null && data['steamCatalogAvailable'] == true,
       steamCatalogStale:
@@ -207,6 +329,33 @@ class GameLibrary {
       steamCatalog: steamAccountId == null ? const [] : steamCatalog.values.toList(),
     );
   }
+}
+
+bool validSteamAppId(int value) => value > 0 && value <= 0xffffffff;
+
+class GameRoute {
+  const GameRoute({required this.host, required this.game, this.savedShortcut = false});
+  final GameHost host;
+  final StreamGame game;
+  final bool savedShortcut;
+  String get key => game.key;
+}
+
+class LibraryGame {
+  const LibraryGame({
+    required this.key,
+    required this.name,
+    required this.routes,
+    this.steamAppId,
+    this.inAccountCatalog = false,
+  });
+  final String key, name;
+  final int? steamAppId;
+  final bool inAccountCatalog;
+  final List<GameRoute> routes;
+  GameRoute? preferredRoute(GameLibrary library) =>
+      routes.where((r) => r.key == library.preferredRoutes[key]).firstOrNull ??
+      (routes.length == 1 ? routes.single : null);
 }
 
 List<dynamic> _rows(Object? value) => value is List ? value : const [];

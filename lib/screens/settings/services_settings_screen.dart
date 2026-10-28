@@ -38,7 +38,7 @@ class ServicesSettingsScreen extends StatelessWidget {
               child: SettingsHelpHint(text: t.services.hubSubtitle),
             ),
             SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
-            if (profileId != null && PlatformDetector.supportsEmbeddedGameStreaming())
+            if (profileId != null && PlatformDetector.supportsGameLibrary())
               SettingsGroup(
                 title: t.games.title,
                 children: [

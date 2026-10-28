@@ -124,3 +124,29 @@ authentication or a streaming transport. Open-source GameNetworkingSockets
 does not grant Valve signaling or relay service access. Pyrofling and
 Aurora/Solarflare are distinct host/protocol combinations and require separate
 interop qualification; their codec name alone does not imply compatibility.
+
+### Stage 1 — unified identity and presentation
+
+Implemented canonical Steam identities, explicit cross-transport mappings,
+profile favorites and successful-route preferences, v1/v2 recovery, catalog
+AppID launch candidates, one poster grid and search, accessible details/menu
+buttons, and library browsing independent of decoder availability. A route
+candidate makes no installation or reachability claim. Steam Library is a
+computer action rather than a synthetic game card.
+
+Android Steam now opens fullscreen through the existing retained Multiview
+surface. Native first-frame/state callbacks (with attachment replay) drive
+recents and route preference. Native stop sends neutral input before cancelling.
+This does not yet separate native session ownership from PlatformView lifetime.
+
+Validation: focused Dart static analysis; new identity/migration/isolation tests
+added. Executing Flutter tests initially blocked by a missing local C compiler
+required by the unrelated PDF native asset hook; toolchain repair in progress.
+No new hardware qualification is claimed.
+
+### Multi-computer requirement
+
+The Steambox, desktop and BC250 contribute separate installation snapshots to
+one game catalog. Installed, reachable, paired, entitled and actively streaming
+are independent states. Snapshot source and freshness must remain visible;
+removing one computer must not erase a favorite still represented elsewhere.

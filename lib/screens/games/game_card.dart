@@ -18,10 +18,10 @@ import '../../widgets/sliver_cross_axis_layout_builder.dart';
 
 /// Games share the media browser's packing, gutters and poster focus treatment.
 /// They keep their own model and actions instead of masquerading as films.
-class GameCardGrid extends StatelessWidget {
+class GameCardGrid<T> extends StatelessWidget {
   const GameCardGrid({super.key, required this.games, required this.builder});
-  final List<StreamGame> games;
-  final Widget Function(BuildContext, StreamGame) builder;
+  final List<T> games;
+  final Widget Function(BuildContext, T) builder;
 
   @override
   Widget build(BuildContext context) => SliverPadding(
@@ -57,7 +57,11 @@ class GameCard extends StatefulWidget {
   const GameCard({
     super.key,
     required this.game,
-    required this.host,
+    this.host,
+    this.steamAppId,
+    this.subtitle,
+    this.onDetails,
+    this.playLabel,
     required this.artwork,
     required this.favorite,
     required this.onPlay,
@@ -66,7 +70,10 @@ class GameCard extends StatefulWidget {
     this.focusNode,
   });
   final StreamGame game;
-  final GameHost host;
+  final GameHost? host;
+  final int? steamAppId;
+  final String? subtitle, playLabel;
+  final VoidCallback? onDetails;
   final GameArtworkLoader artwork;
   final bool favorite;
   final VoidCallback? onPlay;
@@ -84,19 +91,28 @@ class _GameCardState extends State<GameCard> {
   @override
   void initState() {
     super.initState();
-    _cover = widget.artwork.load(widget.host, widget.game);
+    _cover = _loadCover();
   }
 
   @override
   void didUpdateWidget(GameCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.game.key != widget.game.key ||
-        oldWidget.host.address != widget.host.address ||
-        oldWidget.host.port != widget.host.port ||
+        oldWidget.host?.address != widget.host?.address ||
+        oldWidget.host?.port != widget.host?.port ||
+        oldWidget.steamAppId != widget.steamAppId ||
         oldWidget.artwork != widget.artwork) {
-      _cover = widget.artwork.load(widget.host, widget.game);
+      _cover = _loadCover();
     }
   }
+
+  Future<Uint8List?> _loadCover() => widget.steamAppId != null
+      ? widget.artwork.loadSteam(widget.steamAppId!)
+      : widget.host != null
+      ? widget.artwork.load(widget.host!, widget.game)
+      : Future.value();
+
+  String get _subtitle => widget.subtitle ?? widget.host?.name ?? t.games.steamLibrary;
 
   Future<void> _menu() async {
     final box = context.findRenderObject() as RenderBox?;
@@ -107,7 +123,9 @@ class _GameCardState extends State<GameCard> {
       anchorRect: box.localToGlobal(Offset.zero) & box.size,
       focusFirstItem: true,
       entries: [
-        AppMenuItem(value: 'play', label: t.games.play, icon: Symbols.play_arrow_rounded),
+        if (widget.onDetails != null)
+          AppMenuItem(value: 'details', label: t.games.gameDetails, icon: Symbols.info_rounded),
+        AppMenuItem(value: 'play', label: widget.playLabel ?? t.games.play, icon: Symbols.play_arrow_rounded),
         if (widget.onPlayInWorkspace != null)
           AppMenuItem(
             value: 'play_in_workspace',
@@ -122,6 +140,7 @@ class _GameCardState extends State<GameCard> {
       ],
     );
     if (!mounted) return;
+    if (action == 'details') widget.onDetails?.call();
     if (action == 'play') widget.onPlay?.call();
     if (action == 'play_in_workspace') widget.onPlayInWorkspace?.call();
     if (action == 'favorite') widget.onFavorite?.call();
@@ -144,8 +163,8 @@ class _GameCardState extends State<GameCard> {
         focusNode: widget.focusNode,
         delegateFocusBorder: true,
         borderRadius: radius,
-        descendantsAreFocusable: false,
-        semanticLabel: '${isolateDisplayText(widget.game.name)}, ${isolateDisplayText(widget.host.name)}',
+        descendantsAreFocusable: true,
+        semanticLabel: '${isolateDisplayText(widget.game.name)}, ${isolateDisplayText(_subtitle)}',
         semanticValue: widget.favorite ? t.games.favorites : null,
         onSelect: widget.onPlay,
         onLongPress: enabled ? _menu : null,
@@ -179,6 +198,32 @@ class _GameCardState extends State<GameCard> {
                                   errorBuilder: (context, _, _) => _placeholder(context),
                                 ),
                         ),
+                        if (widget.steamAppId != null)
+                          PositionedDirectional(
+                            start: 6,
+                            bottom: 6,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(radius),
+                              ),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text('Steam', style: TextStyle(color: Colors.white, fontSize: 12)),
+                              ),
+                            ),
+                          ),
+                        if (widget.onDetails != null)
+                          PositionedDirectional(
+                            end: 0,
+                            bottom: 0,
+                            child: IconButton.filledTonal(
+                              tooltip: t.games.gameDetails,
+                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                              icon: const AppIcon(Symbols.more_horiz_rounded),
+                              onPressed: _menu,
+                            ),
+                          ),
                         if (widget.favorite)
                           PositionedDirectional(
                             end: 6,
@@ -207,7 +252,7 @@ class _GameCardState extends State<GameCard> {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
               ),
               Text(
-                isolateDisplayText(widget.host.name),
+                isolateDisplayText(_subtitle),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(

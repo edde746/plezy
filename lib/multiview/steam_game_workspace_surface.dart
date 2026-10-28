@@ -19,6 +19,7 @@ class SteamGameWorkspaceSession {
     required this.game,
     required this.touchControls,
     this.pyrowave = false,
+    this.onFirstFrame,
   }) {
     _inputBinding = WorkspaceGameInputBinding(
       onEvent: handleInput,
@@ -31,6 +32,10 @@ class SteamGameWorkspaceSession {
   final StreamGame game;
   final bool touchControls;
   final bool pyrowave;
+  final VoidCallback? onFirstFrame;
+  bool _reportedFirstFrame = false;
+  bool _disposed = false;
+  final ValueNotifier<String> sessionState = ValueNotifier('connecting');
   MethodChannel? _channel;
   bool _audioEnabled = false;
   bool _inputEnabled = false;
@@ -53,6 +58,7 @@ class SteamGameWorkspaceSession {
     'touchLabel': t.games.touchControls,
     'connecting': t.games.connecting,
     'error': t.games.unavailable,
+    'disconnected': t.games.disconnected,
   };
 
   Future<void> setAudioEnabled(bool enabled) async {
@@ -120,17 +126,45 @@ class SteamGameWorkspaceSession {
   Widget workspaceSurface() => SteamGameWorkspaceSurface(key: _surfaceKey, session: this);
 
   void _attach(int viewId) {
+    if (_disposed) return;
     _channel?.setMethodCallHandler(null);
     final channel = MethodChannel(channelNameForViewId(viewId));
     _channel = channel;
     channel.setMethodCallHandler((call) async {
+      if (call.method == 'sessionState') {
+        _stateChanged(call.arguments);
+        return null;
+      }
       // The native surface renders its own localized inline connection error.
       if (call.method == 'failed') return null;
       throw MissingPluginException('Unknown Steam view callback: ${call.method}');
     });
+    // The first frame may precede channel attachment. Replay native state.
+    unawaited(
+      channel
+          .invokeMethod<String>('getSessionState')
+          .then((state) {
+            if (!_disposed && _channel == channel) _stateChanged(state);
+          })
+          .catchError((Object _) {}),
+    );
     unawaited(_invoke('setAudioEnabled', {'enabled': _audioEnabled}));
     unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled}));
     unawaited(_invoke('setControllerState', {'buttons': _buttons, 'axes': _axes}));
+  }
+
+  void _stateChanged(Object? state) {
+    if (_disposed ||
+        state is! String ||
+        !{'connecting', 'playing', 'reconnecting', 'disconnected', 'failed'}.contains(state)) {
+      return;
+    }
+    sessionState.value = state;
+    if (state == 'playing' && !_reportedFirstFrame) {
+      _reportedFirstFrame = true;
+      onFirstFrame?.call();
+    }
+    if (state == 'failed' || state == 'disconnected' || state == 'reconnecting') resetInput();
   }
 
   Future<void> _invoke(String method, [Map<String, Object?> arguments = const {}]) async {
@@ -151,8 +185,12 @@ class SteamGameWorkspaceSession {
   }
 
   void dispose() {
+    if (_disposed) return;
+    resetInput();
+    _disposed = true;
     _inputBinding.dispose();
     detach();
+    sessionState.dispose();
   }
 }
 

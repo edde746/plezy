@@ -106,6 +106,7 @@ class GameLibraryController extends ChangeNotifier {
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
+      preferredRoutes: state.preferredRoutes,
     );
   });
   Future<void> removeHost(GameHost host) => _change(
@@ -120,6 +121,7 @@ class GameLibraryController extends ChangeNotifier {
         steamCatalogStale: state.steamCatalogStale,
         steamCatalogTruncated: state.steamCatalogTruncated,
         steamCatalog: state.steamCatalog,
+        preferredRoutes: state.preferredRoutes,
       ).toJson(),
     ),
   );
@@ -148,6 +150,7 @@ class GameLibraryController extends ChangeNotifier {
           steamCatalogStale: state.steamCatalogStale,
           steamCatalogTruncated: state.steamCatalogTruncated,
           steamCatalog: state.steamCatalog,
+          preferredRoutes: state.preferredRoutes,
         ).toJson(),
       ),
     );
@@ -165,6 +168,7 @@ class GameLibraryController extends ChangeNotifier {
         steamCatalogStale: state.steamCatalogStale,
         steamCatalogTruncated: state.steamCatalogTruncated,
         steamCatalog: state.steamCatalog,
+        preferredRoutes: state.preferredRoutes,
       ).toJson(),
     ),
   );
@@ -181,6 +185,7 @@ class GameLibraryController extends ChangeNotifier {
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
+      preferredRoutes: state.preferredRoutes,
     );
   });
   Future<void> opened(StreamGame game) => _change(
@@ -194,8 +199,28 @@ class GameLibraryController extends ChangeNotifier {
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
+      preferredRoutes: state.preferredRoutes,
     ),
   );
+
+  Future<void> toggleLibraryFavorite(LibraryGame game) => _change((state) {
+    final wasFavorite = state.favoriteKeys.contains(game.key);
+    final favorites = state.favorites.where((key) => state.canonicalKey(key) != game.key).toSet();
+    if (!wasFavorite) favorites.add(game.key);
+    return state.copyWith(favorites: favorites);
+  });
+
+  /// Call only after native connection/first-frame evidence, never on launch acceptance.
+  Future<void> connected(GameRoute route) => _change((state) {
+    final key = state.identityOf(route.game);
+    if (!state.hosts.any((host) => host.key == route.host.key)) return state;
+    final games = [...state.games.where((g) => g.key != route.key), route.game];
+    return state.copyWith(
+      games: games,
+      recent: [key, ...state.recent.where((old) => state.canonicalKey(old) != key)].take(30).toList(),
+      preferredRoutes: {...state.preferredRoutes, key: route.key},
+    );
+  });
 
   Future<void> saveSteamCatalog({
     required String steamId,
@@ -212,6 +237,7 @@ class GameLibraryController extends ChangeNotifier {
       games: state.games,
       recent: state.recent,
       favorites: state.favorites,
+      preferredRoutes: sameAccount ? state.preferredRoutes : const {},
       steamAccountId: steamId,
       steamCatalogAvailable: catalogAvailable || (sameAccount && state.steamCatalogAvailable),
       steamCatalogStale: !catalogAvailable && sameAccount && state.steamCatalogAvailable,
@@ -227,7 +253,15 @@ class GameLibraryController extends ChangeNotifier {
   });
 
   Future<void> unlinkSteamAccount() => _change(
-    (state) => GameLibrary(hosts: state.hosts, games: state.games, recent: state.recent, favorites: state.favorites),
+    (state) => GameLibrary.fromJson(
+      GameLibrary(
+        hosts: state.hosts,
+        games: state.games,
+        recent: state.recent,
+        favorites: state.favorites,
+        preferredRoutes: state.preferredRoutes,
+      ).toJson(),
+    ),
   );
 
   @override

@@ -30,6 +30,9 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
 
     init {
       channel.setMethodCallHandler(this)
+      invoke("setOnStateChanged", arrayOf(Runnable::class.java), Runnable {
+        channel.invokeMethod("sessionState", target.javaClass.getMethod("getSessionState").invoke(target))
+      })
     }
 
     override fun getView(): View = view
@@ -37,6 +40,10 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
       try {
         when (call.method) {
+          "getSessionState" -> {
+            result.success(target.javaClass.getMethod("getSessionState").invoke(target))
+            return
+          }
           "setAudioEnabled" -> invoke("setAudioEnabled", arrayOf(booleanType), call.argument<Boolean>("enabled") == true)
           "setInputEnabled" -> invoke("setInputEnabled", arrayOf(booleanType), call.argument<Boolean>("enabled") == true)
           "setControllerState" -> invoke(
@@ -69,6 +76,7 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
 
     override fun dispose() {
       channel.setMethodCallHandler(null)
+      runCatching { invoke("setOnStateChanged", arrayOf(Runnable::class.java), Runnable {}) }
       runCatching { invoke("close") }
     }
   }

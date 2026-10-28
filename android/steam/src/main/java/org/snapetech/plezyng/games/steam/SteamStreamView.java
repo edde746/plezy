@@ -35,6 +35,8 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   private final TextView status;
   private final SteamControls controls;
   private Runnable onFailure;
+  private Runnable onStateChanged;
+  private String sessionState = "connecting";
   private volatile long handle;
   private volatile SteamDecoder decoder;
   private volatile boolean stopping;
@@ -91,6 +93,13 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   }
 
   public void setOnFailure(Runnable callback) { onFailure = callback; }
+  public void setOnStateChanged(Runnable callback) { onStateChanged = callback; }
+  public String getSessionState() { return sessionState; }
+  private void state(String value) {
+    sessionState = value;
+    Runnable callback = onStateChanged;
+    if (callback != null) callback.run();
+  }
   public boolean isFailed() { return failed; }
   public void toggleTouchControls() { controls.toggle(); }
 
@@ -209,6 +218,8 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
         fallback.setVolume(requestedAudio ? 1.0f : 0.0f);
         main.post(() -> {
           if (!stopping) {
+            releaseInput();
+            state("reconnecting");
             status.setText(label("connecting", "Connecting…"));
             status.setVisibility(View.VISIBLE);
           }
@@ -227,7 +238,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
       if (handle == session) handle = 0;
       main.post(() -> {
         if (!failed && !stopping) {
-          status.setText("Disconnected");
+          releaseInput();
+          state("disconnected");
+          status.setText(label("disconnected", "Disconnected"));
           status.setVisibility(View.VISIBLE);
         }
       });
@@ -266,6 +279,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
       if (stopping) return;
       shown = true;
       status.setVisibility(View.GONE);
+      state("playing");
     });
   }
 
@@ -284,6 +298,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     main.post(() -> {
       if (stopping || failed) return;
       failed = true;
+      state("failed");
       status.setText(label("error", "The stream could not start. Check pairing and the host."));
       status.setVisibility(View.VISIBLE);
       stop();
@@ -294,9 +309,12 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
 
   private void stop() {
     if (stopping) return;
+    // Send the neutral controller packet while the transport is still live.
+    // Setting stopping first caused sendPad() to discard this release.
+    releaseInput();
     stopping = true;
     main.removeCallbacksAndMessages(null);
-    releaseInput();
+    if (!failed) state("disconnected");
     long session = handle;
     if (session != 0) NativeSteam.cancel(session);
     SteamDecoder current = decoder;
