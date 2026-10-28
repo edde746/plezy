@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../games/steam_stream_preferences.dart';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
@@ -751,6 +752,16 @@ class SettingsService extends BaseSharedPreferencesService {
       StringPref(profileScopedPrefsKey(profileId, 'steam_install_root'));
   static BoolPref gamePyrowaveForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
+  static EnumPref<SteamStreamQuality> steamQualityForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_quality'),
+    values: SteamStreamQuality.values,
+    defaultValue: SteamStreamQuality.balanced,
+  );
+  static EnumPref<SteamStreamCodec> steamCodecForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_codec'),
+    values: SteamStreamCodec.values,
+    defaultValue: SteamStreamCodec.automatic,
+  );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>

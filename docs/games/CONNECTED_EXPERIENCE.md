@@ -9,6 +9,27 @@ shortcut establishes entitlement, authentication, reachability or playback.
 
 ## Scope and acceptance
 
+**Overall status: not code complete; draft PR; not ready for all-platform release.**
+The implemented slices below are not substitutes for the remaining scope.
+
+| Area | Code on this branch | Outstanding evidence or implementation |
+| --- | --- | --- |
+| Unified account / multi-computer library | Implemented, shared-model tests pass | Actual Windows/macOS/Linux inventory exchange and large-library qualification |
+| Catalog refresh and revocation | Implemented, Go race tests pass | Relay deployment and live account exercise |
+| Grid, details, routes and filtering | Implemented using existing app components | Device accessibility, RTL, controller and visual qualification; new strings currently use the English fallback |
+| Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
+| Native Steam transport | Portable Linux build and 38 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
+| View-independent stream lifetime | Partial: retained Multiview surface | Native session still belongs to its PlatformView; surface destruction stops it |
+| Adaptive metrics / advanced codecs | Fixed request presets only | Negotiated statistics, adaptive policy, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround, multiple pads |
+| Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
+| Rich Steam / host features | Not implemented | Achievements/news/social, host-authoritative install/cloud/family states, Steam Input/remapping, Together and captures |
+| Companion game control / internet transport | Inventory extension only | Permissioned launch/session commands, signaling/NAT/relay, connection diagnostics |
+
+No claim of “every Steam API” is made: public catalog APIs, game-side Steamworks
+APIs, private client interfaces and services requiring Valve approval have
+different access contracts. An unavailable API needs an explicit dependency or
+unsupported state; a mock response or a menu item is not completion.
+
 The complete requested scope is tracked below. A checked item means implemented
 and verified by the evidence linked in this document; design, an interface or
 an unavailable capability alone does not count as an implementation.
@@ -139,10 +160,9 @@ surface. Native first-frame/state callbacks (with attachment replay) drive
 recents and route preference. Native stop sends neutral input before cancelling.
 This does not yet separate native session ownership from PlatformView lifetime.
 
-Validation: focused Dart static analysis; new identity/migration/isolation tests
-added. Executing Flutter tests initially blocked by a missing local C compiler
-required by the unrelated PDF native asset hook; toolchain repair in progress.
-No new hardware qualification is claimed.
+Validation: focused Dart static analysis and identity/migration/isolation tests
+pass. The initial missing compiler was resolved; subsequent Games/Multiview
+suites pass. No hardware qualification is claimed.
 
 ### Multi-computer requirement
 
@@ -167,3 +187,25 @@ revocation and played free games. This endpoint needs a relay deployment.
 Validation: focused Games/Multiview/companion and Go race tests are run for this
 commit; exact results are recorded in VALIDATION.md. Native OS/hardware support
 is not inferred from these shared-library tests.
+
+### Stage 3 — requested stream limits and explicit recovery
+
+Android's retained Steam receiver now receives profile-scoped request presets:
+1080p60/30 Mbps (unchanged default), 720p60/12 Mbps, 1080p60/50 Mbps and
+1080p30/15 Mbps. Automatic H.264/HEVC or explicit H.264 also applies to the
+Pyrowave compatibility fallback. Optional arguments preserve older callers;
+Java and C++ reject malformed/excessive limits before connecting. These are
+request ceilings, not observed metrics or an adaptive algorithm. Pyrowave's
+bandwidth may exceed the conventional encoder bitrate request.
+
+Flutter presents localized connection/reconnect/disconnect states using the
+current theme and focus controls. Input is enabled only after first-frame
+evidence and while the workspace grants ownership. Late state replay cannot
+overwrite a newer event. Explicit reconnect awaits native worker termination
+before replacing the surface, coalesces repeated taps and cannot resurrect a
+retired profile. A five-second native shutdown deadline fails closed; the UI
+can retry. Disconnect sends no host quit command. Settings apply to newly
+opened sessions; a reconnect retains the original session's preferences.
+
+Android reflection callbacks and teardown methods are kept during shrinking.
+Current platform build/qualification limitations remain in the table above.

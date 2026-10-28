@@ -12,6 +12,7 @@ import '../../focus/input_mode_tracker.dart';
 import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
+import '../../games/steam_stream_preferences.dart';
 import '../../games/steam_inventory_exchange.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/file_picker_service.dart';
@@ -43,6 +44,7 @@ import '../libraries/state_messages.dart';
 import 'game_connection_dialogs.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import 'game_card.dart';
+import '../settings/settings_utils.dart' show DialogOption;
 
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
@@ -534,6 +536,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         }
       },
       pyrowave: SettingsService.instance.read(SettingsService.gamePyrowaveForProfile(c.profileId)),
+      quality: SettingsService.instance.read(SettingsService.steamQualityForProfile(c.profileId)),
+      codec: SettingsService.instance.read(SettingsService.steamCodecForProfile(c.profileId)),
       host: host,
       game: game,
       touchControls:
@@ -1022,6 +1026,34 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             child: SettingsGroup(
               children: [
                 Padding(padding: const EdgeInsets.all(16), child: Text(t.games.availabilityHint)),
+                if (_profile != null && PlatformDetector.supportsEmbeddedGameStreaming()) ...[
+                  SettingSelectionTile<SteamStreamQuality>(
+                    pref: SettingsService.steamQualityForProfile(_profile!),
+                    icon: Symbols.tune_rounded,
+                    title: t.games.streamQuality,
+                    subtitleBuilder: _qualityLabel,
+                    description: t.games.streamQualityHelp,
+                    options: [
+                      for (final quality in SteamStreamQuality.values)
+                        DialogOption(
+                          value: quality,
+                          title: _qualityLabel(quality),
+                          subtitle: '${quality.height}p · ${quality.fps} fps · ${quality.bitrateKbps ~/ 1000} Mbps',
+                        ),
+                    ],
+                  ),
+                  SettingSelectionTile<SteamStreamCodec>(
+                    pref: SettingsService.steamCodecForProfile(_profile!),
+                    icon: Symbols.movie_rounded,
+                    title: t.games.streamCodec,
+                    subtitleBuilder: (codec) => codec == SteamStreamCodec.automatic ? t.games.codecAutomatic : 'H.264',
+                    description: t.games.streamCodecHelp,
+                    options: [
+                      DialogOption(value: SteamStreamCodec.automatic, title: t.games.codecAutomatic),
+                      const DialogOption(value: SteamStreamCodec.h264, title: 'H.264'),
+                    ],
+                  ),
+                ],
                 if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
                   SettingSwitchTile(
                     pref: SettingsService.gamePyrowaveForProfile(_profile!),
@@ -1076,4 +1108,11 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       ],
     );
   }
+
+  String _qualityLabel(SteamStreamQuality quality) => switch (quality) {
+    SteamStreamQuality.balanced => t.games.qualityBalanced,
+    SteamStreamQuality.reducedBandwidth => t.games.qualityReducedBandwidth,
+    SteamStreamQuality.sharperPicture => t.games.qualitySharperPicture,
+    SteamStreamQuality.reducedFrameRate => t.games.qualityReducedFrameRate,
+  };
 }

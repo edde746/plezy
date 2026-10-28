@@ -25,6 +25,7 @@ import java.util.Set;
 public final class SteamStreamView extends FrameLayout implements SurfaceHolder.Callback, SteamDecoder.Events {
   private final Context context;
   private final Map<?, ?> args;
+  private final SteamStreamOptions options;
   private final Handler main = new Handler(Looper.getMainLooper());
   private final short[] physical = new short[6];
   private short[] touch = new short[6];
@@ -39,6 +40,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   private String sessionState = "connecting";
   private volatile long handle;
   private volatile SteamDecoder decoder;
+  private volatile Thread sessionThread;
   private volatile boolean stopping;
   private boolean started, shown, failed, inputEnabled;
   private volatile boolean requestedAudio;
@@ -47,6 +49,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     super(context);
     this.context = context;
     this.args = args;
+    this.options = SteamStreamOptions.from(args);
     setBackgroundColor(Color.BLACK);
     setFocusable(true);
     setFocusableInTouchMode(true);
@@ -155,6 +158,14 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     surface.getHolder().removeCallback(this);
   }
 
+  /** Called off the UI thread after close; never start a replacement over a live worker. */
+  public void awaitTermination() throws InterruptedException {
+    Thread worker = sessionThread;
+    if (worker == null) return;
+    worker.join(5000);
+    if (worker.isAlive()) throw new IllegalStateException("Steam session is still stopping");
+  }
+
   @Override protected void onDetachedFromWindow() {
     stop();
     super.onDetachedFromWindow();
@@ -174,7 +185,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
       return;
     }
     handle = created;
-    Thread sessionThread = new Thread(() -> runSession(created, holder), "PlezySteamWorkspaceSession");
+    sessionThread = new Thread(() -> runSession(created, holder), "PlezySteamWorkspaceSession");
     sessionThread.setDaemon(true);
     sessionThread.start();
     main.postDelayed(() -> {
@@ -206,7 +217,8 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
       }
       boolean pyrowave = Boolean.TRUE.equals(args.get("pyrowave")) && NativeSteam.pyrowaveSupported();
       NativeSteam.run(session, address, port(), hostId(), trust.device(), user, key, gameId(),
-          SteamDecoder.supportsHevc(), pyrowave, sink);
+          options.allowHevc && SteamDecoder.supportsHevc(), pyrowave,
+          options.width, options.height, options.fps, options.bitrateKbps, sink);
       if (pyrowave && sink.consumePyrowaveFallback() && !stopping) {
         sink.close();
         NativeSteam.destroy(session);
@@ -225,7 +237,8 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
           }
         });
         NativeSteam.run(session, address, port(), hostId(), trust.device(), user, key, gameId(),
-            SteamDecoder.supportsHevc(), false, fallback);
+            options.allowHevc && SteamDecoder.supportsHevc(), false,
+            options.width, options.height, options.fps, options.bitrateKbps, fallback);
       }
     } catch (Exception error) {
       failOnMain();

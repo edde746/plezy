@@ -12,7 +12,7 @@ final class NativeSteam {
   static native byte[] pair(long handle, String address, int port, long host, long device, byte[] key, String pin);
   static native void run(
       long handle, String address, int port, long host, long device, long user, byte[] key, long game, boolean hevc,
-      boolean pyrowave, SteamDecoder decoder);
+      boolean pyrowave, int width, int height, int fps, int bitrateKbps, SteamDecoder decoder);
   static native boolean pyrowaveStart(long handle, int width, int height, byte[] initial);
   static native byte[] pyrowaveDecode(long handle, byte[] bytes);
   static native void pyrowaveStop(long handle);

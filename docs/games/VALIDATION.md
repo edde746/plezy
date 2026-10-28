@@ -1,5 +1,9 @@
 # Games validation and release gates
 
+For current PR #46 completion status, see
+[CONNECTED_EXPERIENCE.md](CONNECTED_EXPERIENCE.md#scope-and-acceptance).
+Historical builds below do not validate the current branch.
+
 Recorded 2026-10-26. This is an experimental implementation, not a claim of certified streaming support.
 
 ## Evidence
@@ -68,3 +72,26 @@ No external streaming-app handoff is used.
 - No native Android build or attached-device qualification has yet been run
   for the new Java/Kotlin first-frame callback. Desktop browsing/inventory
   support does not mean a desktop streaming receiver is available.
+
+### Stream preferences and recovery follow-up
+
+- Games/Multiview Flutter suite: **99 tests passed**. After adding the late
+  replay regression, the final session test file passed **6 tests**; these
+  counts overlap and must not be added to the earlier 158-test suite.
+- Focused Dart analysis: no issues. Recovery tests cover first-frame input
+  gating, duplicate reconnect taps, teardown failure, stale state replay and
+  profile retirement during shutdown.
+- Portable Linux Steam/Pyrowave C++ build: successful. **38 native tests passed**
+  across the initial run and a targeted timer rerun. The initial timer test
+  could not execute because its generated binary lacked its executable bit;
+  repairing that local build-file permission allowed it to pass. This run was
+  Debug without sanitizers; it is not a replacement for sanitizer CI.
+- Native request test inspects the transmitted resolution and rejects invalid
+  limits before a connection. Strict host-JDK JNI syntax/type check passed with
+  upstream headers treated as system includes, matching the CMake target.
+- Java 17 compilation and JUnit: **6 option/controller tests passed**, including
+  legacy defaults, explicit H.264, integer overflow, wrong types and excessive
+  limits. This compiles the platform-independent Java classes, not the Android
+  SurfaceView, Kotlin adapter or APK.
+- Android debug/minified release builds, live reconnect/quality negotiation,
+  other platform receivers and hardware performance remain outstanding.

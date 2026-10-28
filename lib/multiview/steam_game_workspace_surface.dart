@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
 
 import '../games/game_models.dart';
+import '../games/steam_stream_preferences.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import 'workspace_game_input.dart';
 
@@ -19,6 +21,8 @@ class SteamGameWorkspaceSession {
     required this.game,
     required this.touchControls,
     this.pyrowave = false,
+    this.quality = SteamStreamQuality.balanced,
+    this.codec = SteamStreamCodec.automatic,
     this.onFirstFrame,
   }) {
     _inputBinding = WorkspaceGameInputBinding(
@@ -32,9 +36,14 @@ class SteamGameWorkspaceSession {
   final StreamGame game;
   final bool touchControls;
   final bool pyrowave;
+  final SteamStreamQuality quality;
+  final SteamStreamCodec codec;
   final VoidCallback? onFirstFrame;
   bool _reportedFirstFrame = false;
   bool _disposed = false;
+  bool _restarting = false;
+  int _stateRevision = 0;
+  final ValueNotifier<int> surfaceGeneration = ValueNotifier(0);
   final ValueNotifier<String> sessionState = ValueNotifier('connecting');
   MethodChannel? _channel;
   bool _audioEnabled = false;
@@ -55,6 +64,8 @@ class SteamGameWorkspaceSession {
     'appName': game.name,
     'touchControls': touchControls,
     'pyrowave': pyrowave,
+    ...quality.nativeArguments,
+    'allowHevc': codec == SteamStreamCodec.automatic,
     'touchLabel': t.games.touchControls,
     'connecting': t.games.connecting,
     'error': t.games.unavailable,
@@ -67,18 +78,20 @@ class SteamGameWorkspaceSession {
   }
 
   Future<void> setInputEnabled(bool enabled) async {
+    if (_disposed) return;
     _inputEnabled = enabled;
-    _inputBinding.setEnabled(enabled);
+    final canInput = enabled && sessionState.value == 'playing';
+    _inputBinding.setEnabled(canInput);
     if (!enabled) {
       _buttons.clear();
       _axes.clear();
       await _invoke('resetInput');
     }
-    await _invoke('setInputEnabled', {'enabled': enabled});
+    await _invoke('setInputEnabled', {'enabled': canInput});
   }
 
   void handleInput(GamepadEvent event) {
-    if (!_inputEnabled) return;
+    if (!_inputEnabled || sessionState.value != 'playing') return;
     if (event is GamepadButtonEvent) {
       _buttons[event.button.name] = event.pressed;
     } else if (event is GamepadAxisEvent) {
@@ -91,7 +104,7 @@ class SteamGameWorkspaceSession {
   }
 
   void handleNativeKey(KeyEvent event) {
-    if (!_inputEnabled) return;
+    if (!_inputEnabled || sessionState.value != 'playing') return;
     unawaited(
       _invoke('inputKey', {
         'key': event.logicalKey.debugName ?? event.logicalKey.keyLabel,
@@ -113,11 +126,15 @@ class SteamGameWorkspaceSession {
         child: Center(child: Text(t.games.engineUnavailable, textAlign: TextAlign.center)),
       );
     }
-    return AndroidView(
-      viewType: steamGamePlatformViewType,
-      creationParams: creationParams,
-      creationParamsCodec: const StandardMessageCodec(),
-      onPlatformViewCreated: _attach,
+    return ValueListenableBuilder<int>(
+      valueListenable: surfaceGeneration,
+      builder: (_, generation, _) => AndroidView(
+        key: ValueKey(generation),
+        viewType: steamGamePlatformViewType,
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: attachPlatformView,
+      ),
     );
   }
 
@@ -125,13 +142,16 @@ class SteamGameWorkspaceSession {
   /// pane and the retained offstage slot without disposing the native stream.
   Widget workspaceSurface() => SteamGameWorkspaceSurface(key: _surfaceKey, session: this);
 
-  void _attach(int viewId) {
+  void attachPlatformView(int viewId) {
     if (_disposed) return;
     _channel?.setMethodCallHandler(null);
     final channel = MethodChannel(channelNameForViewId(viewId));
     _channel = channel;
+    final replayRevision = _stateRevision;
     channel.setMethodCallHandler((call) async {
+      if (_disposed || _channel != channel || _restarting) return null;
       if (call.method == 'sessionState') {
+        _stateRevision++;
         _stateChanged(call.arguments);
         return null;
       }
@@ -144,13 +164,14 @@ class SteamGameWorkspaceSession {
       channel
           .invokeMethod<String>('getSessionState')
           .then((state) {
-            if (!_disposed && _channel == channel) _stateChanged(state);
+            if (!_disposed && !_restarting && _channel == channel && _stateRevision == replayRevision) {
+              _stateChanged(state);
+            }
           })
           .catchError((Object _) {}),
     );
     unawaited(_invoke('setAudioEnabled', {'enabled': _audioEnabled}));
-    unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled}));
-    unawaited(_invoke('setControllerState', {'buttons': _buttons, 'axes': _axes}));
+    unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled && sessionState.value == 'playing'}));
   }
 
   void _stateChanged(Object? state) {
@@ -160,11 +181,50 @@ class SteamGameWorkspaceSession {
       return;
     }
     sessionState.value = state;
+    _inputBinding.setEnabled(_inputEnabled && state == 'playing');
+    unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled && state == 'playing'}));
     if (state == 'playing' && !_reportedFirstFrame) {
       _reportedFirstFrame = true;
       onFirstFrame?.call();
     }
     if (state == 'failed' || state == 'disconnected' || state == 'reconnecting') resetInput();
+  }
+
+  /// A replacement surface may only start after native teardown acknowledges
+  /// termination. Retired profiles and repeated taps cannot restart a stream.
+  Future<void> reconnect() async {
+    if (_disposed || _restarting || !{'failed', 'disconnected'}.contains(sessionState.value)) return;
+    _restarting = true;
+    _inputBinding.setEnabled(false);
+    resetInput();
+    sessionState.value = 'reconnecting';
+    try {
+      final channel = _channel;
+      if (channel != null) await channel.invokeMethod<void>('disconnect').timeout(const Duration(seconds: 6));
+      if (_disposed) return;
+      detach();
+      sessionState.value = 'connecting';
+      surfaceGeneration.value++;
+    } catch (_) {
+      if (!_disposed) sessionState.value = 'failed';
+    } finally {
+      _restarting = false;
+    }
+  }
+
+  Future<void> disconnect() async {
+    if (_disposed || _restarting) return;
+    resetInput();
+    _restarting = true;
+    _inputBinding.setEnabled(false);
+    try {
+      await _channel?.invokeMethod<void>('disconnect').timeout(const Duration(seconds: 6));
+      if (!_disposed) sessionState.value = 'disconnected';
+    } catch (_) {
+      if (!_disposed) sessionState.value = 'failed';
+    } finally {
+      _restarting = false;
+    }
   }
 
   Future<void> _invoke(String method, [Map<String, Object?> arguments = const {}]) async {
@@ -187,10 +247,12 @@ class SteamGameWorkspaceSession {
   void dispose() {
     if (_disposed) return;
     resetInput();
+    unawaited(_invoke('disconnect'));
     _disposed = true;
     _inputBinding.dispose();
     detach();
     sessionState.dispose();
+    surfaceGeneration.dispose();
   }
 }
 
@@ -219,5 +281,56 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.session.build();
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    if (!Platform.isAndroid) return session.build();
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        session.build(),
+        ValueListenableBuilder<String>(
+          valueListenable: session.sessionState,
+          builder: (context, state, _) {
+            if (state == 'playing') return const SizedBox.shrink();
+            final recoverable = state == 'failed' || state == 'disconnected';
+            return ColoredBox(
+              color: Theme.of(context).colorScheme.surface,
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(switch (state) {
+                          'failed' => t.games.streamFailed,
+                          'disconnected' => t.games.disconnected,
+                          'reconnecting' => t.games.reconnecting,
+                          _ => t.games.connecting,
+                        }, textAlign: TextAlign.center),
+                      ),
+                      const SizedBox(height: 12),
+                      if (recoverable)
+                        FocusableButton(
+                          onPressed: session.reconnect,
+                          child: FilledButton(onPressed: session.reconnect, child: Text(t.games.reconnect)),
+                        )
+                      else if (state == 'connecting')
+                        FocusableButton(
+                          onPressed: session.disconnect,
+                          child: TextButton(onPressed: session.disconnect, child: Text(t.games.disconnect)),
+                        ),
+                      const SizedBox(height: 8),
+                      Text(t.games.disconnectHelp, textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 }

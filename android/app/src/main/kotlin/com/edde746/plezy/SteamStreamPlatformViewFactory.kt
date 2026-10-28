@@ -1,6 +1,8 @@
 package com.edde746.plezy
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -40,6 +42,17 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
       try {
         when (call.method) {
+          "disconnect" -> {
+            invoke("close")
+            Thread({
+              val stopped = runCatching { invoke("awaitTermination") }.isSuccess
+              Handler(Looper.getMainLooper()).post {
+                if (stopped) result.success(null)
+                else result.error("STREAM_STOP_PENDING", "The previous stream is still stopping", null)
+              }
+            }, "PlezySteamDisconnect").apply { isDaemon = true }.start()
+            return
+          }
           "getSessionState" -> {
             result.success(target.javaClass.getMethod("getSessionState").invoke(target))
             return

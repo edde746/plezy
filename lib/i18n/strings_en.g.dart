@@ -9798,6 +9798,45 @@ class Translations$games$en {
 
 	/// en: 'Find automatically'
 	String get automaticFolder => 'Find automatically';
+
+	/// en: 'Steam stream quality'
+	String get streamQuality => 'Steam stream quality';
+
+	/// en: 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.'
+	String get streamQualityHelp => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.';
+
+	/// en: 'Steam video codec'
+	String get streamCodec => 'Steam video codec';
+
+	/// en: 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.'
+	String get streamCodecHelp => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.';
+
+	/// en: 'Automatic · H.264 / HEVC'
+	String get codecAutomatic => 'Automatic · H.264 / HEVC';
+
+	/// en: 'Balanced'
+	String get qualityBalanced => 'Balanced';
+
+	/// en: 'Lower bandwidth'
+	String get qualityReducedBandwidth => 'Lower bandwidth';
+
+	/// en: 'Sharper picture'
+	String get qualitySharperPicture => 'Sharper picture';
+
+	/// en: 'Lower frame rate'
+	String get qualityReducedFrameRate => 'Lower frame rate';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Reconnecting…'
+	String get reconnecting => 'Reconnecting…';
+
+	/// en: 'Disconnecting leaves the game running on the computer.'
+	String get disconnectHelp => 'Disconnecting leaves the game running on the computer.';
+
+	/// en: 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.'
+	String get streamFailed => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.';
 }
 
 // Path: deepLinks
@@ -15828,6 +15867,19 @@ extension on Translations {
 			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
 			'games.steamInstallFolder' => 'Steam installation folder',
 			'games.automaticFolder' => 'Find automatically',
+			'games.streamQuality' => 'Steam stream quality',
+			'games.streamQualityHelp' => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.',
+			'games.streamCodec' => 'Steam video codec',
+			'games.streamCodecHelp' => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.',
+			'games.codecAutomatic' => 'Automatic · H.264 / HEVC',
+			'games.qualityBalanced' => 'Balanced',
+			'games.qualityReducedBandwidth' => 'Lower bandwidth',
+			'games.qualitySharperPicture' => 'Sharper picture',
+			'games.qualityReducedFrameRate' => 'Lower frame rate',
+			'games.reconnect' => 'Reconnect',
+			'games.reconnecting' => 'Reconnecting…',
+			'games.disconnectHelp' => 'Disconnecting leaves the game running on the computer.',
+			'games.streamFailed' => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

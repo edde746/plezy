@@ -3912,7 +3912,20 @@
     "shareLibrary": "Share installed Steam games",
     "shareLibraryHelp": "Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.",
     "steamInstallFolder": "Steam installation folder",
-    "automaticFolder": "Find automatically"
+    "automaticFolder": "Find automatically",
+    "streamQuality": "Steam stream quality",
+    "streamQualityHelp": "Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.",
+    "streamCodec": "Steam video codec",
+    "streamCodecHelp": "Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.",
+    "codecAutomatic": "Automatic · H.264 / HEVC",
+    "qualityBalanced": "Balanced",
+    "qualityReducedBandwidth": "Lower bandwidth",
+    "qualitySharperPicture": "Sharper picture",
+    "qualityReducedFrameRate": "Lower frame rate",
+    "reconnect": "Reconnect",
+    "reconnecting": "Reconnecting…",
+    "disconnectHelp": "Disconnecting leaves the game running on the computer.",
+    "streamFailed": "The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled."
   },
   "deepLinks": {
     "invalid": "This Plezy link isn't valid.",

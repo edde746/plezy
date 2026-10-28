@@ -82,8 +82,8 @@ int Runtime::pair(const Host& host, Credentials& credentials, const std::string&
 
 int Runtime::run(
     const Host& host, const Credentials& credentials, uint64_t game, bool hevc, bool pyrowave,
-    std::shared_ptr<Sink> sink) {
-  if (!sink || !credentials.device || !credentials.user || cancelled_) return -1;
+    std::shared_ptr<Sink> sink, StreamOptions options) {
+  if (!sink || !credentials.device || !credentials.user || cancelled_ || !options.valid()) return -1;
   IHS_HostInfo target{};
   if (!hostInfo(host, target)) return -1;
   sink_ = std::move(sink);
@@ -111,7 +111,7 @@ int Runtime::run(
   IHS_ClientSetStreamingCallbacks(client, &streamCallbacks, this);
   IHS_StreamingRequest request{};
   request.streamingEnable = {true, true, true};
-  request.maxResolution = {1920, 1080};
+  request.maxResolution = {options.width, options.height};
   request.audioChannelCount = 2;
   request.streamingInterface = IHS_StreamInterfaceBigPicture;
   request.gameId = game;
@@ -132,7 +132,8 @@ int Runtime::run(
     Runtime* owner;
     bool hevc;
     bool pyrowave;
-  } context{this, hevc, pyrowave};
+    StreamOptions options;
+  } context{this, hevc, pyrowave, options};
   static const IHS_StreamSessionCallbacks sessionCallbacks{
       nullptr,
       nullptr,
@@ -141,11 +142,11 @@ int Runtime::run(
         c->enableAudio = true;
         c->enableHevc = state->hevc;
         c->enablePyrowave = state->pyrowave;
-        c->maxBitrateKbps = 30000;
+        c->maxBitrateKbps = state->options.bitrateKbps;
         c->quality = IHS_StreamQualityBalanced;
-        c->maxWidth = 1920;
-        c->maxHeight = 1080;
-        c->maxFps = 60;
+        c->maxWidth = state->options.width;
+        c->maxHeight = state->options.height;
+        c->maxFps = state->options.fps;
       },
       [](IHS_Session*, void* ctx) {
         auto* self = static_cast<SessionContext*>(ctx)->owner;

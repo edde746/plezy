@@ -189,7 +189,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL JNI(pair)(
 }
 extern "C" JNIEXPORT void JNICALL JNI(run)(
     JNIEnv* env, jclass, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
-    jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jobject target) {
+    jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jint width, jint height, jint fps,
+    jint bitrateKbps, jobject target) {
   auto runtime = get(id);
   Credentials c{};
   if (!runtime || !target || port < 1 || port > 65535 || !credentials(env, deviceId, userId, key, c)) {
@@ -200,7 +201,7 @@ extern "C" JNIEXPORT void JNICALL JNI(run)(
   if (env->ExceptionCheck() || !sink->valid()) return;
   int result = runtime->run(
       {string(env, address), static_cast<uint16_t>(port), static_cast<uint64_t>(hostId)}, c,
-      static_cast<uint64_t>(game), hevc, pyrowave, sink);
+      static_cast<uint64_t>(game), hevc, pyrowave, sink, {width, height, fps, bitrateKbps});
   std::fill(c.key.begin(), c.key.end(), 0);
   if (result != 0 && result != -2) fail(env, result);
 }

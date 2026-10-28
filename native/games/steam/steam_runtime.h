@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 #include "steam_pyrowave.h"
+#include "steam_stream_options.h"
 extern "C" {
 #include <ihslib.h>
 #include <ihslib/frame_ticket.h>
@@ -54,7 +55,8 @@ class Runtime {
   // One operation per Runtime. pair/run execute on a worker; cancel is immediate.
   // Return 0 on success, -2 on cancellation, -3 on timeout, positive host error.
   int pair(const Host&, Credentials&, const std::string& pin);
-  int run(const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>);
+  int run(const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>,
+          StreamOptions options = {});
   bool startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength);
   PyrowaveDecodeStatus decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb);
   void stopPyrowave();
