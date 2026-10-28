@@ -23,6 +23,12 @@ terminology, saved-marker labels, network-access guidance, and screen-reader
 announcements with fluent speakers before claiming language quality. Until then,
 treat these catalogs as drafts.
 
+The follow-up VLC audit adds 10 English source messages for local playlist
+export and alternate video-track selection. Their non-English forms use the
+configured English base-locale fallback until translations are prepared; they
+are not counted as translated or native-speaker reviewed. The source strings
+remain subject to focused localization review.
+
 A direct structural audit found no missing or empty entries and no placeholder
 mismatches for this 36-message batch across all 37 catalogs, including regional
 inheritance. The current repository report checks 37 locales and 3,626 English

@@ -43,7 +43,7 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
 | Files and books | Standalone file sources, metadata, subtitles, ebooks and audiobooks | SMB2/3, optional encrypted NFSv3 RPC-with-TLS, FTP-family, SFTP, DLNA, Komga, WebDAV, S3, OPDS, cloud drives and Audiobookshelf; local Kodi/Jellyfin NFO/posters, confidence-gated Trakt metadata/cast/artwork/trailers, and OpenSubtitles search (including SMB); EPUB/PDF/CBZ, multipart audiobook playback and progress sync. Availability varies by platform; see the [setup guide](docs/FILES_AND_BOOKS.md) for limits and security. |
-| Universal media tools | Direct media URLs, radio playlists, local files, capture, sharing, extensions, Wi-Fi transfer, conversion, recording and picture controls | **Open media** handles session-only HTTP(S)/MPV streams, M3U/PLS/HLS playlists, file queues and supported ISO/disc inputs; safe favorites are profile-local. Desktop tools add screen/camera capture, temporary private-LAN HLS sharing, declarative HTTPS search extensions, `plezyctl` (Python 3.10+), FFmpeg conversion and MPV stream recording. See the [Open media guide](docs/UNIVERSAL_MEDIA.md) and [VLC feature comparison](docs/VLC_FEATURE_PARITY.md) for privacy and platform limits. |
+| Universal media tools | Direct media URLs, radio playlists, local files, capture, sharing, extensions, Wi-Fi transfer, conversion, recording and picture controls | **Open media** handles session-only HTTP(S)/MPV streams, M3U/PLS/HLS playlists, file queues and supported ISO/disc inputs; eligible desktop queues can be saved as sibling-relative M3U files. Safe stream favorites are profile-local. Desktop tools add screen/camera capture, temporary private-LAN HLS sharing, declarative HTTPS search extensions, `plezyctl` (Python 3.10+), FFmpeg conversion and MPV live-stream recording. See the [Open media guide](docs/UNIVERSAL_MEDIA.md) and [VLC feature comparison](docs/VLC_FEATURE_PARITY.md) for privacy and platform limits. |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
@@ -178,6 +178,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Optional TheIntroDB intro timings when Plex, Jellyfin, or Emby has no intro marker; disabled by default
 - Online subtitle search & download[^plex]
 - Audio and subtitle track selection with server-provided defaults
+- MPV alternate video-track selection when a source exposes multiple video streams
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
 - Optional audio-only continuation when the app backgrounds on Android and iOS
@@ -192,7 +193,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
-- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, and temporary local file queues
+- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, temporary local file queues, and desktop same-folder M3U export for durable local queues
 - Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, opt-in unencrypted FTP streams, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
 - MPV picture adjustments and optional 360° flat view; desktop MPV live-stream recording
 - Desktop screen/camera recording with optional audio, plus temporary HLS sharing over a private IPv4 network

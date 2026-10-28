@@ -23,6 +23,8 @@ import 'content_access.dart';
 import 'source_controller.dart';
 import 'source_models.dart';
 
+typedef LocalPlaylistExportItem = ({String title, Uri uri});
+
 /// The book session owns source-time progress independently of the music queue.
 /// Commands serialize, and each native generation ignores stale event delivery.
 class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
@@ -128,6 +130,56 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get isLiveInput => _liveInput;
   bool get isRecordingStream => _streamRecordingPartial != null;
   bool get playing => player?.state.isActive ?? false;
+
+  /// Whether the current queue can be offered for a same-folder M3U export.
+  /// Temporary copies, network addresses, and picker paths without stable
+  /// desktop-file semantics are deliberately excluded.
+  bool get canExportLocalPlaylist {
+    if (!PlatformDetector.isDesktopOS() || _temporaryMediaFiles.isNotEmpty || files.length < 2) return false;
+    String normalizedParent(String value) {
+      final normalized = p.normalize(value);
+      return Platform.isWindows ? normalized.toLowerCase() : normalized;
+    }
+
+    String? parent;
+    for (final item in files) {
+      final uri = _localOverrides[item.id];
+      if (uri == null || uri.scheme != 'file') return false;
+      final path = p.normalize(uri.toFilePath());
+      final currentParent = normalizedParent(p.dirname(path));
+      if (parent != null && parent != currentParent) return false;
+      parent = currentParent;
+    }
+    return true;
+  }
+
+  /// Returns validated durable local files only when they share a real folder.
+  /// The caller writes only sibling names into the exported playlist.
+  Future<List<LocalPlaylistExportItem>?> localPlaylistExportItems() async {
+    if (!canExportLocalPlaylist) return null;
+    final result = <LocalPlaylistExportItem>[];
+    String? parent;
+    for (final item in files) {
+      try {
+        final uri = _localOverrides[item.id]!;
+        final path = await File.fromUri(uri).resolveSymbolicLinks();
+        final file = File(path);
+        if ((await file.stat()).type != FileSystemEntityType.file) return null;
+        final kind = classifySourceFile(p.basename(path));
+        if (kind != SourceItemKind.video && kind != SourceItemKind.music && kind != SourceItemKind.audiobook) {
+          return null;
+        }
+        final currentParentRaw = p.dirname(path);
+        final currentParent = Platform.isWindows ? currentParentRaw.toLowerCase() : currentParentRaw;
+        if (parent != null && parent != currentParent) return null;
+        parent = currentParent;
+        result.add((title: item.name, uri: file.uri));
+      } on FileSystemException {
+        return null;
+      }
+    }
+    return result.length == files.length ? List.unmodifiable(result) : null;
+  }
 
   void markPictureAdjustmentChanged() {
     _pictureAdjustmentTouched = true;
@@ -469,6 +521,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       );
       _subscriptions.add(
         native.streams.seekable.listen((_) {
+          if (current()) _notify();
+        }),
+      );
+      _subscriptions.add(
+        native.streams.tracks.listen((_) {
           if (current()) _notify();
         }),
       );

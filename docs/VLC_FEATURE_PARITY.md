@@ -12,19 +12,22 @@ PlezyNG is centered on Plex, Jellyfin, Emby, and personal media sources. The com
 | Network streams and adaptive playback | Present | HTTP(S), HLS, DASH-capable playback, and live cues use the existing Open media form and player. HTTP needs explicit consent; sensitive URLs remain session-only. |
 | RTSP, RTMP, UDP, and RTP inputs | Present with limits | Direct MPV inputs are shown only on MPV builds. They are not proxied by the HTTP gateway and cannot be saved as favorites. |
 | FTP and FTPS media | Present with limits | The authenticated file-source browser supports FTP/FTPS with credentials in the account vault. Direct FTP URLs are opt-in, MPV-only, unencrypted, and session-only; they cannot be saved as favorites. |
-| M3U, M3U8, PLS, and radio queues | Present | Local and HTTP(S) playlists are bounded, live streams are identified, HLS manifests remain adaptive, and network-relative entries resolve against their playlist. Local relative media entries now resolve inside the selected playlist folder. |
+| M3U, M3U8, PLS, and radio queues | Present | Local and HTTP(S) playlists are bounded, live streams are identified, HLS manifests remain adaptive, and network-relative entries resolve against their playlist. Local relative media entries resolve inside the selected playlist folder. |
+| Save and reopen a local file queue | Added in this follow-up | On desktop, the active player offers a quiet Save playlist action only for durable local files in one folder. It writes sibling-relative M3U entries beside the media, so the existing Open media playlist picker can reopen it safely. Temporary uploads, network URLs, mixed folders, and paths outside the selected folder are excluded. |
 | Disc images and optical media | Present with limits | ISO and desktop DVD, Blu-ray, and audio-CD inputs depend on MPV, the build, drive, and OS permissions. Commercial protection is not bypassed; native TV players do not expose the desktop disc path. |
 | Broad codecs and hardware decoding | Present with platform limits | PlezyNG uses its platform player and hardware-decoding paths. The supported codecs and acceleration depend on the backend and device; neither app can promise every codec on every platform. |
-| Audio/subtitle selection, sidecars, search, and sync | Present | Track selection, device subtitles, subtitle search/download where the server supports it, and per-item sync controls are already in the player. |
+| Audio, video, and subtitle tracks | Present with limits | Audio/subtitle selection, device sidecars, subtitle search/download where supported, and sync controls are in the player. Multiple video tracks can be selected in the existing settings pane on MPV; the native TV/player adapters do not expose equivalent track IDs. |
+| Audio output device and stereo downmix | Present with limits | Desktop MPV exposes available output devices and remembers the last available selection. Stereo downmix, a 5.1 channel cap, passthrough, and normalization use existing playback audio settings; actual output choices remain device/backend-dependent. |
 | Speed, chapters, seek, zoom, and picture controls | Present | Playback speed, chapter navigation, seek, zoom, aspect/crop, picture adjustment, deinterlace, shaders, and 360° flat view use existing playback controls, gated by the player’s support. |
 | Named playback bookmarks and segment looping | Added in this branch | The existing Chapters sheet saves marks for server media; Open media uses its current source-player controls and chapter area for one-off files and streams. MPV A/B looping sits in the existing chapter sheet or source-player playback-options menu. Bookmarks are device-local, accessible by keyboard, remote, touch, and screen reader, and do not alter server resume progress. |
 | Ten-band equalizer | Added in this branch | The existing device-local MPV equalizer now has ten labelled frequency sliders, preserving the five original frequency settings. |
 | Spatializer, stereo widener, and pitch effects | Added in this branch with limits | The existing equalizer pane adds room ambience, stereo widening, and pitch shift. These filters decode audio and disable passthrough. Stereo width depends on a compatible track; pitch needs the optional Rubber Band filter in that MPV build. Failed filters are reported and rolled back without stopping playback. |
 | Loudness and compression | Present | Device-local normalization, limiter/compression behavior, downmix controls, and passthrough are already integrated with the player’s ordered audio-state handling. |
 | Video effects, screenshots, and diagnostics | Present | Picture adjustments, shaders, screenshots, File Info, chapters, and the performance overlay are in the playback surface. They reuse existing sheets and overlays. |
-| Music visualization | Present with limits | PlezyNG has a native, accessible, progress-aware visualizer using server-provided analysis when available. It does not claim a generic live-PCM/FFT visualizer for every input. |
+| Media information | Present with limits | Server playback uses the existing File Info sheet for file and stream details. MPV performance diagnostics expose live codec, resolution, audio, HDR, and buffer data; direct inputs do not receive server-side versions or metadata. |
+| Music visualization | Present with limits | PlezyNG has a native, accessible, progress-aware visualizer using server-provided analysis when available. A generic live-PCM/FFT visualizer for arbitrary local and network inputs is not available. |
 | Local media conversion | Expanded in this branch | Desktop FFmpeg profiles cover H.264/AAC MP4/MKV, MP4/MKV stream-copy remux, AAC M4A, MP3, FLAC, PCM WAV, Ogg Opus, and VP9/Opus WebM. Profiles are disabled when the installed FFmpeg lacks their encoders or output containers. |
-| Live network recording | Present with limits | Desktop MPV records supported live inputs to MKV/MPEG-TS or MKA. Stream and container compatibility remain source-dependent. |
+| Live network recording | Present with limits | Desktop MPV records supported live inputs to MKV/MPEG-TS or MKA. Stream and container compatibility remain source-dependent. Recording seekable movie/file playback is not exposed because MPV writes demuxer input bytes, overwrites the target unless guarded, and warns that seeks or stream switches can break the recording. |
 | Screen and camera capture | Added in PR #42 | Desktop FFmpeg capture to H.264 MP4, optional audio input, local destination selection, overwrite confirmation, progress, safe publication, and OS permission cues. |
 | Send a file to another device | Added in PR #42, bounded | Temporary HLS sharing over private IPv4 with random access token, QR/copy affordances, expiry, and cleanup. It is not a persistent relay or a general-purpose VLC stream-output wizard. |
 | Search extensions | Added in PR #42, bounded | Profile-local declarative HTTPS JSON mappings feed results into the existing Open media form. No extension code, shell commands, arbitrary headers, or file access are allowed. |
@@ -33,9 +36,33 @@ PlezyNG is centered on Plex, Jellyfin, Emby, and personal media sources. The com
 | Cast and external-player handoff | Present with limits | Google Cast and supported platform player handoffs exist; receiver, codec, and device support vary. |
 | Offline playback and server libraries | Present in PlezyNG’s core workflow | Downloads, playlists, search, and source catalogs build on Plex/Jellyfin/Emby and personal file-source APIs rather than a separate VLC-style local library database. |
 
+## Full VLC menu-feature check
+
+The official desktop guide groups VLC’s everyday capabilities under Media,
+Playback, Audio, Video, Subtitle, Tools, View, and Help. This pass checked those
+groups individually so features hidden inside a broad “playback controls” row
+are accounted for:
+
+| VLC menu group | PlezyNG coverage |
+| --- | --- |
+| Media | Open local files, network inputs, playlists, supported discs, and capture flows are available through Open media and Files and books. FFmpeg conversion and temporary private-LAN sharing are grouped in Media tools. |
+| Playback | Seek, speed, chapters, repeat, bookmarks, A/B loops, subtitle/audio sync, and live recording use existing controls. MPV now exposes alternate video tracks. Program/title selection for broadcast transports remains server or native-player-owned. |
+| Audio | Track selection, remembered desktop MPV output device, stereo downmix, channel limits, volume, passthrough, normalization, EQ, and the PlezyNG music visualizer use existing playback and music flows. Arbitrary live PCM visualizations are a known gap. |
+| Video | Fullscreen, zoom, aspect/crop, picture adjustment, deinterlace, shader presets, screenshots, diagnostics, and optional 360° flat projection are present where the active player supports them. Desktop capture records to a file; it does not create a universal live camera/desktop input for the player. |
+| Subtitle | Track selection, local sidecars, server search/download where supported, styling, placement, and timing controls are present. |
+| Tools | File Info, playback effects, audio/video synchronization, diagnostics, conversion, and capture reuse current sheets and tool groups. Third-party executable extensions are not loaded. |
+| View | The app uses its existing adaptive layouts and media/library playlists. Local file queues can be saved as M3U; there is no separate VLC-style local media-library window or downloadable interface skin system. |
+| Help | In-app contextual help, accessibility cues, setup guides, About, credits, and licenses use PlezyNG’s existing flows. Store-managed updates remain platform-owned instead of adding a second in-app updater. |
+
+VLC also acts as a general-purpose capture, plugin, and stream-output framework.
+Those capabilities do not imply identical behavior in PlezyNG: the available
+capture devices, protocols, output codecs, server APIs, decoder properties,
+and native-player controls differ by platform. The following boundaries are
+intentional and documented below.
+
 ## Work completed in the comparison branch
 
-PR #42 already adds desktop capture, temporary HLS sharing, data-only media search extensions, and the `plezyctl` CLI. This expanded pass closes additional gaps that the first matrix hid inside broad “present” rows: local playlist files can reference safe sibling media, the FFmpeg converter offers more useful formats and remux profiles, the MPV equalizer has ten bands, MPV adds common audio effects, and the existing Chapters sheet adds named local bookmarks and temporary A/B looping.
+PR #42 already adds desktop capture, temporary HLS sharing, data-only media search extensions, and the `plezyctl` CLI. PR #43 adds safe sibling media references in local playlists, additional FFmpeg output and remux profiles, MPV audio effects, named device-local bookmarks, and temporary A/B looping. This follow-up adds reusable local M3U export and MPV alternate video-track selection after checking the remaining VLC menu capabilities against PlezyNG’s supported player paths.
 
 The additions stay in the current **Files and books → Open media → Media tools** and existing playback-settings/chapter sheets. They reuse PlezyNG’s source tiles, mono palette, focus handling, shared dialogs, player lifecycle, and semantic feedback. No new top-level navigation section or standalone settings window is added. See the [Open media and local media tools guide](UNIVERSAL_MEDIA.md) for operating details and exact platform behavior.
 
@@ -44,9 +71,12 @@ The additions stay in the current **Files and books → Open media → Media too
 This is a feature comparison, not a claim of binary parity. The following VLC capabilities are intentionally not recreated as if they worked everywhere:
 
 - VLC’s arbitrary Lua extension runtime and downloadable interface skins are not adopted. Search extensions are declarative data, and PlezyNG keeps its existing interface system and visual style.
+- VLC’s plugin manager, arbitrary scripts, wallpaper mode, and multiple desktop interfaces are not reproduced. They require desktop-specific windowing or executable third-party code, and conflict with PlezyNG’s shared UI, permission, and extension contracts.
 - General multicast announcements and discovery (SAP/SDP, Bonjour), legacy MMS/DCCP inputs, DVB tuner devices, ActiveX/browser plugins, and SVCD menu navigation do not have a dependable cross-platform MPV/server abstraction in PlezyNG. Live TV and network discovery continue through their existing platform or server integrations where available.
 - VLC’s full stream-output matrix is reduced to temporary private-network HLS sharing. There is no public relay, persistent streaming server, account system, or arbitrary protocol-output graph.
 - Protected-disc decryption, unsupported device capture, and guaranteed codec playback are not promised. Hardware, DRM, permissions, MPV filter compilation, server APIs, and native-player behavior remain authoritative.
+- MPV's `stream-record` writes demuxer bytes rather than a normalized capture of the rendered playback. The [MPV manual](https://mpv.io/manual/stable/#options-stream-record) warns that seeks and stream changes can break the output, so PlezyNG exposes recording only for supported live inputs. A seekable-file recording flow would need a separate verified capture path.
+- General-purpose PCM visualizers and direct camera/desktop playback inputs remain unsupported. PlezyNG’s accessible visualizer consumes available server analysis, and the desktop capture flow saves a recording instead of feeding an arbitrary device into an MPV session.
 - Bookmarks are stored locally on the device; they do not sync between installs or update server-side resume state.
 
 The detailed implementation limits and UI help are documented alongside each feature so controls appear only where they can work and unsupported cases fail visibly and safely.

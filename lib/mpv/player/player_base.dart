@@ -353,6 +353,7 @@ abstract class PlayerBase
     ('speed', 'double'),
     ('aid', 'string'),
     ('sid', 'string'),
+    ('vid', 'string'),
   ];
 
   /// Register [corePropertyObservations] plus `track-list` in the
@@ -511,6 +512,9 @@ abstract class PlayerBase
           if (result.selectedAudioId != null) {
             updateSelectedAudioTrack(result.selectedAudioId);
           }
+          if (result.selectedVideoId != null) {
+            updateSelectedVideoTrack(result.selectedVideoId);
+          }
           if (result.selectedSubtitleId != null) {
             updateSelectedSubtitleTrack(result.selectedSubtitleId);
           }
@@ -529,6 +533,10 @@ abstract class PlayerBase
 
       case 'sid':
         updateSelectedSubtitleTrack(value);
+        break;
+
+      case 'vid':
+        updateSelectedVideoTrack(value);
         break;
 
       case 'secondary-sid':
@@ -794,10 +802,18 @@ abstract class PlayerBase
     };
   }
 
-  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId, String? selectedSecondarySubtitleId})
+  ({
+    Tracks tracks,
+    String? selectedVideoId,
+    String? selectedAudioId,
+    String? selectedSubtitleId,
+    String? selectedSecondarySubtitleId,
+  })
   parseTrackList(List trackList) {
+    final videoTracks = <VideoTrack>[];
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
+    String? selectedVideoId;
     String? selectedAudioId;
     String? selectedSubtitleId;
     String? selectedSecondarySubtitleId;
@@ -813,7 +829,22 @@ abstract class PlayerBase
       final id = rawId is String || rawId is num ? rawId.toString() : '';
       final selected = track['selected'] == true;
 
-      if (type == 'audio') {
+      if (type == 'video' && track['albumart'] != true) {
+        if (selected) selectedVideoId = id;
+        videoTracks.add(
+          VideoTrack(
+            id: id,
+            title: cleanTrackMetadataValue(track['title'] is String ? track['title'] as String : null),
+            language: cleanTrackMetadataValue(track['lang'] is String ? track['lang'] as String : null),
+            codec: track['codec'] is String ? track['codec'] as String : null,
+            width: _finiteInt(track['demux-w'] ?? track['w']),
+            height: _finiteInt(track['demux-h'] ?? track['h']),
+            isDefault: track['default'] == true,
+            isSelected: selected,
+            isExternal: track['external'] == true,
+          ),
+        );
+      } else if (type == 'audio') {
         final rawExternalFilename = track['external-filename'];
         final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
         final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
@@ -893,11 +924,22 @@ abstract class PlayerBase
     }
 
     return (
-      tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks),
+      tracks: Tracks(video: videoTracks, audio: audioTracks, subtitle: subtitleTracks),
+      selectedVideoId: selectedVideoId,
       selectedAudioId: selectedAudioId,
       selectedSubtitleId: selectedSubtitleId,
       selectedSecondarySubtitleId: selectedSecondarySubtitleId,
     );
+  }
+
+  void updateSelectedVideoTrack(dynamic trackId) {
+    final id = trackId?.toString();
+    if (id != null && id != 'no' && !_state.tracks.video.any((track) => track.id == id)) return;
+    final tracks = _state.tracks.copyWith(
+      video: _state.tracks.video.map((track) => track.copyWith(isSelected: id == track.id)).toList(growable: false),
+    );
+    _state = _state.copyWith(tracks: tracks);
+    tracksController.add(tracks);
   }
 
   void updateSelectedAudioTrack(dynamic trackId) {

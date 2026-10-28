@@ -64,6 +64,7 @@ enum _SettingsView {
   hdrToneMapping,
   audioChannelLimit,
   audioEqualizer,
+  videoTrack,
 }
 
 class _SettingsMenuItem extends StatelessWidget {
@@ -696,6 +697,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.audioChannelLimit;
       case _SettingsView.audioEqualizer:
         return t.videoSettings.audioEqualizer;
+      case _SettingsView.videoTrack:
+        return t.videoSettings.videoTrack;
     }
   }
 
@@ -723,6 +726,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.speaker_group_rounded;
       case _SettingsView.audioEqualizer:
         return Symbols.graphic_eq_rounded;
+      case _SettingsView.videoTrack:
+        return Symbols.video_library_rounded;
     }
   }
 
@@ -838,6 +843,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       shrinkWrap: true,
       children: [
+        StreamBuilder<Tracks>(
+          stream: widget.player.streams.tracks,
+          initialData: widget.player.state.tracks,
+          builder: (context, snapshot) {
+            final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+            if (widget.player.playerType != 'mpv' || tracks.length < 2) return const SizedBox.shrink();
+            VideoTrack? selected;
+            for (final track in tracks) {
+              if (track.isSelected) {
+                selected = track;
+                break;
+              }
+            }
+            return _SettingsMenuItem(
+              icon: Symbols.video_library_rounded,
+              title: t.videoSettings.videoTrack,
+              valueText: selected == null ? t.videoSettings.videoTrackDefault : _videoTrackLabel(selected),
+              onTap: () => _navigateTo(_SettingsView.videoTrack),
+            );
+          },
+        ),
         // Playback Speed - hidden for live TV and when user cannot control playback
         if (_state.canControl && !_state.isLive)
           StreamBuilder<double>(
@@ -1262,6 +1288,58 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           trailing: Text('${formatDecimal(_audioEffects.pitchSemitones, minimumDecimals: 0, maximumDecimals: 0)} st'),
         ),
       ],
+    );
+  }
+
+  String _videoTrackLabel(VideoTrack track) {
+    final title = track.title?.trim();
+    final dimensions = track.width != null && track.height != null ? '${track.width} × ${track.height}' : null;
+    final language = track.language?.trim();
+    return [
+      if (title case final title? when title.isNotEmpty) title,
+      ?dimensions,
+      if (language case final language? when language.isNotEmpty && language != 'und') language.toUpperCase(),
+      if (track.codec case final codec? when codec.isNotEmpty) codec.toUpperCase(),
+    ].join(' · ');
+  }
+
+  Widget _buildVideoTrackView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    return StreamBuilder<Tracks>(
+      stream: widget.player.streams.tracks,
+      initialData: widget.player.state.tracks,
+      builder: (context, snapshot) {
+        final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+        if (tracks.length < 2) return Center(child: Text(t.videoSettings.videoTrackUnavailable));
+        return ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Text(t.videoSettings.videoTrackDescription, style: Theme.of(context).textTheme.bodySmall),
+            ),
+            for (final track in tracks)
+              FocusableListTile(
+                title: Text(
+                  _videoTrackLabel(track).isEmpty
+                      ? t.videoSettings.videoTrackNumber(id: track.id)
+                      : _videoTrackLabel(track),
+                  style: TextStyle(color: track.isSelected ? primary : null),
+                ),
+                subtitle: track.isDefault ? Text(t.videoSettings.videoTrackDefault) : null,
+                trailing: track.isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () async {
+                  try {
+                    await widget.player.setProperty('vid', track.id);
+                    if (mounted) _navigateBack();
+                  } on Object catch (error, stackTrace) {
+                    appLogger.w('Failed to select video track', error: error, stackTrace: stackTrace);
+                    if (mounted) showErrorSnackBar(this.context, t.videoSettings.videoTrackFailed);
+                  }
+                },
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -1763,6 +1841,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildAudioChannelLimitView();
           case _SettingsView.audioEqualizer:
             return _buildAudioEqualizerView();
+          case _SettingsView.videoTrack:
+            return _buildVideoTrackView();
         }
       }(),
     );

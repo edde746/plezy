@@ -6154,6 +6154,24 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Output'
 	String get audioOutput => 'Audio Output';
 
+	/// en: 'Video Track'
+	String get videoTrack => 'Video Track';
+
+	/// en: 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.'
+	String get videoTrackDescription => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.';
+
+	/// en: 'Default'
+	String get videoTrackDefault => 'Default';
+
+	/// en: 'No alternate video tracks are available.'
+	String get videoTrackUnavailable => 'No alternate video tracks are available.';
+
+	/// en: 'Could not change the video track.'
+	String get videoTrackFailed => 'Could not change the video track.';
+
+	/// en: 'Track ${id}'
+	String videoTrackNumber({required Object id}) => 'Track ${id}';
+
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
 
@@ -7821,6 +7839,18 @@ class Translations$universalMedia$en {
 
 	/// en: 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.'
 	String get playlistFormatsHelp => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.';
+
+	/// en: 'Save queue as playlist'
+	String get saveQueuePlaylist => 'Save queue as playlist';
+
+	/// en: 'Playlist saved beside the media files.'
+	String get queuePlaylistSaved => 'Playlist saved beside the media files.';
+
+	/// en: 'This queue can’t be saved as a reusable local playlist.'
+	String get queuePlaylistUnavailable => 'This queue can’t be saved as a reusable local playlist.';
+
+	/// en: 'Choose a save location in the same folder as the queued files.'
+	String get queuePlaylistFolderRequired => 'Choose a save location in the same folder as the queued files.';
 
 	/// en: 'No saved stream favorites yet. Favorites stay in this profile.'
 	String get noFavorites => 'No saved stream favorites yet. Favorites stay in this profile.';
@@ -14686,6 +14716,12 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
+			'videoSettings.videoTrack' => 'Video Track',
+			'videoSettings.videoTrackDescription' => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.',
+			'videoSettings.videoTrackDefault' => 'Default',
+			'videoSettings.videoTrackUnavailable' => 'No alternate video tracks are available.',
+			'videoSettings.videoTrackFailed' => 'Could not change the video track.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Track ${id}',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -14815,14 +14851,14 @@ extension on Translations {
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
 			'metadataEdit.notSet' => 'Not set',
 			'metadataEdit.libraryDefault' => 'Library default',
 			'metadataEdit.accountDefault' => 'Account default',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Series default',
 			'metadataEdit.episodeSorting' => 'Episode Sorting',
 			'metadataEdit.oldestFirst' => 'Oldest first',
@@ -15222,6 +15258,10 @@ extension on Translations {
 			'universalMedia.choosePlaylist' => 'Choose playlist file',
 			'universalMedia.openPlaylist' => 'Open playlist',
 			'universalMedia.playlistFormatsHelp' => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.',
+			'universalMedia.saveQueuePlaylist' => 'Save queue as playlist',
+			'universalMedia.queuePlaylistSaved' => 'Playlist saved beside the media files.',
+			'universalMedia.queuePlaylistUnavailable' => 'This queue can’t be saved as a reusable local playlist.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Choose a save location in the same folder as the queued files.',
 			'universalMedia.noFavorites' => 'No saved stream favorites yet. Favorites stay in this profile.',
 			'universalMedia.removeFavorite' => 'Remove stream favorite',
 			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
@@ -15325,6 +15365,8 @@ extension on Translations {
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
 			'universalMedia.captureFrameRate' => 'Recording frame rate',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
 			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
 			'universalMedia.captureFfmpegMissing' => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.',
@@ -15335,8 +15377,6 @@ extension on Translations {
 			'universalMedia.captureStop' => 'Stop and save',
 			'universalMedia.captureMode' => 'Capture',
 			'universalMedia.shareMode' => 'Share',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareIntro' => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.',
 			'universalMedia.sharePrivacy' => 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.',
 			'universalMedia.shareChooseFile' => 'Choose media file',
@@ -15839,6 +15879,8 @@ extension on Translations {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
@@ -15849,8 +15891,6 @@ extension on Translations {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

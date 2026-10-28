@@ -28,9 +28,13 @@ Choose audio or video files for a temporary queue, or select an ISO image where 
 
 Local `.m3u`/`.pls` playlists can name supported media files in the selected playlist's own folder. PlezyNG rejects absolute paths, parent traversal, encoded separators, symlinks that leave that folder, and unsupported file types. On platforms that provide no stable local playlist path, network entries still work and local siblings are skipped.
 
+On desktop, for a queue made from durable local files in one folder, use the playlist icon in the player app bar and save an `.m3u` beside those files. The save dialog opens in that folder, and its standard overwrite prompt protects an existing playlist. The export contains only relative sibling names; it does not copy media, store a path in the profile, or include temporary uploads and network URLs. Keeping the playlist beside the media lets the existing **Choose playlist file** action reopen it safely. The app offers this action only when every queued file can be validated and the files share one folder.
+
 The desktop MPV menu can also request a DVD, Blu-ray, or audio CD from the computer’s optical drive. This depends on the MPV build, device path, drive, and operating-system permissions. It does not bypass commercial disc protection. Opening an ISO from Device files is the portable alternative when supported by the local player.
 
 ## Picture and recording tools
+
+When MPV reports multiple video tracks, choose **Video Track** from the existing playback settings sheet. The same choice appears beside audio and subtitle tracks in the Open media player. Track labels include available resolution and codec details. Native TV players and other backends do not expose equivalent video track identifiers, so the control stays hidden there.
 
 The player’s picture-adjustment sheet appears only for MPV video playback. Brightness, contrast, gamma, hue, and saturation sliders are named for screen readers and show their current values. **Reset picture** restores the defaults. A separate 360° flat-view control is offered for equirectangular footage when MPV’s FFmpeg `v360` filter exists; yaw, pitch, and field-of-view controls update the labelled filter. Filter support depends on the MPV/FFmpeg build, and the UI reports if it cannot apply the filter. These changes apply only to the current playback.
 
@@ -93,6 +97,8 @@ The receiver accepts supported audio, video, ebook, and comic formats, up to 4 G
 ## Accessibility and help
 
 - Forms have visible labels and short explanatory text; URL input is left-to-right, with autocomplete disabled.
+- The local playlist export action appears only for an eligible durable queue; its tooltip names the action, the save dialog opens beside the media, and the native overwrite prompt protects an existing playlist.
+- Video-track selection appears only when MPV reports alternatives and uses the existing adaptive settings and track menus.
 - Screen-reader labels include slider names and values, button tooltips, file counts, and a live-session cue.
 - Live streams remove seeking affordances instead of leaving controls that cannot work.
 - Transfer and conversion progress use live announcements; transfer errors remain visible in both the app and browser.
@@ -109,6 +115,8 @@ The new interface strings use the repository’s documented machine-translation 
 | Direct HTTP(S) and HTTP playlists | All builds with source playback and a working native media player; codec and container support still depends on that player. |
 | RTSP/RTMP/RTMPS/UDP/RTP and direct FTP | MPV builds only; FTP additionally needs explicit opt-in and is unencrypted. Not available on webOS/Tizen native TV or Android ExoPlayer. |
 | Local files, temporary queues, ISO images | File-picker platforms; ISO playback depends on the native player. |
+| Local queue export | Desktop only; durable local queues with at least two files in one folder export a relative-path M3U beside the files. |
+| Alternate video tracks | MPV builds only, when the source exposes multiple video tracks. |
 | Picture adjustments and 360° flat view | MPV video only; 360° also requires the v360 filter. |
 | Stream recording | Desktop MPV live sessions only. |
 | Optical discs | Desktop MPV only; build and OS drive support required. |
@@ -121,7 +129,7 @@ The new interface strings use the repository’s documented machine-translation 
 
 ## Scope boundaries
 
-This guide covers the full VLC comparison gaps selected for this client: safe local media references in M3U/PLS playlists, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera capture, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
+This guide covers the VLC comparison features selected for this client: safe local media references and reusable queue export in M3U/PLS playlists, MPV alternate video tracks, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera capture, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, server playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
 
 The additions fit the existing Open media pane, playback settings, and chapter areas, using PlezyNG’s standard player, focus handling, and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
 

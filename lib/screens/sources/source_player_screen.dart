@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
@@ -25,6 +26,7 @@ import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -99,6 +101,116 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (!mounted || targetExists && !replace) return;
     await sourceAction(context, () => playback.startStreamRecording(target, replaceExisting: replace));
     if (mounted && playback.isRecordingStream) showSnackBar(context, t.universalMedia.recordingStarted);
+  }
+
+  Future<void> _saveLocalPlaylist(SourcePlayback playback) async {
+    final List<LocalPlaylistExportItem>? items;
+    try {
+      items = await playback.localPlaylistExportItems();
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.universalMedia.queuePlaylistUnavailable);
+      return;
+    }
+    final exportItems = items;
+    if (exportItems == null || exportItems.length < 2 || !mounted) {
+      if (mounted && playback.canExportLocalPlaylist && exportItems == null) {
+        showErrorSnackBar(context, t.universalMedia.queuePlaylistUnavailable);
+      }
+      return;
+    }
+
+    final parent = p.dirname(exportItems.first.uri.toFilePath());
+    final safeName = (playback.entry?.displayTitle ?? exportItems.first.title)
+        .replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '-')
+        .trim();
+    String? selectedPath;
+    try {
+      selectedPath = await FilePicker.saveFile(
+        dialogTitle: t.universalMedia.saveQueuePlaylist,
+        fileName: '${safeName.isEmpty ? 'playlist' : safeName}.m3u',
+        initialDirectory: parent,
+        type: FileType.custom,
+        allowedExtensions: const ['m3u'],
+      );
+    } on Object catch (error, stackTrace) {
+      appLogger.w('Could not open the local playlist save dialog', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.universalMedia.queuePlaylistUnavailable);
+      return;
+    }
+    if (selectedPath == null || !mounted) return;
+    final path = p.extension(selectedPath).isEmpty ? '$selectedPath.m3u' : selectedPath;
+    if (p.extension(path).toLowerCase() != '.m3u') {
+      showErrorSnackBar(context, t.universalMedia.queuePlaylistUnavailable);
+      return;
+    }
+
+    String normalized(String value) {
+      final absolute = p.normalize(p.absolute(value));
+      return Platform.isWindows ? absolute.toLowerCase() : absolute;
+    }
+
+    late final String selectedDirectory;
+    try {
+      selectedDirectory = await Directory(p.dirname(path)).resolveSymbolicLinks();
+    } on FileSystemException {
+      if (mounted) showErrorSnackBar(context, t.universalMedia.queuePlaylistFolderRequired);
+      return;
+    }
+    if (!mounted) return;
+    if (normalized(selectedDirectory) != normalized(parent)) {
+      showErrorSnackBar(context, t.universalMedia.queuePlaylistFolderRequired);
+      return;
+    }
+    final destination = File(path);
+    await sourceAction(context, () async {
+      final rows = <String>['#EXTM3U'];
+      for (final item in exportItems) {
+        final title = item.title.replaceAll(RegExp(r'[\x00-\x1f]'), ' ').trim();
+        rows
+          ..add('#EXTINF:0,${title.isEmpty ? p.basename(item.uri.toFilePath()) : title}')
+          ..add(p.basename(item.uri.toFilePath()));
+      }
+      final suffix = const Uuid().v4();
+      final temporary = File(p.join(parent, '.${p.basename(path)}.plezy-$suffix'));
+      final backup = File('${destination.path}.plezy-backup-$suffix');
+      var backedUp = false;
+      try {
+        await temporary.writeAsString('${rows.join('\n')}\n', flush: true);
+        if (await destination.exists()) {
+          await destination.rename(backup.path);
+          backedUp = true;
+        }
+        await temporary.rename(destination.path);
+      } catch (_) {
+        if (backedUp && await backup.exists() && !await destination.exists()) {
+          await backup.rename(destination.path);
+        }
+        if (await temporary.exists()) await temporary.delete();
+        rethrow;
+      }
+      if (backedUp) {
+        try {
+          await backup.delete();
+        } on Object catch (error, stackTrace) {
+          appLogger.w('Saved playlist backup cleanup failed', error: error, stackTrace: stackTrace);
+        }
+      }
+      if (mounted) showSnackBar(context, t.universalMedia.queuePlaylistSaved);
+    });
+  }
+
+  String _sourceVideoTrackLabel(VideoTrack track) {
+    final title = track.title?.trim();
+    final dimensions = track.width != null && track.height != null ? '${track.width} × ${track.height}' : null;
+    final codec = track.codec?.trim();
+    final language = track.language?.trim();
+    final details = [
+      if (title case final title? when title.isNotEmpty) title,
+      ?dimensions,
+      if (language case final language? when language.isNotEmpty && language != 'und') language.toUpperCase(),
+      if (codec case final codec? when codec.isNotEmpty) codec.toUpperCase(),
+    ].join(' · ');
+    return isolateDisplayText(details.isEmpty ? t.videoSettings.videoTrackNumber(id: track.id) : details);
   }
 
   @override
@@ -914,6 +1026,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
+                if (s.canExportLocalPlaylist)
+                  IconButton(
+                    tooltip: t.universalMedia.saveQueuePlaylist,
+                    onPressed: () => unawaited(_saveLocalPlaylist(s)),
+                    icon: const AppIcon(Symbols.playlist_add_check_rounded),
+                  ),
                 FocusableButton(
                   autoScroll: false,
                   onPressed: _toggleSourceWorkspace,
@@ -991,6 +1109,21 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                               child: Wrap(
                                 spacing: 16,
                                 children: [
+                                  if (core.playerType == 'mpv' && core.state.tracks.video.length > 1)
+                                    AppMenuButton<String>(
+                                      icon: const AppIcon(Symbols.video_library_rounded),
+                                      tooltip: t.videoSettings.videoTrack,
+                                      adaptiveSheet: true,
+                                      entriesBuilder: (_) => [
+                                        for (final track in core.state.tracks.video)
+                                          AppMenuItem(
+                                            value: track.id,
+                                            label: _sourceVideoTrackLabel(track),
+                                            selected: track.isSelected,
+                                          ),
+                                      ],
+                                      onSelected: (id) => sourceAction(context, () => core.setProperty('vid', id)),
+                                    ),
                                   AppMenuButton<String>(
                                     icon: const AppIcon(Symbols.audiotrack_rounded),
                                     tooltip: t.fileSources.audioTrack,
