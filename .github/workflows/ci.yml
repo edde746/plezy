@@ -299,6 +299,12 @@ jobs:
           languages: cpp, java-kotlin
           build-mode: manual
 
+      - name: Install Android host native test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang build-essential cmake ninja-build
+
       - name: Configure Android host native tests
         run: |
           cmake -S android/app/src/test/cpp -B build/android-host-tests \
@@ -335,7 +341,7 @@ jobs:
   native-format:
     name: Native Formatting
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -425,6 +431,21 @@ jobs:
             video_params_test \
             experimental_render_api_test \
             plane_render_executor_test
+
+      # Older TSan runtimes reject randomized mappings when Linux uses more
+      # than 28 bits of mmap entropy. This only changes the disposable JIT VM.
+      - name: Set ThreadSanitizer-compatible ASLR entropy
+        if: matrix.sanitizer == 'thread'
+        run: |
+          current_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          if [ "$current_bits" -gt 28 ]; then
+            sudo sysctl -w vm.mmap_rnd_bits=28
+          fi
+          configured_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          if [ "$configured_bits" -gt 28 ]; then
+            echo "ThreadSanitizer requires vm.mmap_rnd_bits <= 28; found $configured_bits" >&2
+            exit 1
+          fi
 
       - name: Run Linux native reliability tests
         run: |
@@ -537,9 +558,17 @@ jobs:
         if: matrix.platform == 'iOS'
         run: flutter build ios --config-only --simulator --debug --no-pub
 
+      - name: Refresh pinned iOS Swift packages
+        if: matrix.platform == 'iOS'
+        run: scripts/refresh_apple_spm.sh ios
+
       - name: Prepare macOS Flutter build settings
         if: matrix.platform == 'macOS'
         run: flutter build macos --config-only --debug --no-pub
+
+      - name: Refresh pinned macOS Swift packages
+        if: matrix.platform == 'macOS'
+        run: scripts/refresh_apple_spm.sh macos
 
       - name: Prepare tvOS Flutter engine
         if: matrix.platform == 'tvOS'
@@ -567,6 +596,9 @@ jobs:
         run: |
           ruby tvos/scripts/test_wire_mpv.rb
           ruby tvos/scripts/test_wire_top_shelf.rb
+
+      - name: Resolve pinned Apple Swift packages for native tests
+        run: xcodebuild -resolvePackageDependencies -workspace "${{ matrix.workspace }}" -scheme Runner
 
       - name: Select Apple test destination
         env:
@@ -625,6 +657,7 @@ jobs:
           fi
           exit "$test_status"
 
+  # packer-windows-jit-v1
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}

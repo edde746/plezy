@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
+
 import '../services/music/music_playback_service_test.dart' show FakePlayer, FakeMediaControlsManager;
 import 'fixtures/memory_sources.dart';
 
@@ -120,6 +122,45 @@ void main() {
     item.audio,
     localOverrides: {'one': Uri.file('${directory.path}/one'), 'two': Uri.file('${directory.path}/two')},
   );
+  test('retry preserves the last reliable position after decoder reset and EOF', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    native.setPosition(Duration.zero);
+    native.emitError('stream failed');
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.canRetry, isTrue);
+    expect(playback.currentFilePositionMs, 47000);
+    expect(playback.progress!.filePositionMs, 47000);
+    expect(playback.progress!.finished, isFalse);
+    expect(native.openedUris, hasLength(1));
+    await playback.retry();
+    expect(native.openedUris, hasLength(2));
+    expect(native.openedUris.last, native.openedUris.first);
+    expect(native.openStarts.last, const Duration(seconds: 47));
+    expect(playback.failure, isNull);
+    expect(playback.currentFilePositionMs, 47000);
+  });
+
+  test('an intentional seek to zero remains zero after failure', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    await playback.seek(0);
+    native.emitError('stream failed');
+    await playback.retry();
+    expect(native.openStarts.last, Duration.zero);
+  });
+
+  test('retry is inert after the source profile changes', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    native.emitError('stream failed');
+    sources.generation++;
+    await playback.retry();
+    expect(native.openedUris, hasLength(1));
+    expect(playback.canRetry, isFalse);
+  });
+
   test('transient live media disables seeking and never persists progress', () async {
     const liveFile = PublicationFile(
       id: 'live',

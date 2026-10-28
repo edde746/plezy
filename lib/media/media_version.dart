@@ -72,7 +72,8 @@ class MediaVersion {
 
   /// Defaults to true when file-access fields are absent. Plex only populates
   /// them when metadata is fetched with `checkFiles=1`.
-  bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
+  // Split files are one timeline: every known part must be accessible.
+  bool get isPlayable => parts.every((part) => part.isPlayable);
 
   /// Approximate vertical resolution, for ordering versions best-first.
   ///

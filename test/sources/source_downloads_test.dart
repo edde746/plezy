@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/sources/content_access.dart';
+import 'package:plezy/sources/offline_readiness.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_transport.dart';
@@ -55,6 +56,35 @@ void main() {
     await database.close();
     await directory.delete(recursive: true);
   });
+  test('offline verification rejects deleted, truncated and replaced downloads', () async {
+    final source = DownloadSource(SourceTransport(client: MockClient((_) async => http.Response('abcdef', 200))));
+    addTearDown(source.close);
+    const entry = SourceEntry(sourceId: 'source', id: 'book', title: 'Book', kind: SourceItemKind.ebook, files: [file]);
+    final local = await downloads.download('p', source, file);
+    expect(await downloads.verifiedFiles('p', [entry, entry]), {offlineFileIdentity('source', file)});
+    expect(await downloads.verifiedFiles('other', [entry]), isEmpty);
+    await local.writeAsString('abc');
+    expect(await downloads.verifiedFiles('p', [entry]), isEmpty);
+    await local.writeAsString('abcdef');
+    const replacement = PublicationFile(
+      id: 'book',
+      name: 'book.epub',
+      mimeType: 'application/epub+zip',
+      size: 6,
+      revision: 'v2',
+    );
+    const updated = SourceEntry(
+      sourceId: 'source',
+      id: 'book',
+      title: 'Book',
+      kind: SourceItemKind.ebook,
+      files: [replacement],
+    );
+    expect(await downloads.verifiedFiles('p', [updated]), isEmpty);
+    await local.delete();
+    expect(await downloads.verifiedFiles('p', [entry]), isEmpty);
+  });
+
   test('immediate cancellation cannot start a late transfer or publish a file', () async {
     var requested = false;
     final source = DownloadSource(

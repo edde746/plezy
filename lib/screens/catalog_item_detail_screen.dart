@@ -19,15 +19,18 @@ import '../focus/dpad_navigator.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_rating.dart';
-import '../media/media_version.dart';
+import '../media/playback_copy_ranking.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/download_provider.dart';
+import '../providers/offline_mode_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
@@ -35,6 +38,9 @@ import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/settings_service.dart';
+import '../services/video_decode_capabilities.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
 import '../utils/desktop_window_padding.dart';
@@ -107,6 +113,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   /// Library items matching this catalog item; null while resolving.
   List<MediaItem>? _matches;
+  Set<String> _verifiedOfflineCopies = const {};
+  Map<String, PlaybackCopyRank> _copyRanks = const {};
+  MultiServerProvider? _copyServers;
+  OfflineModeProvider? _copyNetwork;
 
   /// Coverage belongs to the newest launched (detail-enriched) query, not the
   /// union of historical successes. Verified copies are merged independently.
@@ -130,6 +140,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _copyServers = context.read<MultiServerProvider>()..addListener(_onPlaybackEnvironmentChanged);
+    _copyNetwork = context.read<OfflineModeProvider?>();
+    _copyNetwork?.addListener(_onPlaybackEnvironmentChanged);
     _syncDetailCollections(widget.item);
     unawaited(_resolveMatches(widget.item));
     unawaited(_loadDetail());
@@ -149,6 +162,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   @override
   void dispose() {
+    _copyServers?.removeListener(_onPlaybackEnvironmentChanged);
+    _copyNetwork?.removeListener(_onPlaybackEnvironmentChanged);
     _backButtonFocusNode.dispose();
     _spoilerTagFocusNode.dispose();
     _overviewFocusNode.dispose();
@@ -166,6 +181,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onPlaybackEnvironmentChanged() {
+    if (mounted && _matches != null) _mergeMatches(const []);
   }
 
   void _onWatchlistChanged() {
@@ -200,6 +219,25 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         ..addAll(result.cancelledServerIds)
         ..addAll(result.unqueriedServerIds);
     }
+    // DownloadProvider resolves ownership, representation and actual file
+    // availability. A database completion flag alone is not an offline proof.
+    final downloads = context.read<DownloadProvider?>();
+    final candidates = mergeLibraryCopies(_matches ?? const [], result.items);
+    if (downloads != null) {
+      final verified = await Future.wait(
+        candidates.map((copy) async {
+          if (!downloads.isDownloaded(copy.globalKey)) return null;
+          try {
+            final path = await downloads.getVideoFilePath(copy.globalKey).timeout(const Duration(seconds: 2));
+            return path == null ? null : copy.globalKey;
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+      if (!mounted) return;
+      if (generation == _resolutionGeneration) _verifiedOfflineCopies = verified.whereType<String>().toSet();
+    }
     _mergeMatches(result.items);
   }
 
@@ -213,7 +251,31 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void _mergeMatches(List<MediaItem> matches) {
     if (!mounted) return;
     final focused = _libraryMatchNodesByKey.values.firstWhereOrNull((node) => node.hasPrimaryFocus);
-    final merged = mergeLibraryCopies(_matches ?? const [], matches);
+    final servers = context.read<MultiServerProvider>();
+    final settings = SettingsService.instanceOrNull;
+    final ranks = rankPlaybackCopies(
+      mergeLibraryCopies(_matches ?? const [], matches),
+      onlineServerIds: servers.onlineServerIds.toSet(),
+      verifiedOfflineKeys: _verifiedOfflineCopies,
+      refusedVideoCodecs: {
+        for (final codec in RankedVideoCodec.values)
+          if (!VideoDecodeCapabilities.accepts(codec)) codec.id,
+      },
+      qualityForItem: (copy) {
+        final server = serverIdOrNull(copy.serverId);
+        if (settings == null || server == null) return TranscodeQualityPreset.original;
+        return TranscodeQualityPreset.resolveStartupDefault(
+          serverSupportsTranscoding: servers.getClientForServer(server)?.capabilities.videoTranscoding ?? false,
+          onCellularOnly: _copyNetwork?.isCellularOnly ?? false,
+          cellularDefault: settings.read(SettingsService.cellularQualityPreset),
+          generalDefault: settings.read(SettingsService.defaultQualityPreset),
+          onRemoteConnection: servers.serverManager.isRemoteConnection(server),
+          remoteDefault: settings.read(SettingsService.remoteQualityPreset),
+        );
+      },
+    );
+    _copyRanks = {for (final rank in ranks) rank.item.globalKey: rank};
+    final merged = [for (final rank in ranks) rank.item];
     final keys = {for (final match in merged) match.globalKey};
     for (final key in _libraryMatchNodesByKey.keys.toList()) {
       if (!keys.contains(key)) _libraryMatchNodesByKey.remove(key)!.dispose();
@@ -651,18 +713,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
-  /// The technical label of a copy's best version, e.g. "4K HEVC MKV
-  /// (45.0 Mbps)". Library names are user-chosen and need not mention
-  /// resolution, which is exactly the question two copies of one movie pose
-  /// (#1754), so the row states it outright. Omitted when the backend
-  /// reported no resolution at all, rather than showing "Unknown".
-  static String? _libraryMatchQuality(MediaItem match) {
-    MediaVersion? best;
-    for (final version in match.mediaVersions ?? const <MediaVersion>[]) {
-      if (version.resolutionHeight == null) continue;
-      if (best == null || version.resolutionHeight! > best.resolutionHeight!) best = version;
-    }
-    return best?.displayLabel;
+  /// Show the practical version selected by the current device/network
+  /// constraints, or verified local availability. The row geometry is shared
+  /// with the existing library-copy list.
+  String? _libraryMatchQuality(MediaItem match) {
+    final rank = _copyRanks[match.globalKey];
+    if (rank?.reason == PlaybackCopyReason.offline) return t.fileSources.offline;
+    return rank?.version?.displayLabel;
   }
 
   Widget _buildLibraryMatchTile(MediaItem match, int index) {

@@ -7,7 +7,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
 import '../system_shelf_service.dart';
 
-/// A `plezy://` or `plezxyng://` link. The one grammar for every platform:
+/// A `plezy://`, `plezyng://` or legacy `plezxyng://` link. The one grammar for every platform:
 /// native code forwards the URL unchanged and only this file reads it. Links
 /// generated in the app use the canonical `plezy://` scheme.
 ///
@@ -34,7 +34,7 @@ sealed class DeepLink {
   const DeepLink({this.profile});
 
   static const scheme = 'plezy';
-  static const acceptedSchemes = <String>{scheme, 'plezxyng'};
+  static const acceptedSchemes = <String>{scheme, 'plezyng', 'plezxyng'};
 
   /// The profile the link names, as written in the link.
   final String? profile;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -305,6 +306,25 @@ class SourceController extends ChangeNotifier {
     if (_disposed || blocked || profileId == null || (epoch != null && !current(epoch))) {
       throw const SourceException(SourceFailure.cancelled);
     }
+  }
+
+  /// Searches only the active profile's already indexed catalogue. This never
+  /// enumerates remote folders or sends a query to an unconfigured provider.
+  Future<List<SourceEntry>> searchIndex(String query, {int limit = 500}) async {
+    final epoch = generation;
+    await ready;
+    requireSession(epoch);
+    if (query.trim().isEmpty) return const [];
+    final page = await repository.entriesPage(profileId!, query: query, limit: limit);
+    requireSession(epoch);
+    final configured = {for (final source in sources) source.id};
+    return [
+      for (final entry in page.items)
+        if (configured.contains(entry.sourceId) &&
+            entry.kind != SourceItemKind.folder &&
+            entry.kind != SourceItemKind.unknown)
+          entry,
+    ];
   }
 
   Future<void> reload() async {

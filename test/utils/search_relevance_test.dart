@@ -5,11 +5,26 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_person.dart';
 import 'package:plezy/media/search_hit.dart';
+import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/utils/search_relevance.dart';
 
 import '../test_helpers/media_items.dart';
 
 void main() {
+  test('indexed title and author participate in shared relevance without merging copies', () {
+    const first = SourceEntry(sourceId: 'one', id: 'book', title: 'Dune', kind: SourceItemKind.ebook);
+    const second = SourceEntry(sourceId: 'two', id: 'book', title: 'Dune', kind: SourceItemKind.audiobook);
+    const author = SourceEntry(
+      sourceId: 'one',
+      id: 'other',
+      title: 'Collected essays',
+      author: 'Dune',
+      kind: SourceItemKind.ebook,
+    );
+    final hits = rankSearchHits([SourceSearchHit(author), SourceSearchHit(first), SourceSearchHit(second)], 'Dune');
+    expect(hits.map((hit) => hit.globalKey), ['source:${first.key}', 'source:${second.key}', 'source:${author.key}']);
+  });
+
   group('normalizeSearchText', () {
     test('normalizes canonical, compatibility, separator, and typography variants', () {
       expect(normalizeSearchText('Amélie'), normalizeSearchText('Ame\u0301lie'));
@@ -169,6 +184,7 @@ List<String> _hitIds(Iterable<SearchHit> hits) => [
   for (final hit in hits)
     switch (hit) {
       MediaSearchHit(:final item) => item.id,
+      SourceSearchHit(:final entry) => entry.key,
       PersonSearchHit(:final person) => person.id,
     },
 ];

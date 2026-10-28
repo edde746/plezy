@@ -70,6 +70,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>plezy</string>
+				<string>plezyng</string>
 				<string>plezxyng</string>
 			</array>
 		</dict>

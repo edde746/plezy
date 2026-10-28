@@ -11,6 +11,16 @@
 - Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
 - Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
 - Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
+- Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
+- Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
+- Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.
+- Verify downloaded representations on disk before showing offline availability, require all audiobook/video parts, and reject server versions with a known missing part.
+- Include indexed Files and books in main Search with shared relevance, media-kind filters, TV focus, partial-failure results and profile-switch invalidation.
+- Accept branded `plezyng://` links across Android, Apple, Linux and Windows while preserving both existing aliases; correct PlezyNG Flatpak launch instructions.
+- Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
+- Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
+- Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
+- Route Windows x64 native CI through the private Packer JIT workflow allowlist.
 
 ### VLC feature parity
 
@@ -27,6 +37,8 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 #### Release automation
 
 - Add one-command native dependency refresh and all-platform private-JIT release orchestration.
+- Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
+- Validate all platform assets before publishing and dispatch configured release channels through the private-JIT orchestrator.
 - Include ARM webOS and Tizen tester builds in versioned releases, with pinned SDK and host-tool setup for Android, webOS and Tizen.
 - Provision pinned Android SDK packages and install hash-verified Python/Ninja plus host prerequisites for Android, webOS and Tizen private JIT builds.
 
@@ -37,6 +49,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 #### Universal media tools
 
 - Add one Open media workspace for direct streams, playlists, local files and desktop discs, plus desktop conversion, live-stream recording, Wi-Fi transfer, and MPV picture tools. Preserve live `#EXTINF` entries with playlist metadata, and keep favorites and nested launchers in the existing focus-aware Files and books rows.
+- Add integrated VLC-inspired media capture, private-LAN HLS sharing, consent-based search extensions and the `plezyctl` helper, with accessible cues, deep links, platform registrations and setup documentation.
 
 #### Playback and downloads
 
@@ -83,6 +96,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Add experimental LG webOS TV playback with OLED sign-in, OS-backed credentials and app-private artwork caching, plus ARM package build tooling; keep its IPK out of public artifacts until redistribution and exact-device qualification are approved.
 - Add experimental Samsung Tizen TV playback, signed TPK packaging and a disabled Apps2Samsung catalog recipe.
 - Add PlezyNG-branded cross-platform release packaging, versioned private-JIT builds, checksums and credential-gated submissions for mobile, desktop and TV stores, plus Linux packages, Windows package-manager submissions and multi-architecture relay images.
+- Attach a downloadable ARM Samsung Tizen tester handoff with its checksum, source and toolchain evidence; label it as development-signed and requiring TV re-signing.
 - Add a seven-day full-app trial followed by a one-time lifetime unlock, a public privacy notice and PlezyNG branding across app icons, launchers, TV and store artwork.
 
 ### Security
@@ -105,6 +119,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 ### Changed
 
 - Complete locale catalogs, record explicit fallbacks for new Steam account copy, fix release validation, and configure Gradle to use the private JIT runner's HTTPS proxy.
+- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows deep-link forwarding for the native toolchain.
 - Keep settings import and reset feedback visible when root rebuilds for locale or TV-mode changes.
 - Route Windows release packaging through PlezyNG's private Windows runner.
 - Use shared focus controls for Home row dialogs, subtitle styling and video equalizer sliders, with TV text input for Home row names.
