@@ -89,6 +89,8 @@ class VisualizerPackStore {
   static const maxExpandedBytes = 64 * 1024 * 1024;
   static const maxFileBytes = 16 * 1024 * 1024;
   static const maxFileCount = 2500;
+  static const maxPresetImportCount = 2500;
+  static const maxPresetImportBatchBytes = 64 * 1024 * 1024;
 
   final http.Client _client;
   Future<Directory>? _rootFuture;

@@ -125,22 +125,51 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     final result = await FilePickerService.instance.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['milk', 'milk2'],
+      allowMultiple: true,
       withData: false,
     );
     if (result == null || result.files.isEmpty || !mounted) return;
+    if (result.files.length > VisualizerPackStore.maxPresetImportCount) {
+      setState(() => _failure = 'Choose at most ${VisualizerPackStore.maxPresetImportCount} preset files at a time.');
+      return;
+    }
+    final announcedBytes = result.files.fold<int>(0, (sum, file) => sum + file.size);
+    if (announcedBytes > VisualizerPackStore.maxPresetImportBatchBytes) {
+      setState(() => _failure = 'The selected preset files exceed the 64 MB batch limit.');
+      return;
+    }
     setState(() {
       _busy = true;
       _failure = null;
     });
     try {
-      final picked = result.files.single;
-      if (picked.size > 1024 * 1024) {
-        throw const VisualizerPackException('Preset files must be smaller than 1 MB.');
+      var imported = 0;
+      final failures = <String>[];
+      for (final picked in result.files) {
+        if (picked.size > 1024 * 1024) {
+          failures.add('${picked.name}: exceeds 1 MB');
+          continue;
+        }
+        final sourcePath = picked.path;
+        if (sourcePath == null) {
+          failures.add('${picked.name}: file could not be read');
+          continue;
+        }
+        try {
+          await _store.importPresetFile(picked.name, sourcePath, picked.size);
+          imported++;
+        } catch (error) {
+          failures.add('${picked.name}: $error');
+        }
       }
-      final sourcePath = picked.path;
-      if (sourcePath == null) throw const VisualizerPackException('The selected file could not be read.');
-      await _store.importPresetFile(picked.name, sourcePath, picked.size);
       await _refresh();
+      if (!mounted) return;
+      final skipped = failures.isEmpty
+          ? ''
+          : '; skipped ${failures.length}: ${failures.take(2).join(' · ')}${failures.length > 2 ? ' · …' : ''}';
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text('Imported $imported of ${result.files.length} preset files$skipped.')),
+      );
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
