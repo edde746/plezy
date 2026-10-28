@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add opt-in subtitle-on-mute for library playback, temporarily overriding an Off choice through the existing track policy and restoring the prior choice on unmute unless the viewer changes tracks or the item changes.
+- Add opt-in subtitle-on-mute for library playback, retrying after the native track catalog arrives and restoring a temporary Off override on unmute unless the viewer changes tracks or the item changes.
 - Add a configurable shortcut to reset subtitle timing to zero through the selected persistence scope and show the applied value.
 
 - Carry selected SDH/closed-caption subtitle intent across library episode changes and saved show preferences, infer the role from older title-only preferences, and preserve the existing server fallback when the matching caption class is unavailable.

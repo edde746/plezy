@@ -815,6 +815,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _subtitleMuteSelectionPending = false;
   int _subtitleMuteGeneration = 0;
   VoidCallback? _subtitleMuteVolumeListener;
+  StreamSubscription<dynamic>? _subtitleMuteTrackCatalogSubscription;
+  Player? _subtitleMuteTrackCatalogPlayer;
   StreamSubscription<void>? _sleepTimerSubscription;
   bool _isHandlingBack = false;
 
@@ -1780,6 +1782,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final controller = _volumeController;
     if (controller == null || !controller.ownsPlayer(currentPlayer)) return;
     _detachSubtitleMuteVolumeListener(controller);
+    _detachSubtitleMuteTrackCatalogListener(currentPlayer);
     _volumeController = null;
     controller.dispose();
   }
@@ -2835,6 +2838,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     final volumeController = _volumeController;
     if (volumeController != null) _detachSubtitleMuteVolumeListener(volumeController);
+    _detachSubtitleMuteTrackCatalogListener();
     _volumeController = null;
     volumeController?.dispose();
     final playerToDispose = player;
@@ -3093,7 +3097,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     void listener() => _handleSubtitleMuteVolume(controller.value);
     _subtitleMuteVolumeListener = listener;
     controller.addListener(listener);
+    final currentPlayer = player;
+    if (currentPlayer != null && controller.ownsPlayer(currentPlayer)) {
+      _attachSubtitleMuteTrackCatalogListener(currentPlayer);
+    }
     _handleSubtitleMuteVolume(controller.value);
+  }
+
+  void _attachSubtitleMuteTrackCatalogListener(Player currentPlayer) {
+    if (identical(_subtitleMuteTrackCatalogPlayer, currentPlayer)) return;
+    _detachSubtitleMuteTrackCatalogListener();
+    _subtitleMuteTrackCatalogPlayer = currentPlayer;
+    _subtitleMuteTrackCatalogSubscription = currentPlayer.streams.tracks.listen((tracks) {
+      final volume = _volumeController?.value;
+      if (tracks.subtitle.isEmpty ||
+          volume == null ||
+          volume > 0 ||
+          !SettingsService.instance.read(SettingsService.subtitleOnMute)) {
+        return;
+      }
+      _handleSubtitleMuteVolume(volume);
+    });
+  }
+
+  void _detachSubtitleMuteTrackCatalogListener([Player? expectedPlayer]) {
+    if (expectedPlayer != null && !identical(_subtitleMuteTrackCatalogPlayer, expectedPlayer)) return;
+    _subtitleMuteTrackCatalogPlayer = null;
+    final subscription = _subtitleMuteTrackCatalogSubscription;
+    _subtitleMuteTrackCatalogSubscription = null;
+    if (subscription != null) unawaited(subscription.cancel());
   }
 
   void _detachSubtitleMuteVolumeListener(VideoVolumeController controller) {
