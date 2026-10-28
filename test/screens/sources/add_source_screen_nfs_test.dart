@@ -70,6 +70,7 @@ void main() {
     expect(find.text(t.fileSources.password), findsNothing);
 
     await tester.ensureVisible(find.text(t.sourceSetup.nfsEncryption));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(t.sourceSetup.nfsEncryption));
     await tester.pumpAndSettle();
     expect(find.text(t.sourceSetup.nfsTrustCertificate), findsOneWidget);
