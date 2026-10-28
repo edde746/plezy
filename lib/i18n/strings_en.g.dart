@@ -6779,6 +6779,18 @@ class Translations$matchScreen$en {
 
 	/// en: 'No matches found'
 	String get noMatchesFound => 'No matches found';
+
+	/// en: 'Plex Discover'
+	String get plexDiscover => 'Plex Discover';
+
+	/// en: 'Plex library'
+	String get plexLibrary => 'Plex library';
+
+	/// en: 'Jellyfin library'
+	String get jellyfinLibrary => 'Jellyfin library';
+
+	/// en: 'Emby library'
+	String get embyLibrary => 'Emby library';
 }
 
 // Path: serverTasks
@@ -6833,6 +6845,48 @@ class Translations$trakt$en {
 
 	/// en: 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.'
 	String get watchedSyncDescription => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.';
+
+	/// en: 'Export to Letterboxd'
+	String get historyExport => 'Export to Letterboxd';
+
+	/// en: 'Create a local CSV from Trakt movie history. Nothing is uploaded.'
+	String get historyExportDescription => 'Create a local CSV from Trakt movie history. Nothing is uploaded.';
+
+	/// en: 'Loading Trakt movie history…'
+	String get historyExportLoading => 'Loading Trakt movie history…';
+
+	/// en: 'Export movie history'
+	String get historyExportReviewTitle => 'Export movie history';
+
+	/// en: 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.'
+	String historyExportReview({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.';
+
+	/// en: '${count} incomplete entries could not be included.'
+	String historyExportSkipped({required Object count}) => '${count} incomplete entries could not be included.';
+
+	/// en: 'No exportable movie history was found in Trakt.'
+	String get historyExportNoHistory => 'No exportable movie history was found in Trakt.';
+
+	/// en: 'Couldn't load Trakt movie history. Try again.'
+	String get historyExportFailed => 'Couldn\'t load Trakt movie history. Try again.';
+
+	/// en: 'Save CSV'
+	String get historyExportSave => 'Save CSV';
+
+	/// en: 'Save Letterboxd file ${part} of ${total}'
+	String historyExportPart({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}';
+
+	/// en: 'Saved ${count} Letterboxd CSV file(s).'
+	String historyExportSaved({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).';
+
+	/// en: 'Export stopped after saving ${saved} of ${total} files.'
+	String historyExportPartial({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.';
+
+	/// en: 'Couldn't save the CSV file. Try again.'
+	String get historyExportSaveFailed => 'Couldn\'t save the CSV file. Try again.';
+
+	/// en: 'This history is too large to package here. Use Trakt's own data export to split very large histories.'
+	String get historyExportTooLarge => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.';
 }
 
 // Path: seerr
@@ -7010,6 +7064,24 @@ class Translations$services$en {
 
 	/// en: 'Integrations'
 	String get integrations => 'Integrations';
+
+	/// en: 'Hardcover'
+	String get hardcover => 'Hardcover';
+
+	/// en: 'Linked catalog titles'
+	String get linkedCatalogTitles => 'Linked catalog titles';
+
+	/// en: 'Optional plan note. This label is only for you; PlezyNG does not verify account access.'
+	String get planNote => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.';
+
+	/// en: 'Plan label'
+	String get planLabel => 'Plan label';
+
+	/// en: 'Set plan label'
+	String get setPlanLabel => 'Set plan label';
+
+	/// en: 'PlezyNG may earn a commission from some links.'
+	String get commissionDisclosure => 'PlezyNG may earn a commission from some links.';
 
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
@@ -9108,8 +9180,8 @@ class Translations$audiobook$en {
 	/// en: 'Sync folder or prefix'
 	String get syncFolder => 'Sync folder or prefix';
 
-	/// en: 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.'
-	String get syncFolderHelp => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.';
+	/// en: 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.'
+	String get syncFolderHelp => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.';
 
 	/// en: 'Private sync code'
 	String get syncCode => 'Private sync code';
@@ -9138,8 +9210,8 @@ class Translations$audiobook$en {
 	/// en: 'Last synced at $time'
 	String lastSynced({required Object time}) => 'Last synced at ${time}';
 
-	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.'
-	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.';
+	/// en: 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.';
 
 	/// en: 'Choose where to resume'
 	String get syncConflicts => 'Choose where to resume';
@@ -9275,6 +9347,9 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Saved server certificate'
 	String get savedCertificate => 'Saved server certificate';
+
+	/// en: 'Project Gutenberg'
+	String get projectGutenberg => 'Project Gutenberg';
 
 	/// en: 'Enter an NFS URL such as nfs://nas:2049/export.'
 	String get nfsEndpointInvalid => 'Enter an NFS URL such as nfs://nas:2049/export.';
@@ -15582,6 +15657,10 @@ extension on Translations {
 			'matchScreen.yearHint' => 'Year',
 			'matchScreen.search' => 'Search',
 			'matchScreen.noMatchesFound' => 'No matches found',
+			'matchScreen.plexDiscover' => 'Plex Discover',
+			'matchScreen.plexLibrary' => 'Plex library',
+			'matchScreen.jellyfinLibrary' => 'Jellyfin library',
+			'matchScreen.embyLibrary' => 'Emby library',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
@@ -15594,6 +15673,20 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.',
+			'trakt.historyExport' => 'Export to Letterboxd',
+			'trakt.historyExportDescription' => 'Create a local CSV from Trakt movie history. Nothing is uploaded.',
+			'trakt.historyExportLoading' => 'Loading Trakt movie history…',
+			'trakt.historyExportReviewTitle' => 'Export movie history',
+			'trakt.historyExportReview' => ({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.',
+			'trakt.historyExportSkipped' => ({required Object count}) => '${count} incomplete entries could not be included.',
+			'trakt.historyExportNoHistory' => 'No exportable movie history was found in Trakt.',
+			'trakt.historyExportFailed' => 'Couldn\'t load Trakt movie history. Try again.',
+			'trakt.historyExportSave' => 'Save CSV',
+			'trakt.historyExportPart' => ({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}',
+			'trakt.historyExportSaved' => ({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).',
+			'trakt.historyExportPartial' => ({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.',
+			'trakt.historyExportSaveFailed' => 'Couldn\'t save the CSV file. Try again.',
+			'trakt.historyExportTooLarge' => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
@@ -15647,6 +15740,12 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
+			'services.hardcover' => 'Hardcover',
+			'services.linkedCatalogTitles' => 'Linked catalog titles',
+			'services.planNote' => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.',
+			'services.planLabel' => 'Plan label',
+			'services.setPlanLabel' => 'Set plan label',
+			'services.commissionDisclosure' => 'PlezyNG may earn a commission from some links.',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
@@ -15946,6 +16045,8 @@ extension on Translations {
 			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
 			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
 			'universalMedia.copyAddress' => 'Copy transfer address',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.addressCopied' => 'Transfer address copied',
 			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
 			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
@@ -15970,8 +16071,6 @@ extension on Translations {
 			'universalMedia.pictureHelp' => 'These picture changes affect only this playback. They reset when playback ends.',
 			'universalMedia.resetPicture' => 'Reset picture',
 			'universalMedia.brightness' => 'Brightness',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.contrast' => 'Contrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
@@ -16338,7 +16437,7 @@ extension on Translations {
 			'audiobook.addSyncSource' => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.',
 			'audiobook.syncDestination' => 'Sync storage account',
 			'audiobook.syncFolder' => 'Sync folder or prefix',
-			'audiobook.syncFolderHelp' => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.',
+			'audiobook.syncFolderHelp' => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.',
 			'audiobook.syncCode' => 'Private sync code',
 			'audiobook.syncCodeHelp' => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.',
 			'audiobook.showCode' => 'Show or hide sync code',
@@ -16348,7 +16447,7 @@ extension on Translations {
 			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
 			'audiobook.syncReconnect' => 'Reconnect storage account',
 			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
-			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.',
+			'audiobook.syncPrivacy' => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.',
 			'audiobook.syncConflicts' => 'Choose where to resume',
 			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
@@ -16391,6 +16490,7 @@ extension on Translations {
 			'audiobook.recoveryExported' => 'Encrypted recovery file saved.',
 			'audiobook.recoveryImported' => 'Recovery data merged.',
 			'sourceSetup.savedCertificate' => 'Saved server certificate',
+			'sourceSetup.projectGutenberg' => 'Project Gutenberg',
 			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
 			'sourceSetup.dlnaServers' => 'DLNA media servers',
@@ -16459,6 +16559,8 @@ extension on Translations {
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
 			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
 			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
@@ -16484,8 +16586,6 @@ extension on Translations {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.sharedEntryPair' => 'Pair this item',
 			'sourceSetup.sharedEntryPairHelp' => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.',
 			'sourceSetup.sharedEntryId' => 'Shared item ID',

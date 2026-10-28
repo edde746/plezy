@@ -3546,7 +3546,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.';
 	@override String get syncDestination => 'Tài khoản lưu trữ Sync';
 	@override String get syncFolder => 'Sync folder hoặc prefix';
-	@override String get syncFolderHelp => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.';
 	@override String get syncCode => 'Mã đồng bộ riêng';
 	@override String get syncCodeHelp => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.';
 	@override String get showCode => 'Hiển thị hoặc ẩn mã đồng bộ';
@@ -3556,7 +3555,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.';
 	@override String get syncReconnect => 'Kết nối lại tài khoản lưu trữ';
 	@override String lastSynced({required Object time}) => 'Kết quả tìm kiếm tại ${time}';
-	@override String get syncPrivacy => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.';
 	@override String get syncConflicts => 'Chọn nơi để lặp lại';
 	@override String get conflictHelp => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.';
 	@override String syncDevice({required Object device}) => 'Thiết bị ${device}';
@@ -8366,7 +8364,6 @@ extension on TranslationsVi {
 			'audiobook.addSyncSource' => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.',
 			'audiobook.syncDestination' => 'Tài khoản lưu trữ Sync',
 			'audiobook.syncFolder' => 'Sync folder hoặc prefix',
-			'audiobook.syncFolderHelp' => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.',
 			'audiobook.syncCode' => 'Mã đồng bộ riêng',
 			'audiobook.syncCodeHelp' => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.',
 			'audiobook.showCode' => 'Hiển thị hoặc ẩn mã đồng bộ',
@@ -8376,7 +8373,6 @@ extension on TranslationsVi {
 			'audiobook.syncSourceDisconnect' => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.',
 			'audiobook.syncReconnect' => 'Kết nối lại tài khoản lưu trữ',
 			'audiobook.lastSynced' => ({required Object time}) => 'Kết quả tìm kiếm tại ${time}',
-			'audiobook.syncPrivacy' => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.',
 			'audiobook.syncConflicts' => 'Chọn nơi để lặp lại',
 			'audiobook.conflictHelp' => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Thiết bị ${device}',
@@ -8577,10 +8573,10 @@ extension on TranslationsVi {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

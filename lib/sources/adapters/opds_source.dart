@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:xml/xml.dart';
 
+import '../../services/book_identifiers.dart';
 import '../source_models.dart';
 import '../comic_document.dart';
 import '../source_transport.dart';
@@ -58,11 +59,16 @@ class OpdsSourceAdapter extends SourceAdapter {
     'entry': id,
     'link': sourceDigest(jsonEncode(sampleOnly ? [_identity(download), type, true] : [_identity(download), type])),
   });
-  bool _downloadable(String rel) => rel
-      .split(RegExp(r'\s+'))
-      .any(
-        const {'http://opds-spec.org/acquisition', 'http://opds-spec.org/acquisition/open-access', _sampleRel}.contains,
-      );
+  bool _hasRel(Iterable<String> rels, String expected) =>
+      rels.any((value) => value.split(RegExp(r'\s+')).contains(expected));
+  bool _sampleAcquisition(Iterable<String> rels) => _hasRel(rels, _sampleRel);
+  bool _openAccessAcquisition(Iterable<String> rels) => _hasRel(rels, 'http://opds-spec.org/acquisition/open-access');
+  bool _supportedFileAcquisition(Iterable<String> rels) =>
+      _sampleAcquisition(rels) || _openAccessAcquisition(rels) || _hasRel(rels, 'http://opds-spec.org/acquisition');
+  bool _downloadable(String rel) => _supportedFileAcquisition([rel]);
+  SourceItemKind _entryKind(List<PublicationFile> files) => files
+      .map((file) => file.kind)
+      .firstWhere((kind) => kind != SourceItemKind.unknown, orElse: () => files.first.kind);
 
   @override
   SourceCapabilities get capabilities => const SourceCapabilities();
@@ -168,6 +174,14 @@ class OpdsSourceAdapter extends SourceAdapter {
     return Map.unmodifiable(result);
   }
 
+  Map<String, String> _identifiers(Object? raw) {
+    final result = Map<String, String>.from(_portableIdentifiers(raw));
+    result.remove('isbn10');
+    result.remove('isbn13');
+    result.addAll(BookIdentifiers.fromValues(raw));
+    return Map.unmodifiable(result);
+  }
+
   SourcePage _json(Uri uri, Map<String, dynamic> feed) {
     final entries = <SourceEntry>[];
     for (final node in sourceList(feed['navigation'])) {
@@ -212,7 +226,7 @@ class OpdsSourceAdapter extends SourceAdapter {
       final links = sourceList(j['links']).map(sourceMap).toList();
       final self = links.where((l) => _rels(l).contains('self')).firstOrNull?['href'];
       final id =
-          '${meta['identifier'] ?? (self == null ? sourceDigest(jsonEncode([uri.toString(), meta['title'], meta['author'], links.where((l) => _rels(l).any(_downloadable)).map((l) => _identity(uri.resolve(l['href'] as String))).toList()])) : _identity(uri.resolve(self as String)))}';
+          '${meta['identifier'] ?? (self == null ? sourceDigest(jsonEncode([uri.toString(), meta['title'], meta['author'], links.where((l) => _supportedFileAcquisition(_rels(l))).map((l) => _identity(uri.resolve(l['href'] as String))).toList()])) : _identity(uri.resolve(self as String)))}';
       final image = sourceList(j['images']).map(sourceMap).where((i) => i['href'] is String).firstOrNull;
       if (image != null) _covers[id] = uri.resolve(image['href'] as String);
       final files = <PublicationFile>[];
@@ -227,12 +241,16 @@ class OpdsSourceAdapter extends SourceAdapter {
       }
       for (var index = 0; index < links.length; index++) {
         final link = links[index];
-        if (!_rels(link).any((r) => _downloadable(r)) || link['href'] is! String) continue;
+        final rels = _rels(link);
+        if (!_supportedFileAcquisition(rels) || link['href'] is! String) {
+          continue;
+        }
         final mime = link['type'] as String? ?? '';
-        final name = '${_label(meta['title'])}${_extension(mime)}';
-        final sampleOnly = _rels(link).any((rel) => rel.split(RegExp(r'\s+')).contains(_sampleRel));
-        final ref = _fileRef(uri, id, uri.resolve(link['href'] as String), mime, sampleOnly: sampleOnly);
-        _acquisitions[ref] = uri.resolve(link['href'] as String);
+        final acquisition = uri.resolve(link['href'] as String);
+        final name = '${_label(meta['title'])}${_extension(mime, acquisition)}';
+        final sampleOnly = _sampleAcquisition(rels);
+        final ref = _fileRef(uri, id, acquisition, mime, sampleOnly: sampleOnly);
+        _acquisitions[ref] = acquisition;
         files.add(
           PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length']), sampleOnly: sampleOnly),
         );
@@ -246,13 +264,13 @@ class OpdsSourceAdapter extends SourceAdapter {
           sourceId: source.id,
           id: id,
           title: _label(meta['title']),
-          kind: files.first.kind,
+          kind: _entryKind(files),
           parentId: uri.toString(),
           author: _label(meta['author']),
           language: _label(meta['language']),
           description: _label(meta['description']),
-          identifiers: _portableIdentifiers(meta['identifier']),
           files: files,
+          identifiers: _identifiers(meta['identifier'] ?? meta['identifiers']),
         ),
       );
     }
@@ -283,7 +301,7 @@ class OpdsSourceAdapter extends SourceAdapter {
                 title,
                 text('author'),
                 links
-                    .where((l) => _downloadable(l.getAttribute('rel') ?? ''))
+                    .where((l) => _supportedFileAcquisition([l.getAttribute('rel') ?? '']))
                     .map((l) => _identity(uri.resolve(l.getAttribute('href') ?? '')))
                     .toList(),
               ]),
@@ -313,12 +331,19 @@ class OpdsSourceAdapter extends SourceAdapter {
         final link = links[index], href = link.getAttribute('href');
         if (href == null) continue;
         final rel = link.getAttribute('rel') ?? '', mime = link.getAttribute('type') ?? '';
+        final rels = [rel];
         if (_downloadable(rel)) {
-          final sampleOnly = rel.split(RegExp(r'\s+')).contains(_sampleRel);
-          final ref = _fileRef(uri, id, uri.resolve(href), mime, sampleOnly: sampleOnly);
-          _acquisitions[ref] = uri.resolve(href);
+          final acquisition = uri.resolve(href);
+          final sampleOnly = _sampleAcquisition(rels);
+          final ref = _fileRef(uri, id, acquisition, mime, sampleOnly: sampleOnly);
+          _acquisitions[ref] = acquisition;
           files.add(
-            PublicationFile(id: ref, name: '$title${_extension(mime)}', mimeType: mime, sampleOnly: sampleOnly),
+            PublicationFile(
+              id: ref,
+              name: '$title${_extension(mime, acquisition)}',
+              mimeType: mime,
+              sampleOnly: sampleOnly,
+            ),
           );
         } else if ((rel == 'subsection' || rel == 'alternate' || rel.isEmpty) &&
             (mime.contains('atom') || mime.contains('opds'))) {
@@ -333,21 +358,23 @@ class OpdsSourceAdapter extends SourceAdapter {
           );
         }
       }
-      if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) files.add(_streamFile(uri, id, title));
+      if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) {
+        files.add(_streamFile(uri, id, title));
+      }
       if (files.isNotEmpty) {
         result.add(
           SourceEntry(
             sourceId: source.id,
             id: id,
             title: title,
-            kind: files.first.kind,
+            kind: _entryKind(files),
             author: entry.childElements
                 .where((e) => e.name.local == 'author')
                 .map((e) => e.innerText.trim())
                 .join(', '),
             description: text('summary').isEmpty ? text('content') : text('summary'),
             parentId: uri.toString(),
-            identifiers: _portableIdentifiers(
+            identifiers: _identifiers(
               entry.childElements
                   .where((element) => element.name.local == 'identifier')
                   .map((element) => element.innerText)
@@ -378,7 +405,9 @@ class OpdsSourceAdapter extends SourceAdapter {
       ]),
       transport: transport,
       resolve: (index) async {
-        if (index < 0 || index >= stream.count) throw const SourceException(SourceFailure.invalidData);
+        if (index < 0 || index >= stream.count) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
         final uri = Uri.parse(
           stream.template
               .replaceAll(RegExp(r'%7BpageNumber%7D|\{pageNumber\}', caseSensitive: false), '$index')
@@ -391,19 +420,30 @@ class OpdsSourceAdapter extends SourceAdapter {
 
   @override
   Future<ContentLease?> cover(SourceEntry entry) async {
-    if (!_covers.containsKey(entry.id) && entry.parentId != null) await browse(parent: entry.parentId);
+    if (!_covers.containsKey(entry.id) && entry.parentId != null) {
+      await browse(parent: entry.parentId);
+    }
     final uri = _covers[entry.id];
     return uri == null ? null : ContentLease(uri, headers: await _headers(uri));
   }
 
-  String _extension(String type) => switch (type.split(';').first) {
-    'application/epub+zip' => '.epub',
-    'application/pdf' => '.pdf',
-    'application/vnd.comicbook+zip' => '.cbz',
-    'audio/mpeg' => '.mp3',
-    'audio/mp4' => '.m4b',
-    _ => '',
-  };
+  String _extension(String type, Uri acquisition) {
+    final declared = switch (type.split(';').first.trim().toLowerCase()) {
+      'application/epub+zip' => '.epub',
+      'application/pdf' => '.pdf',
+      'application/vnd.comicbook+zip' => '.cbz',
+      'audio/mpeg' => '.mp3',
+      'audio/mp4' => '.m4b',
+      _ => null,
+    };
+    if (declared != null) return declared;
+    final path = acquisition.pathSegments.lastOrNull ?? '';
+    final suffix = RegExp(r'\.([A-Za-z0-9]{1,8})$').firstMatch(path)?.group(1)?.toLowerCase();
+    if (suffix == null) return '';
+    final extension = '.$suffix';
+    return classifySourceFile('file$extension') == SourceItemKind.unknown ? '' : extension;
+  }
+
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
     if (file.streamOnly) throw const SourceException(SourceFailure.unsupported);

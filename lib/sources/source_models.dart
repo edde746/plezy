@@ -18,6 +18,8 @@ enum FileSourceKind {
   opds,
   audiobookshelf,
   komga,
+  openSubsonic,
+  podcastRss,
 }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
@@ -48,6 +50,7 @@ class SourceException implements Exception {
 
 String sourceKey(String sourceId, String itemId) => jsonEncode([sourceId, itemId]);
 String sourceDigest(String value) => sha256.convert(utf8.encode(value)).toString();
+String sourceOrigin(Uri uri) => Uri(scheme: uri.scheme, host: uri.host, port: uri.hasPort ? uri.port : null).toString();
 
 Map<String, dynamic> sourceMap(Object? value) => value is Map ? Map<String, dynamic>.from(value) : {};
 List<dynamic> sourceList(Object? value) => value is List ? value : const [];
@@ -236,7 +239,8 @@ class PublicationFile {
     durationMs: sourceInt(j['durationMs']),
     primary: j['primary'] as bool? ?? true,
     streamOnly: j['streamOnly'] as bool? ?? false,
-    sampleOnly: j['sampleOnly'] as bool? ?? false,
+    // Accept the earlier PR schema while always writing the canonical key.
+    sampleOnly: j['sampleOnly'] as bool? ?? j['sample'] as bool? ?? false,
   );
 }
 
@@ -528,7 +532,9 @@ class ContentLease {
       if (!seenHeaders.add(name)) return false;
       if (name == 'authorization') {
         final value = entry.value;
-        if (!(value.startsWith('Basic ') || value.startsWith('Bearer '))) return false;
+        if (!(value.startsWith('Basic ') || value.startsWith('Bearer '))) {
+          return false;
+        }
         hasAuthorization = true;
       } else if (name != 'if-match') {
         return false;
@@ -722,7 +728,9 @@ class BookAnnotation {
 
 SourceItemKind classifySourceFile(String name, [String mime = '']) {
   final ext = p.extension(name.split('?').first).toLowerCase();
-  if (ext == '.cbz' || mime == 'application/vnd.comicbook+zip') return SourceItemKind.comic;
+  if (ext == '.cbz' || mime == 'application/vnd.comicbook+zip') {
+    return SourceItemKind.comic;
+  }
   if (const {'.epub', '.pdf'}.contains(ext) || const {'application/epub+zip', 'application/pdf'}.contains(mime)) {
     return SourceItemKind.ebook;
   }

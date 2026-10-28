@@ -252,14 +252,7 @@ class SourceRepository {
           .toList();
 
   Future<void> saveSource(FileSource source, Map<String, String> credentials) async {
-    if (const {
-      FileSourceKind.webdav,
-      FileSourceKind.opds,
-      FileSourceKind.s3,
-      FileSourceKind.audiobookshelf,
-    }.contains(source.kind)) {
-      validatePublicSourceUri(Uri.parse(source.endpoint), allowHttp: source.options['allowHttp'] == 'true');
-    }
+    _validateSourceEndpoint(source);
     final encrypted = await protect(jsonEncode(credentials));
     _writable(source.profileId);
     await database.customStatement('INSERT OR REPLACE INTO sources VALUES (?,?,?,?)', [
@@ -268,6 +261,57 @@ class SourceRepository {
       jsonEncode(source.toJson()),
       encrypted,
     ]);
+  }
+
+  Future<void> saveSources(List<(FileSource, Map<String, String>)> values) async {
+    if (values.length > 500) throw const SourceException(SourceFailure.invalidData);
+    final prepared = <(FileSource, String)>[];
+    final ids = <String>{};
+    for (final (source, credentials) in values) {
+      _validateSourceEndpoint(source);
+      if (!ids.add('${source.profileId}\u0000${source.id}')) throw const SourceException(SourceFailure.conflict);
+      prepared.add((source, await protect(jsonEncode(credentials))));
+    }
+    if (prepared.isEmpty) return;
+    final profile = prepared.first.$1.profileId;
+    if (prepared.any((item) => item.$1.profileId != profile)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    _writable(profile);
+    await database.transaction(() async {
+      for (final (source, encrypted) in prepared) {
+        await database.customStatement('INSERT OR REPLACE INTO sources VALUES (?,?,?,?)', [
+          source.profileId,
+          source.id,
+          jsonEncode(source.toJson()),
+          encrypted,
+        ]);
+      }
+    });
+  }
+
+  void _validateSourceEndpoint(FileSource source) {
+    if (const {
+      FileSourceKind.webdav,
+      FileSourceKind.opds,
+      FileSourceKind.s3,
+      FileSourceKind.audiobookshelf,
+      FileSourceKind.komga,
+      FileSourceKind.openSubsonic,
+      FileSourceKind.podcastRss,
+    }.contains(source.kind)) {
+      final uri = Uri.parse(source.endpoint);
+      validatePublicSourceUri(uri, allowHttp: source.options['allowHttp'] == 'true');
+      if (source.kind == FileSourceKind.openSubsonic &&
+          (uri.hasQuery || uri.pathSegments.any((part) => part == '.' || part == '..'))) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (source.kind == FileSourceKind.podcastRss && ((uri.path.isNotEmpty && uri.path != '/') || uri.hasQuery)) {
+        // Podcast feed paths and signed query parameters belong only in the
+        // encrypted credential record, never the public source configuration.
+        throw const SourceException(SourceFailure.permission);
+      }
+    }
   }
 
   Future<Map<String, String>> credentials(FileSource source) async {
@@ -989,6 +1033,19 @@ class SourceRepository {
 
   Future<void> forgetPreference(String profile, String key) =>
       database.customStatement('DELETE FROM preferences WHERE profile=? AND key=?', [profile, key]);
+
+  /// Deletes a known set of private integration preferences across profiles
+  /// during app-wide sign-out without removing the profiles' source files.
+  Future<void> forgetPreferencesForAllProfiles(Set<String> keys) async {
+    if (keys.isEmpty) return;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    await database.transaction(
+      () => database.customStatement(
+        'DELETE FROM preferences WHERE key IN ($placeholders)',
+        keys.toList(growable: false),
+      ),
+    );
+  }
 
   Future<void> recordDownload(
     String profile,

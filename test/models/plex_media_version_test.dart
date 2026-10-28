@@ -163,7 +163,7 @@ void main() {
       expect(v.parts.single.accessible, isTrue);
     });
 
-    test('maps multiple parts and treats later playable parts as playable', () {
+    test('maps multiple parts and preserves later playable parts when an earlier part is missing', () {
       final v = PlexMappers.mediaVersionFromJson({
         'id': 1,
         'videoResolution': '1080',
@@ -181,7 +181,8 @@ void main() {
       expect(v.parts.last.sizeBytes, 123);
       expect(v.parts.first.isPlayable, isFalse);
       expect(v.parts.last.isPlayable, isTrue);
-      expect(v.isPlayable, isTrue);
+      expect(v.isPlayable, isFalse);
+      expect(v.hasPlayablePart, isTrue);
     });
 
     test('isPlayable truth table mirrors Plex web semantics', () {

@@ -14,6 +14,8 @@ import '../../focus/focusable_text_field.dart';
 import '../../discovery/discovery_store.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
+import '../../integrations/integration_contracts.dart';
+import '../../integrations/integration_identity_store.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -39,6 +41,7 @@ import '../../sources/source_models.dart';
 import '../../lending/lending_service.dart';
 import '../../sources/source_playback.dart';
 import '../../services/settings_service.dart';
+import '../../services/catalog/catalog_source.dart';
 import '../../utils/formatters.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/catalog_navigation_helper.dart';
@@ -133,6 +136,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
   late DiscoveryReranker _reranker;
   bool _aiEnabled = false;
   late DiscoveryStore _store;
+  final IntegrationIdentityStore _identityStore = IntegrationIdentityStore();
 
   bool get _catalogAllowed {
     final profileId = _ownerProfileId;
@@ -155,10 +159,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   DiscoveryChoice? get _current {
     final restored = _restoredChoice;
-    if (restored != null && !_taste.hides(restored.id) && _matchesFilters(restored)) return restored;
+    if (restored != null && !_taste.hides(restored.id) && _matchesFilters(restored)) {
+      return restored;
+    }
     for (var index = _position; index < _choices.length; index++) {
       final choice = _choices[index];
-      if (!_state.seen.contains(choice.id) && _matchesFilters(choice)) return choice;
+      if (!_state.seen.contains(choice.id) && _matchesFilters(choice)) {
+        return choice;
+      }
     }
     return null;
   }
@@ -190,7 +198,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   bool _sessionCurrent(String profileId, int sourceGeneration, int request) {
     if (!mounted || request != _loadGeneration || _retired) return false;
-    if (context.read<ActiveProfileProvider>().active?.id != profileId) return false;
+    if (context.read<ActiveProfileProvider>().active?.id != profileId) {
+      return false;
+    }
     final sources = context.read<SourceController>();
     return sources.current(sourceGeneration) && sources.profileId == profileId && !sources.blocked;
   }
@@ -278,7 +288,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
   }
 
   List<DiscoveryChoice> _applyTastePriority(List<DiscoveryChoice> baseline) {
-    if (_taste.preferredGenres.isEmpty && _taste.avoidedGenres.isEmpty) return baseline;
+    if (_taste.preferredGenres.isEmpty && _taste.avoidedGenres.isEmpty) {
+      return baseline;
+    }
     final preferred = _taste.preferredGenres.map((value) => value.toLowerCase()).toSet();
     final avoided = _taste.avoidedGenres.map((value) => value.toLowerCase()).toSet();
     final ranked = <DiscoveryChoice>[];
@@ -339,7 +351,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           _mood == mood &&
           _familiarity.name == familiarity,
     );
-    if (!_sessionCurrent(profileId, sourceGeneration, request) || _current?.id != fixedChoiceId) return;
+    if (!_sessionCurrent(profileId, sourceGeneration, request) || _current?.id != fixedChoiceId) {
+      return;
+    }
     if (reranked == null || reranked.length != tail.length) {
       if (_aiEnabled) setState(() => _feedback = t.discover.findNext.aiError);
       return;
@@ -348,7 +362,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     var replacement = 0;
     final next = [...baseline];
     for (var index = currentPosition + 1; index < next.length && replacement < reranked.length; index++) {
-      if (eligible.contains(next[index].id)) next[index] = reranked[replacement++];
+      if (eligible.contains(next[index].id)) {
+        next[index] = reranked[replacement++];
+      }
     }
     if (replacement != reranked.length) return;
     setState(() => _choices = next);
@@ -356,7 +372,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Future<void> _showTasteControls() async {
     final profileId = _ownerProfileId;
-    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+      return;
+    }
     final preferred = {..._taste.preferredGenres};
     final avoided = {..._taste.avoidedGenres};
     final hiddenIds = _taste.hidden.map((pick) => pick.id).toSet();
@@ -365,7 +383,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final shownGenres = genres.take(64).toList();
     for (final selected in [...preferred, ...avoided]) {
       if (shownGenres.length >= 96) break;
-      if (!shownGenres.any((item) => item.toLowerCase() == selected.toLowerCase())) shownGenres.add(selected);
+      if (!shownGenres.any((item) => item.toLowerCase() == selected.toLowerCase())) {
+        shownGenres.add(selected);
+      }
     }
     final result =
         await OverlaySheetController.showAdaptive<
@@ -492,7 +512,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
                                       ? const AppIcon(Symbols.visibility_off_rounded)
                                       : const AppIcon(Symbols.check_rounded),
                                   onTap: () => setSheetState(() {
-                                    if (!hiddenIds.remove(pick.id)) hiddenIds.add(pick.id);
+                                    if (!hiddenIds.remove(pick.id)) {
+                                      hiddenIds.add(pick.id);
+                                    }
                                   }),
                                 ),
                           ],
@@ -528,7 +550,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
             ),
           ),
         );
-    if (!mounted || result == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+    if (!mounted || result == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+      return;
+    }
     try {
       final previouslyHidden = _taste.hidden.map((pick) => pick.id).toSet();
       if (result.reset) {
@@ -549,7 +573,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           hiddenIds: result.hiddenIds,
         );
       }
-      if (!_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+      if (!_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+        return;
+      }
       final restoredIds = previouslyHidden.difference(_taste.hidden.map((pick) => pick.id).toSet());
       final nextChoices = _applyTastePriority(_choices);
       setState(() {
@@ -571,7 +597,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Future<void> _showAiSettings() async {
     final profileId = _ownerProfileId;
-    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+      return;
+    }
     final generation = _sourceGeneration;
     late final DiscoveryAiConfig existing;
     try {
@@ -580,7 +608,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
       return;
     }
-    if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+    if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+      return;
+    }
     final endpoint = TextEditingController(text: existing.endpoint);
     final model = TextEditingController(text: existing.model);
     final apiKey = TextEditingController();
@@ -645,7 +675,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           ),
         ),
       );
-      if (save != true || !mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+      if (save != true || !mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+        return;
+      }
       final next = DiscoveryAiConfig(
         endpoint: endpoint.text.trim(),
         model: model.text.trim(),
@@ -661,7 +693,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           await _reranker.clear(profileId);
           if (!_sessionCurrent(profileId, generation, _loadGeneration)) return;
           _aiEnabled = false;
-          if (mounted) showSuccessSnackBar(context, t.discover.findNext.aiSaved);
+          if (mounted) {
+            showSuccessSnackBar(context, t.discover.findNext.aiSaved);
+          }
           return;
         }
         showErrorSnackBar(context, t.discover.findNext.aiInvalidConfig);
@@ -677,7 +711,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
         return;
       }
       await _reranker.save(profileId, next);
-      if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+      if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+        return;
+      }
       setState(() => _aiEnabled = next.enabled);
       showSuccessSnackBar(context, t.discover.findNext.aiSaved);
       if (_aiEnabled && _current != null) {
@@ -711,7 +747,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     ];
     for (final item in downloaded) {
       final libraryKey = item.libraryGlobalKey;
-      if (libraryKey != null && hiddenLibraries.hiddenLibraryKeys.contains(libraryKey)) continue;
+      if (libraryKey != null && hiddenLibraries.hiddenLibraryKeys.contains(libraryKey)) {
+        continue;
+      }
       final library = MediaLibrary(
         id: item.libraryId ?? 'downloads',
         backend: item.backend,
@@ -725,7 +763,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (!offlineOnly && librariesProvider.libraries.isEmpty && multiServer.hasConnectedServers) {
       await librariesProvider.loadLibraries();
     }
-    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+      return result;
+    }
 
     final visibleServerIds = multiServer.serverIds.toSet();
     var libraries = offlineOnly
@@ -736,7 +776,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
             hideEmpty: false,
           ).where((library) => library.serverId != null && visibleServerIds.contains(library.serverId)).toList();
     final scopedKey = widget.libraryGlobalKey;
-    if (scopedKey != null) libraries = libraries.where((library) => library.globalKey == scopedKey).toList();
+    if (scopedKey != null) {
+      libraries = libraries.where((library) => library.globalKey == scopedKey).toList();
+    }
     libraries = libraries.take(9).toList();
 
     // Query small pages with a hard concurrency bound. It remains useful on a
@@ -752,7 +794,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
     final activeSourceIds = sources.sources.map((source) => source.id).toSet();
     final indexed = await sources.repository.recentEntries(profileId, limit: 72);
-    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+      return result;
+    }
     final bySource = {for (final source in sources.sources) source.id: source};
     final candidateIds = result.map((choice) => choice.id).toSet();
     for (final entry in indexed) {
@@ -778,7 +822,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
               .browse(source.id)
               .then((page) async {
                 for (final entry in page.entries) {
-                  if (candidateIds.contains(discoverySourceIdentity(entry))) continue;
+                  if (candidateIds.contains(discoverySourceIdentity(entry))) {
+                    continue;
+                  }
                   final choice = await _choiceForSource(entry, source, sources, profileId);
                   if (choice != null) {
                     result.add(choice);
@@ -788,24 +834,57 @@ class _FindNextScreenState extends State<FindNextScreen> {
               })
               .catchError((Object _) {}),
       ]);
-      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+        return result;
+      }
     }
 
-    // Reuse the active Explore provider's bounded, profile-owned catalog rows.
+    // Reuse the selected Explore provider's cached, bounded rows first, then
+    // sample a small number of rows from every other connected catalog.
     // Catalog entries are discovery/detail choices only: they are never
     // presented as owned or directly playable media.
     if (!offlineOnly && _catalogAllowed) {
+      final confirmedCrosswalks = await _loadIdentityCrosswalks(profileId);
+      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+        return result;
+      }
+      final seenCatalogIds = <MediaKind, List<ExternalIds>>{};
+      for (final choice in result) {
+        final media = choice.mediaItem;
+        if (media == null) continue;
+        final ids = _externalIdsForMedia(media);
+        if (ids.hasCatalogIds) {
+          seenCatalogIds.putIfAbsent(media.kind, () => []).add(ids);
+        }
+      }
+      void appendCatalogItem(CatalogItem item) {
+        if (_matchesConfirmedCatalogCrosswalk(item, result, confirmedCrosswalks)) {
+          return;
+        }
+        final ids = item.ids.toExternalIds();
+        if (item.season == null && ids.hasCatalogIds) {
+          final seen = seenCatalogIds.putIfAbsent(item.kind, () => []);
+          if (seen.any(ids.intersects)) return;
+          seen.add(ids);
+        }
+        final choice = _choiceForCatalog(item);
+        if (choice != null && candidateIds.add(choice.id)) result.add(choice);
+      }
+
+      var activeExploreLoaded = false;
       if (explore != null) {
         try {
-          await explore.load();
-          if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+          await explore.load().timeout(const Duration(seconds: 8));
+          if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+            return result;
+          }
+          activeExploreLoaded = explore.state == ExploreLoadState.loaded;
           if (_catalogAllowed) {
             for (final row in explore.rowHubs) {
               for (final media in row.hub.items) {
                 final item = media.catalogItem;
                 if (item == null) continue;
-                final choice = _choiceForCatalog(item);
-                if (choice != null && candidateIds.add(choice.id)) result.add(choice);
+                appendCatalogItem(item);
               }
             }
           }
@@ -813,10 +892,76 @@ class _FindNextScreenState extends State<FindNextScreen> {
           // Catalog rows are an optional discovery source.
         }
       }
+
+      final catalogProvider = context.read<CatalogSourcesProvider?>();
+      final activeSource = explore?.activeSource;
+      const discoveryRows = [
+        CatalogRowId.recommendedMovies,
+        CatalogRowId.recommendedShows,
+        CatalogRowId.suggestedAnime,
+        CatalogRowId.trendingAnime,
+        CatalogRowId.airingAnime,
+        CatalogRowId.trendingMovies,
+        CatalogRowId.trendingShows,
+        CatalogRowId.popularAnime,
+        CatalogRowId.popularMovies,
+        CatalogRowId.popularShows,
+        CatalogRowId.trending,
+      ];
+      final requests = <({CatalogSource source, CatalogRowId row})>[];
+      for (final source in catalogProvider?.connectedSources ?? const <CatalogSource>[]) {
+        if (identical(source, activeSource) && activeExploreLoaded) continue;
+        final supported = source.supportedRows;
+        CatalogRowId? selectedRow;
+        for (final row in discoveryRows) {
+          if (supported.contains(row)) {
+            selectedRow = row;
+            break;
+          }
+        }
+        selectedRow ??= supported.contains(CatalogRowId.watchlist) ? CatalogRowId.watchlist : null;
+        if (selectedRow != null) {
+          requests.add((source: source, row: selectedRow));
+        }
+      }
+      for (var start = 0; start < requests.length; start += 4) {
+        final batch = requests.skip(start).take(4);
+        await Future.wait([
+          for (final catalogRequest in batch)
+            () async {
+              try {
+                final page = await catalogRequest.source
+                    .fetchRow(catalogRequest.row, limit: 20)
+                    .timeout(const Duration(seconds: 6));
+                if (!mounted ||
+                    !_sessionCurrent(profileId, sourceGeneration, request) ||
+                    !_catalogAllowed ||
+                    !(context.read<CatalogSourcesProvider?>()?.connectedSources.any(
+                          (source) => identical(source, catalogRequest.source),
+                        ) ??
+                        false)) {
+                  return;
+                }
+                for (final item in page.items) {
+                  appendCatalogItem(item);
+                }
+              } catch (_) {
+                // An unavailable provider does not block the remaining deck.
+              }
+            }(),
+        ]);
+        if (!_sessionCurrent(profileId, sourceGeneration, request)) {
+          return result;
+        }
+      }
     }
 
-    if (!offlineOnly && multiServer.hasConnectedServers) result.addAll(await _fetchLiveCandidates(multiServer));
-    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
+    if (!offlineOnly && multiServer.hasConnectedServers) {
+      result.addAll(await _fetchLiveCandidates(multiServer));
+    }
+    if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
+      return result;
+    }
     final currentlyHidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     result.removeWhere((choice) {
       final serverId = choice.serverId;
@@ -853,7 +998,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
       limit: 30,
     );
     final page = await client.fetchLibraryPagedContent(library.id, query: query, libraryKind: library.kind);
-    if (!identical(client.authenticationSessionId, auth) || !multiServer.serverIds.contains(serverId)) return const [];
+    if (!identical(client.authenticationSessionId, auth) || !multiServer.serverIds.contains(serverId)) {
+      return const [];
+    }
     return [
       for (final item in page.items)
         if (item.libraryId == null || item.libraryId == library.id)
@@ -873,7 +1020,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final type = discoveryTypeForMediaKind(item.kind);
     final id = discoveryMediaIdentity(item);
     final title = item.title?.trim() ?? '';
-    if (type == null || id.isEmpty || title.isEmpty || item.isCatalogItem) return null;
+    if (type == null || id.isEmpty || title.isEmpty || item.isCatalogItem) {
+      return null;
+    }
     final duration = item.durationMs != null && item.durationMs! > 0 ? item.durationMs : null;
     final subtitle = [
       item.parentTitle,
@@ -941,6 +1090,104 @@ class _FindNextScreenState extends State<FindNextScreen> {
       artworkPath: item.posterFor(640),
       portableIds: sanitizeDiscoveryPortableIds(item.ids.toJson().map((key, value) => MapEntry(key, '$value'))),
     );
+  }
+
+  Future<List<IdentityCrosswalk>> _loadIdentityCrosswalks(String profileId) async {
+    try {
+      return await _identityStore.load(profileId);
+    } on Object {
+      return const [];
+    }
+  }
+
+  static bool _matchesConfirmedCatalogCrosswalk(
+    CatalogItem item,
+    List<DiscoveryChoice> choices,
+    List<IdentityCrosswalk> crosswalks,
+  ) {
+    final catalogRef = _catalogEntityRef(item);
+    if (catalogRef == null) return false;
+    for (final choice in choices) {
+      final media = choice.mediaItem;
+      if (media == null || media.kind != item.kind) continue;
+      final serverRef = _serverEntityRef(media);
+      if (serverRef == null) continue;
+      if (crosswalks.any((match) {
+        if (match.method != IdentifierMatchMethod.userConfirmed || match.relation != EntityRelationKind.sameWork) {
+          return false;
+        }
+        return (_sameEntity(match.from, catalogRef) && _sameEntity(match.to, serverRef)) ||
+            (_sameEntity(match.from, serverRef) && _sameEntity(match.to, catalogRef));
+      })) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static IntegrationEntityRef? _catalogEntityRef(CatalogItem item) {
+    final kind = _integrationEntityKind(item.kind);
+    final entryKey = item.ids.entryKey;
+    if (kind == null || entryKey == null || entryKey.trim().isEmpty) {
+      return null;
+    }
+    final reference = IntegrationEntityRef(
+      providerId: item.source.name,
+      nativeId: '${item.kind.id}/$entryKey',
+      kind: kind,
+    );
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityRef? _serverEntityRef(MediaItem item) {
+    final kind = _integrationEntityKind(item.kind);
+    final serverId = item.serverId;
+    if (kind == null || serverId == null || serverId.trim().isEmpty || item.id.trim().isEmpty) {
+      return null;
+    }
+    final reference = IntegrationEntityRef(
+      providerId: 'server.${item.backend.id}',
+      nativeId: sourceDigest('$serverId\u0000${item.id}'),
+      kind: kind,
+    );
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityKind? _integrationEntityKind(MediaKind kind) => switch (kind) {
+    MediaKind.movie => IntegrationEntityKind.movie,
+    MediaKind.show => IntegrationEntityKind.series,
+    MediaKind.season => IntegrationEntityKind.season,
+    MediaKind.episode => IntegrationEntityKind.episode,
+    MediaKind.artist ||
+    MediaKind.album ||
+    MediaKind.track ||
+    MediaKind.collection ||
+    MediaKind.playlist ||
+    MediaKind.clip ||
+    MediaKind.photo ||
+    MediaKind.folder ||
+    MediaKind.unknown => null,
+  };
+
+  static bool _sameEntity(IntegrationEntityRef left, IntegrationEntityRef right) =>
+      left.providerId == right.providerId &&
+      left.nativeId == right.nativeId &&
+      left.kind == right.kind &&
+      left.editionId == right.editionId;
+
+  static ExternalIds _externalIdsForMedia(MediaItem item) {
+    if (item is PlexMediaItem) {
+      final guids = item.raw?['Guid'];
+      return ExternalIds.fromGuids(
+        guids is List ? guids : const [],
+      ).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
+    }
+    final providerIds = item.raw?['ProviderIds'];
+    if (providerIds is! Map) return const ExternalIds();
+    return ExternalIds.fromJellyfinProviderIds({
+      for (final entry in providerIds.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    });
   }
 
   Future<DiscoveryChoice?> _choiceForSource(
@@ -1045,7 +1292,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
       try {
         final channels = await client.liveTv.fetchChannels(lineup: server.lineup);
         final programs = await client.liveTv.fetchSchedule(from: from, to: to);
-        if (!identical(authentication, client.authenticationSessionId)) continue;
+        if (!identical(authentication, client.authenticationSessionId)) {
+          continue;
+        }
         for (final program in programs) {
           final start = program.beginsAt;
           final end = program.endsAt;
@@ -1128,7 +1377,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (filter == _FamiliarityFilter.any) return true;
     final item = choice.mediaItem;
     if (item == null) return false;
-    if (item.viewCount == null && item.viewOffsetMs == null && item.viewedLeafCount == null) return false;
+    if (item.viewCount == null && item.viewOffsetMs == null && item.viewedLeafCount == null) {
+      return false;
+    }
     final leafCount = item.leafCount ?? 0;
     final viewedLeaves = item.viewedLeafCount ?? 0;
     final viewed = (item.viewCount ?? 0) > 0 || (leafCount > 0 && viewedLeaves >= leafCount);
@@ -1147,7 +1398,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (_sourceReason != null && choice.reason != _sourceReason) return false;
     if (!_matchesFamiliarity(choice, _familiarity)) return false;
     final mood = _mood;
-    if (mood != null && !_moodsFor(choice).any((value) => value.toLowerCase() == mood.toLowerCase())) return false;
+    if (mood != null && !_moodsFor(choice).any((value) => value.toLowerCase() == mood.toLowerCase())) {
+      return false;
+    }
     final genre = _genre;
     if (genre != null && !_genresFor(choice).any((value) => value.toLowerCase() == genre.toLowerCase())) {
       return false;
@@ -1329,7 +1582,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
                                   final value = selection.value;
                                   if (value != null &&
                                       !shownMoods.any((item) => item.toLowerCase() == value.toLowerCase())) {
-                                    if (shownMoods.length == 48) shownMoods.removeLast();
+                                    if (shownMoods.length == 48) {
+                                      shownMoods.removeLast();
+                                    }
                                     shownMoods.insert(0, value);
                                   }
                                   setSheetState(() => mood = value);
@@ -1404,7 +1659,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
                                 if (selection != null && selection.applied) {
                                   final value = selection.value;
                                   if (value != null && !shownSources.contains(value)) {
-                                    if (shownSources.length == 48) shownSources.removeLast();
+                                    if (shownSources.length == 48) {
+                                      shownSources.removeLast();
+                                    }
                                     shownSources.insert(0, value);
                                   }
                                   setSheetState(() => sourceReason = value);
@@ -1461,7 +1718,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
                                   final value = selection.value;
                                   if (value != null &&
                                       !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
-                                    if (shownGenres.length == 48) shownGenres.removeLast();
+                                    if (shownGenres.length == 48) {
+                                      shownGenres.removeLast();
+                                    }
                                     shownGenres.insert(0, value);
                                   }
                                   setSheetState(() => genre = value);
@@ -1665,12 +1924,16 @@ class _FindNextScreenState extends State<FindNextScreen> {
     }
     final profileId = _ownerProfileId;
     final sources = context.read<SourceController>();
-    if (profileId == null || sources.profileId != profileId || !sources.current(_sourceGeneration)) return;
+    if (profileId == null || sources.profileId != profileId || !sources.current(_sourceGeneration)) {
+      return;
+    }
     setState(() => _committing = true);
     try {
       if (action == DiscoveryDecisionAction.save) {
         choice = await _withPortableIdentifiers(choice, profileId, sources);
-        if (!sources.current(_sourceGeneration) || sources.profileId != profileId) return;
+        if (!sources.current(_sourceGeneration) || sources.profileId != profileId) {
+          return;
+        }
       }
       final state = await _store.decide(profileId, choice, action);
       if (!mounted ||
@@ -1711,7 +1974,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final serverId = choice.serverId;
     final mediaId = choice.mediaId;
     final kind = choice.mediaKind;
-    if (serverId == null || mediaId == null || (kind != MediaKind.movie && kind != MediaKind.show)) return choice;
+    if (serverId == null || mediaId == null || (kind != MediaKind.movie && kind != MediaKind.show)) {
+      return choice;
+    }
     final multiServer = context.read<MultiServerProvider>();
     final client = multiServer.getClientForServer(ServerId(serverId));
     if (client == null) return choice;
@@ -1734,10 +1999,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
   Future<void> _undo() async {
     if (_committing || _ownerProfileId == null) return;
     final lastDecision = _state.history.lastOrNull;
-    if (!_catalogAllowed && lastDecision?.choice.catalogSourceId != null) return;
+    if (!_catalogAllowed && lastDecision?.choice.catalogSourceId != null) {
+      return;
+    }
     final profileId = _ownerProfileId!;
     final sources = context.read<SourceController>();
-    if (!sources.current(_sourceGeneration) || sources.profileId != profileId) return;
+    if (!sources.current(_sourceGeneration) || sources.profileId != profileId) {
+      return;
+    }
     setState(() => _committing = true);
     try {
       final (state, snapshot) = await _store.undo(profileId);
@@ -1776,7 +2045,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           onChooseForMe: _chooseSavedPick,
           onChooseTogether: _chooseTogether,
           onChanged: () async {
-            if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+            if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+              return;
+            }
             _state = await _store.load(profileId);
             setState(() {});
           },
@@ -1936,7 +2207,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           final library = (await service.libraries())
               .where((item) => item.id == lendingLibraryId && item.native)
               .firstOrNull;
-          if (library == null) throw const SourceException(SourceFailure.unavailable);
+          if (library == null) {
+            throw const SourceException(SourceFailure.unavailable);
+          }
           if (!mounted ||
               context.read<ActiveProfileProvider>().active?.id != profileId ||
               !sources.current(_sourceGeneration)) {
@@ -1950,9 +2223,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
           }
           if (!isConnected) {
             await signInToLendingLibrary(context, service, library);
-            if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+            if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+              return;
+            }
           }
-          if (!await service.connected(library)) throw const SourceException(SourceFailure.authentication);
+          if (!await service.connected(library)) {
+            throw const SourceException(SourceFailure.authentication);
+          }
           if (!mounted ||
               context.read<ActiveProfileProvider>().active?.id != profileId ||
               !sources.current(_sourceGeneration)) {
@@ -1998,7 +2275,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
         return;
       }
       if (choice.catalogSourceId != null) {
-        if (!_catalogAllowed) throw const SourceException(SourceFailure.permission);
+        if (!_catalogAllowed) {
+          throw const SourceException(SourceFailure.permission);
+        }
         await _openCatalogChoice(choice, profileId);
         return;
       }
@@ -2022,7 +2301,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
               break;
             }
           }
-          if (!hasLocalContent) throw const SourceException(SourceFailure.permission);
+          if (!hasLocalContent) {
+            throw const SourceException(SourceFailure.permission);
+          }
         }
         if (sourceConnected) {
           try {
@@ -2032,13 +2313,17 @@ class _FindNextScreenState extends State<FindNextScreen> {
           }
         }
         sources.requireSession(_sourceGeneration);
-        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+          return;
+        }
         await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => SourceDetailScreen(entry: entry!)));
         return;
       }
       final serverId = choice.serverId;
       final mediaId = choice.mediaId;
-      if (serverId == null || mediaId == null) throw const SourceException(SourceFailure.unavailable);
+      if (serverId == null || mediaId == null) {
+        throw const SourceException(SourceFailure.unavailable);
+      }
       final multiServer = context.read<MultiServerProvider>();
       final hasNetworkConnection = context.read<OfflineModeProvider>().hasNetworkConnection;
       final canResolveLocally =
@@ -2055,7 +2340,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
             choice.mediaItem ??
             downloads.metadata.values.where((item) => item.serverId == serverId && item.id == mediaId).firstOrNull;
         if (media != null && await downloads.getCompletedDownload(media.globalKey) != null) {
-          if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+          if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+            return;
+          }
           if (detailsOnly) {
             await navigateToMediaItemDetails(context, media, isOffline: true);
           } else {
@@ -2067,9 +2354,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
           throw const SourceException(SourceFailure.unavailable);
         }
       }
-      if (!multiServer.serverIds.contains(serverId)) throw const SourceException(SourceFailure.permission);
+      if (!multiServer.serverIds.contains(serverId)) {
+        throw const SourceException(SourceFailure.permission);
+      }
       final client = multiServer.getClientForServer(ServerId(serverId));
-      if (client == null) throw const SourceException(SourceFailure.unavailable);
+      if (client == null) {
+        throw const SourceException(SourceFailure.unavailable);
+      }
       final authentication = client.authenticationSessionId;
       if (choice.mediaKind == MediaKind.playlist) {
         final playlist = await client.fetchPlaylistMetadata(mediaId);
@@ -2112,7 +2403,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           (library) =>
               library.globalKey == globalLibraryKey && !hiddenLibraries.hiddenLibraryKeys.contains(globalLibraryKey),
         );
-        if (!isCurrentlyVisible) throw const SourceException(SourceFailure.permission);
+        if (!isCurrentlyVisible) {
+          throw const SourceException(SourceFailure.permission);
+        }
       }
       if (detailsOnly) {
         await navigateToMediaItemDetails(context, media);
@@ -2164,7 +2457,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           .toList(growable: false);
       for (final entry in matches) {
         final rebound = await _choiceForSource(entry, bySource[entry.sourceId]!, sources, profileId);
-        if (rebound == null || !_matchesPortableChoice(rebound, choice)) continue;
+        if (rebound == null || !_matchesPortableChoice(rebound, choice)) {
+          continue;
+        }
         sources.requireSession(_sourceGeneration);
         await _openChoice(rebound, detailsOnly: detailsOnly);
         return;
@@ -2192,7 +2487,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           titles: [choice.title],
         );
         sources.requireSession(_sourceGeneration);
-        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+          return;
+        }
         final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
         final libraries = context.read<LibrariesProvider>().libraries;
         final visibleCopy = result.items.where((item) {
@@ -2229,7 +2526,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           continue;
         }
         sources.requireSession(_sourceGeneration);
-        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+          return;
+        }
         final stillConnected =
             context.read<CatalogSourcesProvider?>()?.connectedSources.any((value) => identical(value, source)) ?? false;
         if (!_catalogAllowed || !stillConnected) continue;
@@ -2251,7 +2550,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
   Future<void> _openCatalogChoice(DiscoveryChoice choice, String profileId) async {
     final sourceName = choice.catalogSourceId;
     final entryKey = choice.catalogEntryKey;
-    if (sourceName == null || entryKey == null) throw const SourceException(SourceFailure.unavailable);
+    if (sourceName == null || entryKey == null) {
+      throw const SourceException(SourceFailure.unavailable);
+    }
     final sourceId = CatalogSourceId.values.where((value) => value.name == sourceName).firstOrNull;
     final provider = context.read<CatalogSourcesProvider?>();
     final source = sourceId == null
@@ -2261,14 +2562,22 @@ class _FindNextScreenState extends State<FindNextScreen> {
     var item = choice.catalogItem;
     if (item == null || item.source != source.id || item.entryIdentityKey != entryKey) {
       final matches = await source.search(choice.title, limit: 30);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
-      if (!_catalogAllowed) throw const SourceException(SourceFailure.permission);
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+        return;
+      }
+      if (!_catalogAllowed) {
+        throw const SourceException(SourceFailure.permission);
+      }
       final stillConnected =
           context.read<CatalogSourcesProvider?>()?.connectedSources.any((value) => identical(value, source)) ?? false;
-      if (!stillConnected) throw const SourceException(SourceFailure.permission);
+      if (!stillConnected) {
+        throw const SourceException(SourceFailure.permission);
+      }
       item = matches.where((value) => value.source == source.id && value.entryIdentityKey == entryKey).firstOrNull;
     }
-    if (item == null || item.entryIdentityKey != entryKey) throw const SourceException(SourceFailure.unavailable);
+    if (item == null || item.entryIdentityKey != entryKey) {
+      throw const SourceException(SourceFailure.unavailable);
+    }
     await navigateToCatalogItem(context, item);
   }
 
@@ -2281,7 +2590,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final liveServer = multiServer.liveTvServers
         .where((server) => server.serverId == choice.serverId && _safeLiveReference(server.dvrKey) == choice.dvrKey)
         .firstOrNull;
-    if (liveServer == null) throw const SourceException(SourceFailure.permission);
+    if (liveServer == null) {
+      throw const SourceException(SourceFailure.permission);
+    }
     final client = multiServer.getClientForServer(ServerId(choice.serverId!));
     if (client == null || !multiServer.serverIds.contains(choice.serverId)) {
       throw const SourceException(SourceFailure.unavailable);
@@ -2342,10 +2653,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Future<void> _hideFromDiscovery(DiscoveryChoice choice) async {
     final profileId = _ownerProfileId;
-    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+    if (profileId == null || !_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+      return;
+    }
     try {
       final next = await _tasteStore.hide(profileId, choice);
-      if (!_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) return;
+      if (!_sessionCurrent(profileId, _sourceGeneration, _loadGeneration)) {
+        return;
+      }
       setState(() {
         _taste = next;
         _restoredChoice = null;
@@ -2432,12 +2747,18 @@ class _FindNextScreenState extends State<FindNextScreen> {
       }
       final selectedLender = selectedLibrary;
       if (selectedLender != null && !await service.connected(selectedLender)) {
-        if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+        if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+          return;
+        }
         await signInToLendingLibrary(context, service, selectedLender);
-        if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+        if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+          return;
+        }
         if (!await service.connected(selectedLender)) return;
       }
-      if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+      if (!mounted || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+        return;
+      }
       final book = await Navigator.of(context).push<LendingBook>(
         MaterialPageRoute(
           builder: (_) => LibraryCatalogueScreen(
@@ -2448,7 +2769,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           ),
         ),
       );
-      if (book == null || !_sessionCurrent(profileId, generation, _loadGeneration)) return;
+      if (book == null || !_sessionCurrent(profileId, generation, _loadGeneration)) {
+        return;
+      }
       final title = book.title.trim();
       if (title.isEmpty) return;
       late final DiscoveryChoice choice;
@@ -2545,7 +2868,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     }
     try {
       final source = sources.sources.where((item) => item.id == sourceId).firstOrNull;
-      if (source == null) throw const SourceException(SourceFailure.unavailable);
+      if (source == null) {
+        throw const SourceException(SourceFailure.unavailable);
+      }
       final storedEntry = await sources.repository.entryById(profileId, sourceId, entryId) ?? choice.sourceEntry;
       if (storedEntry == null ||
           storedEntry.kind == SourceItemKind.folder ||
@@ -2559,9 +2884,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
         if (error.reason == SourceFailure.cancelled) rethrow;
       }
       sources.requireSession(_sourceGeneration);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+        return;
+      }
       final sample = entry.sampleFiles.where((file) => file.previewableSample).firstOrNull;
-      if (sample == null) throw const SourceException(SourceFailure.unavailable);
+      if (sample == null) {
+        throw const SourceException(SourceFailure.unavailable);
+      }
       if (sample.kind == SourceItemKind.ebook || sample.kind == SourceItemKind.comic) {
         await Navigator.of(context).push<void>(
           MaterialPageRoute(
@@ -2577,7 +2906,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           persistProgress: false,
           samplePreview: sources.beginPreview(entry, sample),
         );
-        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) {
+          return;
+        }
         await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => const SourcePlayerScreen()));
       }
     } catch (_) {
@@ -2588,7 +2919,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
   }
 
   String _typeLabel(DiscoveryChoice choice) {
-    if (choice.publicCatalogWorkId != null) return t.discover.findNext.catalogOnly;
+    if (choice.publicCatalogWorkId != null) {
+      return t.discover.findNext.catalogOnly;
+    }
     if (choice.liveProgramId != null) return t.discover.findNext.liveNow;
     if (choice.mediaKind != null) return choice.mediaKind!.label;
     return switch (choice.type) {
@@ -2602,7 +2935,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
   }
 
   String _primaryLabel(DiscoveryChoice choice) {
-    if (choice.publicCatalogWorkId != null || choice.lendingBookId != null) return t.discover.findNext.details;
+    if (choice.publicCatalogWorkId != null || choice.lendingBookId != null) {
+      return t.discover.findNext.details;
+    }
     if (choice.catalogSourceId != null) return t.discover.findNext.details;
     if (choice.liveProgramId != null) return t.discover.findNext.watchLive;
     return switch (choice.type) {
@@ -2634,7 +2969,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (choice.unitLabel.isNotEmpty) {
       return '${t.discover.findNext.nextUnit(duration: displayDuration)} · ${choice.unitLabel}';
     }
-    if (_maxMinutes != null) return t.discover.findNext.finishable(duration: displayDuration);
+    if (_maxMinutes != null) {
+      return t.discover.findNext.finishable(duration: displayDuration);
+    }
     if (choice.totalDurationMs != null && choice.totalDurationMs != duration) {
       final total = formatDurationTextual(choice.totalDurationMs!);
       return '${t.discover.findNext.finishable(duration: formatted)} · ${t.discover.findNext.totalDuration(duration: total)}';
@@ -2940,11 +3277,15 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   }
 
   Future<void> _remove(DiscoveryChoice choice) async {
-    if (_busy || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+    if (_busy || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+      return;
+    }
     setState(() => _busy = true);
     try {
       final state = await widget.store.decide(widget.profileId, choice, DiscoveryDecisionAction.removeSaved);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+        return;
+      }
       setState(() {
         _state = state;
         _comparisonIds.remove(choice.id);
@@ -2966,7 +3307,9 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     setState(() => _busy = true);
     try {
       final (state, _) = await widget.store.undo(widget.profileId);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+        return;
+      }
       setState(() => _state = state);
       if (savedChanged) context.read<SourceController>().scheduleSync();
       await widget.onChanged();
@@ -3014,9 +3357,13 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   }
 
   Future<void> _startVoting(List<DiscoveryChoice> choices) async {
-    if (_voting || _comparisonIds.length < 2 || _comparisonIds.length > 12) return;
+    if (_voting || _comparisonIds.length < 2 || _comparisonIds.length > 12) {
+      return;
+    }
     final sources = context.read<SourceController>();
-    if (!sources.current(_sourceGeneration) || sources.profileId != widget.profileId || sources.blocked) return;
+    if (!sources.current(_sourceGeneration) || sources.profileId != widget.profileId || sources.blocked) {
+      return;
+    }
     final selected = choices.where((choice) => _comparisonIds.contains(choice.id)).take(12).toList(growable: false);
     if (selected.length < 2) {
       showErrorSnackBar(context, t.discover.findNext.voteLimit);
@@ -3043,7 +3390,9 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   Future<void> _compareSelected(List<DiscoveryChoice> choices) async {
     if (_comparing || _comparisonIds.length < 2) return;
     final sources = context.read<SourceController>();
-    if (!sources.current(_sourceGeneration) || sources.profileId != widget.profileId) return;
+    if (!sources.current(_sourceGeneration) || sources.profileId != widget.profileId) {
+      return;
+    }
     setState(() => _comparing = true);
     try {
       final selected = choices.where((choice) => _comparisonIds.contains(choice.id)).toList(growable: false);
@@ -3056,7 +3405,9 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
       }
       final facts = await Future.wait(selected.map(_comparisonFacts));
       sources.requireSession(_sourceGeneration);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+        return;
+      }
       await OverlaySheetController.showAdaptive<void>(
         context,
         showDragHandle: true,
@@ -3211,7 +3562,9 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
 
   Future<MediaItem?> _findPortableLibraryCopy(DiscoveryChoice choice) async {
     final sourceController = context.read<SourceController>();
-    if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) return null;
+    if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) {
+      return null;
+    }
     final ids = ExternalIds(
       imdb: choice.portableIds['imdb'],
       tmdb: int.tryParse(choice.portableIds['tmdb'] ?? ''),
@@ -3226,8 +3579,12 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
         serverIds: multiServer.expectedServerIds.toSet(),
         titles: [choice.title],
       );
-      if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) return null;
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return null;
+      if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) {
+        return null;
+      }
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+        return null;
+      }
       final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
       final libraries = context.read<LibrariesProvider>().libraries;
       return result.items.where((item) {

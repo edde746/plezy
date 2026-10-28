@@ -1525,8 +1525,8 @@ void main() {
   });
 
   testWidgets('up from the first library copy reaches the overview despite the service action', (tester) async {
-    // No watchlist support, trailer, or Seerr is available, but the official
-    // service handoff remains above the copies. Up should still reach overview.
+    // The official service handoff remains above the copies when watchlist,
+    // trailer, and Seerr actions are unavailable. Up still reaches overview.
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,

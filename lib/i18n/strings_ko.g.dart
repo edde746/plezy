@@ -3564,7 +3564,6 @@ class _Translations$audiobook$ko extends Translations$audiobook$en {
 	@override String get addSyncSource => '먼저 Google 드라이브, OneDrive, Dropbox, WebDAV 또는 S3를 파일 및 책에 추가합니다.';
 	@override String get syncDestination => 'Sync 스토리지 계정';
 	@override String get syncFolder => '동기화 폴더 또는 Prefix';
-	@override String get syncFolderHelp => 'WebDAV 소스 내에서 별도의 기존 폴더 또는 전용 S3 사전을 사용하십시오.책 파일은 변경되지 않습니다.';
 	@override String get syncCode => '개인 동기화 코드';
 	@override String get syncCodeHelp => '첫 번째 장치에서 코드를 만들고 다른 장치에서 그 코드를 입력하십시오.개인 복사본을 유지하십시오.그것은 암호화 상태의 열쇠입니다.모든 사람에게 다른 코드를 사용하십시오.';
 	@override String get showCode => 'Sync 코드를 표시하거나 숨기십시오.';
@@ -3574,7 +3573,6 @@ class _Translations$audiobook$ko extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => '이 소스를 제거하면 여기에서 읽기 및 듣기 동기화가 중지됩니다. 암호화 된 동기화 파일은 공급자에 남아 있습니다.';
 	@override String get syncReconnect => '스토리지 계좌 다시 연결';
 	@override String lastSynced({required Object time}) => '마지막으로 합성된 ${time}';
-	@override String get syncPrivacy => '오직 암호화된 프로세스 및 노트만 저장됩니다. 오디오 및 ebook 파일, 계정 토큰 및 암호는 업로드되지 않습니다. Google 드라이브 및 OneDrive는 애플리케이션 스토리지를 사용합니다. Dropbox는 PlezyNG Sync를 사용합니다. Sync를 활성화하는 것은 추가 글쓰기 액세스를 요구할 수 있습니다. 활성화하는 동안,이 목적지는 프로세스를 소유하고 있습니다. 서버 프로세스는 별도로 남아 있습니다.';
 	@override String get syncConflicts => '다시 시작하는 곳을 선택하십시오';
 	@override String get conflictHelp => '이러한 변경 사항은 독립적으로 수행되었습니다. 위치 또는 상표 버전을 선택하여 유지하십시오. 나중에 시간표 또는 더 높은 비율은 자동으로 이기지 않습니다.';
 	@override String syncDevice({required Object device}) => '장치 ${device}';
@@ -8386,7 +8384,6 @@ extension on TranslationsKo {
 			'audiobook.addSyncSource' => '먼저 Google 드라이브, OneDrive, Dropbox, WebDAV 또는 S3를 파일 및 책에 추가합니다.',
 			'audiobook.syncDestination' => 'Sync 스토리지 계정',
 			'audiobook.syncFolder' => '동기화 폴더 또는 Prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV 소스 내에서 별도의 기존 폴더 또는 전용 S3 사전을 사용하십시오.책 파일은 변경되지 않습니다.',
 			'audiobook.syncCode' => '개인 동기화 코드',
 			'audiobook.syncCodeHelp' => '첫 번째 장치에서 코드를 만들고 다른 장치에서 그 코드를 입력하십시오.개인 복사본을 유지하십시오.그것은 암호화 상태의 열쇠입니다.모든 사람에게 다른 코드를 사용하십시오.',
 			'audiobook.showCode' => 'Sync 코드를 표시하거나 숨기십시오.',
@@ -8396,7 +8393,6 @@ extension on TranslationsKo {
 			'audiobook.syncSourceDisconnect' => '이 소스를 제거하면 여기에서 읽기 및 듣기 동기화가 중지됩니다. 암호화 된 동기화 파일은 공급자에 남아 있습니다.',
 			'audiobook.syncReconnect' => '스토리지 계좌 다시 연결',
 			'audiobook.lastSynced' => ({required Object time}) => '마지막으로 합성된 ${time}',
-			'audiobook.syncPrivacy' => '오직 암호화된 프로세스 및 노트만 저장됩니다. 오디오 및 ebook 파일, 계정 토큰 및 암호는 업로드되지 않습니다. Google 드라이브 및 OneDrive는 애플리케이션 스토리지를 사용합니다. Dropbox는 PlezyNG Sync를 사용합니다. Sync를 활성화하는 것은 추가 글쓰기 액세스를 요구할 수 있습니다. 활성화하는 동안,이 목적지는 프로세스를 소유하고 있습니다. 서버 프로세스는 별도로 남아 있습니다.',
 			'audiobook.syncConflicts' => '다시 시작하는 곳을 선택하십시오',
 			'audiobook.conflictHelp' => '이러한 변경 사항은 독립적으로 수행되었습니다. 위치 또는 상표 버전을 선택하여 유지하십시오. 나중에 시간표 또는 더 높은 비율은 자동으로 이기지 않습니다.',
 			'audiobook.syncDevice' => ({required Object device}) => '장치 ${device}',
@@ -8597,10 +8593,10 @@ extension on TranslationsKo {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

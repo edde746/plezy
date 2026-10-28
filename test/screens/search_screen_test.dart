@@ -903,7 +903,13 @@ void main() {
       // second, requestable copy.
       expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
       expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
-      expect(findDisplayText(t.seerr.title), findsOneWidget);
+      final sourceHeadingStyle = Theme.of(tester.element(find.byType(SearchScreen))).textTheme.titleSmall;
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Text && widget.data == t.seerr.title && widget.style == sourceHeadingStyle,
+        ),
+        findsOneWidget,
+      );
       expect(find.byTooltip(t.seerr.request), findsOneWidget);
       expect(
         tester.getTopLeft(findDisplayText('Movie 1 Sequel')).dy,

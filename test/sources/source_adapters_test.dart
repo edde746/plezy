@@ -212,10 +212,10 @@ void main() {
             jsonEncode({
               'publications': [
                 {
-                  'metadata': {'title': 'Sampled book', 'identifier': 'sampled'},
+                  'metadata': {'title': 'Sampled book', 'identifier': '9780306406157'},
                   'links': [
                     {
-                      'rel': 'http://opds-spec.org/acquisition/sample',
+                      'rel': 'http://opds-spec.org/acquisition http://opds-spec.org/acquisition/sample',
                       'type': 'application/epub+zip',
                       'href': '/book-sample.epub',
                     },
@@ -242,6 +242,14 @@ void main() {
     expect(files.last.sampleOnly, isFalse);
     expect(files.first.fingerprint, isNot(files.last.fingerprint));
     expect(PublicationFile.fromJson(files.first.toJson()).sampleOnly, isTrue);
+    expect(files.first.toJson(), containsPair('sampleOnly', true));
+    expect(files.first.toJson(), isNot(contains('sample')));
+    expect(
+      PublicationFile.fromJson({'id': 'legacy', 'name': 'sample.epub', 'sample': true}).sampleOnly,
+      isTrue,
+      reason: 'cached data from the earlier sample schema remains preview-only',
+    );
+    expect((await source.browse()).entries.single.identifiers, containsPair('isbn13', '9780306406157'));
     source.close();
   });
   test('WebDAV rejects traversal and external origins', () {
@@ -304,8 +312,67 @@ void main() {
     );
     await source.readProgress(entry, progress);
     await source.writeProgress(entry, progress);
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+    expect(requests.last.url.path, matches(RegExp(r'^/books/\.state/[a-f0-9]{64}\.json$')));
+    expect(requests.last.url.path, isNot(contains('book.epub')));
     expect(requests.last.headers['If-Match'], '"revision1"');
     expect(jsonDecode(requests.last.body)['annotations'], hasLength(1));
+    expect(requests.every((request) => request.url.path.startsWith('/books/.state/')), isTrue);
+    expect(requests.every((request) => request.url.path.endsWith('.json')), isTrue);
     source.close();
+  });
+
+  test('WebDAV refuses unsafe state folders before any request', () async {
+    var requests = 0;
+    const entry = SourceEntry(
+      sourceId: 'w',
+      id: 'https://dav.example/books/book.epub',
+      title: 'Book',
+      kind: SourceItemKind.ebook,
+    );
+    final progress = PublicationProgress(
+      entryKey: entry.key,
+      edition: 'e',
+      mode: PublicationMode.reading,
+      session: 's',
+      fraction: .4,
+    );
+    for (final root in [
+      '',
+      '.',
+      './',
+      '/state',
+      'state//nested',
+      'folder/..',
+      '%2e%2e',
+      '%252e%252e',
+      'folder%2f..',
+      'folder%5c..',
+      'broken%',
+      r'folder\state',
+    ]) {
+      final source = WebDavSourceAdapter(
+        FileSource(
+          id: 'w',
+          profileId: 'p',
+          kind: FileSourceKind.webdav,
+          name: 'Books',
+          endpoint: 'https://dav.example/books/',
+          options: {'syncRoot': root},
+        ),
+        SourceTransport(
+          client: MockClient((request) async {
+            requests++;
+            return http.Response('', 200);
+          }),
+        ),
+        () async => {},
+      );
+      expect(source.capabilities.writableState, isFalse, reason: 'unsafe syncRoot: $root');
+      await expectLater(source.readProgress(entry, progress), throwsA(isA<SourceException>()));
+      await expectLater(source.writeProgress(entry, progress), throwsA(isA<SourceException>()));
+      source.close();
+    }
+    expect(requests, 0, reason: 'invalid WebDAV state folders must fail before touching the remote source');
   });
 }

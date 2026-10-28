@@ -73,6 +73,25 @@ class DiscoverySwipeCard extends StatefulWidget {
 
 class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
   double _dx = 0;
+  final Set<LogicalKeyboardKey> _heldDirectionalKeys = {};
+
+  KeyEventResult _guardDirectionalKeyRepeat(FocusNode _, KeyEvent event) {
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowLeft && key != LogicalKeyboardKey.arrowRight) {
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyDownEvent) {
+      _heldDirectionalKeys.add(key);
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyRepeatEvent && _heldDirectionalKeys.contains(key)) {
+      return KeyEventResult.handled;
+    }
+    if (event is KeyUpEvent && _heldDirectionalKeys.remove(key)) {
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   @override
   void didUpdateWidget(DiscoverySwipeCard oldWidget) {
@@ -96,8 +115,10 @@ class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
           disableScale: true,
           borderRadius: tokens(context).radiusLg,
           onSelect: widget.onDetails,
-          onKeyEvent: (_, event) {
+          onKeyEvent: (node, event) {
             if (!widget.canSwipe) return KeyEventResult.ignored;
+            final repeatResult = _guardDirectionalKeyRepeat(node, event);
+            if (repeatResult == KeyEventResult.handled) return repeatResult;
             final saveKey = rtl ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight;
             final skipKey = rtl ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft;
             if (event.logicalKey == saveKey) {

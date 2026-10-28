@@ -10,6 +10,26 @@ import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/local_tls.dart';
 
+class _ResponseWithUrl extends http.StreamedResponse implements http.BaseResponseWithUrl {
+  _ResponseWithUrl(super.stream, super.statusCode, {required this.url, super.request});
+
+  @override
+  final Uri url;
+}
+
+class _ResponseUrlClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    await request.finalize().drain<void>();
+    return _ResponseWithUrl(
+      Stream.value('ok'.codeUnits),
+      200,
+      url: Uri.parse('https://media.test/final'),
+      request: request,
+    );
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const secrets = {
@@ -42,6 +62,16 @@ void main() {
       expect(calls, 2);
     });
   }
+
+  test('preserves effective URL metadata supplied by a redirect-following transport', () async {
+    final client = MediaServerHttpClient(client: _ResponseUrlClient());
+    addTearDown(client.close);
+
+    final response = await client.get('http://media.test/start');
+
+    expect(response.requestUri, Uri.parse('http://media.test/start'));
+    expect(response.effectiveUri, Uri.parse('https://media.test/final'));
+  });
 
   for (final destination in ['https://cdn.test/file?signature=public-download', 'https://media.test:9443/file']) {
     test('CDN/port redirect strips all secrets and retains range headers: $destination', () async {
