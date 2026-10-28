@@ -40,12 +40,14 @@ class SubtitleAiSheet extends StatefulWidget {
     this.serverId,
     this.ratingKey,
     this.mediaIndex = 0,
+    this.seriesKey,
   });
 
   final Player player;
   final String? serverId;
   final String? ratingKey;
   final int mediaIndex;
+  final String? seriesKey;
 
   @override
   State<SubtitleAiSheet> createState() => _SubtitleAiSheetState();
@@ -58,6 +60,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   bool _allowMobileData = false;
   bool _requestTranslationCuda = false;
   bool _bilingualTranslation = false;
+  bool _useSeriesGlossary = false;
   final TextEditingController _glossaryController = TextEditingController();
   final Map<String, String> _glossaryDrafts = <String, String>{};
   bool _playbackCaptureSupported = false;
@@ -393,6 +396,9 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     return '${code(_sourceLanguage)}>${code(_targetLanguage)}';
   }
 
+  String _currentGlossaryDraftKey() =>
+      '${_useSeriesGlossary ? 'series:${widget.seriesKey}' : 'profile'}|${_currentGlossaryPairKey()}';
+
   Future<void> _loadSpeechLanguageForProfile() async {
     final profileId = _activeProfileId;
     if (profileId == null) return;
@@ -419,7 +425,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
 
   Future<void> _loadGlossaryForCurrentPair() async {
     final pairKey = _currentGlossaryPairKey();
-    final draft = _glossaryDrafts[pairKey];
+    final draft = _glossaryDrafts[_currentGlossaryDraftKey()];
     final profileId = _activeProfileId;
     Map<String, String> saved = const {};
     if (draft == null && profileId != null) {
@@ -428,6 +434,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
           profileId: profileId,
           sourceLanguage: _sourceLanguage,
           targetLanguage: _targetLanguage,
+          seriesId: _useSeriesGlossary ? widget.seriesKey : null,
         );
       } catch (_) {
         saved = const {};
@@ -439,7 +446,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
 
   void _changeTranslationLanguage({required bool source, required TranslateLanguage? value}) {
     if (value == null || (source ? value == _sourceLanguage : value == _targetLanguage)) return;
-    _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+    _glossaryDrafts[_currentGlossaryDraftKey()] = _glossaryController.text;
     if (_glossaryDrafts.length > 16) _glossaryDrafts.remove(_glossaryDrafts.keys.first);
     setState(() {
       if (source) {
@@ -461,9 +468,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       profileId: profileId,
       sourceLanguage: _sourceLanguage,
       targetLanguage: _targetLanguage,
+      seriesId: _useSeriesGlossary ? widget.seriesKey : null,
       glossary: glossary,
     );
-    _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+    _glossaryDrafts[_currentGlossaryDraftKey()] = _glossaryController.text;
     if (mounted) setState(() => _status = 'Saved glossary for this profile and language pair.');
   }
 
@@ -484,9 +492,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         profileId: profileId,
         sourceLanguage: _sourceLanguage,
         targetLanguage: _targetLanguage,
+      seriesId: _useSeriesGlossary ? widget.seriesKey : null,
         glossary: glossary,
       );
-      _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+      _glossaryDrafts[_currentGlossaryDraftKey()] = _glossaryController.text;
     }
     setState(() => _status = SubtitleTranslationService.desktopPlatformSupported
         ? 'Starting local translation…'
@@ -1245,6 +1254,20 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 ),
               ],
             ),
+            if (widget.seriesKey?.isNotEmpty == true)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Use a series-specific glossary'),
+                subtitle: const Text('Starts with the profile glossary; saved edits apply only to this series.'),
+                value: _useSeriesGlossary,
+                onChanged: _busy
+                    ? null
+                    : (value) {
+                        _glossaryDrafts[_currentGlossaryDraftKey()] = _glossaryController.text;
+                        setState(() => _useSeriesGlossary = value);
+                        unawaited(_loadGlossaryForCurrentPair());
+                      },
+              ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Bilingual subtitle output'),
@@ -1260,10 +1283,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               decoration: const InputDecoration(
                 labelText: 'Translation glossary (JSON)',
                 hintText: '{"TARDIS":"TARDIS","The Doctor":"El Doctor"}',
-                helperText: 'Protects up to 200 whole terms. Saved for this profile and language pair.',
+                helperText: widget.seriesKey == null ? 'Protects up to 200 whole terms. Saved for this profile and language pair.' : 'Protects up to 200 terms. Choose profile or series scope above.',
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value) => _glossaryDrafts[_currentGlossaryPairKey()] = value,
+              onChanged: (value) => _glossaryDrafts[_currentGlossaryDraftKey()] = value,
             ),
             Align(
               alignment: Alignment.centerRight,

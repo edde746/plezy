@@ -10,6 +10,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../media/media_source_info.dart';
+import '../../../media/media_kind.dart';
 import '../../../media/ids.dart';
 import '../../../services/settings_service.dart';
 import '../../../mpv/mpv.dart';
@@ -640,6 +641,8 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
             serverId: state.serverId,
             ratingKey: state.ratingKey.isEmpty ? null : state.ratingKey,
             mediaIndex: state.selectedMediaIndex,
+            seriesKey: state.metadata?.seriesGlobalKey ??
+                (state.metadata?.kind == MediaKind.show ? state.metadata?.globalKey : null),
           ),
         ),
       ),

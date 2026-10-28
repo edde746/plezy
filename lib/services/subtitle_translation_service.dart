@@ -73,35 +73,108 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
       language.bcpCode.toLowerCase().split('-').first;
 
   /// Read this profile's local terminology for the selected language pair.
+  static String _seriesGlossaryEntryKey(
+    String seriesId,
+    TranslateLanguage sourceLanguage,
+    TranslateLanguage targetLanguage,
+  ) {
+    final normalizedSeriesId = seriesId.trim();
+    if (normalizedSeriesId.isEmpty || utf8.encode(normalizedSeriesId).length > 512) {
+      throw ArgumentError.value(seriesId, 'seriesId', 'Use a non-empty series identifier up to 512 bytes.');
+    }
+    final encodedSeriesId = base64Url.encode(utf8.encode(normalizedSeriesId));
+    return '$encodedSeriesId|${_glossaryPairKey(sourceLanguage, targetLanguage)}';
+  }
+
+  /// Read the series override when present, otherwise inherit the profile glossary for the pair.
   static Map<String, String> loadGlossaryForProfile({
     required String profileId,
     required TranslateLanguage sourceLanguage,
     required TranslateLanguage targetLanguage,
+    String? seriesId,
   }) {
+    if (seriesId != null && seriesId.trim().isNotEmpty) {
+      try {
+        final seriesEntries = SettingsService.instance.read(
+          SettingsService.subtitleTranslationSeriesGlossariesForProfile(profileId),
+        );
+        final encoded = seriesEntries[_seriesGlossaryEntryKey(seriesId, sourceLanguage, targetLanguage)];
+        if (encoded != null) {
+          final decoded = jsonDecode(encoded);
+          if (decoded is Map) {
+            final glossary = <String, String>{};
+            for (final entry in decoded.entries) {
+              if (entry.key is String && entry.value is String) {
+                glossary[entry.key as String] = entry.value as String;
+              }
+            }
+            return _validateGlossary(glossary);
+          }
+        }
+      } catch (_) {
+        // A malformed override falls back to the safe profile glossary.
+      }
+    }
     final saved = SettingsService.instance.read(
       SettingsService.subtitleTranslationGlossariesForProfile(profileId),
     );
     return Map.unmodifiable(saved[_glossaryPairKey(sourceLanguage, targetLanguage)] ?? const {});
   }
 
-  /// Save the validated glossary for this profile and language pair. The
-  /// preference retains at most 16 language pairs and evicts the oldest entry.
+  /// Save the validated profile glossary or an independent per-series override.
   static Future<void> saveGlossaryForProfile({
     required String profileId,
     required TranslateLanguage sourceLanguage,
     required TranslateLanguage targetLanguage,
     required Map<String, String> glossary,
+    String? seriesId,
   }) async {
     final normalized = _validateGlossary(glossary);
-    final pref = SettingsService.subtitleTranslationGlossariesForProfile(profileId);
-    final pairs = Map<String, Map<String, String>>.from(SettingsService.instance.read(pref));
-    final key = _glossaryPairKey(sourceLanguage, targetLanguage);
-    pairs.remove(key);
-    if (normalized.isNotEmpty) pairs[key] = normalized;
-    while (pairs.length > 16) {
-      pairs.remove(pairs.keys.first);
+    if (seriesId == null || seriesId.trim().isEmpty) {
+      final pref = SettingsService.subtitleTranslationGlossariesForProfile(profileId);
+      final pairs = Map<String, Map<String, String>>.from(SettingsService.instance.read(pref));
+      final key = _glossaryPairKey(sourceLanguage, targetLanguage);
+      pairs.remove(key);
+      if (normalized.isNotEmpty) pairs[key] = normalized;
+      while (pairs.length > 16) {
+        pairs.remove(pairs.keys.first);
+      }
+      await SettingsService.instance.write(pref, Map.unmodifiable(pairs));
+      return;
     }
-    await SettingsService.instance.write(pref, Map.unmodifiable(pairs));
+
+    final entryKey = _seriesGlossaryEntryKey(seriesId, sourceLanguage, targetLanguage);
+    final pref = SettingsService.subtitleTranslationSeriesGlossariesForProfile(profileId);
+    final entries = Map<String, String>.from(SettingsService.instance.read(pref));
+    entries.remove(entryKey);
+    if (normalized.isNotEmpty) entries[entryKey] = jsonEncode(normalized);
+    final seriesPrefix = entryKey.substring(0, entryKey.lastIndexOf('|') + 1);
+    var pairKeys = entries.keys.where((key) => key.startsWith(seriesPrefix)).toList(growable: false);
+    while (pairKeys.length > 16) {
+      entries.remove(pairKeys.first);
+      pairKeys = entries.keys.where((key) => key.startsWith(seriesPrefix)).toList(growable: false);
+    }
+
+    final seriesOrder = <String>[];
+    for (final key in entries.keys) {
+      final separator = key.lastIndexOf('|');
+      if (separator < 0) continue;
+      final prefix = key.substring(0, separator + 1);
+      if (!seriesOrder.contains(prefix)) seriesOrder.add(prefix);
+    }
+    while (seriesOrder.length > 32) {
+      final oldestSeries = seriesOrder.removeAt(0);
+      entries.removeWhere((key, _) => key.startsWith(oldestSeries));
+    }
+    int serializedBytes() => utf8.encode(jsonEncode(entries)).length;
+    while (serializedBytes() > 1024 * 1024) {
+      final oldest = entries.keys.firstWhere((key) => key != entryKey, orElse: () => '');
+      if (oldest.isEmpty) {
+        throw const FormatException('Series glossary storage exceeds the 1 MiB profile bound.');
+      }
+      entries.remove(oldest);
+    }
+    await SettingsService.instance.write(pref, Map.unmodifiable(entries));
   }
 
   static Future<bool> isSupportedOnCurrentDevice() async {

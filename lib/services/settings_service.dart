@@ -1297,6 +1297,34 @@ class SettingsService extends BaseSharedPreferencesService {
     return StringPref(profileScopedPrefsKey(profileId, 'subtitle_speech_language_v1'), defaultValue: 'auto');
   }
 
+  /// Series-specific translation glossary overrides, stored as bounded serialized pair maps.
+  static JsonPref<Map<String, String>> subtitleTranslationSeriesGlossariesForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return JsonPref<Map<String, String>>(
+      profileScopedPrefsKey(profileId, 'subtitle_translation_series_glossaries_v1'),
+      defaultValue: const {},
+      encode: json.encode,
+      decode: (raw) {
+        if (raw is! Map) return const {};
+        final entries = <String, String>{};
+        var totalBytes = 0;
+        for (final entry in raw.entries) {
+          if (entry.key is! String || entry.value is! String) continue;
+          final key = entry.key as String;
+          final value = entry.value as String;
+          if (key.isEmpty || key.length > 800 || value.length > 128 * 1024) continue;
+          final entryBytes = utf8.encode(key).length + utf8.encode(value).length;
+          if (entries.length >= 512 || entryBytes > 1024 * 1024 - totalBytes) break;
+          entries[key] = value;
+          totalBytes += entryBytes;
+        }
+        return Map.unmodifiable(entries);
+      },
+    );
+  }
+
   static JsonPref<Map<String, Map<String, String>>> subtitleTranslationGlossariesForProfile(String profileId) {
     if (profileId.trim().isEmpty) {
       throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
