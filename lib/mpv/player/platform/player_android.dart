@@ -23,6 +23,9 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
   final EventChannel eventChannel;
 
   String _bufferTier = 'auto';
+  bool _isLive = false;
+  int _mediaSessionGeneration = 0;
+  List<SubtitleTrack> _externalSubtitleMetadata = const [];
   int _bufferMb = 0;
   int _transcodeBufferSeconds = 0;
   bool _tunnelingEnabled = false;
@@ -69,6 +72,10 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
 
   @override
   bool get supportsSecondarySubtitles => false;
+
+  @override
+  Set<String> get supportedLocalSubtitleExtensions =>
+      _isLive ? const <String>{} : const {'srt', 'ass', 'ssa', 'vtt'};
 
   // The fallback runs mpv over MediaCodec — the same display-switch decoder
   // constraint as PlayerNative on Android. The whole startup-gate chain
@@ -218,13 +225,19 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
     Duration timelineOffset = Duration.zero,
   }) async {
     if (disposed) return;
+    final generation = ++_mediaSessionGeneration;
     await _ensureInitialized();
+    if (disposed || generation != _mediaSessionGeneration) return;
     final startPosition = media.start ?? timelineOffset;
     final previousState = state;
     final previousPosition = currentPosition;
     final previousTimelineDuration = configuredTimelineDuration;
     final previousTimelineOffset = this.timelineOffset;
     final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
+    final previousExternalSubtitleTracks = _externalSubtitleMetadata;
+    final previousIsLive = _isLive;
+    _isLive = isLive;
+    _externalSubtitleMetadata = externalSubtitles ?? const [];
     configureTimeline(duration: timelineDuration, offset: timelineOffset);
     final sourceStart = sourcePositionFor(startPosition);
     final hasStartPosition = media.start != null && sourceStart > Duration.zero;
@@ -267,6 +280,8 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
         restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
+        _externalSubtitleMetadata = previousExternalSubtitleTracks;
+        _isLive = previousIsLive;
         setSeekable(previousState.seekable);
       }
       rethrow;
@@ -285,7 +300,11 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
 
   @override
   Future<void> stop() async {
+    ++_mediaSessionGeneration;
     await invoke('stop');
+    _isLive = false;
+    _externalSubtitleMetadata = const [];
+    setExternalSubtitleMetadata(null);
     setSeekable(false);
     await setVisible(false);
   }
@@ -529,13 +548,49 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
     }
   }
 
-  /// Raw mpv commands don't apply to the ExoPlayer backend. Every command
-  /// dispatched through the [Player] interface ('change-list', 'drop-buffers',
-  /// 'sub-seek', 'screenshot') targets an mpv core and has always been a
-  /// silent no-op here — including in the native MPV fallback mode.
+  /// Handles the shared local-subtitle import command on ExoPlayer and its
+  /// mpv fallback. Other mpv-specific commands remain unsupported here.
   @override
-  // ignore: no-empty-block - deliberate no-op, mpv commands target the mpv backend
-  Future<void> command(List<String> args) async {}
+  Future<void> command(List<String> args) async {
+    if (disposed || args.isEmpty || args.first != 'sub-add') return;
+    if (args.length < 2) throw ArgumentError('sub-add requires a local file path.');
+    if (_isLive) throw UnsupportedError('Local subtitle import is unavailable during live playback.');
+
+    final rawPath = args[1];
+    final parsed = Uri.tryParse(rawPath);
+    final uri = parsed != null && parsed.hasScheme ? parsed : Uri.file(rawPath);
+    if (uri.scheme != 'file') throw UnsupportedError('Only local subtitle files can be imported here.');
+    final fileName = uri.pathSegments.isEmpty ? 'Subtitle' : Uri.decodeComponent(uri.pathSegments.last);
+    final extension = fileName.lastIndexOf('.') < 0
+        ? ''
+        : fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+    if (!supportedLocalSubtitleExtensions.contains(extension)) {
+      throw UnsupportedError('Android supports local SRT, ASS, SSA, and WebVTT subtitles.');
+    }
+
+    final track = SubtitleTrack.uri(uri.toString(), title: fileName, codec: extension);
+    final existing = _externalSubtitleMetadata.any((candidate) => candidate.uri == track.uri);
+    final previousMetadata = snapshotExternalSubtitleMetadata();
+    final previousTracks = _externalSubtitleMetadata;
+    final importGeneration = _mediaSessionGeneration;
+    if (!existing) {
+      _externalSubtitleMetadata = [..._externalSubtitleMetadata, track];
+      setExternalSubtitleMetadata(_externalSubtitleMetadata);
+    }
+    try {
+      await invoke('addSubtitleTrack', {
+        'uri': uri.toString(),
+        'title': fileName,
+        'select': args.length < 3 || args[2] == 'select',
+      });
+    } catch (_) {
+      if (importGeneration == _mediaSessionGeneration) {
+        _externalSubtitleMetadata = previousTracks;
+        restoreExternalSubtitleMetadata(previousMetadata);
+      }
+      rethrow;
+    }
+  }
 
   /// Apply subtitle styling to the native ExoPlayer layer.
   ///

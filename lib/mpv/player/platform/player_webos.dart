@@ -400,6 +400,8 @@ class PlayerWebOS extends PlayerBase {
     if (index == null || index < 0) return;
     await controller.selectSubtitleTrack(index);
     if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+    await controller.setSubtitleSync(_subtitleDelay.inMilliseconds);
+    if (disposed || generation != _generation || selection != _subtitleGeneration) return;
     await controller.setSubtitleEnabled(true);
     if (disposed || generation != _generation || selection != _subtitleGeneration) return;
     _captions = null;

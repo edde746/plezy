@@ -52,7 +52,7 @@ class PlayerTizen extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
   @override
-  Set<String> get supportedLocalSubtitleExtensions => const {'srt', 'vtt'};
+  Set<String> get supportedLocalSubtitleExtensions => audioOnly ? const <String>{} : const {'srt', 'vtt'};
   @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
@@ -362,7 +362,7 @@ class PlayerTizen extends PlayerBase {
         throw const FormatException('Subtitle file could not be read.');
       }
       if (bytes.isEmpty) throw const FormatException('Subtitle file is empty.');
-      final content = utf8.decode(bytes);
+      final content = utf8.decode(bytes).replaceFirst(String.fromCharCode(0xFEFF), '');
       return isVtt ? samsung.WebVTTCaptionFile(content) : samsung.SubRipCaptionFile(content);
     }
 
