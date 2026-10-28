@@ -4,7 +4,7 @@ Status: an iOS-only catalog search and playback pilot is implemented in the exis
 
 ## Apple configuration
 
-1. Enable MusicKit for PlezyNG's iOS App ID in the Apple Developer account, use a matching signing profile in Xcode, and complete Apple's current MusicKit setup for the app.
+1. Enable the MusicKit App Service for PlezyNG's iOS App ID in the Apple Developer account and use a matching signing profile in Xcode. Apple's current Swift MusicKit flow automatically associates the service with the app's bundle ID and generates its developer token after this capability is enabled.
 2. Keep `NSAppleMusicUsageDescription` in the iOS app's Info.plist. The app uses it to explain that users can search selected catalog results and play them in Apple's native player.
 3. Build with `--dart-define=ENABLE_APPLE_MUSICKIT=true` after the App ID and signing configuration are ready.
 4. On the device, the user grants MusicKit access. Catalog playback is enabled only if Apple's current subscription capability allows it.
