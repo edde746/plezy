@@ -2,6 +2,8 @@
 
 Open Now Playing, enable the visualizer, then choose the library button. The six original scenes remain available on their existing platforms. Native preset playback is an optional, currently unqualified Linux integration; it needs the patched mpv/projectM dependencies described in `native/visualizer/README.md`. Existing shipped binaries have not been replaced by this PR.
 
+Original scenes also remain available for local/source audio. They use Plex loudness when present, otherwise available live MPV audio statistics, otherwise ambient motion. The live statistics are compact measurements, not a full spectrum or waveform display. Native preset controls use the active dedicated audio player in either source path.
+
 ## Get presets
 
 The library installs the small authored CC0 MilkRust sample pack from the app bundle when first opened; no download is needed. Removing it is remembered, and Restore included pack reinstalls it offline. The unmodified archive retains its source and notices, which also appear in app acknowledgements. It is a fixture pack whose rendering fidelity remains unqualified.

@@ -220,6 +220,13 @@ transition length, quality reduction, fullscreen, download cancellation,
 version-aware updates, serialized mutations and startup replacement recovery.
 The existing CC0 fixture archive is also bundled for offline installation, with app acknowledgements, portable-path and texture-header budgets, and a bounded library size. These are source implementations, not executed user-flow or renderer results.
 
+The current main branch's source-audio constructor and live centroid/flatness
+analysis are integrated with the same library and native controls. The paired
+MilkRust PR now implements separate experimental WebGL warp/composite stages,
+shader-aware meshes, explicit render/texture failures and resource limits. Its
+generic compatibility ledger remains conservative; stage-order regression
+source exists, but no GPU sequence has qualified this implementation.
+
 The full completion contract remains open. In particular, a complete native
 MilkRust renderer, faithful shader/.milk2 handling, other platform hosts,
 broader cleared content and signed catalog publication, bounded compiler/GPU

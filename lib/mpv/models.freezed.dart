@@ -1071,9 +1071,276 @@ as String?,
 }
 
 /// @nodoc
+mixin _$VideoTrack {
+
+ String get id; String? get title; String? get language; String? get codec; int? get width; int? get height; bool get isDefault; bool get isSelected; bool get isExternal;
+/// Create a copy of VideoTrack
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$VideoTrackCopyWith<VideoTrack> get copyWith => _$VideoTrackCopyWithImpl<VideoTrack>(this as VideoTrack, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VideoTrack&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.language, language) || other.language == language)&&(identical(other.codec, codec) || other.codec == codec)&&(identical(other.width, width) || other.width == width)&&(identical(other.height, height) || other.height == height)&&(identical(other.isDefault, isDefault) || other.isDefault == isDefault)&&(identical(other.isSelected, isSelected) || other.isSelected == isSelected)&&(identical(other.isExternal, isExternal) || other.isExternal == isExternal));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,title,language,codec,width,height,isDefault,isSelected,isExternal);
+
+
+
+}
+
+/// @nodoc
+abstract mixin class $VideoTrackCopyWith<$Res>  {
+  factory $VideoTrackCopyWith(VideoTrack value, $Res Function(VideoTrack) _then) = _$VideoTrackCopyWithImpl;
+@useResult
+$Res call({
+ String id, String? title, String? language, String? codec, int? width, int? height, bool isDefault, bool isSelected, bool isExternal
+});
+
+
+
+
+}
+/// @nodoc
+class _$VideoTrackCopyWithImpl<$Res>
+    implements $VideoTrackCopyWith<$Res> {
+  _$VideoTrackCopyWithImpl(this._self, this._then);
+
+  final VideoTrack _self;
+  final $Res Function(VideoTrack) _then;
+
+/// Create a copy of VideoTrack
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? language = freezed,Object? codec = freezed,Object? width = freezed,Object? height = freezed,Object? isDefault = null,Object? isSelected = null,Object? isExternal = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,language: freezed == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
+as String?,codec: freezed == codec ? _self.codec : codec // ignore: cast_nullable_to_non_nullable
+as String?,width: freezed == width ? _self.width : width // ignore: cast_nullable_to_non_nullable
+as int?,height: freezed == height ? _self.height : height // ignore: cast_nullable_to_non_nullable
+as int?,isDefault: null == isDefault ? _self.isDefault : isDefault // ignore: cast_nullable_to_non_nullable
+as bool,isSelected: null == isSelected ? _self.isSelected : isSelected // ignore: cast_nullable_to_non_nullable
+as bool,isExternal: null == isExternal ? _self.isExternal : isExternal // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [VideoTrack].
+extension VideoTrackPatterns on VideoTrack {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _VideoTrack value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _VideoTrack() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _VideoTrack value)  $default,){
+final _that = this;
+switch (_that) {
+case _VideoTrack():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _VideoTrack value)?  $default,){
+final _that = this;
+switch (_that) {
+case _VideoTrack() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? title,  String? language,  String? codec,  int? width,  int? height,  bool isDefault,  bool isSelected,  bool isExternal)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _VideoTrack() when $default != null:
+return $default(_that.id,_that.title,_that.language,_that.codec,_that.width,_that.height,_that.isDefault,_that.isSelected,_that.isExternal);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? title,  String? language,  String? codec,  int? width,  int? height,  bool isDefault,  bool isSelected,  bool isExternal)  $default,) {final _that = this;
+switch (_that) {
+case _VideoTrack():
+return $default(_that.id,_that.title,_that.language,_that.codec,_that.width,_that.height,_that.isDefault,_that.isSelected,_that.isExternal);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? title,  String? language,  String? codec,  int? width,  int? height,  bool isDefault,  bool isSelected,  bool isExternal)?  $default,) {final _that = this;
+switch (_that) {
+case _VideoTrack() when $default != null:
+return $default(_that.id,_that.title,_that.language,_that.codec,_that.width,_that.height,_that.isDefault,_that.isSelected,_that.isExternal);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _VideoTrack extends VideoTrack {
+  const _VideoTrack({required this.id, this.title, this.language, this.codec, this.width, this.height, this.isDefault = false, this.isSelected = false, this.isExternal = false}): super._();
+  
+
+@override final  String id;
+@override final  String? title;
+@override final  String? language;
+@override final  String? codec;
+@override final  int? width;
+@override final  int? height;
+@override@JsonKey() final  bool isDefault;
+@override@JsonKey() final  bool isSelected;
+@override@JsonKey() final  bool isExternal;
+
+/// Create a copy of VideoTrack
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$VideoTrackCopyWith<_VideoTrack> get copyWith => __$VideoTrackCopyWithImpl<_VideoTrack>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VideoTrack&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.language, language) || other.language == language)&&(identical(other.codec, codec) || other.codec == codec)&&(identical(other.width, width) || other.width == width)&&(identical(other.height, height) || other.height == height)&&(identical(other.isDefault, isDefault) || other.isDefault == isDefault)&&(identical(other.isSelected, isSelected) || other.isSelected == isSelected)&&(identical(other.isExternal, isExternal) || other.isExternal == isExternal));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,title,language,codec,width,height,isDefault,isSelected,isExternal);
+
+
+
+}
+
+/// @nodoc
+abstract mixin class _$VideoTrackCopyWith<$Res> implements $VideoTrackCopyWith<$Res> {
+  factory _$VideoTrackCopyWith(_VideoTrack value, $Res Function(_VideoTrack) _then) = __$VideoTrackCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String? title, String? language, String? codec, int? width, int? height, bool isDefault, bool isSelected, bool isExternal
+});
+
+
+
+
+}
+/// @nodoc
+class __$VideoTrackCopyWithImpl<$Res>
+    implements _$VideoTrackCopyWith<$Res> {
+  __$VideoTrackCopyWithImpl(this._self, this._then);
+
+  final _VideoTrack _self;
+  final $Res Function(_VideoTrack) _then;
+
+/// Create a copy of VideoTrack
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? language = freezed,Object? codec = freezed,Object? width = freezed,Object? height = freezed,Object? isDefault = null,Object? isSelected = null,Object? isExternal = null,}) {
+  return _then(_VideoTrack(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,language: freezed == language ? _self.language : language // ignore: cast_nullable_to_non_nullable
+as String?,codec: freezed == codec ? _self.codec : codec // ignore: cast_nullable_to_non_nullable
+as String?,width: freezed == width ? _self.width : width // ignore: cast_nullable_to_non_nullable
+as int?,height: freezed == height ? _self.height : height // ignore: cast_nullable_to_non_nullable
+as int?,isDefault: null == isDefault ? _self.isDefault : isDefault // ignore: cast_nullable_to_non_nullable
+as bool,isSelected: null == isSelected ? _self.isSelected : isSelected // ignore: cast_nullable_to_non_nullable
+as bool,isExternal: null == isExternal ? _self.isExternal : isExternal // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$Tracks {
 
- List<AudioTrack> get audio; List<SubtitleTrack> get subtitle;
+ List<VideoTrack> get video; List<AudioTrack> get audio; List<SubtitleTrack> get subtitle;
 /// Create a copy of Tracks
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1084,12 +1351,12 @@ $TracksCopyWith<Tracks> get copyWith => _$TracksCopyWithImpl<Tracks>(this as Tra
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tracks&&const DeepCollectionEquality().equals(other.audio, audio)&&const DeepCollectionEquality().equals(other.subtitle, subtitle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Tracks&&const DeepCollectionEquality().equals(other.video, video)&&const DeepCollectionEquality().equals(other.audio, audio)&&const DeepCollectionEquality().equals(other.subtitle, subtitle));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(audio),const DeepCollectionEquality().hash(subtitle));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(video),const DeepCollectionEquality().hash(audio),const DeepCollectionEquality().hash(subtitle));
 
 
 
@@ -1100,7 +1367,7 @@ abstract mixin class $TracksCopyWith<$Res>  {
   factory $TracksCopyWith(Tracks value, $Res Function(Tracks) _then) = _$TracksCopyWithImpl;
 @useResult
 $Res call({
- List<AudioTrack> audio, List<SubtitleTrack> subtitle
+ List<VideoTrack> video, List<AudioTrack> audio, List<SubtitleTrack> subtitle
 });
 
 
@@ -1117,9 +1384,10 @@ class _$TracksCopyWithImpl<$Res>
 
 /// Create a copy of Tracks
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? audio = null,Object? subtitle = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? video = null,Object? audio = null,Object? subtitle = null,}) {
   return _then(_self.copyWith(
-audio: null == audio ? _self.audio : audio // ignore: cast_nullable_to_non_nullable
+video: null == video ? _self.video : video // ignore: cast_nullable_to_non_nullable
+as List<VideoTrack>,audio: null == audio ? _self.audio : audio // ignore: cast_nullable_to_non_nullable
 as List<AudioTrack>,subtitle: null == subtitle ? _self.subtitle : subtitle // ignore: cast_nullable_to_non_nullable
 as List<SubtitleTrack>,
   ));
@@ -1203,10 +1471,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<AudioTrack> audio,  List<SubtitleTrack> subtitle)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<VideoTrack> video,  List<AudioTrack> audio,  List<SubtitleTrack> subtitle)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Tracks() when $default != null:
-return $default(_that.audio,_that.subtitle);case _:
+return $default(_that.video,_that.audio,_that.subtitle);case _:
   return orElse();
 
 }
@@ -1224,10 +1492,10 @@ return $default(_that.audio,_that.subtitle);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<AudioTrack> audio,  List<SubtitleTrack> subtitle)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<VideoTrack> video,  List<AudioTrack> audio,  List<SubtitleTrack> subtitle)  $default,) {final _that = this;
 switch (_that) {
 case _Tracks():
-return $default(_that.audio,_that.subtitle);}
+return $default(_that.video,_that.audio,_that.subtitle);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1241,10 +1509,10 @@ return $default(_that.audio,_that.subtitle);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<AudioTrack> audio,  List<SubtitleTrack> subtitle)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<VideoTrack> video,  List<AudioTrack> audio,  List<SubtitleTrack> subtitle)?  $default,) {final _that = this;
 switch (_that) {
 case _Tracks() when $default != null:
-return $default(_that.audio,_that.subtitle);case _:
+return $default(_that.video,_that.audio,_that.subtitle);case _:
   return null;
 
 }
@@ -1256,8 +1524,15 @@ return $default(_that.audio,_that.subtitle);case _:
 
 
 class _Tracks extends Tracks {
-  const _Tracks({final  List<AudioTrack> audio = const <AudioTrack>[], final  List<SubtitleTrack> subtitle = const <SubtitleTrack>[]}): _audio = audio,_subtitle = subtitle,super._();
+  const _Tracks({final  List<VideoTrack> video = const <VideoTrack>[], final  List<AudioTrack> audio = const <AudioTrack>[], final  List<SubtitleTrack> subtitle = const <SubtitleTrack>[]}): _video = video,_audio = audio,_subtitle = subtitle,super._();
   
+
+ final  List<VideoTrack> _video;
+@override@JsonKey() List<VideoTrack> get video {
+  if (_video is EqualUnmodifiableListView) return _video;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_video);
+}
 
  final  List<AudioTrack> _audio;
 @override@JsonKey() List<AudioTrack> get audio {
@@ -1284,12 +1559,12 @@ _$TracksCopyWith<_Tracks> get copyWith => __$TracksCopyWithImpl<_Tracks>(this, _
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tracks&&const DeepCollectionEquality().equals(other._audio, _audio)&&const DeepCollectionEquality().equals(other._subtitle, _subtitle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tracks&&const DeepCollectionEquality().equals(other._video, _video)&&const DeepCollectionEquality().equals(other._audio, _audio)&&const DeepCollectionEquality().equals(other._subtitle, _subtitle));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_audio),const DeepCollectionEquality().hash(_subtitle));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_video),const DeepCollectionEquality().hash(_audio),const DeepCollectionEquality().hash(_subtitle));
 
 
 
@@ -1300,7 +1575,7 @@ abstract mixin class _$TracksCopyWith<$Res> implements $TracksCopyWith<$Res> {
   factory _$TracksCopyWith(_Tracks value, $Res Function(_Tracks) _then) = __$TracksCopyWithImpl;
 @override @useResult
 $Res call({
- List<AudioTrack> audio, List<SubtitleTrack> subtitle
+ List<VideoTrack> video, List<AudioTrack> audio, List<SubtitleTrack> subtitle
 });
 
 
@@ -1317,9 +1592,10 @@ class __$TracksCopyWithImpl<$Res>
 
 /// Create a copy of Tracks
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? audio = null,Object? subtitle = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? video = null,Object? audio = null,Object? subtitle = null,}) {
   return _then(_Tracks(
-audio: null == audio ? _self._audio : audio // ignore: cast_nullable_to_non_nullable
+video: null == video ? _self._video : video // ignore: cast_nullable_to_non_nullable
+as List<VideoTrack>,audio: null == audio ? _self._audio : audio // ignore: cast_nullable_to_non_nullable
 as List<AudioTrack>,subtitle: null == subtitle ? _self._subtitle : subtitle // ignore: cast_nullable_to_non_nullable
 as List<SubtitleTrack>,
   ));

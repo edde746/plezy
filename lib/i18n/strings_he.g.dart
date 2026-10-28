@@ -1204,6 +1204,30 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get settingsButton => 'תגית: Playback Settings';
 	@override String get tracksButton => 'אודיו & תת-כותרות';
 	@override String get chaptersButton => 'פרק';
+	@override String get segmentLoopHelp => 'הגדר A, ולאחר מכן הגדר B מאוחר יותר בשורה הזמנית.';
+	@override String get setLoopStart => 'הגדרת קובץ התחלה (א)';
+	@override String get setLoopEnd => 'הגדרת קצה הקוטב (B)';
+	@override String get clearSegmentLoop => 'סגנון ברור';
+	@override String get setLoopStartFirst => 'הקלד את ההתחלה (A) לפני הסוף (B).';
+	@override String get loopEndAfterStart => 'הסוף חייב להיות מאוחר יותר מההתחלה.';
+	@override String get segmentLoopUnavailable => 'ה-Segment Looping אינו זמין עבור המשחק הזה.';
+	@override String get loopPointNotSet => 'לא קבע';
+	@override String get bookmarksHelp => 'מילות המפתח מאוחסנות במכשיר זה, בחר אחד כדי להגיע לזמן הזה.';
+	@override String get bookmarksButton => 'ספרות';
+	@override String get chaptersAndBookmarks => 'פרקים וספריות';
+	@override String get segmentLoop => 'סגמנט לואי';
+	@override String get addBookmark => 'להוסיף bookmark';
+	@override String get bookmarkName => 'Bookmark שם';
+	@override String get bookmarkNameHint => 'לדוגמה, פתיחת סצנה';
+	@override String bookmarkDefaultName({required Object n}) => 'סימנייה ${n}';
+	@override String get bookmarkNameRequired => 'הקלד שם עבור ספר זה.';
+	@override String get deleteBookmark => 'הסרת ספרייה';
+	@override String get bookmarkLimitReached => 'הפוסט הזה כבר מכיל 100 ספרות.';
+	@override String get bookmarkUnavailable => 'לא הצלחתי לשמור או להסיר את החותם הזה.';
+	@override String get bookmarkSaved => 'הספר נשמר.';
+	@override String get bookmarkDeleted => 'Bookmark נמחק.';
+	@override String loopPointSet({required Object point, required Object time}) => 'לופ נקודה ${point} סדנאות ב ${time}→';
+	@override String get noChaptersOrBookmarks => 'אין פרקים או ספרי ספרים זמינים.';
 	@override String get versionQualityButton => 'גרסה ואיכות';
 	@override String get versionColumnHeader => 'גרסה';
 	@override String get qualityColumnHeader => 'איכות';
@@ -2075,6 +2099,7 @@ class _Translations$music$he extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'קריאת רצועת ניתוח';
 	@override String get visualizerAmbientMotion => 'תנועת הסביבה';
 	@override String get visualizerPlexLoudness => 'Plex צליל';
+	@override String get visualizerLiveAudio => 'ניתוח שמע בזמן אמת';
 	@override String get visualizerPreviousPreset => 'סגנון חזותי קודם';
 	@override String get visualizerNextPreset => 'סגנון חזותי הבא';
 	@override String get visualizerPresetAurora => 'אווררה';
@@ -2429,6 +2454,12 @@ class _Translations$videoSettings$he extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'מפה לנקודת המבט הגבוהה של המסך בשחקן, ואז לספר למפיק את התוצאה.';
 	@override String get hdrToneMappingFailed => 'לא ניתן לשנות את מפת הטון HDR - המצב הקודם עדיין פעיל.';
 	@override String get audioOutput => 'אודיו יוצא';
+	@override String get videoTrack => 'רצועת וידאו';
+	@override String get videoTrackDescription => 'יש לבחור את זרם הווידאו להצגה. זמין בניגון MPV כשקובץ מכיל רצועות וידאו חלופיות.';
+	@override String get videoTrackDefault => 'ברירת מחדל';
+	@override String get videoTrackUnavailable => 'אין רצועות וידאו חלופיות זמינות.';
+	@override String get videoTrackFailed => 'לא ניתן לשנות את רצועת הווידאו.';
+	@override String videoTrackNumber({required Object id}) => 'רצועה ${id}';
 	@override String get performanceOverlay => 'ביצועים Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2436,10 +2467,17 @@ class _Translations$videoSettings$he extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'חלל אודיו';
 	@override String get audioOutputStereo => 'סטריאו';
 	@override String get audioEqualizer => 'אודיו Equalizer';
-	@override String get audioEqualizerDescription => 'זמין ב- mpv; EQ פעיל מעודד אודיו ומפחיד את התאמה.';
+	@override String get audioEqualizerDescription => 'שווה ערך 10 ל MPVמסנני אודיו משתמשים באודיו מעודכן והפסיקו לעמוד.';
 	@override String get audioEqualizerFlat => 'שטוח';
 	@override String get audioEqualizerActive => 'מותאם אישית';
 	@override String get audioEqualizerSaveFailed => 'לא יכולתי לשמור את ההגדרות של שווה אודיו.';
+	@override String get audioEffectsDescription => 'אפקטים משתמשים אודיו מעודכן, כך passthrough הופך.אווירה בחדר והרחבה סטריאו תלויים MPV לבנות ולעקוב.';
+	@override String get audioStereoWidth => 'סטריאו הרחבה';
+	@override String get audioSpatializer => 'סביבת החדר';
+	@override String get audioSpatializerDescription => 'להוסיף מחשבות בחדר שקט.';
+	@override String get audioPitch => 'פיץ \'שינוי';
+	@override String get audioPitchDescription => 'לשנות את המסלול ללא שינוי מהירות. MPV הבנייה חייבת לכלול Rubber Band→';
+	@override String get audioEffectUnavailable => 'השפעה זו אינה זמינה עבור מסלול זה או MPV לבנות';
 	@override String get backgroundVideoAudio => 'רקע וידאו אודיו';
 	@override String get backgroundVideoAudioDescription => 'שמור על שידור אודיו וידאו כאשר אתה עוזב את השחקן; התמונה מוסתרת עד שאתה חוזר. Android משתמש בהודעה לשחק מדיה.';
 	@override String get audioNormalization => 'נורמליזציה צליל';
@@ -3093,6 +3131,10 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'בחר קובץ playlist';
 	@override String get openPlaylist => 'פתיחת Playlist';
 	@override String get playlistFormatsHelp => 'רשימת משחקים יכולה להכיל עד 1,000 פריטים ו 2 MB. HLS מופיע פתוח כמו זרמים כך שהשחקן יכול לבחור איכות.';
+	@override String get saveQueuePlaylist => 'שמירת התור כפלייליסט';
+	@override String get queuePlaylistSaved => 'הפלייליסט נשמר לצד קובצי המדיה.';
+	@override String get queuePlaylistUnavailable => 'אי אפשר לשמור את התור הזה כפלייליסט מקומי לשימוש חוזר.';
+	@override String get queuePlaylistFolderRequired => 'יש לבחור מיקום שמירה באותה תיקייה שבה נמצאים הקבצים שבתור.';
 	@override String get noFavorites => 'עדיין לא נשמר זרימת הפופולרים.Favorites להישאר בפרופיל זה.';
 	@override String get removeFavorite => 'להסיר זרם אהוב';
 	@override String get filesHelp => 'בחר קבצים אודיו, וידאו או ISO עבור קובץ זמני.קבצים וכתובות URL אינם מופיעים בהיסטוריה של הספרייה.';
@@ -3159,12 +3201,13 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'החלפת קובץ';
 	@override String get discHelp => 'פתח דיסק בכונן האופטי של המחשב הזה.אתה יכול גם לפתוח תמונה ISO מתוך קבצי מכשיר.';
 	@override String get discs => 'דיסק אופטי';
+	@override String get editionOrTitle => 'מהדורה או שם התקליטור';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray';
 	@override String get audioCd => 'אודיו CD';
 	@override String get discAvailability => 'משחקי דיסק זקוקים לבניית MPV תואמת, כונן נתמך והרשאה למערכת ההפעלה.';
 	@override String get converterTitle => 'להמיר קובץ מדיה מקומי';
-	@override String get converterHelp => 'השתמש FFmpeg כדי ליצור MP4, M4A, או MP3 עותק.';
+	@override String get converterHelp => 'להמיר קובץ מקומי או לשחזר אותו עם FFmpeg→';
 	@override String get converterIntro => 'להפוך קובץ אודיו או וידאו מקומי לתבנית שעובדת על יותר מכשירים.';
 	@override String get converterPrivacy => 'FFmpeg חייב להיות מותקן במחשב זה.Conversion קורא רק קבצים מקומיים.זה לא הורד זרמים או להסיר DRM.';
 	@override String get converterChooseInput => 'בחר קובץ מדיה מקומי';
@@ -3172,6 +3215,8 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 ו- AAC';
 	@override String get converterM4a => 'M4A · AAC אודיו';
 	@override String get converterMp3 => 'MP3 · אודיו';
+	@override String get allowFtp => 'אישור FTP';
+	@override String get allowFtpHelp => 'FTP שולח מדיה ללא הצפנה.להשתמש רק ברשתות אמינות.';
 	@override String get converterSaveAs => 'שמור את התקשורת המוחלפת כ';
 	@override String get converterExtensionMismatch => 'בחר שם קובץ עם הרחבת היציאה שנבחרה.';
 	@override String get converterUnsupportedInput => 'בחר קובץ אודיו או וידאו.';
@@ -3181,7 +3226,7 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get converterStarting => 'התחלנו עם FFmpeg.';
 	@override String get converterProgress => 'כדי להפוך את המחשב הזה ...';
 	@override String get converterComplete => 'הקובץ החדש כבר מוכן.';
-	@override String get converterFfmpegMissing => 'התקנת FFmpeg עם תמיכה H.264, AAC, ו- MP3 ולאחר מכן נסה שוב.';
+	@override String get converterFfmpegMissing => 'FFmpeg הוא חסר או לא תומך בפורמט זה.';
 	@override String get converterFailed => 'בדוק כי קובץ המקור ניתן לקרוא והמטרה יש מספיק מקום חינם.';
 	@override String get converterCancelled => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.';
 	@override String get converterDesktopOnly => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.';
@@ -3209,6 +3254,9 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get captureSaved => 'הקלטת המסך נשמרה.';
 	@override String get captureElapsedLabel => 'זמן ההקלטה';
 	@override String get captureStart => 'התחל להקליט';
+	@override String get capturePreview => 'תצוגה מקדימה בנגן';
+	@override String get capturePreviewHelp => 'תצוגה מקדימה של המקור שנבחר בנגן הרגיל. היא זמינה רק בהפעלה הנוכחית ואינה שומרת הקלטה. התמיכה במכשירים וההרשאות תלויות ב־MPV ובמערכת ההפעלה. התצוגה משתמשת בווידאו בלבד; אפשר לכלול אודיו אופציונלי בהקלטות שנשמרות.';
+	@override String get capturePreviewActive => 'תצוגה חיה · לא מתבצעת הקלטה';
 	@override String get captureStop => 'להפסיק ולהציל';
 	@override String get captureMode => 'מעצרים';
 	@override String get shareMode => 'שיתוף';
@@ -5978,6 +6026,32 @@ extension on TranslationsHe {
 			'videoControls.settingsButton' => 'תגית: Playback Settings',
 			'videoControls.tracksButton' => 'אודיו & תת-כותרות',
 			'videoControls.chaptersButton' => 'פרק',
+			'videoControls.segmentLoopHelp' => 'הגדר A, ולאחר מכן הגדר B מאוחר יותר בשורה הזמנית.',
+			'videoControls.setLoopStart' => 'הגדרת קובץ התחלה (א)',
+			'videoControls.setLoopEnd' => 'הגדרת קצה הקוטב (B)',
+			'videoControls.clearSegmentLoop' => 'סגנון ברור',
+			'videoControls.setLoopStartFirst' => 'הקלד את ההתחלה (A) לפני הסוף (B).',
+			'videoControls.loopEndAfterStart' => 'הסוף חייב להיות מאוחר יותר מההתחלה.',
+			'videoControls.segmentLoopUnavailable' => 'ה-Segment Looping אינו זמין עבור המשחק הזה.',
+			'videoControls.loopPointNotSet' => 'לא קבע',
+			'videoControls.bookmarksHelp' => 'מילות המפתח מאוחסנות במכשיר זה, בחר אחד כדי להגיע לזמן הזה.',
+			'videoControls.bookmarksButton' => 'ספרות',
+			'videoControls.chaptersAndBookmarks' => 'פרקים וספריות',
+			'videoControls.segmentLoop' => 'סגמנט לואי',
+			'videoControls.addBookmark' => 'להוסיף bookmark',
+			'videoControls.bookmarkName' => 'Bookmark שם',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'לדוגמה, פתיחת סצנה',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'סימנייה ${n}',
+			'videoControls.bookmarkNameRequired' => 'הקלד שם עבור ספר זה.',
+			'videoControls.deleteBookmark' => 'הסרת ספרייה',
+			'videoControls.bookmarkLimitReached' => 'הפוסט הזה כבר מכיל 100 ספרות.',
+			'videoControls.bookmarkUnavailable' => 'לא הצלחתי לשמור או להסיר את החותם הזה.',
+			'videoControls.bookmarkSaved' => 'הספר נשמר.',
+			'videoControls.bookmarkDeleted' => 'Bookmark נמחק.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'לופ נקודה ${point} סדנאות ב ${time}→',
+			'videoControls.noChaptersOrBookmarks' => 'אין פרקים או ספרי ספרים זמינים.',
 			'videoControls.versionQualityButton' => 'גרסה ואיכות',
 			'videoControls.versionColumnHeader' => 'גרסה',
 			'videoControls.qualityColumnHeader' => 'איכות',
@@ -5992,8 +6066,6 @@ extension on TranslationsHe {
 			'videoControls.exitFullscreenButton' => 'יוצא מלא מסך',
 			'videoControls.alwaysOnTopButton' => 'תמיד בראש',
 			'videoControls.rotationLockButton' => 'מקלדת סיבוב',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'מסך סגור',
 			'videoControls.screenLockButton' => 'מסך סגור',
 			'videoControls.timelineSlider' => 'וידאו Timeline',
@@ -6482,6 +6554,8 @@ extension on TranslationsHe {
 			'libraries.hideLibrary' => 'להסתיר את הספרייה',
 			'libraries.libraryOptions' => 'אפשרויות ספרייה',
 			'libraries.content' => 'ספרייה תוכן',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'בחר ספרייה',
 			'libraries.filtersWithCount' => ({required Object count}) => 'מסננים (${count})',
 			'libraries.noRecommendations' => 'אין המלצות זמינות',
@@ -6506,8 +6580,6 @@ extension on TranslationsHe {
 			'libraries.filterCategories.year' => 'שנה',
 			'libraries.filterCategories.contentRating' => 'תוכן דירוג',
 			'libraries.filterCategories.tag' => 'תגית',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'לא צופה',
 			'libraries.filterCategories.unplayed' => 'לא נוגן',
 			'libraries.filterCategories.favorites' => 'מועדפים',
@@ -6949,6 +7021,7 @@ extension on TranslationsHe {
 			'music.visualizerProfileLoading' => 'קריאת רצועת ניתוח',
 			'music.visualizerAmbientMotion' => 'תנועת הסביבה',
 			'music.visualizerPlexLoudness' => 'Plex צליל',
+			'music.visualizerLiveAudio' => 'ניתוח שמע בזמן אמת',
 			'music.visualizerPreviousPreset' => 'סגנון חזותי קודם',
 			'music.visualizerNextPreset' => 'סגנון חזותי הבא',
 			'music.visualizerPresetAurora' => 'אווררה',
@@ -6995,6 +7068,8 @@ extension on TranslationsHe {
 			'watchTogether.codeCopied' => 'קוד חדר עותק',
 			'watchTogether.shareInvite' => 'שיתוף הזמנה',
 			'watchTogether.inviteCopied' => 'תנו לו להוסיף את ההודעה, תנו לו להוסיף הודעה.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'הצטרף לחדר השעון שלי ב- PlezyNG: פתח את השעון יחד, בחר לחדר השעון הצטרף והכנס ל- ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch יחד בדיקת ישיבה',
 			'watchTogether.reconnecting' => 'חיבור מחדש...',
@@ -7020,8 +7095,6 @@ extension on TranslationsHe {
 			'watchTogether.playAnyway' => 'לשחק בכל מקרה',
 			'watchTogether.chooseAnotherCopy' => 'בחר עותק נוסף',
 			'watchTogether.dontPlay' => 'אל תשחק',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'אין לך וידאו זה',
 			'watchTogether.unavailableDescription' => 'PlezyNG לא מצא את זה בספריות שלך.קח עותק בעצמך או לחפש שוב.',
 			'watchTogether.chooseCopy' => 'בחר עותק',
@@ -7375,6 +7448,12 @@ extension on TranslationsHe {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'מפה לנקודת המבט הגבוהה של המסך בשחקן, ואז לספר למפיק את התוצאה.',
 			'videoSettings.hdrToneMappingFailed' => 'לא ניתן לשנות את מפת הטון HDR - המצב הקודם עדיין פעיל.',
 			'videoSettings.audioOutput' => 'אודיו יוצא',
+			'videoSettings.videoTrack' => 'רצועת וידאו',
+			'videoSettings.videoTrackDescription' => 'יש לבחור את זרם הווידאו להצגה. זמין בניגון MPV כשקובץ מכיל רצועות וידאו חלופיות.',
+			'videoSettings.videoTrackDefault' => 'ברירת מחדל',
+			'videoSettings.videoTrackUnavailable' => 'אין רצועות וידאו חלופיות זמינות.',
+			'videoSettings.videoTrackFailed' => 'לא ניתן לשנות את רצועת הווידאו.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'רצועה ${id}',
 			'videoSettings.performanceOverlay' => 'ביצועים Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7382,10 +7461,17 @@ extension on TranslationsHe {
 			'videoSettings.audioOutputSpatial' => 'חלל אודיו',
 			'videoSettings.audioOutputStereo' => 'סטריאו',
 			'videoSettings.audioEqualizer' => 'אודיו Equalizer',
-			'videoSettings.audioEqualizerDescription' => 'זמין ב- mpv; EQ פעיל מעודד אודיו ומפחיד את התאמה.',
+			'videoSettings.audioEqualizerDescription' => 'שווה ערך 10 ל MPVמסנני אודיו משתמשים באודיו מעודכן והפסיקו לעמוד.',
 			'videoSettings.audioEqualizerFlat' => 'שטוח',
 			'videoSettings.audioEqualizerActive' => 'מותאם אישית',
 			'videoSettings.audioEqualizerSaveFailed' => 'לא יכולתי לשמור את ההגדרות של שווה אודיו.',
+			'videoSettings.audioEffectsDescription' => 'אפקטים משתמשים אודיו מעודכן, כך passthrough הופך.אווירה בחדר והרחבה סטריאו תלויים MPV לבנות ולעקוב.',
+			'videoSettings.audioStereoWidth' => 'סטריאו הרחבה',
+			'videoSettings.audioSpatializer' => 'סביבת החדר',
+			'videoSettings.audioSpatializerDescription' => 'להוסיף מחשבות בחדר שקט.',
+			'videoSettings.audioPitch' => 'פיץ \'שינוי',
+			'videoSettings.audioPitchDescription' => 'לשנות את המסלול ללא שינוי מהירות. MPV הבנייה חייבת לכלול Rubber Band→',
+			'videoSettings.audioEffectUnavailable' => 'השפעה זו אינה זמינה עבור מסלול זה או MPV לבנות',
 			'videoSettings.backgroundVideoAudio' => 'רקע וידאו אודיו',
 			'videoSettings.backgroundVideoAudioDescription' => 'שמור על שידור אודיו וידאו כאשר אתה עוזב את השחקן; התמונה מוסתרת עד שאתה חוזר. Android משתמש בהודעה לשחק מדיה.',
 			'videoSettings.audioNormalization' => 'נורמליזציה צליל',
@@ -7496,6 +7582,8 @@ extension on TranslationsHe {
 			'metadataEdit.metadataUpdated' => 'נתונים מתעדכנים',
 			'metadataEdit.metadataUpdateFailed' => 'לא הצלחתי לעדכן את הנתונים',
 			'metadataEdit.artworkUpdated' => 'ארכיון עדכונים',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'לא הצלחתי לעדכן את האמנות',
 			'metadataEdit.noArtworkAvailable' => 'אין יצירות אמנות זמינות',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'האפשרות האמנותית ${index}',
@@ -7534,8 +7622,6 @@ extension on TranslationsHe {
 			'metadataEdit.shownWithForeignAudio' => 'תגיות: אודיו זר',
 			'metadataEdit.alwaysEnabled' => 'תמיד אפשרי',
 			'metadataEdit.tags' => 'מילות מפתח',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'הוסף תגית',
 			'metadataEdit.genre' => 'ז\'אנר',
 			'metadataEdit.director' => 'במאי',
@@ -7904,6 +7990,10 @@ extension on TranslationsHe {
 			'universalMedia.choosePlaylist' => 'בחר קובץ playlist',
 			'universalMedia.openPlaylist' => 'פתיחת Playlist',
 			'universalMedia.playlistFormatsHelp' => 'רשימת משחקים יכולה להכיל עד 1,000 פריטים ו 2 MB. HLS מופיע פתוח כמו זרמים כך שהשחקן יכול לבחור איכות.',
+			'universalMedia.saveQueuePlaylist' => 'שמירת התור כפלייליסט',
+			'universalMedia.queuePlaylistSaved' => 'הפלייליסט נשמר לצד קובצי המדיה.',
+			'universalMedia.queuePlaylistUnavailable' => 'אי אפשר לשמור את התור הזה כפלייליסט מקומי לשימוש חוזר.',
+			'universalMedia.queuePlaylistFolderRequired' => 'יש לבחור מיקום שמירה באותה תיקייה שבה נמצאים הקבצים שבתור.',
 			'universalMedia.noFavorites' => 'עדיין לא נשמר זרימת הפופולרים.Favorites להישאר בפרופיל זה.',
 			'universalMedia.removeFavorite' => 'להסיר זרם אהוב',
 			'universalMedia.filesHelp' => 'בחר קבצים אודיו, וידאו או ISO עבור קובץ זמני.קבצים וכתובות URL אינם מופיעים בהיסטוריה של הספרייה.',
@@ -7962,12 +8052,13 @@ extension on TranslationsHe {
 			'universalMedia.replaceRecording' => 'החלפת קובץ',
 			'universalMedia.discHelp' => 'פתח דיסק בכונן האופטי של המחשב הזה.אתה יכול גם לפתוח תמונה ISO מתוך קבצי מכשיר.',
 			'universalMedia.discs' => 'דיסק אופטי',
+			'universalMedia.editionOrTitle' => 'מהדורה או שם התקליטור',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'אודיו CD',
 			'universalMedia.discAvailability' => 'משחקי דיסק זקוקים לבניית MPV תואמת, כונן נתמך והרשאה למערכת ההפעלה.',
 			'universalMedia.converterTitle' => 'להמיר קובץ מדיה מקומי',
-			'universalMedia.converterHelp' => 'השתמש FFmpeg כדי ליצור MP4, M4A, או MP3 עותק.',
+			'universalMedia.converterHelp' => 'להמיר קובץ מקומי או לשחזר אותו עם FFmpeg→',
 			'universalMedia.converterIntro' => 'להפוך קובץ אודיו או וידאו מקומי לתבנית שעובדת על יותר מכשירים.',
 			'universalMedia.converterPrivacy' => 'FFmpeg חייב להיות מותקן במחשב זה.Conversion קורא רק קבצים מקומיים.זה לא הורד זרמים או להסיר DRM.',
 			'universalMedia.converterChooseInput' => 'בחר קובץ מדיה מקומי',
@@ -7975,6 +8066,8 @@ extension on TranslationsHe {
 			'universalMedia.converterMp4' => 'MP4 · H.264 ו- AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC אודיו',
 			'universalMedia.converterMp3' => 'MP3 · אודיו',
+			'universalMedia.allowFtp' => 'אישור FTP',
+			'universalMedia.allowFtpHelp' => 'FTP שולח מדיה ללא הצפנה.להשתמש רק ברשתות אמינות.',
 			'universalMedia.converterSaveAs' => 'שמור את התקשורת המוחלפת כ',
 			'universalMedia.converterExtensionMismatch' => 'בחר שם קובץ עם הרחבת היציאה שנבחרה.',
 			'universalMedia.converterUnsupportedInput' => 'בחר קובץ אודיו או וידאו.',
@@ -7984,7 +8077,7 @@ extension on TranslationsHe {
 			'universalMedia.converterStarting' => 'התחלנו עם FFmpeg.',
 			'universalMedia.converterProgress' => 'כדי להפוך את המחשב הזה ...',
 			'universalMedia.converterComplete' => 'הקובץ החדש כבר מוכן.',
-			'universalMedia.converterFfmpegMissing' => 'התקנת FFmpeg עם תמיכה H.264, AAC, ו- MP3 ולאחר מכן נסה שוב.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg הוא חסר או לא תומך בפורמט זה.',
 			'universalMedia.converterFailed' => 'בדוק כי קובץ המקור ניתן לקרוא והמטרה יש מספיק מקום חינם.',
 			'universalMedia.converterCancelled' => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.',
 			'universalMedia.converterDesktopOnly' => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.',
@@ -8003,6 +8096,8 @@ extension on TranslationsHe {
 			'universalMedia.captureAudioNone' => 'אין אודיו',
 			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
 			'universalMedia.capturePrivacy' => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.',
 			'universalMedia.captureSaveAs' => 'שמור את הקלטת המסך כ',
@@ -8012,6 +8107,9 @@ extension on TranslationsHe {
 			'universalMedia.captureSaved' => 'הקלטת המסך נשמרה.',
 			'universalMedia.captureElapsedLabel' => 'זמן ההקלטה',
 			'universalMedia.captureStart' => 'התחל להקליט',
+			'universalMedia.capturePreview' => 'תצוגה מקדימה בנגן',
+			'universalMedia.capturePreviewHelp' => 'תצוגה מקדימה של המקור שנבחר בנגן הרגיל. היא זמינה רק בהפעלה הנוכחית ואינה שומרת הקלטה. התמיכה במכשירים וההרשאות תלויות ב־MPV ובמערכת ההפעלה. התצוגה משתמשת בווידאו בלבד; אפשר לכלול אודיו אופציונלי בהקלטות שנשמרות.',
+			'universalMedia.capturePreviewActive' => 'תצוגה חיה · לא מתבצעת הקלטה',
 			'universalMedia.captureStop' => 'להפסיק ולהציל',
 			'universalMedia.captureMode' => 'מעצרים',
 			'universalMedia.shareMode' => 'שיתוף',
@@ -8048,8 +8146,6 @@ extension on TranslationsHe {
 			'universalMedia.extensionInstallTitle' => 'להוסיף שירות חיפוש זה?',
 			'universalMedia.extensionReplaceTitle' => 'עדכון שירות החיפוש הזה?',
 			'universalMedia.extensionService' => 'שירות',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS נקודת סיום',
 			'universalMedia.extensionConsent' => 'טקסט החיפוש שלך נשלח לשירות זה.המניין אינו מכיל קוד מבוצע.המשך רק אם אתה סומך על נקודת המוצא הזו.',
 			'universalMedia.extensionInstall' => 'להוסיף שירות',
@@ -8514,6 +8610,8 @@ extension on TranslationsHe {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
@@ -8562,8 +8660,6 @@ extension on TranslationsHe {
 			'deepLinks.movieHint' => 'פתיחת הקישור הזה משחק את הסרט.',
 			'deepLinks.episodeHint' => 'פתיחת קישור זה משחק את הפרק הזה.',
 			'deepLinks.profileHint' => 'הפתיחה של קישור זה מתפתחת לפרופיל הזה.',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'פתח כ ${name}',
 			'deepLinks.copy' => 'עותק',
 			'deepLinks.copied' => 'קישור עותק',

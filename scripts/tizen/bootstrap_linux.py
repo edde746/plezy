@@ -54,6 +54,27 @@ def extract_package(archive, destination):
                 target.chmod(mode & 0o777 or 0o644)
 
 
+def write_arm_toolchain(path, compiler, sysroot):
+    """Write CMake settings that override Samsung GCC's build-host sysroot."""
+    path = Path(path)
+    path.write_text(f'''set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_C_COMPILER "{compiler}gcc")
+set(CMAKE_CXX_COMPILER "{compiler}g++")
+set(CMAKE_SYSROOT "{sysroot}")
+# CMake does not pass CMAKE_SYSROOT during its initial GCC compiler test.
+# Samsung's pinned compiler embeds its private .dibs build path, so pass the
+# extracted device rootstrap explicitly from the first compiler invocation.
+set(CMAKE_C_FLAGS_INIT "--sysroot=\\\"{sysroot}\\\" -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -fPIC")
+set(CMAKE_CXX_FLAGS_INIT "--sysroot=\\\"{sysroot}\\\" -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -fPIC")
+set(CMAKE_FIND_ROOT_PATH "{sysroot}")
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+''')
+
+
 def install(destination):
     destination = Path(destination).resolve()
     if destination.exists() and any(destination.iterdir()):
@@ -78,19 +99,7 @@ def install(destination):
     compiler = sdk / 'tools/arm-linux-gnueabi-gcc-9.2/bin/arm-linux-gnueabi-'
     sysroot = sdk / 'platforms/tizen-6.0/iot-headed/rootstraps/iot-headed-6.0-device.core'
     toolchain = destination / 'arm-toolchain.cmake'
-    toolchain.write_text(f'''set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR arm)
-set(CMAKE_C_COMPILER "{compiler}gcc")
-set(CMAKE_CXX_COMPILER "{compiler}g++")
-set(CMAKE_SYSROOT "{sysroot}")
-set(CMAKE_C_FLAGS_INIT "-march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -fPIC")
-set(CMAKE_CXX_FLAGS_INIT "-march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16 -fPIC")
-set(CMAKE_FIND_ROOT_PATH "{sysroot}")
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-''')
+    write_arm_toolchain(toolchain, compiler, sysroot)
     (destination / 'sdk-provenance.json').write_text(json.dumps(PINS, indent=2) + '\n')
     # LLVM 10 needs the legacy libtinfo ABI, absent on Ubuntu 24.04. Extract
     # this pinned Debian package locally; do not replace system libraries.
