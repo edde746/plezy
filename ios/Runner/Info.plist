@@ -118,6 +118,8 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Search Apple Music catalog results you choose and play them through Apple's native player.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose images from your photo library to use as media artwork.</string>
 	<key>NSCameraUsageDescription</key>
