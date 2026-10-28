@@ -137,7 +137,7 @@ final class IncomingSubtitleShareService {
 
         final source = File(sourcePath);
         final sourceBytes = await source.length();
-        final maximum = extension == 'zip' ? _maximumArchiveBytes : _maximumSubtitleBytes;
+        final maximum = const {'zip', 'tar'}.contains(extension) ? _maximumArchiveBytes : _maximumSubtitleBytes;
         if (sourceBytes == 0 || sourceBytes > maximum || _pendingBytes + sourceBytes > _maximumPendingBytes) {
           continue;
         }

@@ -202,7 +202,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           LanguageCodes.getIso6391Code(name ?? '') == preferred;
     }
 
-    bool matchesLanguage(String? code, String? name) => matchesLanguageFor(language, code, name);
 
     for (final preferred in orderedLanguages) {
       final existingPreferredTrack = source.subtitleTracks
@@ -320,7 +319,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
             .where(
               (track) =>
                   !originalIds.contains(track.id) &&
-                  matchesLanguage(track.languageCode, track.language) &&
+                  matchesLanguageFor(candidateLanguage, track.languageCode, track.language) &&
                   track.isExternal,
             )
             .firstOrNull;
