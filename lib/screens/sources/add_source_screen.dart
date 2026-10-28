@@ -21,7 +21,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
-import '../settings/services_settings_screen.dart';
+import '../settings/trakt_settings_screen.dart';
 import 'source_widgets.dart';
 
 class AddSourceScreen extends StatefulWidget {
@@ -898,7 +898,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         child: TextButton.icon(
                           onPressed: () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
+                            MaterialPageRoute(builder: (_) => const TraktSettingsScreen()),
                           ),
                           icon: const AppIcon(Symbols.link_rounded),
                           label: Text('${t.common.connect} ${t.trakt.title}'),
