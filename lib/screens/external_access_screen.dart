@@ -19,11 +19,13 @@ class ExternalAccessScreen extends StatefulWidget {
     super.key,
     required this.title,
     this.creator = '',
+    this.identifiers = const {},
     required this.categories,
   });
 
   final String title;
   final String creator;
+  final Map<String, String> identifiers;
   final List<ExternalAccessCategory> categories;
 
   @override
@@ -59,7 +61,12 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
 
   Future<void> _open(BuildContext context, ExternalAccessDestination destination) async {
     final region = Localizations.localeOf(context).countryCode ?? 'CA';
-    final uri = destination.searchUri(widget.title, creator: widget.creator, region: region);
+    final uri = destination.searchUri(
+      widget.title,
+      creator: widget.creator,
+      region: region,
+      identifiers: widget.identifiers,
+    );
     try {
       if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
     } catch (_) {

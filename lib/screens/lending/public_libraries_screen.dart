@@ -13,6 +13,7 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../utils/formatters.dart';
 import '../../lending/lending_service.dart';
+import '../../services/external_access_directory.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../theme/mono_tokens.dart';
@@ -25,6 +26,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
+import '../external_access_screen.dart';
 import '../sources/source_widgets.dart';
 
 Widget _focusedLendingButton({
@@ -986,6 +988,25 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                               onPressed: onPressed,
                               icon: const AppIcon(Symbols.shopping_bag_rounded),
                               label: Text(t.explore.detail.openOn(site: 'Google Books')),
+                            ),
+                          ),
+                        if (library == null)
+                          _focusedLendingButton(
+                            onPressed: () => Navigator.push<void>(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => ExternalAccessScreen(
+                                  title: book.title,
+                                  creator: book.author,
+                                  identifiers: book.identifiers,
+                                  categories: const [ExternalAccessCategory.books],
+                                ),
+                              ),
+                            ),
+                            buildButton: (onPressed) => OutlinedButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.storefront_rounded),
+                              label: Text(t.explore.detail.links),
                             ),
                           ),
                         if (library != null && !book.loan && !book.hold && !_changed) ...[

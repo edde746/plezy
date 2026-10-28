@@ -36,6 +36,8 @@ Status: qualification remains outstanding. This branch adds title-search handoff
 | V28 | Malicious URL, private-network redirect, oversized feed, archive traversal, invalid cover | Correct trust boundary, bounds and sanitized error; local NAS behavior remains intentionally supported | W03/W06/W07 |
 | V29 | Screen reader, D-pad, RTL, large text, reduced motion and high contrast | Labels and focus correct; no clipped decisive price/action; no gesture-only control | W04/W15 |
 | V30 | Offline with playable files and unavailable remote services | Existing files/resume remain available; no false offline entitlement or hidden local result | W02/W04/W15 |
+| V31 | Public-catalog or OPDS book carries a valid, invalid, or missing ISBN | Valid checksum-verified ISBN is used for book-store search; invalid/missing identifiers fall back to title and creator; no price, stock, purchase, or ownership state is inferred | W05/W07 |
+| V32 | Amazon Books/Kindle handoff from a supported country locale | Search opens the mapped official marketplace with a title or validated ISBN; unknown locales keep the existing Canada fallback | W03/W05 |
 
 ## Existing regression owners
 
@@ -95,4 +97,4 @@ This assessment must not trigger CI, enroll partner accounts or deploy a gateway
 
 ## Validation performed for this implementation branch
 
-Static review and `git diff --check` were performed. Dart and Flutter SDKs are unavailable in the current workspace, so no formatter, analyzer, localization generation, platform build or tests were run. No live music-server/feed device playback, paid-service login, partner sandbox circulation or storefront conversion was performed. Planned runtime cases above are not executed claims.
+Static review and `git diff --check` were performed. ISBN capture/search routing and Amazon marketplace routing have been implemented but not exercised against retailer sites or ISBN fixtures. Dart and Flutter SDKs are unavailable in the current workspace, so no formatter, analyzer, localization generation, platform build or tests were run. No live music-server/feed device playback, paid-service login, partner sandbox circulation or storefront conversion was performed. Planned runtime cases above are not executed claims.

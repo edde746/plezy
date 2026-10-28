@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:xml/xml.dart';
 
+import '../../services/book_identifiers.dart';
 import '../source_models.dart';
 import '../comic_document.dart';
 import '../source_transport.dart';
@@ -196,6 +197,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           language: _label(meta['language']),
           description: _label(meta['description']),
           files: files,
+          identifiers: BookIdentifiers.fromValues(meta['identifier'] ?? meta['identifiers']),
         ),
       );
     }
@@ -296,6 +298,9 @@ class OpdsSourceAdapter extends SourceAdapter {
             description: text('summary').isEmpty ? text('content') : text('summary'),
             parentId: uri.toString(),
             files: files,
+            identifiers: BookIdentifiers.fromValues(
+              entry.childElements.where((element) => element.name.local == 'identifier').map((element) => element.innerText),
+            ),
           ),
         );
       }

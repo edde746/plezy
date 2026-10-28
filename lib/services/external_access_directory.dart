@@ -1,4 +1,5 @@
 import '../media/media_kind.dart';
+import 'book_identifiers.dart';
 
 /// Types of title-aware provider lookups that can be handed off to an
 /// official provider site. A lookup is not an availability or entitlement
@@ -24,12 +25,18 @@ class ExternalAccessDestination {
   final String? queryParameter;
   final Map<String, String> fixedQuery;
 
-  Uri searchUri(String title, {String creator = '', String region = 'CA'}) {
+  Uri searchUri(
+    String title, {
+    String creator = '',
+    String region = 'CA',
+    Map<String, String> identifiers = const {},
+  }) {
     final upperRegion = region.toUpperCase();
     final safeRegion = RegExp(r'^[A-Z]{2}$').hasMatch(upperRegion) ? upperRegion.toLowerCase() : 'ca';
     final cleanTitle = _cleanQuery(title);
     final cleanCreator = _cleanQuery(creator);
-    final term = [cleanTitle, if (cleanCreator.isNotEmpty) cleanCreator].join(' ');
+    final isbn = category == ExternalAccessCategory.books ? BookIdentifiers.preferred(identifiers) : null;
+    final term = isbn ?? [cleanTitle, if (cleanCreator.isNotEmpty) cleanCreator].join(' ');
     return Uri.https(hostForRegion(safeRegion), pathForRegion(safeRegion), {
       ...fixedQuery,
       if (id == 'google-play-books') 'gl': safeRegion.toUpperCase(),
@@ -48,6 +55,24 @@ class ExternalAccessDestination {
         'us' => 'www.amazon.com',
         'gb' => 'www.amazon.co.uk',
         'au' => 'www.amazon.com.au',
+        'be' => 'www.amazon.com.be',
+        'br' => 'www.amazon.com.br',
+        'de' => 'www.amazon.de',
+        'eg' => 'www.amazon.eg',
+        'es' => 'www.amazon.es',
+        'fr' => 'www.amazon.fr',
+        'ie' => 'www.amazon.ie',
+        'in' => 'www.amazon.in',
+        'it' => 'www.amazon.it',
+        'jp' => 'www.amazon.co.jp',
+        'mx' => 'www.amazon.com.mx',
+        'nl' => 'www.amazon.nl',
+        'pl' => 'www.amazon.pl',
+        'sa' => 'www.amazon.sa',
+        'sg' => 'www.amazon.sg',
+        'se' => 'www.amazon.se',
+        'tr' => 'www.amazon.com.tr',
+        'ae' => 'www.amazon.ae',
         _ => 'www.amazon.ca',
       };
     }

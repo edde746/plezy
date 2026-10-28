@@ -68,7 +68,7 @@ Amazon KDP: [Digital Rights Management](https://kdp.amazon.com/en_US/help/topic/
 
 ## S16
 
-Amazon: [Creators API introduction](https://affiliate-program.amazon.com/creatorsapi/docs/), [registration eligibility](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/onboarding/register-for-creators-api), [PA-API 5 deprecation](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation), [migration/auth changes](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/migrating-to-creatorsapi-from-paapi). Use current successor documentation instead of stale PA-API tutorials. High.
+Amazon: [Creators API introduction](https://affiliate-program.amazon.com/creatorsapi/docs/), [locale reference](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/locale-reference), [registration eligibility](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/onboarding/register-for-creators-api), [PA-API 5 deprecation](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation), [migration/auth changes](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/migrating-to-creatorsapi-from-paapi). The locale reference supports marketplace-aware routing for official searches; catalog API use still requires eligibility. High.
 
 ## S17
 

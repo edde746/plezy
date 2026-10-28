@@ -743,6 +743,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                         builder: (_) => ExternalAccessScreen(
                                           title: _entry.displayTitle,
                                           creator: _entry.author,
+                                          identifiers: _entry.identifiers,
                                           categories: _externalAccessCategories,
                                         ),
                                       ),
