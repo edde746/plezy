@@ -15,6 +15,14 @@ native manifest and dispatches `snapetech-org/mpv-build` if the published
 artifacts are stale or incomplete. It verifies Apple, Android, Linux, and
 Windows native groups before touching PlezyNG.
 
+When a completed native run has failed platforms, the orchestrator can recover
+other groups whose publishing jobs succeeded. It checks the manifest artifact's
+GitHub digest, the current source content keys, and every published asset's
+checksum before recording that group on native `main`. Only manifests from an
+explicit private build of an ancestor of current `main` are eligible. The next
+native build then rebuilds only the groups still stale. A partial recovery never
+updates PlezyNG's pins or bypasses the final all-platform verification.
+
 After native artifacts verify, the command verifies the FFmpeg source archive
 signature against FFmpeg's pinned release-key fingerprint, records its exact
 SHA-256 in the Android header build, and runs

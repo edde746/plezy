@@ -90,6 +90,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 #### Release automation
 
 - Add one-command native dependency refresh and all-platform private-JIT release orchestration.
+- Reuse complete, checksum-verified native platform groups after another platform fails, while requiring the full artifact set before updating app dependencies.
 - Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
 - Validate all platform assets before publishing and dispatch configured release channels through the private-JIT orchestrator.
 - Include ARM webOS and Tizen tester builds in versioned releases, with pinned SDK and host-tool setup for Android, webOS and Tizen.
