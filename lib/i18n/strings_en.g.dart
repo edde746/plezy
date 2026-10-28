@@ -2128,6 +2128,12 @@ class Translations$settings$en {
 
 	/// en: 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.'
 	String get videoCodecOptionDescription => 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.';
+
+	/// en: 'Show subtitles when muted'
+	String get subtitleOnMute => 'Show subtitles when muted';
+
+	/// en: 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.'
+	String get subtitleOnMuteDescription => 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.';
 }
 
 // Path: themeEditor
@@ -6985,6 +6991,84 @@ class Translations$videoSettings$en {
 
 	/// en: 'Couldn't save motion clarity settings.'
 	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
+
+	/// en: 'Export synchronized subtitle'
+	String get subtitleExport => 'Export synchronized subtitle';
+
+	/// en: 'Synchronized subtitle saved.'
+	String get subtitleExportSuccess => 'Synchronized subtitle saved.';
+
+	/// en: 'Could not export this subtitle file. The original remains unchanged.'
+	String get subtitleExportFailed => 'Could not export this subtitle file. The original remains unchanged.';
+
+	/// en: 'Some subtitle cues end before playback starts and will be removed from the exported file. Continue?'
+	String get subtitleExportClipped => 'Some subtitle cues end before playback starts and will be removed from the exported file. Continue?';
+
+	/// en: 'A file with this name already exists. Replace it?'
+	String get subtitleExportReplace => 'A file with this name already exists. Replace it?';
+
+	/// en: 'Calibrate subtitle drift'
+	String get subtitleDriftCalibration => 'Calibrate subtitle drift';
+
+	/// en: 'Match two subtitle cue times to the playback times when each cue should appear. Choose anchors at least 60 seconds apart.'
+	String get subtitleDriftCalibrationHelp => 'Match two subtitle cue times to the playback times when each cue should appear. Choose anchors at least 60 seconds apart.';
+
+	/// en: 'Preview correction'
+	String get subtitleDriftPreview => 'Preview correction';
+
+	/// en: 'Preview active. Save to keep this correction, or cancel to restore the previous timing.'
+	String get subtitleDriftPreviewActive => 'Preview active. Save to keep this correction, or cancel to restore the previous timing.';
+
+	/// en: 'The player could not preview this correction. The previous timing was restored.'
+	String get subtitleDriftPreviewFailed => 'The player could not preview this correction. The previous timing was restored.';
+
+	/// en: 'Undo drift calibration'
+	String get subtitleDriftUndo => 'Undo drift calibration';
+
+	/// en: 'Subtitle cue 1 time'
+	String get subtitleCueTimeAnchor1 => 'Subtitle cue 1 time';
+
+	/// en: 'Playback position for cue 1'
+	String get subtitlePlaybackTimeAnchor1 => 'Playback position for cue 1';
+
+	/// en: 'Subtitle cue 2 time'
+	String get subtitleCueTimeAnchor2 => 'Subtitle cue 2 time';
+
+	/// en: 'Playback position for cue 2'
+	String get subtitlePlaybackTimeAnchor2 => 'Playback position for cue 2';
+
+	/// en: 'Use current playback time'
+	String get subtitleUsePlaybackTime => 'Use current playback time';
+
+	/// en: 'Choose increasing anchors at least 60 seconds apart. Corrections are limited to 80%–125% speed and ±60 seconds.'
+	String get subtitleDriftInvalidAnchors => 'Choose increasing anchors at least 60 seconds apart. Corrections are limited to 80%–125% speed and ±60 seconds.';
+
+	/// en: 'Subtitle cues'
+	String get subtitleCueTools => 'Subtitle cues';
+
+	/// en: 'Previous subtitle cue'
+	String get subtitlePreviousCue => 'Previous subtitle cue';
+
+	/// en: 'Next subtitle cue'
+	String get subtitleNextCue => 'Next subtitle cue';
+
+	/// en: 'Replay current cue'
+	String get subtitleReplayCue => 'Replay current cue';
+
+	/// en: 'Copy current cue'
+	String get subtitleCopyCue => 'Copy current cue';
+
+	/// en: 'Subtitle cue copied.'
+	String get subtitleCueCopied => 'Subtitle cue copied.';
+
+	/// en: 'No suitable subtitle cue is available.'
+	String get subtitleCueUnavailable => 'No suitable subtitle cue is available.';
+
+	/// en: 'Could not seek to that subtitle cue.'
+	String get subtitleCueSeekUnavailable => 'Could not seek to that subtitle cue.';
+
+	/// en: 'Replay preroll'
+	String get subtitleReplayPreroll => 'Replay preroll';
 }
 
 // Path: performanceOverlay
@@ -11941,6 +12025,9 @@ class Translations$hotkeys$actions$en {
 
 	/// en: 'Next Frame'
 	String get frameNext => 'Next Frame';
+
+	/// en: 'Reset Subtitle Timing'
+	String get subtitleDelayReset => 'Reset Subtitle Timing';
 }
 
 // Path: videoControls.pipErrors
@@ -14844,6 +14931,8 @@ extension on Translations {
 			'settings.prerollSelectionDescription' => 'Choose which clips from the selected library can play before movies.',
 			'settings.contentScreensaverDelayOptionDescription' => 'Wait this many minutes without input before showing screensaver artwork.',
 			'settings.videoCodecOptionDescription' => 'Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.',
+			'settings.subtitleOnMute' => 'Show subtitles when muted',
+			'settings.subtitleOnMuteDescription' => 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -14933,6 +15022,7 @@ extension on Translations {
 			'hotkeys.actions.screenshot' => 'Take Screenshot',
 			'hotkeys.actions.framePrevious' => 'Previous Frame',
 			'hotkeys.actions.frameNext' => 'Next Frame',
+			'hotkeys.actions.subtitleDelayReset' => 'Reset Subtitle Timing',
 			'fileInfo.title' => 'File Info',
 			'fileInfo.overview' => 'Overview',
 			'fileInfo.video' => 'Video',
@@ -15167,11 +15257,11 @@ extension on Translations {
 			'videoControls.playButton' => 'Play',
 			'videoControls.pauseButton' => 'Pause',
 			'videoControls.playbackPaused' => 'Paused',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.playbackResumed' => 'Playing',
 			'videoControls.loadingVideo' => 'Loading video',
 			'videoControls.showPlaybackControls' => 'Show playback controls',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
 			'videoControls.seekForwardButton' => ({required Object seconds}) => 'Seek forward ${seconds} seconds',
@@ -15681,11 +15771,11 @@ extension on Translations {
 			'accountPreferences.forcedSubtitleOptions.preferForcedDescription' => 'Prefer forced tracks when available, but allow regular subtitles as a fallback.',
 			'accountPreferences.forcedSubtitleOptions.onlyForcedDescription' => 'Use only tracks marked as forced.',
 			'accountPreferences.forcedSubtitleOptions.onlyNonForcedDescription' => 'Exclude tracks marked as forced.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.displayMissingEpisodes' => 'Show missing episodes',
 			'accountPreferences.displayMissingEpisodesDescription' => 'List episodes the server knows about but has no file for.',
 			'accountPreferences.hidePlayedInLatest' => 'Hide watched items in Latest',
-			_ => null,
-		} ?? switch (path) {
 			'accountPreferences.hidePlayedInLatestDescription' => 'Leave items you have already watched out of the server\'s Latest rows.',
 			'accountPreferences.displayCollectionsView' => 'Show the Collections view',
 			'accountPreferences.displayCollectionsViewDescription' => 'Offer the server\'s Collections view alongside your libraries.',
@@ -16195,11 +16285,11 @@ extension on Translations {
 			'explore.relation.other' => 'Related',
 			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
 			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.originalTitle' => 'Original title',
 			'explore.detail.alsoKnownAs' => 'Also known as',
 			'explore.detail.studios' => 'Studios',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.country' => 'Country',
 			'explore.detail.language' => 'Language',
 			'explore.detail.released' => 'Released',
@@ -16709,11 +16799,11 @@ extension on Translations {
 			'downloads.notificationComplete' => 'Download complete',
 			'downloads.notificationPaused' => 'Download paused',
 			'shaders.title' => 'Shaders',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
 			'shaders.lanczosUpscaling' => 'Lanczos upscaling',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.lanczosUpscalingDescription' => 'GPU resampling for video smaller than the display; unavailable with DRM or tunneled playback.',
 			'shaders.artcnnVariantNeutral' => 'Neutral',
 			'shaders.artcnnVariantDenoise' => 'Denoise',
@@ -16915,6 +17005,32 @@ extension on Translations {
 			'videoSettings.motionClarityCompareProcessingDescription' => 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.',
 			'videoSettings.motionClarityCompareFailed' => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.',
 			'videoSettings.motionClaritySaveFailed' => 'Couldn\'t save motion clarity settings.',
+			'videoSettings.subtitleExport' => 'Export synchronized subtitle',
+			'videoSettings.subtitleExportSuccess' => 'Synchronized subtitle saved.',
+			'videoSettings.subtitleExportFailed' => 'Could not export this subtitle file. The original remains unchanged.',
+			'videoSettings.subtitleExportClipped' => 'Some subtitle cues end before playback starts and will be removed from the exported file. Continue?',
+			'videoSettings.subtitleExportReplace' => 'A file with this name already exists. Replace it?',
+			'videoSettings.subtitleDriftCalibration' => 'Calibrate subtitle drift',
+			'videoSettings.subtitleDriftCalibrationHelp' => 'Match two subtitle cue times to the playback times when each cue should appear. Choose anchors at least 60 seconds apart.',
+			'videoSettings.subtitleDriftPreview' => 'Preview correction',
+			'videoSettings.subtitleDriftPreviewActive' => 'Preview active. Save to keep this correction, or cancel to restore the previous timing.',
+			'videoSettings.subtitleDriftPreviewFailed' => 'The player could not preview this correction. The previous timing was restored.',
+			'videoSettings.subtitleDriftUndo' => 'Undo drift calibration',
+			'videoSettings.subtitleCueTimeAnchor1' => 'Subtitle cue 1 time',
+			'videoSettings.subtitlePlaybackTimeAnchor1' => 'Playback position for cue 1',
+			'videoSettings.subtitleCueTimeAnchor2' => 'Subtitle cue 2 time',
+			'videoSettings.subtitlePlaybackTimeAnchor2' => 'Playback position for cue 2',
+			'videoSettings.subtitleUsePlaybackTime' => 'Use current playback time',
+			'videoSettings.subtitleDriftInvalidAnchors' => 'Choose increasing anchors at least 60 seconds apart. Corrections are limited to 80%–125% speed and ±60 seconds.',
+			'videoSettings.subtitleCueTools' => 'Subtitle cues',
+			'videoSettings.subtitlePreviousCue' => 'Previous subtitle cue',
+			'videoSettings.subtitleNextCue' => 'Next subtitle cue',
+			'videoSettings.subtitleReplayCue' => 'Replay current cue',
+			'videoSettings.subtitleCopyCue' => 'Copy current cue',
+			'videoSettings.subtitleCueCopied' => 'Subtitle cue copied.',
+			'videoSettings.subtitleCueUnavailable' => 'No suitable subtitle cue is available.',
+			'videoSettings.subtitleCueSeekUnavailable' => 'Could not seek to that subtitle cue.',
+			'videoSettings.subtitleReplayPreroll' => 'Replay preroll',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -17197,6 +17313,8 @@ extension on Translations {
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',
 			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.body' => 'Scan this QR code or open the URL on any device.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
 			'services.pendingAuth.copyUrl' => 'Copy sign-in URL',
@@ -17226,8 +17344,6 @@ extension on Translations {
 			'streaming.settingsLoadFailed' => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.',
 			'streaming.settingsUnreadable' => 'These saved connections can\'t be unlocked. Clear them to reconnect services.',
 			'streaming.clearUnreadableSettings' => 'Clear saved settings',
-			_ => null,
-		} ?? switch (path) {
 			'streaming.clearUnreadableSettingsConfirm' => 'Clear saved streaming settings?',
 			'streaming.clearUnreadableSettingsBody' => 'This removes every saved provider account and add-on address from this profile. It can\'t be undone.',
 			'streaming.clearUnreadableSettingsFailed' => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.',
@@ -17711,6 +17827,8 @@ extension on Translations {
 			'universalMedia.shareCopyUrl' => 'Copy stream address',
 			'universalMedia.shareExpiresLabel' => 'Link expires at',
 			'universalMedia.shareStarting' => 'Preparing the stream…',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareStart' => 'Start sharing',
 			'universalMedia.shareStop' => 'Stop sharing',
 			'universalMedia.extensionsMode' => 'Extensions and CLI',
@@ -17740,8 +17858,6 @@ extension on Translations {
 			'universalMedia.cliTitle' => 'Command line',
 			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
 			'universalMedia.cliCopyExample' => 'Copy command example',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.cliCopied' => 'Command example copied.',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
@@ -18225,6 +18341,8 @@ extension on Translations {
 			'games.steamBetaDescription' => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
+			_ => null,
+		} ?? switch (path) {
 			'games.refreshSteamAccount' => 'Refresh Steam account',
 			'games.unlinkSteamAccount' => 'Unlink Steam account',
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
@@ -18254,8 +18372,6 @@ extension on Translations {
 			'games.inventoryConfirm' => ({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.',
 			'games.inventoryImported' => 'Installed games updated.',
 			'games.inventoryChecked' => ({required Object date}) => 'Last checked ${date}',
-			_ => null,
-		} ?? switch (path) {
 			'games.shareLibrary' => 'Share installed Steam games',
 			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
 			'games.steamInstallFolder' => 'Steam installation folder',

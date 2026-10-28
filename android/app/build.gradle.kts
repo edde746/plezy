@@ -765,7 +765,7 @@ android {
   namespace = "com.edde746.plezy"
   // permission_handler_android uses Android 17 API constants.
   compileSdk = 37
-  buildToolsVersion = "37.0.0"
+  buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
 
   // Android Automotive OS driver-distraction state (CarUxRestrictionsManager). This is a platform

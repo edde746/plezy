@@ -723,7 +723,9 @@
     "prerollLibraryDescription": "Choose the library that contains the clips available as movie pre-rolls.",
     "prerollSelectionDescription": "Choose which clips from the selected library can play before movies.",
     "contentScreensaverDelayOptionDescription": "Wait this many minutes without input before showing screensaver artwork.",
-    "videoCodecOptionDescription": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server."
+    "videoCodecOptionDescription": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.",
+    "subtitleOnMute": "Show subtitles when muted",
+    "subtitleOnMuteDescription": "Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track."
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -823,7 +825,8 @@
       "skipMarker": "Skip Intro/Credits",
       "screenshot": "Take Screenshot",
       "framePrevious": "Previous Frame",
-      "frameNext": "Next Frame"
+      "frameNext": "Next Frame",
+      "subtitleDelayReset": "Reset Subtitle Timing"
     }
   },
   "fileInfo": {
@@ -3004,7 +3007,33 @@
     "motionClarityReturnToProcessing": "Return to motion processing",
     "motionClarityCompareProcessingDescription": "Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.",
     "motionClarityCompareFailed": "The renderer couldn't switch comparison mode. Playback settings were left as they are.",
-    "motionClaritySaveFailed": "Couldn't save motion clarity settings."
+    "motionClaritySaveFailed": "Couldn't save motion clarity settings.",
+    "subtitleExport": "Export synchronized subtitle",
+    "subtitleExportSuccess": "Synchronized subtitle saved.",
+    "subtitleExportFailed": "Could not export this subtitle file. The original remains unchanged.",
+    "subtitleExportClipped": "Some subtitle cues end before playback starts and will be removed from the exported file. Continue?",
+    "subtitleExportReplace": "A file with this name already exists. Replace it?",
+    "subtitleDriftCalibration": "Calibrate subtitle drift",
+    "subtitleDriftCalibrationHelp": "Match two subtitle cue times to the playback times when each cue should appear. Choose anchors at least 60 seconds apart.",
+    "subtitleDriftPreview": "Preview correction",
+    "subtitleDriftPreviewActive": "Preview active. Save to keep this correction, or cancel to restore the previous timing.",
+    "subtitleDriftPreviewFailed": "The player could not preview this correction. The previous timing was restored.",
+    "subtitleDriftUndo": "Undo drift calibration",
+    "subtitleCueTimeAnchor1": "Subtitle cue 1 time",
+    "subtitlePlaybackTimeAnchor1": "Playback position for cue 1",
+    "subtitleCueTimeAnchor2": "Subtitle cue 2 time",
+    "subtitlePlaybackTimeAnchor2": "Playback position for cue 2",
+    "subtitleUsePlaybackTime": "Use current playback time",
+    "subtitleDriftInvalidAnchors": "Choose increasing anchors at least 60 seconds apart. Corrections are limited to 80%–125% speed and ±60 seconds.",
+    "subtitleCueTools": "Subtitle cues",
+    "subtitlePreviousCue": "Previous subtitle cue",
+    "subtitleNextCue": "Next subtitle cue",
+    "subtitleReplayCue": "Replay current cue",
+    "subtitleCopyCue": "Copy current cue",
+    "subtitleCueCopied": "Subtitle cue copied.",
+    "subtitleCueUnavailable": "No suitable subtitle cue is available.",
+    "subtitleCueSeekUnavailable": "Could not seek to that subtitle cue.",
+    "subtitleReplayPreroll": "Replay preroll"
   },
   "performanceOverlay": {
     "color": "Color",

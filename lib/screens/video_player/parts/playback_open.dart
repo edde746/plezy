@@ -182,27 +182,40 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     final localLanguage = settings.read(SettingsService.subtitleSearchLanguage);
     final appLanguage = settings.read(SettingsService.appLocale).languageCode;
-    final language =
-        LanguageCodes.getIso6391Code(profileSettings?.defaultSubtitleLanguage ?? '') ??
-        LanguageCodes.getIso6391Code(localLanguage ?? '') ??
-        LanguageCodes.getIso6391Code(appLanguage);
-    if (language == null) return (result: result, streamId: null);
-
-    bool matchesLanguage(String? code, String? name) {
-      return LanguageCodes.getIso6391Code(code ?? name ?? '') == language ||
-          LanguageCodes.getIso6391Code(name ?? '') == language;
+    final orderedLanguages = <String>[];
+    void addLanguage(String? raw) {
+      final normalized = LanguageCodes.getIso6391Code(raw ?? '');
+      if (normalized != null && !orderedLanguages.contains(normalized)) orderedLanguages.add(normalized);
     }
 
-    final existingPreferredTrack = source.subtitleTracks
-        .where((track) => matchesLanguage(track.languageCode, track.language))
-        .firstOrNull;
-    if (existingPreferredTrack != null) {
-      return (result: result, streamId: existingPreferredTrack.id);
+    addLanguage(profileSettings?.defaultSubtitleLanguage);
+    for (final preferred in settings.read(SettingsService.subtitleLanguageOrder)) {
+      addLanguage(preferred);
+    }
+    addLanguage(localLanguage);
+    addLanguage(appLanguage);
+    if (orderedLanguages.isEmpty) return (result: result, streamId: null);
+    final language = orderedLanguages.first;
+
+    bool matchesLanguageFor(String preferred, String? code, String? name) {
+      return LanguageCodes.getIso6391Code(code ?? name ?? '') == preferred ||
+          LanguageCodes.getIso6391Code(name ?? '') == preferred;
+    }
+
+
+    for (final preferred in orderedLanguages) {
+      final existingPreferredTrack = source.subtitleTracks
+          .where((track) => matchesLanguageFor(preferred, track.languageCode, track.language))
+          .firstOrNull;
+      if (existingPreferredTrack != null) {
+        return (result: result, streamId: existingPreferredTrack.id);
+      }
     }
 
     final client = context.tryGetMediaClientForServer(serverIdOrNull(metadata.serverId));
     if (client == null) return (result: result, streamId: null);
-    final attemptKey = '${metadata.globalKey}:${source.mediaSourceId ?? result.selectedMediaIndex}:$language';
+    final languagesToSearch = orderedLanguages.take(3).toList(growable: false);
+    final attemptKey = '${metadata.globalKey}:${source.mediaSourceId ?? result.selectedMediaIndex}:${languagesToSearch.join(',')}';
     if (!_autoSubtitleFetchAttempts.add(attemptKey)) return (result: result, streamId: null);
 
     final activePlayer = player;
@@ -210,41 +223,71 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     bool isCurrent() => mounted && !_shuttingDown && player == activePlayer && _transitionGate.generation == generation;
 
     try {
-      final results = await client
-          .searchSubtitles(
-            metadata.id,
-            language: language,
-            title: metadata.title,
-            mediaIndex: result.selectedMediaIndex,
-            mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
-          )
-          .timeout(const Duration(seconds: 8));
+      final searchBatches = await Future.wait<List<SubtitleSearchResult>>(
+        languagesToSearch.map((searchLanguage) async {
+          try {
+            return await client
+                .searchSubtitles(
+                  metadata.id,
+                  language: searchLanguage,
+                  title: metadata.title,
+                  mediaIndex: result.selectedMediaIndex,
+                  mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+                )
+                .timeout(const Duration(seconds: 8));
+          } catch (error) {
+            appLogger.d('Automatic subtitle search failed for $searchLanguage', error: error);
+            return const <SubtitleSearchResult>[];
+          }
+        }),
+      );
       if (!isCurrent()) return (result: result, streamId: null);
 
-      final candidates = results
-          .where((candidate) => candidate.key.isNotEmpty && matchesLanguage(candidate.languageCode, candidate.language))
-          .toList();
-      candidates.sort((a, b) {
-        final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
-        if (perfect != 0) return perfect;
-        final forced = (a.forced ? 1 : 0).compareTo(b.forced ? 1 : 0);
-        if (forced != 0) return forced;
-        final hearingImpaired = (a.hearingImpaired ? 1 : 0).compareTo(b.hearingImpaired ? 1 : 0);
-        if (hearingImpaired != 0) return hearingImpaired;
-        return (b.score ?? -1).compareTo(a.score ?? -1);
-      });
-      final candidate = candidates.firstOrNull;
-      if (candidate == null) return (result: result, streamId: null);
+      SubtitleSearchResult? candidate;
+      var candidateLanguage = language;
+      for (var languageIndex = 0; languageIndex < searchBatches.length; languageIndex++) {
+        final searchLanguage = languagesToSearch[languageIndex];
+        final candidates = searchBatches[languageIndex]
+            .where(
+              (candidate) =>
+                  candidate.key.isNotEmpty &&
+                  matchesLanguageFor(searchLanguage, candidate.languageCode, candidate.language) &&
+                  !SubtitleRejectionService.isRejected(
+                    settings,
+                    serverId: metadata.serverId!,
+                    itemId: metadata.id,
+                    mediaIndex: result.selectedMediaIndex,
+                    result: candidate,
+                  ),
+            )
+            .toList();
+        candidates.sort((a, b) {
+          final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
+          if (perfect != 0) return perfect;
+          final forced = (a.forced ? 1 : 0).compareTo(b.forced ? 1 : 0);
+          if (forced != 0) return forced;
+          final hearingImpaired = (a.hearingImpaired ? 1 : 0).compareTo(b.hearingImpaired ? 1 : 0);
+          if (hearingImpaired != 0) return hearingImpaired;
+          return (b.score ?? -1).compareTo(a.score ?? -1);
+        });
+        final bestForLanguage = candidates.firstOrNull;
+        if (bestForLanguage == null) continue;
+        candidate = bestForLanguage;
+        candidateLanguage = searchLanguage;
+        break;
+      }
+      final chosenCandidate = candidate;
+      if (chosenCandidate == null) return (result: result, streamId: null);
 
       final downloaded = await client
           .downloadSubtitle(
             metadata.id,
-            key: candidate.key,
-            codec: candidate.codec,
-            language: candidate.languageCode ?? language,
-            hearingImpaired: candidate.hearingImpaired,
-            forced: candidate.forced,
-            providerTitle: candidate.providerTitle,
+            key: chosenCandidate.key,
+            codec: chosenCandidate.codec,
+            language: chosenCandidate.languageCode ?? candidateLanguage,
+            hearingImpaired: chosenCandidate.hearingImpaired,
+            forced: chosenCandidate.forced,
+            providerTitle: chosenCandidate.providerTitle,
             mediaIndex: result.selectedMediaIndex,
             mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
           )
@@ -276,7 +319,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
             .where(
               (track) =>
                   !originalIds.contains(track.id) &&
-                  matchesLanguage(track.languageCode, track.language) &&
+                  matchesLanguageFor(candidateLanguage, track.languageCode, track.language) &&
                   track.isExternal,
             )
             .firstOrNull;
@@ -1470,6 +1513,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     _trackManager = trackManager;
 
     trackManager.applyTrackSelectionWhenReady();
+    final volumeController = _volumeController;
+    if (volumeController != null && volumeController.value <= 0) {
+      _handleSubtitleMuteVolume(volumeController.value);
+    }
     if (staleGuard != null && !staleGuard()) return false;
 
     await _releaseFrameRateStartupGate(

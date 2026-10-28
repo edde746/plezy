@@ -941,6 +941,23 @@ abstract class MediaServerClient {
     String? mediaSourceId,
   });
 
+  /// Attach a validated text subtitle to the library item.
+  ///
+  /// Plex, Jellyfin, and Emby may persist the uploaded asset and refresh their
+  /// subtitle catalog. The server's account permissions determine whether the
+  /// operation is accepted. Backends that do not implement upload return false.
+  Future<bool> attachSubtitle(
+    String ratingKey, {
+    required List<int> bytes,
+    required String fileName,
+    required String format,
+    required String language,
+    bool hearingImpaired = false,
+    bool forced = false,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async => false;
+
   /// Consume a backend-reported source subtitle stream id for a subtitle that
   /// was just downloaded for [ratingKey].
   ///

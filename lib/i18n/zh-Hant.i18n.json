@@ -4258,12 +4258,7 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": "",
-    "streamAudio": "",
-    "streamAudioHelp": "",
-    "audioStereo": "",
-    "audioQuad": "",
-    "audioSurround51": ""
+    "allowHostInstallHelp": ""
   },
   "deepLinks": {
     "invalid": "此 Plezy 連結不有效。",

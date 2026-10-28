@@ -165,7 +165,7 @@ abstract class PlayerBase
   /// destination cannot be read back, and then to [publishPlayheadRelocation]
   /// when there is a destination to report.
   @protected
-  int beginPlayheadRelocation() => ++_playheadOperations;
+  int beginPlayheadRelocation() => _playheadOperations;
 
   /// Record that a claimed relocation actually moved the playhead, even though
   /// its destination could not be read back.
@@ -236,7 +236,7 @@ abstract class PlayerBase
   /// to leave a hung predecessor's release chained forever (the permanent
   /// "Playback could not be started" wedge).
   static int _nativeInstanceCounter = 0;
-  final int nativeInstanceId = ++_nativeInstanceCounter;
+  final int nativeInstanceId = _nativeInstanceCounter;
 
   static const _maximumDurationMilliseconds = 9223372036854775;
 
@@ -429,7 +429,7 @@ abstract class PlayerBase
           // any more — whatever the value happens to be.
           _lastPositionWriter = _backendReportedWriter;
           _lastReportedPositionMs = positionMs;
-          // Only allocate PlayerState + emit at ~4Hz (250ms). The raw integer
+          // Only allocate PlayerState   emit at ~4Hz (250ms). The raw integer
           // remains current for synchronous position reads on every tick.
           final nowMs = _throttleSw.elapsedMilliseconds;
           if (nowMs - _lastEmitMs >= 250) {
@@ -1094,7 +1094,7 @@ abstract class PlayerBase
       _deferredRelocation = (token: token, position: position);
       return;
     }
-    final writer = token ?? ++_playheadOperations;
+    final writer = token ?? _playheadOperations;
     _takeOperationOwnership(writer);
     _lastPositionWriter = writer;
     _activeSeekGroup = null;
@@ -1196,7 +1196,7 @@ abstract class PlayerBase
     _outgoingSourcePosition = Duration(milliseconds: _frozenOutgoingPositionMs ?? _lastReportedPositionMs);
     _frozenOutgoingPositionMs = null;
     _lastReportedPositionMs = 0;
-    _takeOperationOwnership(++_playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _activeSeekGroup = null;
     // A gapless advance starts the new source at its beginning, which is known
     // rather than guessed. Published unconditionally: the alternative is to
@@ -1274,7 +1274,7 @@ abstract class PlayerBase
       bufferRanges: const [],
       hasRenderedFrame: false,
     );
-    _takeOperationOwnership(++_playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _lastPositionWriter = _playheadOperations;
     _activeSeekGroup = null;
     completedController.add(false);
@@ -1316,7 +1316,7 @@ abstract class PlayerBase
       bufferRanges: snapshot.bufferRanges,
       hasRenderedFrame: snapshot.hasRenderedFrame,
     );
-    _takeOperationOwnership(++_playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _lastPositionWriter = _playheadOperations;
     _activeSeekGroup = null;
     completedController.add(snapshot.completed);
@@ -1434,6 +1434,15 @@ abstract class PlayerBase
   bool get supportsSecondarySubtitles => true;
 
   @override
+  Set<String> get supportedLocalSubtitleExtensions => const <String>{};
+
+  @override
+  bool get supportsSubtitleStyleControls => false;
+
+  @override
+  bool get supportsSubtitleStepSync => false;
+
+  @override
   bool get detectsFpsAfterRender => false;
 
   @override
@@ -1470,7 +1479,7 @@ abstract class PlayerBase
   static const String _androidNormalizationFilter =
       'acompressor=threshold=-34dB:ratio=4:knee=6dB:attack=30:release=300:makeup=15dB:link=maximum,'
       'alimiter=limit=-3dB:attack=1:release=60:level=false';
-  static const String _spectrumAnalysisFilter = '@plezy_spectrum:lavfi=[aspectralstats=measure=centroid+flatness]';
+  static const String _spectrumAnalysisFilter = '@plezy_spectrum:lavfi=[aspectralstats=measure=centroid flatness]';
 
   static const List<int> _audioEqualizerFrequencies = [60, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000];
   List<double> _audioEqualizerBandGains = List<double>.filled(_audioEqualizerFrequencies.length, 0);
@@ -1591,7 +1600,7 @@ abstract class PlayerBase
       await setProperty('audio-normalize-downmix', 'no');
       return;
     }
-    // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
+    // Kodi's mechanism: center coefficient = 10^((-3   boost)/20); the
     // surround (-3 dB) and LFE (dropped) swresample defaults already match.
     // Only a stereo fold mixes the center away, so only it takes the boost.
     final centerMixLevel = limit == AudioChannelLimit.stereo
@@ -1647,7 +1656,7 @@ abstract class PlayerBase
   Future<void> runSeek(Duration position, Future<void> Function() seekFn) async {
     if (_disposed) return;
 
-    final request = ++_playheadOperations;
+    final request = _playheadOperations;
     // Measures how much media time playback could legitimately have covered
     // while the command was in flight; a fixed media-time window cannot tell a
     // fast-rate advance from a stale pre-seek tick.
@@ -1766,7 +1775,7 @@ abstract class PlayerBase
     }
   }
 
-  /// Injects the log + error events that would fire when the server rejects the
+  /// Injects the log   error events that would fire when the server rejects the
   /// stream with [status]. Used by the in-player debug buttons to preview the
   /// end-to-end detection path without needing a real misbehaving server: 403
   /// is a refusal of this account or connection, 500 a shared-user

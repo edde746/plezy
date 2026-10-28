@@ -22,13 +22,60 @@
 - Add opt-in Apple Metal Pyrowave source integration with direct GPU conversion, bounded 4:2:0/4:4:4 SDR textures, observed-chroma diagnostics and conventional-codec fallback; retain explicit HDR rejection pending a qualified HDR surface.
 - Route normal Linux and Apple Steam launches into the retained workspace receiver as well as supporting the window action.
 
-- Add Apple Steam receiver source and Xcode integration using VideoToolbox pixel-buffer textures, Keychain pairing, bounded multichannel Core Audio and acknowledged teardown; add a real H.264 decoder test for Apple runners. SDK builds and device playback remain qualification gates.
+- Add Apple Steam receiver source and Xcode integration using VideoToolbox pixel-buffer textures, Keychain pairing, bounded multichannel Core Audio and acknowledged teardown. SDK builds and device playback remain qualification gates.
 - Route desktop/Apple Steam pointer, scroll and full keyboard input through workspace ownership; release held controls on focus changes and provide Shift+Escape to return to workspace menus.
 
 - Add capability-negotiated Steam Input and game-properties actions on paired computers, plus confirmed Cloud files and Families destinations in the existing adaptive Steam menu.
 
 - Add an embedded Linux Steam receiver with OS-keyring pairing, dedicated H.264/HEVC and PCM decoding, retained Flutter textures, controller seats, connection details and acknowledged reconnect; bundle its fixed GStreamer plugins with Linux releases.
 
+- Export Whisper token timestamps as cue-linked word/token timing records in reviewed subtitle JSON; unsupported accelerators clearly return cue timing without word records.
+
+- Import bounded gzip-compressed TAR subtitle archives (`.tar.gz` and `.tgz`) through the picker, desktop drop, and Android share flows.
+
+- Browse captured Android ExoPlayer transcripts with search, cue-level seeking, and an optional hide-future-dialogue filter.
+
+- Save reviewed subtitle results as standalone SRT or versioned cue JSON files without attaching them to playback or modifying the source.
+
+- Show SDH/closed-caption role markers in playback track labels and identify AI-generated, translated, and synchronized local tracks.
+
+- Explain when burned-in captions remain part of the video image and when the active player cannot receive generated SRT subtitles.
+
+- Automatic preferred subtitle downloads now check the first three ordered languages concurrently and use the highest-priority language with an eligible provider result.
+
+- Show language/script, format, provider, and forced/SDH metadata in server and standalone subtitle search results.
+
+- Remember rejected server and standalone subtitle revisions for 180 days; hide or restore them in search and skip rejected server results during automatic preferred-language downloads.
+
+- Add opt-in subtitle-on-mute for library playback, retrying after the native track catalog arrives and restoring a temporary Off override on unmute unless the viewer changes tracks or the item changes.
+- Extend opt-in subtitle-on-mute to standalone source video playback with guarded restoration of the prior track on unmute.
+- Add a configurable shortcut to reset subtitle timing to zero through the selected persistence scope and show the applied value.
+
+- Carry selected SDH/closed-caption subtitle intent across library episode changes and saved show preferences, infer the role from older title-only preferences, and preserve the existing server fallback when the matching caption class is unavailable.
+
+- Read BOM-marked UTF-16LE/BE subtitle text for cue inspection and corrected export while preserving source encoding and line endings.
+
+- Add current subtitle cue copy, previous/next cue navigation, and replay with an adjustable preroll for persistent standalone MPV text subtitles.
+
+- Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
+- Fix the macOS native reliability target to import the `PlezyNG` app module.
+- Require Android host native-test tools to be provisioned on the private runner before CI starts.
+
+- Add an MPV subtitle-drift preview that applies calibration temporarily and restores prior timing on cancel; saving commits the read-back values.
+- Add one-step undo for the most recent applied MPV subtitle drift calibration or reset, including its prior scoped rate and delay.
+- Retain downloaded OpenSubtitles text subtitles for standalone MPV VOD, bound to profile, source item, edition and file fingerprint; verify content hashes when restoring and enforce per-file asset limits. Preserve session-only cleanup for transient and live playback.
+- Roll back native sync timing when saving an offset fails, keeping player state, confirmation state and persisted settings consistent.
+- Export affine-corrected SRT/WebVTT and simple ASS/SSA copies for standalone MPV VOD subtitles; preserve source metadata and cue payload, confirm before removing cues wholly before playback starts, and refuse ASS/SSA karaoke/animation or Effect timing the exporter cannot safely preserve.
+- Align a selected SRT/WebVTT cue to the current standalone MPV playback position and persist the one-anchor correction for the active subtitle and audio stream.
+- Preview actual cue times and text before applying direct OpenSubtitles SRT, WebVTT, ASS, and SSA downloads on standalone file playback.
+- Add subtitle sync controls to standalone MPV VOD OpenSubtitles assets. Persist delay and drift rate by the current audio descriptor, reapply only matching audio calibration after a track switch, and restore corrections only when edition, source file, and subtitle digest still match.
+- Search OpenSubtitles by moviehash when a local or cached file is available and its byte size matches the source record; rank reported hash matches ahead of title-only results.
+- Add bounded two-anchor subtitle drift calibration for MPV text tracks. Capture matching playback positions, fit one timestamp multiplier plus delay, persist both in the existing scope, and exclude unsupported players and known bitmap subtitle codecs.
+- Add exact millisecond audio/subtitle sync entry and backend-aware local subtitle import: MPV keeps its existing formats, Android ExoPlayer accepts SRT/ASS/SSA/VTT on VOD, and Tizen/webOS add SRT/VTT overlays.
+- Add a separately persisted sync offset for MPV's secondary subtitle track, using the existing scoped timing controls.
+- Import backend-supported subtitle files from bounded ZIP or plain TAR archives; validate safe entry paths, reject links and unsupported TAR extensions, and materialize only the selected subtitle or paired IDX/SUB files into a temporary app cache.
+- Add previous/next subtitle cue alignment on MPV, persisting the player-reported offset through the existing scoped controls.
+- Expand in-player subtitle readability controls with text color, weight, outline, and background adjustments on MPV and ExoPlayer; hide the style action on unsupported backends. Add a one-tap reset to stored style defaults.
 - Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.
 - Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
 - Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.

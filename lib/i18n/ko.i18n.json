@@ -4258,12 +4258,7 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": "",
-    "streamAudio": "",
-    "streamAudioHelp": "",
-    "audioStereo": "",
-    "audioQuad": "",
-    "audioSurround51": ""
+    "allowHostInstallHelp": ""
   },
   "deepLinks": {
     "invalid": "이 Plezy 링크는 유효하지 않습니다.",

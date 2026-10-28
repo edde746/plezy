@@ -4363,12 +4363,7 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": "",
-    "streamAudio": "",
-    "streamAudioHelp": "",
-    "audioStereo": "",
-    "audioQuad": "",
-    "audioSurround51": ""
+    "allowHostInstallHelp": ""
   },
   "deepLinks": {
     "invalid": "هذا الرابط Plezy غير صالح.",

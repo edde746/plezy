@@ -21,13 +21,15 @@ import '../../multiview/source_playback_workspace_surface.dart';
 import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
 import '../../utils/formatters.dart';
+import '../../utils/app_logger.dart';
 import '../../services/open_subtitles_client.dart';
+import '../../services/player_sync_offsets.dart';
+import '../../services/subtitle_retimer.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -47,6 +49,7 @@ import 'standalone_subtitle_search_sheet.dart';
 import 'source_queue_sheet.dart';
 import 'source_widgets.dart';
 import '../../widgets/video_controls/sheets/picture_adjustments_sheet.dart';
+import '../../widgets/video_controls/widgets/sync_offset_control.dart';
 
 class SourcePlayerScreen extends StatefulWidget {
   const SourcePlayerScreen({super.key});
@@ -472,7 +475,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       password: credentials['openSubtitlesPassword'],
     );
     try {
-      if (!mounted) return;
+      final fingerprint = await s.currentOpenSubtitlesFingerprint();
+      if (!mounted || s.entry?.key != entry.key) return;
       await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
@@ -483,11 +487,494 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           imdbId: entry.identifiers['imdb'],
           tmdbId: entry.identifiers['tmdb'],
           year: entry.releaseYear,
-          onApply: (download) => s.applyExternalSubtitle(name: download.fileName, bytes: download.bytes),
+          movieHash: fingerprint?.movieHash,
+          onApply: (download) => s.applyExternalSubtitle(
+            name: download.fileName,
+            bytes: download.bytes,
+            languageCode: download.languageCode,
+            forced: download.forced,
+            hearingImpaired: download.hearingImpaired,
+          ),
         ),
       );
     } finally {
       client.close();
+    }
+  }
+
+  Future<void> _openExternalSubtitleSync(SourcePlayback playback) async {
+    final targetPlayer = playback.player;
+    if (targetPlayer == null || !playback.hasSelectedPersistentExternalSubtitle) return;
+    final initial = await playback.activeExternalSubtitleSync();
+    if (!mounted || playback.player != targetPlayer || initial == null) return;
+    final identity = playback.activeExternalSubtitleIdentity;
+    if (identity == null) return;
+    var replayPrerollMs = 500;
+    Future<List<SubtitleCue>>? cueCache;
+    Future<List<SubtitleCue>> loadSubtitleCues() {
+      return cueCache ??= (() async {
+        final file = playback.activePersistentExternalSubtitleFile;
+        if (file == null || playback.activeExternalSubtitleIdentity != identity) {
+          return const <SubtitleCue>[];
+        }
+        final size = await file.length();
+        if (size == 0 || size > SubtitleRetimer.maximumInputBytes) {
+          throw const FormatException('Subtitle is empty or exceeds the cue-inspection size limit.');
+        }
+        final bytes = await file.readAsBytes();
+        if (bytes.length > SubtitleRetimer.maximumInputBytes) {
+          throw const FormatException('Subtitle exceeds the cue-inspection size limit.');
+        }
+        if (!mounted || playback.player != targetPlayer || playback.activeExternalSubtitleIdentity != identity) {
+          return const <SubtitleCue>[];
+        }
+        final cues = SubtitleRetimer.parseCues(sourceBytes: bytes, extension: p.extension(file.path).toLowerCase())
+          ..sort((a, b) => a.startMs.compareTo(b.startMs));
+        return cues;
+      })();
+    }
+
+    var closeScheduled = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => AnimatedBuilder(
+        animation: playback,
+        builder: (context, _) {
+          if (playback.activeExternalSubtitleIdentity != identity && !closeScheduled) {
+            closeScheduled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (sheetContext.mounted) Navigator.of(sheetContext).maybePop();
+            });
+          }
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(t.videoSettings.subtitleSync, style: Theme.of(sheetContext).textTheme.titleMedium),
+                      ),
+                      IconButton(
+                        tooltip: t.common.close,
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const AppIcon(Symbols.close_rounded),
+                      ),
+                    ],
+                  ),
+                  SyncOffsetControl(
+                    player: targetPlayer,
+                    propertyName: PlayerSyncOffsets.subtitleProperty,
+                    contentIdentity: identity,
+                    initialOffset: initial.delayMs,
+                    initialSubtitleRate: initial.rate,
+                    onOffsetChanged: (offset) {
+                      if (playback.activeExternalSubtitleIdentity != identity) {
+                        throw const SourceException(SourceFailure.cancelled);
+                      }
+                      return playback.persistExternalSubtitleSync(delayMs: offset);
+                    },
+                    onSubtitleRateChanged: (rate) {
+                      if (playback.activeExternalSubtitleIdentity != identity) {
+                        throw const SourceException(SourceFailure.cancelled);
+                      }
+                      return playback.persistExternalSubtitleSync(rate: rate);
+                    },
+                  ),
+                  if (playback.canExportActiveExternalSubtitle)
+                    TextButton.icon(
+                      onPressed: () => sourceAction(
+                        context,
+                        () => _alignExternalSubtitleCueNow(playback, targetPlayer, identity, sheetContext),
+                      ),
+                      icon: const AppIcon(Symbols.vertical_align_bottom_rounded),
+                      label: Text(t.videoSettings.subtitleUsePlaybackTime),
+                    ),
+
+                  if (playback.canExportActiveExternalSubtitle)
+                    StatefulBuilder(
+                      builder: (context, setCueToolState) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              t['videoSettings.subtitleCueTools'] as String,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(child: Text(t['videoSettings.subtitleReplayPreroll'] as String)),
+                              Text('$replayPrerollMs ms'),
+                            ],
+                          ),
+                          Slider(
+                            value: replayPrerollMs.toDouble(),
+                            min: 0,
+                            max: 2500,
+                            divisions: 10,
+                            label: '$replayPrerollMs ms',
+                            onChanged: (value) {
+                              setCueToolState(() => replayPrerollMs = value.round());
+                            },
+                          ),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              IconButton(
+                                tooltip: t['videoSettings.subtitlePreviousCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs < now - 100) {
+                                            target = cue;
+                                          } else {
+                                            break;
+                                          }
+                                        }
+                                        if (target == null) {
+                                          showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                          return;
+                                        }
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.skip_previous_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleCopyCue'] as String,
+                                onPressed: () => sourceAction(context, () async {
+                                  final cues = await loadSubtitleCues();
+                                  final sync = await playback.activeExternalSubtitleSync();
+                                  if (!mounted ||
+                                      playback.player != targetPlayer ||
+                                      playback.activeExternalSubtitleIdentity != identity ||
+                                      sync == null) {
+                                    return;
+                                  }
+                                  final now = playback.currentFilePositionMs;
+                                  final active = cues.where((cue) {
+                                    final start = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                    final end = (cue.endMs * sync.rate).round() + sync.delayMs;
+                                    return start <= now && now < end;
+                                  });
+                                  final text = active
+                                      .map((cue) => _plainSubtitleCueText(cue.text))
+                                      .where((value) => value.isNotEmpty)
+                                      .join('\n');
+                                  if (text.isEmpty) {
+                                    showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                    return;
+                                  }
+                                  await Clipboard.setData(ClipboardData(text: text));
+                                  if (mounted && playback.activeExternalSubtitleIdentity == identity) {
+                                    showSnackBar(
+                                      context,
+                                      t['videoSettings.subtitleCueCopied'] as String,
+                                      type: SnackBarType.success,
+                                    );
+                                  }
+                                }),
+                                icon: const AppIcon(Symbols.content_copy_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleNextCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs > now + 100) {
+                                            target = cue;
+                                            break;
+                                          }
+                                        }
+                                        if (target == null) {
+                                          showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                          return;
+                                        }
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.skip_next_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleReplayCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null ||
+                                            cues.isEmpty) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs <= now) {
+                                            target = cue;
+                                          } else {
+                                            break;
+                                          }
+                                        }
+                                        target ??= cues.first;
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                          prerollMs: replayPrerollMs,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.replay_rounded),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _seekExternalSubtitleCue(
+    SourcePlayback playback,
+    Player targetPlayer,
+    String identity,
+    SubtitleCue cue,
+    int delayMs,
+    double rate, {
+    int prerollMs = 0,
+  }) async {
+    if (!mounted || playback.player != targetPlayer || playback.activeExternalSubtitleIdentity != identity) return;
+    try {
+      final sought = await playback.seekExternalSubtitleCue(
+        expectedIdentity: identity,
+        cueStartMs: cue.startMs,
+        delayMs: delayMs,
+        rate: rate,
+        prerollMs: prerollMs,
+      );
+      if (!sought && mounted && playback.activeExternalSubtitleIdentity == identity) {
+        showSnackBar(context, t['videoSettings.subtitleCueSeekUnavailable'] as String);
+      }
+    } on Object catch (error, stackTrace) {
+      appLogger.w('Could not seek to a subtitle cue', error: error, stackTrace: stackTrace);
+      if (mounted && playback.activeExternalSubtitleIdentity == identity) {
+        showErrorSnackBar(context, t.common.error);
+      }
+    }
+  }
+
+  Future<void> _alignExternalSubtitleCueNow(
+    SourcePlayback playback,
+    Player targetPlayer,
+    String identity,
+    BuildContext syncSheetContext,
+  ) async {
+    final file = playback.activePersistentExternalSubtitleFile;
+    if (file == null || !playback.canExportActiveExternalSubtitle) return;
+
+    try {
+      final size = await file.length();
+      if (size == 0 || size > SubtitleRetimer.maximumInputBytes) {
+        throw const FormatException('Subtitle is empty or exceeds the cue-inspection size limit.');
+      }
+      final bytes = await file.readAsBytes();
+      final extension = p.extension(file.path).toLowerCase();
+      final cues = SubtitleRetimer.parseCues(sourceBytes: bytes, extension: extension);
+      final initialSync = await playback.activeExternalSubtitleSync();
+      if (!mounted ||
+          playback.player != targetPlayer ||
+          playback.activeExternalSubtitleIdentity != identity ||
+          initialSync == null) {
+        return;
+      }
+
+      final selection = await showModalBottomSheet<({SubtitleCue cue, int playbackPositionMs})>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => _SubtitleCuePickerSheet(
+          cues: cues,
+          playback: playback,
+          initialPlaybackPositionMs: playback.currentFilePositionMs,
+          initialDelayMs: initialSync.delayMs,
+          initialRate: initialSync.rate,
+        ),
+      );
+      if (selection == null ||
+          !mounted ||
+          playback.player != targetPlayer ||
+          playback.activeExternalSubtitleIdentity != identity) {
+        return;
+      }
+
+      await playback.alignExternalSubtitleCueNow(
+        expectedIdentity: identity,
+        cueStartMs: selection.cue.startMs,
+        playbackPositionMs: selection.playbackPositionMs,
+      );
+      if (syncSheetContext.mounted) Navigator.of(syncSheetContext).pop();
+    } on Object catch (error, stackTrace) {
+      appLogger.w('Could not align subtitle cue to playback', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.common.error);
+    }
+  }
+
+  Future<void> _exportSynchronizedSubtitle(SourcePlayback playback) async {
+    final sourceFile = playback.activePersistentExternalSubtitleFile;
+    final targetPlayer = playback.player;
+    if (sourceFile == null || targetPlayer == null || !playback.canExportActiveExternalSubtitle) return;
+    final extension = p.extension(sourceFile.path).toLowerCase();
+    final identity = playback.activeExternalSubtitleIdentity;
+    if (identity == null) return;
+
+    try {
+      final sync = await playback.activeExternalSubtitleSync();
+      if (!mounted ||
+          playback.player != targetPlayer ||
+          playback.activeExternalSubtitleIdentity != identity ||
+          sync == null) {
+        return;
+      }
+      final sourceBytes = await sourceFile.readAsBytes();
+      final result = SubtitleRetimer.retime(
+        sourceBytes: sourceBytes,
+        extension: extension,
+        delayMs: sync.delayMs,
+        rate: sync.rate,
+      );
+      if (!mounted || playback.activeExternalSubtitleIdentity != identity) return;
+
+      if (result.clippedCueCount > 0) {
+        final proceed = await showConfirmDialog(
+          context,
+          title: t['videoSettings.subtitleExport'] as String,
+          message: t['videoSettings.subtitleExportClipped'] as String,
+        );
+        if (!proceed || !mounted || playback.activeExternalSubtitleIdentity != identity) return;
+      }
+
+      final rawTitle = playback.entry?.displayTitle ?? '';
+      var baseName = rawTitle.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+      while (baseName.endsWith('.')) {
+        baseName = baseName.substring(0, baseName.length - 1);
+      }
+      if (baseName.isEmpty) baseName = 'subtitle';
+      baseName = baseName.substring(0, math.min(120, baseName.length));
+      var path = await FilePicker.saveFile(
+        dialogTitle: t['videoSettings.subtitleExport'] as String,
+        fileName: baseName + '.synced' + extension,
+        type: FileType.custom,
+        allowedExtensions: [extension.substring(1)],
+      );
+      if (path == null || !mounted) return;
+      if (p.extension(path).isEmpty) path += extension;
+      if (p.extension(path).toLowerCase() != extension ||
+          p.equals(p.normalize(p.absolute(path)), p.normalize(sourceFile.absolute.path))) {
+        showErrorSnackBar(context, t['videoSettings.subtitleExportFailed'] as String);
+        return;
+      }
+
+      final target = File(path);
+      if (await target.exists()) {
+        if (!mounted) return;
+        final replace = await showConfirmDialog(
+          context,
+          title: t['videoSettings.subtitleExport'] as String,
+          message: t['videoSettings.subtitleExportReplace'] as String,
+        );
+        if (!replace || !mounted) return;
+      }
+      if (playback.activeExternalSubtitleIdentity != identity) return;
+      await _writeSubtitleExport(target, result.bytes);
+      if (mounted) showSnackBar(context, t['videoSettings.subtitleExportSuccess'] as String);
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t['videoSettings.subtitleExportFailed'] as String);
+    }
+  }
+
+  Future<void> _writeSubtitleExport(File target, List<int> bytes) async {
+    final nonce = DateTime.now().microsecondsSinceEpoch.toString();
+    final staged = File(target.path + '.plezyng.' + nonce + '.pending');
+    final backup = File(target.path + '.plezyng.' + nonce + '.backup');
+    var backedUp = false;
+    try {
+      await staged.writeAsBytes(bytes, flush: true);
+      if (await target.exists()) {
+        await target.rename(backup.path);
+        backedUp = true;
+      }
+      try {
+        await staged.rename(target.path);
+      } catch (_) {
+        if (backedUp && await backup.exists()) await backup.rename(target.path);
+        rethrow;
+      }
+      if (backedUp && await backup.exists()) {
+        try {
+          await backup.delete();
+        } on Object {
+          // The new export is committed; a stale backup is safe to remove later.
+        }
+      }
+    } finally {
+      if (await staged.exists()) await staged.delete();
     }
   }
 
@@ -709,6 +1196,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             onPressed: () => sourceAction(context, s.toggle),
             icon: AppIcon(s.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded, fill: 1),
           ),
+          if (s.video)
+            IconButton(
+              tooltip: s.muted ? t.videoControls.unmuteButton : t.hotkeys.actions.muteToggle,
+              onPressed: () => sourceAction(context, () => s.setMuted(!s.muted)),
+              icon: AppIcon(s.muted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded),
+            ),
           if (!s.isLiveInput)
             IconButton(
               tooltip: t.fileSources.skipForward,
@@ -846,7 +1339,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                   valid: (v) => parseListeningTime(v) != null,
                 );
                 if (value != null) {
-                  await s.seek(parseListeningTime(value)! + (s.hasCompleteTimeline ? 0 : s.timelineStartMs));
+                  await s.seek(parseListeningTime(value)!(s.hasCompleteTimeline ? 0 : s.timelineStartMs));
                 }
               }),
             ),
@@ -879,6 +1372,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceListeningSettings())),
             icon: const AppIcon(Symbols.tune_rounded),
           ),
+          if (s.video && s.canExportActiveExternalSubtitle)
+            IconButton(
+              tooltip: t['videoSettings.subtitleExport'] as String,
+              onPressed: () => sourceAction(context, () => _exportSynchronizedSubtitle(s)),
+              icon: const AppIcon(Symbols.download_rounded),
+            ),
+          if (s.video && s.hasSelectedPersistentExternalSubtitle)
+            IconButton(
+              tooltip: t.videoSettings.subtitleSync,
+              onPressed: () => sourceAction(context, () => _openExternalSubtitleSync(s)),
+              icon: const AppIcon(Symbols.sync_rounded),
+            ),
           if (s.isTransientInput && s.player?.playerType == 'mpv')
             IconButton(
               tooltip: t.fileInfo.title,
@@ -1460,6 +1965,143 @@ class SourceMiniPlayer extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _plainSubtitleCueText(String value) => value
+    .replaceAll(RegExp(r'\{[^}]*\}'), '')
+    .replaceAll(RegExp(r'<[^>]*>'), '')
+    .replaceAll(RegExp(r'\\[Nn]'), '\n')
+    .replaceAll(RegExp(r'\\h'), ' ')
+    .replaceAll('&nbsp;', ' ')
+    .trim();
+
+class _SubtitleCuePickerSheet extends StatefulWidget {
+  const _SubtitleCuePickerSheet({
+    required this.cues,
+    required this.playback,
+    required this.initialPlaybackPositionMs,
+    required this.initialDelayMs,
+    required this.initialRate,
+  });
+
+  final List<SubtitleCue> cues;
+  final SourcePlayback playback;
+  final int initialPlaybackPositionMs;
+  final int initialDelayMs;
+  final double initialRate;
+
+  @override
+  State<_SubtitleCuePickerSheet> createState() => _SubtitleCuePickerSheetState();
+}
+
+class _SubtitleCuePickerSheetState extends State<_SubtitleCuePickerSheet> {
+  late final ScrollController _scrollController;
+
+  int _closestCueIndex() {
+    var nearestIndex = 0;
+    var nearestDistance = 1 << 62;
+    for (var index = 0; index < widget.cues.length; index++) {
+      final cue = widget.cues[index];
+      final visibleStartMs = (cue.startMs * widget.initialRate).round() + widget.initialDelayMs;
+      final distance = (visibleStartMs - widget.initialPlaybackPositionMs).abs();
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    }
+    return nearestIndex;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    final nearestIndex = _closestCueIndex();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scrollController.hasClients) {
+        _scrollController.jumpTo(
+          (nearestIndex * 76.0).clamp(0.0, _scrollController.position.maxScrollExtent).toDouble(),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: true,
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.72,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(t.videoSettings.subtitleCueTimeAnchor1, style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  IconButton(
+                    tooltip: t.common.close,
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const AppIcon(Symbols.close_rounded),
+                  ),
+                ],
+              ),
+              AnimatedBuilder(
+                animation: widget.playback,
+                builder: (context, _) => Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 12, bottom: 8),
+                    child: Text(
+                      '${t.videoSettings.subtitleUsePlaybackTime}: ${sourceTime(widget.playback.currentFilePositionMs)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: widget.cues.length,
+                  itemExtent: 76,
+                  itemBuilder: (context, index) {
+                    final cue = widget.cues[index];
+                    final plainText = cue.text
+                        .replaceAll(RegExp(r'<[^>]*>'), '')
+                        .replaceAll(RegExp(r'\s '), ' ')
+                        .trim();
+                    return ListTile(
+                      leading: SizedBox(
+                        width: 72,
+                        child: Text(
+                          sourceTime(cue.startMs),
+                          maxLines: 1,
+                          overflow: TextOverflow.fade,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                      title: Text(plainText, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      onTap: () => Navigator.of(
+                        context,
+                      ).pop((cue: cue, playbackPositionMs: widget.playback.currentFilePositionMs)),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

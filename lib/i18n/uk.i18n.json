@@ -4307,12 +4307,7 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": "",
-    "streamAudio": "",
-    "streamAudioHelp": "",
-    "audioStereo": "",
-    "audioQuad": "",
-    "audioSurround51": ""
+    "allowHostInstallHelp": ""
   },
   "deepLinks": {
     "invalid": "Цей Plezy посилання не діє.",

@@ -379,6 +379,45 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   },
                 ),
               ),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 92,
+                child: ValueListenableBuilder<SubtitleLiveCaption?>(
+                  valueListenable: SubtitlePlaybackTranscriptionService.instance.liveCaption,
+                  builder: (context, caption, _) {
+                    if (caption == null) return const SizedBox.shrink();
+                    return IgnorePointer(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 900),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.78),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                              child: Text(
+                                caption.text,
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  shadows: [Shadow(color: Colors.black, blurRadius: 5)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
               // Netflix-style auto-play overlay (hidden in PiP mode)
               VideoPlayerPlayNextOverlay(
                 visible: _episode.showPlayNextDialog,

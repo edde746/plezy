@@ -347,10 +347,10 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
 ///
 /// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
 /// this track"; this answers "which row of a DIFFERENT item serves the same
-/// intent". Effective forced-ness is a hard requirement, and so is language
-/// when both sides declare one: the intent's class is preserved or the match
-/// declines, so the selection ladder can fall back to the server's own
-/// per-item choice (#1716/#1717).
+/// intent". Effective forced-ness and explicit SDH/CC title markers are hard
+/// requirements, and so is language when both sides declare one: the intent's
+/// class is preserved or the match declines, so the selection ladder can fall
+/// back to the server's own per-item choice (#1716/#1717).
 ///
 /// When language metadata is missing on either side, a unique real title
 /// match may vouch for the row instead (#1785) — untagged tracks whose only
@@ -366,7 +366,8 @@ MediaSubtitleTrack? findSourceTrackForIntent(SubtitleIntent intent, List<MediaSu
     sourceTracks,
     intentLanguage: intent.language,
     isSelectable: (_) => true,
-    classMatches: (row) => row.effectiveForced == intent.forced,
+    classMatches: (row) =>
+        row.effectiveForced == intent.forced && row.effectiveHearingImpaired == intent.hearingImpaired,
     language: (row) => row.languageCode ?? row.language,
     titleScore: (row) => _titleScore(intent.title, row.title, row.displayTitle),
     codecMatches: (row) => _subtitleCodecsMatch(intent.codec, row.codec),
@@ -381,7 +382,8 @@ SubtitleTrack? findNativeTrackForIntent(SubtitleIntent intent, List<SubtitleTrac
     tracks,
     intentLanguage: intent.language,
     isSelectable: (track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id,
-    classMatches: (track) => track.effectiveForced == intent.forced,
+    classMatches: (track) =>
+        track.effectiveForced == intent.forced && track.effectiveHearingImpaired == intent.hearingImpaired,
     language: (track) => track.language,
     titleScore: (track) => _titleScore(intent.title, track.title, null),
     codecMatches: (track) => _subtitleCodecsMatch(intent.codec, track.codec),
@@ -433,6 +435,21 @@ const String carriedAudioTrackId = 'carried';
 /// reloads keep the original track and its identity fast path.
 AudioTrack itemAgnosticAudioCarry(AudioTrack track) => track.copyWith(id: carriedAudioTrackId);
 
+String? _declaredBcp47Script(String? code) {
+  if (code == null || code.trim().isEmpty) return null;
+  final subtags = code.replaceAll('_', '-').split('-');
+  for (final subtag in subtags.skip(1)) {
+    if (RegExp(r'^[A-Za-z]{4}$').hasMatch(subtag)) return subtag.toLowerCase();
+  }
+  return null;
+}
+
+bool _languageScriptsMatch(String? preferred, String? candidate) {
+  final preferredScript = _declaredBcp47Script(preferred);
+  final candidateScript = _declaredBcp47Script(candidate);
+  return preferredScript == null || candidateScript == null || preferredScript == candidateScript;
+}
+
 /// Shared evidence matcher behind the cross-item intent matchers.
 ///
 /// Candidates are compared lexicographically, strongest evidence first:
@@ -465,8 +482,12 @@ T? _findTrackByEvidenceBands<T extends Object>(
     final hasLanguageParity = intentLanguage != null && candidateLanguage != null;
     if (hasLanguageParity) {
       // A declared language on both sides stays authoritative: a
-      // contradiction declines no matter what the title says.
-      if (!_languagesMatch(intentLanguage, candidateLanguage)) continue;
+      // contradiction declines no matter what the title says. Preserve
+      // declared BCP-47 scripts too, so Hant/Hans never collapse to "zh".
+      if (!_languagesMatch(intentLanguage, candidateLanguage) ||
+          !_languageScriptsMatch(intentLanguage, candidateLanguage)) {
+        continue;
+      }
     } else if (candidateTitleScore < 3) {
       // Language evidence is missing on at least one side; only a real
       // title match may serve the intent then.
@@ -693,6 +714,7 @@ class TrackSelectionService {
   final MediaItem metadata;
   final MediaSourceInfo? plexMediaInfo;
   final bool alwaysShowSubtitlesOnDevice;
+  final List<String> preferredSubtitleLanguages;
 
   TrackSelectionService({
     this.player,
@@ -700,6 +722,7 @@ class TrackSelectionService {
     required this.metadata,
     this.plexMediaInfo,
     this.alwaysShowSubtitlesOnDevice = false,
+    this.preferredSubtitleLanguages = const [],
   });
 
   /// The profile's preferred language for one track kind, or null when unset.
@@ -713,6 +736,17 @@ class TrackSelectionService {
   /// Matching goes through [languageMatches] (exact, region-code, and
   /// ISO 639 variation parity) - never prefix comparison, which would let
   /// e.g. an `est` (Estonian) track satisfy an `es` (Spanish) preference.
+  List<String> _subtitleLanguageOrder(MediaServerUserProfile? profile) {
+    final ordered = <String>{};
+    final serverLanguage = profile == null ? null : _preferredLanguage(profile, isAudio: false);
+    if (serverLanguage != null && serverLanguage.trim().isNotEmpty) ordered.add(serverLanguage.trim());
+    for (final language in preferredSubtitleLanguages) {
+      final normalized = language.trim();
+      if (normalized.isNotEmpty) ordered.add(normalized);
+    }
+    return ordered.toList(growable: false);
+  }
+
   T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
     for (final track in tracks) {
       if (languageMatches(getLanguage(track), preferredLanguage)) {
@@ -773,9 +807,11 @@ class TrackSelectionService {
   }) {
     final candidates = forcedOnly ? availableTracks.where((track) => track.effectiveForced).toList() : availableTracks;
     if (candidates.isEmpty) return null;
-    final preferredLanguage = _preferredLanguage(profile, isAudio: false);
-    if (preferredLanguage == null) return null;
-    return _findTrackByPreferredLanguage<SubtitleTrack>(candidates, preferredLanguage, (track) => track.language);
+    for (final preferredLanguage in _subtitleLanguageOrder(profile)) {
+      final match = _findTrackByPreferredLanguage<SubtitleTrack>(candidates, preferredLanguage, (track) => track.language);
+      if (match != null) return match;
+    }
+    return null;
   }
 
   SubtitleTrack? _findDefaultSubtitleTrack(List<SubtitleTrack> availableTracks) {
@@ -791,8 +827,7 @@ class TrackSelectionService {
         profileSettings?.subtitleMode == SubtitlePlaybackMode.none) {
       return null;
     }
-    final preferredLanguage = profileSettings?.defaultSubtitleLanguage;
-    if (preferredLanguage != null && preferredLanguage.isNotEmpty) {
+    for (final preferredLanguage in _subtitleLanguageOrder(profileSettings)) {
       final preferred = _findTrackByPreferredLanguage(availableTracks, preferredLanguage, (track) => track.language);
       if (preferred != null) return preferred;
     }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -37,6 +38,9 @@ class PlayerWebOS extends PlayerBase {
   bool get supportsSecondarySubtitles => false;
 
   @override
+  Set<String> get supportedLocalSubtitleExtensions => audioOnly ? const <String>{} : const {'srt', 'vtt'};
+
+  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   final bool audioOnly;
@@ -45,19 +49,43 @@ class PlayerWebOS extends PlayerBase {
   WebOSMediaProxy? _proxy;
   int? _sourceId;
   int _generation = 0;
+  int _subtitleGeneration = 0;
   bool _loaded = false;
   bool _firstFrameSent = false;
   bool _errorSent = false;
   bool _completionQueued = false;
   Media? _nextMedia;
   String? _subtitleSelection;
+  List<SubtitleTrack> _externalSubtitles = const [];
+  webos_media.ClosedCaptionFile? _captions;
+  final ValueNotifier<String> caption = ValueNotifier('');
+  Duration _subtitleDelay = Duration.zero;
+  bool _subtitlesVisible = false;
 
   bool get hasVideoSurface => !audioOnly && _controller != null;
 
   Widget videoSurface() {
     final controller = _controller;
     if (audioOnly || controller == null) return const SizedBox.expand();
-    return webos_media.VideoPlayer(controller);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        webos_media.VideoPlayer(controller),
+        IgnorePointer(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32, 16, 32, 36),
+              child: ValueListenableBuilder<String>(
+                valueListenable: caption,
+                builder: (context, text, child) =>
+                    text.isEmpty ? const SizedBox.shrink() : webos_media.ClosedCaption(text),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -87,6 +115,12 @@ class PlayerWebOS extends PlayerBase {
     _firstFrameSent = false;
     _errorSent = false;
     _completionQueued = false;
+    _externalSubtitles = const [];
+    _captions = null;
+    _subtitleSelection = null;
+    _subtitleDelay = Duration.zero;
+    _subtitlesVisible = false;
+    caption.value = '';
     handlePlayerEvent('start-file', {'sourceId': sourceId});
 
     webos_media.VideoPlayerController? controller;
@@ -172,6 +206,7 @@ class PlayerWebOS extends PlayerBase {
     handlePropertyChange('pause', !value.isPlaying);
     handlePropertyChange('paused-for-cache', value.isBuffering);
     handlePropertyChange('time-pos', value.position.inMilliseconds / Duration.millisecondsPerSecond);
+    _updateCaption(value.position);
     if (value.buffered.isNotEmpty) {
       final end = value.buffered.map((range) => range.end).reduce((a, b) => a > b ? a : b);
       handlePropertyChange('demuxer-cache-time', end.inMilliseconds / Duration.millisecondsPerSecond);
@@ -219,6 +254,7 @@ class PlayerWebOS extends PlayerBase {
           language: _stringField(subtitleRows[index], 'language'),
           isContainer: true,
         ),
+      ..._externalSubtitles,
     ];
     updateTracks(Tracks(audio: audio, subtitle: subtitles));
     final currentAudio = value.currentAudioTrack;
@@ -268,6 +304,12 @@ class PlayerWebOS extends PlayerBase {
   Future<void> _releaseSource() async {
     final controller = _controller;
     _controller = null;
+    _subtitleGeneration++;
+    _captions = null;
+    _subtitlesVisible = false;
+    _subtitleSelection = null;
+    caption.value = '';
+    _externalSubtitles = const [];
     await _proxy?.close();
     _proxy = null;
     if (controller != null) {
@@ -330,18 +372,84 @@ class PlayerWebOS extends PlayerBase {
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
     final controller = _controller;
     if (disposed || controller == null) return;
+    final generation = _generation;
+    final selection = ++_subtitleGeneration;
     if (track.id == SubtitleTrack.off.id || track.id == 'auto') {
       await controller.setSubtitleEnabled(false);
+      if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+      _captions = null;
+      _subtitlesVisible = false;
+      caption.value = '';
       _subtitleSelection = SubtitleTrack.off.id;
       updateSelectedSubtitleTrack(SubtitleTrack.off.id);
+      return;
+    }
+    if (track.uri != null) {
+      final parsed = await _readLocalCaptions(track);
+      if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+      await controller.setSubtitleEnabled(false);
+      if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+      _captions = parsed;
+      _subtitlesVisible = true;
+      _subtitleSelection = track.id;
+      _updateCaption(controller.value.position);
+      updateSelectedSubtitleTrack(track.id);
       return;
     }
     final index = int.tryParse(track.id);
     if (index == null || index < 0) return;
     await controller.selectSubtitleTrack(index);
+    if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+    await controller.setSubtitleSync(_subtitleDelay.inMilliseconds);
+    if (disposed || generation != _generation || selection != _subtitleGeneration) return;
     await controller.setSubtitleEnabled(true);
+    if (disposed || generation != _generation || selection != _subtitleGeneration) return;
+    _captions = null;
+    _subtitlesVisible = false;
+    caption.value = '';
     _subtitleSelection = track.id;
     updateSelectedSubtitleTrack(track.id);
+  }
+
+  Future<webos_media.ClosedCaptionFile> _readLocalCaptions(SubtitleTrack track) async {
+    final uri = Uri.parse(track.uri!);
+    final isVtt = track.codec?.toLowerCase() == 'vtt' || uri.path.toLowerCase().endsWith('.vtt');
+    if (uri.scheme != 'file' || (!isVtt && track.codec?.toLowerCase() != 'srt')) {
+      throw UnsupportedError('webOS local subtitles must be SRT or WebVTT files.');
+    }
+    final file = File.fromUri(uri);
+    final bytes = <int>[];
+    try {
+      await for (final chunk in file.openRead(0, 2 * 1024 * 1024 + 1)) {
+        if (bytes.length + chunk.length > 2 * 1024 * 1024) {
+          throw const FormatException('Subtitle file exceeds 2 MiB');
+        }
+        bytes.addAll(chunk);
+      }
+    } on FormatException {
+      rethrow;
+    } catch (_) {
+      // File-system errors may contain the user's full local path.
+      throw const FormatException('Subtitle file could not be read.');
+    }
+    if (bytes.isEmpty) throw const FormatException('Subtitle file is empty.');
+    final content = utf8.decode(bytes).replaceFirst(String.fromCharCode(0xFEFF), '');
+    return isVtt ? webos_media.WebVTTCaptionFile(content) : webos_media.SubRipCaptionFile(content);
+  }
+
+  void _updateCaption(Duration position) {
+    var text = '';
+    final cues = _captions?.captions;
+    if (_subtitlesVisible && cues != null) {
+      final adjusted = position - _subtitleDelay;
+      for (final cue in cues) {
+        if (adjusted >= cue.start && adjusted < cue.end) {
+          text = cue.text;
+          break;
+        }
+      }
+    }
+    if (caption.value != text) caption.value = text;
   }
 
   @override
@@ -391,12 +499,22 @@ class PlayerWebOS extends PlayerBase {
         break;
       case 'sub-visibility':
         final controller = _controller;
-        if (controller != null) await controller.setSubtitleEnabled(value == 'yes');
+        if (_captions != null) {
+          _subtitlesVisible = value == 'yes';
+          _updateCaption(controller?.value.position ?? Duration.zero);
+        } else if (controller != null) {
+          await controller.setSubtitleEnabled(value == 'yes');
+        }
         break;
       case 'sub-delay':
         final controller = _controller;
         final milliseconds = ((double.tryParse(value) ?? 0) * 1000).round();
-        if (controller != null) await controller.setSubtitleSync(milliseconds);
+        _subtitleDelay = Duration(milliseconds: milliseconds);
+        if (_captions != null) {
+          _updateCaption(controller?.value.position ?? Duration.zero);
+        } else if (controller != null) {
+          await controller.setSubtitleSync(milliseconds);
+        }
         break;
       default:
         // MPV-only tuning properties have no LG media equivalent.
@@ -425,7 +543,28 @@ class PlayerWebOS extends PlayerBase {
   Future<void> setLogLevel(String level) async {}
 
   @override
-  Future<void> command(List<String> args) async {}
+  Future<void> command(List<String> args) async {
+    if (disposed || args.isEmpty || args.first != 'sub-add') return;
+    if (args.length < 2) throw ArgumentError('sub-add requires a local file path.');
+    if (_controller == null || !_loaded) throw StateError('No active playback session for subtitle import.');
+    final localPath = args[1];
+    final fileName = localPath.split(Platform.pathSeparator).last;
+    final extension = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : '';
+    if (!supportedLocalSubtitleExtensions.contains(extension)) {
+      throw UnsupportedError('webOS supports local SRT and WebVTT subtitles.');
+    }
+
+    final uri = Uri.file(localPath);
+    final existingIndex = _externalSubtitles.indexWhere((track) => track.uri == uri.toString());
+    final track = existingIndex >= 0
+        ? _externalSubtitles[existingIndex]
+        : SubtitleTrack.uri(uri.toString(), title: fileName, codec: extension);
+    if (existingIndex < 0) {
+      _externalSubtitles = [..._externalSubtitles, track];
+      updateTracks(Tracks(audio: state.tracks.audio, subtitle: [...state.tracks.subtitle, track]));
+    }
+    if (args.length < 3 || args[2] == 'select') await selectSubtitleTrack(track);
+  }
 
   @override
   Future<void> configureSubtitleFonts() async {}
@@ -469,6 +608,7 @@ class PlayerWebOS extends PlayerBase {
     _generation++;
     await _releaseSource();
     surfaceRevision.dispose();
+    caption.dispose();
     await super.dispose(preserveDisplayMode: preserveDisplayMode);
   }
 }

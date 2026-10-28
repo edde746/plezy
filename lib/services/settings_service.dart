@@ -51,7 +51,7 @@ import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_party_relays.dart';
 
 Map<String, List<MediaBookmark>> _decodeMediaBookmarks(dynamic raw) {
-  if (raw is! Map) return const {};
+  if (raw is! Map) return const <String, Map<String, String>>{};
   final decoded = <String, List<MediaBookmark>>{};
   for (final entry in raw.entries) {
     if (entry.key is! String || (entry.key as String).isEmpty || entry.value is! List) continue;
@@ -865,6 +865,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// (see HomeLayoutSyncService). Off by default; a device left off keeps
   /// its own layout and neither sends nor receives changes.
   static const homeLayoutSyncEnabled = BoolPref('home_layout_sync_enabled', defaultValue: false);
+
   /// Optional Plex account sync for IPTV VOD watch positions only.
   static const iptvVodProgressSyncEnabled = BoolPref('iptv_vod_progress_sync_enabled', defaultValue: false);
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
@@ -872,7 +873,26 @@ class SettingsService extends BaseSharedPreferencesService {
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+  static const subtitleReplayPrerollMs = IntPref('subtitle_replay_preroll_ms', defaultValue: 500);
+  static const secondarySubtitleSyncOffset = IntPref('secondary_subtitle_sync_offset');
+  static const subtitleSyncRate = DoublePref(
+    'subtitle_sync_rate',
+    defaultValue: 1.0,
+    transform: (value) => value.isFinite && value >= 0.8 && value <= 1.25 ? value : 1.0,
+  );
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
+  /// Rejected server subtitle revisions, stored as content fingerprints → epoch ms.
+  static final subtitleRejectedRevisions = JsonPref<Map<String, int>>(
+    'subtitle_rejected_revisions_v1',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => (raw as Map<String, dynamic>).map((key, value) {
+      final timestamp = value is int ? value : int.tryParse(value.toString()) ?? 0;
+      return MapEntry(key, timestamp);
+    }),
+  );
+  /// Ordered device-local subtitle language fallbacks; server profile language remains first.
+  static const subtitleLanguageOrder = StringListPref('subtitle_language_order');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
   static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
@@ -920,6 +940,10 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Select a subtitle on this device when the server has no selected track.
   static const alwaysShowSubtitlesOnDevice = BoolPref('always_show_subtitles_on_device');
+
+  /// Temporarily select subtitles when the viewer mutes playback, then restore
+  /// the prior choice when audio returns unless the viewer changes tracks.
+  static const subtitleOnMute = BoolPref('subtitle_on_mute');
 
   /// Find and attach a subtitle in the preferred language when none is available.
   static const autoDownloadPreferredSubtitle = BoolPref('auto_download_preferred_subtitle');
@@ -994,6 +1018,7 @@ class SettingsService extends BaseSharedPreferencesService {
     values: MotionClarityPreset.values,
     defaultValue: MotionClarityPreset.original,
   );
+
   /// Preset restored when the player-bar motion toggle is turned back on.
   static const motionClarityLastPreset = EnumPref<MotionClarityPreset>(
     'motion_clarity_last_preset',
@@ -1311,6 +1336,86 @@ class SettingsService extends BaseSharedPreferencesService {
     return NullableStringPref(profileScopedPrefsKey(profileId, 'metadata_recent_tags'));
   }
 
+  /// Translation terminology saved locally for one profile, keyed by
+  /// normalized source/target language pair. Oldest pairs are evicted by the
+  /// writer after the 16-pair bound; series identity is handled separately.
+  /// The speech language used by local subtitle generation, scoped to one profile.
+  static StringPref subtitleSpeechLanguageForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return StringPref(profileScopedPrefsKey(profileId, 'subtitle_speech_language_v1'), defaultValue: 'auto');
+  }
+
+  /// Series-specific translation glossary overrides, stored as bounded serialized pair maps.
+  static JsonPref<Map<String, String>> subtitleTranslationSeriesGlossariesForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return JsonPref<Map<String, String>>(
+      profileScopedPrefsKey(profileId, 'subtitle_translation_series_glossaries_v1'),
+      defaultValue: const {},
+      encode: json.encode,
+      decode: (raw) {
+        if (raw is! Map) return const {};
+        final entries = <String, String>{};
+        var totalBytes = 0;
+        for (final entry in raw.entries) {
+          if (entry.key is! String || entry.value is! String) continue;
+          final key = entry.key as String;
+          final value = entry.value as String;
+          if (key.isEmpty || key.length > 800 || value.length > 128 * 1024) continue;
+          final entryBytes = utf8.encode(key).length + utf8.encode(value).length;
+          if (entries.length >= 512 || entryBytes > 1024 * 1024 - totalBytes) break;
+          entries[key] = value;
+          totalBytes += entryBytes;
+        }
+        return Map.unmodifiable(entries);
+      },
+    );
+  }
+
+  static JsonPref<Map<String, Map<String, String>>> subtitleTranslationGlossariesForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return JsonPref<Map<String, Map<String, String>>>(
+      profileScopedPrefsKey(profileId, 'subtitle_translation_glossaries_v1'),
+      defaultValue: const {},
+      encode: json.encode,
+      decode: (raw) {
+        if (raw is! Map) return const {};
+        final pairs = <String, Map<String, String>>{};
+        for (final pair in raw.entries) {
+          if (pair.key is! String || pair.value is! Map) continue;
+          final terms = <String, String>{};
+          final seen = <String>{};
+          for (final term in (pair.value as Map).entries) {
+            if (term.key is! String || term.value is! String) continue;
+            final source = (term.key as String).trim();
+            final target = (term.value as String).trim();
+            if (source.isEmpty ||
+                target.isEmpty ||
+                source.runes.length > 128 ||
+                target.runes.length > 128 ||
+                source.contains('\n') ||
+                source.contains('\r') ||
+                target.contains('\n') ||
+                target.contains('\r') ||
+                !seen.add(source.toLowerCase())) {
+              continue;
+            }
+            terms[source] = target;
+            if (terms.length >= 200) break;
+          }
+          if (terms.isNotEmpty) pairs[pair.key as String] = Map.unmodifiable(terms);
+          if (pairs.length >= 16) break;
+        }
+        return Map.unmodifiable(pairs);
+      },
+    );
+  }
+
   static final companionRemoteLastHostAddress = NullableStringPref(
     'companion_remote_last_host_address',
     transform: _trimEmptyAsNull,
@@ -1344,9 +1449,14 @@ class SettingsService extends BaseSharedPreferencesService {
     motionClarityMciQuality,
   ]);
 
-  /// One scope for both sync offsets: they are tuned together and a user who
+  /// One scope for all sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
-  static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
+  static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [
+    audioSyncOffset,
+    subtitleSyncOffset,
+    secondarySubtitleSyncOffset,
+    subtitleSyncRate,
+  ]);
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
@@ -1927,7 +2037,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
     // Try extracting USB HID code from toString() output:
     // PhysicalKeyboardKey#ec9ed(usbHidUsage: "0x0007002c", debugName: "Space")
-    final usbHidMatch = RegExp(r'usbhidusage: "0x([0-9a-f]+)"').firstMatch(normalized);
+    final usbHidMatch = RegExp(r'usbhidusage: "0x([0-9a-f] )"').firstMatch(normalized);
     if (usbHidMatch != null) {
       final code = int.tryParse(usbHidMatch.group(1)!, radix: 16);
       if (code != null) return PhysicalKeyboardKey(code);
@@ -1978,7 +2088,10 @@ class SettingsService extends BaseSharedPreferencesService {
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
+    secondarySubtitleSyncOffset,
+    subtitleSyncRate,
     subtitleSearchLanguage,
+    subtitleLanguageOrder,
     volume,
     subtitleFontSize,
     subtitleTextColor,
@@ -1989,6 +2102,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     chooseTracksBeforePlayback,
     alwaysShowSubtitlesOnDevice,
+    subtitleOnMute,
     autoDownloadPreferredSubtitle,
     followServerTrackSelections,
     downloadOnWifiOnly,

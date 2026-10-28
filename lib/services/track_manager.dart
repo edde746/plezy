@@ -252,6 +252,8 @@ class TrackManager {
       plexMediaInfo: mediaInfo,
       alwaysShowSubtitlesOnDevice:
           SettingsService.instanceOrNull?.read(SettingsService.alwaysShowSubtitlesOnDevice) ?? false,
+      preferredSubtitleLanguages:
+          SettingsService.instanceOrNull?.read(SettingsService.subtitleLanguageOrder) ?? const [],
     );
 
     // A burned-in primary is already in the picture, so no native track is ever coming for it.
@@ -353,6 +355,7 @@ class TrackManager {
         metadata: metadata,
         plexMediaInfo: mediaInfo,
         alwaysShowSubtitlesOnDevice: SettingsService.instance.read(SettingsService.alwaysShowSubtitlesOnDevice),
+        preferredSubtitleLanguages: SettingsService.instance.read(SettingsService.subtitleLanguageOrder),
       );
 
       return await trackService.selectAndApplyTracks(
@@ -531,6 +534,7 @@ class TrackManager {
                 if (intent?.title?.isNotEmpty ?? false) 'title': intent!.title,
                 if (intent?.codec?.isNotEmpty ?? false) 'codec': intent!.codec,
                 if (intent != null) 'forced': intent.forced,
+                if (intent != null) 'hearingImpaired': intent.hearingImpaired,
                 if (intent != null) 'external': intent.isExternal,
               },
       );

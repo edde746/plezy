@@ -4,6 +4,8 @@ final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<Late
 
 extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   void _toggleSubtitles() {
+    // A manual visibility change replaces the temporary mute behavior.
+    _subtitleVisibilityBeforeMute = null;
     // Restoring always works: backends without a renderer-level visibility
     // switch hide subtitles by deselecting them, so the current track reads
     // as Off while hidden and a selection check would trap the toggle.
@@ -40,6 +42,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   );
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {
+    // A manual track change replaces the temporary mute behavior.
+    _subtitleVisibilityBeforeMute = null;
     if (track.id != 'no' && !_subtitlesVisible) {
       _setSubtitleVisibility(true);
     }
@@ -175,6 +179,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       videoZoomScale: widget.videoZoomScale,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
+      secondarySubtitleSyncOffset: _secondarySubtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: FullscreenStateManager().isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,

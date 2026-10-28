@@ -5,6 +5,7 @@ import android.media.AudioDeviceInfo
 import android.os.Build
 import android.os.Handler
 import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
@@ -65,6 +66,9 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
   val channelMixProcessor = ChannelMixingAudioProcessor().apply {
     for (matrix in identityChannelMixingMatrices) putChannelMixingMatrix(matrix)
   }
+
+  /** PCM is copied from the output writer only while a user-started transcription session runs. */
+  internal val subtitlePcmCaptureBuffer = SubtitlePcmCaptureBuffer()
 
   fun identityChannelMixingMatrix(channelCount: Int): ChannelMixingMatrix = identityChannelMixingMatrices[channelCount - 1]
 
@@ -192,7 +196,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       // Wraps in DefaultAudioProcessorChain, keeping stock silence-skip +
       // Sonic; the downmix runs first and only in the decoded-PCM path.
       .setAudioProcessors(arrayOf(channelMixProcessor))
-      .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
+      .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger, subtitlePcmCapture = subtitlePcmCaptureBuffer))
       .build()
 
     val processedSink = PositionFixAudioSink(
@@ -641,11 +645,12 @@ internal class DvSanitizingVideoRenderer(
 // lookups, and media3's own onReleased delivery all run there.
 
 @OptIn(UnstableApi::class)
-internal class RawPositionOutputProvider(
+internal internal class RawPositionOutputProvider(
   private val delegate: AudioOutputProvider,
   private val rawPositionUs: AtomicLong,
   private val log: ((String, String, String) -> Unit)?,
-  private val sdkInt: Int = Build.VERSION.SDK_INT
+  private val sdkInt: Int = Build.VERSION.SDK_INT,
+  private val subtitlePcmCapture: SubtitlePcmCaptureBuffer? = null
 ) : AudioOutputProvider {
 
   private var cachedOutput: RawPositionAudioOutput? = null
@@ -678,7 +683,12 @@ internal class RawPositionOutputProvider(
       rawPositionUs = rawPositionUs,
       provider = this,
       mayCache = AudioOutputCachePolicy.mayCache(config.encoding, config.isOffload, sdkInt),
-      log = log
+      log = log,
+      subtitlePcmCapture = subtitlePcmCapture,
+      sampleRate = config.sampleRate,
+      channelCount = Integer.bitCount(config.channelMask),
+      encoding = config.encoding,
+      captureUnavailable = config.isOffload || config.isTunneling
     )
   }
 
@@ -723,7 +733,12 @@ internal class RawPositionAudioOutput(
   private val rawPositionUs: AtomicLong,
   private val provider: RawPositionOutputProvider,
   private val mayCache: Boolean,
-  private val log: ((String, String, String) -> Unit)?
+  private val log: ((String, String, String) -> Unit)?,
+  private val subtitlePcmCapture: SubtitlePcmCaptureBuffer? = null,
+  private val sampleRate: Int = 0,
+  private val channelCount: Int = 0,
+  private val encoding: Int = 0,
+  private val captureUnavailable: Boolean = true
 ) : AudioOutput {
 
   private var loggedFirstWrite = false
@@ -792,6 +807,31 @@ internal class RawPositionAudioOutput(
       throw e
     }
     val written = buffer.position() - before
+    if (written > 0 && !captureUnavailable && sampleRate > 0 && channelCount > 0) {
+      val bytesPerSample = when (encoding) {
+        C.ENCODING_PCM_16BIT -> 2
+        C.ENCODING_PCM_FLOAT -> 4
+        else -> 0
+      }
+      val bytesPerFrame = bytesPerSample * channelCount
+      if (bytesPerFrame > 0) {
+        val captureBytes = written - written % bytesPerFrame
+        if (captureBytes > 0) {
+          val captureBuffer = buffer.duplicate()
+          captureBuffer.position(before)
+          captureBuffer.limit(before + captureBytes)
+          val frameOffsetUs = (before / bytesPerFrame).toLong() * 1_000_000L / sampleRate
+          subtitlePcmCapture?.capture(
+            captureBuffer.slice(),
+            captureBytes,
+            presentationTimeUs + frameOffsetUs,
+            sampleRate,
+            channelCount,
+            encoding
+          )
+        }
+      }
+    }
     if (written > 0) {
       writeCount++
       writtenBytes += written.toLong()

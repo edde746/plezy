@@ -133,12 +133,24 @@ abstract class Player {
 
   /// Select a secondary subtitle track (displayed simultaneously with primary).
   ///
-  /// Only supported on mpv backends (desktop + Android mpv fallback).
+  /// Only supported on mpv backends (desktop   Android mpv fallback).
   /// Pass [SubtitleTrack.off] to disable secondary subtitles.
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track);
 
   /// Whether this player backend supports secondary subtitle tracks.
   bool get supportsSecondarySubtitles;
+
+  /// Local subtitle formats that the backend can attach to the active session.
+  ///
+  /// An empty set means local-file attachment is unavailable. Backends must
+  /// not advertise a format unless they can parse and select it at runtime.
+  Set<String> get supportedLocalSubtitleExtensions;
+
+  /// Whether the backend can apply in-player subtitle appearance changes.
+  bool get supportsSubtitleStyleControls;
+
+  /// Whether the backend can step a subtitle event to the current playback time.
+  bool get supportsSubtitleStepSync;
 
   /// Whether the backend detects container fps from rendered frame
   /// timestamps, so `container-fps` only becomes available a few frames
@@ -232,7 +244,7 @@ abstract class Player {
   /// mpv backends insert/remove an audio filter (`loudnorm`; a compressor and
   /// limiter on Android) and, because a filter cannot process a bitstream,
   /// leave passthrough while it is on. Android ExoPlayer attaches platform
-  /// audio effects instead (DynamicsProcessing on API 28+, LoudnessEnhancer
+  /// audio effects instead (DynamicsProcessing on API 28 , LoudnessEnhancer
   /// otherwise) and forces decoded non-tunneled PCM output while enabled so
   /// the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);

@@ -214,21 +214,21 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
   void didUpdateWidget(covariant _SettingsToggleItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pref != widget.pref) {
-      ++_writeGeneration;
+      _writeGeneration;
       _pendingValue = null;
     }
   }
 
   @override
   void dispose() {
-    ++_writeGeneration;
+    _writeGeneration;
     super.dispose();
   }
 
   void _write(bool next) {
     final pref = widget.pref;
     final callback = widget.onAfterWrite;
-    final generation = ++_writeGeneration;
+    final generation = _writeGeneration;
     final writeToken = _prefWrites.begin(pref.key);
     setState(() {
       _pendingValue = next;
@@ -380,6 +380,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
+  late int _secondarySubtitleSyncOffset;
   late double _zoomScale;
   String _dvConversionMode = 'auto';
   int _dvConversionWriteGeneration = 0;
@@ -437,6 +438,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     if (widget.openMotionClarity) _currentView = _SettingsView.motionClarity;
     _audioSyncOffset = _state.audioSyncOffset;
     _subtitleSyncOffset = _state.subtitleSyncOffset;
+    _secondarySubtitleSyncOffset = _state.secondarySubtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
     _audioChannelLimit = SettingsService.instance.read(SettingsService.audioChannelLimit);
@@ -640,7 +642,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
-    final generation = ++_dvConversionWriteGeneration;
+    final generation = _dvConversionWriteGeneration;
     unawaited(() async {
       try {
         await targetPlayer.setProperty('dv-conversion-mode', mode);
@@ -663,14 +665,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   // Sync adjustments open as a compact top bar instead of a sub-view.
-  void _openSyncBar({required bool isSubtitle}) {
+  void _openSyncBar({required bool isSubtitle, bool isSecondarySubtitle = false}) {
     final controller = OverlaySheetController.maybeOf(context);
     if (controller == null) return;
 
-    final title = isSubtitle ? t.videoSettings.subtitleSync : t.videoSettings.audioSync;
+    final title = isSecondarySubtitle
+        ? '${t.videoSettings.subtitleSync} (${t.videoControls.secondarySubtitle})'
+        : isSubtitle
+        ? t.videoSettings.subtitleSync
+        : t.videoSettings.audioSync;
     final icon = isSubtitle ? Symbols.subtitles_rounded : Symbols.sync_rounded;
-    final propertyName = isSubtitle ? 'sub-delay' : 'audio-delay';
-    final initialOffset = isSubtitle ? _subtitleSyncOffset : _audioSyncOffset;
+    final propertyName = isSecondarySubtitle
+        ? PlayerSyncOffsets.secondarySubtitleProperty
+        : isSubtitle
+        ? PlayerSyncOffsets.subtitleProperty
+        : PlayerSyncOffsets.audioProperty;
+    final initialOffset = isSecondarySubtitle
+        ? _secondarySubtitleSyncOffset
+        : isSubtitle
+        ? _subtitleSyncOffset
+        : _audioSyncOffset;
 
     // Created here so it can be passed as the overlay's initial focus target.
     // The creator disposes it after the overlay's lifecycle completes.
@@ -689,10 +703,19 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             icon: icon,
             player: widget.player,
             propertyName: propertyName,
+            contentIdentity: _state.metadata?.globalKey,
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
+            initialSubtitleRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncRate, _state.metadata),
+            onSubtitleRateChanged: isSubtitle && !isSecondarySubtitle
+                ? (rate) => ScopedPlayerPrefs.write(ScopedPlayerPrefs.subtitleSyncRate, _state.metadata, rate)
+                : null,
             onOffsetChanged: (offset) async {
-              final pref = isSubtitle ? ScopedPlayerPrefs.subtitleSyncOffset : ScopedPlayerPrefs.audioSyncOffset;
+              final pref = isSecondarySubtitle
+                  ? ScopedPlayerPrefs.secondarySubtitleSyncOffset
+                  : isSubtitle
+                  ? ScopedPlayerPrefs.subtitleSyncOffset
+                  : ScopedPlayerPrefs.audioSyncOffset;
               await ScopedPlayerPrefs.write(pref, _state.metadata, offset);
             },
           ),
@@ -990,6 +1013,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _openSyncBar(isSubtitle: true),
         ),
+
+        if (widget.player.supportsSecondarySubtitles)
+          _SettingsMenuItem(
+            icon: Symbols.subtitles_rounded,
+            title: '${t.videoSettings.subtitleSync} (${t.videoControls.secondarySubtitle})',
+            valueText: formatSyncOffset(_secondarySubtitleSyncOffset.toDouble()),
+            isHighlighted: _secondarySubtitleSyncOffset != 0,
+            onTap: () => _openSyncBar(isSubtitle: true, isSecondarySubtitle: true),
+          ),
 
         if (_supportsHdrControl)
           _SettingsToggleItem(
@@ -1347,7 +1379,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             beforeSourceOpen: false,
             engine: oldEngine,
             outputRate: _motionOutputRate,
-          mciQuality: _motionMciQuality,
+            mciQuality: _motionMciQuality,
           );
           rethrow;
         }
@@ -1398,7 +1430,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionComparisonBypass = false;
         });
         _state.onMotionClarityChanged?.call();
-      });    } catch (error, stackTrace) {
+      });
+    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity output rate', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1439,7 +1472,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionComparisonBypass = false;
         });
         _state.onMotionClarityChanged?.call();
-      });    } catch (error, stackTrace) {
+      });
+    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion-compensation quality', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1499,7 +1533,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             beforeSourceOpen: false,
             engine: _motionEngine,
             outputRate: _motionOutputRate,
-          mciQuality: _motionMciQuality,
+            mciQuality: _motionMciQuality,
           );
           rethrow;
         }
@@ -1512,7 +1546,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionComparisonBypass = false;
         });
         _state.onMotionClarityChanged?.call();
-      });    } catch (error, stackTrace) {
+      });
+    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity preset', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1552,7 +1587,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             beforeSourceOpen: false,
             engine: _motionEngine,
             outputRate: _motionOutputRate,
-          mciQuality: _motionMciQuality,
+            mciQuality: _motionMciQuality,
           );
           rethrow;
         }
@@ -1564,7 +1599,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _motionComparisonBypass = false;
         });
         _state.onMotionClarityChanged?.call();
-      });    } catch (error, stackTrace) {
+      });
+    } catch (error, stackTrace) {
       appLogger.w('Failed to change motion clarity kernel', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
     }
@@ -1582,15 +1618,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       beforeSourceOpen: false,
       engine: _motionEngine,
       outputRate: _motionOutputRate,
-          mciQuality: _motionMciQuality,
+      mciQuality: _motionMciQuality,
     );
     try {
       await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata, threshold);
-      await ScopedPlayerPrefs.write(
-        ScopedPlayerPrefs.motionClarityPreset,
-        _state.metadata,
-        MotionClarityPreset.custom,
-      );
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, _state.metadata, MotionClarityPreset.custom);
       if (mounted) {
         setState(() {
           _motionPreset = MotionClarityPreset.custom;
@@ -1611,7 +1643,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         beforeSourceOpen: false,
         engine: _motionEngine,
         outputRate: _motionOutputRate,
-          mciQuality: _motionMciQuality,
+        mciQuality: _motionMciQuality,
       );
       appLogger.w('Failed to save motion clarity threshold', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
@@ -1638,14 +1670,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final statusText = status == null
         ? t.common.loading
         : !status.isSupported
-            ? t.videoSettings.motionClarityOutputUnsupported
-            : status.isConfigured && status.effectiveEngine == MotionClarityEngine.motionCompensated
-                ? t.videoSettings.motionClarityMciConfigured
-                : status.requiresSourceReload
-                    ? t.videoSettings.motionClarityRestartRequired
-                    : status.isConfigured
-                        ? t.videoSettings.motionClarityConfigured
-                        : t.videoSettings.motionClarityOriginalDescription;
+        ? t.videoSettings.motionClarityOutputUnsupported
+        : status.isConfigured && status.effectiveEngine == MotionClarityEngine.motionCompensated
+        ? t.videoSettings.motionClarityMciConfigured
+        : status.requiresSourceReload
+        ? t.videoSettings.motionClarityRestartRequired
+        : status.isConfigured
+        ? t.videoSettings.motionClarityConfigured
+        : t.videoSettings.motionClarityOriginalDescription;
     final outputDetail = [
       if (status != null && status.outputDriver != null && status.outputDriver!.isNotEmpty) status.outputDriver!,
       if (_motionSourceFps != null)
@@ -1666,7 +1698,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(t.videoSettings.motionClarityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+          child: Text(
+            t.videoSettings.motionClarityDescription,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -1690,10 +1725,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   children: [
                     if (outputDetail.isNotEmpty) Text(outputDetail),
                     if (showEngineReason)
-                      Text(
-                        status!.reason!,
-                        style: TextStyle(color: tokens(context).textMuted, fontSize: 11),
-                      ),
+                      Text(status!.reason!, style: TextStyle(color: tokens(context).textMuted, fontSize: 11)),
                     if (status?.isConfigured == true && status?.audioPassthroughActive == true)
                       Text(
                         t.videoSettings.motionClarityPassthroughWarning,
@@ -1717,7 +1749,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
           for (final engine in MotionClarityEngine.values)
             FocusableListTile(
-              title: Text(_motionEngineTitle(engine), style: TextStyle(color: _motionEngine == engine ? primary : null)),
+              title: Text(
+                _motionEngineTitle(engine),
+                style: TextStyle(color: _motionEngine == engine ? primary : null),
+              ),
               subtitle: Text(
                 engine == MotionClarityEngine.motionCompensated
                     ? t.videoSettings.motionClarityMotionCompensatedDescription
@@ -1734,11 +1769,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(t.videoSettings.motionClarityMciQualityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+              child: Text(
+                t.videoSettings.motionClarityMciQualityDescription,
+                style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+              ),
             ),
             for (final quality in MotionClarityMciQuality.values)
               FocusableListTile(
-                title: Text(_motionMciQualityTitle(quality), style: TextStyle(color: _motionMciQuality == quality ? primary : null)),
+                title: Text(
+                  _motionMciQualityTitle(quality),
+                  style: TextStyle(color: _motionMciQuality == quality ? primary : null),
+                ),
                 trailing: _motionMciQuality == quality ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
                 onTap: () => _selectMotionClarityMciQuality(quality),
               ),
@@ -1755,7 +1796,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             ),
             for (final rate in MotionClarityOutputRate.values)
               FocusableListTile(
-                title: Text(_motionOutputRateTitle(rate), style: TextStyle(color: _motionOutputRate == rate ? primary : null)),
+                title: Text(
+                  _motionOutputRateTitle(rate),
+                  style: TextStyle(color: _motionOutputRate == rate ? primary : null),
+                ),
                 trailing: _motionOutputRate == rate ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
                 onTap: () => _selectMotionClarityOutputRate(rate),
               ),
@@ -1790,15 +1834,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             trailing: _motionPreset == preset ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
             onTap: () => _selectMotionClarityPreset(preset),
           ),
-        if (_motionPreset == MotionClarityPreset.custom &&
-            _motionEngine == MotionClarityEngine.temporalBlend) ...[
+        if (_motionPreset == MotionClarityPreset.custom && _motionEngine == MotionClarityEngine.temporalBlend) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(t.videoSettings.motionClarityKernel, style: Theme.of(context).textTheme.titleSmall),
           ),
           for (final kernel in MotionTemporalKernel.values)
             FocusableListTile(
-              title: Text(_motionKernelTitle(kernel), style: TextStyle(color: _motionKernel == kernel ? primary : null)),
+              title: Text(
+                _motionKernelTitle(kernel),
+                style: TextStyle(color: _motionKernel == kernel ? primary : null),
+              ),
               trailing: _motionKernel == kernel ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () => _selectMotionTemporalKernel(kernel),
             ),
@@ -1991,7 +2037,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       pitchSemitones: pitchSemitones ?? _audioEffects.pitchSemitones,
     );
     setState(() => _audioEffects = next);
-    final generation = ++_audioEffectsWriteGeneration;
+    final generation = _audioEffectsWriteGeneration;
     _audioEffectsWrite = _applyAudioEffects(next, generation);
   }
 
@@ -2559,6 +2605,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             isShaderActive ||
             isMotionActive ||
             isMotionSmoothingActive ||
+            _secondarySubtitleSyncOffset != 0 ||
             isZoomActive);
 
     return BaseVideoControlSheet(
@@ -2686,7 +2733,10 @@ class _CompactSyncBar extends StatefulWidget {
   final IconData icon;
   final Player player;
   final String propertyName;
+  final String? contentIdentity;
   final int initialOffset;
+  final double initialSubtitleRate;
+  final Future<void> Function(double rate)? onSubtitleRateChanged;
   final Future<void> Function(int offset) onOffsetChanged;
   final FocusNode sliderFocusNode;
 
@@ -2695,7 +2745,10 @@ class _CompactSyncBar extends StatefulWidget {
     required this.icon,
     required this.player,
     required this.propertyName,
+    required this.contentIdentity,
     required this.initialOffset,
+    required this.initialSubtitleRate,
+    required this.onSubtitleRateChanged,
     required this.onOffsetChanged,
     required this.sliderFocusNode,
   });
@@ -2727,7 +2780,10 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
           child: SyncOffsetControl(
             player: widget.player,
             propertyName: widget.propertyName,
+            contentIdentity: widget.contentIdentity,
             initialOffset: widget.initialOffset,
+            initialSubtitleRate: widget.initialSubtitleRate,
+            onSubtitleRateChanged: widget.onSubtitleRateChanged,
             onOffsetChanged: widget.onOffsetChanged,
             sliderFocusNode: widget.sliderFocusNode,
             resetFocusNode: _resetFocusNode,

@@ -4270,12 +4270,7 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": "",
-    "streamAudio": "",
-    "streamAudioHelp": "",
-    "audioStereo": "",
-    "audioQuad": "",
-    "audioSurround51": ""
+    "allowHostInstallHelp": ""
   },
   "deepLinks": {
     "invalid": "Ce lien Plezy n’est pas valide.",

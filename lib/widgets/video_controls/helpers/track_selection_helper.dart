@@ -16,6 +16,7 @@ class TrackSelectionHelper {
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
+    Widget? secondaryAction,
   }) {
     return _buildSelectableTile(
       context: context,
@@ -27,6 +28,7 @@ class TrackSelectionHelper {
       onLongPress: onLongPress,
       onSecondaryTap: onSecondaryTap,
       badge: badge,
+      secondaryAction: secondaryAction,
     );
   }
 
@@ -40,6 +42,7 @@ class TrackSelectionHelper {
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
+    Widget? secondaryAction,
   }) {
     return _buildSelectableTile(
       context: context,
@@ -52,6 +55,7 @@ class TrackSelectionHelper {
       onLongPress: onLongPress,
       onSecondaryTap: onSecondaryTap,
       badge: badge,
+      secondaryAction: secondaryAction,
     );
   }
 
@@ -81,6 +85,7 @@ class TrackSelectionHelper {
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
+    Widget? secondaryAction,
   }) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     Widget? trailing;
@@ -88,6 +93,14 @@ class TrackSelectionHelper {
       trailing = badge;
     } else if (isSelected) {
       trailing = AppIcon(Symbols.check_rounded, fill: 1, color: primaryColor);
+    }
+    if (secondaryAction != null) {
+      trailing = trailing == null
+          ? secondaryAction
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [trailing!, secondaryAction],
+            );
     }
 
     Widget tile = FocusableListTile(

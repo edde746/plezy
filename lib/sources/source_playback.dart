@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:path/path.dart' as p;
@@ -12,12 +13,16 @@ import '../mpv/mpv.dart';
 import '../services/media_control_router.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
+import '../services/settings_service.dart';
 import '../services/music/music_hardware_transport.dart';
+import '../services/player_sync_offsets.dart';
+import '../services/scoped_player_prefs.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/driver_distraction.dart';
 import '../services/car_ux_restrictions_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
+import '../utils/subtitle_forced_semantics.dart';
 import '../utils/notification_permission.dart';
 import '../screens/video_player/wakelock_controller.dart';
 import 'content_access.dart';
@@ -86,6 +91,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool _pictureAdjustmentTouched = false;
   bool _disposed = false;
   bool _workspaceAudioEnabled = true;
+  bool _userMuted = false;
+  int _subtitleMuteGeneration = 0;
+  Future<void> _subtitleMuteQueue = Future<void>.value();
+  ({Player player, int fileIndex, String fingerprint, SubtitleTrack previousTrack, String temporaryTrackId})?
+  _subtitleMuteRestore;
   bool _resumeAfterInterruption = false;
   bool _useEntryChapters = false;
   int _fileEpoch = 0;
@@ -107,7 +117,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   MediaControlsManager? _controls;
   MusicHardwareTransportHandler? _hardware;
   Future<void> _commands = Future.value();
+  Future<void> _subtitleSyncWrites = Future.value();
   Future<void> _writes = Future.value();
+  String? _selectedExternalSubtitlePath;
+  String? _activeExternalSubtitleSyncBinding;
   Timer? _saveTimer;
   Timer? _sleepTimer;
   int? _sleepAtMs;
@@ -123,6 +136,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   int backwardSeconds = 15;
   int forwardSeconds = 30;
   bool get canUndoSeek => _undoSeek != null;
+  bool get muted => _userMuted;
   int get currentFilePositionMs => _failedFilePositionMs ?? _lastKnownFilePositionMs;
   bool get canRetry =>
       _valid &&
@@ -154,6 +168,39 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get isCapturePreview =>
       _fileIndex >= 0 && _fileIndex < files.length && _directPlayerAddresses.containsKey(files[_fileIndex].id);
   bool get isRecordingStream => _streamRecordingPartial != null;
+  bool get hasSelectedPersistentExternalSubtitle =>
+      _isSelectedExternalSubtitlePath(player?.state.track.subtitle, _selectedExternalSubtitlePath);
+  File? get activePersistentExternalSubtitleFile {
+    final path = _selectedExternalSubtitlePath;
+    return hasSelectedPersistentExternalSubtitle && path != null ? File(path) : null;
+  }
+
+  bool get canExportActiveExternalSubtitle {
+    final file = activePersistentExternalSubtitleFile;
+    return file != null && const {'.srt', '.vtt', '.ass', '.ssa'}.contains(p.extension(file.path).toLowerCase());
+  }
+
+  String? get activeExternalSubtitleIdentity {
+    final native = player;
+    final selectedPath = _selectedExternalSubtitlePath;
+    final item = entry;
+    if (native == null ||
+        selectedPath == null ||
+        item == null ||
+        files.isEmpty ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length) {
+      return null;
+    }
+    return [
+      item.key,
+      progress?.edition ?? '',
+      files[_fileIndex].fingerprint,
+      selectedPath,
+      _subtitleAudioIdentity(native),
+    ].join('|');
+  }
+
   bool get playing => player?.state.isActive ?? false;
   bool get canUseDirectQueueControls =>
       isTransientInput &&
@@ -322,7 +369,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       } catch (error, stackTrace) {
         appLogger.w('Source workspace audio focus handoff failed', error: error, stackTrace: stackTrace);
       }
-      await native.setVolume(100);
+      await native.setVolume(_userMuted ? 0 : 100);
       return;
     }
 
@@ -335,6 +382,115 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         appLogger.w('Source workspace audio focus release failed', error: error, stackTrace: stackTrace);
       }
     }
+  }
+
+  Future<void> setMuted(bool muted) async {
+    if (_disposed || _userMuted == muted) return;
+    _userMuted = muted;
+    final generation = _subtitleMuteGeneration += 1;
+    final native = player;
+    if (native != null && !native.disposed) {
+      await native.setVolume(_workspaceAudioEnabled && !muted ? 100 : 0);
+      if (muted) {
+        if (SettingsService.instance.read(SettingsService.subtitleOnMute) && video) {
+          await _selectSubtitleForMute(native, generation);
+        }
+      } else {
+        await _restoreSubtitleAfterMute(generation);
+      }
+    } else if (!muted) {
+      await _restoreSubtitleAfterMute(generation);
+    }
+    _notify();
+  }
+
+  Future<void> _selectSubtitleForMute(Player native, int generation, {List<SubtitleTrack>? availableTracks}) async {
+    if (!_userMuted ||
+        _disposed ||
+        !video ||
+        !identical(player, native) ||
+        !SettingsService.instance.read(SettingsService.subtitleOnMute) ||
+        _subtitleMuteRestore != null ||
+        opening) {
+      return;
+    }
+    final current = native.state.track.subtitle;
+    if (current != null && current.id != SubtitleTrack.off.id && current.id != SubtitleTrack.auto.id) return;
+    final tracks = (availableTracks ?? native.state.tracks.subtitle)
+        .where((track) => track.id != SubtitleTrack.off.id && track.id != SubtitleTrack.auto.id)
+        .toList(growable: false);
+    if (tracks.isEmpty || _fileIndex < 0 || _fileIndex >= files.length) return;
+
+    SubtitleTrack? candidate;
+    for (final track in tracks) {
+      if (track.isDefault && !track.effectiveForced) {
+        candidate = track;
+        break;
+      }
+    }
+    if (candidate == null) {
+      for (final track in tracks) {
+        if (!track.effectiveForced) {
+          candidate = track;
+          break;
+        }
+      }
+    }
+    candidate ??= tracks.first;
+    if (candidate.id == current?.id) return;
+    final restore = (
+      player: native,
+      fileIndex: _fileIndex,
+      fingerprint: files[_fileIndex].fingerprint,
+      previousTrack: current ?? SubtitleTrack.off,
+      temporaryTrackId: candidate.id,
+    );
+    _subtitleMuteRestore = restore;
+    await _queueSubtitleMuteMutation(() async {
+      if (generation != _subtitleMuteGeneration ||
+          !_userMuted ||
+          !identical(player, native) ||
+          _fileIndex != restore.fileIndex ||
+          _fileIndex < 0 ||
+          _fileIndex >= files.length ||
+          files[_fileIndex].fingerprint != restore.fingerprint) {
+        return;
+      }
+      final selected = native.state.track.subtitle;
+      if (selected != null && selected.id != SubtitleTrack.off.id && selected.id != SubtitleTrack.auto.id) {
+        _subtitleMuteRestore = null;
+        return;
+      }
+      await native.selectSubtitleTrack(candidate);
+    });
+  }
+
+  Future<void> _restoreSubtitleAfterMute(int generation) async {
+    final restore = _subtitleMuteRestore;
+    if (restore == null) return;
+    _subtitleMuteRestore = null;
+    await _queueSubtitleMuteMutation(() async {
+      if (generation != _subtitleMuteGeneration ||
+          _userMuted ||
+          !identical(player, restore.player) ||
+          _fileIndex != restore.fileIndex ||
+          _fileIndex < 0 ||
+          _fileIndex >= files.length ||
+          files[_fileIndex].fingerprint != restore.fingerprint) {
+        return;
+      }
+      if (restore.player.state.track.subtitle?.id != restore.temporaryTrackId) return;
+      await restore.player.selectSubtitleTrack(restore.previousTrack);
+    });
+  }
+
+  Future<void> _queueSubtitleMuteMutation(Future<void> Function() action) async {
+    final previous = _subtitleMuteQueue;
+    final operation = previous.catchError((Object _, StackTrace __) {}).then((_) => action());
+    _subtitleMuteQueue = operation.catchError((Object error, StackTrace stackTrace) {
+      appLogger.w('Standalone subtitle-on-mute operation failed', error: error, stackTrace: stackTrace);
+    });
+    await _subtitleMuteQueue;
   }
 
   double get speed => progress?.speed ?? 1;
@@ -546,6 +702,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
+      _userMuted = false;
+      _subtitleMuteRestore = null;
+      _subtitleMuteGeneration += 1;
       _useEntryChapters =
           selected.length == item.audio.length &&
           List.generate(
@@ -654,7 +813,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         preferSkipOverTrackButtons: true,
         skipInterval: Duration(seconds: backwardSeconds),
       );
-      final generation = ++_generation;
+      final generation = _generation;
       bool current() => _valid && generation == _generation && player == native;
       _subscriptions.add(
         native.streams.position.listen((_) {
@@ -689,13 +848,25 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         }),
       );
       _subscriptions.add(
+        native.streams.track.listen((_) {
+          if (current()) {
+            _notify();
+            unawaited(_reapplySelectedExternalSubtitleSyncForCurrentTrack());
+          }
+        }),
+      );
+      _subscriptions.add(
         native.streams.seekable.listen((_) {
           if (current()) _notify();
         }),
       );
       _subscriptions.add(
-        native.streams.tracks.listen((_) {
-          if (current()) _notify();
+        native.streams.tracks.listen((tracks) {
+          if (!current()) return;
+          _notify();
+          if (tracks.subtitle.isNotEmpty && _userMuted) {
+            unawaited(_selectSubtitleForMute(native, _subtitleMuteGeneration, availableTracks: tracks.subtitle));
+          }
         }),
       );
       _subscriptions.add(
@@ -766,11 +937,22 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       rethrow;
     }
   });
-  Future<void> applyExternalSubtitle({required String name, required List<int> bytes}) async {
+  Future<void> applyExternalSubtitle({
+    required String name,
+    required List<int> bytes,
+    String languageCode = '',
+    bool forced = false,
+    bool hearingImpaired = false,
+  }) => _serialize(() async {
     final native = player;
     final profile = _profile;
-    if (!_valid || !video || native == null || profile == null) {
+    final item = entry;
+    final currentProgress = progress;
+    if (!_valid || !video || native == null || profile == null || item == null) {
       throw const SourceException(SourceFailure.cancelled);
+    }
+    if (native.playerType != 'mpv' || files.isEmpty || _fileIndex < 0 || _fileIndex >= files.length) {
+      throw const SourceException(SourceFailure.unsupported);
     }
     if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
       throw const SourceException(SourceFailure.invalidData);
@@ -779,20 +961,1017 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final extension = const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(requestedExtension)
         ? requestedExtension
         : '.srt';
-    final directory = Directory(p.join(sources.downloads.directory.path, sourceDigest(profile), 'external-subtitles'));
+    if (!native.supportedLocalSubtitleExtensions.contains(extension.substring(1))) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = currentProgress?.edition;
+    final normalizedLanguage = _normalizeSubtitleLanguage(languageCode);
+    final fileIndex = _fileIndex;
+    final publicationFile = files[fileIndex];
+    bool current() => _isCurrentExternalSubtitleScope(
+      native: native,
+      item: item,
+      publicationFile: publicationFile,
+      fileIndex: fileIndex,
+      profile: profile,
+      edition: edition,
+      generation: generation,
+      fileEpoch: fileEpoch,
+    );
+
+    final persistent = _persistProgress && !_liveInput && currentProgress != null && edition != null;
+    if (!persistent) {
+      final directory = Directory(
+        p.join(sources.downloads.directory.path, sourceDigest(profile), 'external-subtitles'),
+      );
+      await directory.create(recursive: true);
+      if (!current()) throw const SourceException(SourceFailure.cancelled);
+      final file = File(p.join(directory.path, '${const Uuid().v4()}$extension'));
+      try {
+        await file.writeAsBytes(bytes, flush: true);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        final offsets = PlayerSyncOffsets.of(native);
+        final previousDelayMs = offsets.subtitleMs;
+        final previousRate = offsets.subtitleRate;
+        try {
+          await _applyExternalSubtitleSync(native, delayMs: 0, rate: 1.0);
+          await native.command(
+            _externalSubtitleCommand(
+              path: file.path,
+              language: normalizedLanguage,
+              forced: forced,
+              hearingImpaired: hearingImpaired,
+            ),
+          );
+          if (!current()) throw const SourceException(SourceFailure.cancelled);
+        } catch (_) {
+          try {
+            await _applyExternalSubtitleSync(native, delayMs: previousDelayMs, rate: previousRate);
+          } on Object catch (error, stackTrace) {
+            appLogger.w('Could not restore subtitle timing after import failed', error: error, stackTrace: stackTrace);
+          }
+          rethrow;
+        }
+        _temporarySubtitles.add(file);
+        _notify();
+      } catch (_) {
+        if (await file.exists()) await file.delete();
+        rethrow;
+      }
+      return;
+    }
+
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
     await directory.create(recursive: true);
-    if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-    final file = File(p.join(directory.path, '${const Uuid().v4()}$extension'));
+    if (!current()) throw const SourceException(SourceFailure.cancelled);
+    final manifestFile = File(p.join(directory.path, 'manifest.json'));
+    final previousManifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final oldAssets = (previousManifest?['assets'] as List<Map<String, dynamic>>?) ?? const [];
+    final slot = sha256.convert(utf8.encode(jsonEncode([normalizedLanguage, forced, hearingImpaired]))).toString();
+    final checksum = sha256.convert(bytes).toString();
+    Map<String, dynamic>? previousSlotAsset;
+    for (final asset in oldAssets) {
+      if (asset['slot'] == slot) {
+        previousSlotAsset = asset;
+        break;
+      }
+    }
+    final preserveSync = previousSlotAsset?['sha256'] == checksum;
+    final syncByAudio = preserveSync
+        ? Map<String, dynamic>.from(previousSlotAsset!['syncByAudio'] as Map<String, dynamic>)
+        : <String, dynamic>{};
+    final selectedSync = _subtitleSyncForAudio(syncByAudio, _subtitleAudioIdentity(native));
+    final assetName = '$checksum$extension';
+    final assetFile = File(p.join(directory.path, assetName));
+    final nextAssets = <Map<String, dynamic>>[
+      ...oldAssets.where((asset) => asset['slot'] != slot),
+      {
+        'slot': slot,
+        'sha256': checksum,
+        'file': assetName,
+        'size': bytes.length,
+        'language': normalizedLanguage,
+        'forced': forced,
+        'hearingImpaired': hearingImpaired,
+        'syncByAudio': syncByAudio,
+      },
+    ];
+    final uniqueFiles = nextAssets.map((asset) => asset['file'] as String).toSet();
+    final totalBytes = uniqueFiles.fold<int>(
+      0,
+      (total, fileName) => total + (nextAssets.firstWhere((asset) => asset['file'] == fileName)['size'] as int),
+    );
+    if (nextAssets.length > 8 || totalBytes > 20 * 1024 * 1024) {
+      throw const SourceException(SourceFailure.quotaExceeded);
+    }
+    final nextManifest = <String, dynamic>{
+      'version': 2,
+      'entry': sourceDigest(item.key),
+      'edition': edition,
+      'fileFingerprint': publicationFile.fingerprint,
+      'selected': slot,
+      'assets': nextAssets,
+    };
+
+    final stagedAsset = File('${assetFile.path}.${const Uuid().v4()}.pending');
+    final hadAsset = await assetFile.exists();
+    var manifestWritten = false;
     try {
-      await file.writeAsBytes(bytes, flush: true);
-      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-      await native.command(['sub-add', file.path, 'select']);
-      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-      _temporarySubtitles.add(file);
+      if (!hadAsset ||
+          await assetFile.length() != bytes.length ||
+          sha256.convert(await assetFile.readAsBytes()).toString() != checksum) {
+        await stagedAsset.writeAsBytes(bytes, flush: true);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        if (await assetFile.exists()) await assetFile.delete();
+        await stagedAsset.rename(assetFile.path);
+      }
+      if (!current()) throw const SourceException(SourceFailure.cancelled);
+      await _writeExternalSubtitleManifest(manifestFile, nextManifest);
+      manifestWritten = true;
+      final offsets = PlayerSyncOffsets.of(native);
+      final previousDelayMs = offsets.subtitleMs;
+      final previousRate = offsets.subtitleRate;
+      try {
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        await _applyExternalSubtitleSync(native, delayMs: selectedSync.delayMs, rate: selectedSync.rate);
+        await native.command(['sub-add', assetFile.path, 'select']);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+      } catch (_) {
+        try {
+          await _applyExternalSubtitleSync(native, delayMs: previousDelayMs, rate: previousRate);
+        } on Object catch (error, stackTrace) {
+          appLogger.w(
+            'Could not restore subtitle timing after subtitle import failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+        if (previousManifest == null) {
+          if (await manifestFile.exists()) await manifestFile.delete();
+          manifestWritten = false;
+        } else {
+          await _writeExternalSubtitleManifest(manifestFile, previousManifest);
+        }
+        if (!hadAsset && !oldAssets.any((asset) => asset['file'] == assetName) && await assetFile.exists()) {
+          await assetFile.delete();
+        }
+        rethrow;
+      }
+      _selectedExternalSubtitlePath = assetFile.absolute.path;
+      _activeExternalSubtitleSyncBinding = _externalSubtitleSyncBinding(native, assetFile.absolute.path);
+      try {
+        await _pruneExternalSubtitleAssets(directory, nextAssets);
+      } on Object {
+        // Playback and the committed manifest remain valid if cache pruning fails.
+      }
       _notify();
     } catch (_) {
-      if (await file.exists()) await file.delete();
+      if (await stagedAsset.exists()) await stagedAsset.delete();
+      if (!hadAsset && !manifestWritten && await assetFile.exists()) await assetFile.delete();
       rethrow;
+    }
+  });
+
+  Future<({int delayMs, double rate})?> activeExternalSubtitleSync() async {
+    final native = player;
+    final item = entry;
+    final profile = _profile;
+    final edition = progress?.edition;
+    if (!_valid ||
+        !video ||
+        _liveInput ||
+        !_persistProgress ||
+        native == null ||
+        native.playerType != 'mpv' ||
+        item == null ||
+        profile == null ||
+        edition == null ||
+        files.isEmpty ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length ||
+        !hasSelectedPersistentExternalSubtitle) {
+      return null;
+    }
+    final publicationFile = files[_fileIndex];
+    final fileIndex = _fileIndex;
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    bool current() => _isCurrentExternalSubtitleScope(
+      native: native,
+      item: item,
+      publicationFile: publicationFile,
+      fileIndex: fileIndex,
+      profile: profile,
+      edition: edition,
+      generation: generation,
+      fileEpoch: fileEpoch,
+    );
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final manifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    if (!current() || manifest == null) return null;
+    final selected = manifest['selected'];
+    final assets = manifest['assets'] as List<Map<String, dynamic>>;
+    final selectedPath = _selectedExternalSubtitlePath;
+    if (selectedPath == null) return null;
+    for (final asset in assets) {
+      if (asset['slot'] != selected || asset['file'] != p.basename(selectedPath)) continue;
+      final file = File(p.join(directory.path, asset['file'] as String));
+      if (!await file.exists() || !current()) return null;
+      if (await file.length() != asset['size'] || !current()) return null;
+      if (sha256.convert(await file.readAsBytes()).toString() != asset['sha256'] || !current()) return null;
+      final sync = asset['syncByAudio'] as Map<String, dynamic>;
+      return _subtitleSyncForAudio(sync, _subtitleAudioIdentity(native));
+    }
+    return null;
+  }
+
+  /// Aligns a chosen subtitle cue's start to a captured playback position.
+  ///
+  /// The correction is scoped to the active subtitle asset and selected audio
+  /// stream. The player's value is restored if the manifest write fails.
+  Future<int> alignExternalSubtitleCueNow({
+    required String expectedIdentity,
+    required int cueStartMs,
+    required int playbackPositionMs,
+  }) async {
+    if (cueStartMs < 0 || cueStartMs > 60 * 24 * 60 * 60 * 1000 || playbackPositionMs < 0) {
+      throw RangeError('Subtitle cue and playback times must be non-negative and within the supported range.');
+    }
+    if (activeExternalSubtitleIdentity != expectedIdentity) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final native = player;
+    final previous = await activeExternalSubtitleSync();
+    if (native == null ||
+        player != native ||
+        previous == null ||
+        activeExternalSubtitleIdentity != expectedIdentity ||
+        !previous.rate.isFinite) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final nextDelayMs = playbackPositionMs - (cueStartMs * previous.rate).round();
+    if (nextDelayMs < ScopedPlayerPrefs.minimumSyncOffsetMs || nextDelayMs > ScopedPlayerPrefs.maximumSyncOffsetMs) {
+      throw RangeError.range(
+        nextDelayMs,
+        ScopedPlayerPrefs.minimumSyncOffsetMs,
+        ScopedPlayerPrefs.maximumSyncOffsetMs,
+        'delayMs',
+      );
+    }
+
+    await _applyExternalSubtitleSync(native, delayMs: nextDelayMs, rate: previous.rate);
+    try {
+      if (player != native || activeExternalSubtitleIdentity != expectedIdentity) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      await persistExternalSubtitleSync(delayMs: nextDelayMs);
+      if (player != native || activeExternalSubtitleIdentity != expectedIdentity) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+    } on Object catch (error, stackTrace) {
+      if (player == native && activeExternalSubtitleIdentity == expectedIdentity) {
+        try {
+          await _applyExternalSubtitleSync(native, delayMs: previous.delayMs, rate: previous.rate);
+        } on Object catch (rollbackError, rollbackStackTrace) {
+          appLogger.w(
+            'Could not restore subtitle timing after one-cue alignment failed',
+            error: rollbackError,
+            stackTrace: rollbackStackTrace,
+          );
+        }
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    return nextDelayMs;
+  }
+
+  /// Seeks to a cue's corrected display time while the same external subtitle,
+  /// audio track, file, and playback generation remain active.
+  Future<bool> seekExternalSubtitleCue({
+    required String expectedIdentity,
+    required int cueStartMs,
+    required int delayMs,
+    required double rate,
+    required int prerollMs,
+  }) => _serialize(() async {
+    if (cueStartMs < 0 ||
+        cueStartMs > 24 * 60 * 60 * 1000 ||
+        prerollMs < 0 ||
+        prerollMs > 5000 ||
+        delayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+        delayMs > ScopedPlayerPrefs.maximumSyncOffsetMs ||
+        !rate.isFinite ||
+        rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+        rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+      throw RangeError('Subtitle cue seek values are outside the supported range.');
+    }
+    final native = player;
+    if (!_valid ||
+        !video ||
+        _liveInput ||
+        native == null ||
+        native.playerType != 'mpv' ||
+        !native.state.seekable ||
+        !canExportActiveExternalSubtitle ||
+        activeExternalSubtitleIdentity != expectedIdentity) {
+      return false;
+    }
+
+    final durationMs = currentFileDurationMs;
+    if (durationMs <= 0) return false;
+    final correctedCueStartMs = (cueStartMs * rate).round() + delayMs;
+    final targetInFileMs = correctedCueStartMs - prerollMs;
+    if (targetInFileMs >= durationMs) return false;
+
+    final currentFileStartMs = positionMs - currentFilePositionMs;
+    final targetInFile = targetInFileMs.clamp(0, durationMs - 1).toInt();
+    _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
+    await _seek(currentFileStartMs + targetInFile);
+    return activeExternalSubtitleIdentity == expectedIdentity;
+  });
+
+  Future<void> persistExternalSubtitleSync({int? delayMs, double? rate}) async {
+    if (delayMs == null && rate == null) return;
+    if (delayMs != null &&
+        (delayMs < ScopedPlayerPrefs.minimumSyncOffsetMs || delayMs > ScopedPlayerPrefs.maximumSyncOffsetMs)) {
+      throw RangeError.range(
+        delayMs,
+        ScopedPlayerPrefs.minimumSyncOffsetMs,
+        ScopedPlayerPrefs.maximumSyncOffsetMs,
+        'delayMs',
+      );
+    }
+    if (rate != null &&
+        (!rate.isFinite ||
+            rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+            rate > ScopedPlayerPrefs.maximumSubtitleSyncRate)) {
+      throw RangeError.range(
+        rate,
+        ScopedPlayerPrefs.minimumSubtitleSyncRate,
+        ScopedPlayerPrefs.maximumSubtitleSyncRate,
+        'rate',
+      );
+    }
+    final next = _subtitleSyncWrites.then((_) async {
+      await _commands;
+      final native = player;
+      final item = entry;
+      final profile = _profile;
+      final edition = progress?.edition;
+      final selectedPath = _selectedExternalSubtitlePath;
+      if (!_valid ||
+          !video ||
+          _liveInput ||
+          !_persistProgress ||
+          native == null ||
+          native.playerType != 'mpv' ||
+          item == null ||
+          profile == null ||
+          edition == null ||
+          selectedPath == null ||
+          files.isEmpty ||
+          _fileIndex < 0 ||
+          _fileIndex >= files.length ||
+          !hasSelectedPersistentExternalSubtitle) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      final publicationFile = files[_fileIndex];
+      final fileIndex = _fileIndex;
+      final generation = _generation;
+      final fileEpoch = _fileEpoch;
+      bool current() => _isCurrentExternalSubtitleScope(
+        native: native,
+        item: item,
+        publicationFile: publicationFile,
+        fileIndex: fileIndex,
+        profile: profile,
+        edition: edition,
+        generation: generation,
+        fileEpoch: fileEpoch,
+      );
+      final directory = _externalSubtitleAssetDirectory(
+        profile: profile,
+        item: item,
+        edition: edition,
+        publicationFile: publicationFile,
+      );
+      final manifest = await _readExternalSubtitleManifest(
+        directory: directory,
+        item: item,
+        edition: edition,
+        publicationFile: publicationFile,
+      );
+      if (!current() || manifest == null) throw const SourceException(SourceFailure.cancelled);
+      final selected = manifest['selected'];
+      final assets = (manifest['assets'] as List<Map<String, dynamic>>)
+          .map((asset) => Map<String, dynamic>.from(asset))
+          .toList();
+      final index = assets.indexWhere(
+        (asset) => asset['slot'] == selected && asset['file'] == p.basename(selectedPath),
+      );
+      if (index < 0) throw const SourceException(SourceFailure.cancelled);
+      final updated = Map<String, dynamic>.from(assets[index]);
+      final syncByAudio = Map<String, dynamic>.from(updated['syncByAudio'] as Map<String, dynamic>);
+      final audioIdentity = _subtitleAudioIdentity(native);
+      final currentSync = _subtitleSyncForAudio(syncByAudio, audioIdentity);
+      final nextSync = <String, dynamic>{'delayMs': delayMs ?? currentSync.delayMs, 'rate': rate ?? currentSync.rate};
+      syncByAudio.remove('legacy');
+      syncByAudio.remove(audioIdentity);
+      syncByAudio[audioIdentity] = nextSync;
+      while (syncByAudio.length > 16) {
+        syncByAudio.remove(syncByAudio.keys.first);
+      }
+      updated['syncByAudio'] = syncByAudio;
+      assets[index] = updated;
+      final manifestFile = File(p.join(directory.path, 'manifest.json'));
+      await _writeExternalSubtitleManifest(manifestFile, {
+        'version': 2,
+        'entry': sourceDigest(item.key),
+        'edition': edition,
+        'fileFingerprint': publicationFile.fingerprint,
+        'selected': selected,
+        'assets': assets,
+      });
+      if (!current()) throw const SourceException(SourceFailure.cancelled);
+    });
+    _subtitleSyncWrites = next.catchError((Object _) {});
+    await next;
+  }
+
+  String _subtitleAudioIdentity(Player native) {
+    final audio = native.state.track.audio;
+    final descriptor = audio == null
+        ? const ['no-selected-audio']
+        : [
+            audio.id,
+            audio.language?.trim().toLowerCase() ?? '',
+            audio.title?.trim() ?? '',
+            audio.codec?.trim().toLowerCase() ?? '',
+            audio.channels ?? 0,
+            audio.sampleRate ?? 0,
+          ];
+    return sha256.convert(utf8.encode(jsonEncode(descriptor))).toString();
+  }
+
+  ({int delayMs, double rate}) _subtitleSyncForAudio(Map<String, dynamic> syncByAudio, String audioIdentity) {
+    final raw = syncByAudio[audioIdentity] ?? syncByAudio['legacy'];
+    if (raw is! Map) return (delayMs: 0, rate: 1.0);
+    final values = Map<String, dynamic>.from(raw);
+    final rawDelay = values['delayMs'];
+    final rawRate = values['rate'];
+    if (rawDelay is! int || rawRate is! num) return (delayMs: 0, rate: 1.0);
+    final delayMs = rawDelay;
+    final rate = rawRate.toDouble();
+    if (delayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+        delayMs > ScopedPlayerPrefs.maximumSyncOffsetMs ||
+        !rate.isFinite ||
+        rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+        rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+      return (delayMs: 0, rate: 1.0);
+    }
+    return (delayMs: delayMs, rate: rate);
+  }
+
+  String _externalSubtitleSyncBinding(Player native, String path) =>
+      _subtitleAudioIdentity(native) + '|' + (native.state.track.subtitle?.id ?? 'off') + '|' + path;
+
+  Future<void> _reapplySelectedExternalSubtitleSyncForCurrentTrack() async {
+    await _commands;
+    if (opening) return;
+    final native = player;
+    final item = entry;
+    final profile = _profile;
+    if (native == null ||
+        item == null ||
+        profile == null ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length ||
+        _selectedExternalSubtitlePath == null) {
+      return;
+    }
+    await _reapplyExternalSubtitleSyncForTrackChange(
+      native: native,
+      item: item,
+      publicationFile: files[_fileIndex],
+      fileIndex: _fileIndex,
+      profile: profile,
+      edition: progress?.edition,
+      generation: _generation,
+      fileEpoch: _fileEpoch,
+    );
+  }
+
+  Future<void> _reapplyExternalSubtitleSyncForTrackChange({
+    required Player native,
+    required SourceEntry item,
+    required PublicationFile publicationFile,
+    required int fileIndex,
+    required String profile,
+    required String? edition,
+    required int generation,
+    required int fileEpoch,
+  }) async {
+    final path = _selectedExternalSubtitlePath;
+    if (path == null ||
+        !_isSelectedExternalSubtitlePath(native.state.track.subtitle, path) ||
+        !_isCurrentExternalSubtitleScope(
+          native: native,
+          item: item,
+          publicationFile: publicationFile,
+          fileIndex: fileIndex,
+          profile: profile,
+          edition: edition,
+          generation: generation,
+          fileEpoch: fileEpoch,
+        )) {
+      return;
+    }
+    final binding = _externalSubtitleSyncBinding(native, path);
+    if (binding == _activeExternalSubtitleSyncBinding || edition == null) return;
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final manifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    if (manifest == null) return;
+    final selected = manifest['selected'];
+    for (final asset in manifest['assets'] as List<Map<String, dynamic>>) {
+      if (asset['slot'] != selected || asset['file'] != p.basename(path)) continue;
+      final sync = _subtitleSyncForAudio(asset['syncByAudio'] as Map<String, dynamic>, _subtitleAudioIdentity(native));
+      if (!_isCurrentExternalSubtitleScope(
+            native: native,
+            item: item,
+            publicationFile: publicationFile,
+            fileIndex: fileIndex,
+            profile: profile,
+            edition: edition,
+            generation: generation,
+            fileEpoch: fileEpoch,
+          ) ||
+          !_isSelectedExternalSubtitlePath(native.state.track.subtitle, path)) {
+        return;
+      }
+      try {
+        await _applyExternalSubtitleSync(native, delayMs: sync.delayMs, rate: sync.rate);
+        _activeExternalSubtitleSyncBinding = binding;
+        _notify();
+      } on Object catch (error, stackTrace) {
+        appLogger.w(
+          'Could not apply saved subtitle timing for the selected audio',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      return;
+    }
+  }
+
+  bool _isSelectedExternalSubtitlePath(SubtitleTrack? track, String? path) {
+    if (track == null || !track.isExternal || path == null || track.uri == null) return false;
+    final actual = track.uri!;
+    if (actual == path || actual == File(path).uri.toString()) return true;
+    final uri = Uri.tryParse(actual);
+    return uri != null && uri.scheme == 'file' && File.fromUri(uri).absolute.path == path;
+  }
+
+  Future<void> _applyExternalSubtitleSync(Player native, {required int delayMs, required double rate}) async {
+    if (native.playerType != 'mpv' ||
+        delayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+        delayMs > ScopedPlayerPrefs.maximumSyncOffsetMs ||
+        !rate.isFinite ||
+        rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+        rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    await native.setProperty(PlayerSyncOffsets.subtitleRateProperty, rate.toStringAsFixed(6));
+    await native.setProperty(PlayerSyncOffsets.subtitleProperty, (delayMs / 1000.0).toString());
+    final appliedRate = double.tryParse(await native.getProperty(PlayerSyncOffsets.subtitleRateProperty) ?? '');
+    final appliedDelay = double.tryParse(await native.getProperty(PlayerSyncOffsets.subtitleProperty) ?? '');
+    if (appliedRate == null ||
+        !appliedRate.isFinite ||
+        appliedDelay == null ||
+        !appliedDelay.isFinite ||
+        (appliedRate - rate).abs() > 0.001 ||
+        (appliedDelay * 1000 - delayMs).abs() > 2) {
+      throw StateError('The player did not apply the external subtitle timing.');
+    }
+    final offsets = PlayerSyncOffsets.of(native);
+    offsets.recordSubtitleRate(appliedRate);
+    offsets.recordApplied(PlayerSyncOffsets.subtitleProperty, (appliedDelay * 1000).round());
+  }
+
+  bool _isCurrentExternalSubtitleScope({
+    required Player native,
+    required SourceEntry item,
+    required PublicationFile publicationFile,
+    required int fileIndex,
+    required String profile,
+    required String? edition,
+    required int generation,
+    required int fileEpoch,
+  }) =>
+      _valid &&
+      player == native &&
+      entry == item &&
+      _profile == profile &&
+      _generation == generation &&
+      _fileEpoch == fileEpoch &&
+      _fileIndex == fileIndex &&
+      fileIndex >= 0 &&
+      fileIndex < files.length &&
+      files[fileIndex].fingerprint == publicationFile.fingerprint &&
+      progress?.edition == edition;
+
+  Directory _externalSubtitleAssetDirectory({
+    required String profile,
+    required SourceEntry item,
+    required String edition,
+    required PublicationFile publicationFile,
+  }) {
+    final digestPattern = RegExp(r'^[0-9a-f]{64}$');
+    if (!digestPattern.hasMatch(edition) || !digestPattern.hasMatch(publicationFile.fingerprint)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    return Directory(
+      p.join(
+        sources.downloads.directory.path,
+        sourceDigest(profile),
+        'external-subtitles',
+        sourceDigest(item.key),
+        edition,
+        publicationFile.fingerprint,
+      ),
+    );
+  }
+
+  String _normalizeSubtitleLanguage(String value) {
+    final normalized = value.trim().toLowerCase().replaceAll('_', '-');
+    return RegExp(r'^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$').hasMatch(normalized) ? normalized : '';
+  }
+
+  List<String> _externalSubtitleCommand({
+    required String path,
+    required String language,
+    required bool forced,
+    required bool hearingImpaired,
+  }) {
+    final flags = ['select', if (forced) 'forced', if (hearingImpaired) 'hearing-impaired'].join(' ');
+    final title = language.isEmpty ? 'External subtitle' : language;
+    return ['sub-add', path, flags, title, if (language.isNotEmpty) language];
+  }
+
+  Map<String, dynamic>? _safeExternalSubtitleAsset(Object? value) {
+    if (value is! Map) return null;
+    final asset = Map<String, dynamic>.from(value);
+    final slot = asset['slot'];
+    final checksum = asset['sha256'];
+    final fileName = asset['file'];
+    final size = asset['size'];
+    final language = asset['language'];
+    final forced = asset['forced'];
+    final hearingImpaired = asset['hearingImpaired'];
+    final rawSyncByAudio = asset['syncByAudio'];
+    final rawSyncByAudioMap = rawSyncByAudio is Map ? Map<String, dynamic>.from(rawSyncByAudio) : null;
+    final legacyDelay = asset['syncDelayMs'] ?? 0;
+    final legacyRate = asset['syncRate'] ?? 1.0;
+    final syncByAudio =
+        rawSyncByAudioMap ??
+        <String, dynamic>{
+          'legacy': {'delayMs': legacyDelay, 'rate': legacyRate},
+        };
+
+    if (syncByAudio.length > 16) return null;
+    for (final entry in syncByAudio.entries) {
+      if (entry.key != 'legacy' && !RegExp(r'^[0-9a-f]{64}$').hasMatch(entry.key)) return null;
+      if (entry.value is! Map) return null;
+      final values = Map<String, dynamic>.from(entry.value as Map);
+      final rawDelay = values['delayMs'];
+      final rawRate = values['rate'];
+      if (rawDelay is! int || rawRate is! num) return null;
+      final rate = rawRate.toDouble();
+      if (rawDelay < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+          rawDelay > ScopedPlayerPrefs.maximumSyncOffsetMs ||
+          !rate.isFinite ||
+          rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+          rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+        return null;
+      }
+    }
+
+    if (slot is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(slot) ||
+        checksum is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum) ||
+        fileName is! String ||
+        p.basename(fileName) != fileName ||
+        size is! int ||
+        size <= 0 ||
+        size > 5 * 1024 * 1024 ||
+        language is! String ||
+        _normalizeSubtitleLanguage(language) != language ||
+        forced is! bool ||
+        hearingImpaired is! bool) {
+      return null;
+    }
+    final extension = p.extension(fileName).toLowerCase();
+    if (!const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(extension) ||
+        fileName != '$checksum$extension' ||
+        slot != sha256.convert(utf8.encode(jsonEncode([language, forced, hearingImpaired]))).toString()) {
+      return null;
+    }
+    return {
+      'slot': slot,
+      'sha256': checksum,
+      'file': fileName,
+      'size': size,
+      'language': language,
+      'forced': forced,
+      'hearingImpaired': hearingImpaired,
+      'syncByAudio': syncByAudio,
+    };
+  }
+
+  Future<Map<String, dynamic>?> _readExternalSubtitleManifest({
+    required Directory directory,
+    required SourceEntry item,
+    required String edition,
+    required PublicationFile publicationFile,
+  }) async {
+    final manifestFile = File(p.join(directory.path, 'manifest.json'));
+    final backupFile = File('${manifestFile.path}.backup');
+    try {
+      if (!await manifestFile.exists() && await backupFile.exists()) {
+        await backupFile.rename(manifestFile.path);
+      } else if (await manifestFile.exists() && await backupFile.exists()) {
+        await backupFile.delete();
+      }
+      if (!await manifestFile.exists() || await manifestFile.length() > 64 * 1024) return null;
+      final decoded = jsonDecode(await manifestFile.readAsString());
+      if (decoded is! Map) return null;
+      final manifest = Map<String, dynamic>.from(decoded);
+      if ((manifest['version'] != 1 && manifest['version'] != 2) ||
+          manifest['entry'] != sourceDigest(item.key) ||
+          manifest['edition'] != edition ||
+          manifest['fileFingerprint'] != publicationFile.fingerprint ||
+          manifest['assets'] is! List) {
+        return null;
+      }
+      final rawAssets = manifest['assets'] as List;
+      if (rawAssets.length > 8) return null;
+      final assets = rawAssets.map(_safeExternalSubtitleAsset).whereType<Map<String, dynamic>>().toList();
+      final selected = manifest['selected'];
+      return {
+        'version': 2,
+        'entry': sourceDigest(item.key),
+        'edition': edition,
+        'fileFingerprint': publicationFile.fingerprint,
+        'selected': selected is String && assets.any((asset) => asset['slot'] == selected) ? selected : '',
+        'assets': assets,
+      };
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _writeExternalSubtitleManifest(File manifestFile, Map<String, dynamic> manifest) async {
+    final staged = File('${manifestFile.path}.${const Uuid().v4()}.pending');
+    final backup = File('${manifestFile.path}.backup');
+    try {
+      await staged.writeAsString(jsonEncode(manifest), flush: true);
+      if (await backup.exists()) await backup.delete();
+      if (await manifestFile.exists()) await manifestFile.rename(backup.path);
+      try {
+        await staged.rename(manifestFile.path);
+        if (await backup.exists()) {
+          try {
+            await backup.delete();
+          } on Object {
+            // The main manifest is already committed; recover by preferring it next time.
+          }
+        }
+      } catch (_) {
+        if (!await manifestFile.exists() && await backup.exists()) {
+          await backup.rename(manifestFile.path);
+        }
+        rethrow;
+      }
+    } finally {
+      if (await staged.exists()) await staged.delete();
+    }
+  }
+
+  Future<void> _pruneExternalSubtitleAssets(Directory directory, List<Map<String, dynamic>> assets) async {
+    final keep = assets.map((asset) => asset['file'] as String).toSet();
+    final ownedAsset = RegExp(r'^[0-9a-f]{64}\.(?:srt|ass|ssa|vtt|sub)$');
+    for (final entity in await directory.list(followLinks: false).toList()) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      if (ownedAsset.hasMatch(name) && !keep.contains(name)) {
+        try {
+          await entity.delete();
+        } on Object {
+          // Stale, unreferenced cache cleanup is best effort.
+        }
+      } else if (name.endsWith('.pending')) {
+        try {
+          await entity.delete();
+        } on Object {
+          // Stale, unreferenced cache cleanup is best effort.
+        }
+      }
+    }
+  }
+
+  Future<void> _restoreExternalSubtitleAssets({
+    required Player native,
+    required SourceEntry item,
+    required PublicationFile publicationFile,
+    required int fileIndex,
+    required String profile,
+    required String edition,
+    required int generation,
+    required int fileEpoch,
+  }) async {
+    if (!_persistProgress || _liveInput || !video || native.playerType != 'mpv') return;
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final manifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    if (manifest == null) return;
+    final assets = (manifest['assets'] as List<Map<String, dynamic>>)
+        .where(
+          (asset) =>
+              native.supportedLocalSubtitleExtensions.contains(p.extension(asset['file'] as String).substring(1)),
+        )
+        .toList();
+    final selected = manifest['selected'];
+    assets.sort((a, b) => (a['slot'] == selected ? 1 : 0).compareTo(b['slot'] == selected ? 1 : 0));
+    for (final asset in assets) {
+      if (!_isCurrentExternalSubtitleScope(
+        native: native,
+        item: item,
+        publicationFile: publicationFile,
+        fileIndex: fileIndex,
+        profile: profile,
+        edition: edition,
+        generation: generation,
+        fileEpoch: fileEpoch,
+      )) {
+        return;
+      }
+      final fileName = asset['file'] as String;
+      final file = File(p.join(directory.path, fileName));
+      try {
+        if (!await file.exists() || await file.length() != asset['size']) continue;
+        final contents = await file.readAsBytes();
+        if (sha256.convert(contents).toString() != asset['sha256']) continue;
+        if (!_isCurrentExternalSubtitleScope(
+          native: native,
+          item: item,
+          publicationFile: publicationFile,
+          fileIndex: fileIndex,
+          profile: profile,
+          edition: edition,
+          generation: generation,
+          fileEpoch: fileEpoch,
+        )) {
+          return;
+        }
+        await native.command(
+          _externalSubtitleCommand(
+            path: file.path,
+            language: asset['language'] as String,
+            forced: asset['forced'] as bool,
+            hearingImpaired: asset['hearingImpaired'] as bool,
+          ),
+        );
+        if (asset['slot'] == selected) {
+          final sync = _subtitleSyncForAudio(
+            asset['syncByAudio'] as Map<String, dynamic>,
+            _subtitleAudioIdentity(native),
+          );
+          await _applyExternalSubtitleSync(native, delayMs: sync.delayMs, rate: sync.rate);
+          _selectedExternalSubtitlePath = file.absolute.path;
+          _activeExternalSubtitleSyncBinding = _externalSubtitleSyncBinding(native, file.absolute.path);
+        }
+      } on Object {
+        appLogger.w('Saved external subtitle could not be restored');
+      }
+    }
+  }
+
+  Future<({String movieHash, int fileSize})?> currentOpenSubtitlesFingerprint() async {
+    final native = player;
+    final item = entry;
+    final profile = _profile;
+    if (!_valid ||
+        !video ||
+        _liveInput ||
+        !_persistProgress ||
+        native == null ||
+        item == null ||
+        profile == null ||
+        files.isEmpty ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length) {
+      return null;
+    }
+    final publicationFile = files[_fileIndex];
+    final fileIndex = _fileIndex;
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = progress?.edition;
+    if (publicationFile.streamOnly || publicationFile.size == null) return null;
+    bool current() =>
+        _valid &&
+        player == native &&
+        entry == item &&
+        _profile == profile &&
+        _generation == generation &&
+        _fileEpoch == fileEpoch &&
+        _fileIndex == fileIndex &&
+        fileIndex < files.length &&
+        files[fileIndex].fingerprint == publicationFile.fingerprint &&
+        progress?.edition == edition;
+
+    try {
+      final cached = await sources.downloads.local(profile, item.sourceId, publicationFile);
+      final Uri uri;
+      if (cached != null) {
+        uri = cached.uri;
+      } else {
+        final adapter = sources.adapter(item.sourceId);
+        if (adapter.source.kind != FileSourceKind.local) return null;
+        uri = (await adapter.resolve(publicationFile)).uri;
+      }
+      if (!current() || uri.scheme != 'file') return null;
+
+      final sourceFile = File.fromUri(uri);
+      final input = await sourceFile.open(mode: FileMode.read);
+      try {
+        const chunkSize = 64 * 1024;
+        final size = await input.length();
+        if (size < chunkSize * 2 || size != publicationFile.size || !current()) return null;
+        final mask = (BigInt.one << 64) - BigInt.one;
+        var hash = BigInt.from(size);
+        for (final offset in <int>[0, size - chunkSize]) {
+          await input.setPosition(offset);
+          final bytes = await input.read(chunkSize);
+          if (bytes.length != chunkSize) return null;
+          for (var wordOffset = 0; wordOffset < chunkSize; wordOffset += 8) {
+            var word = BigInt.zero;
+            for (var byteOffset = 7; byteOffset >= 0; byteOffset--) {
+              word = (word << 8) | BigInt.from(bytes[wordOffset + byteOffset]);
+            }
+            hash = (hash + word) & mask;
+          }
+        }
+        if (!current()) return null;
+        return (movieHash: hash.toRadixString(16).padLeft(16, '0'), fileSize: size);
+      } finally {
+        await input.close();
+      }
+    } on Object {
+      // A local hash is an optional precision improvement; unavailable files
+      // and source changes keep the ordinary title/ID search usable.
+      return null;
     }
   }
 
@@ -807,6 +1986,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _openFile(int index, int localPosition, {bool play = true}) async {
     if (!_valid || player == null) return;
+    _subtitleMuteGeneration += 1;
+    _subtitleMuteRestore = null;
     if (_streamRecordingPartial != null && index != _fileIndex) {
       try {
         await stopStreamRecording();
@@ -815,7 +1996,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     opening = true;
-    _fileEpoch++;
+    _selectedExternalSubtitlePath = null;
+    _activeExternalSubtitleSyncBinding = null;
+    _fileEpoch += 1;
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = progress?.edition;
     _notify();
     _fileIndex = index;
     _lastKnownFilePositionMs = math.max(0, localPosition);
@@ -868,7 +2054,27 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       isLive: _liveInput,
     );
     await native.setRate(speed);
-    if (!_valid || player != native) return;
+    if (!_valid || player != native || generation != _generation || fileEpoch != _fileEpoch) return;
+    if (native.playerType == 'mpv') {
+      try {
+        await _applyExternalSubtitleSync(native, delayMs: 0, rate: 1.0);
+      } on Object catch (error, stackTrace) {
+        appLogger.w('Could not reset subtitle timing for the new source file', error: error, stackTrace: stackTrace);
+      }
+    }
+    if (edition != null) {
+      await _restoreExternalSubtitleAssets(
+        native: native,
+        item: item,
+        publicationFile: file,
+        fileIndex: index,
+        profile: _profile!,
+        edition: edition,
+        generation: generation,
+        fileEpoch: fileEpoch,
+      );
+    }
+    if (!_valid || player != native || generation != _generation || fileEpoch != _fileEpoch) return;
     await _controls?.updateFileMetadata(
       title: item.displayTitle,
       author: item.narrator.isEmpty ? item.author : item.narrator,
@@ -879,6 +2085,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _rebuildChapters();
     opening = false;
     _notify();
+    if (_userMuted) unawaited(_selectSubtitleForMute(native, _subtitleMuteGeneration));
   }
 
   Future<void> _readChapters(Player native, int generation, int index) async {
@@ -1341,13 +2548,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _sleepBoundaryFile = null;
     _undoSeek = null;
     if (_persistProgress) sources.scheduleSync();
-    _generation++;
+    _generation += 1;
+    _subtitleMuteGeneration += 1;
+    _subtitleMuteRestore = null;
+    _userMuted = false;
     for (final sub in _subscriptions) {
       await release(sub.cancel);
     }
     _subscriptions.clear();
     await release(() => _hardware?.unregister());
     _hardware = null;
+    _selectedExternalSubtitlePath = null;
+    _activeExternalSubtitleSyncBinding = null;
     final native = player;
     player = null;
     final videoLease = _videoPlayerLease;

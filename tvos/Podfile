@@ -15,7 +15,6 @@ project 'Runner', {
 # plugins whose upstream podspecs already declare tvOS — the rest remain
 # compiled from tvos/Runner/Plugins/ via tvos/scripts/wire_plugins.rb.
 require 'json'
-require 'fileutils'
 
 tvos_pod_plugins = %w[universal_gamepad os_media_controls wakelock_plus]
 
@@ -64,24 +63,6 @@ target 'Runner' do
   tvos_pod_plugins.each do |name|
     plugin_paths[name] or
       raise "tvos/Podfile: plugin '#{name}' not in .flutter-plugins-dependencies"
-    # The standard iOS Podfile creates these links through Flutter's podhelper.
-    # A tvOS-only job does not evaluate that Podfile, so materialize the links
-    # this hand-wired Podfile needs in a clean checkout.
-    plugin_root = File.expand_path(plugin_paths.fetch(name))
-    unless Dir.exist?(File.join(plugin_root, 'ios'))
-      raise "tvos/Podfile: plugin '#{name}' has no ios pod directory at #{plugin_root}"
-    end
-    plugin_links_dir = File.expand_path('../ios/.symlinks/plugins', __dir__)
-    FileUtils.mkdir_p(plugin_links_dir)
-    plugin_link = File.join(plugin_links_dir, name)
-    if File.symlink?(plugin_link)
-      linked_root = File.expand_path(File.readlink(plugin_link), plugin_links_dir)
-      File.unlink(plugin_link) unless Dir.exist?(linked_root) && File.realpath(linked_root) == File.realpath(plugin_root)
-    end
-    File.symlink(plugin_root, plugin_link) unless File.exist?(plugin_link)
-    unless File.realpath(plugin_link) == File.realpath(plugin_root)
-      raise "tvos/Podfile: plugin link for '#{name}' does not resolve to #{plugin_root}"
-    end
     relative_pod_path = File.join('..', 'ios', '.symlinks', 'plugins', name, 'ios')
     unless Dir.exist?(File.expand_path(relative_pod_path, __dir__))
       raise "tvos/Podfile: plugin '#{name}' is missing at #{relative_pod_path}"

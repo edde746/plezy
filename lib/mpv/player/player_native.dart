@@ -108,6 +108,16 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       audioOnly = true,
       _hardwareDecoding = true;
 
+  @override
+  Set<String> get supportedLocalSubtitleExtensions =>
+      audioOnly ? const <String>{} : const <String>{'srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'};
+
+  @override
+  bool get supportsSubtitleStyleControls => !audioOnly;
+
+  @override
+  bool get supportsSubtitleStepSync => !audioOnly;
+
   /// Whether this session intends to hardware-decode; carried on
   /// `initialize` for the Android core's vo decision.
   final bool _hardwareDecoding;
@@ -697,7 +707,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     // Let mpv open the armed entry while the current track still plays
     // (prefetch starts once the current demuxer is fully read) so the
     // network open never sits on the gapless boundary: with a boundary
-    // open, any server whose connect+probe outlasts the AO's buffered
+    // open, any server whose connect probe outlasts the AO's buffered
     // tail (~0.5s) produces an audible gap on every transition (#1869).
     // A failed or superseded prefetch is discarded by mpv and the entry
     // reopens normally at the boundary, so this can only remove latency.
@@ -1264,12 +1274,12 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   Future<void> _enqueueAudioStateReconciliation(int fields) {
     final requested = _requestedAudioState;
-    if (fields & _passthroughAudioField != 0) ++_passthroughGeneration;
-    if (fields & _normalizationAudioField != 0) ++_normalizationGeneration;
-    if (fields & _downmixAudioField != 0) ++_downmixGeneration;
-    if (fields & _equalizerAudioField != 0) ++_equalizerGeneration;
-    if (fields & _effectsAudioField != 0) ++_effectsGeneration;
-    if (fields & _rateAudioField != 0) ++_rateGeneration;
+    if (fields & _passthroughAudioField != 0) _passthroughGeneration++;
+    if (fields & _normalizationAudioField != 0) _normalizationGeneration++;
+    if (fields & _downmixAudioField != 0) _downmixGeneration++;
+    if (fields & _equalizerAudioField != 0) _equalizerGeneration++;
+    if (fields & _effectsAudioField != 0) _effectsGeneration++;
+    if (fields & _rateAudioField != 0) _rateGeneration++;
     final generations = (
       passthrough: _passthroughGeneration,
       normalization: _normalizationGeneration,

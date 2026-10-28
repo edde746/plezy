@@ -41,6 +41,7 @@ import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
 import 'subtitle_styling_screen.dart';
+import 'subtitle_language_order_screen.dart';
 
 class PlaybackSettingsScreen extends StatefulWidget {
   const PlaybackSettingsScreen({super.key});
@@ -265,10 +266,22 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   subtitle: t.settings.alwaysShowSubtitlesOnDeviceDescription,
                 ),
                 SettingSwitchTile(
+                  pref: SettingsService.subtitleOnMute,
+                  icon: Symbols.subtitles_rounded,
+                  title: t.settings.subtitleOnMute,
+                  subtitle: t.settings.subtitleOnMuteDescription,
+                ),
+                SettingSwitchTile(
                   pref: SettingsService.autoDownloadPreferredSubtitle,
                   icon: Symbols.download_rounded,
                   title: t.settings.autoDownloadPreferredSubtitle,
                   subtitle: t.settings.autoDownloadPreferredSubtitleDescription,
+                ),
+                SettingNavigationTile(
+                  icon: Symbols.subtitles_rounded,
+                  title: 'Preferred subtitle languages',
+                  subtitle: 'Order device-local fallback languages; the server profile language takes priority.',
+                  destinationBuilder: (_) => const SubtitleLanguageOrderScreen(),
                 ),
                 if (!PlatformDetector.isTizenBuild())
                   SettingNavigationTile(

@@ -423,6 +423,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
           stepSubtitleDelay(_subtitleDelayStepMs);
         case ShortcutAction.subtitleDelayDecrease:
           stepSubtitleDelay(-_subtitleDelayStepMs);
+        case ShortcutAction.subtitleDelayReset:
+          stepSubtitleDelay(-PlayerSyncOffsets.of(player).subtitleMs);
         case ShortcutAction.shaderToggle:
           onToggleShader?.call();
         case ShortcutAction.skipMarker:

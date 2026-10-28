@@ -40,7 +40,7 @@ subprojects {
                 // Plugin modules can lag the app's Android tools even when
                 // their dependencies already require current APIs.
                 extension.compileSdk = 37
-                extension.buildToolsVersion = "37.0.0"
+                extension.buildToolsVersion = "36.1.0"
                 // The Flutter plugin copies the app's build types into every plugin
                 // module, so `minified` arrives here carrying the app's shrinker flags.
                 // Library-level shrinking then deletes the plugin entry points that only

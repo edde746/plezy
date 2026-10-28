@@ -24,6 +24,9 @@ dependencies:
   shared_preferences: ^2.5.4
   cached_network_image_ce: ^4.9.0
   http: ^1.6.0
+  sherpa_onnx: ^2.0.1
+  flutter_whisper_ggml: 0.0.2
+  google_mlkit_translation: ^0.15.1
   url_launcher: ^6.3.0
   uuid: ^4.4.0
   window_manager: ^0.5.1
@@ -113,6 +116,8 @@ dependencies:
   flutter_secure_storage_webos:
     path: packages/webos_plugins/flutter_secure_storage_webos
   file_picker: ^11.0.2
+  desktop_drop: 0.8.4
+  receive_sharing_intent: 1.8.1
   saf_util:
     # Vendored 3.1.0: fixes upstream's duplicate MethodChannel result.
     path: packages/saf_util
