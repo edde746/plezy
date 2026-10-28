@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Carry selected SDH/closed-caption subtitle intent across library episode changes and saved show preferences, while preserving the existing server fallback when the matching caption class is unavailable.
+- Carry selected SDH/closed-caption subtitle intent across library episode changes and saved show preferences, infer the role from older title-only preferences, and preserve the existing server fallback when the matching caption class is unavailable.
 
 - Read BOM-marked UTF-16LE/BE subtitle text for cue inspection and corrected export while preserving source encoding and line endings.
 

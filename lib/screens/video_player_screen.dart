@@ -84,6 +84,7 @@ import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../utils/language_codes.dart';
+import '../utils/subtitle_forced_semantics.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
@@ -1740,7 +1741,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         title: title,
         codec: codec,
         forced: subtitle['forced'] == true,
-        hearingImpaired: subtitle['hearingImpaired'] == true,
+        hearingImpaired:
+            subtitle['hearingImpaired'] == true || titleSaysHearingImpaired(title),
         isExternal: subtitle['external'] == true,
       ),
     );
