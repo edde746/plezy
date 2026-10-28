@@ -42,6 +42,23 @@ abstract final class SubtitleSyncService {
     'which', 'while', 'will', 'with', 'would', 'your',
   };
 
+  /// Align a target subtitle against another already synchronized subtitle
+  /// in the same spoken language. The reference cues provide the same
+  /// monotonic text/time anchors used by WAV transcription without requiring
+  /// a separate audio transcription pass.
+  static SubtitleSyncResult synchronizeAgainstReference({
+    required List<SubtitleCue> subtitleCues,
+    required List<SubtitleCue> referenceCues,
+    required int mediaDurationMs,
+    required bool repairCuts,
+  }) =>
+      synchronize(
+        subtitleCues: subtitleCues,
+        speechCues: referenceCues,
+        mediaDurationMs: mediaDurationMs,
+        repairCuts: repairCuts,
+      );
+
   static SubtitleSyncResult synchronize({
     required List<SubtitleCue> subtitleCues,
     required List<SubtitleCue> speechCues,
@@ -50,7 +67,7 @@ abstract final class SubtitleSyncService {
     bool preserveUnmatchedOutsideEvidence = false,
   }) {
     if (subtitleCues.length < _minimumMatches || speechCues.length < _minimumMatches) {
-      throw const FormatException('At least three subtitle and speech cues are needed for automatic alignment.');
+      throw const FormatException('At least three cues are needed in both the target subtitle and its reference text for automatic alignment.');
     }
     if (subtitleCues.length > SubtitleRetimer.maximumCueCount ||
         speechCues.length > SubtitleRetimer.maximumCueCount) {
@@ -157,7 +174,7 @@ abstract final class SubtitleSyncService {
       throw FormatException(
         'Only ${anchors.length} reliable speech matches were found '
         '(${(meanConfidence * 100).round()}% average confidence). '
-        'Use subtitles in the same language as the detected audio, or align two cues manually.',
+        'Use a subtitle in the same language as the reference text, or align two cues manually.',
       );
     }
 

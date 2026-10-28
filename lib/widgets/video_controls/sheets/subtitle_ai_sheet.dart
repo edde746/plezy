@@ -187,7 +187,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         setState(() => _status = '$phase$percent');
       },
     );
-    await _writeAndApply(result.cues);
+    if (!await _writeAndApply(result.cues, operationLabel: 'Generated subtitles')) return;
     if (!mounted) return;
     final providerLabel = result.fellBackToCpu
         ? '${result.requestedProvider.displayName} request unavailable; CPU fallback'
@@ -222,7 +222,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       mediaDurationMs: transcription.durationMs,
       repairCuts: repairCuts,
     );
-    await _writeAndApply(aligned.cues);
+    if (!await _writeAndApply(
+      aligned.cues,
+      operationLabel: repairCuts ? 'Cut repair' : 'Automatic sync',
+    )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
     setState(() {
@@ -259,6 +262,47 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     setState(() => _status = service.status);
   });
 
+  Future<void> _synchronizeToReference({required bool repairCuts}) => _run(() async {
+    setState(() => _status = 'Choose the subtitle that needs synchronization…');
+    final target = await _pickSubtitleCues();
+    if (target == null || !mounted) return;
+    setState(() => _status = 'Choose an already synchronized subtitle in the same language…');
+    final reference = await _pickSubtitleCues();
+    if (reference == null || !mounted) return;
+    if (target.$1.length == reference.$1.length &&
+        List.generate(target.$1.length, (index) => index).every((index) {
+          final left = target.$1[index];
+          final right = reference.$1[index];
+          return left.startMs == right.startMs && left.endMs == right.endMs && left.text == right.text;
+        })) {
+      throw const FormatException('Choose a different reference subtitle; the two files contain identical cues.');
+    }
+    final durationMs = widget.player.state.duration.inMilliseconds;
+    if (durationMs <= 0) {
+      throw const StateError('The player must expose media duration for subtitle-to-subtitle synchronization.');
+    }
+    setState(() => _status = 'Matching both subtitles and aligning timing…');
+    final aligned = SubtitleSyncService.synchronizeAgainstReference(
+      subtitleCues: target.$1,
+      referenceCues: reference.$1,
+      mediaDurationMs: durationMs,
+      repairCuts: repairCuts,
+    );
+    if (!await _writeAndApply(
+      aligned.cues,
+      operationLabel: repairCuts ? 'Reference cut repair' : 'Subtitle-reference sync',
+    )) return;
+    if (!mounted) return;
+    final percent = (aligned.meanMatchConfidence * 100).round();
+    setState(() {
+      _status = '${repairCuts ? 'Cut repair' : 'Subtitle-reference sync'} applied to '
+          '${aligned.matchedCueCount} of ${aligned.totalCueCount} cues ($percent% match confidence). '
+          '${aligned.discontinuityCount} timing discontinuities detected. '
+          'Reference: ${reference.$2}. Original: ${target.$2}.';
+    });
+    await _showApplied();
+  });
+
   Future<void> _synchronizeCapturedPlayback({required bool repairCuts}) => _run(() async {
     final transcript = SubtitlePlaybackTranscriptionService.instance.recentTranscript;
     if (transcript == null || transcript.cues.length < 3) {
@@ -276,7 +320,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       repairCuts: repairCuts,
       preserveUnmatchedOutsideEvidence: repairCuts,
     );
-    await _writeAndApply(aligned.cues);
+    if (!await _writeAndApply(
+      aligned.cues,
+      operationLabel: repairCuts ? 'Captured-playback cut repair' : 'Captured-playback sync',
+    )) return;
     if (!mounted) return;
     final percent = (aligned.meanMatchConfidence * 100).round();
     setState(() {
@@ -406,7 +453,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
     );
-    await _writeAndApply(result.cues);
+    if (!await _writeAndApply(result.cues, operationLabel: 'Translated subtitles')) return;
     if (!mounted) return;
     setState(() {
       _status = 'Translated ${result.cues.length} cues from '
@@ -417,12 +464,87 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     await _showApplied();
   });
 
-  Future<void> _writeAndApply(List<SubtitleCue> cues) async {
+  Future<bool> _writeAndApply(List<SubtitleCue> cues, {required String operationLabel}) async {
     final bytes = SubtitleSyncService.writeSrt(cues);
+    final List<int> previewIndexes;
+    if (cues.length <= 12) {
+      previewIndexes = List<int>.generate(cues.length, (index) => index);
+    } else {
+      final sample = <int>{
+        ...List<int>.generate(8, (index) => index),
+        cues.length ~/ 2,
+        ...List<int>.generate(3, (index) => cues.length - 3 + index),
+      };
+      previewIndexes = sample.toList()..sort();
+    }
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Review $operationLabel'),
+        content: SizedBox(
+          width: 560,
+          height: (MediaQuery.sizeOf(dialogContext).height - 220).clamp(240.0, 420.0).toDouble(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('${cues.length} cues are ready. Review this sample before attaching the generated SRT.'),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: previewIndexes.length,
+                  itemBuilder: (context, index) {
+                    final cueIndex = previewIndexes[index];
+                    final cue = cues[cueIndex];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_formatCueTime(cue.startMs)} – ${_formatCueTime(cue.endMs)}',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          SelectableText(cue.text),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Attach subtitle'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || accepted != true) {
+      if (mounted) setState(() => _status = 'Subtitle result discarded; the current track and source file are unchanged.');
+      return false;
+    }
     final directory = await getTemporaryDirectory();
     final path = p.join(directory.path, 'plezyng_subtitle_${DateTime.now().microsecondsSinceEpoch}.srt');
     await File(path).writeAsBytes(bytes, flush: true);
     await widget.player.command(['sub-add', path, 'select']);
+    return true;
+  }
+
+  String _formatCueTime(int milliseconds) {
+    final hours = milliseconds ~/ 3600000;
+    final minutes = milliseconds ~/ 60000 % 60;
+    final seconds = milliseconds ~/ 1000 % 60;
+    final millis = milliseconds % 1000;
+    String pad(int value, int width) => value.toString().padLeft(width, '0');
+    return '${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)},${pad(millis, 3)}';
   }
 
   Future<void> _showApplied() async {
@@ -476,7 +598,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         children: [
           Text(
-            'WAV transcription and sync use a 16-bit PCM WAV from the same title and audio track. Android ExoPlayer also supports an opt-in, local CPU caption tap while watching VOD; it covers only the portion played. MPV fallback and other players do not expose decoded audio.',
+            'WAV transcription and audio sync use a 16-bit PCM WAV from the same title and audio track; subtitle sync can also use an already synchronized same-language reference. Android ExoPlayer supports an opt-in local CPU caption tap for watched VOD sections. MPV fallback and other players do not expose decoded audio.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -613,6 +735,18 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             title: const Text('Repair cuts and sync'),
             subtitle: const Text('Uses piecewise timing where subtitle/audio text anchors suggest a cut offset change'),
             onTap: _busy ? null : () => unawaited(_synchronize(repairCuts: true)),
+          ),
+          FocusableListTile(
+            leading: const AppIcon(Symbols.closed_caption_rounded),
+            title: const Text('Sync to another subtitle'),
+            subtitle: const Text('Use a same-language SRT, VTT, ASS, or SSA subtitle as the timing reference'),
+            onTap: _busy ? null : () => unawaited(_synchronizeToReference(repairCuts: false)),
+          ),
+          FocusableListTile(
+            leading: const AppIcon(Symbols.content_cut_rounded),
+            title: const Text('Repair cuts using another subtitle'),
+            subtitle: const Text('Apply piecewise offsets where dialogue anchors show a timing discontinuity'),
+            onTap: _busy ? null : () => unawaited(_synchronizeToReference(repairCuts: true)),
           ),
           if (_translationSupported) ...[
             const Divider(height: 24),
