@@ -2,6 +2,7 @@ PODS:
   - Flutter (1.0.0)
   - os_media_controls (0.2.4):
     - Flutter
+  - plezy_torrent_tvos (1.0.0)
   - universal_gamepad (1.5.8):
     - Flutter
   - wakelock_plus (0.0.1):
@@ -10,6 +11,7 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - os_media_controls (from `../ios/.symlinks/plugins/os_media_controls/ios`)
+  - plezy_torrent_tvos (from `../packages/plezy_torrent/ios`)
   - universal_gamepad (from `../ios/.symlinks/plugins/universal_gamepad/ios`)
   - wakelock_plus (from `../ios/.symlinks/plugins/wakelock_plus/ios`)
 
@@ -18,6 +20,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   os_media_controls:
     :path: "../ios/.symlinks/plugins/os_media_controls/ios"
+  plezy_torrent_tvos:
+    :path: "../packages/plezy_torrent/ios"
   universal_gamepad:
     :path: "../ios/.symlinks/plugins/universal_gamepad/ios"
   wakelock_plus:
@@ -26,9 +30,10 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: f241167288a285322faa6d3e8a9c29c5bdb725ef
   os_media_controls: 10677b8012bf315d313649822324cc0bd03f3bb8
+  plezy_torrent_tvos: fb8b2c2ae515358f682f250a4e70ba63a98683a4
   universal_gamepad: 7c0cc0c2e3909dfb803d325387e42963b3ed842c
   wakelock_plus: 5aaa6a7ccaf4749a96a7d8ff0721d68061ad62cf
 
-PODFILE CHECKSUM: e773836d435650d5d2ab97d3ecf12f48fc9808af
+PODFILE CHECKSUM: c3e243217283f0313b18b7e16b7d0819f79c12e3
 
 COCOAPODS: 1.17.0
