@@ -17,6 +17,8 @@
 - Add capability-negotiated Steam Input and game-properties actions on paired computers, plus confirmed Cloud files and Families destinations in the existing adaptive Steam menu.
 
 - Add an embedded Linux Steam receiver with OS-keyring pairing, dedicated H.264/HEVC and PCM decoding, retained Flutter textures, controller seats, connection details and acknowledged reconnect; bundle its fixed GStreamer plugins with Linux releases.
+- Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.
+- Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
 - Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.
 
 - Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.

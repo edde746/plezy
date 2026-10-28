@@ -785,7 +785,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   /// Handle a tap in a skip zone. Every skip costs a fresh same-direction
-  /// double tap; a lone tap toggles the chrome.
+  /// double tap; a lone tap toggles playback or the chrome based on the user's
+  /// click-to-toggle preference.
   ///
   /// The badge left over from the previous skip is a readout, not an armed
   /// state — it says nothing about what the next tap does.
@@ -816,7 +817,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // No partner within the window, and this resolves as a lone tap.
     _singleTapTimer = Timer(kDoubleTapTimeout, () {
       if (mounted) {
-        _toggleControls();
+        if (widget.canControl && _clickVideoTogglesPlayback) {
+          _playOrPause();
+        } else {
+          _toggleControls();
+        }
       }
     });
   }
@@ -1011,8 +1016,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       return;
     }
 
-    // Not in skip zone, toggle controls
-    _toggleControls();
+    // Match the hidden-surface tap behavior when the chrome is visible too.
+    if (widget.canControl && _clickVideoTogglesPlayback) {
+      _playOrPause();
+    } else {
+      _toggleControls();
+    }
   }
 
   /// Apply a user-requested playback rate through the owning screen when it

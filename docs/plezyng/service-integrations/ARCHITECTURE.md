@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: partner/availability architecture remains proposed. Shipped code includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, OPML transfer, and a limited integration layer. `integration_contracts.dart` contains provider definitions, safe external targets and deny-by-default commerce policy; `integration_preferences_store.dart` and `integration_identity_store.dart` store non-secret profile-scoped preferences and reversible confirmed crosswalks. The proposed connection, identifier, offer and evidence models below are not implemented; there is no universal account registry or licensed offer backend. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: live partner and availability delivery remains gated. Shipped code includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, OPML transfer, and a limited integration layer. `integration_contracts.dart` contains provider definitions, safe external targets and deny-by-default commerce policy; `integration_preferences_store.dart` and `integration_identity_store.dart` store non-secret profile-scoped preferences and reversible confirmed crosswalks. `integration_offers.dart` adds non-secret connection and evidence projections, normalized licensed-offer provenance, and a bounded no-cache availability lookup boundary. There is still no universal account registry, production availability adapter, licensed-offer cache or backend endpoint. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 
@@ -20,20 +20,20 @@ flowchart TD
 
 Catalog browsing must work without obtaining playback leases. Reading an offer never initiates a checkout, loan, provider download job or account mutation. All access routes retain their original data owner and provenance.
 
-## Proposed domain contracts
+## Domain contracts and future target models
 
-The following table is a future target model. Its connection, identity-provenance, offer, evidence and fulfillment rows are design notes, not shipped Dart types. Implement each only when a concrete approved provider needs it.
+The following table records the target model. `IntegrationConnectionRef`, `IntegrationAccessEvidence`, `LicensedOffer`, `LicensedOfferSource`, and the `AvailabilityProvider` boundary now ship as non-persistent Dart contracts. Provider-owned account state, licensed-offer caching, live adapters, and the remaining target rows are still gated; implement those only for a concrete approved provider.
 
 | Type | Minimum fields / purpose | Invariant |
 | --- | --- | --- |
 | `ProviderDefinition` | Stable provider ID, display name/localized aliases, domains, media kinds, marks, support links, capability descriptors, region/channel policy reference | Definition has no user secret; brand names may change without changing IDs. |
-| `ProviderConnectionRef` | Profile ID, connection ID, provider ID, account/tenant identity, generation, connection state, vault reference, consent version | One owner controls a token/session; account replacement retires old async work. A selected subscription is not a connection. |
+| `IntegrationConnectionRef` | Profile ID, connection ID, provider ID, generation, connection state, consent version | Non-secret projection only; account replacement retires old async work in the provider-owned service. A selected subscription is not a connection. |
 | `ServicePreference` | Profile ID, provider, country, user-selected subscription/tier/channel, preferred destinations | Self-reported preference, never verified entitlement. No password requested for a launch-only provider. |
 | `EntityRef` | Typed media kind, provider/source namespace, original native ID, optional edition/episode/issue refs | Keep `MediaItem`, `CatalogItem`, `SourceEntry` and game keys authoritative. Adapter references project them into this layer. |
 | `ExternalIdentifier` | Namespace, value, entity kind, provenance, match method, confidence, validation timestamp | ISBN, ASIN, TMDB movie, TMDB TV, IMDb, EAN, ISRC, MBID and Steam AppID are not one untyped string space. |
 | `EntityRelation` | From/to refs; work-edition, adaptation, translation, season-episode, omnibus-contains, release-recording | Relations support navigation; do not automatically merge progress or rights. |
-| `AccessOffer` | Stable offer ID, content/edition ref, seller, fulfillment provider, territory, currency, exact decimal/minor-unit price, offer kind, quality/language, canonical destination, data source, observed/expiry times, attribution | Offer is a claim of availability, not a credential, owned file or user's entitlement. A null price is unknown, not zero. |
-| `AccessEvidence` | Connection/local-copy ref, entitlement kind, evidence source, verification state, due/expiry, allowed actions | `verified`, `selfReported`, `unknown`, `expired` and `revoked` remain distinct. A library loan is time limited. |
+| `LicensedOffer` | Stable offer and optional product IDs, content/edition ref, seller, territory, source currency/minor-unit price, offer kind, required tier/add-ons, source provenance and expiry | Shipped in-memory normalized offer; no credential, purchase URL, ownership claim or persistence. A null price is unknown, not zero. |
+| `IntegrationAccessEvidence` | Connection/local-copy ref, entitlement kind, evidence source, verification state, due/expiry, allowed actions | Shipped action-limited projection; `verified`, `selfReported`, `unknown`, `expired` and `revoked` stay distinct. A verified library loan requires an expiry. |
 | `AccessTarget` | Tagged union: existing server item, existing source file, approved SDK item, official external destination, supported license acquisition | A target cannot become a native media URL without a resolver attesting that capability. |
 | `FulfillmentCapability` | Read/play/preview, offline, cast, PiP, background, seek, rate, multiview, progress export, DRM/SDK requirements | All optional capabilities default absent/unknown. An external destination has no native offline capability. |
 | `ActionPolicyDecision` | Action, provider, platform, distribution channel, storefront country, account/content evidence, allowed/denied/unknown, explanation, policy version | Recheck immediately before dispatch; server-provided data cannot activate a prohibited executable or expand local policy. |
@@ -47,7 +47,7 @@ Use explicit enums/unions, not a pile of booleans whose combinations imply unsup
 Prefer small optional interfaces:
 
 - `ProviderCatalog`: search, detail and curated rows with pagination, cancel token, locale and country.
-- `AvailabilityProvider`: resolve typed IDs to offers; batch only where the upstream permits it.
+- `AvailabilityProvider`: resolve typed IDs to offers; batch only where the upstream permits it. The shipped `AvailabilityLookupService` bounds provider count/deadline, scopes each request to its adapter, and isolates invalid or failed providers; live adapter behavior remains provider-specific.
 - `MerchantProvider`: exact product lookup, regional links, price freshness and accepted affiliate policy.
 - `ProviderAccount`: supported sign-in, account details, token renewal and disconnect.
 - `EntitlementProvider`: read the user's library/loans/subscriptions only when an API actually supports it.
@@ -96,7 +96,7 @@ For server-fetched URLs: allowlist partner hosts, validate resolved destinations
 
 OAuth callbacks bind state, redirect, profile, connection, generation and one-time verifier. Refresh is single-flight per account; rotation is atomic. Account switching while the browser is open must retire the old attempt. QR pairing contains a short-lived capability for the intended operation, not the library-card PIN. After sign-out or key-store failure, show reconnect/retry states without overwriting recoverable encrypted data.
 
-For requests and queries use bounded concurrency, explicit deadlines, backoff respecting `Retry-After`, a per-provider circuit breaker and stale-cache labeling. An initial engineering target is local results without a network dependency and independent remote results within a five-second visible deadline; measure before treating it as a performance claim. Never request every provider for every keystroke. Fetch offers on detail demand; remote global search is explicitly enabled by category/provider.
+The shipped `AvailabilityLookupService` queries at most eight explicitly selected providers, applies a five-second default deadline (maximum 15 seconds), validates exact entity/territory/channel/source/freshness, isolates provider failures, and permits one short transient retry. HTTP 429 is surfaced with a bounded retry time and is not retried. It does not cache offers or implement a circuit breaker. A production backend must add partner-specific rate limits, retention-approved cache TTL/purge controls and circuit breaking before it is enabled. Keep local results independent of network calls, never query every provider per keystroke, and fetch offers on detail demand.
 
 ## Fulfillment and playback
 

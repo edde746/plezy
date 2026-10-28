@@ -446,13 +446,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             )
             .toList(),
       ),
-      if (!isMobile)
-        SettingSwitchTile(
-          pref: SettingsService.clickVideoTogglesPlayback,
-          icon: Symbols.play_pause_rounded,
-          title: t.settings.clickVideoTogglesPlayback,
-          subtitle: t.settings.clickVideoTogglesPlaybackDescription,
-        ),
+      SettingSwitchTile(
+        pref: SettingsService.clickVideoTogglesPlayback,
+        icon: Symbols.play_pause_rounded,
+        title: t.settings.clickVideoTogglesPlayback,
+        subtitle: t.settings.clickVideoTogglesPlaybackDescription,
+      ),
       if (PlatformDetector.isDesktopOS()) ...[
         SettingSwitchTile(
           pref: SettingsService.enterFullscreenOnPlaybackStart,
