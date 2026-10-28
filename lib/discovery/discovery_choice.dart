@@ -32,6 +32,10 @@ class DiscoveryChoice {
     this.libraryId,
     this.catalogSourceId,
     this.catalogEntryKey,
+    this.publicCatalogWorkId,
+    this.publicCatalogAuthor = '',
+    this.lendingLibraryId,
+    this.lendingBookId,
     required this.year,
     this.liveProgramId,
     this.channelId,
@@ -45,6 +49,7 @@ class DiscoveryChoice {
     this.liveChannel,
     this.catalogItem,
     this.artworkPath,
+    this.portableIds = const {},
   });
 
   final String id;
@@ -72,6 +77,15 @@ class DiscoveryChoice {
   /// again before opening a saved pick.
   final String? catalogSourceId;
   final String? catalogEntryKey;
+
+  /// Open Library work identity. Presence always means catalog-only: it is
+  /// never an owned item or a verified local-library offer.
+  final String? publicCatalogWorkId;
+  final String publicCatalogAuthor;
+
+  /// Local-only lender identity. It is never a portable/public catalog ID.
+  final String? lendingLibraryId;
+  final String? lendingBookId;
   final int? year;
   final String? liveProgramId;
   final String? channelId;
@@ -89,6 +103,51 @@ class DiscoveryChoice {
   final LiveTvChannel? liveChannel;
   final CatalogItem? catalogItem;
   final String? artworkPath;
+
+  /// Whitelisted public identifiers used only for optional cross-device
+  /// Saved picks. Server, source, library, and account identifiers never
+  /// belong in this map.
+  final Map<String, String> portableIds;
+
+  String? get portableReference {
+    if (publicCatalogWorkId != null || lendingLibraryId != null || lendingBookId != null) return null;
+    final resolvable = switch (type) {
+      DiscoveryChoiceType.video => mediaKind == MediaKind.movie || mediaKind == MediaKind.show,
+      DiscoveryChoiceType.music =>
+        mediaKind == null ||
+            mediaKind == MediaKind.artist ||
+            mediaKind == MediaKind.album ||
+            mediaKind == MediaKind.track,
+      DiscoveryChoiceType.ebook ||
+      DiscoveryChoiceType.audiobook ||
+      DiscoveryChoiceType.comic ||
+      DiscoveryChoiceType.sourceVideo => mediaKind == null,
+      DiscoveryChoiceType.liveProgram => false,
+    };
+    if (!resolvable) return null;
+    final id = _canonicalPortableId(portableIds);
+    if (id == null) return null;
+    return jsonEncode(['discovery-pick-v1', type.name, mediaKind?.id, id.$1, id.$2]);
+  }
+
+  String? get portableKey {
+    final reference = portableReference;
+    return reference == null ? null : sourceDigest(reference);
+  }
+
+  /// Verifies a restored/catalog pick against exact public identifiers.
+  /// Titles alone never establish that two editions represent the same work.
+  bool isSamePortableWorkAs(DiscoveryChoice other) {
+    if (portableReference == null ||
+        other.portableReference == null ||
+        type != other.type ||
+        mediaKind != other.mediaKind) {
+      return false;
+    }
+    final left = sanitizeDiscoveryPortableIds(portableIds);
+    final right = sanitizeDiscoveryPortableIds(other.portableIds);
+    return left.entries.any((entry) => right[entry.key] == entry.value);
+  }
 
   String get typeLabel => switch (type) {
     DiscoveryChoiceType.video => 'Video',
@@ -108,6 +167,9 @@ class DiscoveryChoice {
     mediaId,
     sourceId,
     entryId,
+    publicCatalogWorkId,
+    lendingLibraryId,
+    lendingBookId,
     liveProgramId,
     channelId,
     liveBeginsAtSeconds,
@@ -132,6 +194,10 @@ class DiscoveryChoice {
     libraryId: libraryId,
     catalogSourceId: catalogSourceId,
     catalogEntryKey: catalogEntryKey,
+    publicCatalogWorkId: publicCatalogWorkId,
+    publicCatalogAuthor: publicCatalogAuthor,
+    lendingLibraryId: lendingLibraryId,
+    lendingBookId: lendingBookId,
     year: year,
     liveProgramId: liveProgramId,
     channelId: channelId,
@@ -145,6 +211,46 @@ class DiscoveryChoice {
     liveChannel: liveChannel,
     catalogItem: catalogItem,
     artworkPath: art ?? artworkPath,
+    portableIds: portableIds,
+  );
+
+  DiscoveryChoice withPortableIds(Map<String, String> value) => DiscoveryChoice(
+    id: id,
+    type: type,
+    title: title,
+    subtitle: subtitle,
+    reason: reason,
+    summary: summary,
+    durationMs: durationMs,
+    totalDurationMs: totalDurationMs,
+    isEstimate: isEstimate,
+    unitLabel: unitLabel,
+    serverId: serverId,
+    mediaId: mediaId,
+    mediaKind: mediaKind,
+    sourceId: sourceId,
+    entryId: entryId,
+    libraryId: libraryId,
+    catalogSourceId: catalogSourceId,
+    catalogEntryKey: catalogEntryKey,
+    publicCatalogWorkId: publicCatalogWorkId,
+    publicCatalogAuthor: publicCatalogAuthor,
+    lendingLibraryId: lendingLibraryId,
+    lendingBookId: lendingBookId,
+    year: year,
+    liveProgramId: liveProgramId,
+    channelId: channelId,
+    dvrKey: dvrKey,
+    liveBeginsAtSeconds: liveBeginsAtSeconds,
+    liveEndsAtSeconds: liveEndsAtSeconds,
+    offlineReady: offlineReady,
+    mediaItem: mediaItem,
+    sourceEntry: sourceEntry,
+    liveProgram: liveProgram,
+    liveChannel: liveChannel,
+    catalogItem: catalogItem,
+    artworkPath: artworkPath,
+    portableIds: sanitizeDiscoveryPortableIds(value),
   );
 
   Map<String, dynamic> toSnapshot() => {
@@ -166,6 +272,10 @@ class DiscoveryChoice {
     'libraryId': libraryId,
     'catalogSourceId': catalogSourceId,
     'catalogEntryKey': catalogEntryKey,
+    'publicCatalogWorkId': publicCatalogWorkId,
+    'publicCatalogAuthor': _bounded(publicCatalogAuthor, 160),
+    'lendingLibraryId': lendingLibraryId,
+    'lendingBookId': lendingBookId,
     'year': year,
     'liveProgramId': liveProgramId,
     'channelId': channelId,
@@ -173,6 +283,7 @@ class DiscoveryChoice {
     'liveBeginsAtSeconds': liveBeginsAtSeconds,
     'liveEndsAtSeconds': liveEndsAtSeconds,
     'offlineReady': offlineReady,
+    if (portableIds.isNotEmpty) 'portableIds': portableIds,
   };
 
   factory DiscoveryChoice.fromSnapshot(Map<String, dynamic> json) {
@@ -198,6 +309,13 @@ class DiscoveryChoice {
       libraryId: _nonEmpty(json['libraryId']),
       catalogSourceId: _nonEmpty(json['catalogSourceId']),
       catalogEntryKey: _nonEmpty(json['catalogEntryKey']),
+      publicCatalogWorkId: _validPublicWorkId(json['publicCatalogWorkId']),
+      publicCatalogAuthor: _bounded(
+        json['publicCatalogAuthor'] is String ? json['publicCatalogAuthor'] as String : '',
+        160,
+      ),
+      lendingLibraryId: _validLocalLendingId(json['lendingLibraryId'], 128),
+      lendingBookId: _validLocalLendingId(json['lendingBookId'], 256),
       year: json['year'] is num ? (json['year'] as num).toInt() : null,
       liveProgramId: _nonEmpty(json['liveProgramId']),
       channelId: _nonEmpty(json['channelId']),
@@ -205,8 +323,17 @@ class DiscoveryChoice {
       liveBeginsAtSeconds: json['liveBeginsAtSeconds'] is num ? (json['liveBeginsAtSeconds'] as num).toInt() : null,
       liveEndsAtSeconds: json['liveEndsAtSeconds'] is num ? (json['liveEndsAtSeconds'] as num).toInt() : null,
       offlineReady: json['offlineReady'] == true,
+      portableIds: sanitizeDiscoveryPortableIds(
+        sourceMap(json['portableIds']).map((key, value) => MapEntry(key, '$value')),
+      ),
     );
-    if (choice.id.isEmpty || choice.title.isEmpty) throw const FormatException('Invalid discovery choice snapshot');
+    if (choice.id.isEmpty ||
+        choice.title.isEmpty ||
+        (json['publicCatalogWorkId'] != null && choice.publicCatalogWorkId == null) ||
+        ((json['lendingLibraryId'] != null || json['lendingBookId'] != null) &&
+            (choice.lendingLibraryId == null || choice.lendingBookId == null))) {
+      throw const FormatException('Invalid discovery choice snapshot');
+    }
     return choice;
   }
 
@@ -222,6 +349,101 @@ class DiscoveryChoice {
     if (value is! String || value.trim().isEmpty) return null;
     return value.trim();
   }
+
+  static String? _validPublicWorkId(Object? value) {
+    if (value is! String || !RegExp(r'^OL[0-9]{1,14}W$').hasMatch(value)) return null;
+    return value;
+  }
+
+  static String? _validLocalLendingId(Object? value, int maxLength) {
+    if (value is! String ||
+        value.trim().isEmpty ||
+        value.length > maxLength ||
+        value.contains(RegExp(r'[\r\n\u0000]'))) {
+      return null;
+    }
+    return value;
+  }
+}
+
+/// Identifiers eligible for replication. These are public title identities;
+/// provider URLs and PlezyNG's local ids are intentionally excluded.
+Map<String, String> sanitizeDiscoveryPortableIds(Map<String, String> raw) {
+  final result = <String, String>{};
+  for (final entry in raw.entries.take(16)) {
+    final key = entry.key.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    var value = entry.value.trim();
+    if (value.length > 128) continue;
+    switch (key) {
+      case 'imdb':
+      case 'imdbid':
+        final normalized = value.toLowerCase();
+        if (RegExp(r'^tt[0-9]{6,12}$').hasMatch(normalized)) result.putIfAbsent('imdb', () => normalized);
+      case 'tmdb':
+      case 'tmdbid':
+      case 'themoviedb':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('tmdb', () => value);
+      case 'tvdb':
+      case 'tvdbid':
+      case 'thetvdb':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('tvdb', () => value);
+      case 'mal':
+      case 'malid':
+      case 'myanimelist':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('mal', () => value);
+      case 'anilist':
+      case 'anilistid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('anilist', () => value);
+      case 'simkl':
+      case 'simklid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('simkl', () => value);
+      case 'trakt':
+      case 'traktid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('trakt', () => value);
+      case 'isbn':
+      case 'isbn10':
+      case 'isbn13':
+      case 'isbn10id':
+      case 'isbn13id':
+        value = value.replaceAll(RegExp(r'[\s-]'), '').toUpperCase();
+        if (RegExp(r'^[0-9]{13}$').hasMatch(value)) {
+          result.putIfAbsent('isbn13', () => value);
+        } else if (RegExp(r'^[0-9]{9}[0-9X]$').hasMatch(value)) {
+          result.putIfAbsent('isbn10', () => value);
+        }
+      case 'asin':
+      case 'asinid':
+        final normalized = value.toUpperCase();
+        if (RegExp(r'^[A-Z0-9]{10}$').hasMatch(normalized)) result.putIfAbsent('asin', () => normalized);
+      case 'doi':
+      case 'doiid':
+        value = value.replaceFirst(RegExp(r'^https?://(?:dx\.)?doi\.org/', caseSensitive: false), '');
+        if (RegExp(r'^10\.[0-9]{4,9}/[^\s]{1,100}$', caseSensitive: false).hasMatch(value)) {
+          result.putIfAbsent('doi', () => value.toLowerCase());
+        }
+    }
+  }
+  return Map.unmodifiable(result);
+}
+
+(String, String)? _canonicalPortableId(Map<String, String> ids) {
+  for (final key in const [
+    'imdb',
+    'isbn13',
+    'isbn10',
+    'tmdb',
+    'tvdb',
+    'asin',
+    'mal',
+    'anilist',
+    'simkl',
+    'trakt',
+    'doi',
+  ]) {
+    final value = ids[key];
+    if (value != null && value.isNotEmpty) return (key, value);
+  }
+  return null;
 }
 
 String discoveryMediaIdentity(MediaItem item) {

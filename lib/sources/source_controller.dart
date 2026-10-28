@@ -18,6 +18,8 @@ import 'adapters/local_source.dart';
 import 'adapters/nfs_source.dart';
 import 'adapters/sftp_source.dart';
 import 'adapters/opds_source.dart';
+import 'adapters/open_subsonic_source.dart';
+import 'adapters/podcast_rss_source.dart';
 import 'adapters/s3_source.dart';
 import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
@@ -28,9 +30,11 @@ import 'source_oauth.dart';
 import '../services/standalone_video_metadata_client.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
+import 'podcast_opml.dart';
 import 'sync/publication_sync.dart';
 import 'sync/sync_store.dart';
 import 'sync/sync_document.dart';
+import '../discovery/discovery_sync.dart';
 
 Uri? _trustedOnlinePosterUri(String? value) {
   final uri = Uri.tryParse(value ?? '');
@@ -59,6 +63,9 @@ Uri? _trustedOnlineTrailerUri(String? value) {
   return null;
 }
 
+String _publicationCoverCacheKey(String profile, SourceEntry entry) =>
+    sourceKey(profile, jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]));
+
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
     ready = _initialize(repository);
@@ -66,6 +73,7 @@ class SourceController extends ChangeNotifier {
   late final Future<void> ready;
   late SourceRepository repository;
   late PublicationSync cloudSync;
+  late DiscoverySync discoverySync;
   PublicationSyncConfig? syncConfig;
   final Set<String> activeProgressKeys = {};
   void holdProgress(String key) => activeProgressKeys.add(key);
@@ -86,6 +94,7 @@ class SourceController extends ChangeNotifier {
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
   final Map<String, _ImportTransfer> _importTransfers = {};
+  final Map<String, Future<void>> _sourceCredentialWrites = {};
   final Map<String, Future<File?>> _covers = {};
   final Map<String, Future<SourceEntry>> _onlineLookups = {};
   final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
@@ -150,9 +159,20 @@ class SourceController extends ChangeNotifier {
     await Future.wait(transfers.map((transfer) => transfer.finished.future));
   }
 
+  Future<void> _settleSourceCredentialWrite(String sourceId) async {
+    final pending = _sourceCredentialWrites[sourceId];
+    if (pending == null) return;
+    try {
+      await pending;
+    } on Object {
+      // Source removal or an account switch may cancel a token rotation.
+    }
+  }
+
   Future<void> _initialize(SourceRepository? provided) async {
     repository = provided ?? SourceRepository(await SourceDatabase.open());
     cloudSync = PublicationSync(repository);
+    discoverySync = DiscoverySync(repository);
     oauth = SourceOAuthService(repository);
     downloads = PublicationDownloads(
       repository,
@@ -171,6 +191,7 @@ class SourceController extends ChangeNotifier {
     _sourceSyncRetryAt.clear();
     activeProgressKeys.clear();
     syncConfig = null;
+    discoverySync.resetStatus();
     sources = const [];
     shelves = {};
     scanning.clear();
@@ -493,14 +514,95 @@ class SourceController extends ChangeNotifier {
       await migration;
       requireSession(epoch);
     }
+    _adapters.remove(source.id)?.close();
+    await _settleSourceCredentialWrite(source.id);
+    requireSession(epoch);
     await repository.saveSource(source, credentials);
     requireSession(epoch);
     _sourceSyncSucceeded(source.id);
     await reload();
   }
 
+  Future<int> importPodcastSubscriptions(List<PodcastSubscription> feeds) async {
+    if (feeds.isEmpty || feeds.length > PodcastOpml.maxFeeds) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final known = <String>{};
+    for (final source in sources.where((item) => item.kind == FileSourceKind.podcastRss)) {
+      try {
+        final saved = await repository.credentials(source);
+        final url = saved['feedUrl'];
+        if (url != null) known.add(sourceDigest(url));
+      } on Object {
+        // A damaged vault entry must not prevent importing other feeds.
+      }
+      requireSession(epoch);
+    }
+    final additions = <(FileSource, Map<String, String>)>[];
+    for (final feed in feeds) {
+      final uri = feed.url;
+      if (uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasFragment ||
+          uri.toString().length > 8192) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      final key = sourceDigest(uri.toString());
+      if (!known.add(key)) continue;
+      final title = feed.title.trim();
+      final displayName = title.isEmpty ? uri.host : title;
+      final source = FileSource(
+        id: const Uuid().v4(),
+        profileId: profile,
+        kind: FileSourceKind.podcastRss,
+        name: displayName.length > 200 ? displayName.substring(0, 200) : displayName,
+        endpoint: sourceOrigin(uri),
+        options: const {'allowHttp': 'false', 'shelves': 'music', 'onlineMetadata': 'false'},
+      );
+      additions.add((source, {'feedUrl': uri.toString()}));
+    }
+    requireSession(epoch);
+    if (additions.isEmpty) return 0;
+    await repository.saveSources(additions);
+    requireSession(epoch);
+    await reload();
+    requireSession(epoch);
+    return additions.length;
+  }
+
+  Future<List<PodcastSubscription>> podcastSubscriptions() async {
+    await ready;
+    requireSession();
+    final epoch = generation;
+    final result = <PodcastSubscription>[];
+    for (final source in sources.where((item) => item.kind == FileSourceKind.podcastRss)) {
+      try {
+        final saved = await repository.credentials(source);
+        final value = saved['feedUrl'] ?? '';
+        final uri = Uri.tryParse(value);
+        if (uri == null ||
+            uri.host.isEmpty ||
+            !const {'https', 'http'}.contains(uri.scheme) ||
+            uri.userInfo.isNotEmpty ||
+            uri.hasFragment) {
+          continue;
+        }
+        result.add(PodcastSubscription(title: source.name, url: uri));
+      } on Object {
+        // A locked or damaged feed does not block exporting the other feeds.
+      }
+      requireSession(epoch);
+    }
+    return result;
+  }
+
   Future<void> reconnect(String id) async {
     _adapters.remove(id)?.close();
+    await _settleSourceCredentialWrite(id);
     _sourceSyncSucceeded(id);
   }
 
@@ -518,6 +620,8 @@ class SourceController extends ChangeNotifier {
     await downloads.cancelSource(profile, source.id);
     requireSession(epoch);
     _adapters.remove(source.id)?.close();
+    await _settleSourceCredentialWrite(source.id);
+    requireSession(epoch);
     _sourceSyncSucceeded(source.id);
     await repository.removeSource(profile, source.id);
     requireSession(epoch);
@@ -561,6 +665,34 @@ class SourceController extends ChangeNotifier {
     }
 
     Future<Map<String, String>> backgroundCredentials() => credentials();
+    Future<void> persistSourceCredentials(Map<String, String> value) async {
+      checkOwner();
+      if (transport.isClosed) throw const SourceException(SourceFailure.cancelled);
+      final previous = _sourceCredentialWrites[source.id];
+      late final Future<void> write;
+      write = Future<void>(() async {
+        if (previous != null) {
+          try {
+            await previous;
+          } on Object {
+            // A failed earlier token write must not block the latest rotation.
+          }
+        }
+        checkOwner();
+        if (transport.isClosed) throw const SourceException(SourceFailure.cancelled);
+        await repository.saveSource(source, value);
+        checkOwner();
+      });
+      _sourceCredentialWrites[source.id] = write;
+      try {
+        await write;
+      } finally {
+        if (identical(_sourceCredentialWrites[source.id], write)) {
+          unawaited(_sourceCredentialWrites.remove(source.id));
+        }
+      }
+    }
+
     return switch (source.kind) {
       FileSourceKind.local => LocalSourceAdapter(source, transport),
       FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
@@ -575,7 +707,14 @@ class SourceController extends ChangeNotifier {
       FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
       FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
       FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
-      FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
+      FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(
+        source,
+        transport,
+        credentials,
+        persistCredentials: persistSourceCredentials,
+      ),
+      FileSourceKind.openSubsonic => OpenSubsonicSourceAdapter(source, transport, credentials),
+      FileSourceKind.podcastRss => PodcastRssSourceAdapter(source, transport, credentials),
     };
   }
 
@@ -730,6 +869,7 @@ class SourceController extends ChangeNotifier {
   Future<File> content(SourceEntry entry, PublicationFile file, {void Function(int, int?)? onProgress}) async {
     await ready;
     requireSession();
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final epoch = generation;
     final local = await downloads.local(profileId!, entry.sourceId, file);
     if (local != null) return local;
@@ -742,6 +882,39 @@ class SourceController extends ChangeNotifier {
     );
     requireSession(epoch);
     return result;
+  }
+
+  /// Checks local availability without downloading. Sample files are never
+  /// considered offline publication content.
+  Future<bool> hasOfflineContent(SourceEntry entry, PublicationFile file) async {
+    await ready;
+    requireSession();
+    if (file.sampleOnly) return false;
+    final profile = profileId!;
+    if (await downloads.local(profile, entry.sourceId, file) != null) return true;
+    final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (source?.kind != FileSourceKind.local) return false;
+    try {
+      final lease = await adapter(entry.sourceId).resolve(file);
+      if (lease.uri.scheme != 'file') return false;
+      final stat = await File.fromUri(lease.uri).stat();
+      return stat.type == FileSystemEntityType.file && stat.size > 0;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Creates an isolated preview reader for a provider-declared sample.
+  /// Unlike [content], this never enters the persistent download queue.
+  SourcePreviewSession beginPreview(SourceEntry entry, PublicationFile file) {
+    requireSession();
+    if (!file.previewableSample ||
+        entry.sourceId.trim().isEmpty ||
+        !sources.any((source) => source.id == entry.sourceId && source.profileId == profileId)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final epoch = generation;
+    return SourcePreviewSession(adapter(entry.sourceId), file, check: () => requireSession(epoch));
   }
 
   Future<void> cancelDownload(String downloadKey) async {
@@ -777,6 +950,7 @@ class SourceController extends ChangeNotifier {
     if (sourceId.isEmpty || file.fingerprint != row['fingerprint'] || sourceKey(sourceId, file.id) != downloadKey) {
       throw const SourceException(SourceFailure.invalidData);
     }
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final source = sources.where((candidate) => candidate.id == sourceId).firstOrNull;
     if (source == null || source.profileId != profile) throw const SourceException(SourceFailure.permission);
     final sourceAdapter = adapter(sourceId);
@@ -860,7 +1034,7 @@ class SourceController extends ChangeNotifier {
   Future<File?> cover(SourceEntry entry, {bool refresh = false}) {
     final profile = profileId;
     if (profile == null || blocked) return Future.value();
-    final cacheKey = sourceKey(profile, entry.key);
+    final cacheKey = _publicationCoverCacheKey(profile, entry);
     if (refresh) _covers.remove(cacheKey);
     return _covers.putIfAbsent(cacheKey, () async {
       await ready;
@@ -925,7 +1099,7 @@ class SourceController extends ChangeNotifier {
       if (await file.exists()) await file.delete();
       throw const SourceException(SourceFailure.cancelled);
     }
-    _covers[sourceKey(owner, entry.key)] = Future.value(file);
+    _covers[_publicationCoverCacheKey(owner, entry)] = Future.value(file);
     return file;
   }
 
@@ -1262,6 +1436,24 @@ class SourceController extends ChangeNotifier {
       } finally {
         if (current(epoch)) _notify();
       }
+      if (config.includeDiscovery && source != null) {
+        try {
+          await discoverySync.run(
+            profile: profile,
+            code: config.code,
+            store: ProviderSyncStore(adapter(source.id), folder: config.folder, check: () => requireSession(epoch)),
+            check: () => requireSession(epoch),
+          );
+        } catch (error, stackTrace) {
+          requireSession(epoch);
+          firstFailure ??= error;
+          firstFailureStack ??= stackTrace;
+        } finally {
+          if (current(epoch)) _notify();
+        }
+      } else {
+        discoverySync.resetStatus();
+      }
     }
     final entriesByKey = <String, SourceEntry?>{};
     Future<SourceEntry?> entryFor(String key) async {
@@ -1436,6 +1628,7 @@ class SourceController extends ChangeNotifier {
     requireSession(epoch);
     await cloudSync.configure(profile, config);
     syncConfig = config;
+    if (config == null || !config.includeDiscovery) discoverySync.resetStatus();
     _notify();
     if (config != null) await sync();
   }
@@ -1446,7 +1639,7 @@ class SourceController extends ChangeNotifier {
     requireSession(epoch);
     await _syncQueue;
     requireSession(epoch);
-    return cloudSync.exportRecovery(profileId!);
+    return cloudSync.exportRecovery(profileId!, discoverySync: discoverySync);
   }
 
   Future<void> importCloudSyncRecovery(String text) async {
@@ -1456,13 +1649,39 @@ class SourceController extends ChangeNotifier {
     final activeSources = List<FileSource>.of(sources);
     final activeKeys = Set<String>.of(activeProgressKeys);
     final operation = _syncQueue.then(
-      (_) => cloudSync.importRecovery(profile: profile, text: text, sources: activeSources, activeKeys: activeKeys),
+      (_) => cloudSync.importRecovery(
+        profile: profile,
+        text: text,
+        sources: activeSources,
+        activeKeys: activeKeys,
+        discoverySync: discoverySync,
+      ),
     );
     _syncQueue = operation.catchError((Object _) {});
     await operation;
     requireSession(epoch);
     _notify();
     scheduleSync();
+  }
+
+  Future<void> resolveDiscoveryConflict(String key, SyncVersion selected) {
+    final operation = _syncQueue.then((_) async {
+      requireSession();
+      final epoch = generation, profile = profileId!, config = syncConfig;
+      if (config == null || !config.includeDiscovery) throw const SourceException(SourceFailure.cancelled);
+      await discoverySync.resolve(
+        profile: profile,
+        code: config.code,
+        key: key,
+        selected: selected,
+        check: () => requireSession(epoch),
+      );
+      requireSession(epoch);
+      _notify();
+      await _sync();
+    });
+    _syncQueue = operation.catchError((Object _) {});
+    return operation;
   }
 
   Future<void> resolveCloudConflict(String key, SyncVersion selected) {
@@ -1517,4 +1736,164 @@ class _ImportTransfer {
   final String sourceId;
   final TransferCancellation cancellation = TransferCancellation();
   final Completer<void> finished = Completer<void>();
+}
+
+/// A bounded, temporary, cancel-on-close file used only by a sample preview.
+/// It is intentionally separate from publication downloads and progress.
+class SourcePreviewSession {
+  SourcePreviewSession(this._adapter, this.file, {required this._check});
+
+  static const int maxBytes = 128 * 1024 * 1024;
+  final SourceAdapter _adapter;
+  final PublicationFile file;
+  final void Function() _check;
+  final TransferCancellation _cancellation = TransferCancellation();
+  Directory? _directory;
+  Future<File>? _opening;
+  bool _disposed = false;
+
+  Future<File> open() => _opening ??= _open();
+
+  void _requireCurrent() {
+    if (_disposed) throw const SourceException(SourceFailure.cancelled);
+    _cancellation.check();
+    _check();
+  }
+
+  Future<File> _open() async {
+    _requireCurrent();
+    if (!file.previewableSample || (file.size != null && file.size! > maxBytes)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final temp = await getTemporaryDirectory();
+    _requireCurrent();
+    _directory = await temp.createTemp('plezy-sample-');
+    final extension = p.extension(file.name);
+    final safeExtension = RegExp(r'^\.[a-zA-Z0-9]{1,8}$').hasMatch(extension) ? extension : '';
+    final target = File(p.join(_directory!.path, 'preview$safeExtension'));
+    Stream<List<int>> stream;
+    int? expectedSize = file.size;
+
+    try {
+      final direct = await _adapter.openContent(file, offset: 0, length: maxBytes + 1);
+      if (direct != null) {
+        try {
+          _requireCurrent();
+        } on Object {
+          await direct.stream.listen((_) {}).cancel();
+          rethrow;
+        }
+        if (direct.offset != 0 || direct.size > maxBytes || direct.length != direct.size) {
+          await direct.stream.listen((_) {}).cancel();
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        expectedSize = direct.size;
+        stream = direct.stream;
+      } else {
+        _requireCurrent();
+        final lease = await _adapter.resolve(file);
+        _requireCurrent();
+        if (expectedSize != null && lease.size != null && expectedSize != lease.size) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        expectedSize ??= lease.size;
+        if (expectedSize != null && expectedSize > maxBytes) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        if (lease.uri.scheme == 'file') {
+          final local = File.fromUri(lease.uri);
+          final stat = await local.stat();
+          _requireCurrent();
+          if (stat.type != FileSystemEntityType.file || stat.size <= 0 || stat.size > maxBytes) {
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          if (expectedSize != null && expectedSize != stat.size) {
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          expectedSize = stat.size;
+          stream = local.openRead();
+        } else {
+          final response = await _adapter.transport.send(
+            'GET',
+            lease.uri,
+            headers: lease.headers,
+            redirects: true,
+            abort: _cancellation.aborted,
+          );
+          _requireCurrent();
+          if (response.statusCode != 200) {
+            await response.stream.listen((_) {}).cancel();
+            SourceTransport.check(response.statusCode);
+            throw const SourceException(SourceFailure.unavailable);
+          }
+          final responseSize = int.tryParse(response.headers['content-length'] ?? '');
+          if (responseSize != null && responseSize > maxBytes) {
+            await response.stream.listen((_) {}).cancel();
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          if (expectedSize != null && responseSize != null && expectedSize != responseSize) {
+            await response.stream.listen((_) {}).cancel();
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          expectedSize ??= responseSize;
+          stream = response.stream;
+        }
+      }
+
+      var received = 0;
+      final output = await target.open(mode: FileMode.write);
+      final iterator = StreamIterator<List<int>>(stream);
+      try {
+        while (true) {
+          // Race the next network chunk with the preview's cancel token. A
+          // reader closing mid-transfer must release the provider stream
+          // immediately instead of waiting for another chunk or the timeout.
+          final hasChunk = await Future.any<bool>([
+            iterator.moveNext().timeout(const Duration(seconds: 45)),
+            _cancellation.aborted.then((_) => false),
+          ]);
+          _requireCurrent();
+          if (!hasChunk) break;
+          final chunk = iterator.current;
+          if (received + chunk.length > maxBytes || expectedSize != null && received + chunk.length > expectedSize) {
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          await output.writeFrom(chunk);
+          received += chunk.length;
+        }
+        await output.flush();
+      } finally {
+        await iterator.cancel();
+        await output.close();
+      }
+      _requireCurrent();
+      if (received <= 0 || expectedSize != null && received != expectedSize) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      return target;
+    } catch (_) {
+      if (await target.exists()) await target.delete();
+      rethrow;
+    }
+  }
+
+  Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    _cancellation.cancel();
+    try {
+      await _opening;
+    } on Object {
+      // Cancellation is expected when the reader closes mid-transfer.
+    }
+    final directory = _directory;
+    _directory = null;
+    if (directory != null) {
+      try {
+        if (await directory.exists()) await directory.delete(recursive: true);
+      } on FileSystemException {
+        // The app's temporary-directory cleanup will remove a locked preview.
+      }
+    }
+  }
 }

@@ -3569,7 +3569,6 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Add hozzá a Google Drive, OneDrive, Dropbox, WebDAV vagy S3 a Fájlok és könyvek először.';
 	@override String get syncDestination => 'Sync tárolási számla';
 	@override String get syncFolder => 'Szinkronizálódás vagy prefix';
-	@override String get syncFolderHelp => 'Használjon egy külön meglévő mappát a WebDAV forráson belül, vagy egy dedikált S3 előfizetést.';
 	@override String get syncCode => 'Magánszinkron kód';
 	@override String get syncCodeHelp => 'Hozzon létre egy kódot az első eszközön, majd adja meg azt a kódot a többi eszközön. tartsa magán másolatot: ez a kulcs a titkosított állapot. Használjon egy másik kódot minden egyes személy számára.';
 	@override String get showCode => 'Megmutatja vagy elrejti a szinkron kódot';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Ez a forrás eltávolítása kikapcsolja az olvasást és a hallgatást a szinkronizálás itt. titkosított szinkronizált fájlok maradnak a szolgáltató.';
 	@override String get syncReconnect => 'Újra összekapcsolja a tárolási fiókot';
 	@override String lastSynced({required Object time}) => 'Legutóbb szinkronizált a ${time}';
-	@override String get syncPrivacy => 'Csak titkosított előrehaladást és jegyzeteket tárolnak. Audio és ebook fájlokat, fiók tokeneket és jelszavakat nem töltik fel. A Google Drive és a OneDrive alkalmazás tárolását használja; a Dropbox PlezyNG Szinkronizálást használ. A szinkronizálás lehetővé tétele további írásos hozzáférést igényelhet. Amíg aktiválódik, ez a cél a progress szinkronizálást birtokolja; a szerver előrehaladása elválasztva marad. A szinkronizálást törölve tartja a helyi történetet és a távoli állapotot.';
 	@override String get syncConflicts => 'Válassza ki, hol kell újra';
 	@override String get conflictHelp => 'Ezek a változások önállóan történtek. Válassza ki a pozíciót vagy a betűtípus verzióját, hogy tartsa. A későbbi időzítés vagy a magasabb arány automatikusan nem nyer.';
 	@override String syncDevice({required Object device}) => 'készülék ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsHu {
 			'audiobook.addSyncSource' => 'Add hozzá a Google Drive, OneDrive, Dropbox, WebDAV vagy S3 a Fájlok és könyvek először.',
 			'audiobook.syncDestination' => 'Sync tárolási számla',
 			'audiobook.syncFolder' => 'Szinkronizálódás vagy prefix',
-			'audiobook.syncFolderHelp' => 'Használjon egy külön meglévő mappát a WebDAV forráson belül, vagy egy dedikált S3 előfizetést.',
 			'audiobook.syncCode' => 'Magánszinkron kód',
 			'audiobook.syncCodeHelp' => 'Hozzon létre egy kódot az első eszközön, majd adja meg azt a kódot a többi eszközön. tartsa magán másolatot: ez a kulcs a titkosított állapot. Használjon egy másik kódot minden egyes személy számára.',
 			'audiobook.showCode' => 'Megmutatja vagy elrejti a szinkron kódot',
@@ -8401,7 +8398,6 @@ extension on TranslationsHu {
 			'audiobook.syncSourceDisconnect' => 'Ez a forrás eltávolítása kikapcsolja az olvasást és a hallgatást a szinkronizálás itt. titkosított szinkronizált fájlok maradnak a szolgáltató.',
 			'audiobook.syncReconnect' => 'Újra összekapcsolja a tárolási fiókot',
 			'audiobook.lastSynced' => ({required Object time}) => 'Legutóbb szinkronizált a ${time}',
-			'audiobook.syncPrivacy' => 'Csak titkosított előrehaladást és jegyzeteket tárolnak. Audio és ebook fájlokat, fiók tokeneket és jelszavakat nem töltik fel. A Google Drive és a OneDrive alkalmazás tárolását használja; a Dropbox PlezyNG Szinkronizálást használ. A szinkronizálás lehetővé tétele további írásos hozzáférést igényelhet. Amíg aktiválódik, ez a cél a progress szinkronizálást birtokolja; a szerver előrehaladása elválasztva marad. A szinkronizálást törölve tartja a helyi történetet és a távoli állapotot.',
 			'audiobook.syncConflicts' => 'Válassza ki, hol kell újra',
 			'audiobook.conflictHelp' => 'Ezek a változások önállóan történtek. Válassza ki a pozíciót vagy a betűtípus verzióját, hogy tartsa. A későbbi időzítés vagy a magasabb arány automatikusan nem nyer.',
 			'audiobook.syncDevice' => ({required Object device}) => 'készülék ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsHu {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

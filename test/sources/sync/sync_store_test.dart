@@ -135,6 +135,7 @@ void main() {
     final tokens = <bool>[];
     final graphAuthorization = <String?>[];
     String? cdnAuthorization;
+    http.Request? create;
     var contentReads = 0;
     final adapter = OneDriveSourceAdapter(
       const FileSource(id: 'one', profileId: 'p', kind: FileSourceKind.oneDrive, name: 'OneDrive'),
@@ -156,6 +157,10 @@ void main() {
             if (contentReads == 1) return http.Response('', 401);
             return http.Response('', 302, headers: {'location': 'https://cdn.example/state'});
           }
+          if (request.url.host == 'graph.microsoft.com' && request.method == 'PUT') {
+            create = request;
+            return http.Response('', 201);
+          }
           if (request.url.host == 'cdn.example') {
             cdnAuthorization = request.headers['Authorization'];
             return http.Response('encrypted', 200);
@@ -172,9 +177,13 @@ void main() {
     try {
       final file = (await store.list(namespace)).single;
       expect(await store.read(file), 'encrypted');
-      expect(tokens, [false, false, true]);
+      await store.create(filename(2), 'encrypted state');
+      expect(tokens, [false, false, true, false]);
       expect(graphAuthorization, ['Bearer stale', 'Bearer fresh']);
       expect(cdnAuthorization, isNull);
+      expect(create!.url.path, '/v1.0/me/drive/special/approot:/${filename(2)}:/content');
+      expect(create!.headers['If-None-Match'], '*');
+      expect(create!.body, 'encrypted state');
       expect(
         SourceOAuthConfig.forSource(
           const FileSource(
@@ -370,6 +379,8 @@ void main() {
         method: 'GET',
       );
       expect(put!.method, 'PUT');
+      expect(put!.url.path, '/bucket/library/state/${filename(1)}');
+      expect(put!.body, 'encrypted');
       expect(put!.headers['If-None-Match'], '*');
       expect(signed.queryParameters['X-Amz-Signature'], expectedPut.queryParameters['X-Amz-Signature']);
       expect(signed.queryParameters['X-Amz-Signature'], isNot(expectedGet.queryParameters['X-Amz-Signature']));

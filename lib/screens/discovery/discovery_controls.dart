@@ -115,9 +115,22 @@ class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
           disableScale: true,
           borderRadius: tokens(context).radiusLg,
           onSelect: widget.onDetails,
-          onKeyEvent: _guardDirectionalKeyRepeat,
-          onNavigateLeft: widget.canSwipe ? widget.onSkip : null,
-          onNavigateRight: widget.canSwipe ? widget.onSave : null,
+          onKeyEvent: (node, event) {
+            if (!widget.canSwipe) return KeyEventResult.ignored;
+            final repeatResult = _guardDirectionalKeyRepeat(node, event);
+            if (repeatResult == KeyEventResult.handled) return repeatResult;
+            final saveKey = rtl ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight;
+            final skipKey = rtl ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft;
+            if (event.logicalKey == saveKey) {
+              if (event is KeyDownEvent) widget.onSave();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == skipKey) {
+              if (event is KeyDownEvent) widget.onSkip();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
           child: MouseRegion(
             cursor: widget.onDetails == null ? MouseCursor.defer : SystemMouseCursors.click,
             child: GestureDetector(
@@ -183,6 +196,8 @@ class DiscoveryActionBar extends StatelessWidget {
     this.onSave,
     this.onOpen,
     this.onDetails,
+    this.onPreview,
+    this.onHide,
     this.showDetails = true,
     this.onUndo,
     this.feedback,
@@ -194,6 +209,8 @@ class DiscoveryActionBar extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
   final VoidCallback? onDetails;
+  final VoidCallback? onPreview;
+  final VoidCallback? onHide;
   final bool showDetails;
   final VoidCallback? onUndo;
   final String? feedback;
@@ -262,7 +279,12 @@ class DiscoveryActionBar extends StatelessWidget {
                   children: [
                     Expanded(child: _secondary(t.discover.findNext.undo, onUndo)),
                     if (showDetails) Expanded(child: _secondary(t.discover.findNext.details, onDetails)),
-                    Expanded(child: _secondary(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context))),
+                    if (onPreview != null) Expanded(child: _secondary(t.common.preview, onPreview)),
+                    Expanded(
+                      child: onHide != null
+                          ? _secondary(t.discover.findNext.hideFromDiscovery, onHide)
+                          : _secondary(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context)),
+                    ),
                   ],
                 ),
               ],

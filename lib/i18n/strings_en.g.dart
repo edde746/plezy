@@ -363,6 +363,9 @@ class Translations$common$en {
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
+	/// en: 'Compare'
+	String get compare => 'Compare';
+
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
@@ -389,6 +392,9 @@ class Translations$common$en {
 
 	/// en: 'Search'
 	String get search => 'Search';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
 
 	/// en: 'Home'
 	String get home => 'Home';
@@ -6773,6 +6779,18 @@ class Translations$matchScreen$en {
 
 	/// en: 'No matches found'
 	String get noMatchesFound => 'No matches found';
+
+	/// en: 'Plex Discover'
+	String get plexDiscover => 'Plex Discover';
+
+	/// en: 'Plex library'
+	String get plexLibrary => 'Plex library';
+
+	/// en: 'Jellyfin library'
+	String get jellyfinLibrary => 'Jellyfin library';
+
+	/// en: 'Emby library'
+	String get embyLibrary => 'Emby library';
 }
 
 // Path: serverTasks
@@ -6827,6 +6845,48 @@ class Translations$trakt$en {
 
 	/// en: 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.'
 	String get watchedSyncDescription => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.';
+
+	/// en: 'Export to Letterboxd'
+	String get historyExport => 'Export to Letterboxd';
+
+	/// en: 'Create a local CSV from Trakt movie history. Nothing is uploaded.'
+	String get historyExportDescription => 'Create a local CSV from Trakt movie history. Nothing is uploaded.';
+
+	/// en: 'Loading Trakt movie history…'
+	String get historyExportLoading => 'Loading Trakt movie history…';
+
+	/// en: 'Export movie history'
+	String get historyExportReviewTitle => 'Export movie history';
+
+	/// en: 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.'
+	String historyExportReview({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.';
+
+	/// en: '${count} incomplete entries could not be included.'
+	String historyExportSkipped({required Object count}) => '${count} incomplete entries could not be included.';
+
+	/// en: 'No exportable movie history was found in Trakt.'
+	String get historyExportNoHistory => 'No exportable movie history was found in Trakt.';
+
+	/// en: 'Couldn't load Trakt movie history. Try again.'
+	String get historyExportFailed => 'Couldn\'t load Trakt movie history. Try again.';
+
+	/// en: 'Save CSV'
+	String get historyExportSave => 'Save CSV';
+
+	/// en: 'Save Letterboxd file ${part} of ${total}'
+	String historyExportPart({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}';
+
+	/// en: 'Saved ${count} Letterboxd CSV file(s).'
+	String historyExportSaved({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).';
+
+	/// en: 'Export stopped after saving ${saved} of ${total} files.'
+	String historyExportPartial({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.';
+
+	/// en: 'Couldn't save the CSV file. Try again.'
+	String get historyExportSaveFailed => 'Couldn\'t save the CSV file. Try again.';
+
+	/// en: 'This history is too large to package here. Use Trakt's own data export to split very large histories.'
+	String get historyExportTooLarge => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.';
 }
 
 // Path: seerr
@@ -7004,6 +7064,24 @@ class Translations$services$en {
 
 	/// en: 'Integrations'
 	String get integrations => 'Integrations';
+
+	/// en: 'Hardcover'
+	String get hardcover => 'Hardcover';
+
+	/// en: 'Linked catalog titles'
+	String get linkedCatalogTitles => 'Linked catalog titles';
+
+	/// en: 'Optional plan note. This label is only for you; PlezyNG does not verify account access.'
+	String get planNote => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.';
+
+	/// en: 'Plan label'
+	String get planLabel => 'Plan label';
+
+	/// en: 'Set plan label'
+	String get setPlanLabel => 'Set plan label';
+
+	/// en: 'PlezyNG may earn a commission from some links.'
+	String get commissionDisclosure => 'PlezyNG may earn a commission from some links.';
 
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
@@ -9102,8 +9180,8 @@ class Translations$audiobook$en {
 	/// en: 'Sync folder or prefix'
 	String get syncFolder => 'Sync folder or prefix';
 
-	/// en: 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.'
-	String get syncFolderHelp => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.';
+	/// en: 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.'
+	String get syncFolderHelp => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.';
 
 	/// en: 'Private sync code'
 	String get syncCode => 'Private sync code';
@@ -9132,8 +9210,8 @@ class Translations$audiobook$en {
 	/// en: 'Last synced at $time'
 	String lastSynced({required Object time}) => 'Last synced at ${time}';
 
-	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.'
-	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.';
+	/// en: 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.';
 
 	/// en: 'Choose where to resume'
 	String get syncConflicts => 'Choose where to resume';
@@ -9269,6 +9347,9 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Saved server certificate'
 	String get savedCertificate => 'Saved server certificate';
+
+	/// en: 'Project Gutenberg'
+	String get projectGutenberg => 'Project Gutenberg';
 
 	/// en: 'Enter an NFS URL such as nfs://nas:2049/export.'
 	String get nfsEndpointInvalid => 'Enter an NFS URL such as nfs://nas:2049/export.';
@@ -10977,6 +11058,171 @@ class Translations$discover$findNext$en {
 	/// en: 'Choose the moment'
 	String get filters => 'Choose the moment';
 
+	/// en: 'Mood'
+	String get mood => 'Mood';
+
+	/// en: 'Mood filters use mood tags supplied by your media server; some picks do not have them.'
+	String get moodMetadataHint => 'Mood filters use mood tags supplied by your media server; some picks do not have them.';
+
+	/// en: 'Familiarity'
+	String get familiarity => 'Familiarity';
+
+	/// en: 'Any familiarity'
+	String get familiarityAny => 'Any familiarity';
+
+	/// en: 'New to me'
+	String get newToMe => 'New to me';
+
+	/// en: 'Already started'
+	String get inProgress => 'Already started';
+
+	/// en: 'Revisit'
+	String get revisit => 'Revisit';
+
+	/// en: 'Taste controls'
+	String get tasteControls => 'Taste controls';
+
+	/// en: 'Choose styles to bring forward or gently push back. Not now never changes these preferences.'
+	String get tasteControlsHelp => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.';
+
+	/// en: 'Bring forward'
+	String get preferMore => 'Bring forward';
+
+	/// en: 'Show less'
+	String get showLess => 'Show less';
+
+	/// en: 'Hide this pick'
+	String get hideFromDiscovery => 'Hide this pick';
+
+	/// en: 'Hidden picks'
+	String get hiddenPicks => 'Hidden picks';
+
+	/// en: 'No hidden picks'
+	String get noHiddenPicks => 'No hidden picks';
+
+	/// en: 'Reset taste and hidden picks'
+	String get resetTaste => 'Reset taste and hidden picks';
+
+	/// en: 'Clear genre preferences and restore every hidden pick?'
+	String get resetTasteConfirm => 'Clear genre preferences and restore every hidden pick?';
+
+	/// en: 'Choose together'
+	String get chooseTogether => 'Choose together';
+
+	/// en: 'Make a shortlist decision together'
+	String get voteSetup => 'Make a shortlist decision together';
+
+	/// en: 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.'
+	String get votePrivacy => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.';
+
+	/// en: 'How many guests?'
+	String get guestCount => 'How many guests?';
+
+	/// en: 'Start private voting'
+	String get beginVoting => 'Start private voting';
+
+	/// en: 'Guest ${guest} of ${count}'
+	String guestProgress({required Object guest, required Object count}) => 'Guest ${guest} of ${count}';
+
+	/// en: 'Maybe'
+	String get maybe => 'Maybe';
+
+	/// en: 'Not tonight'
+	String get notTonight => 'Not tonight';
+
+	/// en: 'Pass the device'
+	String get passDevice => 'Pass the device';
+
+	/// en: 'The previous guest’s choices are covered. Hand the device to the next guest when ready.'
+	String get passDeviceHint => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.';
+
+	/// en: 'Ready for next guest'
+	String get readyNextGuest => 'Ready for next guest';
+
+	/// en: 'No shared pick yet'
+	String get noSharedPick => 'No shared pick yet';
+
+	/// en: 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.'
+	String get noSharedPickHint => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.';
+
+	/// en: 'You found a shared pick'
+	String get sharedPick => 'You found a shared pick';
+
+	/// en: '${title} received the strongest shared approval.'
+	String sharedPickHint({required Object title}) => '${title} received the strongest shared approval.';
+
+	/// en: 'Put this pick on the deck'
+	String get useSharedPick => 'Put this pick on the deck';
+
+	/// en: 'Widen the shortlist'
+	String get widenShortlist => 'Widen the shortlist';
+
+	/// en: 'Choose picks to vote on'
+	String get selectToVote => 'Choose picks to vote on';
+
+	/// en: 'Start voting'
+	String get startVote => 'Start voting';
+
+	/// en: 'Choose between 2 and 12 picks.'
+	String get voteLimit => 'Choose between 2 and 12 picks.';
+
+	/// en: 'Availability'
+	String get availability => 'Availability';
+
+	/// en: 'Check again when opened'
+	String get availabilityNotChecked => 'Check again when opened';
+
+	/// en: 'Find a library catalog pick'
+	String get libraryCatalog => 'Find a library catalog pick';
+
+	/// en: 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.'
+	String get libraryCatalogHint => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.';
+
+	/// en: 'Open Library'
+	String get openLibraryName => 'Open Library';
+
+	/// en: 'Catalog record · availability not checked'
+	String get catalogOnly => 'Catalog record · availability not checked';
+
+	/// en: 'Optional AI ranking'
+	String get aiRanking => 'Optional AI ranking';
+
+	/// en: 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.'
+	String get aiRankingHelp => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.';
+
+	/// en: 'Service URL'
+	String get aiEndpoint => 'Service URL';
+
+	/// en: 'Model name'
+	String get aiModel => 'Model name';
+
+	/// en: 'API key (optional for local services)'
+	String get aiApiKey => 'API key (optional for local services)';
+
+	/// en: 'Enable AI ranking'
+	String get aiEnabled => 'Enable AI ranking';
+
+	/// en: 'Review AI ranking data'
+	String get aiConsentTitle => 'Review AI ranking data';
+
+	/// en: 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.'
+	String get aiConsentBody => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.';
+
+	/// en: 'AI ranking settings saved'
+	String get aiSaved => 'AI ranking settings saved';
+
+	/// en: 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.'
+	String get aiInvalidConfig => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.';
+
+	/// en: 'A key is saved securely'
+	String get aiSavedKey => 'A key is saved securely';
+
+	/// en: 'Remove saved API key'
+	String get aiClearKey => 'Remove saved API key';
+
+	/// en: 'AI ranking was unavailable. Your usual discovery order is still active.'
+	String get aiError => 'AI ranking was unavailable. Your usual discovery order is still active.';
+
 	/// en: 'Watch'
 	String get watch => 'Watch';
 
@@ -11009,6 +11255,30 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
+
+	/// en: 'Select picks to compare'
+	String get selectToCompare => 'Select picks to compare';
+
+	/// en: 'Compare up to three picks at a time.'
+	String get compareLimit => 'Compare up to three picks at a time.';
+
+	/// en: 'Choose at least two saved picks to compare.'
+	String get compareNeedsTwo => 'Choose at least two saved picks to compare.';
+
+	/// en: 'On this device'
+	String get localOnly => 'On this device';
+
+	/// en: 'Sync Saved picks across devices'
+	String get syncSavedPicks => 'Sync Saved picks across devices';
+
+	/// en: 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.'
+	String get syncSavedPicksHelp => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.';
+
+	/// en: 'These devices changed this saved pick independently. Choose which saved state to keep.'
+	String get savedPickConflict => 'These devices changed this saved pick independently. Choose which saved state to keep.';
+
+	/// en: 'Use this version'
+	String get useThisVersion => 'Use this version';
 
 	/// en: 'Saved picks · ${count}'
 	String savedCount({required Object count}) => 'Saved picks · ${count}';
@@ -12787,6 +13057,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
+			'common.compare' => 'Compare',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
 			'common.connect' => 'Connect',
@@ -12796,6 +13067,7 @@ extension on Translations {
 			'common.resume' => 'Resume',
 			'common.error' => 'Error',
 			'common.search' => 'Search',
+			'common.preview' => 'Preview',
 			'common.home' => 'Home',
 			'common.back' => 'Back',
 			'common.settings' => 'Settings',
@@ -13203,10 +13475,10 @@ extension on Translations {
 			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
-			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
-			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
+			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
 			'settings.hdrSdrConversionDevice' => 'Device',
@@ -13717,10 +13989,10 @@ extension on Translations {
 			'videoControls.bookmarksButton' => 'Bookmarks',
 			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
 			'videoControls.segmentLoop' => 'Segment loop',
-			'videoControls.addBookmark' => 'Add bookmark',
-			'videoControls.bookmarkName' => 'Bookmark name',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.addBookmark' => 'Add bookmark',
+			'videoControls.bookmarkName' => 'Bookmark name',
 			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
 			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
 			'videoControls.bookmarkNameRequired' => 'Enter a name for this bookmark.',
@@ -14113,6 +14385,61 @@ extension on Translations {
 			'discover.findNext.anyTime' => 'Any time',
 			'discover.findNext.timeAvailable' => 'How much time do you have?',
 			'discover.findNext.filters' => 'Choose the moment',
+			'discover.findNext.mood' => 'Mood',
+			'discover.findNext.moodMetadataHint' => 'Mood filters use mood tags supplied by your media server; some picks do not have them.',
+			'discover.findNext.familiarity' => 'Familiarity',
+			'discover.findNext.familiarityAny' => 'Any familiarity',
+			'discover.findNext.newToMe' => 'New to me',
+			'discover.findNext.inProgress' => 'Already started',
+			'discover.findNext.revisit' => 'Revisit',
+			'discover.findNext.tasteControls' => 'Taste controls',
+			'discover.findNext.tasteControlsHelp' => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.',
+			'discover.findNext.preferMore' => 'Bring forward',
+			'discover.findNext.showLess' => 'Show less',
+			'discover.findNext.hideFromDiscovery' => 'Hide this pick',
+			'discover.findNext.hiddenPicks' => 'Hidden picks',
+			'discover.findNext.noHiddenPicks' => 'No hidden picks',
+			'discover.findNext.resetTaste' => 'Reset taste and hidden picks',
+			'discover.findNext.resetTasteConfirm' => 'Clear genre preferences and restore every hidden pick?',
+			'discover.findNext.chooseTogether' => 'Choose together',
+			'discover.findNext.voteSetup' => 'Make a shortlist decision together',
+			'discover.findNext.votePrivacy' => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.',
+			'discover.findNext.guestCount' => 'How many guests?',
+			'discover.findNext.beginVoting' => 'Start private voting',
+			'discover.findNext.guestProgress' => ({required Object guest, required Object count}) => 'Guest ${guest} of ${count}',
+			'discover.findNext.maybe' => 'Maybe',
+			'discover.findNext.notTonight' => 'Not tonight',
+			'discover.findNext.passDevice' => 'Pass the device',
+			'discover.findNext.passDeviceHint' => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.',
+			'discover.findNext.readyNextGuest' => 'Ready for next guest',
+			'discover.findNext.noSharedPick' => 'No shared pick yet',
+			'discover.findNext.noSharedPickHint' => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.',
+			'discover.findNext.sharedPick' => 'You found a shared pick',
+			'discover.findNext.sharedPickHint' => ({required Object title}) => '${title} received the strongest shared approval.',
+			'discover.findNext.useSharedPick' => 'Put this pick on the deck',
+			'discover.findNext.widenShortlist' => 'Widen the shortlist',
+			'discover.findNext.selectToVote' => 'Choose picks to vote on',
+			'discover.findNext.startVote' => 'Start voting',
+			'discover.findNext.voteLimit' => 'Choose between 2 and 12 picks.',
+			'discover.findNext.availability' => 'Availability',
+			'discover.findNext.availabilityNotChecked' => 'Check again when opened',
+			'discover.findNext.libraryCatalog' => 'Find a library catalog pick',
+			'discover.findNext.libraryCatalogHint' => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.',
+			'discover.findNext.openLibraryName' => 'Open Library',
+			'discover.findNext.catalogOnly' => 'Catalog record · availability not checked',
+			'discover.findNext.aiRanking' => 'Optional AI ranking',
+			'discover.findNext.aiRankingHelp' => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.',
+			'discover.findNext.aiEndpoint' => 'Service URL',
+			'discover.findNext.aiModel' => 'Model name',
+			'discover.findNext.aiApiKey' => 'API key (optional for local services)',
+			'discover.findNext.aiEnabled' => 'Enable AI ranking',
+			'discover.findNext.aiConsentTitle' => 'Review AI ranking data',
+			'discover.findNext.aiConsentBody' => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.',
+			'discover.findNext.aiSaved' => 'AI ranking settings saved',
+			'discover.findNext.aiInvalidConfig' => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.',
+			'discover.findNext.aiSavedKey' => 'A key is saved securely',
+			'discover.findNext.aiClearKey' => 'Remove saved API key',
+			'discover.findNext.aiError' => 'AI ranking was unavailable. Your usual discovery order is still active.',
 			'discover.findNext.watch' => 'Watch',
 			'discover.findNext.listen' => 'Listen',
 			'discover.findNext.read' => 'Read',
@@ -14124,6 +14451,14 @@ extension on Translations {
 			'discover.findNext.notNow' => 'Not now',
 			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
+			'discover.findNext.selectToCompare' => 'Select picks to compare',
+			'discover.findNext.compareLimit' => 'Compare up to three picks at a time.',
+			'discover.findNext.compareNeedsTwo' => 'Choose at least two saved picks to compare.',
+			'discover.findNext.localOnly' => 'On this device',
+			'discover.findNext.syncSavedPicks' => 'Sync Saved picks across devices',
+			'discover.findNext.syncSavedPicksHelp' => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.',
+			'discover.findNext.savedPickConflict' => 'These devices changed this saved pick independently. Choose which saved state to keep.',
+			'discover.findNext.useThisVersion' => 'Use this version',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
 			'discover.findNext.details' => 'Details',
@@ -14168,6 +14503,8 @@ extension on Translations {
 			'discover.director' => 'Director',
 			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
+			_ => null,
+		} ?? switch (path) {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
@@ -14233,8 +14570,6 @@ extension on Translations {
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
@@ -14682,6 +15017,8 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
@@ -14747,8 +15084,6 @@ extension on Translations {
 			'watchTogether.codeCopied' => 'Room code copied',
 			'watchTogether.shareInvite' => 'Share Invite',
 			'watchTogether.inviteCopied' => 'Invite copied. Paste it into a message.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in PlezyNG: open Watch Together, choose Join Room and enter ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
 			'watchTogether.reconnecting' => 'Reconnecting...',
@@ -15196,6 +15531,8 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
@@ -15261,8 +15598,6 @@ extension on Translations {
 			'metadataEdit.metadataUpdated' => 'Metadata updated',
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
@@ -15322,6 +15657,10 @@ extension on Translations {
 			'matchScreen.yearHint' => 'Year',
 			'matchScreen.search' => 'Search',
 			'matchScreen.noMatchesFound' => 'No matches found',
+			'matchScreen.plexDiscover' => 'Plex Discover',
+			'matchScreen.plexLibrary' => 'Plex library',
+			'matchScreen.jellyfinLibrary' => 'Jellyfin library',
+			'matchScreen.embyLibrary' => 'Emby library',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
@@ -15334,6 +15673,20 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.',
+			'trakt.historyExport' => 'Export to Letterboxd',
+			'trakt.historyExportDescription' => 'Create a local CSV from Trakt movie history. Nothing is uploaded.',
+			'trakt.historyExportLoading' => 'Loading Trakt movie history…',
+			'trakt.historyExportReviewTitle' => 'Export movie history',
+			'trakt.historyExportReview' => ({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.',
+			'trakt.historyExportSkipped' => ({required Object count}) => '${count} incomplete entries could not be included.',
+			'trakt.historyExportNoHistory' => 'No exportable movie history was found in Trakt.',
+			'trakt.historyExportFailed' => 'Couldn\'t load Trakt movie history. Try again.',
+			'trakt.historyExportSave' => 'Save CSV',
+			'trakt.historyExportPart' => ({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}',
+			'trakt.historyExportSaved' => ({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).',
+			'trakt.historyExportPartial' => ({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.',
+			'trakt.historyExportSaveFailed' => 'Couldn\'t save the CSV file. Try again.',
+			'trakt.historyExportTooLarge' => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
@@ -15387,6 +15740,12 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
+			'services.hardcover' => 'Hardcover',
+			'services.linkedCatalogTitles' => 'Linked catalog titles',
+			'services.planNote' => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.',
+			'services.planLabel' => 'Plan label',
+			'services.setPlanLabel' => 'Set plan label',
+			'services.commissionDisclosure' => 'PlezyNG may earn a commission from some links.',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
@@ -15686,6 +16045,8 @@ extension on Translations {
 			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
 			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
 			'universalMedia.copyAddress' => 'Copy transfer address',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.addressCopied' => 'Transfer address copied',
 			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
 			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
@@ -15775,8 +16136,6 @@ extension on Translations {
 			'universalMedia.captureAudioNone' => 'No audio',
 			'universalMedia.captureDefaultAudio' => 'Default audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
@@ -16078,7 +16437,7 @@ extension on Translations {
 			'audiobook.addSyncSource' => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.',
 			'audiobook.syncDestination' => 'Sync storage account',
 			'audiobook.syncFolder' => 'Sync folder or prefix',
-			'audiobook.syncFolderHelp' => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.',
+			'audiobook.syncFolderHelp' => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.',
 			'audiobook.syncCode' => 'Private sync code',
 			'audiobook.syncCodeHelp' => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.',
 			'audiobook.showCode' => 'Show or hide sync code',
@@ -16088,7 +16447,7 @@ extension on Translations {
 			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
 			'audiobook.syncReconnect' => 'Reconnect storage account',
 			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
-			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.',
+			'audiobook.syncPrivacy' => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.',
 			'audiobook.syncConflicts' => 'Choose where to resume',
 			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
@@ -16131,6 +16490,7 @@ extension on Translations {
 			'audiobook.recoveryExported' => 'Encrypted recovery file saved.',
 			'audiobook.recoveryImported' => 'Recovery data merged.',
 			'sourceSetup.savedCertificate' => 'Saved server certificate',
+			'sourceSetup.projectGutenberg' => 'Project Gutenberg',
 			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
 			'sourceSetup.dlnaServers' => 'DLNA media servers',
@@ -16199,6 +16559,8 @@ extension on Translations {
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
 			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
 			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
@@ -16289,8 +16651,6 @@ extension on Translations {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			_ => null,
-		} ?? switch (path) {
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',

@@ -13,6 +13,7 @@ class SourceTransport {
   final http.Client _client;
   final bool allowHttp;
   bool _closed = false;
+  bool get isClosed => _closed;
 
   void validate(Uri uri) {
     if (uri.userInfo.isNotEmpty ||

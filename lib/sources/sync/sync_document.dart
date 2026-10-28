@@ -64,6 +64,17 @@ Map<String, int> joinedClock(Iterable<SyncVersion> values) {
 
 bool _covers(Map<String, int> a, Map<String, int> b) => b.entries.every((e) => (a[e.key] ?? 0) >= e.value);
 Map<String, dynamic> _semanticSyncValue(Map<String, dynamic> value) {
+  if (value['type'] == 'discovery-pick') {
+    final data = sourceMap(value['data']);
+    return {
+      'type': 'discovery-pick',
+      'data': {
+        'saved': data['saved'] == true,
+        if (data['reference'] is String) 'reference': data['reference'],
+        if (data['portableKey'] is String) 'portableKey': data['portableKey'],
+      },
+    };
+  }
   if (value['type'] != 'annotation') return value;
   final data = sourceMap(value['data']);
   if (data['deleted'] != true) return value;
@@ -149,7 +160,10 @@ class SyncDocument {
   bool _compactEqualValues(List<SyncVersion> values) {
     final groups = <String, List<SyncVersion>>{};
     for (final value in values) {
-      groups.putIfAbsent(canonicalSyncJson(value.value), () => []).add(value);
+      final identity = value.value['type'] == 'discovery-pick'
+          ? canonicalSyncJson(_semanticSyncValue(value.value))
+          : canonicalSyncJson(value.value);
+      groups.putIfAbsent(identity, () => []).add(value);
     }
     if (groups.values.every((group) => group.length == 1)) return false;
     values.clear();

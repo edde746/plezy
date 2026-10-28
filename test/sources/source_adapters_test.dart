@@ -197,6 +197,61 @@ void main() {
     expect((await source.browse()).entries, isEmpty);
     source.close();
   });
+  test('OPDS marks provider-declared samples as isolated previews', () async {
+    final source = OpdsSourceAdapter(
+      const FileSource(
+        id: 'samples',
+        profileId: 'p',
+        kind: FileSourceKind.opds,
+        name: 'Books',
+        endpoint: 'https://catalog.example/feed',
+      ),
+      SourceTransport(
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'publications': [
+                {
+                  'metadata': {'title': 'Sampled book', 'identifier': '9780306406157'},
+                  'links': [
+                    {
+                      'rel': 'http://opds-spec.org/acquisition http://opds-spec.org/acquisition/sample',
+                      'type': 'application/epub+zip',
+                      'href': '/book-sample.epub',
+                    },
+                    {
+                      'rel': 'http://opds-spec.org/acquisition/open-access',
+                      'type': 'application/epub+zip',
+                      'href': '/book.epub',
+                    },
+                  ],
+                },
+              ],
+            }),
+            200,
+          ),
+        ),
+      ),
+      () async => {},
+    );
+
+    final files = (await source.browse()).entries.single.files;
+    expect(files, hasLength(2));
+    expect(files.first.sampleOnly, isTrue);
+    expect(files.first.previewableSample, isTrue);
+    expect(files.last.sampleOnly, isFalse);
+    expect(files.first.fingerprint, isNot(files.last.fingerprint));
+    expect(PublicationFile.fromJson(files.first.toJson()).sampleOnly, isTrue);
+    expect(files.first.toJson(), containsPair('sampleOnly', true));
+    expect(files.first.toJson(), isNot(contains('sample')));
+    expect(
+      PublicationFile.fromJson({'id': 'legacy', 'name': 'sample.epub', 'sample': true}).sampleOnly,
+      isTrue,
+      reason: 'cached data from the earlier sample schema remains preview-only',
+    );
+    expect((await source.browse()).entries.single.identifiers, containsPair('isbn13', '9780306406157'));
+    source.close();
+  });
   test('WebDAV rejects traversal and external origins', () {
     final source = WebDavSourceAdapter(
       const FileSource(
@@ -257,6 +312,9 @@ void main() {
     );
     await source.readProgress(entry, progress);
     await source.writeProgress(entry, progress);
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+    expect(requests.last.url.path, matches(RegExp(r'^/books/\.state/[a-f0-9]{64}\.json$')));
+    expect(requests.last.url.path, isNot(contains('book.epub')));
     expect(requests.last.headers['If-Match'], '"revision1"');
     expect(jsonDecode(requests.last.body)['annotations'], hasLength(1));
     expect(requests.every((request) => request.url.path.startsWith('/books/.state/')), isTrue);

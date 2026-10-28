@@ -91,13 +91,13 @@ class DiscoveryState {
 /// store. Each read/modify/write runs in one database transaction.
 class DiscoveryStore {
   const DiscoveryStore(this._sources);
-  static const _preferenceKey = 'discovery.find-next.v1';
+  static const preferenceKey = 'discovery.find-next.v1';
   static const _maxHistory = 500;
   static const maxSaved = 250;
   final SourceRepository _sources;
 
   Future<DiscoveryState> load(String profileId) async {
-    final data = await _sources.preference(profileId, _preferenceKey);
+    final data = await _sources.preference(profileId, preferenceKey);
     try {
       return DiscoveryState.fromJson(data);
     } on FormatException {
@@ -177,7 +177,7 @@ class DiscoveryStore {
   });
 
   Future<DiscoveryState> _update(String profileId, DiscoveryState Function(DiscoveryState) update) async {
-    final value = await _sources.updatePreferenceAtomically(profileId, _preferenceKey, (raw) {
+    final value = await _sources.updatePreferenceAtomically(profileId, preferenceKey, (raw) {
       return update(DiscoveryState.fromJson(raw)).toJson();
     });
     return DiscoveryState.fromJson(value);

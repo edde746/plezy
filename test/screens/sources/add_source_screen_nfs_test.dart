@@ -38,7 +38,7 @@ void main() {
 
   testWidgets('NFS setup exposes mount and RPC TLS controls without account fields', (tester) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.physicalSize = const Size(1200, 1600);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     const nfs = FileSource(
