@@ -17,6 +17,7 @@ import '../../../services/file_picker_service.dart';
 import '../../../services/incoming_subtitle_share_service.dart';
 import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/subtitle_archive_importer.dart';
+import '../../../services/subtitle_ai_service.dart';
 import '../../../services/track_selection_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/formatters.dart';
@@ -32,6 +33,7 @@ import 'base_video_control_sheet.dart';
 import 'sheet_selection_column.dart';
 import 'sheet_split_columns.dart';
 import 'subtitle_search_sheet.dart';
+import 'subtitle_ai_sheet.dart';
 import 'subtitle_style_sheet.dart';
 import '../models/track_controls_state.dart';
 import '../helpers/track_filter_helper.dart';
@@ -579,6 +581,19 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
         leading: const AppIcon(Symbols.file_open_rounded),
         title: Text(t.videoControls.loadSubtitleFile),
         onTap: () => _loadSubtitleFile(context, player),
+      ),
+    );
+  }
+
+  if (SubtitleAiService.supportedPlatform && player.supportedLocalSubtitleExtensions.contains('srt')) {
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.auto_awesome_rounded),
+        title: const Text('Generate, sync, or translate subtitles'),
+        subtitle: const Text('Generate, sync, and translate WAV-based subtitle tracks'),
+        onTap: () => OverlaySheetController.of(context).push(
+          builder: (_) => SubtitleAiSheet(player: player),
+        ),
       ),
     );
   }
