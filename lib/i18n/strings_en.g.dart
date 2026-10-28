@@ -10479,6 +10479,168 @@ class Translations$discover$findNext$en {
 	/// en: 'Choose the moment'
 	String get filters => 'Choose the moment';
 
+	/// en: 'Mood'
+	String get mood => 'Mood';
+
+	/// en: 'Mood filters use mood tags supplied by your media server; some picks do not have them.'
+	String get moodMetadataHint => 'Mood filters use mood tags supplied by your media server; some picks do not have them.';
+
+	/// en: 'Familiarity'
+	String get familiarity => 'Familiarity';
+
+	/// en: 'Any familiarity'
+	String get familiarityAny => 'Any familiarity';
+
+	/// en: 'New to me'
+	String get newToMe => 'New to me';
+
+	/// en: 'Already started'
+	String get inProgress => 'Already started';
+
+	/// en: 'Revisit'
+	String get revisit => 'Revisit';
+
+	/// en: 'Taste controls'
+	String get tasteControls => 'Taste controls';
+
+	/// en: 'Choose styles to bring forward or gently push back. Not now never changes these preferences.'
+	String get tasteControlsHelp => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.';
+
+	/// en: 'Bring forward'
+	String get preferMore => 'Bring forward';
+
+	/// en: 'Show less'
+	String get showLess => 'Show less';
+
+	/// en: 'Hide this pick'
+	String get hideFromDiscovery => 'Hide this pick';
+
+	/// en: 'Hidden picks'
+	String get hiddenPicks => 'Hidden picks';
+
+	/// en: 'No hidden picks'
+	String get noHiddenPicks => 'No hidden picks';
+
+	/// en: 'Reset taste and hidden picks'
+	String get resetTaste => 'Reset taste and hidden picks';
+
+	/// en: 'Clear genre preferences and restore every hidden pick?'
+	String get resetTasteConfirm => 'Clear genre preferences and restore every hidden pick?';
+
+	/// en: 'Choose together'
+	String get chooseTogether => 'Choose together';
+
+	/// en: 'Make a shortlist decision together'
+	String get voteSetup => 'Make a shortlist decision together';
+
+	/// en: 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.'
+	String get votePrivacy => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.';
+
+	/// en: 'How many guests?'
+	String get guestCount => 'How many guests?';
+
+	/// en: 'Start private voting'
+	String get beginVoting => 'Start private voting';
+
+	/// en: 'Guest ${guest} of ${count}'
+	String guestProgress({required Object guest, required Object count}) => 'Guest ${guest} of ${count}';
+
+	/// en: 'Maybe'
+	String get maybe => 'Maybe';
+
+	/// en: 'Not tonight'
+	String get notTonight => 'Not tonight';
+
+	/// en: 'Pass the device'
+	String get passDevice => 'Pass the device';
+
+	/// en: 'The previous guest’s choices are covered. Hand the device to the next guest when ready.'
+	String get passDeviceHint => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.';
+
+	/// en: 'Ready for next guest'
+	String get readyNextGuest => 'Ready for next guest';
+
+	/// en: 'No shared pick yet'
+	String get noSharedPick => 'No shared pick yet';
+
+	/// en: 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.'
+	String get noSharedPickHint => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.';
+
+	/// en: 'You found a shared pick'
+	String get sharedPick => 'You found a shared pick';
+
+	/// en: '${title} received the strongest shared approval.'
+	String sharedPickHint({required Object title}) => '${title} received the strongest shared approval.';
+
+	/// en: 'Put this pick on the deck'
+	String get useSharedPick => 'Put this pick on the deck';
+
+	/// en: 'Widen the shortlist'
+	String get widenShortlist => 'Widen the shortlist';
+
+	/// en: 'Choose picks to vote on'
+	String get selectToVote => 'Choose picks to vote on';
+
+	/// en: 'Start voting'
+	String get startVote => 'Start voting';
+
+	/// en: 'Choose between 2 and 12 picks.'
+	String get voteLimit => 'Choose between 2 and 12 picks.';
+
+	/// en: 'Availability'
+	String get availability => 'Availability';
+
+	/// en: 'Check again when opened'
+	String get availabilityNotChecked => 'Check again when opened';
+
+	/// en: 'Find a library catalog pick'
+	String get libraryCatalog => 'Find a library catalog pick';
+
+	/// en: 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.'
+	String get libraryCatalogHint => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.';
+
+	/// en: 'Catalog record · availability not checked'
+	String get catalogOnly => 'Catalog record · availability not checked';
+
+	/// en: 'Optional AI ranking'
+	String get aiRanking => 'Optional AI ranking';
+
+	/// en: 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.'
+	String get aiRankingHelp => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.';
+
+	/// en: 'Service URL'
+	String get aiEndpoint => 'Service URL';
+
+	/// en: 'Model name'
+	String get aiModel => 'Model name';
+
+	/// en: 'API key (optional for local services)'
+	String get aiApiKey => 'API key (optional for local services)';
+
+	/// en: 'Enable AI ranking'
+	String get aiEnabled => 'Enable AI ranking';
+
+	/// en: 'Review AI ranking data'
+	String get aiConsentTitle => 'Review AI ranking data';
+
+	/// en: 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.'
+	String get aiConsentBody => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.';
+
+	/// en: 'AI ranking settings saved'
+	String get aiSaved => 'AI ranking settings saved';
+
+	/// en: 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.'
+	String get aiInvalidConfig => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.';
+
+	/// en: 'A key is saved securely'
+	String get aiSavedKey => 'A key is saved securely';
+
+	/// en: 'Remove saved API key'
+	String get aiClearKey => 'Remove saved API key';
+
+	/// en: 'AI ranking was unavailable. Your usual discovery order is still active.'
+	String get aiError => 'AI ranking was unavailable. Your usual discovery order is still active.';
+
 	/// en: 'Watch'
 	String get watch => 'Watch';
 
@@ -13619,6 +13781,60 @@ extension on Translations {
 			'discover.findNext.anyTime' => 'Any time',
 			'discover.findNext.timeAvailable' => 'How much time do you have?',
 			'discover.findNext.filters' => 'Choose the moment',
+			'discover.findNext.mood' => 'Mood',
+			'discover.findNext.moodMetadataHint' => 'Mood filters use mood tags supplied by your media server; some picks do not have them.',
+			'discover.findNext.familiarity' => 'Familiarity',
+			'discover.findNext.familiarityAny' => 'Any familiarity',
+			'discover.findNext.newToMe' => 'New to me',
+			'discover.findNext.inProgress' => 'Already started',
+			'discover.findNext.revisit' => 'Revisit',
+			'discover.findNext.tasteControls' => 'Taste controls',
+			'discover.findNext.tasteControlsHelp' => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.',
+			'discover.findNext.preferMore' => 'Bring forward',
+			'discover.findNext.showLess' => 'Show less',
+			'discover.findNext.hideFromDiscovery' => 'Hide this pick',
+			'discover.findNext.hiddenPicks' => 'Hidden picks',
+			'discover.findNext.noHiddenPicks' => 'No hidden picks',
+			'discover.findNext.resetTaste' => 'Reset taste and hidden picks',
+			'discover.findNext.resetTasteConfirm' => 'Clear genre preferences and restore every hidden pick?',
+			'discover.findNext.chooseTogether' => 'Choose together',
+			'discover.findNext.voteSetup' => 'Make a shortlist decision together',
+			'discover.findNext.votePrivacy' => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.',
+			'discover.findNext.guestCount' => 'How many guests?',
+			'discover.findNext.beginVoting' => 'Start private voting',
+			'discover.findNext.guestProgress' => ({required Object guest, required Object count}) => 'Guest ${guest} of ${count}',
+			'discover.findNext.maybe' => 'Maybe',
+			'discover.findNext.notTonight' => 'Not tonight',
+			'discover.findNext.passDevice' => 'Pass the device',
+			'discover.findNext.passDeviceHint' => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.',
+			'discover.findNext.readyNextGuest' => 'Ready for next guest',
+			'discover.findNext.noSharedPick' => 'No shared pick yet',
+			'discover.findNext.noSharedPickHint' => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.',
+			'discover.findNext.sharedPick' => 'You found a shared pick',
+			'discover.findNext.sharedPickHint' => ({required Object title}) => '${title} received the strongest shared approval.',
+			'discover.findNext.useSharedPick' => 'Put this pick on the deck',
+			'discover.findNext.widenShortlist' => 'Widen the shortlist',
+			'discover.findNext.selectToVote' => 'Choose picks to vote on',
+			'discover.findNext.startVote' => 'Start voting',
+			'discover.findNext.voteLimit' => 'Choose between 2 and 12 picks.',
+			'discover.findNext.availability' => 'Availability',
+			'discover.findNext.availabilityNotChecked' => 'Check again when opened',
+			'discover.findNext.libraryCatalog' => 'Find a library catalog pick',
+			'discover.findNext.libraryCatalogHint' => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.',
+			'discover.findNext.catalogOnly' => 'Catalog record · availability not checked',
+			'discover.findNext.aiRanking' => 'Optional AI ranking',
+			'discover.findNext.aiRankingHelp' => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.',
+			'discover.findNext.aiEndpoint' => 'Service URL',
+			'discover.findNext.aiModel' => 'Model name',
+			'discover.findNext.aiApiKey' => 'API key (optional for local services)',
+			'discover.findNext.aiEnabled' => 'Enable AI ranking',
+			'discover.findNext.aiConsentTitle' => 'Review AI ranking data',
+			'discover.findNext.aiConsentBody' => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.',
+			'discover.findNext.aiSaved' => 'AI ranking settings saved',
+			'discover.findNext.aiInvalidConfig' => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.',
+			'discover.findNext.aiSavedKey' => 'A key is saved securely',
+			'discover.findNext.aiClearKey' => 'Remove saved API key',
+			'discover.findNext.aiError' => 'AI ranking was unavailable. Your usual discovery order is still active.',
 			'discover.findNext.watch' => 'Watch',
 			'discover.findNext.listen' => 'Listen',
 			'discover.findNext.read' => 'Read',

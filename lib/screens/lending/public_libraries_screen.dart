@@ -269,6 +269,10 @@ Future<void> _signIn(BuildContext context, LendingService service, LendingLibrar
   if (failure != null && context.mounted) showErrorSnackBar(context, sourceFailureText(failure!));
 }
 
+/// Reuses the explicit borrower authorization flow from discovery.
+Future<void> signInToLendingLibrary(BuildContext context, LendingService service, LendingLibrary library) =>
+    _signIn(context, service, library);
+
 class _SignInDialog extends StatefulWidget {
   const _SignInDialog({required this.service, required this.finished});
   final LendingService service;
@@ -483,9 +487,19 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
 }
 
 class LibraryCatalogueScreen extends StatefulWidget {
-  const LibraryCatalogueScreen({super.key, required this.service, this.library});
+  const LibraryCatalogueScreen({
+    super.key,
+    required this.service,
+    this.library,
+    this.initialQuery,
+    this.initialBookId,
+    this.selectOnly = false,
+  });
   final LendingService service;
   final LendingLibrary? library;
+  final String? initialQuery;
+  final String? initialBookId;
+  final bool selectOnly;
   @override
   State<LibraryCatalogueScreen> createState() => _LibraryCatalogueScreenState();
 }
@@ -497,7 +511,16 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   String _catalogProvider = 'openLibrary';
   int _page = 1, _request = 0;
   bool _busy = false, _more = false;
+  bool _openedInitialBook = false;
   Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.text = widget.initialQuery?.trim() ?? '';
+    if (_search.text.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
   Future<void> _load({bool more = false}) async {
     if (_shelf == 'catalogue' && _search.text.trim().isEmpty) return;
     final request = ++_request;
@@ -525,6 +548,19 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
           _more = result.more;
         });
       }
+      final initialBookId = widget.initialBookId;
+      if (!more && initialBookId != null && !_openedInitialBook && mounted && request == _request) {
+        final exactBook = result.books.where((book) => book.id == initialBookId).firstOrNull;
+        if (exactBook == null) {
+          setState(() {
+            _books = [];
+            _error = const SourceException(SourceFailure.unavailable);
+          });
+        } else {
+          _openedInitialBook = true;
+          await _open(exactBook);
+        }
+      }
     } catch (error) {
       if (mounted && request == _request) setState(() => _error = error);
     } finally {
@@ -539,6 +575,10 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   }
 
   Future<void> _open(LendingBook book) async {
+    if (widget.selectOnly) {
+      Navigator.of(context).pop(book);
+      return;
+    }
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -636,6 +676,11 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                       ),
                     ),
                   ),
+                ),
+              if (widget.selectOnly)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(t.discover.findNext.libraryCatalogHint, style: Theme.of(context).textTheme.bodySmall),
                 ),
               if (_busy) const Padding(padding: EdgeInsets.only(top: 20), child: LinearProgressIndicator()),
               if (_error != null && _books.isEmpty)

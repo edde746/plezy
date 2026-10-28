@@ -32,6 +32,10 @@ class DiscoveryChoice {
     this.libraryId,
     this.catalogSourceId,
     this.catalogEntryKey,
+    this.publicCatalogWorkId,
+    this.publicCatalogAuthor = '',
+    this.lendingLibraryId,
+    this.lendingBookId,
     required this.year,
     this.liveProgramId,
     this.channelId,
@@ -73,6 +77,13 @@ class DiscoveryChoice {
   /// again before opening a saved pick.
   final String? catalogSourceId;
   final String? catalogEntryKey;
+  /// Open Library work identity. Presence always means catalog-only: it is
+  /// never an owned item or a verified local-library offer.
+  final String? publicCatalogWorkId;
+  final String publicCatalogAuthor;
+  /// Local-only lender identity. It is never a portable/public catalog ID.
+  final String? lendingLibraryId;
+  final String? lendingBookId;
   final int? year;
   final String? liveProgramId;
   final String? channelId;
@@ -97,6 +108,7 @@ class DiscoveryChoice {
   final Map<String, String> portableIds;
 
   String? get portableReference {
+    if (publicCatalogWorkId != null || lendingLibraryId != null || lendingBookId != null) return null;
     final resolvable = switch (type) {
       DiscoveryChoiceType.video => mediaKind == MediaKind.movie || mediaKind == MediaKind.show,
       DiscoveryChoiceType.music =>
@@ -139,6 +151,9 @@ class DiscoveryChoice {
     mediaId,
     sourceId,
     entryId,
+    publicCatalogWorkId,
+    lendingLibraryId,
+    lendingBookId,
     liveProgramId,
     channelId,
     liveBeginsAtSeconds,
@@ -163,6 +178,10 @@ class DiscoveryChoice {
     libraryId: libraryId,
     catalogSourceId: catalogSourceId,
     catalogEntryKey: catalogEntryKey,
+    publicCatalogWorkId: publicCatalogWorkId,
+    publicCatalogAuthor: publicCatalogAuthor,
+    lendingLibraryId: lendingLibraryId,
+    lendingBookId: lendingBookId,
     year: year,
     liveProgramId: liveProgramId,
     channelId: channelId,
@@ -198,6 +217,10 @@ class DiscoveryChoice {
     libraryId: libraryId,
     catalogSourceId: catalogSourceId,
     catalogEntryKey: catalogEntryKey,
+    publicCatalogWorkId: publicCatalogWorkId,
+    publicCatalogAuthor: publicCatalogAuthor,
+    lendingLibraryId: lendingLibraryId,
+    lendingBookId: lendingBookId,
     year: year,
     liveProgramId: liveProgramId,
     channelId: channelId,
@@ -233,6 +256,10 @@ class DiscoveryChoice {
     'libraryId': libraryId,
     'catalogSourceId': catalogSourceId,
     'catalogEntryKey': catalogEntryKey,
+    'publicCatalogWorkId': publicCatalogWorkId,
+    'publicCatalogAuthor': _bounded(publicCatalogAuthor, 160),
+    'lendingLibraryId': lendingLibraryId,
+    'lendingBookId': lendingBookId,
     'year': year,
     'liveProgramId': liveProgramId,
     'channelId': channelId,
@@ -266,6 +293,10 @@ class DiscoveryChoice {
       libraryId: _nonEmpty(json['libraryId']),
       catalogSourceId: _nonEmpty(json['catalogSourceId']),
       catalogEntryKey: _nonEmpty(json['catalogEntryKey']),
+      publicCatalogWorkId: _validPublicWorkId(json['publicCatalogWorkId']),
+      publicCatalogAuthor: _bounded(json['publicCatalogAuthor'] is String ? json['publicCatalogAuthor'] as String : '', 160),
+      lendingLibraryId: _validLocalLendingId(json['lendingLibraryId'], 128),
+      lendingBookId: _validLocalLendingId(json['lendingBookId'], 256),
       year: json['year'] is num ? (json['year'] as num).toInt() : null,
       liveProgramId: _nonEmpty(json['liveProgramId']),
       channelId: _nonEmpty(json['channelId']),
@@ -277,7 +308,13 @@ class DiscoveryChoice {
         sourceMap(json['portableIds']).map((key, value) => MapEntry(key, '$value')),
       ),
     );
-    if (choice.id.isEmpty || choice.title.isEmpty) throw const FormatException('Invalid discovery choice snapshot');
+    if (choice.id.isEmpty ||
+        choice.title.isEmpty ||
+        (json['publicCatalogWorkId'] != null && choice.publicCatalogWorkId == null) ||
+        ((json['lendingLibraryId'] != null || json['lendingBookId'] != null) &&
+            (choice.lendingLibraryId == null || choice.lendingBookId == null))) {
+      throw const FormatException('Invalid discovery choice snapshot');
+    }
     return choice;
   }
 
@@ -292,6 +329,18 @@ class DiscoveryChoice {
   static String? _nonEmpty(Object? value) {
     if (value is! String || value.trim().isEmpty) return null;
     return value.trim();
+  }
+
+  static String? _validPublicWorkId(Object? value) {
+    if (value is! String || !RegExp(r'^OL[0-9]{1,14}W$').hasMatch(value)) return null;
+    return value;
+  }
+
+  static String? _validLocalLendingId(Object? value, int maxLength) {
+    if (value is! String || value.trim().isEmpty || value.length > maxLength || value.contains(RegExp(r'[\r\n\u0000]'))) {
+      return null;
+    }
+    return value;
   }
 }
 
