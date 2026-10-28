@@ -16,6 +16,21 @@ Profile _home(String id, String name, String uuid) =>
     Profile.plexHome(id: id, displayName: name, plexHomeUserUuid: uuid, createdAt: DateTime(2026));
 
 void main() {
+  group('registered URI schemes', () {
+    for (final scheme in ['plezy', 'plezyng', 'plezxyng']) {
+      test('$scheme preserves profile, playback and open-media semantics', () {
+        final play = DeepLink.tryParse('$scheme://play?server=s1&id=i1&profile=Kids') as PlayLink;
+        expect(play.target, ItemPlayTarget(serverId: ServerId('s1'), itemId: 'i1'));
+        expect(play.profile, 'Kids');
+        expect(DeepLink.tryParse('${scheme.toUpperCase()}://OPEN'), isA<OpenLink>());
+        expect(DeepLink.tryParse('$scheme://open-media?url=https%3A%2F%2Fmedia.example%2Ffilm.mp4'),
+            isA<OpenMediaLink>());
+        expect(DeepLink.tryParse('$scheme://open-media?url=http%3A%2F%2Fmedia.example%2Ffilm.mp4'), isNull);
+        expect(DeepLink.tryParse('$scheme://play?server=s1'), isNull);
+      });
+    }
+  });
+
   group('legacy link compatibility', () {
     test('maps profile URLs onto the profile-aware open link', () {
       final link = DeepLink.tryParse('plezy://profile?profileId=kids');

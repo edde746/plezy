@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Accept branded `plezyng://` links across Android, Apple, Linux and Windows while preserving both existing aliases; correct PlezyNG Flatpak launch instructions.
 - Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
 - Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 
