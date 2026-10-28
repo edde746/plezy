@@ -23,6 +23,13 @@ explicit private build of an ancestor of current `main` are eligible. The next
 native build then rebuilds only the groups still stale. A partial recovery never
 updates PlezyNG's pins or bypasses the final all-platform verification.
 
+Android CI, release, and embedded-engine workflows share
+`scripts/prepare_android_sdk.py`. It configures Java and Gradle proxy settings
+before SDK setup, reads every checked-in Android module's SDK/NDK/CMake pins,
+installs those exact packages, and checks the installed tools. This includes
+Steam's CMake 3.22.1 alongside the app/libass CMake 4.1.2. A fresh runner must
+not depend on Gradle silently downloading missing toolchains during compilation.
+
 After native artifacts verify, the command verifies the FFmpeg source archive
 signature against FFmpeg's pinned release-key fingerprint, records its exact
 SHA-256 in the Android header build, and runs

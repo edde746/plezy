@@ -235,30 +235,16 @@ jobs:
           java-version: "21"
 
       - name: Configure Gradle to use the private JIT proxy
-        shell: bash
-        run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          import os
-          from urllib.parse import urlsplit
-
-          proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
-          if not proxy:
-              raise SystemExit("The private JIT HTTPS proxy is required for Gradle downloads.")
-          parsed = urlsplit(proxy if "://" in proxy else f"http://{proxy}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT HTTPS proxy URL is invalid for Gradle.")
-          options = [
-              f"-Dhttp.proxyHost={parsed.hostname}",
-              f"-Dhttp.proxyPort={parsed.port}",
-              f"-Dhttps.proxyHost={parsed.hostname}",
-              f"-Dhttps.proxyPort={parsed.port}",
-          ]
-          existing = os.environ.get("GRADLE_OPTS", "").strip()
-          print("GRADLE_OPTS=" + " ".join(([existing] if existing else []) + options))
-          PY
+        run: python3 scripts/prepare_android_sdk.py proxy
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Install all pinned Android module toolchains
+        run: python3 scripts/prepare_android_sdk.py install
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -301,6 +287,9 @@ jobs:
 
       - name: Verify Android host native test toolchain
         run: |
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+            build-essential clang cmake ninja-build pkg-config
           python3 - <<'PY'
           import shutil
           import sys

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Provision Android toolchains from every module's Gradle pins and configure both Java and Gradle downloads for the private runner proxy before SDK setup.
+
 - Retain checksum-verified webOS candidates and their exact source/run receipts in private storage after ephemeral runners exit, so device qualification can use the built package.
 
 - Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
