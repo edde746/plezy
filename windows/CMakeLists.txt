@@ -357,3 +357,7 @@ install(FILES "${VULKAN_RT_DIR}/vulkan-1.dll" "${VULKAN_RT_DIR}/VulkanRT-License
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
+
+# Optional qualified MilkRust artifacts and their exact corresponding source.
+include("${CMAKE_SOURCE_DIR}/../native/visualizer/milkrust.cmake")
+plezy_install_milkrust("milkrust_native.dll")

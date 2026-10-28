@@ -62,8 +62,8 @@ This command prepares source only. It checks out the pinned mpv-build tree,
 checks its mpv source revision, applies `series.common` and the requested
 platform series, then adds the PCM patch. Use a separate clean destination for
 each platform. The Linux source composition was performed with all 23 existing
-patches; no compiler or test was invoked. Other platforms need source composition
-and native host implementation as well as artifact qualification. Do not replace
+patches; no compiler or test was invoked. Other platforms now have host source but still need source composition, compiler
+validation and artifact qualification. Do not replace
 `mpv-build.lock.json` with invented checksums or unproduced artifact URLs.
 
 Build projectM as a shared library with GLES 3 for the Linux offscreen host:
@@ -122,3 +122,71 @@ Promotion still requires other-platform patch composition, all-platform artifact
 builds, native rendering with actual playback audio, seek/pause/gapless/format
 changes, overload tests, passthrough preservation, and device/performance
 qualification. No such results are claimed by these patches.
+
+## Native MilkRust and platform hosts
+
+`sources.lock.json` also pins MilkRust's `milkrust-native` crate and C ABI v1.
+It builds a static library and a dynamic library; no new third-party Rust
+renderer dependency is introduced. The shared C++ adapter resolves the ABI,
+loads bounded UTF-8 presets, resolves assets within the installed pack root and
+uses platform image decoders with dimensions checked before pixel allocation.
+The Rust engine owns shader programs, named textures, per-layer feedback and
+final composite passes. `milkrust_render_rgba` returns bounded top-down RGBA8.
+
+The app source now includes these hosts:
+
+| Platform | Graphics and Flutter output | Playback lease |
+| --- | --- | --- |
+| Linux | Existing surfaceless EGL/GLES 3 and pixel-buffer texture | Existing mpv native mutex and cached playback PTS |
+| Windows | Dedicated hidden WGL 3.2 core context, WIC images, leased Flutter RGBA buffers | Same-player tap under native mutex; worker stops before disposal |
+| macOS | Dedicated CGL 3.2 core context, ImageIO, retained CVPixelBuffer | `MpvPlayerCoreBase` lifecycle lock and internal PTS observation |
+| iOS/tvOS | Dedicated EAGL ES 3 context, ImageIO, retained CVPixelBuffer | Same Apple lifecycle lease |
+| Android/Android TV | EGL ES 3 pbuffer, bounded BitmapFactory decoding, SurfaceTexture native window | AAR `SessionGuard` admission lease; opaque session ID |
+
+All entries are source-only and unqualified. The non-Linux hosts currently offer
+MilkRust; selecting projectM produces an explicit unavailable response. webOS
+and Tizen still lack a decoded-PCM/native-texture path. No host claims to play
+all shaders or all `.milk2` patterns. Native MilkRust currently uses immediate
+preset cuts, not qualified cross-preset transitions.
+
+Android additionally needs `mpv-build-android-visualizer-bridge.patch` applied to
+the exact pinned mpv-build tree. Source preparation checks its digest and applies
+it when `--platform android` is selected. The bridge exports a versioned C API
+from `libplayer.so`, uses the existing session registry and admission lock, and
+caches presentation PTS on the event thread. It never exports a raw player
+pointer, queries the decoder from the render worker, or delivers PCM through
+Kotlin/Dart. Stock AARs fail this capability gate and keep normal playback.
+
+### Artifact wiring after private JIT qualification
+
+- Linux: install `libmilkrust_native.so` beside the bundled native libraries.
+- Windows: install `milkrust_native.dll` beside the signed app executable.
+- Android: place the matching `libmilkrust_native.so` in the release's `jniLibs`
+  directory for every packaged ABI, and use the patched, verified mpv AAR.
+- Apple: link the per-architecture static library with `-force_load` and retain
+  the C ABI exports (`-Wl,-export_dynamic`) so the runtime gate can resolve them.
+  Include the host's OpenGL/OpenGLES, ImageIO and CoreVideo framework links in the
+  signed target. A universal/XCFramework artifact must carry device and simulator
+  slices separately. The existing default mpv artifacts are not patched here.
+
+Do not edit the application dependency lock until those artifacts exist and
+have verified digests. Package the AGPL-3.0-only MilkRust notice, exact corresponding
+source and dependency notices with any distribution that includes the engine.
+The full engine license is in `notices/MilkRust-AGPL-3.0.txt`.
+
+The in-process GL compiler and Android native-window presentation can block in
+a driver. Exception handling does not impose a timeout. Qualification must cover
+backgrounding, surface/context loss, seek generation reset, pixel leases during
+unregister, repeated create/dispose, multichannel audio and passthrough. Process
+isolation or platform-specific recovery remains a release gate for untrusted
+community shaders; this source does not claim that containment is solved.
+
+
+Desktop CMake has an explicit artifact path: set
+`PLEZY_VISUALIZER_MILKRUST_LIBRARY`, `PLEZY_VISUALIZER_MILKRUST_SHA256`,
+`PLEZY_VISUALIZER_MILKRUST_SOURCE_ARCHIVE` and
+`PLEZY_VISUALIZER_MILKRUST_SOURCE_SHA256`. Both digests are checked at configure
+time. Installation includes the runtime library, corresponding-source archive,
+source lock and notices. With no library configured, nothing is downloaded or
+installed and the runtime capability reports unavailable. This wiring has not
+been exercised; it is not an artifact qualification record.

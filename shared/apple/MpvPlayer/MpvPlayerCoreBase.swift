@@ -107,6 +107,7 @@ class MpvPlayerCoreBase: NSObject {
   var isPipActive = false
 
   private struct LifecycleState {
+    var visualizationPTS = Double.nan
     var mpv: OpaquePointer?
     var isTerminal = false
     var isBackgrounded = false
@@ -191,7 +192,9 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalVideoColorMatrixObserverId: UInt64 = UInt64.max - 9
   private static let internalDeinterlaceActiveObserverId: UInt64 = UInt64.max - 10
   private static let internalIvtcActiveObserverId: UInt64 = UInt64.max - 11
+  private static let internalVisualizationObserverId: UInt64 = UInt64.max - 12
   private static let internalObserverIds: Set<UInt64> = [
+    internalVisualizationObserverId,
     internalSigPeakObserverId,
     internalWidthObserverId,
     internalHeightObserverId,
@@ -328,6 +331,17 @@ class MpvPlayerCoreBase: NSObject {
     defer { lifecycleLock.unlock() }
     guard !lifecycleState.isTerminal, let mpv = lifecycleState.mpv else { return nil }
     return body(mpv)
+  }
+
+  // The tap is read under the same lifecycle lease used to detach mpv. PCM
+  // stays on the native renderer worker and never crosses a Flutter channel.
+  func setVisualizationTap(_ enabled: Bool) -> Int32 {
+    withActiveMpv { PlezyVisualizationTapEnable(UnsafeMutableRawPointer($0), enabled) } ?? -1001
+  }
+  func readVisualizationAudio(_ output: UnsafeMutableRawPointer, size: Int) -> Int32 {
+    withActiveMpv { player in
+      PlezyVisualizationTapRead(UnsafeMutableRawPointer(player), lifecycleState.visualizationPTS, output, size)
+    } ?? -1001
   }
 
   func updateEDRMode(sigPeak: Double) {}
@@ -566,6 +580,8 @@ class MpvPlayerCoreBase: NSObject {
       mpv_terminate_destroy(mpv)
       return false
     }
+
+    mpv_observe_property(mpv, Self.internalVisualizationObserverId, "time-pos", MPV_FORMAT_DOUBLE)
 
     // mpv stores this context without retaining it. The core owns the context,
     // while the context keeps only a weak callback target; disposal atomically
@@ -1359,10 +1375,20 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   private func handleEvent(_ event: mpv_event) {
+    if event.event_id == MPV_EVENT_START_FILE || event.event_id == MPV_EVENT_END_FILE || event.event_id == MPV_EVENT_SEEK {
+      lifecycleLock.lock(); lifecycleState.visualizationPTS = .nan; lifecycleLock.unlock()
+    }
     switch event.event_id {
     case MPV_EVENT_PROPERTY_CHANGE:
       guard let data = event.data else { break }
       let property = data.assumingMemoryBound(to: mpv_event_property.self).pointee
+      if event.reply_userdata == Self.internalVisualizationObserverId {
+        lifecycleLock.lock()
+        lifecycleState.visualizationPTS = property.format == MPV_FORMAT_DOUBLE
+          ? (property.data?.assumingMemoryBound(to: Double.self).pointee ?? .nan) : .nan
+        lifecycleLock.unlock()
+        break
+      }
       let name = safeString(property.name)
       handlePropertyChange(
         name: name,

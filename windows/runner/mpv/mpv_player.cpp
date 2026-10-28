@@ -31,6 +31,23 @@ struct InnerWindowSubclassState {
 
 namespace {
 
+constexpr uint64_t kVisualizationTimeUserdata = UINT64_MAX - 2;
+struct VisualizationTapApi {
+  decltype(&mpv_plezy_audio_tap_version) version = nullptr;
+  decltype(&mpv_plezy_audio_tap_enable) enable = nullptr;
+  decltype(&mpv_plezy_audio_tap_read) read = nullptr;
+  VisualizationTapApi() {
+    HMODULE module = nullptr;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        reinterpret_cast<LPCWSTR>(&mpv_client_api_version), &module)) return;
+    version = reinterpret_cast<decltype(version)>(GetProcAddress(module, "mpv_plezy_audio_tap_version"));
+    enable = reinterpret_cast<decltype(enable)>(GetProcAddress(module, "mpv_plezy_audio_tap_enable"));
+    read = reinterpret_cast<decltype(read)>(GetProcAddress(module, "mpv_plezy_audio_tap_read"));
+  }
+  bool available() const { return version && enable && read && version() == MPV_PLEZY_AUDIO_TAP_ABI; }
+};
+VisualizationTapApi& TapApi() { static VisualizationTapApi api; return api; }
+
 // Whether any GPU on this system is a Qualcomm Adreno.
 //
 // libplacebo regenerates its tone-mapping shader LUT whenever the tone-map
@@ -565,6 +582,17 @@ void DetachMpvInnerSubclassState(const std::shared_ptr<InnerWindowSubclassState>
 MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
+bool MpvPlayer::VisualizationTapAvailable() { return TapApi().available(); }
+int MpvPlayer::SetVisualizationTap(bool enabled) {
+  std::lock_guard<std::mutex> lock(visualization_mutex_);
+  return audio_only_ && mpv_ && TapApi().available() ? TapApi().enable(mpv_, enabled ? 1 : 0) : MPV_ERROR_UNSUPPORTED;
+}
+int MpvPlayer::ReadVisualizationAudio(mpv_plezy_audio_block* block) {
+  std::lock_guard<std::mutex> lock(visualization_mutex_);
+  if (!audio_only_ || !mpv_ || !TapApi().available()) return MPV_ERROR_UNSUPPORTED;
+  const auto pts = visualization_pts_.load();
+  return std::isfinite(pts) ? TapApi().read(mpv_, pts, block, sizeof(*block)) : 0;
+}
 
 void MpvPlayer::EnsureMpvInnerSubclassed() {
   if (!hwnd_ || !forward_target_view_) return;
@@ -704,6 +732,7 @@ bool MpvPlayer::Initialize(HWND view) {
   // choosing to observe the device list.
   mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
 
+  if (audio_only_) mpv_observe_property(mpv_, kVisualizationTimeUserdata, "time-pos", MPV_FORMAT_DOUBLE);
   // Start event loop.
   StartEventLoop();
 
@@ -728,8 +757,10 @@ void MpvPlayer::Dispose() {
   // Detach the native handle before releasing platform-owned state. mpv can
   // block in demuxer/network teardown, so only the detached handle crosses to
   // the worker; it must not retain this player, callbacks, or HWNDs.
-  auto* handle = mpv_;
-  mpv_ = nullptr;
+  mpv_handle* handle = nullptr;
+  { std::lock_guard<std::mutex> lock(visualization_mutex_);
+    handle = mpv_; mpv_ = nullptr;
+    visualization_pts_.store(std::numeric_limits<double>::quiet_NaN()); }
 
   // The input subclass must stop referencing this player generation before
   // either the host HWND or the player object can be destroyed.
@@ -1088,6 +1119,8 @@ void MpvPlayer::EventLoop() {
 }
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
+  if (event->event_id == MPV_EVENT_START_FILE || event->event_id == MPV_EVENT_END_FILE || event->event_id == MPV_EVENT_SEEK)
+    visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
   if (plezy::mpv_common::DispatchReplyEvent(
           pending_requests_, event, [](const char* value) { return SanitizeUtf8(value); })) {
     return;
@@ -1120,6 +1153,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_PROPERTY_CHANGE: {
       auto* prop = static_cast<mpv_event_property*>(event->data);
       mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
+      if (event->reply_userdata == kVisualizationTimeUserdata) {
+        visualization_pts_.store(node.format == MPV_FORMAT_DOUBLE ? node.u.double_ : std::numeric_limits<double>::quiet_NaN());
+        break;
+      }
 
       // The 100ms mpv_wait_event tick already polls for scheduled reloads.
       const auto notice = plezy::mpv_common::ObserveAudioRecoveryProperty(audio_recovery_, event, prop);

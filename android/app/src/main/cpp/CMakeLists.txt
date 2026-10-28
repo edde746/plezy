@@ -37,3 +37,9 @@ target_link_libraries(ffmpegJNI
     swresample
     android
     log)
+
+# Runtime-gated optional renderer. The app works without libmilkrust_native.so;
+# releases must supply the qualified library for each packaged Android ABI.
+add_library(plezy_milkrust_host SHARED milkrust_host.cpp)
+target_compile_features(plezy_milkrust_host PRIVATE cxx_std_17)
+target_link_libraries(plezy_milkrust_host PRIVATE android jnigraphics EGL dl log)

@@ -15,15 +15,36 @@ void main() {
   late Directory directory;
   final entry = VisualizerPackCatalogEntry.available.single.toJson();
 
-  Future<List<int>> envelope(int sequence, {DateTime? expires, List<String> revoked = const [],
-      List<Map<String, Object>>? entries, String keyId = 'test'}) async {
-    final payload = utf8.encode(jsonEncode({'schemaVersion': 1, 'sequence': sequence,
-      'issuedAt': now.subtract(const Duration(hours: 1)).toIso8601String(),
-      'expiresAt': (expires ?? now.add(const Duration(days: 7))).toIso8601String(),
-      'entries': entries ?? [entry], 'revoked': revoked}));
-    final signature = await Ed25519().sign([...utf8.encode(VisualizerCatalogVerifier.domain), ...payload], keyPair: key);
-    return utf8.encode(jsonEncode({'schemaVersion': 1, 'payload': base64Encode(payload),
-      'signatures': [{'keyId': keyId, 'signature': base64Encode(signature.bytes)}]}));
+  Future<List<int>> envelope(
+    int sequence, {
+    DateTime? expires,
+    List<String> revoked = const [],
+    List<Map<String, Object>>? entries,
+    String keyId = 'test',
+  }) async {
+    final payload = utf8.encode(
+      jsonEncode({
+        'schemaVersion': 1,
+        'sequence': sequence,
+        'issuedAt': now.subtract(const Duration(hours: 1)).toIso8601String(),
+        'expiresAt': (expires ?? now.add(const Duration(days: 7))).toIso8601String(),
+        'entries': entries ?? [entry],
+        'revoked': revoked,
+      }),
+    );
+    final signature = await Ed25519().sign([
+      ...utf8.encode(VisualizerCatalogVerifier.domain),
+      ...payload,
+    ], keyPair: key);
+    return utf8.encode(
+      jsonEncode({
+        'schemaVersion': 1,
+        'payload': base64Encode(payload),
+        'signatures': [
+          {'keyId': keyId, 'signature': base64Encode(signature.bytes)},
+        ],
+      }),
+    );
   }
 
   setUp(() async {
@@ -42,12 +63,24 @@ void main() {
     changed['payload'] = base64Encode(utf8.encode('{}'));
     await expectLater(verifier.verify(utf8.encode(jsonEncode(changed)), now), throwsFormatException);
     await expectLater(verifier.verify(await envelope(4, keyId: 'untrusted'), now), throwsFormatException);
-    final quorum = VisualizerCatalogVerifier(VisualizerCatalogTrust(
-      keys: {...trust.keys, 'second': List.filled(32, 1)}, threshold: 2));
+    final quorum = VisualizerCatalogVerifier(
+      VisualizerCatalogTrust(keys: {...trust.keys, 'second': List.filled(32, 1)}, threshold: 2),
+    );
     // Repeating the same valid signature must not satisfy a quorum of two.
     final repeated = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
     repeated['signatures'] = [...repeated['signatures'], ...repeated['signatures']];
     await expectLater(quorum.verify(utf8.encode(jsonEncode(repeated)), now), throwsFormatException);
+  });
+
+  test('one public key under two IDs cannot satisfy an independent-key quorum', () async {
+    final public = (await key.extractPublicKey()).bytes;
+    final verifier = VisualizerCatalogVerifier(
+      VisualizerCatalogTrust(keys: {'test': public, 'alias': public}, threshold: 2),
+    );
+    final signed = jsonDecode(utf8.decode(await envelope(5))) as Map<String, dynamic>;
+    final signatures = signed['signatures'] as List;
+    signatures.add({...signatures.single as Map, 'keyId': 'alias'});
+    await expectLater(verifier.verify(utf8.encode(jsonEncode(signed)), now), throwsFormatException);
   });
 
   test('expiry denies download, but cache verification retains the sequence watermark', () async {
@@ -59,20 +92,41 @@ void main() {
 
   test('rejects mutable archives and uncleared pack declarations', () async {
     final verifier = VisualizerCatalogVerifier(trust);
-    await expectLater(verifier.verify(await envelope(1, entries: [
-      {...entry, 'archiveUrl': 'https://raw.githubusercontent.com/snapetech-org/MilkRust/main/content/downloads/a.rmpack'}
-    ]), now), throwsFormatException);
-    await expectLater(verifier.verify(await envelope(1, entries: [
-      {...entry, 'license': 'NOASSERTION'}
-    ]), now), throwsFormatException);
+    await expectLater(
+      verifier.verify(
+        await envelope(
+          1,
+          entries: [
+            {
+              ...entry,
+              'archiveUrl': 'https://raw.githubusercontent.com/snapetech-org/MilkRust/main/content/downloads/a.rmpack',
+            },
+          ],
+        ),
+        now,
+      ),
+      throwsFormatException,
+    );
+    await expectLater(
+      verifier.verify(
+        await envelope(
+          1,
+          entries: [
+            {...entry, 'license': 'NOASSERTION'},
+          ],
+        ),
+        now,
+      ),
+      throwsFormatException,
+    );
   });
 
   test('refresh persists rollback protection and revocations across restart', () async {
     var response = await envelope(12, revoked: ['milkrust-sample-pack@*']);
     final client = MockClient((_) async => http.Response.bytes(response, 200));
     addTearDown(client.close);
-    VisualizerSignedCatalog open() => VisualizerSignedCatalog(trust: trust, client: client,
-      directory: () async => directory, clock: () => now);
+    VisualizerSignedCatalog open() =>
+        VisualizerSignedCatalog(trust: trust, client: client, directory: () async => directory, clock: () => now);
     final catalog = open();
     await catalog.refresh();
     expect(catalog.authorizes(VisualizerPackCatalogEntry.available.single), isFalse);
@@ -96,8 +150,12 @@ void main() {
       return http.Response.bytes(bytes, 200);
     });
     addTearDown(client.close);
-    final catalog = VisualizerSignedCatalog(trust: trust, client: client,
-      directory: () async => directory, clock: () => now);
+    final catalog = VisualizerSignedCatalog(
+      trust: trust,
+      client: client,
+      directory: () async => directory,
+      clock: () => now,
+    );
     await catalog.refresh();
     offline = true;
     await expectLater(catalog.refresh(), throwsA(isA<SocketException>()));
@@ -107,14 +165,21 @@ void main() {
 
   test('conflicting authenticated cache checkpoints fail closed for remote packs', () async {
     final verifier = VisualizerCatalogVerifier(trust);
-    for (final bytes in [await envelope(8), await envelope(8, revoked: ['removed@*'])]) {
+    for (final bytes in [
+      await envelope(8),
+      await envelope(8, revoked: ['removed@*']),
+    ]) {
       final snapshot = await verifier.verify(bytes, now);
       await File('${directory.path}/catalog-${snapshot.sequence}-${snapshot.digest}.json').writeAsBytes(bytes);
     }
     final client = MockClient((_) async => throw StateError('Network must not be contacted'));
     addTearDown(client.close);
-    final catalog = VisualizerSignedCatalog(trust: trust, client: client,
-      directory: () async => directory, clock: () => now);
+    final catalog = VisualizerSignedCatalog(
+      trust: trust,
+      client: client,
+      directory: () async => directory,
+      clock: () => now,
+    );
     await catalog.loadCached(); // Offline inventory can continue.
     await expectLater(catalog.refresh(), throwsFormatException);
   });

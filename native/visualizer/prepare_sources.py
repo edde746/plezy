@@ -30,6 +30,10 @@ def checkout(name, root, spec):
 
 def prepare(name, root, lock, here, platform):
     spec = lock[name]
+    if name == 'milkrust':
+        checkout(name, root, spec)
+        print(f'milkrust: prepared native ABI {spec["abi"]} source {spec["commit"]}; no build performed')
+        return
     patch = here / spec['patch']
     if hashlib.sha256(patch.read_bytes()).hexdigest() != spec['patchSha256']:
         raise SystemExit(f'{name}: patch digest does not match sources.lock.json')
@@ -55,6 +59,12 @@ def prepare(name, root, lock, here, platform):
                 seen.add(filename)
                 git(destination, 'apply', str(build / 'patches' / 'mpv' / 'pool' / filename))
         print(f'mpv: composed {len(seen)} locked common/{platform} source patches')
+        if platform == 'android':
+            bridge = here / lock['appMpvBuild']['androidBridgePatch']
+            if hashlib.sha256(bridge.read_bytes()).hexdigest() != lock['appMpvBuild']['androidBridgePatchSha256']:
+                raise SystemExit('Android session bridge patch digest mismatch')
+            git(build, 'apply', str(bridge))
+            print('mpv-build: prepared the Android session-leased visualization bridge')
     git(destination, 'apply', str(patch))
     print(f'{name}: prepared {spec["commit"]} with {spec["patch"]}')
 
@@ -62,7 +72,7 @@ def prepare(name, root, lock, here, platform):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--destination', type=Path, required=True)
-    parser.add_argument('--component', choices=['projectm', 'mpv', 'all'], default='all')
+    parser.add_argument('--component', choices=['projectm', 'mpv', 'milkrust', 'all'], default='all')
     parser.add_argument('--platform', choices=['linux', 'windows', 'apple', 'android'], default='linux',
                         help='mpv-build patch series; each platform needs its own clean destination')
     args = parser.parse_args()
@@ -70,7 +80,7 @@ def main():
     lock = json.loads((here / 'sources.lock.json').read_text())
     root = args.destination.resolve()
     root.mkdir(parents=True, exist_ok=True)
-    for name in ['projectm', 'mpv'] if args.component == 'all' else [args.component]:
+    for name in ['projectm', 'mpv', 'milkrust'] if args.component == 'all' else [args.component]:
         prepare(name, root, lock, here, args.platform)
 
 

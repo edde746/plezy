@@ -1232,6 +1232,9 @@ void _registerAppLicenses() {
   _registerShaderLicenses();
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(const [
+      'MilkRust native integration (AGPL-3.0)',
+    ], await rootBundle.loadString('assets/licenses/MilkRust_Native.txt'));
+    yield LicenseEntryWithLineBreaks(const [
       'Unicode CLDR',
     ], await rootBundle.loadString('assets/licenses/Unicode.txt'));
     yield LicenseEntryWithLineBreaks(const [

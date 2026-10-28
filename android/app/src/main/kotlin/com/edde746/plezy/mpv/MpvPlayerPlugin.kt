@@ -67,6 +67,9 @@ open class MpvPlayerPlugin(
 
   private val channels = PlayerChannelBinding(channelBase, this, this, tag)
   private var playerCore: MpvPlayerCore? = null
+  private var textureRegistry: io.flutter.view.TextureRegistry? = null
+  private var visualizer: MilkRustVisualizer? = null
+  private var visualizerSessionId = 0L
   private var audioFocusEnabled = true
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
@@ -150,6 +153,7 @@ open class MpvPlayerPlugin(
   }
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    textureRegistry = binding.textureRegistry
     applicationContext = binding.applicationContext
     binding.applicationContext.registerComponentCallbacks(memoryCallbacks)
     channels.attach(binding)
@@ -164,10 +168,12 @@ open class MpvPlayerPlugin(
     activity = null
     activityBinding = null
     applicationContext = null
+    textureRegistry = null
     channels.detach()
   }
 
   private fun takeCoreForTeardown(): MpvPlayerCore? {
+    disposeVisualizer()
     ++sessionGeneration
     val core = playerCore
     playerCore = null
@@ -225,7 +231,55 @@ open class MpvPlayerPlugin(
     channels.cancel()
   }
 
+  private fun disposeVisualizer() {
+    ++visualizerSessionId
+    val old = visualizer; visualizer = null
+    old?.close()
+  }
+
+  private fun handleVisualizer(call: MethodCall, result: MethodChannel.Result) {
+    fun unavailable(): String {
+      if (!audioOnly || playerCore?.visualizationSessionId() == null) return "Initialize the music player before opening a preset."
+      if ((call.argument<String>("engine") ?: "projectm") != "milkrust") return "Select native MilkRust on Android; this host does not bundle projectM."
+      return MilkRustNativeBridge.loadError ?: MilkRustNativeBridge.dependencyError()
+    }
+    try {
+      if (call.method == "visualizerCapabilities") {
+        val reason = unavailable()
+        result.success(mapOf("available" to reason.isEmpty(), "reason" to reason, "engine" to "milkrust-native-abi1", "audioTap" to reason.isEmpty())); return
+      }
+      if (call.method == "visualizerCreate") {
+        val reason = unavailable()
+        check(reason.isEmpty()) { reason }
+        val registry = checkNotNull(textureRegistry) { "Flutter texture registry is unavailable." }
+        val player = checkNotNull(playerCore?.visualizationSessionId()) { "Music session ended." }
+        disposeVisualizer()
+        val created = MilkRustVisualizer(registry, player); visualizer = created
+        result.success(mapOf("sessionId" to visualizerSessionId, "textureId" to created.textureId)); return
+      }
+      val current = visualizer
+      if (current == null || call.argument<Number>("sessionId")?.toLong() != visualizerSessionId) {
+        result.error("VISUALIZER_STALE", "This visualization session has ended.", null); return
+      }
+      when (call.method) {
+        "visualizerDispose" -> disposeVisualizer()
+        "visualizerLoad" -> current.load(checkNotNull(call.argument<String>("path")), checkNotNull(call.argument<String>("root")))
+        "visualizerResize" -> {
+          val width = checkNotNull(call.argument<Number>("width")).toLong()
+          val height = checkNotNull(call.argument<Number>("height")).toLong()
+          require(width in 1..16384 && height in 1..16384) { "Invalid visualization dimensions." }
+          current.resize(width.toInt(), height.toInt())
+        }
+        "visualizerSetPaused" -> current.pause(checkNotNull(call.argument<Boolean>("paused")))
+        "visualizerStatus" -> { result.success(current.status()); return }
+        else -> { result.notImplemented(); return }
+      }
+      result.success(null)
+    } catch (error: Exception) { result.error("VISUALIZER_NATIVE", error.message ?: "Native visualization failed.", null) }
+  }
+
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+    if (call.method.startsWith("visualizer")) { handleVisualizer(call, result); return }
     when (call.method) {
       "initialize" -> handleInitialize(call, result)
       "dispose" -> handleDispose(call, result)
@@ -332,6 +386,7 @@ open class MpvPlayerPlugin(
         // above. We never tear down a core that's mid-initialization.
         if (playerCore != null && playerCore?.isInitialized != true) {
           Log.w(tag, "Discarding stale uninitialized core before re-init")
+          disposeVisualizer()
           playerCore?.dispose()
           playerCore = null
         }

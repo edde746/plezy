@@ -21,6 +21,16 @@
   "appMpvBuild": {
     "repository": "https://github.com/edde746/mpv-build",
     "commit": "3b9f38affe3c4171f8e6bc47331feffd3d13be1d",
-    "integrationStatus": "linux-source-series-composed; native-artifacts-unbuilt"
+    "integrationStatus": "linux-source-series-composed; windows/apple/android-source-unqualified; native-artifacts-unbuilt",
+    "androidBridgePatch": "patches/mpv-build-android-visualizer-bridge.patch",
+    "androidBridgePatchSha256": "7b98d2f40f2c53fd28292f6a28aed92b4429b052da7a42054351612d1b9b545c"
+  },
+  "milkrust": {
+    "repository": "https://github.com/snapetech-org/MilkRust.git",
+    "commit": "0d72d71e87276da0e659a094b6c767a1cd56be0f",
+    "abi": 1,
+    "crate": "milkrust-native",
+    "license": "AGPL-3.0-only",
+    "qualification": "source-only-unqualified"
   }
 }

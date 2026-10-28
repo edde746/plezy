@@ -237,3 +237,19 @@ broader cleared content and signed catalog publication, bounded compiler/GPU
 hang containment, and real artifact/device/conformance evidence are not done.
 No tests, builds, CI, render captures or device qualification were run in this
 session. Source preparation is recorded separately from those checks.
+
+
+## Source checkpoint, 2026-10-28
+
+The original scope and completion gates above remain unchanged. PRs #55/#57
+merged the library, Linux projectM and signed-catalog client source. Follow-up
+[PR #61](https://github.com/snapetech-org/PlezyNG/pull/61) adds native MilkRust host
+source for Linux, Windows, macOS, iOS/tvOS and Android/TV, paired with MilkRust
+PR #20. The latter also contains the saved-pair parser, native C renderer ABI,
+conservative MIT pack-conversion recipe and signed-catalog publisher source.
+
+This checkpoint does **not** close complete HLSL/`.milk2` semantics, webOS/Tizen,
+produced native artifacts, qualified broader downloadable packs, production
+catalog key custody/publication, or V9/V10. No builds, tests, CI jobs, GPU captures
+or device qualification were executed for these increments. See
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the evidence ledger.
