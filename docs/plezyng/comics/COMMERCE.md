@@ -6,9 +6,9 @@ Status: the handoff and link-broker code is implemented. Partner tracking is dis
 
 PlezyNG keeps comic reading and local file ownership in the existing source and reader owners. Title-specific storefront actions are embedded in the existing source-backed comic detail beside the local Read action: the highest-priority options appear inline and View All expands the remaining official destinations without leaving the detail. The generic full destination directory remains for other service categories. It does not take payment, assert that an issue is in stock, claim that a subscription covers an issue, proxy protected content, or mark an item purchased.
 
-The new POST endpoint at /commerce/comic-link accepts a provider ID and that provider's curated HTTPS destination URL. It validates an exact host, path, and query contract, limits requests by source IP, applies CORS only for exact configured origins, sends no titles or credentials to logs, and returns a URL plus a tracked flag. It returns the direct official URL whenever an approval gate is closed or a network request fails. API tokens remain on the relay server.
+The POST endpoint at /commerce/comic-link is the server-side affiliate-link broker. It accepts only curated provider IDs and HTTPS destination shapes, including Fanatical game title search. It validates exact hosts, paths, and query keys, limits requests by source IP, applies CORS only for exact configured origins, sends no titles or credentials to logs, and returns a URL plus a tracked flag. It returns the direct official URL whenever an approval gate is closed or a network request fails. API tokens remain on the relay server.
 
-The app calls the broker only after the user taps an eligible storefront. The comic query and optional ISBN reach Plezy's relay at that moment. The destination URL is forwarded to Awin, FlexOffers, or Rakuten only when that network's link builder is used; Bookshop ISBN links are formed locally. Eligible rows disclose that PlezyNG may earn a commission. The final purchase, territory, age eligibility, price, and license period are controlled by the storefront.
+The app calls the broker only after the user taps an eligible comic store or Fanatical game search. The title query and optional ISBN reach Plezy's relay at that moment. The destination URL is forwarded to Awin, FlexOffers, or Rakuten only when that network's link builder is used; Bookshop ISBN links are formed locally. Eligible rows disclose that PlezyNG may earn a commission. The final purchase, territory, age eligibility, price, and license period are controlled by the storefront.
 
 ## Provider setup
 
@@ -17,7 +17,7 @@ Every approval variable defaults to false. Set a gate to true only after approva
 | Provider | Environment configuration | Behavior |
 | --- | --- | --- |
 | DriveThruComics | DRIVETHRU_COMICS_AFFILIATE_ID, DRIVETHRU_COMICS_AFFILIATE_APPROVED | Adds affiliate_id to its official browse URL. Affiliate status must be confirmed for the PlezyNG property. |
-| Fanatical | AWIN_PUBLISHER_ID, AWIN_API_TOKEN, FANATICAL_AWIN_ADVERTISER_ID, FANATICAL_AWIN_APPROVED | Calls Awin's official Link Builder API for the curated Fanatical search URL. The returned URL must use an approved Awin tracking host. |
+| Fanatical | AWIN_PUBLISHER_ID, AWIN_API_TOKEN, FANATICAL_AWIN_ADVERTISER_ID, FANATICAL_AWIN_APPROVED, FANATICAL_GAMES_AWIN_APPROVED | Calls Awin's official Link Builder API for the curated comic/book or game search URL. Comic/book and game surfaces have separate approval gates; the returned URL must use an approved Awin tracking host. |
 | Renta! | FLEXOFFERS_API_KEY, optional FLEXOFFERS_API_KEY_HEADER and FLEXOFFERS_API_KEY_PREFIX, RENTA_FLEXOFFERS_ADVERTISER_ID, RENTA_FLEXOFFERS_APPROVED | Calls the FlexOffers deep-link API for an advertiser accepted by the account. Link creation failure falls back to the direct Renta! site. |
 | eBooks.com | EBOOKS_COM_AFFILIATE_ID, EBOOKS_COM_AFFILIATE_APPROVED | Produces the published aff.asp AID and ISBN URL only for a checksum-valid ISBN. Without an ISBN it opens the normal search. |
 | Bookshop.org | BOOKSHOP_AFFILIATE_ID, BOOKSHOP_AFFILIATE_APPROVED | Builds Bookshop's affiliate ISBN URL from the configured ID only when a valid ISBN is available (ISBN-10 is converted to ISBN-13). Otherwise the app opens the direct title search. No API key is required. |
@@ -33,7 +33,7 @@ COMIC_COMMERCE_ALLOWED_ORIGINS is a comma-separated exact-origin list for Flutte
 
 | Opportunity | PlezyNG path | Boundary |
 | --- | --- | --- |
-| Retailer affiliate commission | DriveThruComics, Fanatical/Awin, Renta!/FlexOffers, eBooks.com, Bookshop.org, Kobo/Rakuten, optional Humble/FlexOffers, optional Gumroad Discover | Merchant/network attribution applies only under the current account terms. PlezyNG does not independently report a sale. |
+| Retailer affiliate commission | DriveThruComics, Fanatical/Awin (comic/book links and gated game searches), Renta!/FlexOffers, eBooks.com, Bookshop.org, Kobo/Rakuten, optional Humble/FlexOffers, optional Gumroad Discover | Merchant/network attribution applies only under the current account terms. PlezyNG does not independently report a sale. Game searches do not imply an offer, price, edition, region, or activation-key match. |
 | Creator/publisher revenue share | GlobalComix publishing handoff | GlobalComix pays participating creators and publishers under its own publishing terms. This is not a PlezyNG referral fee. |
 | Creator affiliate links | Gumroad | Use product or creator links only after that creator approves PlezyNG and issues the tracking link. |
 | Institutional library access | Comics Plus / LibraryPass | School/library subscriptions and catalog APIs require an institutional relationship. The code includes no consumer referral checkout. |

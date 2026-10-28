@@ -46,7 +46,8 @@ type comicCommerceHandler struct {
 	awinPublisherID string
 	awinToken       string
 	fanaticalID     string
-	fanaticalReady  bool
+	fanaticalReady      bool
+	fanaticalGamesReady bool
 	flexAPIKey      string
 	flexHeader      string
 	flexPrefix      string
@@ -125,7 +126,8 @@ func newComicCommerceHandler(clientIPs clientIPResolver) *comicCommerceHandler {
 		awinPublisherID: strings.TrimSpace(os.Getenv("AWIN_PUBLISHER_ID")),
 		awinToken:       strings.TrimSpace(os.Getenv("AWIN_API_TOKEN")),
 		fanaticalID:     strings.TrimSpace(os.Getenv("FANATICAL_AWIN_ADVERTISER_ID")),
-		fanaticalReady:  envEnabled("FANATICAL_AWIN_APPROVED"),
+		fanaticalReady:      envEnabled("FANATICAL_AWIN_APPROVED"),
+		fanaticalGamesReady: envEnabled("FANATICAL_GAMES_AWIN_APPROVED"),
 		flexAPIKey:      strings.TrimSpace(os.Getenv("FLEXOFFERS_API_KEY")),
 		flexHeader:      header,
 		flexPrefix:      os.Getenv("FLEXOFFERS_API_KEY_PREFIX"),
@@ -269,8 +271,12 @@ func (h *comicCommerceHandler) resolve(ctx context.Context, input comicCommerceR
 			destination.RawQuery = query.Encode()
 			return destination.String(), true
 		}
-	case "fanatical-comics":
-		if h.fanaticalReady && isPositiveInteger(h.awinPublisherID) && isPositiveInteger(h.fanaticalID) && h.awinToken != "" && !strings.ContainsAny(h.awinToken, "\r\n") {
+	case "fanatical-comics", "fanatical-games":
+		approved := h.fanaticalReady
+		if input.ProviderID == "fanatical-games" {
+			approved = h.fanaticalGamesReady
+		}
+		if approved && isPositiveInteger(h.awinPublisherID) && isPositiveInteger(h.fanaticalID) && h.awinToken != "" && !strings.ContainsAny(h.awinToken, "\r\n") {
 			if target, ok := h.makeAwinLink(ctx, h.fanaticalID, destination); ok {
 				return target, true
 			}
@@ -562,6 +568,7 @@ func validateComicDestination(providerID, raw string) (*url.URL, error) {
 	}{
 		"drivethru-comics": {hosts: map[string]struct{}{"www.drivethrucomics.com": {}}, path: "/en/browse", keys: map[string]struct{}{}},
 		"fanatical-comics": {hosts: map[string]struct{}{"www.fanatical.com": {}}, path: "/en/search", keys: map[string]struct{}{"search": {}}},
+		"fanatical-games":  {hosts: map[string]struct{}{"www.fanatical.com": {}}, path: "/en/search", keys: map[string]struct{}{"search": {}}},
 		"renta-comics":     {hosts: map[string]struct{}{"www.ebookrenta.com": {}}, path: "/renta/sc/frm/", keys: map[string]struct{}{}},
 		"ebooks-comics":    {hosts: map[string]struct{}{"www.ebooks.com": {}}, path: "/en-us/searchall", keys: map[string]struct{}{"term": {}}},
 		"bookshop-comics":  {hosts: map[string]struct{}{"bookshop.org": {}}, path: "/search", keys: map[string]struct{}{"keywords": {}}},

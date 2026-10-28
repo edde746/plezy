@@ -1056,6 +1056,9 @@ abstract final class ExternalAccessDirectory {
       host: 'www.fanatical.com',
       path: '/en/search',
       queryParameter: 'search',
+      commerceProviderId: 'fanatical-games',
+      affiliateHosts: {'awin1.com', 'www.awin1.com'},
+      offerNote: 'Game search tracking requires separate Fanatical/Awin approval.',
     ),
     ExternalAccessDestination(
       id: 'humble-store',
