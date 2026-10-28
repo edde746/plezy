@@ -30,6 +30,10 @@ on:
           - candidate
           - stable
 
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
+
 permissions:
   contents: read
 
