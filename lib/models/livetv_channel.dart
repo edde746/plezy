@@ -29,7 +29,7 @@ Object? _readFavoriteChannelId(Map json, String _) => json['id'] as String? ?? j
 String favoriteChannelKey(String source, String id) => '$source\u0000$id';
 
 String liveTvChannelScopeKey(LiveTvChannel channel) =>
-    '${channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
+    '${channel.iptvSourceId ?? channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
 
 List<LiveTvChannel> filterLiveTvChannelsForFavorites({
   required List<LiveTvChannel> channels,
@@ -79,6 +79,22 @@ class LiveTvChannel {
   final String? favoriteSource;
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? favoriteStoreKey;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? iptvSourceId;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? iptvChannelId;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool iptvRadio;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? iptvGroupTitle;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool iptvFavorite;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool iptvCatchupAvailable;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final int? iptvCatchupDays;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool iptvParentalLocked;
 
   LiveTvChannel({
     required this.key,
@@ -98,6 +114,14 @@ class LiveTvChannel {
     this.liveTvSourceTitle,
     this.favoriteSource,
     this.favoriteStoreKey,
+    this.iptvSourceId,
+    this.iptvChannelId,
+    this.iptvRadio = false,
+    this.iptvGroupTitle,
+    this.iptvFavorite = false,
+    this.iptvCatchupAvailable = false,
+    this.iptvCatchupDays,
+    this.iptvParentalLocked = false,
   });
 
   factory LiveTvChannel.fromJson(Map<String, dynamic> json) => _$LiveTvChannelFromJson(json);
@@ -109,6 +133,14 @@ class LiveTvChannel {
     String? liveTvSourceTitle,
     String? favoriteSource,
     String? favoriteStoreKey,
+    String? iptvSourceId,
+    String? iptvChannelId,
+    bool? iptvRadio,
+    String? iptvGroupTitle,
+    bool? iptvFavorite,
+    bool? iptvCatchupAvailable,
+    int? iptvCatchupDays,
+    bool? iptvParentalLocked,
   }) {
     return LiveTvChannel(
       key: key,
@@ -128,6 +160,14 @@ class LiveTvChannel {
       liveTvSourceTitle: liveTvSourceTitle ?? this.liveTvSourceTitle,
       favoriteSource: favoriteSource ?? this.favoriteSource,
       favoriteStoreKey: favoriteStoreKey ?? this.favoriteStoreKey,
+      iptvSourceId: iptvSourceId ?? this.iptvSourceId,
+      iptvChannelId: iptvChannelId ?? this.iptvChannelId,
+      iptvRadio: iptvRadio ?? this.iptvRadio,
+      iptvGroupTitle: iptvGroupTitle ?? this.iptvGroupTitle,
+      iptvFavorite: iptvFavorite ?? this.iptvFavorite,
+      iptvCatchupAvailable: iptvCatchupAvailable ?? this.iptvCatchupAvailable,
+      iptvCatchupDays: iptvCatchupDays ?? this.iptvCatchupDays,
+      iptvParentalLocked: iptvParentalLocked ?? this.iptvParentalLocked,
     );
   }
 

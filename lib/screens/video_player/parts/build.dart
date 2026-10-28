@@ -341,6 +341,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onShaderChanged: () => _setPlayerState(() {}),
                         thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
+                        isRecordingLiveStream: _isRecordingIptv,
+                        onToggleLiveRecording: _canRecordIptv ? _toggleIptvRecording : null,
+                        onOpenLiveChannelPicker: widget.isLive && (widget.live?.channels?.length ?? 0) > 1
+                            ? _showLiveChannelPicker
+                            : null,
                         liveChannelName: _live.channelName,
                         liveTimelineForPosition: widget.isLive && _live.session is LiveTvTimeshiftSession
                             ? _liveTimelineForPosition

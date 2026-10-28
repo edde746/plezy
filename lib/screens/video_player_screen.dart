@@ -2,11 +2,15 @@ import 'dart:async';
 import '../services/playback_launch_observer.dart';
 import '../media/ids.dart';
 import 'dart:io';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:disk_usage/disk_usage.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
@@ -29,8 +33,10 @@ import '../media/live_tv_support.dart';
 import '../media/live_tv_timeline.dart';
 import '../services/live_tv_program_guide.dart';
 import 'video_player/live_tv_seek.dart';
+import 'iptv/iptv_live_channel_picker.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
+import '../models/livetv_program.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
 import '../services/jellyfin_client.dart';
@@ -50,6 +56,11 @@ import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/companion_remote_provider.dart';
+import '../profiles/active_profile_provider.dart';
+import '../iptv/iptv_source_repository.dart';
+import '../iptv/iptv_parental_access_service.dart';
+import '../iptv/iptv_live_tv_session.dart';
+import '../iptv/iptv_models.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/car_ux_restrictions_service.dart';
 import '../services/driver_distraction.dart';
@@ -140,6 +151,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/focus_navigation_intent.dart';
 import '../focus/transport_keys.dart';
 import '../i18n/strings.g.dart';
+import '../i18n/iptv_copy.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/models/watch_copy.dart';
 import '../watch_together/services/player_adapter.dart';
@@ -589,6 +601,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void>? _playerInitializationOperation;
   int _playerInitializationGeneration = 0;
   Future<void>? _shutdownOperation;
+  PlayerNative? _iptvRecordingPlayer;
+  File? _iptvRecordingTarget;
+  File? _iptvRecordingPartial;
+  String? _iptvRecordingId;
+  String? _iptvRecordingProfileId;
+  DateTime? _iptvRecordingStartedAt;
   Future<void>? _routeExitOperation;
   Future<void>? _systemUiRestoreOperation;
 
@@ -3201,12 +3219,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final stoppedReport = _sendStoppedProgressOnce(positionOverride: currentPlayer?.state.position);
     unawaited(() async {
       try {
-        await Future.wait<void>([
-          stoppedReport,
-          if (currentPlayer != null)
-            pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop(),
-          ...cancellations,
-        ]);
+        await _finishIptvRecording(currentPlayer, notify: false);
+        await stoppedReport;
+        if (currentPlayer != null) {
+          await (pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop());
+        }
+        await Future.wait<void>(cancellations);
         completer.complete();
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);

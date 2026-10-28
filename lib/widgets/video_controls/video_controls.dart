@@ -61,6 +61,7 @@ import '../../utils/orientation_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
 import '../../theme/mono_tokens.dart';
+import '../../widgets/app_icon.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/latest_async_write.dart';
@@ -71,6 +72,7 @@ import 'widgets/player_toast_indicator.dart';
 import 'widgets/transport_feedback_indicator.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/iptv_copy.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
@@ -696,6 +698,11 @@ class PlexVideoControls extends StatefulWidget {
   /// Whether this is a live TV stream (disables seek, progress, etc.)
   final bool isLive;
 
+  /// Optional local MPV capture control for direct IPTV live streams.
+  final bool isRecordingLiveStream;
+  final VoidCallback? onToggleLiveRecording;
+  final VoidCallback? onOpenLiveChannelPicker;
+
   /// Channel name for live TV display
   final String? liveChannelName;
 
@@ -794,6 +801,9 @@ class PlexVideoControls extends StatefulWidget {
     this.onShaderChanged,
     this.thumbnailDataBuilder,
     this.isLive = false,
+    this.isRecordingLiveStream = false,
+    this.onToggleLiveRecording,
+    this.onOpenLiveChannelPicker,
     this.liveChannelName,
     this.liveTimelineForPosition,
     this.onLiveSeek,
@@ -812,6 +822,31 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     with WindowListener, ListenableBindingsMixin, MountedSetStateMixin {
   bool get _showControls => widget.chromeController.controlsVisible;
   bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
+
+  Widget? get _liveRecordingControl {
+    final onPressed = widget.onToggleLiveRecording;
+    if (!widget.isLive || onPressed == null) return null;
+    final recording = widget.isRecordingLiveStream;
+    return IconButton(
+      tooltip: recording ? t.universalMedia.stopRecording : t.universalMedia.recordStream,
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      color: recording ? Colors.red.shade300 : Colors.white,
+      icon: AppIcon(recording ? Symbols.stop_circle_rounded : Symbols.radio_button_checked_rounded),
+    );
+  }
+
+  Widget? get _liveChannelPickerControl {
+    final onPressed = widget.onOpenLiveChannelPicker;
+    if (!widget.isLive || onPressed == null) return null;
+    return IconButton(
+      tooltip: t.iptv.liveChannelPicker,
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      color: Colors.white,
+      icon: const AppIcon(Symbols.format_list_bulleted_rounded),
+    );
+  }
 
   late bool _lastControlsVisible;
   late bool _controlsMounted;
@@ -1423,6 +1458,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       thumbnailDataBuilder: widget.thumbnailDataBuilder,
                                                       isLive: widget.isLive,
                                                       liveChannelName: widget.liveChannelName,
+                                                      liveRecordingControl: _liveRecordingControl,
+                                                      liveChannelPickerControl: _liveChannelPickerControl,
                                                       liveTimelineForPosition: widget.liveTimelineForPosition,
 
                                                       onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),

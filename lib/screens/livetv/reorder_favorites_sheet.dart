@@ -180,7 +180,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
           SizedBox(
             width: 40,
             height: 40,
-            child: channel?.thumb != null && client != null
+            child: channel?.thumb != null && (client != null || channel!.thumb!.startsWith('http'))
                 ? OptimizedMediaImage.thumb(
                     client: client,
                     imagePath: channel!.thumb,

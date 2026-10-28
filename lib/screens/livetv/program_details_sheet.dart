@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/iptv_copy.dart';
 import '../../media/media_server_client.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_channel.dart';
@@ -36,6 +37,9 @@ void showProgramDetailsSheet(
   required LiveTvChannel? channel,
   required String? posterUrl,
   required VoidCallback? onTuneChannel,
+  VoidCallback? onCatchupProgram,
+  Future<bool> Function()? onDispatcharrRecordProgram,
+  Future<bool> Function()? onLocalIptvRecordProgram,
   MediaServerClient? client,
   ValueChanged<bool>? onRecordingStateChanged,
 }) {
@@ -48,6 +52,9 @@ void showProgramDetailsSheet(
         channel: channel,
         posterUrl: posterUrl,
         onTuneChannel: onTuneChannel,
+        onCatchupProgram: onCatchupProgram,
+        onDispatcharrRecordProgram: onDispatcharrRecordProgram,
+        onLocalIptvRecordProgram: onLocalIptvRecordProgram,
         client: client,
         onRecordingStateChanged: onRecordingStateChanged,
       );
@@ -76,6 +83,9 @@ class _ProgramDetailsSheetContent extends StatefulWidget {
   final LiveTvChannel? channel;
   final String? posterUrl;
   final VoidCallback? onTuneChannel;
+  final VoidCallback? onCatchupProgram;
+  final Future<bool> Function()? onDispatcharrRecordProgram;
+  final Future<bool> Function()? onLocalIptvRecordProgram;
   final MediaServerClient? client;
   final ValueChanged<bool>? onRecordingStateChanged;
 
@@ -84,6 +94,9 @@ class _ProgramDetailsSheetContent extends StatefulWidget {
     required this.channel,
     required this.posterUrl,
     required this.onTuneChannel,
+    required this.onCatchupProgram,
+    required this.onDispatcharrRecordProgram,
+    required this.onLocalIptvRecordProgram,
     required this.client,
     required this.onRecordingStateChanged,
   });
@@ -209,6 +222,46 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
           onPressed: () {
             _closeSheet();
             widget.onTuneChannel!();
+          },
+        ),
+      );
+    }
+
+    if (widget.onCatchupProgram != null) {
+      actions.add(
+        _SheetAction(
+          label: t.iptv.watchFromStart,
+          icon: Symbols.replay_rounded,
+          onPressed: () {
+            _closeSheet();
+            widget.onCatchupProgram!();
+          },
+        ),
+      );
+    }
+
+    if (widget.onDispatcharrRecordProgram != null && (program.endsAt ?? 0) > DateTime.now().millisecondsSinceEpoch ~/ 1000) {
+      actions.add(
+        _SheetAction(
+          label: t.iptv.scheduleRecording,
+          icon: Symbols.fiber_manual_record_rounded,
+          style: _ActionStyle.filled,
+          onPressed: () async {
+            final scheduled = await widget.onDispatcharrRecordProgram!();
+            if (scheduled && mounted) _closeSheet();
+          },
+        ),
+      );
+    }
+
+    if (widget.onLocalIptvRecordProgram != null && (program.endsAt ?? 0) > DateTime.now().millisecondsSinceEpoch ~/ 1000) {
+      actions.add(
+        _SheetAction(
+          label: t.iptv.scheduleRecordingOnDevice,
+          icon: Symbols.fiber_manual_record_rounded,
+          onPressed: () async {
+            final scheduled = await widget.onLocalIptvRecordProgram!();
+            if (scheduled && mounted) _closeSheet();
           },
         ),
       );

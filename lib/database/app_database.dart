@@ -128,6 +128,20 @@ class AppDatabase extends _$AppDatabase {
               },
         ),
       );
+      if (outcome != TvosDatabaseRecoveryOutcome.recoveryRequired) {
+        final interrupted = await database
+            .customSelect("SELECT 1 AS present FROM iptv_recordings WHERE state='recording' LIMIT 1")
+            .getSingleOrNull();
+        if (interrupted != null) {
+          final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          await database.runIdentityMutation(
+            () => database.customStatement(
+              "UPDATE iptv_recordings SET state='failed', error_code='interrupted', completed_at=? WHERE state='recording'",
+              [now],
+            ),
+          );
+        }
+      }
       return AppDatabaseBootstrap(database: database, recoveryOutcome: outcome);
     } catch (_) {
       await database.close();
@@ -236,6 +250,33 @@ class AppDatabase extends _$AppDatabase {
     final joinRows = await (select(
       profileConnections,
     )..orderBy([(t) => OrderingTerm.asc(t.profileId), (t) => OrderingTerm.asc(t.connectionId)])).get();
+    final iptvSourcesRows = await customSelect('''
+      SELECT id, profile_id, display_name, kind, config_ciphertext, revision, generation,
+             created_at, last_success_at, last_error_code
+      FROM iptv_sources ORDER BY id
+    ''').get();
+    final iptvOverrideRows = await customSelect('''
+      SELECT profile_id, source_id, channel_id, favorite, favorite_order, hidden, custom_title, group_override, guide_id_override, parental_locked
+      FROM iptv_channel_overrides ORDER BY profile_id, source_id, channel_id
+    ''').get();
+    final iptvGroupLockRows = await customSelect('''
+      SELECT profile_id, source_id, group_key, group_title
+      FROM iptv_group_locks ORDER BY profile_id, source_id, group_key
+    ''').get();
+    final iptvVodProgressRows = await customSelect('''
+      SELECT source_id, kind, item_id, episode_id, position_ms, duration_ms, updated_at, finished
+      FROM iptv_vod_progress ORDER BY updated_at DESC LIMIT 500
+    ''').get();
+    final iptvRecordingScheduleRows = await customSelect('''
+      SELECT id, profile_id, source_id, channel_id, title, programme_title, starts_at, ends_at, state,
+             recording_id, error_code, created_at, updated_at
+      FROM iptv_recording_schedules ORDER BY starts_at, id
+    ''').get();
+    final iptvRecordingRows = await customSelect('''
+      SELECT id, profile_id, source_id, channel_id, title, programme_title, file_path, started_at, completed_at,
+             duration_seconds, size_bytes, state, error_code
+      FROM iptv_recordings ORDER BY profile_id, started_at DESC, id
+    ''').get();
     // Drift's generated serializer is the recovery image's column schema:
     // `toJson`/`fromJson` use these camelCase keys, so the read and restore
     // sides can never drift apart when a column is added or renamed.
@@ -243,6 +284,94 @@ class AppDatabase extends _$AppDatabase {
       'connections': [for (final row in connectionRows) row.toJson()],
       'profiles': [for (final row in profileRows) row.toJson()],
       'profileConnections': [for (final row in joinRows) row.toJson()],
+      'iptvSources': [
+        for (final row in iptvSourcesRows)
+          {
+            'id': row.data['id'],
+            'profileId': row.data['profile_id'],
+            'displayName': row.data['display_name'],
+            'kind': row.data['kind'],
+            'configCiphertext': row.data['config_ciphertext'],
+            'revision': row.data['revision'],
+            'generation': row.data['generation'],
+            'createdAt': row.data['created_at'],
+            'lastSuccessAt': row.data['last_success_at'],
+            'lastErrorCode': row.data['last_error_code'],
+          },
+      ],
+      'iptvChannelOverrides': [
+        for (final row in iptvOverrideRows)
+          {
+            'profileId': row.data['profile_id'],
+            'sourceId': row.data['source_id'],
+            'channelId': row.data['channel_id'],
+            'favorite': row.data['favorite'] == 1,
+            'favoriteOrder': row.data['favorite_order'],
+            'hidden': row.data['hidden'] == 1,
+            'customTitle': row.data['custom_title'],
+            'groupOverride': row.data['group_override'],
+            'guideIdOverride': row.data['guide_id_override'],
+            'parentalLocked': row.data['parental_locked'] == 1,
+          },
+      ],
+      'iptvGroupLocks': [
+        for (final row in iptvGroupLockRows)
+          {
+            'profileId': row.data['profile_id'],
+            'sourceId': row.data['source_id'],
+            'groupKey': row.data['group_key'],
+            'groupTitle': row.data['group_title'],
+          },
+      ],
+      'iptvVodProgress': [
+        for (final row in iptvVodProgressRows)
+          {
+            'sourceId': row.data['source_id'],
+            'kind': row.data['kind'],
+            'itemId': row.data['item_id'],
+            'episodeId': row.data['episode_id'],
+            'positionMs': row.data['position_ms'],
+            'durationMs': row.data['duration_ms'],
+            'updatedAt': row.data['updated_at'],
+            'finished': row.data['finished'] == 1,
+          },
+      ],
+      'iptvRecordingSchedules': [
+        for (final row in iptvRecordingScheduleRows)
+          {
+            'id': row.data['id'],
+            'profileId': row.data['profile_id'],
+            'sourceId': row.data['source_id'],
+            'channelId': row.data['channel_id'],
+            'title': row.data['title'],
+            'programmeTitle': row.data['programme_title'],
+            'startsAt': row.data['starts_at'],
+            'endsAt': row.data['ends_at'],
+            'state': row.data['state'],
+            'recordingId': row.data['recording_id'],
+            'errorCode': row.data['error_code'],
+            'createdAt': row.data['created_at'],
+            'updatedAt': row.data['updated_at'],
+          },
+      ],
+      'iptvRecordings': [
+        for (final row in iptvRecordingRows)
+          {
+            'id': row.data['id'],
+            'profileId': row.data['profile_id'],
+            'sourceId': row.data['source_id'],
+            'channelId': row.data['channel_id'],
+            'title': row.data['title'],
+            'programmeTitle': row.data['programme_title'],
+            'filePath': row.data['file_path'],
+            'startedAt': row.data['started_at'],
+            'completedAt': row.data['completed_at'],
+            'durationSeconds': row.data['duration_seconds'],
+            'sizeBytes': row.data['size_bytes'],
+            'state': row.data['state'],
+            'errorCode': row.data['error_code'],
+          },
+      ],
     };
   }
 
@@ -257,6 +386,76 @@ class AppDatabase extends _$AppDatabase {
     final connectionRows = _decodeRecoveryRows(snapshot.identity, 'connections', ConnectionRow.fromJson);
     final profileRows = _decodeRecoveryRows(snapshot.identity, 'profiles', ProfileRow.fromJson);
     final joinRows = _decodeRecoveryRows(snapshot.identity, 'profileConnections', ProfileConnectionRow.fromJson);
+    final iptvSourcesRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvSources', const {
+      'id',
+      'profileId',
+      'displayName',
+      'kind',
+      'configCiphertext',
+      'revision',
+      'generation',
+      'createdAt',
+      'lastSuccessAt',
+      'lastErrorCode',
+    });
+    final iptvOverrideRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvChannelOverrides', const {
+      'profileId',
+      'sourceId',
+      'channelId',
+      'favorite',
+      'favoriteOrder',
+      'hidden',
+      'customTitle',
+      'groupOverride',
+      'guideIdOverride',
+      'parentalLocked',
+    });
+    final iptvGroupLockRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvGroupLocks', const {
+      'profileId',
+      'sourceId',
+      'groupKey',
+      'groupTitle',
+    });
+    final iptvVodProgressRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvVodProgress', const {
+      'sourceId',
+      'kind',
+      'itemId',
+      'episodeId',
+      'positionMs',
+      'durationMs',
+      'updatedAt',
+      'finished',
+    });
+    final iptvRecordingScheduleRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvRecordingSchedules', const {
+      'id',
+      'profileId',
+      'sourceId',
+      'channelId',
+      'title',
+      'programmeTitle',
+      'startsAt',
+      'endsAt',
+      'state',
+      'recordingId',
+      'errorCode',
+      'createdAt',
+      'updatedAt',
+    });
+    final iptvRecordingRows = _decodeIptvRecoveryRowsIfPresent(snapshot.identity, 'iptvRecordings', const {
+      'id',
+      'profileId',
+      'sourceId',
+      'channelId',
+      'title',
+      'programmeTitle',
+      'filePath',
+      'startedAt',
+      'completedAt',
+      'durationSeconds',
+      'sizeBytes',
+      'state',
+      'errorCode',
+    });
     final pendingRows = _decodeRecoveryRows(
       snapshot.pending,
       'offlineWatchProgress',
@@ -290,8 +489,19 @@ class AppDatabase extends _$AppDatabase {
       // Recovery completion (the durable marker removal) is deliberately
       // separate from this transaction. Replace the snapshot-owned rows so a
       // restart can replay the same committed image after a crash or marker
-      // removal failure without hitting primary-key conflicts.
+      // removal failure without hitting primary-key conflicts. IPTV channels
+      // and programme listings are a large, replaceable feed cache; recovery
+      // keeps the protected source, user overrides, and local recording
+      // metadata, then rebuilds the channel cache when Live TV is opened.
       await delete(profileConnections).go();
+      await customStatement('DELETE FROM iptv_channel_overrides');
+      await customStatement('DELETE FROM iptv_group_locks');
+      await customStatement('DELETE FROM iptv_vod_progress');
+      await customStatement('DELETE FROM iptv_recording_schedules');
+      await customStatement('DELETE FROM iptv_recordings');
+      await customStatement('DELETE FROM iptv_programmes');
+      await customStatement('DELETE FROM iptv_channels');
+      await customStatement('DELETE FROM iptv_sources');
       await delete(profiles).go();
       await delete(connections).go();
       await delete(offlineWatchProgress).go();
@@ -306,6 +516,103 @@ class AppDatabase extends _$AppDatabase {
       }
       for (final row in joinRows) {
         await into(profileConnections).insert(row.toCompanion(false));
+      }
+      for (final row in iptvSourcesRows) {
+        await customStatement(
+          'INSERT INTO iptv_sources(id, profile_id, display_name, kind, config_ciphertext, revision, generation, created_at, last_success_at, last_error_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            row['id'],
+            row['profileId'],
+            row['displayName'],
+            row['kind'],
+            row['configCiphertext'],
+            row['revision'],
+            row['generation'],
+            row['createdAt'],
+            row['lastSuccessAt'],
+            row['lastErrorCode'],
+          ],
+        );
+      }
+      for (final row in iptvOverrideRows) {
+        await customStatement(
+          'INSERT INTO iptv_channel_overrides(profile_id, source_id, channel_id, favorite, favorite_order, hidden, custom_title, group_override, guide_id_override, parental_locked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            row['profileId'],
+            row['sourceId'],
+            row['channelId'],
+            row['favorite'] == true ? 1 : 0,
+            row['favoriteOrder'],
+            row['hidden'] == true ? 1 : 0,
+            row['customTitle'],
+            row['groupOverride'],
+            row['guideIdOverride'],
+            row['parentalLocked'] == true ? 1 : 0,
+          ],
+        );
+      }
+      for (final row in iptvGroupLockRows) {
+        await customStatement(
+          'INSERT INTO iptv_group_locks(profile_id, source_id, group_key, group_title) VALUES (?, ?, ?, ?)',
+          [row['profileId'], row['sourceId'], row['groupKey'], row['groupTitle']],
+        );
+      }
+      for (final row in iptvVodProgressRows) {
+        await customStatement('''
+          INSERT INTO iptv_vod_progress(source_id, kind, item_id, episode_id, position_ms, duration_ms, updated_at, finished)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', [
+          row['sourceId'],
+          row['kind'],
+          row['itemId'],
+          row['episodeId'],
+          row['positionMs'],
+          row['durationMs'],
+          row['updatedAt'],
+          row['finished'] == true ? 1 : 0,
+        ]);
+      }
+      for (final row in iptvRecordingScheduleRows) {
+        await customStatement('''
+          INSERT INTO iptv_recording_schedules(
+            id, profile_id, source_id, channel_id, title, programme_title, starts_at, ends_at,
+            state, recording_id, error_code, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', [
+          row['id'],
+          row['profileId'],
+          row['sourceId'],
+          row['channelId'],
+          row['title'],
+          row['programmeTitle'],
+          row['startsAt'],
+          row['endsAt'],
+          row['state'],
+          row['recordingId'],
+          row['errorCode'],
+          row['createdAt'],
+          row['updatedAt'],
+        ]);
+      }
+      for (final row in iptvRecordingRows) {
+        await customStatement(
+          'INSERT INTO iptv_recordings(id, profile_id, source_id, channel_id, title, programme_title, file_path, started_at, completed_at, duration_seconds, size_bytes, state, error_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            row['id'],
+            row['profileId'],
+            row['sourceId'],
+            row['channelId'],
+            row['title'],
+            row['programmeTitle'],
+            row['filePath'],
+            row['startedAt'],
+            row['completedAt'],
+            row['durationSeconds'],
+            row['sizeBytes'],
+            row['state'],
+            row['errorCode'],
+          ],
+        );
       }
       for (final row in pendingRows) {
         await into(offlineWatchProgress).insert(row.toCompanion(false));
@@ -346,6 +653,128 @@ class AppDatabase extends _$AppDatabase {
     ];
   }
 
+  /// Rows added in later schema versions are absent from older committed
+  /// tvOS images. Treat that one shape as an empty new table while retaining
+  /// strict validation whenever the group exists.
+  static List<T> _decodeRecoveryRowsIfPresent<T extends DataClass>(
+    Map<String, Object?> group,
+    String key,
+    T Function(Map<String, dynamic> json) fromJson,
+  ) {
+    if (!group.containsKey(key)) return const [];
+    return _decodeRecoveryRows(group, key, fromJson);
+  }
+
+  static List<Map<String, dynamic>> _decodeIptvRecoveryRowsIfPresent(
+    Map<String, Object?> group,
+    String key,
+    Set<String> columns,
+  ) {
+    if (!group.containsKey(key)) return const [];
+    final value = group[key];
+    if (value is! List) throw _invalidRecoveryImage;
+    final rows = <Map<String, dynamic>>[];
+    for (final raw in value) {
+      if (raw is! Map<String, dynamic>) {
+        throw _invalidRecoveryImage;
+      }
+      final rawColumns = raw.keys.toSet();
+      final legacyOverrideColumns = columns.difference(const {'guideIdOverride', 'parentalLocked'});
+      final legacyIptvOverrides = key == 'iptvChannelOverrides' &&
+          (setEquals(rawColumns, columns.difference(const {'parentalLocked'})) || setEquals(rawColumns, legacyOverrideColumns));
+      if (rawColumns.difference(columns).isNotEmpty || (columns.difference(rawColumns).isNotEmpty && !legacyIptvOverrides)) {
+        throw _invalidRecoveryImage;
+      }
+      final normalized = Map<String, dynamic>.from(raw);
+      if (legacyIptvOverrides) {
+        normalized.putIfAbsent('guideIdOverride', () => null);
+        normalized.putIfAbsent('parentalLocked', () => false);
+      }
+      if (key == 'iptvSources') {
+        if (normalized['id'] is! String ||
+            normalized['profileId'] is! String ||
+            normalized['displayName'] is! String ||
+            normalized['kind'] is! String ||
+            normalized['configCiphertext'] is! String ||
+            normalized['revision'] is! int ||
+            normalized['generation'] is! int ||
+            normalized['createdAt'] is! int ||
+            (normalized['lastSuccessAt'] != null && normalized['lastSuccessAt'] is! int) ||
+            (normalized['lastErrorCode'] != null && normalized['lastErrorCode'] is! String)) {
+          throw _invalidRecoveryImage;
+        }
+      } else if (key == 'iptvChannelOverrides') {
+        if (normalized['profileId'] is! String ||
+            normalized['sourceId'] is! String ||
+            normalized['channelId'] is! String ||
+            normalized['favorite'] is! bool ||
+            normalized['favoriteOrder'] is! int ||
+            normalized['hidden'] is! bool ||
+            (normalized['customTitle'] != null && normalized['customTitle'] is! String) ||
+            (normalized['groupOverride'] != null && normalized['groupOverride'] is! String) ||
+            (normalized['guideIdOverride'] != null && normalized['guideIdOverride'] is! String)) {
+          throw _invalidRecoveryImage;
+        }
+        if (normalized['parentalLocked'] is! bool) throw _invalidRecoveryImage;
+      } else if (key == 'iptvGroupLocks') {
+        if (normalized['profileId'] is! String ||
+            normalized['sourceId'] is! String ||
+            normalized['groupKey'] is! String ||
+            normalized['groupTitle'] is! String) {
+          throw _invalidRecoveryImage;
+        }
+      } else if (key == 'iptvVodProgress') {
+        if (normalized['sourceId'] is! String ||
+            normalized['kind'] is! String ||
+            !const {'movie', 'series'}.contains(normalized['kind']) ||
+            normalized['itemId'] is! String ||
+            normalized['episodeId'] is! String ||
+            normalized['positionMs'] is! int ||
+            normalized['durationMs'] is! int ||
+            normalized['updatedAt'] is! int ||
+            normalized['finished'] is! bool) {
+          throw _invalidRecoveryImage;
+        }
+      } else if (key == 'iptvRecordingSchedules') {
+        if (normalized['id'] is! String ||
+            normalized['profileId'] is! String ||
+            normalized['sourceId'] is! String ||
+            normalized['channelId'] is! String ||
+            normalized['title'] is! String ||
+            (normalized['programmeTitle'] != null && normalized['programmeTitle'] is! String) ||
+            normalized['startsAt'] is! int ||
+            normalized['endsAt'] is! int ||
+            normalized['state'] is! String ||
+            (normalized['recordingId'] != null && normalized['recordingId'] is! String) ||
+            (normalized['errorCode'] != null && normalized['errorCode'] is! String) ||
+            normalized['createdAt'] is! int ||
+            normalized['updatedAt'] is! int) {
+          throw _invalidRecoveryImage;
+        }
+      } else if (key == 'iptvRecordings') {
+        if (raw['id'] is! String ||
+            raw['profileId'] is! String ||
+            (raw['sourceId'] != null && raw['sourceId'] is! String) ||
+            (raw['channelId'] != null && raw['channelId'] is! String) ||
+            raw['title'] is! String ||
+            (raw['programmeTitle'] != null && raw['programmeTitle'] is! String) ||
+            raw['filePath'] is! String ||
+            raw['startedAt'] is! int ||
+            (raw['completedAt'] != null && raw['completedAt'] is! int) ||
+            (raw['durationSeconds'] != null && raw['durationSeconds'] is! int) ||
+            (raw['sizeBytes'] != null && raw['sizeBytes'] is! int) ||
+            raw['state'] is! String ||
+            (raw['errorCode'] != null && raw['errorCode'] is! String)) {
+          throw _invalidRecoveryImage;
+        }
+      } else {
+        throw _invalidRecoveryImage;
+      }
+      rows.add(normalized);
+    }
+    return rows;
+  }
+
   /// Reads one row through drift's generated deserializer and rejects anything
   /// that does not round-trip back to the exact same map. Drift already throws
   /// on a missing or mistyped required column; the round-trip additionally
@@ -368,7 +797,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration {
@@ -384,6 +813,10 @@ class AppDatabase extends _$AppDatabase {
       },
       onCreate: (Migrator m) async {
         await m.createAll();
+        await _createIptvTables();
+        await _createIptvExtensionTables();
+        await _createIptvParentalTables();
+        await _createIptvRecordingSchedules();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 7) {
@@ -513,6 +946,34 @@ class AppDatabase extends _$AppDatabase {
             'Index idx_offline_watch_progress_profile',
             () => m.create(idxOfflineWatchProgressProfile),
           );
+        }
+        if (from < 29) {
+          appLogger.i('Adding profile-scoped IPTV sources, channel catalog, guide and overrides (v29 migration)');
+          await _createIptvTables();
+        }
+        if (from < 30) {
+          appLogger.i('Adding IPTV VOD catalogue and local recordings (v30 migration)');
+          await _createIptvExtensionTables();
+        }
+        if (from < 31) {
+          appLogger.i('Adding IPTV manual guide channel mapping (v31 migration)');
+          await _addIptvGuideMappingColumn();
+        }
+        if (from < 32) {
+          appLogger.i('Adding profile-scoped IPTV VOD playback progress (v32 migration)');
+          await _createIptvVodProgressTable();
+        }
+        if (from < 33) {
+          appLogger.i('Adding IPTV parental locks (v33 migration)');
+          await _createIptvParentalTables();
+        }
+        if (from < 34) {
+          appLogger.i('Adding scheduled IPTV recordings (v34 migration)');
+          await _createIptvRecordingSchedules();
+        }
+        if (from < 35) {
+          appLogger.i('Adding protected IPTV playback headers (v35 migration)');
+          await _addIptvStreamHeadersColumn();
         }
         if (from < 15) {
           appLogger.i('Adding mediaSourceId column to DownloadedMedia (v15 migration)');
@@ -788,6 +1249,205 @@ class AppDatabase extends _$AppDatabase {
         }
       },
     );
+  }
+
+  Future<void> _createIptvTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_sources (
+        id TEXT NOT NULL PRIMARY KEY,
+        profile_id TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        config_ciphertext TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 1,
+        generation INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        last_success_at INTEGER,
+        last_error_code TEXT
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_sources_profile ON iptv_sources(profile_id, created_at)');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_channels (
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        channel_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        tvg_id TEXT,
+        number TEXT,
+        group_title TEXT,
+        logo_url TEXT,
+        catchup_source_ciphertext TEXT,
+        catchup_days INTEGER,
+        stream_url_ciphertext TEXT NOT NULL,
+        is_radio INTEGER NOT NULL DEFAULT 0,
+        stream_headers_ciphertext TEXT,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (source_id, channel_id)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_channels_source_number ON iptv_channels(source_id, number)');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_channels_source_tvg ON iptv_channels(source_id, tvg_id)');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_programmes (
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        channel_id TEXT NOT NULL,
+        begins_at INTEGER NOT NULL,
+        ends_at INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT,
+        category TEXT,
+        episode_id TEXT,
+        thumb_url TEXT,
+        PRIMARY KEY (source_id, channel_id, begins_at, title)
+      )
+    ''');
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_iptv_programmes_channel_time ON iptv_programmes(source_id, channel_id, begins_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_iptv_programmes_time ON iptv_programmes(source_id, begins_at, ends_at)',
+    );
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_channel_overrides (
+        profile_id TEXT NOT NULL,
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        channel_id TEXT NOT NULL,
+        favorite INTEGER NOT NULL DEFAULT 0,
+        favorite_order INTEGER NOT NULL DEFAULT 0,
+        hidden INTEGER NOT NULL DEFAULT 0,
+        custom_title TEXT,
+        group_override TEXT,
+        guide_id_override TEXT,
+        parental_locked INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (profile_id, source_id, channel_id)
+      )
+    ''');
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_iptv_overrides_favorites ON iptv_channel_overrides(profile_id, favorite, favorite_order)',
+    );
+  }
+
+  Future<void> _addIptvStreamHeadersColumn() async {
+    final columns = await customSelect('PRAGMA table_info(iptv_channels)').get();
+    if (!columns.any((row) => row.read<String>('name') == 'stream_headers_ciphertext')) {
+      await customStatement('ALTER TABLE iptv_channels ADD COLUMN stream_headers_ciphertext TEXT');
+    }
+  }
+
+  Future<void> _addIptvGuideMappingColumn() async {
+    final columns = await customSelect('PRAGMA table_info(iptv_channel_overrides)').get();
+    if (!columns.any((row) => row.read<String>('name') == 'guide_id_override')) {
+      await customStatement('ALTER TABLE iptv_channel_overrides ADD COLUMN guide_id_override TEXT');
+    }
+  }
+
+  Future<void> _createIptvParentalTables() async {
+    final columns = await customSelect('PRAGMA table_info(iptv_channel_overrides)').get();
+    if (!columns.any((row) => row.read<String>('name') == 'parental_locked')) {
+      await customStatement('ALTER TABLE iptv_channel_overrides ADD COLUMN parental_locked INTEGER NOT NULL DEFAULT 0');
+    }
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_group_locks (
+        profile_id TEXT NOT NULL,
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        group_key TEXT NOT NULL,
+        group_title TEXT NOT NULL,
+        PRIMARY KEY (profile_id, source_id, group_key)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_group_locks_profile ON iptv_group_locks(profile_id, source_id)');
+  }
+
+  Future<void> _createIptvRecordingSchedules() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_recording_schedules (
+        id TEXT NOT NULL PRIMARY KEY,
+        profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        channel_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        programme_title TEXT,
+        starts_at INTEGER NOT NULL,
+        ends_at INTEGER NOT NULL,
+        state TEXT NOT NULL DEFAULT 'scheduled',
+        recording_id TEXT,
+        error_code TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE(profile_id, source_id, channel_id, starts_at)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_recording_schedules_due ON iptv_recording_schedules(state, starts_at)');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_recording_schedules_profile ON iptv_recording_schedules(profile_id, starts_at)');
+  }
+
+  Future<void> _createIptvExtensionTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_vod_categories (
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        category_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (source_id, kind, category_id)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_vod_categories_source ON iptv_vod_categories(source_id, kind, name)');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_vod_items (
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        item_id TEXT NOT NULL,
+        category_id TEXT,
+        title TEXT NOT NULL,
+        plot TEXT,
+        year INTEGER,
+        duration_seconds INTEGER,
+        rating REAL,
+        poster_url TEXT,
+        backdrop_url TEXT,
+        container_extension TEXT NOT NULL DEFAULT 'mp4',
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (source_id, kind, item_id)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_vod_items_category ON iptv_vod_items(source_id, kind, category_id, title)');
+    await _createIptvVodProgressTable();
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_recordings (
+        id TEXT NOT NULL PRIMARY KEY,
+        profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        source_id TEXT REFERENCES iptv_sources(id) ON DELETE SET NULL,
+        channel_id TEXT,
+        title TEXT NOT NULL,
+        programme_title TEXT,
+        file_path TEXT NOT NULL,
+        started_at INTEGER NOT NULL,
+        completed_at INTEGER,
+        duration_seconds INTEGER,
+        size_bytes INTEGER,
+        state TEXT NOT NULL DEFAULT 'recording',
+        error_code TEXT
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_recordings_profile ON iptv_recordings(profile_id, started_at DESC)');
+  }
+
+  Future<void> _createIptvVodProgressTable() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS iptv_vod_progress (
+        source_id TEXT NOT NULL REFERENCES iptv_sources(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        item_id TEXT NOT NULL,
+        episode_id TEXT NOT NULL DEFAULT '',
+        position_ms INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        finished INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (source_id, kind, item_id, episode_id)
+      )
+    ''');
+    await customStatement('CREATE INDEX IF NOT EXISTS idx_iptv_vod_progress_source_kind ON iptv_vod_progress(source_id, kind, updated_at DESC)');
   }
 
   Future<void> _ignoreAlreadyExists(String label, Future<void> Function() operation) async {

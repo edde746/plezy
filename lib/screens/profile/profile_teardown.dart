@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
+import '../../iptv/iptv_source_repository.dart';
 import '../../database/download_collection_operations.dart';
 import '../../database/download_operations.dart';
 import '../../i18n/strings.g.dart';
@@ -207,6 +208,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.database.deleteDownloadCollectionsForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
     await scope.database.deleteMusicSessionForProfile(profile.id);
+    await IptvSourceRepository(scope.database).deleteProfile(profile.id);
     await scope.sources?.forgetProfile(profile.id);
     await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
