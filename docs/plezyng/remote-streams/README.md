@@ -5,11 +5,13 @@ Status: the connected-stream feature is on
 a durable cloud-file source, a bounded cloud-video index and Home poster row,
 encrypted background download renewal, and a persisted debrid preparation
 journal. The branch is not publish-ready: an embedded native P2P engine and
-platform packaging are absent. Streams and verified cloud-file matches opened
-from a server movie or episode use the shared video player and server queue;
-catalog-only playback and standalone cloud files still use the separate
-`SourcePlayback` player contract. External viewing queues local resume updates
-without starting a false server now-playing session. See
+platform packaging are absent. Stremio streams and verified cloud-file matches
+use the shared video player. Server-matched playback keeps the server item's
+identity and queue; catalog-only streams and single-file cloud videos keep
+resume state in the active profile's source journal without inventing a server
+identity. Multi-file source sessions still use `SourcePlayback`. External
+viewing queues local resume updates without starting a false server now-playing
+session. See
 [IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
 qualification boundary.
 
@@ -36,7 +38,8 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Cached cloud videos appear in the existing Videos shelf and Search. Home gets
   a bounded Cloud files poster row after background indexing; Trakt title/year
   matching is opt-in under the existing online-metadata privacy control. TV's
-  dedicated spotlight layout does not yet include this row.
+  spotlight Home now includes a compact focusable cloud row above the existing
+  hub rail when indexed videos are available.
 - Browse supported Stremio add-on catalogs in the existing Explore source
   switcher; search catalogs and use each catalog's required choice or text
   filters from the existing View All filter sheet. Open installation-scoped
@@ -50,9 +53,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Play direct HTTP streams, select add-on subtitles, open explicit external
   links, or resolve supported hash/file-host candidates through a selected
   connected provider.
-- When a Stremio result is launched from a uniquely matched server movie or
-  episode, use the regular video player and its existing queue, next-item
-  flow, subtitle controls and PiP. Signed stream URLs and headers stay behind
+- When a Stremio result is launched from a server movie or episode, use the
+  regular video player with that item's identity and existing queue, next-item
+  flow, subtitle controls and PiP. Catalog-only streams also use that player
+  and keep resume state source-local. Signed stream URLs and headers stay behind
   the session loopback gateway. Expired primary links get one single-flight
   re-resolution of the same add-on candidate or provider job. Resume offsets
   are durably queued for the owning server without sending an active “now
@@ -67,8 +71,9 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   its bounded server sample. The selected server item remains the recommendation
   and keeps its normal details, queue, and source-choice actions.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
-  profile; use the existing source-player surface and local resume journal for
-  catalog-only playback and standalone cloud files.
+  profile; use the shared video-player surface and source-local resume journal
+  for catalog-only streams and single-file cloud videos. The existing source
+  player remains for multi-file source sessions and other file types.
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
 - Read the authorization QR's service label and copy the activation code with
@@ -89,13 +94,14 @@ using its saved provider ID; cancellation leaves provider-side work untouched.
 Recovery runs in the app runtime, so OS suspension can pause it; this is not an
 OS-scheduled background worker, and jobs without a reusable provider ID still
 need a user action. A
-Stremio choice from a matched server item now uses
-the normal video player and queue, with resume offsets reconciled through the
-existing watch queue. This does not merge cloud files into server library
-cards or make the standalone source player queue-aware. Preparation remains
+Stremio choice from a matched server item uses the normal video player and
+queue, with resume offsets reconciled through the existing watch queue.
+Catalog-only streams and single-file cloud videos use the same player chrome
+with profile-scoped source progress; they do not receive a server queue.
+Cloud files are not merged into server library cards. Preparation remains
 app-runtime work, not an always-running OS worker. A native torrent engine
-and platform P2P packages are absent. Home's cloud poster row is not currently
-shown in the dedicated TV spotlight composition.
+and platform P2P packages are absent. TV's compact cloud row has not yet been
+qualified on device for D-pad focus, large text or different screen sizes.
 
 ## Target experience after full completion
 
@@ -163,8 +169,8 @@ help sentence at setup, rather than requiring users to learn the architecture.
 
 | Completion level | Required outcome |
 | --- | --- |
-| Implemented connected-source slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud files and virtual sources; Stremio QR add-on import and manual manifest connection; Explore catalog/search and metadata; direct, hash, file-host and subtitle choices; source player and local resume; durable preparation checkpoints; cloud downloads with encrypted Android/iOS lease renewal; bounded Search/Videos shelf/Home poster integration with opt-in metadata |
-| Remaining core integration | Shared server/source player queue and chrome, canonical media identity and matching into server Libraries, TV spotlight composition, autonomous preparation polling/cancellation, and all regression gates; Stremio catalog/account, provider APIs, downloads, and background callbacks still need fixture, live, and device qualification |
+| Implemented connected-source slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud files and virtual sources; Stremio QR add-on import and manual manifest connection; Explore catalog/search and metadata; direct, hash, file-host and subtitle choices; shared video player for server-matched, catalog-only and single-file cloud playback; source-local resume; durable preparation checkpoints; cloud downloads with encrypted Android/iOS lease renewal; bounded Search/Videos shelf/Home poster integration with opt-in metadata |
+| Remaining core integration | Cross-source next-item queue and canonical cloud/server library-card merge, OS-scheduled preparation, native P2P engine/package, and regression gates; Stremio catalog/account, provider APIs, downloads, background callbacks and all target platforms still need fixture, live, and device qualification |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
 | Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |

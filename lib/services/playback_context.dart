@@ -7,10 +7,11 @@ enum PlaybackSourceKind { localFile, remoteDirect, remoteTranscode }
 enum PlaybackReportingMode { online, offlineQueue, onlineWithOfflineFallback, localOnly, disabled }
 
 typedef ExternalPlaybackRenewal = Future<({Uri uri, Map<String, String> headers})> Function();
+typedef ExternalPlaybackProgress = Future<void> Function(String state, Duration position, Duration duration);
 
-/// A short-lived source selected from a connected provider for a real library
-/// item. The descriptor is memory-only: signed URLs and request headers must
-/// never become part of queue state, playback metadata, logs, or persistence.
+/// A short-lived stream selected from a connected provider. The descriptor is
+/// memory-only: signed URLs and request headers must never become part of
+/// queue state, playback metadata, logs, or persistence.
 class ExternalPlaybackSource {
   ExternalPlaybackSource({
     required this.mediaGlobalKey,
@@ -22,6 +23,7 @@ class ExternalPlaybackSource {
     this.subtitleTitle,
     this.subtitleLanguage,
     this.subtitleRenew,
+    this.onProgress,
   }) : headers = Map.unmodifiable(headers);
 
   final String mediaGlobalKey;
@@ -33,6 +35,11 @@ class ExternalPlaybackSource {
   final String? subtitleTitle;
   final String? subtitleLanguage;
   final ExternalPlaybackRenewal? subtitleRenew;
+
+  /// Optional owner for progress from a connected source that is not a server
+  /// library item. Server matched playback continues to use its normal watch
+  /// queue; a standalone cloud file can keep progress in its source journal.
+  final ExternalPlaybackProgress? onProgress;
 
   @override
   String toString() => 'ExternalPlaybackSource(media: $mediaGlobalKey, uri: <redacted>)';

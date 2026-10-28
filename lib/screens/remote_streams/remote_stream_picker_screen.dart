@@ -6,15 +6,16 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/playback_context.dart';
 import '../../services/remote_streams/real_debrid_client.dart';
 import '../../services/remote_streams/remote_stream_models.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
+import '../../sources/external_video_progress.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
-import '../../sources/source_transport.dart';
 import '../../screens/video_player_screen.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -348,8 +349,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     required RemoteStreamService? service,
     required String profileId,
   }) async {
-    final profile = context.read<SourceController>().profileId;
-    if (profile == null || profile != profileId || context.read<RemoteStreamingProvider>().profileId != profile) {
+    final sources = context.read<SourceController>();
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profile = sources.profileId;
+    if (profile == null || profile != profileId || streaming.profileId != profile) {
       throw const SourceException(SourceFailure.cancelled);
     }
     final request = widget.request;
@@ -376,128 +379,118 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       releaseYear: request.year,
       onlineTitle: request.title,
     );
-    final playbackItem = widget.playbackItem;
-    final serverId = playbackItem?.serverId;
-    if (playbackItem != null && serverId != null) {
-      final manager = context.read<MultiServerProvider>().serverManager;
-      final serverKey = ServerId(serverId);
-      if (manager.isClientOnline(serverKey) && manager.getClient(serverKey) != null) {
-        final streaming = context.read<RemoteStreamingProvider>();
-        Future<({Uri uri, Map<String, String> headers})> renewStream() async {
-          if (streaming.profileId != profileId || !streaming.isReady) {
-            throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-          }
-          late final Uri renewedUri;
-          late final Map<String, String> renewedHeaders;
-          if (viaProvider && candidate.url != null) {
-            final provider = service;
-            if (provider == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
-            final renewed = await streaming.resolveHosterLink(candidate.url!, service: provider);
-            renewedUri = renewed.uri;
-            renewedHeaders = const {};
-          } else if (candidate.url == null && candidate.infoHash != null) {
-            final renewed = await streaming.resolveTorrent(candidate, service: service, request: request);
-            renewedUri = renewed.uri;
-            renewedHeaders = const {};
-          } else {
-            final refreshed = await streaming.streamsFor(request);
-            final current = refreshed.candidates
-                .where(
-                  (row) =>
-                      row.addonId == candidate.addonId &&
-                      row.label == candidate.label &&
-                      row.infoHash == candidate.infoHash &&
-                      row.fileIndex == candidate.fileIndex,
-                )
-                .firstOrNull;
-            if (current?.url == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
-            renewedUri = current!.url!;
-            renewedHeaders = current.headers;
-          }
-          if (streaming.profileId != profileId || !streaming.isReady) {
-            throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-          }
-          return (uri: renewedUri, headers: renewedHeaders);
-        }
+    Future<({Uri uri, Map<String, String> headers})> renewStream() async {
+      if (streaming.profileId != profileId || !streaming.isReady) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
+      late final Uri renewedUri;
+      late final Map<String, String> renewedHeaders;
+      if (viaProvider && candidate.url != null) {
+        final provider = service;
+        if (provider == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
+        final renewed = await streaming.resolveHosterLink(candidate.url!, service: provider);
+        renewedUri = renewed.uri;
+        renewedHeaders = const {};
+      } else if (candidate.url == null && candidate.infoHash != null) {
+        final renewed = await streaming.resolveTorrent(candidate, service: service, request: request);
+        renewedUri = renewed.uri;
+        renewedHeaders = const {};
+      } else {
+        final refreshed = await streaming.streamsFor(request);
+        final current = refreshed.candidates
+            .where(
+              (row) =>
+                  row.addonId == candidate.addonId &&
+                  row.label == candidate.label &&
+                  row.infoHash == candidate.infoHash &&
+                  row.fileIndex == candidate.fileIndex,
+            )
+            .firstOrNull;
+        if (current?.url == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+        renewedUri = current!.url!;
+        renewedHeaders = current.headers;
+      }
+      if (streaming.profileId != profileId || !streaming.isReady) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
+      return (uri: renewedUri, headers: renewedHeaders);
+    }
 
-        Future<({Uri uri, Map<String, String> headers})>? renewSubtitle;
-        if (subtitle != null) {
-          renewSubtitle = () async {
-            if (streaming.profileId != profileId || !streaming.isReady) {
-              throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-            }
-            final refreshed = await streaming.streamsFor(request);
-            final current = refreshed.candidates
-                .where(
-                  (row) =>
-                      row.addonId == candidate.addonId &&
-                      row.label == candidate.label &&
-                      row.infoHash == candidate.infoHash &&
-                      row.fileIndex == candidate.fileIndex,
-                )
-                .firstOrNull;
-            final currentSubtitle = current?.subtitles.where((row) => row.id == subtitle.id).firstOrNull;
-            if (currentSubtitle == null || streaming.profileId != profileId || !streaming.isReady) {
-              throw const RemoteProviderException(RemoteProviderFailure.unavailable);
-            }
-            return (uri: currentSubtitle.url, headers: const <String, String>{});
-          };
-        }
-        final descriptor = ExternalPlaybackSource(
-          mediaGlobalKey: playbackItem.globalKey,
-          profileId: profile,
-          uri: uri,
-          headers: headers,
-          renew: renewStream,
-          subtitleUri: subtitle?.url,
-          subtitleTitle: subtitle == null ? null : _subtitleLabel(subtitle),
-          subtitleLanguage: subtitle?.lang,
-          subtitleRenew: renewSubtitle,
-        );
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            settings: const RouteSettings(name: 'video-player-remote-stream'),
-            builder: (_) => VideoPlayerScreen(metadata: playbackItem, externalPlaybackSource: descriptor),
-          ),
-        );
-        return;
-      }
-    }
-    await context.read<SourcePlayback>().start(
-      entry,
-      [file],
-      playbackMode: PublicationMode.watching,
-      localOverrides: {file.id: uri},
-      localOverrideHeaders: {file.id: headers},
-      persistProgress: true,
-    );
-    if (!mounted ||
-        context.read<SourceController>().profileId != profile ||
-        context.read<RemoteStreamingProvider>().profileId != profile) {
-      return;
-    }
+    Future<({Uri uri, Map<String, String> headers})>? renewSubtitle;
     if (subtitle != null) {
-      try {
-        final bytes = await _downloadSubtitle(subtitle);
-        if (!mounted ||
-            context.read<SourceController>().profileId != profile ||
-            context.read<RemoteStreamingProvider>().profileId != profile) {
-          return;
+      renewSubtitle = () async {
+        if (streaming.profileId != profileId || !streaming.isReady) {
+          throw const RemoteProviderException(RemoteProviderFailure.cancelled);
         }
-        await context.read<SourcePlayback>().applyExternalSubtitle(name: _subtitleFileName(subtitle), bytes: bytes);
-      } on Object {
-        if (mounted) showAppSnackBar(context, t.streaming.subtitleLoadFailed);
-      }
+        final refreshed = await streaming.streamsFor(request);
+        final current = refreshed.candidates
+            .where(
+              (row) =>
+                  row.addonId == candidate.addonId &&
+                  row.label == candidate.label &&
+                  row.infoHash == candidate.infoHash &&
+                  row.fileIndex == candidate.fileIndex,
+            )
+            .firstOrNull;
+        final currentSubtitle = current?.subtitles.where((row) => row.id == subtitle.id).firstOrNull;
+        if (currentSubtitle == null || streaming.profileId != profileId || !streaming.isReady) {
+          throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+        }
+        return (uri: currentSubtitle.url, headers: const <String, String>{});
+      };
     }
-    if (!mounted) return;
-    await Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'remote-stream-player'),
-        builder: (_) => const SourcePlayerScreen(),
-      ),
+
+    await context.read<SourcePlayback>().stop();
+    if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final playbackItem = widget.playbackItem;
+    final media = playbackItem ??
+        MediaItem.plex(
+          id: 'remote-stream:${sourceDigest('$profileId:$fileId')}',
+          kind: request.type == 'series' ? MediaKind.episode : MediaKind.movie,
+          title: request.title,
+          year: request.year,
+          parentTitle: request.type == 'series' ? request.title : null,
+          parentIndex: request.season,
+          index: request.episode,
+          durationMs: file.durationMs,
+        );
+    final progress = playbackItem == null ? await ExternalVideoProgressSession.open(sources, entry, file) : null;
+    if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+      await progress?.close();
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final descriptor = ExternalPlaybackSource(
+      mediaGlobalKey: media.globalKey,
+      profileId: profile,
+      uri: uri,
+      headers: headers,
+      renew: renewStream,
+      subtitleUri: subtitle?.url,
+      subtitleTitle: subtitle == null ? null : _subtitleLabel(subtitle),
+      subtitleLanguage: subtitle?.lang,
+      subtitleRenew: renewSubtitle,
+      onProgress: progress?.record,
     );
+    try {
+      if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'video-player-remote-stream'),
+          builder: (_) => VideoPlayerScreen(
+            metadata: media,
+            externalPlaybackSource: descriptor,
+            initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
+          ),
+        ),
+      );
+    } finally {
+      await progress?.close();
+    }
   }
 
   Future<void> _chooseSubtitle(RemoteStreamCandidate candidate) async {
@@ -533,31 +526,6 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     });
   }
 
-  Future<List<int>> _downloadSubtitle(RemoteSubtitle subtitle) async {
-    final transport = SourceTransport(allowHttp: subtitle.url.scheme == 'http');
-    try {
-      final response = await transport.send('GET', subtitle.url, redirects: true);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        await response.stream.drain<void>().timeout(const Duration(seconds: 20));
-        SourceTransport.check(response.statusCode);
-      }
-      final declaredLength = int.tryParse(response.headers['content-length'] ?? '');
-      if (declaredLength != null && declaredLength > 5 * 1024 * 1024) {
-        await response.stream.drain<void>().timeout(const Duration(seconds: 20));
-        throw const SourceException(SourceFailure.invalidData);
-      }
-      final bytes = <int>[];
-      await for (final chunk in response.stream.timeout(const Duration(seconds: 20))) {
-        if (bytes.length + chunk.length > 5 * 1024 * 1024) throw const SourceException(SourceFailure.invalidData);
-        bytes.addAll(chunk);
-      }
-      if (bytes.isEmpty) throw const SourceException(SourceFailure.invalidData);
-      return bytes;
-    } finally {
-      transport.close();
-    }
-  }
-
   String _candidateKey(RemoteStreamCandidate candidate) =>
       '${candidate.addonId}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
       '\u0000${candidate.url == null ? candidate.fileIndex ?? '' : sourceDigest(candidate.url.toString())}'
@@ -567,18 +535,6 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       subtitle.label?.trim().isNotEmpty == true ? subtitle.label! : subtitle.lang?.trim().isNotEmpty == true
       ? subtitle.lang!
       : t.streaming.subtitleTracks(count: 1);
-
-  String _subtitleFileName(RemoteSubtitle subtitle) {
-    final segment = subtitle.url.pathSegments.isEmpty ? '' : subtitle.url.pathSegments.last;
-    final name = Uri.decodeComponent(segment);
-    return name.toLowerCase().endsWith('.srt') ||
-            name.toLowerCase().endsWith('.ass') ||
-            name.toLowerCase().endsWith('.ssa') ||
-            name.toLowerCase().endsWith('.vtt') ||
-            name.toLowerCase().endsWith('.sub')
-        ? name
-        : '${_subtitleLabel(subtitle)}.srt';
-  }
 
   Future<void> _openExternal(Uri uri) async {
     try {

@@ -244,61 +244,73 @@ Set<String> discoveryCanonicalVideoIdentities(DiscoveryChoice choice) {
   if (choice.type != DiscoveryChoiceType.video && choice.type != DiscoveryChoiceType.sourceVideo) {
     return const {};
   }
+  final media = choice.mediaItem;
+  if (media != null) return canonicalVideoIdentitiesForMediaItem(media);
+  final entry = choice.sourceEntry;
+  return entry == null ? const {} : canonicalVideoIdentitiesForSourceEntry(entry);
+}
 
-  late final ExternalIds ids;
+/// Strong cross-source IDs for server-backed movies, shows and exact episodes.
+/// Title/year matches deliberately do not produce a canonical identity.
+Set<String> canonicalVideoIdentitiesForMediaItem(MediaItem media) {
+  final ids = _externalIdsForMediaItem(media);
+  final String mediaType;
+  String? episodeKey;
+  switch (media.kind) {
+    case MediaKind.movie:
+      mediaType = 'movie';
+      break;
+    case MediaKind.show:
+      mediaType = 'show';
+      break;
+    case MediaKind.episode:
+      final season = media.parentIndex;
+      final episode = media.index;
+      if (season == null || episode == null) return const {};
+      mediaType = 'episode';
+      episodeKey = 's${season}e$episode';
+      break;
+    case MediaKind.clip ||
+          MediaKind.artist ||
+          MediaKind.album ||
+          MediaKind.track ||
+          MediaKind.season ||
+          MediaKind.collection ||
+          MediaKind.playlist ||
+          MediaKind.photo ||
+          MediaKind.folder ||
+          MediaKind.unknown:
+      return const {};
+  }
+  return _canonicalExternalIdKeys(ids, mediaType, episodeKey);
+}
+
+/// Strong cross-source IDs for indexed source videos. Episodes are only
+/// comparable when both exact season and episode were recorded.
+Set<String> canonicalVideoIdentitiesForSourceEntry(SourceEntry entry) {
+  if (entry.kind != SourceItemKind.video) return const {};
+  final ids = _externalIdsForSourceEntry(entry);
+  final indexedType = entry.identifiers['plezyMediaType'];
   late final String mediaType;
   String? episodeKey;
-
-  final media = choice.mediaItem;
-  if (media != null) {
-    ids = _externalIdsForMediaItem(media);
-    switch (media.kind) {
-      case MediaKind.movie:
-        mediaType = 'movie';
-        break;
-      case MediaKind.show:
-        mediaType = 'show';
-        break;
-      case MediaKind.episode:
-        final season = media.parentIndex;
-        final episode = media.index;
-        if (season == null || episode == null) return const {};
-        mediaType = 'episode';
-        episodeKey = 's${season}e$episode';
-        break;
-      case MediaKind.clip ||
-            MediaKind.artist ||
-            MediaKind.album ||
-            MediaKind.track ||
-            MediaKind.season ||
-            MediaKind.collection ||
-            MediaKind.playlist ||
-            MediaKind.photo ||
-            MediaKind.folder ||
-            MediaKind.unknown:
-        return const {};
+  if (indexedType == 'movie') {
+    mediaType = 'movie';
+  } else if (indexedType == 'show') {
+    final season = int.tryParse(entry.identifiers['plezySeason'] ?? '');
+    final episode = int.tryParse(entry.identifiers['plezyEpisode'] ?? '');
+    if (season != null && episode != null) {
+      mediaType = 'episode';
+      episodeKey = 's${season}e$episode';
+    } else {
+      mediaType = 'show';
     }
   } else {
-    final entry = choice.sourceEntry;
-    if (entry == null || entry.kind != SourceItemKind.video) return const {};
-    ids = _externalIdsForSourceEntry(entry);
-    final indexedType = entry.identifiers['plezyMediaType'];
-    if (indexedType == 'movie') {
-      mediaType = 'movie';
-    } else if (indexedType == 'show') {
-      final season = int.tryParse(entry.identifiers['plezySeason'] ?? '');
-      final episode = int.tryParse(entry.identifiers['plezyEpisode'] ?? '');
-      if (season != null && episode != null) {
-        mediaType = 'episode';
-        episodeKey = 's${season}e$episode';
-      } else {
-        mediaType = 'show';
-      }
-    } else {
-      return const {};
-    }
+    return const {};
   }
+  return _canonicalExternalIdKeys(ids, mediaType, episodeKey);
+}
 
+Set<String> _canonicalExternalIdKeys(ExternalIds ids, String mediaType, String? episodeKey) {
   final suffix = episodeKey == null ? '' : '/$episodeKey';
   return {
     if (ids.imdb case final value?) '$mediaType/imdb:$value$suffix',

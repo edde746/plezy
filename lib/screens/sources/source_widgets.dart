@@ -235,10 +235,21 @@ class _SourceCoverState extends State<SourceCover> {
 }
 
 class SourcePosterCard extends StatefulWidget {
-  const SourcePosterCard({super.key, required this.entry, required this.onTap, this.progress});
+  const SourcePosterCard({
+    super.key,
+    required this.entry,
+    required this.onTap,
+    this.progress,
+    this.focusNode,
+    this.onNavigateUp,
+    this.onNavigateDown,
+  });
   final SourceEntry entry;
   final VoidCallback onTap;
   final double? progress;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
 
   @override
   State<SourcePosterCard> createState() => _SourcePosterCardState();
@@ -333,8 +344,13 @@ class _SourcePosterCardState extends State<SourcePosterCard> {
 
   @override
   Widget build(BuildContext context) => FocusableWrapper(
+    focusNode: widget.focusNode,
     onSelect: widget.onTap,
+    onNavigateUp: widget.onNavigateUp,
+    onNavigateDown: widget.onNavigateDown,
     borderRadius: tokens(context).radiusMd,
+    semanticLabel: '${isolateDisplayText(_entry.displayTitle)}, ${t.streaming.cloudFiles}',
+    semanticValue: widget.progress == null ? null : formatPercent(widget.progress!.clamp(0, 1)),
     child: InkWell(
       onTap: widget.onTap,
       canRequestFocus: false,

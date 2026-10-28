@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
+import '../discovery/discovery_choice.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
@@ -366,7 +367,13 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case MediaSearchHit(:final item) when item.isCatalogItem) item,
         ];
-    _sourceFileResults = matchedOutcome?.sourceFiles ?? const [];
+    final serverVideoIdentities = <String>{
+      for (final item in _searchCandidates) ...canonicalVideoIdentitiesForMediaItem(item),
+    };
+    _sourceFileResults = [
+      for (final entry in matchedOutcome?.sourceFiles ?? const <SourceEntry>[])
+        if (!canonicalVideoIdentitiesForSourceEntry(entry).any(serverVideoIdentities.contains)) entry,
+    ];
     _searchPeople =
         matched?.people ??
         [

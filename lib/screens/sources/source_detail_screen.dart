@@ -11,9 +11,14 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../media/media_backend.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
+import '../../services/playback_context.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
+import '../../sources/external_video_progress.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -28,6 +33,7 @@ import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
+import '../video_player_screen.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
@@ -460,6 +466,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _play(List<PublicationFile> files) async {
+    if (_entry.kind == SourceItemKind.video && files.length == 1 && files.single.kind == SourceItemKind.video) {
+      final usedSharedPlayer = await _playRemoteCloudVideo(files.single);
+      if (usedSharedPlayer) return;
+    }
     final playback = context.read<SourcePlayback>();
     await playback.start(
       _entry,
@@ -476,6 +486,85 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       );
     }
     if (mounted) await _load();
+  }
+
+  /// A single cloud video uses the same video player surface as server
+  /// playback. The signed lease stays in memory behind its loopback gateway;
+  /// source progress is written to the existing profile-scoped publication
+  /// journal rather than pretending the item belongs to a server.
+  Future<bool> _playRemoteCloudVideo(PublicationFile selectedFile) async {
+    final sources = context.read<SourceController>();
+    await sources.ready;
+    sources.requireSession();
+    final owner = sources.sources.where((source) => source.id == _entry.sourceId).firstOrNull;
+    if (owner?.kind != FileSourceKind.remoteCloud) return false;
+
+    final epoch = sources.generation;
+    final profile = sources.profileId!;
+    final entry = await sources.hydrate(_entry);
+    sources.requireSession(epoch);
+    final file = entry.files.where((candidate) => candidate.id == selectedFile.id).firstOrNull;
+    if (file == null || file.fingerprint != selectedFile.fingerprint) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    final lease = await sources.resolveRemoteCloudFile(entry, file);
+    sources.requireSession(epoch);
+    await context.read<SourcePlayback>().stop();
+    sources.requireSession(epoch);
+
+    final progress = await ExternalVideoProgressSession.open(sources, entry, file);
+    if (!sources.current(epoch) || sources.profileId != profile) {
+      await progress.close();
+      throw const SourceException(SourceFailure.cancelled);
+    }
+
+    final media = MediaItem(
+      id: 'remote-source:${sourceDigest(jsonEncode([profile, entry.key, file.fingerprint]))}',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: entry.onlineTitle ?? entry.displayTitle,
+      summary: entry.description,
+      year: entry.releaseYear,
+      durationMs: file.durationMs,
+      thumbPath: entry.onlinePosterUrl,
+    );
+    Future<({Uri uri, Map<String, String> headers})> renew() async {
+      if (sources.blocked || sources.profileId != profile || !sources.current(epoch)) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      final renewed = await sources.resolveRemoteCloudFile(entry, file);
+      sources.requireSession(epoch);
+      return (uri: renewed.uri, headers: renewed.headers);
+    }
+
+    final descriptor = ExternalPlaybackSource(
+      mediaGlobalKey: media.globalKey,
+      profileId: profile,
+      uri: lease.uri,
+      headers: lease.headers,
+      renew: renew,
+      onProgress: progress.record,
+    );
+    try {
+      if (!mounted || sources.blocked || sources.profileId != profile || !sources.current(epoch)) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-cloud-video-player'),
+          builder: (_) => VideoPlayerScreen(
+            metadata: media,
+            externalPlaybackSource: descriptor,
+            initialPosition: Duration(milliseconds: progress.resumePositionMs),
+          ),
+        ),
+      );
+    } finally {
+      await progress.close();
+    }
+    if (mounted) await _load();
+    return true;
   }
 
   Future<void> _read(PublicationFile file) async {

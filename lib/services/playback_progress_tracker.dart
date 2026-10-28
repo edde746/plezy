@@ -53,6 +53,10 @@ class PlaybackProgressTracker {
   /// Service for queuing offline progress updates
   final OfflineWatchSyncService? offlineWatchService;
 
+  /// Source-owned progress journal for standalone connected-source playback.
+  /// When present, no synthetic server ID is invented for the watch queue.
+  final Future<void> Function(String state, Duration position, Duration duration)? localProgressCallback;
+
   /// Queue the latest progress locally if online reporting fails. Used for
   /// downloaded/local playback where playback can continue without a server.
   final bool queueOnOnlineFailure;
@@ -225,6 +229,7 @@ class PlaybackProgressTracker {
     this.isOffline = false,
     this.localOnly = false,
     this.offlineWatchService,
+    this.localProgressCallback,
     this.queueOnOnlineFailure = false,
     this.playMethod,
     this.playSessionId,
@@ -458,7 +463,17 @@ class PlaybackProgressTracker {
 
       if (localOnly) {
         if (!canCommitStoppedProgress) return;
-        await _sendOfflineProgress(position, duration);
+        final callback = localProgressCallback;
+        if (callback != null) {
+          try {
+            await callback(state, position, duration);
+          } catch (error) {
+            appLogger.w('Source playback progress could not be saved', error: error);
+          }
+        }
+        if (callback == null || metadata.serverId != null) {
+          await _sendOfflineProgress(position, duration);
+        }
         _notifyProgressIfNeeded(position, duration, force: state == 'stopped', serverAcknowledged: false);
       } else if (isOffline) {
         // There is no backend session to terminate offline. Do not turn a

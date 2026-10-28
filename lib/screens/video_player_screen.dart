@@ -1217,7 +1217,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // the chokepoint for the local last-played history. Offline plays and
     // prerolls are excluded — like version prefs, the history describes
     // online intent for the title the viewer actually chose.
-    if (!session.isOffline && !widget.isPreroll) {
+    final sourceOwnsPlaybackHistory =
+        widget.externalPlaybackSource?.onProgress != null && session.metadata.serverId == null;
+    if (!session.isOffline && !widget.isPreroll && !sourceOwnsPlaybackHistory) {
       unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
     }
   }

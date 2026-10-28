@@ -972,7 +972,9 @@ class SourceController extends ChangeNotifier {
     final fresh = await hydrate(entry);
     requireSession(epoch);
     final freshFile = fresh.files.where((value) => value.id == file.id).firstOrNull;
-    if (freshFile == null) throw const SourceException(SourceFailure.unavailable);
+    if (freshFile == null || freshFile.fingerprint != file.fingerprint) {
+      throw const SourceException(SourceFailure.conflict);
+    }
     final lease = await adapter(source.id).resolve(freshFile);
     requireSession(epoch);
     return lease;
