@@ -271,14 +271,20 @@ func (h *watchmodeAvailabilityHandler) fetch(
 		if _, duplicate := seen[key]; duplicate {
 			continue
 		}
-		seen[key] = struct{}{}
-		sources = append(sources, watchmodeAvailabilitySource{
+		source := watchmodeAvailabilitySource{
 			SourceID: row.SourceID, Name: name, Type: kind, Region: rowRegion,
 			Format: format, Price: watchmodePrice(row.Price),
 			WebURL: watchmodeURL(row.WebURL), IOSURL: watchmodeURL(row.IOSURL),
 			AndroidURL: watchmodeURL(row.AndroidURL), TVOSURL: watchmodeURL(row.TVOSURL),
 			AndroidTV: watchmodeURL(row.AndroidTV),
-		})
+		}
+		// A row whose every link was rejected gives the client nothing to open.
+		if source.WebURL == "" && source.IOSURL == "" && source.AndroidURL == "" &&
+			source.TVOSURL == "" && source.AndroidTV == "" {
+			continue
+		}
+		seen[key] = struct{}{}
+		sources = append(sources, source)
 		if len(sources) == watchmodeMaxRows {
 			break
 		}
