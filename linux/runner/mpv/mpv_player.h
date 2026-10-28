@@ -14,6 +14,7 @@
 #include <deque>
 #include <functional>
 #include <memory>
+#include <limits>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include "../../../shared/mpv/mpv_player_common.h"
+#include "../../../shared/visualization/plezy_audio_tap.h"
 #include "hdr_metadata.h"
 #include "video_params.h"
 
@@ -85,6 +87,12 @@ class MpvPlayer {
   /// once the video plane's EGL surface exists.
   /// @return true if initialization succeeded.
   bool Initialize();
+
+  // Optional patched libmpv ABI. Reads run on the visualization worker and
+  // use the native observed playback clock; PCM never passes through Dart.
+  static bool VisualizationTapAvailable();
+  int SetVisualizationTap(bool enabled);
+  int ReadVisualizationAudio(mpv_plezy_audio_block* block);
 
   // Set before initialization, on the platform thread. Never mutates a live renderer.
   void ConfigureDolbyVisionExperiment(bool enabled, bool allow_fallback) {
@@ -522,6 +530,7 @@ class MpvPlayer {
 
   std::atomic<bool> needs_redraw_{false};
   std::atomic<bool> disposed_{false};
+  std::atomic<double> visualization_pts_{std::numeric_limits<double>::quiet_NaN()};
   EventCallback event_callback_;
   RedrawCallback redraw_callback_;
   SourceMetadataCallback source_metadata_callback_;

@@ -10,10 +10,12 @@
 
 #include "plane_render_executor.h"
 #include "wayland_video_surface.h"
+#include "../visualizer/visualizer_session.h"
 
 using PlayerPtr = std::unique_ptr<mpv::MpvPlayer>;
 using VideoSurfacePtr = std::unique_ptr<mpv::WaylandVideoSurface>;
 using ExecutorPtr = std::unique_ptr<mpv::PlaneRenderExecutor>;
+using VisualizerPtr = std::unique_ptr<plezy::visualization::VisualizerSession>;
 
 // One queued HDR transaction: what to apply, and who to tell when it settles.
 //
@@ -38,6 +40,8 @@ struct _MpvPlugin {
   FlEventChannel* event_channel;
 
   PlayerPtr player;
+  VisualizerPtr visualizer;
+  uint64_t visualizer_session_id;
   // The native Wayland plane every video instance renders into. Non-null once
   // initialize() has brought it up; there is no second render path, so a null
   // here on a video instance means initialization refused.
@@ -223,6 +227,11 @@ static void send_named_event(MpvPlugin* self, const char* name) {
 }
 
 static void release_video_resources(MpvPlugin* self) {
+  // The worker's reader borrows this music player. Join it before detaching
+  // the tap or destroying the player, including on profile/engine teardown.
+  self->visualizer.reset();
+  ++self->visualizer_session_id;
+  if (self->player && self->audio_only) self->player->SetVisualizationTap(false);
   // Anything still in flight is now answering for a plane that is going away.
   ++self->generation;
   // The timeout closure holds a raw `this`; without this it would fire into
@@ -1070,6 +1079,7 @@ static void mpv_plugin_finalize(GObject* object) {
   self->hdr_queue.~HdrQueue();
   self->render_executor.~ExecutorPtr();
   self->video_surface.~VideoSurfacePtr();
+  self->visualizer.~VisualizerPtr();
   self->player.~PlayerPtr();
   G_OBJECT_CLASS(mpv_plugin_parent_class)->finalize(object);
 }
@@ -1081,6 +1091,7 @@ static void mpv_plugin_class_init(MpvPluginClass* klass) {
 
 static void mpv_plugin_init(MpvPlugin* self) {
   new (&self->player) PlayerPtr();
+  new (&self->visualizer) VisualizerPtr();
   new (&self->video_surface) VideoSurfacePtr();
   new (&self->hdr_queue) HdrQueue();
   // Its default member initialisers make it non-trivially-default-constructible,
@@ -1138,6 +1149,86 @@ static FlMethodResponse* bool_success_response(gboolean value) {
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
+static std::string visualization_unavailable(MpvPlugin* self) {
+  if (!self->audio_only) return "Visualizations require the dedicated music player.";
+  if (!self->player || !self->initialized || self->player->IsDisposed()) return "Start music playback first.";
+  if (!mpv::MpvPlayer::VisualizationTapAvailable()) return "This build does not include the native music PCM tap.";
+  return plezy::visualization::VisualizerSession::DependencyError();
+}
+
+static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, FlValue* args) {
+  auto failure = [](const char* code, const std::string& message) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(code, message.c_str(), nullptr));
+  };
+  auto arg = [args](const char* name) -> FlValue* {
+    return args && fl_value_get_type(args) == FL_VALUE_TYPE_MAP ? fl_value_lookup_string(args, name) : nullptr;
+  };
+  auto integer = [&arg](const char* name, int64_t fallback) {
+    auto* value = arg(name);
+    return value && fl_value_get_type(value) == FL_VALUE_TYPE_INT ? fl_value_get_int(value) : fallback;
+  };
+  if (strcmp(method, "visualizerCapabilities") == 0) {
+    const std::string reason = visualization_unavailable(self);
+    g_autoptr(FlValue) result = fl_value_new_map();
+    fl_value_set_string_take(result, "available", fl_value_new_bool(reason.empty()));
+    fl_value_set_string_take(result, "engine", fl_value_new_string("projectm-4.1.8"));
+    fl_value_set_string_take(result, "reason", fl_value_new_string(reason.c_str()));
+    fl_value_set_string_take(result, "audioTap", fl_value_new_bool(mpv::MpvPlayer::VisualizationTapAvailable()));
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+  }
+  if (strcmp(method, "visualizerCreate") == 0) {
+    const std::string reason = visualization_unavailable(self);
+    if (!reason.empty()) return failure("VISUALIZER_UNAVAILABLE", reason);
+    self->visualizer.reset();
+    ++self->visualizer_session_id;
+    if (self->player->SetVisualizationTap(true) < 0)
+      return failure("VISUALIZER_AUDIO", "Could not attach to the music PCM tap.");
+    try {
+      auto* player = self->player.get();
+      self->visualizer = std::make_unique<plezy::visualization::VisualizerSession>(
+          fl_plugin_registrar_get_texture_registrar(self->registrar),
+          [player](mpv_plezy_audio_block* block) { return player->ReadVisualizationAudio(block); });
+      g_autoptr(FlValue) result = fl_value_new_map();
+      fl_value_set_string_take(result, "sessionId", fl_value_new_int(self->visualizer_session_id));
+      fl_value_set_string_take(result, "textureId", fl_value_new_int(self->visualizer->texture_id()));
+      return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    } catch (const std::exception& ex) {
+      self->player->SetVisualizationTap(false);
+      return failure("VISUALIZER_CREATE", ex.what());
+    }
+  }
+  if (!self->visualizer || integer("sessionId", -1) != static_cast<int64_t>(self->visualizer_session_id))
+    return failure("VISUALIZER_STALE", "This visualization session has ended.");
+  if (strcmp(method, "visualizerDispose") == 0) {
+    self->visualizer.reset();
+    ++self->visualizer_session_id;
+    if (self->player) self->player->SetVisualizationTap(false);
+  } else if (strcmp(method, "visualizerLoad") == 0) {
+    auto* path = arg("path"); auto* root = arg("root");
+    if (!path || !root || fl_value_get_type(path) != FL_VALUE_TYPE_STRING || fl_value_get_type(root) != FL_VALUE_TYPE_STRING)
+      return failure("INVALID_ARGS", "A preset path and installed asset root are required.");
+    std::string error;
+    if (!self->visualizer->LoadPreset(fl_value_get_string(path), fl_value_get_string(root), &error))
+      return failure("VISUALIZER_PRESET", error);
+  } else if (strcmp(method, "visualizerResize") == 0) {
+    const int64_t width = integer("width", 0), height = integer("height", 0);
+    if (width < 1 || height < 1 || width > 16384 || height > 16384)
+      return failure("INVALID_ARGS", "Visualization dimensions must be between 1 and 16384.");
+    self->visualizer->Resize(static_cast<int>(width), static_cast<int>(height));
+  } else if (strcmp(method, "visualizerSetPaused") == 0) {
+    auto* paused = arg("paused");
+    if (!paused || fl_value_get_type(paused) != FL_VALUE_TYPE_BOOL)
+      return failure("INVALID_ARGS", "A paused boolean is required.");
+    self->visualizer->SetPaused(fl_value_get_bool(paused));
+  } else if (strcmp(method, "visualizerStatus") == 0) {
+    g_autoptr(FlValue) result = self->visualizer->Status();
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+  } else {
+    return FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+  }
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
 /// Method call handler.
 static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data) {
   (void)channel;
@@ -1147,7 +1238,9 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
 
   g_autoptr(FlMethodResponse) response = nullptr;
 
-  if (strcmp(method, "initialize") == 0) {
+  if (strncmp(method, "visualizer", 10) == 0) {
+    response = visualizer_method(self, method, args);
+  } else if (strcmp(method, "initialize") == 0) {
     if (self->audio_only) {
       // Audio-only music core: no plane, no render context - mpv runs with
       // video disabled entirely (see MpvPlayer).
