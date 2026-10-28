@@ -435,6 +435,21 @@ const String carriedAudioTrackId = 'carried';
 /// reloads keep the original track and its identity fast path.
 AudioTrack itemAgnosticAudioCarry(AudioTrack track) => track.copyWith(id: carriedAudioTrackId);
 
+String? _declaredBcp47Script(String? code) {
+  if (code == null || code.trim().isEmpty) return null;
+  final subtags = code.replaceAll('_', '-').split('-');
+  for (final subtag in subtags.skip(1)) {
+    if (RegExp(r'^[A-Za-z]{4}$').hasMatch(subtag)) return subtag.toLowerCase();
+  }
+  return null;
+}
+
+bool _languageScriptsMatch(String? preferred, String? candidate) {
+  final preferredScript = _declaredBcp47Script(preferred);
+  final candidateScript = _declaredBcp47Script(candidate);
+  return preferredScript == null || candidateScript == null || preferredScript == candidateScript;
+}
+
 /// Shared evidence matcher behind the cross-item intent matchers.
 ///
 /// Candidates are compared lexicographically, strongest evidence first:
@@ -467,8 +482,12 @@ T? _findTrackByEvidenceBands<T extends Object>(
     final hasLanguageParity = intentLanguage != null && candidateLanguage != null;
     if (hasLanguageParity) {
       // A declared language on both sides stays authoritative: a
-      // contradiction declines no matter what the title says.
-      if (!_languagesMatch(intentLanguage, candidateLanguage)) continue;
+      // contradiction declines no matter what the title says. Preserve
+      // declared BCP-47 scripts too, so Hant/Hans never collapse to "zh".
+      if (!_languagesMatch(intentLanguage, candidateLanguage) ||
+          !_languageScriptsMatch(intentLanguage, candidateLanguage)) {
+        continue;
+      }
     } else if (candidateTitleScore < 3) {
       // Language evidence is missing on at least one side; only a real
       // title match may serve the intent then.
