@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build pinned, app-owned Steam transport archives for the active Xcode SDK.
 
-VideoToolbox/Core Audio are compiled by Xcode; this script builds only portable
-C/C++. Vulkan/Pyrowave is explicitly disabled for this Apple receiver path.
+VideoToolbox/Core Audio are compiled by Xcode; this script builds portable C/C++
+and the pinned native Metal Pyrowave library. Vulkan is disabled on Apple.
 """
 from __future__ import annotations
 
@@ -57,14 +57,14 @@ def build() -> None:
     for arch in architectures:
         directory = destination / f"{platform}-{arch}"
         run(cmake, "-S", str(ROOT / "native/games/steam"), "-B", str(directory),
-            "-DCMAKE_BUILD_TYPE=Release", "-DPLEZY_STEAM_PYROWAVE=OFF", "-DPLEZY_STEAM_TESTS=OFF",
+            "-DCMAKE_BUILD_TYPE=Release", "-DPLEZY_STEAM_PYROWAVE=OFF", "-DPLEZY_STEAM_METAL=ON", "-DPLEZY_STEAM_TESTS=OFF",
             "-DPLEZY_STEAM_GSTREAMER=OFF", f"-DCMAKE_SYSTEM_NAME={system}",
             f"-DCMAKE_SYSTEM_PROCESSOR={arch}", f"-DCMAKE_OSX_ARCHITECTURES={arch}",
             f"-DCMAKE_OSX_SYSROOT={sdk}", f"-DCMAKE_OSX_DEPLOYMENT_TARGET={deployment}")
         run(cmake, "--build", str(directory), "--target", "plezy_steam_runtime", "--parallel", "2")
         archive = directory / "libplezy_steam_apple.a"
         libraries = [directory / name for name in (
-            "libplezy_steam_runtime.a", "libplezy_ihs.a", "libplezy_protobuf_c.a",
+            "libplezy_steam_runtime.a", "libplezy_ihs.a", "libplezy_protobuf_c.a", "libplezy_pyrowave_metal.a",
             "opus/libopus.a", "mbedtls/library/libmbedcrypto.a")]
         if not all(p.is_file() for p in libraries):
             raise SystemExit("Pinned Steam build did not produce every required archive")

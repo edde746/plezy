@@ -25,13 +25,14 @@ uint8_t clamp8(int value) { return static_cast<uint8_t>(std::clamp(value, 0, 255
 }  // namespace
 
 bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uint32_t height,
-                        PyrowaveFrameInfo& info) {
+                        PyrowaveFrameInfo& info, bool allow444) {
   if (!bytes || length < 8 || length > kMaxFrameBytes || width == 0 || height == 0 || width > kMaxWidth ||
       height > kMaxHeight || (width & 1) != 0 || (height & 1) != 0) {
     return false;
   }
 
   bool foundSequence = false;
+  uint32_t sequenceHeader = 0, sequenceFlags = 0;
   size_t offset = 0;
   PyrowaveFrameInfo result{};
   while (offset < length) {
@@ -48,17 +49,22 @@ bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uin
       const uint32_t transfer = (second >> 28) & 0x1u;
       const uint32_t transform = (second >> 29) & 0x1u;
       const uint32_t range = (second >> 30) & 0x1u;
+      if (foundSequence && (sequenceHeader != first || sequenceFlags != second)) return false;
+      sequenceHeader = first; sequenceFlags = second;
 
-      // This Android path converts SDR BT.709 4:2:0 to an ARGB Surface. Do not
-      // misrender HDR, BT.2020 or 4:4:4 as if they were qualified formats.
-      if (code != 0 || chroma != 0 || primaries != 0 || transfer != 0 || transform != 0 ||
+      // Current surfaces are SDR BT.709. The legacy Android converter accepts
+      // 4:2:0 only; the Metal path explicitly opts into full-resolution chroma.
+      if (code != 0 || (chroma != 0 && !allow444) || primaries != 0 || transfer != 0 || transform != 0 ||
           packetWidth != width || packetHeight != height) {
         return false;
       }
-      if (foundSequence && (result.fullRange != (range == 0))) return false;
+      const bool left = (second >> 31) != 0;
+      if (foundSequence && (result.fullRange != (range == 0) || result.chroma444 != (chroma != 0) || result.chromaLeft != left)) return false;
       result.width = packetWidth;
       result.height = packetHeight;
       result.fullRange = range == 0;
+      result.chroma444 = chroma != 0;
+      result.chromaLeft = left;
       foundSequence = true;
       offset += 8;
       continue;
@@ -77,7 +83,7 @@ bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uin
 void convertPyrowave420ToArgb(const uint8_t* y, size_t yStride, const uint8_t* cb, size_t cbStride,
                               const uint8_t* cr, size_t crStride, const PyrowaveFrameInfo& info,
                               std::vector<uint8_t>& argb) {
-  if (!y || !cb || !cr || info.width == 0 || info.height == 0 || info.width > kMaxWidth ||
+  if (!y || !cb || !cr || info.chroma444 || info.width == 0 || info.height == 0 || info.width > kMaxWidth ||
       info.height > kMaxHeight || yStride < info.width || cbStride < info.width / 2 ||
       crStride < info.width / 2) {
     throw std::invalid_argument("invalid Pyrowave output planes");

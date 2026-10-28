@@ -69,6 +69,7 @@
 		255014FD2BA82FF4251C35FB /* PlezySteamPlugin.mm in Sources */ = {isa = PBXBuildFile; fileRef = A9CE887AECB5C1DD0CA57F50 /* PlezySteamPlugin.mm */; };
 		437460616170D0496A8E4059 /* SteamAppleSink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 239DD681EBDF93867D9E8C5F /* SteamAppleSink.mm */; };
 		8BD318526AFD06A98D3BED92 /* SteamAppleSinkTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = B7E6BED3BA6EAF684C17E02A /* SteamAppleSinkTests.mm */; };
+		F7494BCD98AE3D3CBB2360C2 /* SteamMetalPyrowave.mm in Sources */ = {isa = PBXBuildFile; fileRef = 584E0287BFD6C62B99464118 /* SteamMetalPyrowave.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -221,6 +222,8 @@
 		57F089874C4BACB918D43D40 /* PlezySteamPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/PlezySteamPlugin.h"; sourceTree = SOURCE_ROOT; };
 		11007BD81B1DC76FB25E2DBB /* SteamAppleSink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamAppleSink.h"; sourceTree = SOURCE_ROOT; };
 		B7E6BED3BA6EAF684C17E02A /* SteamAppleSinkTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSinkTests.mm"; sourceTree = SOURCE_ROOT; };
+		584E0287BFD6C62B99464118 /* SteamMetalPyrowave.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamMetalPyrowave.mm"; sourceTree = SOURCE_ROOT; };
+		D90212727223A395F03A55CE /* SteamMetalPyrowave.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamMetalPyrowave.h"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -389,6 +392,8 @@
 				B7E6BED3BA6EAF684C17E02A /* SteamAppleSinkTests.mm */,
 				A9CE887AECB5C1DD0CA57F50 /* PlezySteamPlugin.mm */,
 				239DD681EBDF93867D9E8C5F /* SteamAppleSink.mm */,
+				584E0287BFD6C62B99464118 /* SteamMetalPyrowave.mm */,
+				D90212727223A395F03A55CE /* SteamMetalPyrowave.h */,
 				57F089874C4BACB918D43D40 /* PlezySteamPlugin.h */,
 				11007BD81B1DC76FB25E2DBB /* SteamAppleSink.h */,
 
@@ -784,6 +789,7 @@
 			files = (
 				255014FD2BA82FF4251C35FB /* PlezySteamPlugin.mm in Sources */,
 				437460616170D0496A8E4059 /* SteamAppleSink.mm in Sources */,
+				F7494BCD98AE3D3CBB2360C2 /* SteamMetalPyrowave.mm in Sources */,
 
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
@@ -997,8 +1003,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -1069,7 +1075,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng.RunnerTests;
@@ -1256,8 +1262,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -1297,8 +1303,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -1310,7 +1316,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng.RunnerTests;
@@ -1331,7 +1337,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng.RunnerTests;

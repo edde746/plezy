@@ -456,14 +456,14 @@ reconnect. Codec parameters are parsed with explicit size/count limits and
 validated against the negotiated resolution before decoder allocation.
 
 The current Apple texture path is **SDR, at most 1080p60**. It rejects PQ/HLG
-instead of clipping HDR into BGRA. This is not a Metal Pyrowave implementation.
+instead of clipping HDR into BGRA. The additional Metal Pyrowave path is described below.
 Hardware/software decoder reporting uses the documented properties only on
 supported OS versions; older mobile systems keep an unknown decoder-kind
 value. The existing deployment floors are unchanged.
 
 Core Audio uses explicit mono/stereo/quad/5.1 layouts at 48 kHz with bounded
 AudioQueue buffers. Unsupported audio requests retry stereo; HEVC failure
-retries H.264. Retries only remove capabilities and are capped at three. The
+retries H.264. Retries only remove capabilities and are capped at four when Pyrowave is enabled. The
 workspace audio lease controls volume independently of input ownership.
 Speaker routing, Bluetooth changes and TV/HDMI output require device tests.
 
@@ -482,3 +482,39 @@ focus/lease reset. Shift+Escape releases game input to the existing workspace
 controls; details dialogs suspend it without reclaiming another pane's lease.
 Apple on-screen gamepad controls are a separate follow-up; physical gamepads,
 keyboard and direct pointer input are the current adapters.
+
+
+### Native Metal Pyrowave
+
+The Apple adapter now builds the already pinned upstream Metal decoder into the
+application. The profile Pyrowave opt-in is available on Apple as well as
+Android, and still defaults off. Apple advertises the codec only on a compatible
+Apple7-family GPU; Intel/AMD Macs continue with conventional codecs. Pipeline
+creation or decode failure removes Pyrowave on reconnect, then conventional
+codec/audio fallback remains available. There are at most four attempts.
+
+Compressed packets pass the same bounded parser before reaching the upstream
+API. A sequence's dimensions and chroma cannot change under an active decoder.
+The wrapper accepts SDR BT.709 4:2:0 and 4:4:4, full/limited range and the declared
+chroma siting. It does not invent a Steam wire setting to force 4:4:4: the host
+chooses its encoded chroma. Connection details report the observed format.
+
+Metal decodes into private R16 plane textures and converts into an IOSurface
+BGRA buffer on the same command buffer. The decoder worker waits for GPU
+completion before publishing it to Flutter. A four-buffer allocation threshold
+and fixed upload slots bound retained frames; pressure drops work instead of
+allocating an unbounded queue. There is **no production decoded-pixel CPU
+readback** in this path. The diagnostic decoder label distinguishes this from
+Android's existing Vulkan/CPU-readback path.
+
+The upstream Metal port is explicitly experimental, with limited maintainer
+support. Its presence is not evidence of Apple SDK compatibility or measured
+latency. RunnerTests now includes 4:2:0/4:4:4 neutral-color rendering, unsupported
+HDR rejection and teardown on compatible Apple GPUs. CPU mapping is used only
+by that test to inspect the completed output. These tests have not run here.
+
+True HDR remains unfinished: Flutter's current Darwin texture implementation
+accepts eight-bit BGRA and eight-bit NV12, and treats YUV as BT.601. The receiver
+therefore uses explicit BT.709 GPU conversion and rejects PQ/BT.2020 streams.
+An EDR/HDR native presentation layer, host negotiation and color/device tests
+are required; adding an HDR toggle alone would misrepresent support.

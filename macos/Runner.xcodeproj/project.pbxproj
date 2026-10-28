@@ -50,6 +50,7 @@
 		7F2BF6AFB99069BAB06494E4 /* PlezySteamPlugin.mm in Sources */ = {isa = PBXBuildFile; fileRef = FE0F1353ACD461F20BE3E7B9 /* PlezySteamPlugin.mm */; };
 		7D5F3FCB885EA9492B70B8F7 /* SteamAppleSink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 18314D10B686B469A0C226EC /* SteamAppleSink.mm */; };
 		F42652A27746793350EE6DEE /* SteamAppleSinkTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */; };
+		8D854652BD4A32EF7B82EF28 /* SteamMetalPyrowave.mm in Sources */ = {isa = PBXBuildFile; fileRef = B1181385E0A7348D7FA7E101 /* SteamMetalPyrowave.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -168,6 +169,8 @@
 		8442147075951A0D36D0835F /* PlezySteamPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/PlezySteamPlugin.h"; sourceTree = SOURCE_ROOT; };
 		EB0BAC8E1FF8B446B4EAEF07 /* SteamAppleSink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamAppleSink.h"; sourceTree = SOURCE_ROOT; };
 		DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSinkTests.mm"; sourceTree = SOURCE_ROOT; };
+		B1181385E0A7348D7FA7E101 /* SteamMetalPyrowave.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamMetalPyrowave.mm"; sourceTree = SOURCE_ROOT; };
+		0CB20541BC24300F1DAFE113 /* SteamMetalPyrowave.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamMetalPyrowave.h"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -274,6 +277,8 @@
 				DA8292FEAE7659282810C0EE /* SteamAppleSinkTests.mm */,
 				FE0F1353ACD461F20BE3E7B9 /* PlezySteamPlugin.mm */,
 				18314D10B686B469A0C226EC /* SteamAppleSink.mm */,
+				B1181385E0A7348D7FA7E101 /* SteamMetalPyrowave.mm */,
+				0CB20541BC24300F1DAFE113 /* SteamMetalPyrowave.h */,
 				8442147075951A0D36D0835F /* PlezySteamPlugin.h */,
 				EB0BAC8E1FF8B446B4EAEF07 /* SteamAppleSink.h */,
 
@@ -607,6 +612,7 @@
 			files = (
 				7F2BF6AFB99069BAB06494E4 /* PlezySteamPlugin.mm in Sources */,
 				7D5F3FCB885EA9492B70B8F7 /* SteamAppleSink.mm in Sources */,
+				8D854652BD4A32EF7B82EF28 /* SteamMetalPyrowave.mm in Sources */,
 
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
@@ -707,7 +713,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -725,7 +731,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -743,7 +749,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -826,8 +832,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 			};
 			name = Profile;
@@ -967,8 +973,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -996,8 +1002,8 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include");
-				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network);
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "-weak_framework", PIP, "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

@@ -3937,6 +3937,8 @@
     "streamHardwareDecoder": "Hardware",
     "streamSoftwareDecoder": "Software",
     "streamReadbackDecoder": "Vulkan with CPU readback",
+    "streamMetalDecoder": "Metal · direct GPU",
+    "streamChroma": "Color sampling",
     "streamHostFps": "Host frame rate target",
     "streamHostBitrate": "Host bitrate target",
     "streamLimits": "Host-reported frame rate limits",

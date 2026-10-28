@@ -21,7 +21,8 @@ void main() {
                 reads++;
                 return SteamStreamMetrics.fromNative({
                   ...metricsFixture(time: reads * 1000000),
-                  'decoderKind': 1,
+                  'decoderKind': 4,
+                  'chromaFormat': 2,
                   'targetBitrate': 12000000,
                   'fpsNumerator': 30,
                   'fpsDenominator': 1,
@@ -38,6 +39,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(reads, 2);
+    expect(find.textContaining('Metal', findRichText: true), findsOneWidget);
+    expect(find.textContaining('4:4:4', findRichText: true), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 3));

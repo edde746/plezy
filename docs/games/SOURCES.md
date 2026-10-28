@@ -58,3 +58,19 @@ The exact IHS runtime pin includes game-ID serialization and current/legacy auth
   documents shared configuration links and game-side glyph handling. The
   per-game configuration and properties client routes used here are compatibility
   affordances, not a claimed supported Web API or an imported configuration.
+
+
+## Apple presentation references
+
+- The pinned [Metal API](https://github.com/Themaister/pyrowave/blob/79a3232a2199281f33f7a2e2659fc4fac62b022a/metal/pyrowave_metal.h)
+  specifies Apple7-family support, output-plane formats, command-buffer
+  ownership and ordering. Its accompanying README records limited maintenance
+  and experimental status. The source pin is unchanged by this integration.
+- Flutter 3.47.1's `FlutterDarwinExternalTextureMetal.mm` and
+  `FlutterExternalTexture.mm` accept BGRA8 and NV12-8, with no HDR texture path.
+  The Apple receiver uses BGRA with its own BT.709 conversion.
+- [VideoToolbox hardware decoder selection](https://developer.apple.com/documentation/videotoolbox/kvtvideodecoderspecification_enablehardwareacceleratedvideodecoder)
+  is available on macOS 10.9+ and iOS/tvOS 17+; the older mobile path omits that
+  property and does not claim verified hardware selection.
+- [Network endpoint addresses](https://developer.apple.com/documentation/network/nw_endpoint_get_address(_:))
+  and effective path endpoints supply cancellable, resolved peer addresses.

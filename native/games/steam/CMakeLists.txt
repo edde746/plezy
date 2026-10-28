@@ -9,6 +9,22 @@ set(PLEZY_STEAM_SOURCE "${PLEZY_ROOT}/.dart_tool/games/steam" CACHE PATH "Prepar
 if(NOT EXISTS "${PLEZY_STEAM_SOURCE}/.plezy-recipe")
   message(FATAL_ERROR "Run python3 scripts/games/prepare_steam.py before configuring")
 endif()
+option(PLEZY_STEAM_METAL "Build the pinned native Metal Pyrowave decoder" OFF)
+if(PLEZY_STEAM_METAL)
+  if(NOT APPLE)
+    message(FATAL_ERROR "The Metal decoder requires an Apple SDK")
+  endif()
+  enable_language(OBJCXX)
+  set(CMAKE_OBJCXX_STANDARD 17)
+  set(PYROWAVE_METAL_ROOT "${PLEZY_STEAM_SOURCE}/pyrowave/metal")
+  add_library(plezy_pyrowave_metal STATIC
+    "${PYROWAVE_METAL_ROOT}/pyrowave_common.mm"
+    "${PYROWAVE_METAL_ROOT}/pyrowave_decoder.mm"
+    "${PYROWAVE_METAL_ROOT}/pyrowave_bitstream.cpp")
+  target_compile_definitions(plezy_pyrowave_metal PRIVATE PYROWAVE_EXPORT_SYMBOLS)
+  target_compile_options(plezy_pyrowave_metal PRIVATE $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
+  target_link_libraries(plezy_pyrowave_metal PRIVATE "-framework Foundation" "-framework Metal" "-framework IOSurface")
+endif()
 set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
 set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
@@ -67,6 +83,9 @@ target_link_libraries(plezy_ihs PUBLIC plezy_protobuf_c mbedcrypto Threads::Thre
 add_library(plezy_steam_runtime STATIC steam_runtime.cpp steam_controller.cpp steam_pyrowave.cpp steam_audio.cpp steam_h26x.cpp)
 target_include_directories(plezy_steam_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" PRIVATE "${IHS_ROOT}/src")
 target_link_libraries(plezy_steam_runtime PUBLIC plezy_ihs opus)
+if(PLEZY_STEAM_METAL)
+  target_link_libraries(plezy_steam_runtime PRIVATE plezy_pyrowave_metal)
+endif()
 if(PLEZY_STEAM_PYROWAVE)
   target_compile_definitions(plezy_steam_runtime PRIVATE PLEZY_STEAM_PYROWAVE=1)
   target_include_directories(plezy_steam_runtime BEFORE PRIVATE

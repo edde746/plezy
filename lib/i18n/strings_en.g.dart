@@ -9873,6 +9873,12 @@ class Translations$games$en {
 	/// en: 'Vulkan with CPU readback'
 	String get streamReadbackDecoder => 'Vulkan with CPU readback';
 
+	/// en: 'Metal · direct GPU'
+	String get streamMetalDecoder => 'Metal · direct GPU';
+
+	/// en: 'Color sampling'
+	String get streamChroma => 'Color sampling';
+
 	/// en: 'Host frame rate target'
 	String get streamHostFps => 'Host frame rate target';
 
@@ -16208,6 +16214,8 @@ extension on Translations {
 			'games.streamHardwareDecoder' => 'Hardware',
 			'games.streamSoftwareDecoder' => 'Software',
 			'games.streamReadbackDecoder' => 'Vulkan with CPU readback',
+			'games.streamMetalDecoder' => 'Metal · direct GPU',
+			'games.streamChroma' => 'Color sampling',
 			'games.streamHostFps' => 'Host frame rate target',
 			'games.streamHostBitrate' => 'Host bitrate target',
 			'games.streamLimits' => 'Host-reported frame rate limits',

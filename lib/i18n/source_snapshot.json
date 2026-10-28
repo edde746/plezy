@@ -3620,6 +3620,8 @@
   "games.streamHardwareDecoder": "8c1bc3a078056ff7",
   "games.streamSoftwareDecoder": "ec00af4c7c541603",
   "games.streamReadbackDecoder": "6789def930f8a615",
+  "games.streamMetalDecoder": "8ba3176375bd7f1a",
+  "games.streamChroma": "304c949b468d8697",
   "games.streamHostFps": "9ecffa88a4a4267b",
   "games.streamHostBitrate": "1c96c2c9ee7d841f",
   "games.streamLimits": "815291934cb32fec",

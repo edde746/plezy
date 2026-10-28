@@ -393,7 +393,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (paired == true) await c.refreshGames(selected);
   }).then<void>((_) {});
   Future<void> _open(GameHost host, StreamGame game) async {
-    if (Platform.isAndroid && host.protocol == GameProtocol.steam) {
+    if (PlatformDetector.supportsEmbeddedGameStreaming() && host.protocol == GameProtocol.steam) {
       await _openInWorkspace(host, game, fullscreen: true);
       return;
     }
@@ -1198,7 +1198,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     options: [for (var count = 1; count <= 4; count++) DialogOption(value: count, title: '$count')],
                   ),
                 ],
-                if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
+                if (_profile != null &&
+                    {TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.macOS}.contains(defaultTargetPlatform))
                   SettingSwitchTile(
                     pref: SettingsService.gamePyrowaveForProfile(_profile!),
                     icon: Symbols.speed_rounded,

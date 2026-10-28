@@ -1,6 +1,6 @@
 # Games validation and release gates
 
-For current PR #46 completion status, see
+For current follow-up PR #54 completion status, see
 [CONNECTED_EXPERIENCE.md](CONNECTED_EXPERIENCE.md#scope-and-acceptance).
 Historical builds below do not validate the current branch.
 
@@ -216,3 +216,20 @@ security, action-pin and architecture checks passed; no runner routing changed.
 - The Apple source uses a direct CVPixelBuffer texture path for conventional
   SDR codecs. Direct Pyrowave, HDR/4:4:4, Windows receivers and automatic
   internet traversal remain separate unfinished work.
+
+
+### Metal Pyrowave source follow-up
+
+The pinned Metal library, app-owned GPU conversion and texture adapter are
+wired into all Apple targets. Source/project checks verify compilation inputs,
+framework linkage and archive wiring. Portable parser tests now cover opt-in
+4:4:4, siting, legacy 4:2:0 rejection, conflicting sequence headers and HDR
+rejection. This does not validate Metal shader compilation or GPU execution.
+The checked-in Apple XCTest must run on compatible Apple private-JIT hardware.
+The Intel/simulator skip is explicit and is not a successful GPU test.
+
+Local follow-up checks: all **41 native tests** and **20 focused Dart/widget
+tests** passed after these changes, including the narrow RTL diagnostics view
+with Metal/chroma labels. Focused Dart analysis reports no issues. Structural
+localization checks pass for 37 locales and 3,728 messages. These counts do not
+include the Apple-only decoder tests.

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add opt-in Apple Metal Pyrowave source integration with direct GPU conversion, bounded 4:2:0/4:4:4 SDR textures, observed-chroma diagnostics and conventional-codec fallback; retain explicit HDR rejection pending a qualified HDR surface.
+- Route normal Linux and Apple Steam launches into the retained workspace receiver as well as supporting the window action.
+
 - Add Apple Steam receiver source and Xcode integration using VideoToolbox pixel-buffer textures, Keychain pairing, bounded multichannel Core Audio and acknowledged teardown; add a real H.264 decoder test for Apple runners. SDK builds and device playback remain qualification gates.
 - Route desktop/Apple Steam pointer, scroll and full keyboard input through workspace ownership; release held controls on focus changes and provide Shift+Escape to return to workspace menus.
 

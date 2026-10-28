@@ -29,6 +29,15 @@ Map<String, Object> metricsFixture({int time = 1000000}) => {
 };
 
 void main() {
+  test('Metal and chroma measurements are optional and strictly bounded', () {
+    expect(SteamStreamMetrics.fromNative(metricsFixture()).chromaFormat, 0);
+    final measured = SteamStreamMetrics.fromNative({...metricsFixture(), 'decoderKind': 4, 'chromaFormat': 2});
+    expect(measured.decoderKind, 4);
+    expect(measured.chromaFormat, 2);
+    expect(() => SteamStreamMetrics.fromNative({...metricsFixture(), 'chromaFormat': 3}), throwsFormatException);
+    expect(() => SteamStreamMetrics.fromNative({...metricsFixture(), 'decoderKind': 5}), throwsFormatException);
+  });
+
   test('unknown targets remain unknown and negotiated fractions are preserved', () {
     var metrics = SteamStreamMetrics.fromNative(metricsFixture());
     expect(metrics.hostFps, isNull);

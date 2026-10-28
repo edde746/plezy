@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "SteamAppleSink.h"
+#include "SteamMetalPyrowave.h"
 #include "steam_h26x.h"
 #import <AudioToolbox/AudioToolbox.h>
 #import <Foundation/Foundation.h>
@@ -22,6 +23,7 @@ struct AppleSink::Impl {
   bool stopping = false;
   std::atomic<bool> audible{false};
   std::atomic<int> kind{0};
+  std::atomic<int> chroma{0};
   Config config;
   int channels = 0;
   uint64_t videoEpoch = 0, audioEpoch = 0;
@@ -29,6 +31,7 @@ struct AppleSink::Impl {
   std::deque<Audio> pcm;
   // Everything below is decoder-worker owned, except atomic buffer availability.
   H26xParser parser;
+  MetalPyrowave pyrowave;
   CMVideoFormatDescriptionRef format = nullptr;
   VTDecompressionSessionRef decoder = nullptr;
   AudioQueueRef audioQueue = nullptr;
@@ -45,10 +48,11 @@ struct AppleSink::Impl {
     if (!once) { once = true; failed(audio); }
   }
   void closeVideo() {
+    pyrowave.reset();
     if (decoder) { VTDecompressionSessionWaitForAsynchronousFrames(decoder); VTDecompressionSessionInvalidate(decoder); CFRelease(decoder); }
     decoder = nullptr;
     if (format) CFRelease(format);
-    format = nullptr; kind = 0;
+    format = nullptr; kind = 0; chroma = 0;
   }
   void closeAudio() {
     if (audioQueue) { AudioQueueStop(audioQueue,true); AudioQueueDispose(audioQueue,true); }
@@ -103,6 +107,17 @@ struct AppleSink::Impl {
   }
   void decode(const Video& item) {
     if (videoFailed) { complete(item.id,false); return; }
+    if (current.codec == 9) {
+      CVPixelBufferRef image = nullptr;
+      const auto result = pyrowave.decode(item.bytes.data(),item.bytes.size(),&image);
+      if (result == PyrowaveDecodeStatus::frame) {
+        kind = 4; chroma = pyrowave.chroma444() ? 2 : 1;
+        if (!present(image,item.id)) complete(item.id,false);
+        CVPixelBufferRelease(image);
+      } else complete(item.id,false);
+      if (result == PyrowaveDecodeStatus::invalid) fail(false);
+      return;
+    }
     std::vector<uint8_t> bytes; bool changed = false;
     if (!parser.accessUnit(item.bytes.data(),item.bytes.size(),bytes,changed)) { complete(item.id,false); fail(false); return; }
     if (bytes.empty()) { complete(item.id,false); return; }
@@ -172,7 +187,12 @@ struct AppleSink::Impl {
         if (!frames.empty()) { video = std::move(frames.front()); frames.pop_front(); haveVideo = true; }
         if (!pcm.empty()) { audio = std::move(pcm.front()); pcm.pop_front(); haveAudio = true; }
       }
-      if (configureVideo) { closeVideo(); if (!parser.configure(current.codec,current.extra.data(),current.extra.size())) fail(false); }
+      if (configureVideo) {
+        closeVideo();
+        bool ready = current.codec == 9 ? pyrowave.start(current.width,current.height,current.extra.data(),current.extra.size()) :
+                                         parser.configure(current.codec,current.extra.data(),current.extra.size());
+        if (!ready) fail(false);
+      }
       if (configureAudio && !openAudio(newChannels)) fail(true);
       if (audioQueue) AudioQueueSetParameter(audioQueue,kAudioQueueParam_Volume,audible ? 1 : 0);
       if (haveVideo) { if (video.epoch == vEpoch) decode(video); else complete(video.id,false); }
@@ -191,8 +211,9 @@ struct AppleSink::Impl {
 AppleSink::AppleSink(Present p, Complete c, Failed f) : impl_(std::make_unique<Impl>(std::move(p),std::move(c),std::move(f))) {}
 AppleSink::~AppleSink() = default;
 bool AppleSink::supportsHevc() { return VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC); }
+bool AppleSink::supportsPyrowave() { return MetalPyrowave::supported(); }
 bool AppleSink::video(int codec,int width,int height,const uint8_t* extra,size_t length) {
-  if ((codec != 4 && codec != 5) || width <= 0 || height <= 0 || width > 1920 || height > 1080 || length > 65536 || (length && !extra)) return false;
+  if ((codec != 4 && codec != 5 && codec != 9) || width <= 0 || height <= 0 || width > 1920 || height > 1080 || length > 65536 || (length && !extra)) return false;
   std::deque<Impl::Video> old;
   { std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->stopping) return false;
@@ -232,5 +253,6 @@ void AppleSink::samples(const int16_t* bytes,size_t count) {
 }
 void AppleSink::volume(bool enabled) { impl_->audible = enabled; }
 int AppleSink::decoderKind() const { return impl_->kind; }
+int AppleSink::chromaFormat() const { return impl_->chroma; }
 void AppleSink::close() { impl_->close(); }
 }

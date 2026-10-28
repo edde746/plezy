@@ -15,6 +15,7 @@ class AppleSink final : public Sink {
   AppleSink(Present, Complete, Failed);
   ~AppleSink() override;
   static bool supportsHevc();
+  static bool supportsPyrowave();
   bool video(int,int,int,const uint8_t*,size_t) override;
   bool frame(const uint8_t*,size_t,uint32_t,bool) override;
   bool audio(int,int) override;
@@ -22,6 +23,7 @@ class AppleSink final : public Sink {
   void samples(const int16_t*,size_t) override;
   void volume(bool);
   int decoderKind() const;
+  int chromaFormat() const;
   void close();
  private:
   struct Impl;

@@ -181,7 +181,7 @@ namespace {
 struct Manager;
 struct Session : std::enable_shared_from_this<Session> {
   std::weak_ptr<Manager> owner;
-  Host host; uint64_t game; StreamOptions options; bool hevc, audible = false;
+  Host host; uint64_t game; StreamOptions options; bool hevc, pyrowave, audible = false;
   InputState input;
   int64_t sessionId, textureId;
   __weak id<FlutterTextureRegistry> registry;
@@ -195,8 +195,8 @@ struct Session : std::enable_shared_from_this<Session> {
   std::atomic<uint64_t> renderedEpoch{0}, renderedSize{0};
   NSString* state = @"connecting";
   NSMutableArray* stopReplies = [NSMutableArray new];
-  Session(int64_t value,Host h,uint64_t game,StreamOptions o,bool hevc,id<FlutterPluginRegistrar> registrar)
-    : host(std::move(h)),game(game),options(o),hevc(hevc),input(o.controllerCount),sessionId(value),
+  Session(int64_t value,Host h,uint64_t game,StreamOptions o,bool hevc,bool pyrowave,id<FlutterPluginRegistrar> registrar)
+    : host(std::move(h)),game(game),options(o),hevc(hevc),pyrowave(pyrowave),input(o.controllerCount),sessionId(value),
       registry([registrar textures]),texture([PlezySteamTexture new]) {
     textureId = [registry registerTexture:texture];
     // iOS assigns texture zero to the first registration. macOS instead uses
@@ -256,8 +256,9 @@ struct Session : std::enable_shared_from_this<Session> {
         Credentials credentials;
         if (!loadTrust(self->host.id,credentials)) throw std::runtime_error("Pairing required");
         Host resolved = resolveHost(self->host,self->closing);
-        bool hevc = self->hevc; int channels = self->options.audioChannels;
-        for (int attempt = 0; attempt < 3 && !self->closing; ++attempt) {
+        bool hevc = self->hevc, pyrowave = self->pyrowave && AppleSink::supportsPyrowave();
+        int channels = self->options.audioChannels;
+        for (int attempt = 0; attempt < 4 && !self->closing; ++attempt) {
           auto r = std::make_shared<Runtime>();
           struct Failure { std::atomic<bool> video{false}, audio{false}; };
           auto failure = std::make_shared<Failure>();
@@ -272,15 +273,16 @@ struct Session : std::enable_shared_from_this<Session> {
             sink->volume(self->audible); if (self->closing) r->cancel();
           }
           auto options = self->options; options.audioChannels = channels;
-          int result = r->run(resolved,credentials,self->game,hevc,false,sink,options);
+          int result = r->run(resolved,credentials,self->game,hevc,pyrowave,sink,options);
           { std::lock_guard<std::mutex> lock(self->mutex); self->active = false; self->input.enabled(*r,false); }
           sink->close();
           { std::lock_guard<std::mutex> lock(self->mutex); self->sink.reset(); }
           if (self->closing) break;
           bool stereo = failure->audio && channels > 2;
           bool h264 = failure->video && hevc && r->metrics().codec == 5;
-          if (stereo || h264) {
-            if (stereo) channels = 2; if (h264) hevc = false;
+          bool conventional = pyrowave && (failure->video || (result != 0 && r->metrics().presentedFrames == 0));
+          if (stereo || h264 || conventional) {
+            if (stereo) channels = 2; if (h264) hevc = false; if (conventional) pyrowave = false;
             self->notifyState(@"reconnecting"); continue;
           }
           self->notifyState(result == 0 && !failure->audio && !failure->video ? @"disconnected" : @"failed"); break;
@@ -353,7 +355,8 @@ void Session::method(FlutterMethodCall* call,FlutterResult reply) {
       @"fpsReasons":@(m.fpsReasons),@"targetBitrate":@(m.targetBitrate),@"reliableRetries":@(m.reliability.reliableRetries),
       @"reliableGiveUps":@(m.reliability.reliableGiveUps),@"reliableOutstanding":@(m.reliability.reliableOutstanding),
       @"maxAckLatencyMs":@(m.reliability.reliableMaxAckLatencyMs),@"hidPending":@(m.reliability.hidPending),
-      @"hidInFlight":@(m.reliability.hidInFlight),@"decoderKind":@(sink ? sink->decoderKind() : 0)}); return;
+      @"hidInFlight":@(m.reliability.hidInFlight),@"decoderKind":@(sink ? sink->decoderKind() : 0),
+      @"chromaFormat":@(sink ? sink->chromaFormat() : 0)}); return;
   } else {
     auto args = arguments(call.arguments);
     if ([method isEqualToString:@"setAudioEnabled"]) {
@@ -418,7 +421,7 @@ void Manager::method(FlutterMethodCall* call,FlutterResult reply,bool create) {
     options.fps = number(args,@"streamFps",60,15,60); options.bitrateKbps = number(args,@"streamBitrateKbps",30000,1000,50000);
     options.controllerCount = number(args,@"controllerCount",1,1,4); options.audioChannels = number(args,@"audioChannels",2,2,6);
     if (!options.valid()) throw std::invalid_argument("Invalid stream options");
-    auto session = std::make_shared<Session>(next++,host,game,options,boolean(args,@"allowHevc",true) && AppleSink::supportsHevc(),registrar);
+    auto session = std::make_shared<Session>(next++,host,game,options,boolean(args,@"allowHevc",true) && AppleSink::supportsHevc(),boolean(args,@"pyrowave"),registrar);
     session->owner = shared_from_this(); sessions.emplace(session->sessionId,session); session->start();
     reply(@{@"id":@(session->sessionId),@"textureId":@(session->textureId)}); return;
   }
