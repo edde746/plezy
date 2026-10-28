@@ -853,6 +853,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+  static const subtitleReplayPrerollMs = IntPref('subtitle_replay_preroll_ms', defaultValue: 500);
   static const secondarySubtitleSyncOffset = IntPref('secondary_subtitle_sync_offset');
   static const subtitleSyncRate = DoublePref(
     'subtitle_sync_rate',

@@ -522,6 +522,41 @@ class _SubtitleColumn extends StatelessWidget {
   }
 }
 
+Future<void> _configureSubtitleReplayPreroll(BuildContext context) async {
+  final settings = SettingsService.instance;
+  final pref = SettingsService.subtitleReplayPrerollMs;
+  var selected = settings.read(pref).clamp(0, 2500).toDouble();
+  final value = await showDialog<int>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
+        title: const Text('Subtitle replay lead-in'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${selected.round()} ms before the cue'),
+            Slider(
+              value: selected,
+              min: 0,
+              max: 2500,
+              divisions: 50,
+              label: '${selected.round()} ms',
+              onChanged: (value) => setDialogState(() => selected = value),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(selected.round()), child: const Text('Save')),
+        ],
+      ),
+    ),
+  );
+  if (value == null || !context.mounted) return;
+  await settings.write(pref, value.clamp(0, 2500));
+  if (context.mounted) showSnackBar(context, 'Subtitle replay lead-in saved.');
+}
+
 List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state, Player player) {
   final actions = <Widget>[];
   if (player.supportsSecondarySubtitles) {
@@ -537,6 +572,14 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
         leading: const AppIcon(Symbols.replay_rounded),
         title: const Text('Replay current secondary subtitle'),
         onTap: () => _replayCurrentSubtitle(context, player, secondary: true),
+      ),
+    );
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.timer_rounded),
+        title: const Text('Subtitle replay lead-in'),
+        subtitle: Text('${SettingsService.instance.read(SettingsService.subtitleReplayPrerollMs).clamp(0, 2500)} ms before the cue'),
+        onTap: () => unawaited(_configureSubtitleReplayPreroll(context)),
       ),
     );
   }
@@ -802,7 +845,8 @@ Future<void> _replayCurrentSubtitle(
       return;
     }
     final startMs = (start * 1000).round();
-    await player.seek(Duration(milliseconds: (startMs - 500).clamp(0, 1 << 31).toInt()));
+    final prerollMs = SettingsService.instance.read(SettingsService.subtitleReplayPrerollMs).clamp(0, 2500);
+    await player.seek(Duration(milliseconds: (startMs - prerollMs).clamp(0, 1 << 31).toInt()));
   } catch (error, stackTrace) {
     appLogger.w('Could not replay the active subtitle cue', error: error, stackTrace: stackTrace);
     if (context.mounted) showSnackBar(context, 'This player does not expose the active subtitle cue timing.');
