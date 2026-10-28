@@ -698,30 +698,37 @@ class _FindNextScreenState extends State<FindNextScreen> {
                     ),
                     const SizedBox(height: 8),
                     Expanded(
-                      child: filtered.isEmpty
-                          ? Center(child: Text(t.common.noResultsFound))
-                          : ListView.builder(
-                              itemCount: filtered.length + 1,
-                              itemBuilder: (context, index) {
-                                final isAnything = index == 0;
-                                final value = isAnything ? null : filtered[index - 1];
-                                final isSelected = value == null
-                                    ? selected == null
-                                    : value.toLowerCase() == selected?.toLowerCase();
-                                return FocusableListTile(
-                                  title: Text(
-                                    isAnything ? t.discover.findNext.filterAnything : isolateDisplayText(value!),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  trailing: isSelected ? const AppIcon(Symbols.check_rounded) : null,
-                                  onTap: () => OverlaySheetController.popAdaptive(
-                                    sheetContext,
-                                    (applied: true, value: value),
-                                  ),
-                                );
-                              },
+                      child: ListView.builder(
+                        itemCount: filtered.length + (filtered.isEmpty ? 2 : 1),
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return FocusableListTile(
+                              title: Text(t.discover.findNext.filterAnything),
+                              trailing: selected == null ? const AppIcon(Symbols.check_rounded) : null,
+                              onTap: () => OverlaySheetController.popAdaptive(
+                                sheetContext,
+                                (applied: true, value: null),
+                              ),
+                            );
+                          }
+                          if (filtered.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Center(child: Text(t.common.noResultsFound)),
+                            );
+                          }
+                          final value = filtered[index - 1];
+                          final isSelected = value.toLowerCase() == selected?.toLowerCase();
+                          return FocusableListTile(
+                            title: Text(isolateDisplayText(value), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            trailing: isSelected ? const AppIcon(Symbols.check_rounded) : null,
+                            onTap: () => OverlaySheetController.popAdaptive(
+                              sheetContext,
+                              (applied: true, value: value),
                             ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
