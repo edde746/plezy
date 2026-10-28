@@ -264,7 +264,7 @@ import TVServices
     let notifyChange: () -> Void
   }
 
-  final class SystemShelfPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
+  final class SystemShelfPlugin: NSObject, FlutterPlugin {
     static let schemaVersion = 3
     static let appGroupIdentifier = "group.com.edde746.plezy"
     static let cacheDataKey = "PlezySystemShelfCacheData"
@@ -280,8 +280,6 @@ import TVServices
     private static let imageTimeout: TimeInterval = 2.5
     private static let staleArtworkGracePeriod: TimeInterval = 60
     private static let mutationQueue = DispatchQueue(label: "com.plezy.system-shelf", qos: .utility)
-    private static let deepLinkDelivery = TvosDeepLinkDeliveryCoordinator()
-    private static var methodChannel: FlutterMethodChannel?
     private static var mutationState = SystemShelfMutationState()
     private let engineEpoch: UInt64
 
@@ -295,57 +293,9 @@ import TVServices
       let engineEpoch = mutationQueue.sync {
         mutationState.beginEngineSession()
       }
-      methodChannel = channel
-      deepLinkDelivery.bindEngine()
       let instance = SystemShelfPlugin(engineEpoch: engineEpoch)
       registrar.addMethodCallDelegate(instance, channel: channel)
-      // Top Shelf links are delivered through UIScene once that lifecycle is enabled.
-      registrar.addSceneDelegate(instance)
       mutationQueue.async { scrubLegacyPayload() }
-    }
-
-    static func handleOpenURL(_ url: URL) -> Bool {
-      guard let contentId = contentId(from: url) else { return false }
-      switch deepLinkDelivery.receive(contentId: contentId) {
-      case let .deliver(event):
-        deliverLive(event)
-      case .retained, .duplicate:
-        break
-      }
-      return true
-    }
-
-    static func handleSceneURLs(
-      _ urls: [URL],
-      using handler: (URL) -> Bool = SystemShelfPlugin.handleOpenURL
-    ) -> Bool {
-      var handled = false
-      for url in urls where handler(url) {
-        handled = true
-      }
-      return handled
-    }
-
-    func scene(
-      _ scene: UIScene,
-      willConnectTo session: UISceneSession,
-      options connectionOptions: UIScene.ConnectionOptions?
-    ) -> Bool {
-      guard let connectionOptions else { return false }
-      return Self.handleSceneURLs(connectionOptions.urlContexts.map(\.url))
-    }
-
-    func scene(
-      _ scene: UIScene,
-      openURLContexts URLContexts: Set<UIOpenURLContext>
-    ) -> Bool {
-      Self.handleSceneURLs(URLContexts.map(\.url))
-    }
-
-    private static func contentId(from url: URL) -> String? {
-      guard url.scheme == "plezy", url.host == "play" else { return nil }
-      return URLComponents(url: url, resolvingAgainstBaseURL: false)?
-        .queryItems?.first { $0.name == "content_id" }?.value
     }
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -400,29 +350,9 @@ import TVServices
           return
         }
         Self.perform(result) { Self.removeItem(envelope: envelope, contentId: contentId) }
-      case "getInitialDeepLink":
-        let event = Self.deepLinkDelivery.beginLiveDelivery()
-        result(event?.contentId)
-        if let event, let next = Self.deepLinkDelivery.complete(event, succeeded: true) {
-          Self.deliverLive(next)
-        }
       default:
         result(FlutterMethodNotImplemented)
       }
-    }
-
-    private static func deliverLive(_ event: TvosDeepLinkDeliveryCoordinator.Event) {
-      guard let channel = methodChannel else { return }
-      channel.invokeMethod("onShelfItemTap", arguments: event.flutterArguments) { reply in
-        let succeeded = flutterDeliverySucceeded(reply)
-        if let next = deepLinkDelivery.complete(event, succeeded: succeeded) {
-          deliverLive(next)
-        }
-      }
-    }
-
-    private static func flutterDeliverySucceeded(_ reply: Any?) -> Bool {
-      reply as? Bool == true
     }
 
     private static func perform(_ result: @escaping FlutterResult, operation: @escaping () -> Bool) {

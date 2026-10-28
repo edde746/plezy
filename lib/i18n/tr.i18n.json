@@ -864,7 +864,8 @@
     "rotationLockButton": "Döndürme kilidi",
     "lockScreen": "Ekranı kilitle",
     "screenLockButton": "Ekran kilidi",
-    "longPressToUnlock": "Kilidi açmak için uzun basın",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Video zaman çubuğu",
     "volumeSlider": "Ses seviyesi",
     "endsAt": "Bitiş saati: ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filtreler (${count})",
     "noRecommendations": "Öneri bulunmuyor",
     "noCollections": "Bu kitaplıkta koleksiyon yok",
+    "noGenres": "",
     "noFoldersFound": "Klasör bulunamadı",
     "folders": "klasörler",
     "tabs": {
       "recommended": "Önerilenler",
       "browse": "Göz At",
       "collections": "Koleksiyonlar",
+      "genres": "",
       "playlists": "Oynatma Listeleri"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "Sunucu farklı bir ana makineye yönlendirdi. Nihai ${product} URL'sini doğrudan girin.",
     "redirectInsecure": "Sunucu HTTPS'den güvenli olmayan bir URL'ye yönlendirdi",
     "redirectUnsupportedEnterFinal": "Sunucu desteklenmeyen bir URL'ye yönlendirdi. Nihai ${product} URL'sini doğrudan girin."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

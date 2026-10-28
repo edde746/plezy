@@ -1,8 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/chapter_marker_classifier.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late ChapterMarkerClassifier classifier;
+  setUpAll(() async => classifier = await ChapterMarkerClassifier.bundled);
+
   group('MediaChapter traversal', () {
     final chapters = [
       MediaChapter(id: 1, startTimeOffset: 0, title: 'One'),
@@ -126,47 +131,98 @@ void main() {
     });
   });
 
-  group('PlaybackExtras.withChapterFallback blank patterns', () {
-    final chapters = [
-      MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Overture'),
-      MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 1200000, title: 'Part 1'),
+  /// Chapters laid out back to back from zero, as (title, seconds) pairs.
+  List<MediaChapter> layout(List<(String, int)> parts) {
+    var at = 0;
+    return [
+      for (final (i, (title, seconds)) in parts.indexed)
+        MediaChapter(id: i + 1, startTimeOffset: at, endTimeOffset: at += seconds * 1000, title: title),
     ];
+  }
 
-    test('stored blank patterns do not classify every chapter as a marker', () {
+  List<(String, int)> markersOf(PlaybackExtras extras) => [for (final m in extras.markers) (m.type, m.id)];
+
+  group('PlaybackExtras.withChapterFallback classifier', () {
+    test('finds the intro and credits of an episode whose chapters are all "Chapter N"', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
+        chapters: layout([
+          ('Chapter 1', 120),
+          ('Chapter 2', 90),
+          ('Chapter 3', 540),
+          ('Chapter 4', 540),
+          ('Chapter 5', 90),
+          ('Chapter 6', 30),
+        ]),
+        markers: [],
+      );
+
+      expect(markersOf(extras), [('intro', 2), ('credits', 5)]);
+    });
+
+    test('marks the explicit OP, not the cold open titled "Intro" before it', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
+        chapters: layout([('Intro', 84), ('OP', 90), ('Episode', 946), ('ED', 90), ('Preview', 15)]),
+        markers: [],
+      );
+
+      expect(markersOf(extras), [('intro', 2), ('credits', 4)]);
+    });
+
+    test('chapters without an end use the next chapter start', () {
+      final chapters = layout([('Prologue', 60), ('OP', 90), ('Part A', 1140), ('ED', 90), ('Preview', 30)]);
+      final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
+        chapters: [
+          for (final c in chapters.take(4)) MediaChapter(id: c.id, startTimeOffset: c.startTimeOffset, title: c.title),
+          chapters.last,
+        ],
+        markers: [],
+      );
+
+      expect(markersOf(extras), [('intro', 2), ('credits', 4)]);
+      expect(extras.markers.first.endTimeOffset, chapters[1].endTimeOffset);
+    });
+  });
+
+  group('PlaybackExtras.withChapterFallback patterns', () {
+    final chapters = layout([('Overture', 90), ('Part 1', 1110)]);
+
+    test('stored blank patterns behave like the defaults instead of matching every chapter', () {
+      final blank = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: chapters,
         markers: [],
         introPatternStr: '',
         creditsPatternStr: '   ',
       );
+      final unset = PlaybackExtras.withChapterFallback(classifier: classifier, chapters: chapters, markers: []);
 
-      expect(extras.markers, isEmpty);
+      expect(markersOf(blank), markersOf(unset));
+      expect(blank.markers.map((m) => m.id), isNot(contains(2)));
     });
 
-    test('blank patterns fall back to the built-in defaults', () {
+    test('a custom intro pattern replaces only the intro pick', () {
       final extras = PlaybackExtras.withChapterFallback(
-        chapters: [
-          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Opening'),
-          MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 1200000, title: 'Part 1'),
-        ],
+        classifier: classifier,
+        chapters: layout([('Prologue', 60), ('OP', 90), ('Part A', 1140), ('ED', 90), ('Preview', 30)]),
         markers: [],
-        introPatternStr: '',
-        creditsPatternStr: '',
+        introPatternStr: 'prologue',
       );
 
-      expect(extras.markers.map((m) => m.type), ['intro']);
+      expect(markersOf(extras), [('intro', 1), ('credits', 4)]);
     });
 
-    test('non-blank custom pattern still wins over the default', () {
+    test('a custom credits pattern replaces only the credits pick', () {
       final extras = PlaybackExtras.withChapterFallback(
-        chapters: chapters,
+        classifier: classifier,
+        chapters: layout([('Prologue', 60), ('OP', 90), ('Part A', 1140), ('ED', 90), ('Preview', 30)]),
         markers: [],
-        introPatternStr: 'overture',
-        creditsPatternStr: '',
+        creditsPatternStr: 'preview',
       );
 
-      expect(extras.markers.map((m) => m.type), ['intro']);
-      expect(extras.markers.single.startTimeOffset, 0);
+      expect(markersOf(extras), [('intro', 2), ('credits', 5)]);
     });
   });
 
@@ -176,6 +232,7 @@ void main() {
 
     test('a movie-length "Opening Credits" chapter does not become an intro', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 480000, title: 'Opening Credits'),
           MediaChapter(id: 2, startTimeOffset: 480000, endTimeOffset: movieEnd, title: 'Chapter 2'),
@@ -186,18 +243,22 @@ void main() {
       expect(extras.markers, isEmpty);
     });
 
-    test('a chapter exactly at the cap still qualifies; one millisecond over does not', () {
+    test('a custom-pattern chapter exactly at the cap still qualifies; one millisecond over does not', () {
       final atCap = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 1000, endTimeOffset: 1000 + cap.inMilliseconds, title: 'Intro'),
         ],
         markers: [],
+        introPatternStr: r'^intro$',
       );
       final overCap = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 1000, endTimeOffset: 1001 + cap.inMilliseconds, title: 'Intro'),
         ],
         markers: [],
+        introPatternStr: r'^intro$',
       );
 
       expect(atCap.markers.map((m) => m.type), ['intro']);
@@ -206,6 +267,7 @@ void main() {
 
     test('the cap uses the next chapter start when the chapter has no end', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 0, title: 'Opening'),
           MediaChapter(id: 2, startTimeOffset: 600000, title: 'Chapter 2'),
@@ -218,6 +280,7 @@ void main() {
 
     test('long credits chapters are still derived', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 6600000, title: 'Chapter 1'),
           MediaChapter(id: 2, startTimeOffset: 6600000, endTimeOffset: movieEnd, title: 'End Credits'),
@@ -231,6 +294,7 @@ void main() {
 
     test('server-supplied intro markers are never capped', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [],
         markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 0, endTimeOffset: 600000)],
       );
@@ -241,6 +305,7 @@ void main() {
 
     test('a dropped chapter intro leaves native markers intact under forced fallback', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 480000, title: 'Opening Credits')],
         markers: [MediaMarker(id: 9, type: 'credits', startTimeOffset: 6600000, endTimeOffset: movieEnd)],
         forceChapterFallback: true,
@@ -262,14 +327,14 @@ void main() {
     ];
 
     test('a mid-film "Closing Day" chapter does not become credits', () {
-      final extras = PlaybackExtras.withChapterFallback(chapters: shiningChapters, markers: []);
+      final extras = PlaybackExtras.withChapterFallback(classifier: classifier, chapters: shiningChapters, markers: []);
 
-      expect(extras.markers.map((m) => m.id), [40]);
-      expect(extras.markers.single.type, 'credits');
+      expect(markersOf(extras), [('credits', 40)]);
     });
 
     test('a saved pattern that still matches "Closing Day" is gated by position', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: shiningChapters,
         markers: [],
         creditsPatternStr: r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
@@ -280,18 +345,22 @@ void main() {
 
     test('a credits chapter starting at three quarters of the runtime qualifies; one millisecond earlier does not', () {
       final atThreshold = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Episode'),
           MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 120000, title: 'ED'),
         ],
         markers: [],
+        creditsPatternStr: r'^ed$',
       );
       final beforeThreshold = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: [
           MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 89999, title: 'Episode'),
           MediaChapter(id: 2, startTimeOffset: 89999, endTimeOffset: 120000, title: 'ED'),
         ],
         markers: [],
+        creditsPatternStr: r'^ed$',
       );
 
       expect(atThreshold.markers.map((m) => m.type), ['credits']);
@@ -300,6 +369,7 @@ void main() {
 
     test('server-supplied credits markers are never gated by position', () {
       final extras = PlaybackExtras.withChapterFallback(
+        classifier: classifier,
         chapters: shiningChapters,
         markers: [MediaMarker(id: 1, type: 'credits', startTimeOffset: 1057930, endTimeOffset: 1230900)],
       );

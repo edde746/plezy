@@ -203,6 +203,9 @@ class _VolumeControlState extends State<VolumeControl> {
               padding: .zero,
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
               tickMarkShape: SliderTickMarkShape.noTickMark,
+              // The top volume pill only announces commands, not drag
+              // previews, so a drag shows its live level on the thumb (#2820).
+              showValueIndicator: ShowValueIndicator.onDrag,
             ),
             child: Semantics(
               label: t.videoControls.volumeSlider,
@@ -211,6 +214,7 @@ class _VolumeControlState extends State<VolumeControl> {
                 value: volume.clamp(0.0, maxVolumeDouble),
                 min: 0.0,
                 max: maxVolumeDouble,
+                label: '${volume.round()}%',
                 onChanged: widget.volumeController.preview,
                 onChangeEnd: widget.volumeController.commit,
                 activeColor: Colors.white,

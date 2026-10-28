@@ -864,7 +864,8 @@
     "rotationLockButton": "Rotation lock",
     "lockScreen": "Lock screen",
     "screenLockButton": "Screen lock",
-    "longPressToUnlock": "Long press to unlock",
+    "tapToUnlock": "Tap to unlock",
+    "tapAgainToUnlock": "Tap again to unlock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
     "endsAt": "Ends at ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filters (${count})",
     "noRecommendations": "No recommendations available",
     "noCollections": "No collections in this library",
+    "noGenres": "No genres in this library",
     "noFoldersFound": "No folders found",
     "folders": "folders",
     "tabs": {
       "recommended": "Recommended",
       "browse": "Browse",
       "collections": "Collections",
+      "genres": "Genres",
       "playlists": "Playlists"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
     "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
     "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
+  },
+  "deepLinks": {
+    "invalid": "This Plezy link isn't valid.",
+    "profileNotFound": "No profile matches \"${profile}\".",
+    "serverUnavailable": "Couldn't reach the server for this link.",
+    "notFound": "Couldn't find this title in your libraries.",
+    "unsupportedItem": "This link can't be played.",
+    "noLiveTv": "No Live TV server is available for this link.",
+    "channelNotFound": "Couldn't find channel \"${channel}\".",
+    "showLink": "Show link",
+    "showProfileLink": "Show profile link",
+    "dialogTitle": "Link",
+    "showHint": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+    "movieHint": "Opening this link plays the movie.",
+    "episodeHint": "Opening this link plays this episode.",
+    "profileHint": "Opening this link switches to this profile.",
+    "openAsProfile": "Open as ${name}",
+    "copy": "Copy",
+    "copied": "Link copied"
   }
 }

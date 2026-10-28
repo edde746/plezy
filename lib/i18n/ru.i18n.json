@@ -870,7 +870,8 @@
     "rotationLockButton": "Блокировка поворота",
     "lockScreen": "Заблокировать экран",
     "screenLockButton": "Блокировка экрана",
-    "longPressToUnlock": "Удерживайте для разблокировки",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Временная шкала",
     "volumeSlider": "Уровень громкости",
     "endsAt": "Закончится в ${time}",
@@ -1288,12 +1289,14 @@
     "filtersWithCount": "Фильтры (${count})",
     "noRecommendations": "Рекомендации недоступны",
     "noCollections": "В этой библиотеке нет коллекций",
+    "noGenres": "",
     "noFoldersFound": "Папки не найдены",
     "folders": "папки",
     "tabs": {
       "recommended": "Рекомендуемые",
       "browse": "Обзор",
       "collections": "Коллекции",
+      "genres": "",
       "playlists": "Плейлисты"
     },
     "groupings": {
@@ -2571,5 +2574,24 @@
     "redirectDifferentHost": "Сервер перенаправил на другой хост. Введите конечный URL ${product} напрямую.",
     "redirectInsecure": "Сервер перенаправил с HTTPS на небезопасный URL",
     "redirectUnsupportedEnterFinal": "Сервер перенаправил на неподдерживаемый URL. Введите конечный URL ${product} напрямую."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

@@ -861,7 +861,8 @@
     "rotationLockButton": "旋转锁定",
     "lockScreen": "锁定屏幕",
     "screenLockButton": "屏幕锁定",
-    "longPressToUnlock": "长按解锁",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量滑块",
     "endsAt": "结束时间：${time}",
@@ -1273,12 +1274,14 @@
     "filtersWithCount": "筛选器（${count}）",
     "noRecommendations": "暂无推荐",
     "noCollections": "此媒体库中没有合集",
+    "noGenres": "",
     "noFoldersFound": "未找到文件夹",
     "folders": "文件夹",
     "tabs": {
       "recommended": "推荐",
       "browse": "浏览",
       "collections": "合集",
+      "genres": "",
       "playlists": "播放列表"
     },
     "groupings": {
@@ -2535,5 +2538,24 @@
     "redirectDifferentHost": "服务器重定向到了其他主机。请直接输入最终的 ${product} URL。",
     "redirectInsecure": "服务器从 HTTPS 重定向到了不安全的 URL",
     "redirectUnsupportedEnterFinal": "服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。"
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

@@ -103,13 +103,38 @@ String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(_hubKeyS
 
 bool _hasTailToken(List<String> tokens, String token) => tokens.isNotEmpty && tokens.last == token;
 
-/// Index of [previous] within [items] after a content refresh, so visual
-/// focus can follow the item it was on instead of staying at a stale
-/// position (a Continue Watching refresh moves the just-played entry to the
-/// front). The exact item wins; an episode that left the list falls back to
-/// its series' replacement entry (a finished episode becomes the next
-/// episode). Returns -1 when neither is present.
-int followItemIndex(List<MediaItem> items, MediaItem previous) {
+/// Where visual focus goes after a row's [items] were replaced underneath it,
+/// given the item it was [focused] on: the item's new index, so focus follows
+/// it instead of staying at a stale position (a Continue Watching refresh
+/// moves the just-played entry to the front, #1987). The exact item wins; an
+/// episode that left the list falls back to its series' replacement entry (a
+/// finished episode becomes the next episode).
+///
+/// A refresh can arrive in steps: Continue Watching evicts a finished episode
+/// at once and only a later refetch brings the next one in. In the step
+/// between, nothing replaces the focused item and focus keeps its position on
+/// whichever item slid into it — a clamp, not a choice. The lost item comes
+/// back as `displaced`; the caller hands it in on the next refresh so focus
+/// still reaches its replacement rather than following the neighbour, and
+/// drops it once the user moves or acts on the selection (#2814). While it
+/// stays unresolved, focus follows the item it currently sits on.
+///
+/// `index` is -1 when neither item is present; the caller then keeps its
+/// positional clamp.
+({int index, MediaItem? displaced}) followFocus(
+  List<MediaItem> items, {
+  required MediaItem? focused,
+  required MediaItem? displaced,
+}) {
+  if (displaced != null) {
+    final index = _followItemIndex(items, displaced);
+    if (index != -1) return (index: index, displaced: null);
+  }
+  final index = focused == null ? -1 : _followItemIndex(items, focused);
+  return (index: index, displaced: index == -1 ? displaced ?? focused : displaced);
+}
+
+int _followItemIndex(List<MediaItem> items, MediaItem previous) {
   final exactIndex = items.indexWhere((item) => item.globalKey == previous.globalKey);
   if (exactIndex != -1) return exactIndex;
   final seriesKey = previous.seriesGlobalKey;

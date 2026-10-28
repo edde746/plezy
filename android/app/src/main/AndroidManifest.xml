@@ -67,19 +67,13 @@
             <meta-data
                 android:name="flutter_deeplinking_enabled"
                 android:value="false" />
-            <!-- Deep link handler for Watch Next items -->
+            <!-- Every plezy:// link, whatever its host. DeepLinkPlugin forwards the URL unchanged;
+                 the grammar lives in lib/services/deep_links/deep_link.dart. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="plezy" android:host="play"/>
-            </intent-filter>
-            <!-- Deep link for tuning a live TV channel: plezy://live?channel=...&start=beginning|live -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="plezy" android:host="live"/>
+                <data android:scheme="plezy"/>
             </intent-filter>
         </activity>
         <!-- The default icon. Keep this component name forever: it was the launcher activity before

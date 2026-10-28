@@ -285,15 +285,31 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
   }
 
+  /// How long the hidden layers stay in the tree after mpv is gone; matches
+  /// vo_avfoundation's AVF_LAYER_RETIRE_DELAY_NS for its OSD layer.
+  private static let layerRetireDelay: TimeInterval = 0.2
+
   func dispose() {
     guard beginDisposal() else { return }
     endPlaybackActivity()
     NotificationCenter.default.removeObserver(self)
     NSWorkspace.shared.notificationCenter.removeObserver(self)
-    disposeSharedState(destroySynchronously: false)
 
-    videoLayer?.removeFromSuperlayer()
-    containerLayer?.removeFromSuperlayer()
+    // Hidden now, out of the tree only after mpv's VO has let go of the
+    // layers and the hidden frame has reached the screen. On macOS 27,
+    // pulling a visible sample-buffer layer out while its video receiver is
+    // torn down can stop the display for good: WindowServer's watchdog
+    // fires and the Mac panics (plezy#2823).
+    setContainerHidden(true)
+    let container = containerLayer
+    let layer = videoLayer
+    disposeSharedState(destroySynchronously: false) {
+      DispatchQueue.main.asyncAfter(deadline: .now() + Self.layerRetireDelay) {
+        layer?.removeFromSuperlayer()
+        container?.removeFromSuperlayer()
+      }
+    }
+
     videoLayer = nil
     containerLayer = nil
     isInitialized = false

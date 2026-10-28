@@ -864,7 +864,8 @@
     "rotationLockButton": "Rotatievergrendeling",
     "lockScreen": "Scherm vergrendelen",
     "screenLockButton": "Schermvergrendeling",
-    "longPressToUnlock": "Lang indrukken om te ontgrendelen",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
     "endsAt": "Eindigt om ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filters (${count})",
     "noRecommendations": "Geen aanbevelingen beschikbaar",
     "noCollections": "Geen collecties in deze bibliotheek",
+    "noGenres": "",
     "noFoldersFound": "Geen mappen gevonden",
     "folders": "mappen",
     "tabs": {
       "recommended": "Aanbevolen",
       "browse": "Bladeren",
       "collections": "Collecties",
+      "genres": "",
       "playlists": "Afspeellijsten"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.",
     "redirectInsecure": "De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL",
     "redirectUnsupportedEnterFinal": "De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

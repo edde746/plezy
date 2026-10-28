@@ -108,6 +108,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
+  /// The armed rail claim is the screen's first focus (its initial load),
+  /// which a root route covering the session holds for the uncover instead of
+  /// dropping; see [TvBrowseRailState.requestInitialFocus].
+  bool _pendingTvBrowseRailFocusIsInitial = false;
+
   /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
   FocusNode? _railClaimFocusOrigin;
 
@@ -250,7 +255,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  void _focusTvBrowseRailWhenReady({bool immediate = false}) {
+  void _focusTvBrowseRailWhenReady({bool immediate = false, bool initial = false}) {
     if (!PlatformDetector.isTV()) return;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
@@ -258,12 +263,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     _pendingTvBrowseRailFocus = true;
+    _pendingTvBrowseRailFocusIsInitial = initial;
     _railClaimFocusOrigin = FocusManager.instance.primaryFocus;
     if (immediate && _tvBrowseHubs.isNotEmpty) {
       final rail = _tvBrowseRailKey.currentState;
       if (rail != null) {
-        _pendingTvBrowseRailFocus = false;
-        rail.requestFocus();
+        _claimTvBrowseRail(rail);
         return;
       }
     }
@@ -277,9 +282,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (_tvBrowseHubs.isEmpty) return;
       final rail = _tvBrowseRailKey.currentState;
       if (rail == null) return;
-      _pendingTvBrowseRailFocus = false;
-      rail.requestFocus();
+      _claimTvBrowseRail(rail);
     });
+  }
+
+  void _claimTvBrowseRail(TvBrowseRailState rail) {
+    _pendingTvBrowseRailFocus = false;
+    if (_pendingTvBrowseRailFocusIsInitial) {
+      rail.requestInitialFocus();
+    } else {
+      rail.requestFocus();
+    }
   }
 
   /// A rail-focus request stays armed while the rail has no hubs to focus
@@ -307,7 +320,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _pendingTvBrowseRailFocus = false;
       return;
     }
-    _focusTvBrowseRailWhenReady();
+    _focusTvBrowseRailWhenReady(initial: _pendingTvBrowseRailFocusIsInitial);
   }
 
   /// Handle vertical navigation between hubs
@@ -387,7 +400,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (!_initialLoadComplete) {
       if (PlatformDetector.isTV() && (_onDeck.isNotEmpty || _hubs.isNotEmpty)) {
         _initialLoadComplete = true;
-        _focusTvBrowseRailWhenReady();
+        _focusTvBrowseRailWhenReady(initial: true);
       } else if (!PlatformDetector.isTV() && _onDeck.isNotEmpty) {
         _initialLoadComplete = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -836,19 +849,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           onPressed: openWatchTogether,
                           tooltip: t.watchTogether.title,
                         ),
+                        // Badges sit over the button they label, so they must
+                        // not swallow its hover and clicks (#2846).
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
                           Positioned(
                             top: 6,
                             right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: const BorderRadius.all(Radius.circular(8)),
-                              ),
-                              child: Text(
-                                '${watchTogether.participantCount}',
-                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                            child: IgnorePointer(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                ),
+                                child: Text(
+                                  '${watchTogether.participantCount}',
+                                  style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                                ),
                               ),
                             ),
                           ),
@@ -873,13 +890,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           Positioned(
                             top: 6,
                             right: 6,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                            child: IgnorePointer(
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                                ),
                               ),
                             ),
                           ),

@@ -864,7 +864,8 @@
     "rotationLockButton": "Aylanish qulfi",
     "lockScreen": "Ekranni qulflash",
     "screenLockButton": "Ekran qulfi",
-    "longPressToUnlock": "Qulfdan chiqarish uchun bosib turing",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Video vaqt shkalasi",
     "volumeSlider": "Ovoz balandligi",
     "endsAt": "Tugash vaqti: ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filtrlar (${count})",
     "noRecommendations": "Tavsiyalar yoʻq",
     "noCollections": "Ushbu kutubxonada toʻplamlar yoʻq",
+    "noGenres": "",
     "noFoldersFound": "Jildlar topilmadi",
     "folders": "jildlar",
     "tabs": {
       "recommended": "Tavsiya etilganlar",
       "browse": "Koʻrib chiqish",
       "collections": "Toʻplamlar",
+      "genres": "",
       "playlists": "Ijro roʻyxatlari"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "Server boshqa xostga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
     "redirectInsecure": "Server HTTPS manzilidan xavfsiz boʻlmagan URL-ga yoʻnaltirdi",
     "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

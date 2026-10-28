@@ -864,7 +864,8 @@
     "rotationLockButton": "Bloqueo de rotación",
     "lockScreen": "Bloquear pantalla",
     "screenLockButton": "Bloqueo de pantalla",
-    "longPressToUnlock": "Mantén pulsado para desbloquear",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Línea de tiempo del video",
     "volumeSlider": "Nivel de volumen",
     "endsAt": "Termina a las ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filtros (${count})",
     "noRecommendations": "No hay recomendaciones disponibles",
     "noCollections": "No hay colecciones en esta biblioteca",
+    "noGenres": "",
     "noFoldersFound": "No se encontraron carpetas",
     "folders": "carpetas",
     "tabs": {
       "recommended": "Recomendado",
       "browse": "Explorar",
       "collections": "Colecciones",
+      "genres": "",
       "playlists": "Listas de reproducción"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "El servidor redirigió a un host diferente. Introduce directamente la URL final de ${product}.",
     "redirectInsecure": "El servidor redirigió de HTTPS a una URL no segura",
     "redirectUnsupportedEnterFinal": "El servidor redirigió a una URL no compatible. Introduce directamente la URL final de ${product}."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

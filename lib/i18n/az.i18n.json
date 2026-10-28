@@ -864,7 +864,8 @@
     "rotationLockButton": "Dönmə kilidi",
     "lockScreen": "Ekranı kilidlə",
     "screenLockButton": "Ekran kilidi",
-    "longPressToUnlock": "Kilidi açmaq üçün uzun basın",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Video zaman çubuğu",
     "volumeSlider": "Səs səviyyəsi",
     "endsAt": "Bitiş vaxtı: ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filtrlər (${count})",
     "noRecommendations": "Tövsiyə yoxdur",
     "noCollections": "Bu kitabxanada kolleksiya yoxdur",
+    "noGenres": "",
     "noFoldersFound": "Qovluq tapılmadı",
     "folders": "qovluqlar",
     "tabs": {
       "recommended": "Tövsiyə olunanlar",
       "browse": "Baxış",
       "collections": "Kolleksiyalar",
+      "genres": "",
       "playlists": "Oynatma siyahıları"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "Server başqa hosta yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.",
     "redirectInsecure": "Server HTTPS-dən təhlükəsiz olmayan URL-ə yönləndirdi",
     "redirectUnsupportedEnterFinal": "Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

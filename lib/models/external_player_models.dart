@@ -7,6 +7,87 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_logger.dart';
 
 typedef PlayerLauncher = Future<bool> Function(String url);
+typedef PlayerOptionsLauncher = Future<bool> Function(String url, ExternalPlayerLaunchOptions options);
+
+/// Extras for players whose URL scheme can carry more than the stream URL.
+class ExternalPlayerLaunchOptions {
+  const ExternalPlayerLaunchOptions({this.startPosition, this.returnLinks, this.filename});
+
+  final Duration? startPosition;
+
+  /// A descriptive file name (`Show - S01E02 - Title.mkv`) for players that
+  /// identify media by name; stream URLs usually end in `file.mkv`.
+  final String? filename;
+
+  /// Where the player hands control back to Plezy; null asks for no return
+  /// links.
+  final ExternalPlayerReturnLinks? returnLinks;
+}
+
+/// The x-callback-url links a player opens to hand control back to Plezy,
+/// one per way playback can end.
+class ExternalPlayerReturnLinks {
+  const ExternalPlayerReturnLinks({required this.success, required this.cancel, required this.error});
+
+  final Uri success;
+  final Uri cancel;
+  final Uri error;
+}
+
+/// A player launched through `<scheme>://x-callback-url/<action>`, and which
+/// of the optional parameters it understands.
+class XCallbackPlayer {
+  const XCallbackPlayer({
+    required this.scheme,
+    this.action = 'play',
+    this.supportsCancel = false,
+    this.supportsFilename = false,
+    this.supportsStartPosition = true,
+    this.successMeansFinished = true,
+    this.decodesCallbackUrls = true,
+  });
+
+  final String scheme;
+  final String action;
+  final bool supportsCancel;
+  final bool supportsFilename;
+
+  /// Accepts `position`, the start time in seconds.
+  final bool supportsStartPosition;
+
+  /// Whether `x-success` without a position means the video played to the
+  /// end, rather than that playback stopped somewhere unknown.
+  final bool successMeansFinished;
+
+  /// Whether the player percent-decodes `x-success`/`x-cancel`/`x-error`
+  /// before opening them. Players that don't get the return links unencoded;
+  /// they hold no `&` or `=`, so they survive a naive query split.
+  final bool decodesCallbackUrls;
+
+  /// Values are percent-encoded by hand because [Uri.queryParameters] writes
+  /// spaces as `+`.
+  Uri playUri(String url, ExternalPlayerLaunchOptions options) {
+    final startSeconds = supportsStartPosition ? options.startPosition?.inSeconds ?? 0 : 0;
+    final returnLinks = options.returnLinks;
+    final filename = supportsFilename ? options.filename : null;
+    String returnLink(Uri link) {
+      final value = link.toString();
+      return decodesCallbackUrls ? Uri.encodeComponent(value) : value;
+    }
+
+    final query = <String>[
+      'url=${Uri.encodeComponent(url)}',
+      if (filename != null) 'filename=${Uri.encodeComponent(filename)}',
+      if (startSeconds > 0) 'position=$startSeconds',
+      if (returnLinks != null) ...[
+        'x-success=${returnLink(returnLinks.success)}',
+        if (supportsCancel) 'x-cancel=${returnLink(returnLinks.cancel)}',
+        'x-error=${returnLink(returnLinks.error)}',
+      ],
+    ].join('&');
+    return Uri.parse('$scheme://x-callback-url/$action?$query');
+  }
+}
 
 enum CustomPlayerType { command, urlScheme }
 
@@ -41,6 +122,9 @@ class ExternalPlayer {
   final String? iconAsset;
   final bool isAvailable;
   final PlayerLauncher launch;
+
+  /// Set for players that accept a start position and return links.
+  final PlayerOptionsLauncher? launchWithOptions;
   final bool isCustom;
   final String? customValue; // Only for custom player serialization
   final CustomPlayerType? customType;
@@ -51,6 +135,7 @@ class ExternalPlayer {
     this.iconAsset,
     this.isAvailable = true,
     required this.launch,
+    this.launchWithOptions,
     this.isCustom = false,
     this.customValue,
     this.customType,
@@ -137,15 +222,19 @@ Future<bool> _launchAndroidIntentCandidates(String url, Iterable<String> package
   return _launchWithUrl(url);
 }
 
-Future<bool> _launchUrlScheme(String scheme, String url) async {
+Future<bool> _launchUrlScheme(String scheme, String url) {
   final playerUrl = scheme.contains('url=') ? '$scheme${Uri.encodeComponent(url)}' : '$scheme$url';
-  final uri = Uri.parse(playerUrl);
+  return _openPlayerUri(Uri.parse(playerUrl));
+}
+
+Future<bool> _openPlayerUri(Uri uri) async {
+  // Apple platforms skip the canOpenURL gate: it answers false for any scheme
+  // missing from LSApplicationQueriesSchemes, which is every custom player.
+  // The open call reports a missing handler itself.
   if (_tvosBuild) {
-    // No canOpenURL gate: it answers false for any scheme missing from
-    // LSApplicationQueriesSchemes, which is every custom player. The open
-    // call reports a missing handler itself.
     return await _tvosHandoffChannel.invokeMethod<bool>('openUrl', {'url': uri.toString()}) ?? false;
   }
+  if (Platform.isIOS) return launchUrl(uri, mode: LaunchMode.externalApplication);
   if (await canLaunchUrl(uri)) {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -279,6 +368,10 @@ class KnownPlayers {
         if (Platform.isWindows) return _launchWindowsVlc(url);
         return _launchCommand('vlc', url);
       },
+      // iOS only: tvOS has no handler for the return links.
+      launchWithOptions: Platform.isIOS && !_tvosBuild
+          ? (url, options) => _openPlayerUri(callbackPlayUri('vlc', url, options)!)
+          : null,
     ),
     ExternalPlayer(
       id: 'mpv',
@@ -317,6 +410,16 @@ class KnownPlayers {
       iconAsset: 'assets/player_icons/infuse.png',
       isAvailable: Platform.isIOS,
       launch: (url) => _launchUrlScheme('infuse://x-callback-url/play?url=', url),
+      // tvOS has no handler for the return links.
+      launchWithOptions: _tvosBuild ? null : (url, options) => _openPlayerUri(callbackPlayUri('infuse', url, options)!),
+    ),
+    ExternalPlayer(
+      id: 'outplayer',
+      name: 'Outplayer',
+      iconAsset: 'assets/player_icons/outplayer.png',
+      isAvailable: Platform.isIOS && !_tvosBuild,
+      launch: (url) => _openPlayerUri(callbackPlayUri('outplayer', url, const ExternalPlayerLaunchOptions())!),
+      launchWithOptions: (url, options) => _openPlayerUri(callbackPlayUri('outplayer', url, options)!),
     ),
     ExternalPlayer(
       id: 'potplayer',
@@ -336,6 +439,33 @@ class KnownPlayers {
       launch: (url) => _launchCommand('celluloid', url),
     ),
   ];
+
+  static const _xCallbackPlayers = <String, XCallbackPlayer>{
+    'outplayer': XCallbackPlayer(scheme: 'outplayer', supportsCancel: true),
+    // No x-cancel: Infuse calls x-success with the position once playback
+    // ends. It matches metadata from `filename`.
+    'infuse': XCallbackPlayer(scheme: 'infuse', supportsFilename: true),
+    // VLC calls x-success on every stop, finished or not, and appends nothing:
+    // no position comes back, and it takes no start position either. VLC 3.7.x
+    // opens the return links as `URL(string: value)` without decoding them.
+    'vlc': XCallbackPlayer(
+      scheme: 'vlc-x-callback',
+      action: 'stream',
+      supportsStartPosition: false,
+      successMeansFinished: false,
+      decodesCallbackUrls: false,
+    ),
+  };
+
+  /// How [playerId] is launched through x-callback-url, or null for players
+  /// that are not launched that way.
+  static XCallbackPlayer? xCallbackPlayer(String playerId) => _xCallbackPlayers[playerId];
+
+  /// The x-callback-url play link for [playerId], or null for players that
+  /// are not launched that way.
+  static Uri? callbackPlayUri(String playerId, String url, ExternalPlayerLaunchOptions options) {
+    return _xCallbackPlayers[playerId]?.playUri(url, options);
+  }
 
   /// Host lookups used to decide whether a supported player is actually
   /// installed. Overridden in tests; production talks to the real process,
@@ -387,11 +517,12 @@ class KnownPlayers {
         detectors['mpv'] = () => _windowsCommandExists('mpv');
         detectors['potplayer'] = _windowsPotPlayerExists;
       case 'ios':
-        // iOS and tvOS. Both schemes are declared in the Runners'
+        // iOS and tvOS. These schemes are declared in the Runners'
         // LSApplicationQueriesSchemes, so the handler check is truthful and
         // detection can never hide a player the handoff would have reached.
         detectors['vlc'] = () => probe.schemeHasHandler('vlc://');
         detectors['infuse'] = () => probe.schemeHasHandler('infuse://');
+        if (!_tvosBuild) detectors['outplayer'] = () => probe.schemeHasHandler('outplayer://');
     }
     if (detectors.isEmpty) return supported;
 

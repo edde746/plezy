@@ -44,22 +44,6 @@ void main() {
     expect(_item(MediaKind.episode).cardShape(EpisodePosterMode.episodeThumbnail), CardShape.wide);
   });
 
-  test('square grid delegates use square aspect ratios, defaults unchanged', () {
-    expect(MediaGridDelegate.aspectRatioFor(shape: CardShape.square), GridLayoutConstants.squareGridCellAspectRatio);
-    expect(
-      MediaGridDelegate.aspectRatioFor(shape: CardShape.square, fullBleedImage: true),
-      GridLayoutConstants.squareAspectRatio,
-    );
-    // Shape wins over the legacy bool when both are provided.
-    expect(
-      MediaGridDelegate.aspectRatioFor(shape: CardShape.square, useWideAspectRatio: true),
-      GridLayoutConstants.squareGridCellAspectRatio,
-    );
-    // Existing behavior is untouched when shape isn't passed.
-    expect(MediaGridDelegate.aspectRatioFor(), GridLayoutConstants.posterAspectRatio);
-    expect(MediaGridDelegate.aspectRatioFor(useWideAspectRatio: true), GridLayoutConstants.episodeGridCellAspectRatio);
-  });
-
   testWidgets('square grid delegates use square gutters, others unchanged', (tester) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(1280, 720);

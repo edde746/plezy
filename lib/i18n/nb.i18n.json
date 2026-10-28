@@ -864,7 +864,8 @@
     "rotationLockButton": "Rotasjonslås",
     "lockScreen": "Lås skjerm",
     "screenLockButton": "Skjermlås",
-    "longPressToUnlock": "Trykk og hold for å låse opp",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volumnivå",
     "endsAt": "Slutter kl. ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Filtre (${count})",
     "noRecommendations": "Ingen anbefalinger tilgjengelig",
     "noCollections": "Ingen samlinger i dette biblioteket",
+    "noGenres": "",
     "noFoldersFound": "Ingen mapper funnet",
     "folders": "mapper",
     "tabs": {
       "recommended": "Anbefalt",
       "browse": "Bla gjennom",
       "collections": "Samlinger",
+      "genres": "",
       "playlists": "Spillelister"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "Serveren omdirigerte til en annen vert. Angi den endelige ${product}-URL-en direkte.",
     "redirectInsecure": "Serveren omdirigerte fra HTTPS til en usikker URL",
     "redirectUnsupportedEnterFinal": "Serveren omdirigerte til en URL som ikke støttes. Angi den endelige ${product}-URL-en direkte."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

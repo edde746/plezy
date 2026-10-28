@@ -864,7 +864,8 @@
     "rotationLockButton": "Elforgatás zárolása",
     "lockScreen": "Képernyő zárolása",
     "screenLockButton": "Képernyőzár",
-    "longPressToUnlock": "Nyomd hosszan a feloldáshoz",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "Videó idősáv",
     "volumeSlider": "Hangerő",
     "endsAt": "Vége: ${time}",
@@ -1278,12 +1279,14 @@
     "filtersWithCount": "Szűrők (${count})",
     "noRecommendations": "Nincsenek elérhető ajánlások",
     "noCollections": "Nincsenek gyűjtemények ebben a könyvtárban",
+    "noGenres": "",
     "noFoldersFound": "Nem találhatók mappák",
     "folders": "mappák",
     "tabs": {
       "recommended": "Ajánlott",
       "browse": "Böngészés",
       "collections": "Gyűjtemények",
+      "genres": "",
       "playlists": "Lejátszási listák"
     },
     "groupings": {
@@ -2547,5 +2550,24 @@
     "redirectDifferentHost": "A szerver egy másik gazdagépre irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
     "redirectInsecure": "A szerver HTTPS-ről nem biztonságos URL-re irányított át",
     "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

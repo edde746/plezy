@@ -35,6 +35,8 @@ Future<void> _expireCachedRows(AppDatabase db) async {
 /// `MediaItem.raw['MediaSources']` / `raw['Chapters']` from outside the
 /// client, so any regression here would silently re-leak that abstraction.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late AppDatabase db;
 
   setUp(() {

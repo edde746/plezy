@@ -861,7 +861,8 @@
     "rotationLockButton": "회전 잠금",
     "lockScreen": "화면 잠금",
     "screenLockButton": "화면 잠금",
-    "longPressToUnlock": "길게 눌러 잠금 해제",
+    "tapToUnlock": "",
+    "tapAgainToUnlock": "",
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
     "endsAt": "${time}에 종료",
@@ -1273,12 +1274,14 @@
     "filtersWithCount": "필터 (${count})",
     "noRecommendations": "추천 없음",
     "noCollections": "이 미디어 라이브러리에는 컬렉션이 없습니다",
+    "noGenres": "",
     "noFoldersFound": "폴더를 찾을 수 없습니다",
     "folders": "폴더",
     "tabs": {
       "recommended": "추천",
       "browse": "찾아보기",
       "collections": "컬렉션",
+      "genres": "",
       "playlists": "재생 목록"
     },
     "groupings": {
@@ -2535,5 +2538,24 @@
     "redirectDifferentHost": "서버가 다른 호스트로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.",
     "redirectInsecure": "서버가 HTTPS에서 안전하지 않은 URL로 리디렉션했습니다",
     "redirectUnsupportedEnterFinal": "서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }
