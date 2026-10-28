@@ -8,7 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// A supported subtitle entry inside a local ZIP archive.
+/// A supported subtitle entry inside a bounded local archive.
 final class SubtitleArchiveCandidate {
   const SubtitleArchiveCandidate._({
     required this.displayName,
@@ -23,8 +23,8 @@ final class SubtitleArchiveCandidate {
   final String _documentDigest;
 }
 
-/// Bounded ZIP reader that only writes selected subtitle files under the
-/// application's temporary directory. Archive names are never used as paths.
+/// Bounded ZIP/TAR reader that only writes selected subtitle files under
+/// the application's temporary directory. Archive names are never used as paths.
 abstract final class SubtitleArchiveImporter {
   static const int maximumArchiveBytes = 50 * 1024 * 1024;
   static const int maximumExpandedArchiveBytes = 64 * 1024 * 1024;
