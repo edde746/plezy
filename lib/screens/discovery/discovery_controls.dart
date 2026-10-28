@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
@@ -72,6 +73,25 @@ class DiscoverySwipeCard extends StatefulWidget {
 
 class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
   double _dx = 0;
+  final Set<LogicalKeyboardKey> _heldDirectionalKeys = {};
+
+  KeyEventResult _guardDirectionalKeyRepeat(FocusNode _, KeyEvent event) {
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowLeft && key != LogicalKeyboardKey.arrowRight) {
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyDownEvent) {
+      _heldDirectionalKeys.add(key);
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyRepeatEvent && _heldDirectionalKeys.contains(key)) {
+      return KeyEventResult.handled;
+    }
+    if (event is KeyUpEvent && _heldDirectionalKeys.remove(key)) {
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   @override
   void didUpdateWidget(DiscoverySwipeCard oldWidget) {
@@ -95,6 +115,9 @@ class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
           disableScale: true,
           borderRadius: tokens(context).radiusLg,
           onSelect: widget.onDetails,
+          onKeyEvent: _guardDirectionalKeyRepeat,
+          onNavigateLeft: widget.canSwipe ? widget.onSkip : null,
+          onNavigateRight: widget.canSwipe ? widget.onSave : null,
           child: MouseRegion(
             cursor: widget.onDetails == null ? MouseCursor.defer : SystemMouseCursors.click,
             child: GestureDetector(
@@ -184,7 +207,7 @@ class DiscoveryActionBar extends StatelessWidget {
     final hint = MediaQuery.accessibleNavigationOf(context)
         ? t.discover.findNext.chooseHint
         : keyboard
-        ? t.discover.findNext.controlsHelp
+        ? t.discover.findNext.remoteHint
         : t.discover.findNext.swipeHint;
     final theme = Theme.of(context);
     return ColoredBox(

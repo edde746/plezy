@@ -103,8 +103,13 @@ class ProviderSyncStore implements SyncStore {
   }
 
   Uri get _davRoot {
-    if (folder.trim().isEmpty) throw const SourceException(SourceFailure.invalidData);
-    return (adapter as WebDavSourceAdapter).contained('${folder.replaceAll(RegExp(r'/+$'), '')}/');
+    final relative = folder.trim().replaceAll(RegExp(r'^/+|/+$'), '');
+    if (relative.isEmpty ||
+        relative.contains('\\') ||
+        relative.split('/').any((segment) => segment.isEmpty || segment == '.' || segment == '..')) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    return (adapter as WebDavSourceAdapter).contained('$relative/');
   }
 
   String get _s3Prefix {

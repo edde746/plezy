@@ -237,6 +237,7 @@ void main() {
   });
 
   test('WebDAV sync paths stay inside the selected source root', () async {
+    var requests = 0;
     final adapter = WebDavSourceAdapter(
       const FileSource(
         id: 'dav',
@@ -245,12 +246,20 @@ void main() {
         name: 'WebDAV',
         endpoint: 'https://dav.example/books/',
       ),
-      SourceTransport(),
+      SourceTransport(
+        client: MockClient((_) async {
+          requests++;
+          return http.Response('', 200);
+        }),
+      ),
       () async => {'username': 'reader', 'password': 'secret'},
     );
     try {
-      final store = ProviderSyncStore(adapter, folder: '../outside');
-      await expectLater(store.list(namespace), throwsA(isA<SourceException>()));
+      for (final folder in ['../outside', '', '.', './', '///']) {
+        final store = ProviderSyncStore(adapter, folder: folder);
+        await expectLater(store.list(namespace), throwsA(isA<SourceException>()));
+      }
+      expect(requests, 0, reason: 'invalid sync roots must fail before touching the remote source');
       expect(adapter.contained('state/').path, '/books/state/');
     } finally {
       adapter.close();
