@@ -60,6 +60,17 @@ bool _looksLikeLanguageCode(String value) => _languageCodePattern.hasMatch(value
 /// Detect SDH/closed-caption role markers when a backend only supplies a
 /// subtitle title. Exact tokens avoid treating ordinary words containing "cc"
 /// as accessibility metadata.
+String? _derivedSubtitleOrigin(String? value) {
+  final text = value?.trim();
+  if (text == null || text.isEmpty) return null;
+  final basename = text.replaceAll('\\', '/').split('/').last;
+  final token = _metadataToken(basename);
+  if (token.startsWith('PLEZYNG_AI_GENERATED_')) return 'AI generated';
+  if (token.startsWith('PLEZYNG_AI_TRANSLATED_')) return 'AI translated';
+  if (token.startsWith('PLEZYNG_AI_SYNCHRONIZED_')) return 'AI synchronized';
+  return null;
+}
+
 bool titleSaysHearingImpaired(String? value) {
   final text = value?.trim();
   if (text == null || text.isEmpty) return false;
@@ -174,13 +185,14 @@ class TrackLabelBuilder {
     String? displayTitle,
     required int index,
   }) {
+    final origin = _derivedSubtitleOrigin(title) ?? _derivedSubtitleOrigin(displayTitle);
     final cleanedTitle = cleanSubtitleTitle(title, codec: codec);
     final cleanedDisplayTitle = cleanSubtitleTitle(displayTitle, codec: codec);
     final hearingImpaired =
         titleSaysHearingImpaired(cleanedTitle) || titleSaysHearingImpaired(cleanedDisplayTitle);
     return _compose(
       languageDisplay: resolveTrackLanguageDisplay(language: language, languageCode: languageCode),
-      title: cleanedTitle,
+      title: origin ?? cleanedTitle,
       displayTitle: cleanedDisplayTitle,
       rawLanguageValues: [language, languageCode],
       techParts: [

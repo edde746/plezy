@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Show SDH/closed-caption role markers in playback track labels when explicit title metadata provides them.
+- Show SDH/closed-caption role markers in playback track labels and identify AI-generated, translated, and synchronized local tracks.
 
 - Explain when burned-in captions remain part of the video image and when the active player cannot receive generated SRT subtitles.
 

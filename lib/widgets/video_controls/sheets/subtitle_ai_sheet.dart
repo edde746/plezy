@@ -210,7 +210,11 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         setState(() => _status = '$phase$percent');
       },
     );
-    if (!await _writeAndApply(result.cues, operationLabel: 'Generated subtitles', operationLanguageCode: result.translatedToEnglish ? 'en' : result.detectedLanguage)) return;
+    if (!await _writeAndApply(
+      result.cues,
+      operationLabel: result.translatedToEnglish ? 'Speech translated to English' : 'Generated subtitles',
+      operationLanguageCode: result.translatedToEnglish ? 'en' : result.detectedLanguage,
+    )) return;
     if (!mounted) return;
     final providerLabel = result.fellBackToCpu
         ? '${result.requestedProvider.displayName} request unavailable; CPU fallback'
@@ -787,7 +791,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   }
 
 
-  Future<void> _uploadSubtitleToServer(Uint8List bytes, String languageCode) async {
+  Future<void> _uploadSubtitleToServer(Uint8List bytes, String languageCode, String originToken) async {
     final serverId = widget.serverId;
     final ratingKey = widget.ratingKey;
     if (serverId == null || serverId.isEmpty || ratingKey == null || ratingKey.isEmpty) {
@@ -798,7 +802,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     final uploaded = await client.attachSubtitle(
       ratingKey,
       bytes: bytes,
-      fileName: 'PlezyNG.$languageCode.srt',
+      fileName: 'PlezyNG.$originToken.$languageCode.srt',
       format: 'srt',
       language: languageCode,
       mediaIndex: widget.mediaIndex,
@@ -806,6 +810,13 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     if (!uploaded) {
       throw UnsupportedError('The server refused this subtitle upload or does not support library attachment.');
     }
+  }
+
+  String _originTokenForOperation(String operationLabel) {
+    final normalized = operationLabel.toLowerCase();
+    if (normalized.contains('translat')) return 'translated';
+    if (normalized.contains('sync') || normalized.contains('repair')) return 'synchronized';
+    return 'generated';
   }
 
   Future<bool> _writeAndApply(
@@ -1006,14 +1017,15 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       return false;
     }
     final bytes = SubtitleSyncService.writeSrt(reviewedCues);
+    final originToken = _originTokenForOperation(operationLabel);
     if (choice == _SubtitleReviewChoice.serverAndPlayer) {
       final languageCode = uploadLanguage;
       if (languageCode == null) throw StateError('The result language could not be identified for server upload.');
-      await _uploadSubtitleToServer(bytes, languageCode);
+      await _uploadSubtitleToServer(bytes, languageCode, originToken);
       _lastResultUploadedToServer = true;
     }
     final directory = await getTemporaryDirectory();
-    final path = p.join(directory.path, 'plezyng_subtitle_${DateTime.now().microsecondsSinceEpoch}.srt');
+    final path = p.join(directory.path, 'plezyng_ai_${originToken}_${DateTime.now().microsecondsSinceEpoch}.srt');
     try {
       await File(path).writeAsBytes(bytes, flush: true);
       await widget.player.command(['sub-add', path, 'select']);
