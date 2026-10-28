@@ -76,6 +76,7 @@ import '../services/media_control_router.dart';
 import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
+import '../services/motion_clarity_service.dart';
 import '../services/settings_service.dart';
 import '../services/video_decode_capabilities.dart';
 import '../services/storage_service.dart';
@@ -2319,6 +2320,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           appLogger.d('Applied custom MPV property: ${entry.key}=${entry.value}');
         } catch (e) {
           appLogger.w('Failed to set MPV property ${entry.key}', error: e);
+        }
+      }
+
+      // Configure mpv temporal interpolation before the first source opens so
+      // hardware decoders can allocate the extra reference surfaces it needs.
+      if (currentPlayer.playerType == 'mpv') {
+        final motionPreset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _currentMetadata);
+        final motionResult = await MotionClarityService.forPlayer(currentPlayer).configure(
+          preset: motionPreset,
+          kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _currentMetadata),
+          thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _currentMetadata),
+          beforeSourceOpen: true,
+          engine: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _currentMetadata),
+          outputRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _currentMetadata),
+      mciQuality: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _currentMetadata),
+        );
+        if (!motionResult.isSupported && motionResult.reason != null) {
+          appLogger.d('VideoPlayerScreen: motion clarity is unavailable: ${motionResult.reason}');
         }
       }
 

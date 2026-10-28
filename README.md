@@ -207,6 +207,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
+- Motion & clarity — motion presets, temporal blending, motion-compensated frame generation, OLED and sports profiles, generated-rate and search controls, desktop player-bar toggle with hold-to-open presets, mobile Video settings access, live A/B comparison, and scoped preferences[^mpv]. See the [Motion & clarity guide](docs/plezyng/motion-clarity/guide.md).
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
 - **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, temporary local file and desktop folder queues, desktop same-folder M3U export, direct MPV File Info, and edition/disc-title choices when exposed by the input
 - Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, opt-in unencrypted FTP streams, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
