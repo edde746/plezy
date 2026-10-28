@@ -11,6 +11,7 @@ import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/player_sync_offsets.dart';
 import '../../../services/scoped_player_prefs.dart';
+import '../../../services/subtitle_sync_calibration.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/app_logger.dart';
@@ -21,6 +22,8 @@ class SyncOffsetControl extends StatefulWidget {
   final Player player;
   final String propertyName; // 'audio-delay' or 'sub-delay'
   final int initialOffset;
+  final double initialSubtitleRate;
+  final Future<void> Function(double rate)? onSubtitleRateChanged;
   final Future<void> Function(int offset) onOffsetChanged;
 
   /// Focus node for the reset button. When provided from the parent, allows
@@ -40,6 +43,8 @@ class SyncOffsetControl extends StatefulWidget {
     required this.player,
     required this.propertyName,
     required this.initialOffset,
+    this.initialSubtitleRate = 1.0,
+    this.onSubtitleRateChanged,
     required this.onOffsetChanged,
     this.resetFocusNode,
     this.closeFocusNode,
@@ -69,6 +74,8 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
 
   late double _currentOffset;
   late double _confirmedOffset;
+  late double _currentSubtitleRate;
+  late double _confirmedSubtitleRate;
   int _writeGeneration = 0;
   int _bindingGeneration = 0;
   Timer? _longPressTimer;
@@ -78,6 +85,8 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     super.initState();
     _currentOffset = widget.initialOffset.toDouble();
     _confirmedOffset = _currentOffset;
+    _currentSubtitleRate = widget.initialSubtitleRate;
+    _confirmedSubtitleRate = _currentSubtitleRate;
   }
 
   @override
@@ -85,11 +94,14 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialOffset != oldWidget.initialOffset ||
         widget.player != oldWidget.player ||
-        widget.propertyName != oldWidget.propertyName) {
+        widget.propertyName != oldWidget.propertyName ||
+        widget.initialSubtitleRate != oldWidget.initialSubtitleRate) {
       ++_writeGeneration;
       ++_bindingGeneration;
       _currentOffset = widget.initialOffset.toDouble();
       _confirmedOffset = _currentOffset;
+      _currentSubtitleRate = widget.initialSubtitleRate;
+      _confirmedSubtitleRate = _currentSubtitleRate;
     }
   }
 
@@ -226,6 +238,286 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     }());
   }
 
+
+  String _subtitleDriftText(String key) => t['videoSettings.$key'] as String;
+
+  bool get _canUseSubtitleDriftCorrection =>
+      widget.player.supportsSubtitleStepSync &&
+      widget.propertyName == PlayerSyncOffsets.subtitleProperty &&
+      widget.onSubtitleRateChanged != null;
+
+  bool get _supportsSubtitleDriftCalibration {
+    if (!_canUseSubtitleDriftCorrection) return false;
+    final subtitle = widget.player.state.track.subtitle;
+    if (subtitle == null || subtitle.id == SubtitleTrack.off.id) return false;
+    final codec = subtitle.codec?.toLowerCase() ?? '';
+    final imageSubtitle =
+        codec.contains('pgs') ||
+        codec.contains('dvd_subtitle') ||
+        codec.contains('vobsub') ||
+        codec.contains('dvb_subtitle') ||
+        codec.contains('dvb_teletext') ||
+        codec == 'xsub';
+    return !imageSubtitle;
+  }
+
+  Future<void> _openSubtitleDriftCalibration() async {
+    if (!_supportsSubtitleDriftCalibration) return;
+
+    final subtitleTime1 = TextEditingController();
+    final playbackTime1 = TextEditingController();
+    final subtitleTime2 = TextEditingController();
+    final playbackTime2 = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    String? failureMessage;
+
+    TextFormField numberField(TextEditingController controller, String labelKey, void Function(void Function()) update) {
+      return TextFormField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(labelText: _subtitleDriftText(labelKey), suffixText: 's'),
+        validator: (value) {
+          final parsed = double.tryParse(value?.trim() ?? '');
+          if (parsed == null || !parsed.isFinite || parsed < 0) return t.validationErrorEnterNumber;
+          return null;
+        },
+        onChanged: (_) {
+          if (failureMessage != null) update(() => failureMessage = null);
+        },
+      );
+    }
+
+    void capturePlaybackTime(TextEditingController controller) {
+      final seconds = widget.player.state.position.inMicroseconds / Duration.microsecondsPerSecond;
+      controller.text = formatDecimal(seconds, maximumDecimals: 3);
+    }
+
+    final calibration = await showDialog<SubtitleSyncCalibration>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) {
+          void submit() {
+            if (!(formKey.currentState?.validate() ?? false)) return;
+            try {
+              final result = SubtitleSyncCalibration.fromAnchors(
+                subtitleTime1Seconds: double.parse(subtitleTime1.text.trim()),
+                playbackTime1Seconds: double.parse(playbackTime1.text.trim()),
+                subtitleTime2Seconds: double.parse(subtitleTime2.text.trim()),
+                playbackTime2Seconds: double.parse(playbackTime2.text.trim()),
+              );
+              Navigator.of(dialogContext).pop(result);
+            } catch (_) {
+              updateDialog(
+                () => failureMessage = _subtitleDriftText('subtitleDriftInvalidAnchors'),
+              );
+            }
+          }
+
+          return AlertDialog(
+            title: Text(_subtitleDriftText('subtitleDriftCalibration')),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(_subtitleDriftText('subtitleDriftCalibrationHelp')),
+                    const SizedBox(height: 12),
+                    numberField(subtitleTime1, 'subtitleCueTimeAnchor1', updateDialog),
+                    numberField(playbackTime1, 'subtitlePlaybackTimeAnchor1', updateDialog),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: TextButton.icon(
+                        onPressed: () => capturePlaybackTime(playbackTime1),
+                        icon: const Icon(Symbols.my_location_rounded),
+                        label: Text(_subtitleDriftText('subtitleUsePlaybackTime')),
+                      ),
+                    ),
+                    const Divider(),
+                    numberField(subtitleTime2, 'subtitleCueTimeAnchor2', updateDialog),
+                    numberField(playbackTime2, 'subtitlePlaybackTimeAnchor2', updateDialog),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: TextButton.icon(
+                        onPressed: () => capturePlaybackTime(playbackTime2),
+                        icon: const Icon(Symbols.my_location_rounded),
+                        label: Text(_subtitleDriftText('subtitleUsePlaybackTime')),
+                      ),
+                    ),
+                    if (failureMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        failureMessage!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(t.common.cancel),
+              ),
+              TextButton(onPressed: submit, child: Text(t.common.save)),
+            ],
+          );
+        },
+      ),
+    );
+
+    subtitleTime1.dispose();
+    playbackTime1.dispose();
+    subtitleTime2.dispose();
+    playbackTime2.dispose();
+    if (!mounted || calibration == null) return;
+
+    setState(() {
+      _currentOffset = calibration.delayMs.toDouble();
+      _currentSubtitleRate = calibration.timestampMultiplier;
+    });
+    await _applySubtitleCalibration(calibration);
+  }
+
+  Future<void> _applySubtitleCalibration(SubtitleSyncCalibration calibration) async {
+    if (!_canUseSubtitleDriftCorrection) return;
+
+    final targetPlayer = widget.player;
+    final propertyName = widget.propertyName;
+    final persistOffset = widget.onOffsetChanged;
+    final persistRate = widget.onSubtitleRateChanged!;
+    final coordinator = _syncOffsetWrites[targetPlayer] ??= LatestAsyncWrite<String>();
+    final writeToken = coordinator.begin(propertyName);
+    final generation = ++_writeGeneration;
+    final bindingGeneration = _bindingGeneration;
+    var rollbackOffset = _confirmedOffset.round();
+    var rollbackRate = _confirmedSubtitleRate;
+
+    try {
+      final committed = await coordinator.commitIfLatest(propertyName, writeToken, () async {
+        rollbackOffset = _confirmedOffset.round();
+        rollbackRate = _confirmedSubtitleRate;
+        final offsets = PlayerSyncOffsets.of(targetPlayer);
+        try {
+          await targetPlayer.setProperty(
+            PlayerSyncOffsets.subtitleRateProperty,
+            calibration.timestampMultiplier.toStringAsFixed(6),
+          );
+          await targetPlayer.setProperty(propertyName, (calibration.delayMs / 1000.0).toString());
+
+          final appliedRate = double.tryParse(
+            await targetPlayer.getProperty(PlayerSyncOffsets.subtitleRateProperty) ?? '',
+          );
+          final appliedDelay = double.tryParse(await targetPlayer.getProperty(propertyName) ?? '');
+          if (appliedRate == null ||
+              !appliedRate.isFinite ||
+              appliedDelay == null ||
+              !appliedDelay.isFinite ||
+              (appliedRate - calibration.timestampMultiplier).abs() > 0.001 ||
+              (appliedDelay * 1000 - calibration.delayMs).abs() > 2) {
+            throw StateError('The player did not apply the subtitle drift correction.');
+          }
+
+          final appliedOffsetMs = (appliedDelay * 1000).round();
+          offsets.recordSubtitleRate(appliedRate);
+          offsets.recordApplied(propertyName, appliedOffsetMs);
+          await persistRate(appliedRate);
+          await persistOffset(appliedOffsetMs);
+          _confirmedOffset = appliedOffsetMs.toDouble();
+          _confirmedSubtitleRate = appliedRate;
+        } catch (_) {
+          try {
+            await targetPlayer.setProperty(
+              PlayerSyncOffsets.subtitleRateProperty,
+              rollbackRate.toStringAsFixed(6),
+            );
+            await targetPlayer.setProperty(propertyName, (rollbackOffset / 1000.0).toString());
+            offsets.recordSubtitleRate(rollbackRate);
+            offsets.recordApplied(propertyName, rollbackOffset);
+          } catch (rollbackError, rollbackStackTrace) {
+            appLogger.w(
+              'Could not restore subtitle timing after drift calibration failed',
+              error: rollbackError,
+              stackTrace: rollbackStackTrace,
+            );
+          }
+          try {
+            await persistRate(rollbackRate);
+            await persistOffset(rollbackOffset);
+          } catch (rollbackError, rollbackStackTrace) {
+            appLogger.w(
+              'Could not restore saved subtitle timing after drift calibration failed',
+              error: rollbackError,
+              stackTrace: rollbackStackTrace,
+            );
+          }
+          rethrow;
+        }
+      });
+
+      if (!committed ||
+          !mounted ||
+          generation != _writeGeneration ||
+          bindingGeneration != _bindingGeneration ||
+          targetPlayer != widget.player ||
+          propertyName != widget.propertyName) {
+        return;
+      }
+      setState(() {
+        _currentOffset = _confirmedOffset;
+        _currentSubtitleRate = _confirmedSubtitleRate;
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Could not calibrate subtitle drift', error: error, stackTrace: stackTrace);
+      if (!mounted ||
+          generation != _writeGeneration ||
+          bindingGeneration != _bindingGeneration ||
+          targetPlayer != widget.player ||
+          propertyName != widget.propertyName) {
+        return;
+      }
+      setState(() {
+        _currentOffset = _confirmedOffset;
+        _currentSubtitleRate = _confirmedSubtitleRate;
+      });
+    }
+  }
+
+  Widget _buildSubtitleDriftButton() {
+    final label = _subtitleDriftText('subtitleDriftCalibration');
+    final value = formatPercent(_currentSubtitleRate);
+    return FocusableWrapper(
+      onSelect: _openSubtitleDriftCalibration,
+      borderRadius: 8,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      child: Tooltip(
+        message: '$label · $value',
+        child: Semantics(
+          button: true,
+          label: label,
+          value: value,
+          child: GestureDetector(
+            onTap: _openSubtitleDriftCalibration,
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+              ),
+              child: AppIcon(Symbols.speed_rounded, color: tokens(context).text, size: 20),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSubtitleStepButton({required bool previous}) {
     final label = previous ? t.shortcuts.subtitleDelayIncrease : t.shortcuts.subtitleDelayDecrease;
     return FocusableWrapper(
@@ -275,6 +567,15 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   }
 
   void _resetOffset() {
+    if (_canUseSubtitleDriftCorrection) {
+      final reset = const SubtitleSyncCalibration(timestampMultiplier: 1.0, delayMs: 0);
+      setState(() {
+        _currentOffset = 0;
+        _currentSubtitleRate = 1.0;
+      });
+      unawaited(_applySubtitleCalibration(reset));
+      return;
+    }
     setState(() {
       _currentOffset = 0;
     });
@@ -527,6 +828,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 children: [
                   _buildSubtitleStepButton(previous: true),
                   _buildSubtitleStepButton(previous: false),
+                  if (_supportsSubtitleDriftCalibration) _buildSubtitleDriftButton(),
                 ],
               ),
             ),

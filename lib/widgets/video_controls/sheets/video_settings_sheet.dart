@@ -649,6 +649,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             propertyName: propertyName,
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
+            initialSubtitleRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncRate, _state.metadata),
+            onSubtitleRateChanged: isSubtitle && !isSecondarySubtitle
+                ? (rate) => ScopedPlayerPrefs.write(ScopedPlayerPrefs.subtitleSyncRate, _state.metadata, rate)
+                : null,
             onOffsetChanged: (offset) async {
               final pref = isSecondarySubtitle
                   ? ScopedPlayerPrefs.secondarySubtitleSyncOffset
@@ -1768,6 +1772,8 @@ class _CompactSyncBar extends StatefulWidget {
   final Player player;
   final String propertyName;
   final int initialOffset;
+  final double initialSubtitleRate;
+  final Future<void> Function(double rate)? onSubtitleRateChanged;
   final Future<void> Function(int offset) onOffsetChanged;
   final FocusNode sliderFocusNode;
 
@@ -1777,6 +1783,8 @@ class _CompactSyncBar extends StatefulWidget {
     required this.player,
     required this.propertyName,
     required this.initialOffset,
+    required this.initialSubtitleRate,
+    required this.onSubtitleRateChanged,
     required this.onOffsetChanged,
     required this.sliderFocusNode,
   });
@@ -1809,6 +1817,8 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
             player: widget.player,
             propertyName: widget.propertyName,
             initialOffset: widget.initialOffset,
+            initialSubtitleRate: widget.initialSubtitleRate,
+            onSubtitleRateChanged: widget.onSubtitleRateChanged,
             onOffsetChanged: widget.onOffsetChanged,
             sliderFocusNode: widget.sliderFocusNode,
             resetFocusNode: _resetFocusNode,

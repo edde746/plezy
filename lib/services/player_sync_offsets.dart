@@ -5,7 +5,8 @@ import '../mpv/mpv.dart';
 import 'scoped_player_prefs.dart';
 
 /// The audio, primary-subtitle, and secondary-subtitle sync offsets one video
-/// [Player] is applying, in milliseconds.
+/// [Player] is applying, in milliseconds, plus MPV's primary subtitle timestamp
+/// multiplier used for gradual drift correction.
 ///
 /// Both backends keep `audio-delay`/`sub-delay` across an in-place item swap,
 /// so the native value outlives the item it was tuned for — and under the
@@ -24,15 +25,18 @@ final class PlayerSyncOffsets extends ChangeNotifier {
   static const audioProperty = 'audio-delay';
   static const subtitleProperty = 'sub-delay';
   static const secondarySubtitleProperty = 'secondary-sub-delay';
+  static const subtitleRateProperty = 'sub-speed';
 
   final Player _player;
   int _audioMs = 0;
   int _subtitleMs = 0;
   int _secondarySubtitleMs = 0;
+  double _subtitleRate = 1.0;
 
   int get audioMs => _audioMs;
   int get subtitleMs => _subtitleMs;
   int get secondarySubtitleMs => _secondarySubtitleMs;
+  double get subtitleRate => _subtitleRate;
 
   /// Make the player apply [item]'s scope-resolved offsets.
   ///
@@ -49,6 +53,27 @@ final class PlayerSyncOffsets extends ChangeNotifier {
         ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.secondarySubtitleSyncOffset, item),
       );
     }
+    if (_player.supportsSubtitleStepSync) {
+      await _applySubtitleRate(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncRate, item));
+    }
+  }
+
+  Future<void> _applySubtitleRate(double rate) async {
+    if ((rate - _subtitleRate).abs() < 0.000001) return;
+    await _player.setProperty(subtitleRateProperty, rate.toStringAsFixed(6));
+    recordSubtitleRate(rate);
+  }
+
+  /// Record a subtitle timestamp multiplier already written to the player.
+  void recordSubtitleRate(double rate) {
+    if (!rate.isFinite ||
+        rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+        rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+      throw ArgumentError.value(rate, 'rate', 'outside the supported subtitle sync range');
+    }
+    if ((_subtitleRate - rate).abs() < 0.000001) return;
+    _subtitleRate = rate;
+    notifyListeners();
   }
 
   Future<void> _apply(String property, int offsetMs) async {

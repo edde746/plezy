@@ -822,6 +822,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
   static const secondarySubtitleSyncOffset = IntPref('secondary_subtitle_sync_offset');
+  static const subtitleSyncRate = DoublePref(
+    'subtitle_sync_rate',
+    defaultValue: 1.0,
+    transform: (value) => value.isFinite && value >= 0.8 && value <= 1.25 ? value : 1.0,
+  );
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
@@ -1216,7 +1221,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// wants per-title subtitle offsets wants per-title audio offsets too.
   static final syncOffsetScope = PlayerSettingScopePref(
     'sync_offset_scope',
-    [audioSyncOffset, subtitleSyncOffset, secondarySubtitleSyncOffset],
+    [audioSyncOffset, subtitleSyncOffset, secondarySubtitleSyncOffset, subtitleSyncRate],
   );
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
@@ -1840,6 +1845,7 @@ class SettingsService extends BaseSharedPreferencesService {
     audioSyncOffset,
     subtitleSyncOffset,
     secondarySubtitleSyncOffset,
+    subtitleSyncRate,
     subtitleSearchLanguage,
     volume,
     subtitleFontSize,

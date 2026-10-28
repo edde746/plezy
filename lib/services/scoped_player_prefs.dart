@@ -84,9 +84,18 @@ abstract final class ScopedPlayerPrefs {
     _decodeInt,
   );
 
+  static final subtitleSyncRate = ScopedPlayerPref<double>._(
+    'subtitle_sync_rate',
+    SettingsService.syncOffsetScope,
+    SettingsService.subtitleSyncRate,
+    _decodeSubtitleRate,
+  );
+
   /// Shared limits for persisted sync offsets and the player's offset controls.
   static const int minimumSyncOffsetMs = -60000;
   static const int maximumSyncOffsetMs = 60000;
+  static const double minimumSubtitleSyncRate = 0.8;
+  static const double maximumSubtitleSyncRate = 1.25;
 
   /// Entry cap per property; oldest entries by write time are evicted past it.
   static const int maxEntriesPerProperty = 300;
@@ -232,6 +241,14 @@ abstract final class ScopedPlayerPrefs {
       raw is num ? raw.toDouble().clamp(minimumPlaybackRate, maximumPlaybackRate) : null;
 
   static int? _decodeInt(Object? raw) => raw is int ? raw : null;
+
+  static double? _decodeSubtitleRate(Object? raw) {
+    final value = raw is num ? raw.toDouble() : double.tryParse('$raw');
+    if (value == null || !value.isFinite || value < minimumSubtitleSyncRate || value > maximumSubtitleSyncRate) {
+      return null;
+    }
+    return value;
+  }
 
   static int? _decodeBoxFit(Object? raw) => raw is int ? raw.clamp(0, 2) : null;
 

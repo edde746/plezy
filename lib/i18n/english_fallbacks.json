@@ -1,6 +1,6 @@
 {
   "baseLocale": "en",
-  "reason": "Steam connected-experience copy is shipped in English until reviewed translations are available. Slang base_locale_empty_string provides the runtime fallback; remove each key after translation replaces the fallback.",
+  "reason": "Some Steam and advanced playback feature copy ships in English until reviewed translations are available. Slang base_locale_empty_string provides runtime fallback; remove each key after reviewed translations replace the fallback.",
   "keys": [
     "games.achievementLocked",
     "games.achievementProgress",
@@ -121,6 +121,14 @@
     "games.streamReliableRetries",
     "games.streamSoftwareDecoder",
     "games.streamVideo",
-    "games.streamVideoQueue"
+    "games.streamVideoQueue",
+    "videoSettings.subtitleCueTimeAnchor1",
+    "videoSettings.subtitleCueTimeAnchor2",
+    "videoSettings.subtitleDriftCalibration",
+    "videoSettings.subtitleDriftCalibrationHelp",
+    "videoSettings.subtitleDriftInvalidAnchors",
+    "videoSettings.subtitlePlaybackTimeAnchor1",
+    "videoSettings.subtitlePlaybackTimeAnchor2",
+    "videoSettings.subtitleUsePlaybackTime"
   ]
 }
