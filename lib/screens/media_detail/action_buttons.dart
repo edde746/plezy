@@ -319,10 +319,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     Future<void> onWatchWithServicesPressed() async {
       if (!_canUseDetail || !context.mounted) return;
       final streaming = context.read<RemoteStreamingProvider>();
-      if (streaming.addons.where((addon) => addon.enabled).isEmpty && streaming.accounts.isEmpty) {
+      if (streaming.addons.where((addon) => addon.enabled).isEmpty) {
         await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
-        if (!context.mounted ||
-            (streaming.addons.where((addon) => addon.enabled).isEmpty && streaming.accounts.isEmpty)) {
+        if (!context.mounted || streaming.addons.where((addon) => addon.enabled).isEmpty) {
           return;
         }
       }

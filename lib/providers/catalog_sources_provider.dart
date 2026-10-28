@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,8 @@ import '../services/catalog/mal_catalog_source.dart';
 import '../services/catalog/plex_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/simkl_catalog_source.dart';
+import '../services/catalog/stremio_catalog_source.dart';
+import '../services/remote_streams/remote_streaming_provider.dart';
 import '../services/catalog/trakt_catalog_source.dart';
 import '../services/trackers/future_coalescer.dart';
 import '../services/plex_discover_client.dart';
@@ -128,6 +131,8 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   );
   List<MdblistExploreShelf> _mdblistShelves = const [];
   String? _mdblistShelvesError;
+  String? _stremioSignature;
+  StremioCatalogSource? _stremioSource;
 
   List<MdblistExploreShelf> get mdblistShelves => _mdblistShelves;
   String get mdblistShelfScope => _activeUserUuid;
@@ -176,6 +181,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     ?_mdblist.source,
     ?_plex.source,
     ?_seerr.source,
+    if (_stremioSource?.hasCatalogs ?? false) _stremioSource!,
   ];
 
   bool get hasAnySource => connectedSources.isNotEmpty;
@@ -387,7 +393,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
   /// Proxy-provider update hook: rebuild a source when its catalog client
   /// was rebound (connect/disconnect/profile switch).
-  void update(TrackersProvider trackers, SeerrAccountProvider seerr) {
+  void update(TrackersProvider trackers, SeerrAccountProvider seerr, RemoteStreamingProvider streaming) {
     var changed = false;
     changed = _trakt.update(trackers.traktCatalogClient) || changed;
     changed = _mal.update(trackers.malCatalogClient) || changed;
@@ -395,6 +401,25 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     changed = _simkl.update(trackers.simklCatalogClient) || changed;
     changed = _mdblist.update(trackers.mdblistCatalogClient) || changed;
     changed = _seerr.update(seerr.catalogClient) || changed;
+    final stremioSignature = jsonEncode([
+      streaming.profileId,
+      streaming.isReady,
+      for (final addon in streaming.addons) [addon.id, addon.name, addon.enabled],
+    ]);
+    if (stremioSignature != _stremioSignature) {
+      _stremioSignature = stremioSignature;
+      _stremioSource?.dispose();
+      _stremioSource = null;
+      if (streaming.isReady) {
+        final source = StremioCatalogSource(streaming);
+        if (source.hasCatalogs) {
+          _stremioSource = source;
+        } else {
+          source.dispose();
+        }
+      }
+      changed = true;
+    }
     if (changed) {
       _invalidateWatchlistCandidates();
       safeNotifyListeners();
@@ -410,6 +435,8 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _mdblist.dispose();
     _simkl.dispose();
     _seerr.dispose();
+    _stremioSource?.dispose();
+    _stremioSource = null;
     super.dispose();
   }
 }

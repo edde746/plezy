@@ -123,7 +123,39 @@ class CatalogDetail {
   /// UI needs to head each shelf.
   final List<CatalogRelation> relations;
 
-  const CatalogDetail({required this.item, this.cast = const [], this.related = const [], this.relations = const []});
+  /// Episode entries exposed by providers that return playable episode IDs
+  /// inside a show detail body (for example, a Stremio `meta.videos` list).
+  final List<CatalogEpisode> episodes;
+
+  const CatalogDetail({
+    required this.item,
+    this.cast = const [],
+    this.related = const [],
+    this.relations = const [],
+    this.episodes = const [],
+  });
+}
+
+/// Provider-returned episode metadata for an external show detail.
+class CatalogEpisode {
+  const CatalogEpisode({
+    required this.id,
+    required this.title,
+    this.seasonNumber,
+    this.episodeNumber,
+    this.year,
+    this.runtimeMinutes,
+    this.overview,
+  });
+
+  /// Opaque ID sent back to the owning provider for stream lookup.
+  final String id;
+  final String title;
+  final int? seasonNumber;
+  final int? episodeNumber;
+  final int? year;
+  final int? runtimeMinutes;
+  final String? overview;
 }
 
 /// How a group of titles relates to the item they were fetched from.

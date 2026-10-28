@@ -95,7 +95,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         : accounts.isEmpty
         ? null
         : await _chooseProvider(accounts);
-    if (candidate.infoHash != null && service == null) return;
+    if (needsProvider && service == null) {
+      if (mounted) showAppSnackBar(context, t.streaming.streamNeedsProvider);
+      return;
+    }
     if (!mounted || streaming.profileId != startingProfile || !streaming.isReady) return;
     setState(() => _busyCandidate = candidate.addonId + candidate.label);
     try {

@@ -264,6 +264,7 @@ flutter:
     - assets/simkl_mark.svg
     - assets/seerr_mark.svg
     - assets/mdblist_mark.svg
+    - assets/addon_source_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
     # Intro/credits chapter classifier; scripts/codegen/train_chapter_marker_model.py writes it.

@@ -1,10 +1,12 @@
 # Debrid, Stremio and remote streaming
 
-Status: initial remote-streaming implementation is on
-`codex/debrid-stremio-integration-20261028`; the broader design below remains
-the target. This implementation is not full native P2P or a merged cloud
-library. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for completed behavior and
-the exact remaining packages.
+Status: the connected-stream feature is on
+`codex/debrid-stremio-integration-20261028`. It includes debrid account setup,
+on-demand cloud files, Stremio QR add-on import, add-on catalog browsing in
+Explore, and contextual stream choices on supported title details. It is not a
+native P2P engine or a unified cloud library. See
+[IMPLEMENTATION.md](IMPLEMENTATION.md) for implemented behavior and remaining
+packages.
 
 Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 `a7b172b00ff437eb431fb5d3e7b8b758f4a5c422` on `main`.
@@ -13,13 +15,22 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 
 - Connect Real-Debrid or AllDebrid through a QR/code flow; connect Premiumize
   or TorBox with an API key.
+- Link a Stremio account with its QR approval flow, preview installed
+  add-ons, and select which secure HTTPS add-ons to import. PlezyNG does not
+  ask for the Stremio password, persist the account authorization key, or
+  change the remote add-on collection. Add-ons can also be connected by
+  manifest URL.
 - Open Files and books from the existing library picker or its single nested
   Libraries rail row. Connected accounts live together in the screen's Cloud
   & add-on streaming group. Browse ready video files with the focused list,
   refresh, and recover from empty or unavailable states without losing account
   setup.
-- Install a Stremio-compatible add-on by manifest URL and fetch its stream
-  options for a Plex/Jellyfin/Emby movie or episode detail.
+- Browse supported Stremio add-on catalogs in the existing Explore source
+  switcher; search supported catalogs and open installation-scoped title
+  details without creating a new navigation destination.
+- Fetch add-on stream options for supported library and catalog movie/episode
+  details, with show episodes listed and selectable inside the existing title
+  detail screen.
 - Play direct HTTP streams, select add-on subtitles, open explicit external
   links, or resolve supported hash/file-host candidates through a selected
   connected provider.
@@ -30,12 +41,12 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Read the authorization QR's service label and copy the activation code with
   assistive technology; use the Services/settings hub to manage connections.
 
-Unified cloud-source records and poster rows in Libraries/Home/Search, Stremio catalogs and account
-import, shared server player reporting, remote job management,
-renewable/background leases and an embedded P2P engine are not part of this
-implementation. Cloud inventory is fetched on demand and is not cached or
-merged into catalog surfaces; Files and books shortcuts open the same
-cloud-file browser.
+Cloud inventory is fetched on demand and is not indexed as poster rows in
+Libraries, Home, Search or Downloads. Remote playback does not report progress
+to the connected Plex/Jellyfin/Emby server. Remote job management,
+renewable/background leases, broad add-on configuration and an embedded P2P
+engine are not part of this implementation. Files and books shortcuts open
+the same cloud-file browser.
 
 ## Target experience after full completion
 
@@ -73,11 +84,12 @@ help sentence at setup, rather than requiring users to learn the architecture.
    The current branch has account, supported stream-resolution paths, and
    on-demand video-file browsing, but not a unified cloud catalog.
 2. Implement the Stremio HTTP add-on protocol as a data adapter. The current
-   branch supports manifest and stream lookup only. Run no add-on
-   JavaScript, Node server, downloaded executable or arbitrary script in the app.
-3. Support configured manifest URLs and Stremio account import. The latter uses
-   the first-party account/link protocol behind an isolated compatibility client;
-   do not invent a public Stremio OAuth/PKCE contract.
+   branch supports manifests, catalogs, search/paging, metadata and streams.
+   Run no add-on JavaScript, Node server, downloaded executable or arbitrary
+   script in the app.
+3. Support configured manifest URLs and read-only Stremio account add-on import.
+   The latter uses the first-party account/link protocol behind an isolated
+   compatibility client; do not invent a public Stremio OAuth/PKCE contract.
 4. Preserve configured add-ons. Native debrid credentials resolve raw candidates
    locally; they are never automatically copied into third-party add-on URLs.
 5. Separate catalog identity, playable copies and ephemeral playback leases.
@@ -102,9 +114,9 @@ help sentence at setup, rather than requiring users to learn the architecture.
 
 | Completion level | Required outcome |
 | --- | --- |
-| Implemented stream slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud file browsing; Stremio manifest/stream requests; direct, hash, file-host and subtitle choices; existing standalone player and local resume |
-| First useful vertical slice still needed | Unified cloud source rows, source metadata, durable identity, server-style player integration, profile teardown evidence and same-copy expired-link recovery |
-| Core integration | Cloud catalog surfaces, Stremio catalogs/account import; shared Home/Explore/Search/details; source choice; preparation queue; next episode; all regression gates |
+| Implemented vertical slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud file browsing; Stremio QR add-on import and manual manifest connection; Explore catalog/search and catalog metadata; direct, hash, file-host and subtitle choices; existing standalone player and local resume |
+| First useful vertical slice still needed | Unified cloud source rows, source metadata, durable cloud identity, server-style player integration, profile teardown evidence and same-copy expired-link recovery |
+| Core integration | Cloud catalog rows, shared Home/Search/details, source choice, preparation queue, next episode and all regression gates; the current Stremio catalog/account slice is implemented but still needs live and fixture qualification |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
 | Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |
@@ -118,8 +130,8 @@ not presumed to exist or inherit native playback/CORS capabilities.
 
 - A connected cloud account immediately gains a library in the existing picker.
   First results appear incrementally; enrichment continues without blocking use.
-- Stremio import restores installed catalog choices and ordering, with a clear
-  preview; one malformed add-on cannot invalidate the whole account.
+- Stremio import previews installed add-ons and imports selected HTTPS entries;
+  one malformed add-on cannot invalidate the rest of the account collection.
 - A title detail page offers one primary Play/Resume action and one compact
   Sources action, rather than a wall of filenames.
 - Provider expiry, queueing and missing files have specific recovery actions.
@@ -133,7 +145,7 @@ not presumed to exist or inherit native playback/CORS capabilities.
 
 **High:** the architectural fit and the repository gaps identified here; the
 documented core-provider and Stremio add-on interfaces cited in PROVIDERS.
-**Moderate:** Stremio account-link compatibility outside its own clients;
+**Moderate:** live Stremio account-link compatibility outside its own clients;
 cross-provider metadata matching; the proposed migration effort.
 **Unknown until exercised:** live account behavior, startup latency, rate-limit
 headroom, device secure storage, casting across networks, and native P2P on

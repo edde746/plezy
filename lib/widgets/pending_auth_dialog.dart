@@ -38,6 +38,9 @@ class PendingAuthDialog extends StatelessWidget {
   /// URL tap region.
   final String url;
 
+  /// Some services provide a distinct QR payload and browser link.
+  final String? qrData;
+
   /// Short human-readable form of [url] shown under the QR code. Defaults to
   /// [url]; the scheme is stripped for display either way.
   final String? displayUrl;
@@ -54,6 +57,7 @@ class PendingAuthDialog extends StatelessWidget {
     required this.body,
     required this.children,
     required this.url,
+    this.qrData,
     this.displayUrl,
     required this.openLabel,
     required this.onCancel,
@@ -91,7 +95,7 @@ class PendingAuthDialog extends StatelessWidget {
       dimension: qrSize,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: QrImageView(data: url, size: qrSize, version: QrVersions.auto, backgroundColor: Colors.white),
+        child: QrImageView(data: qrData ?? url, size: qrSize, version: QrVersions.auto, backgroundColor: Colors.white),
       ),
     );
     final accessibleQr = Semantics(label: '$title QR code', image: true, child: qr);

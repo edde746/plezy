@@ -11,6 +11,7 @@ import '../../services/remote_streams/real_debrid_client.dart';
 import '../../services/remote_streams/additional_debrid_clients.dart';
 import '../../services/remote_streams/remote_stream_models.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
+import '../../services/remote_streams/stremio_account_client.dart';
 import '../../services/remote_streams/stremio_addon_client.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -88,6 +89,122 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
       if (mounted) showAppSnackBar(context, t.streaming.addonError);
     } on Object {
       if (mounted) showAppSnackBar(context, t.streaming.addonError);
+    }
+  }
+
+  Future<void> _importFromStremio() async {
+    if (_connecting) return;
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profile = streaming.profileId;
+    if (profile == null || !streaming.isReady) return;
+    if (streaming.addons.length >= 50) {
+      showAppSnackBar(context, t.streaming.stremioImportLimitReached);
+      return;
+    }
+
+    setState(() => _connecting = true);
+    final client = StremioAccountClient();
+    var cancelled = false;
+    var dialogOpen = false;
+    Future<void>? dialogResult;
+    try {
+      final authorization = await client.createLinkAuthorization();
+      if (!mounted || streaming.profileId != profile || !streaming.isReady) return;
+      dialogResult = showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => PendingAuthDialog(
+          title: t.streaming.importFromStremio,
+          body: t.streaming.stremioImportInstructions,
+          url: authorization.link,
+          qrData: authorization.qrData,
+          displayUrl: Uri.parse(authorization.link).host,
+          openLabel: t.streaming.stremioImportOpen,
+          onCancel: () {
+            cancelled = true;
+            dialogOpen = false;
+          },
+          children: [
+            const SizedBox(height: 10),
+            Text(t.streaming.stremioImportCode, style: Theme.of(context).textTheme.labelMedium),
+            _copyableAuthorizationCode(authorization.code, copyLabel: t.common.copy),
+          ],
+        ),
+      );
+      dialogOpen = true;
+      final collection = await client.importAddonCollection(
+        authorization.code,
+        shouldCancel: () => cancelled || !mounted || streaming.profileId != profile,
+      );
+      if (cancelled || !mounted || streaming.profileId != profile || !streaming.isReady) return;
+      if (dialogOpen) {
+        dialogOpen = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      await dialogResult;
+
+      final alreadyInstalled = streaming.addons.map((addon) => addon.manifestUrl).toSet();
+      final candidates = collection.addons.where((addon) => !alreadyInstalled.contains(addon.manifestUrl)).toList();
+      if (candidates.isEmpty) {
+        showAppSnackBar(context, t.streaming.stremioImportEmpty);
+        return;
+      }
+      final remainingSlots = 50 - streaming.addons.length;
+      final selected = await showDialog<List<StremioAccountAddon>>(
+        context: context,
+        builder: (_) => _StremioAddonImportDialog(
+          addons: candidates,
+          ignoredCount: collection.ignoredCount,
+          maxSelected: remainingSlots,
+        ),
+      );
+      if (selected == null || selected.isEmpty || !mounted || streaming.profileId != profile || !streaming.isReady) return;
+
+      var added = 0;
+      var failed = 0;
+      for (final addon in selected) {
+        if (!mounted || streaming.profileId != profile || !streaming.isReady) return;
+        try {
+          await streaming.installAddon(addon.manifestUrl, allowHttp: false);
+          added++;
+        } on Object {
+          failed++;
+        }
+      }
+      if (!mounted || streaming.profileId != profile) return;
+      if (added == 0) {
+        showAppSnackBar(context, t.streaming.stremioImportFailed);
+      } else if (failed == 0) {
+        showAppSnackBar(context, t.streaming.stremioImportAdded(count: added));
+      } else {
+        showAppSnackBar(context, t.streaming.stremioImportPartial(added: added, failed: failed));
+      }
+    } on StremioAccountException catch (error) {
+      if (dialogOpen && mounted) {
+        dialogOpen = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (dialogResult != null) await dialogResult;
+      if (mounted && !cancelled && streaming.profileId == profile) {
+        showAppSnackBar(
+          context,
+          error.kind == StremioAccountFailure.timeout
+              ? t.streaming.stremioImportTimedOut
+              : t.streaming.stremioImportFailed,
+        );
+      }
+    } on Object {
+      if (dialogOpen && mounted) {
+        dialogOpen = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (dialogResult != null) await dialogResult;
+      if (mounted && !cancelled && streaming.profileId == profile) {
+        showAppSnackBar(context, t.streaming.stremioImportFailed);
+      }
+    } finally {
+      client.close();
+      if (mounted) setState(() => _connecting = false);
     }
   }
 
@@ -409,11 +526,21 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                         ),
                       ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: FilledButton.tonalIcon(
-                      onPressed: streaming.isReady ? _addAddon : null,
+                      onPressed: streaming.isReady && !_connecting ? _importFromStremio : null,
+                      icon: _connecting
+                          ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const AppIcon(Symbols.qr_code_rounded),
+                      label: Text(t.streaming.importFromStremio),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: TextButton.icon(
+                      onPressed: streaming.isReady && !_connecting ? _addAddon : null,
                       icon: const AppIcon(Symbols.add_rounded),
-                      label: Text(t.streaming.addAddon),
+                      label: Text(t.streaming.addByManifestUrl),
                     ),
                   ),
                   Padding(
@@ -582,4 +709,102 @@ class _AddAddonDialogState extends State<_AddAddonDialog> {
       ),
     ],
   );
+}
+
+class _StremioAddonImportDialog extends StatefulWidget {
+  const _StremioAddonImportDialog({
+    required this.addons,
+    required this.ignoredCount,
+    required this.maxSelected,
+  });
+
+  final List<StremioAccountAddon> addons;
+  final int ignoredCount;
+  final int maxSelected;
+
+  @override
+  State<_StremioAddonImportDialog> createState() => _StremioAddonImportDialogState();
+}
+
+class _StremioAddonImportDialogState extends State<_StremioAddonImportDialog> {
+  late final Set<String> _selected = widget.addons.take(widget.maxSelected).map((addon) => addon.manifestUrl).toSet();
+
+  void _toggle(StremioAccountAddon addon) {
+    setState(() {
+      if (!_selected.remove(addon.manifestUrl) && _selected.length < widget.maxSelected) {
+        _selected.add(addon.manifestUrl);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = (MediaQuery.sizeOf(context).height * 0.52).clamp(220.0, 480.0).toDouble();
+    final canImport = _selected.isNotEmpty;
+    return AlertDialog(
+      title: Text(t.streaming.stremioImportPreviewTitle),
+      content: SizedBox(
+        width: 520,
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.streaming.stremioImportPreviewBody),
+            if (widget.ignoredCount > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                t.streaming.stremioImportIgnored(count: widget.ignoredCount),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            if (widget.maxSelected == 0) ...[
+              const SizedBox(height: 8),
+              Text(t.streaming.stremioImportLimitReached, style: Theme.of(context).textTheme.bodySmall),
+            ],
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: widget.addons.length,
+                itemBuilder: (context, index) {
+                  final addon = widget.addons[index];
+                  final selected = _selected.contains(addon.manifestUrl);
+                  final canSelect = selected || _selected.length < widget.maxSelected;
+                  final capabilities = [
+                    if (addon.supportsCatalogs) t.streaming.stremioCatalogs,
+                    if (addon.supportsStreams) t.streaming.stremioStreams,
+                  ].join(' · ');
+                  return FocusableListTile(
+                    leading: Checkbox.adaptive(
+                      value: selected,
+                      onChanged: canSelect ? (_) => _toggle(addon) : null,
+                    ),
+                    title: Text(addon.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      '${addon.host} · $capabilities',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.ltr,
+                    ),
+                    onTap: canSelect ? () => _toggle(addon) : null,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        FilledButton(
+          onPressed: canImport
+              ? () => Navigator.pop(
+                  context,
+                  widget.addons.where((addon) => _selected.contains(addon.manifestUrl)).toList(growable: false),
+                )
+              : null,
+          child: Text(t.streaming.stremioImportAddSelected(count: _selected.length)),
+        ),
+      ],
+    );
+  }
 }

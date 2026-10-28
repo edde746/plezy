@@ -21,6 +21,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
+import '../media/media_kind.dart';
 import '../media/media_rating.dart';
 import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
@@ -34,6 +35,8 @@ import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/remote_streams/remote_stream_models.dart';
+import '../services/remote_streams/remote_streaming_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
@@ -46,6 +49,8 @@ import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/rating_utils.dart';
 import '../utils/snackbar_helper.dart';
+import 'remote_streams/remote_stream_picker_screen.dart';
+import 'settings/remote_streaming_settings_screen.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
@@ -85,6 +90,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _backgroundFocusNode = FocusNode(debugLabel: 'catalog_background');
   List<FocusNode> _linkFocusNodes = const [];
   List<FocusNode> _relationFocusNodes = const [];
+  List<FocusNode> _episodeFocusNodes = const [];
   List<CatalogTag> _orderedTags = const [];
   List<CatalogLink> _streamingLinks = const [];
   List<CatalogLink> _otherLinks = const [];
@@ -117,6 +123,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Cast/characters from the item's own source; null while loading (the
   /// section only renders once loaded non-empty).
   List<CatalogCastMember>? _cast;
+
+  /// Provider-returned playable episodes, currently supplied by Stremio.
+  List<CatalogEpisode> _episodes = const [];
 
   /// "More like this" from the item's own source; null while loading (the
   /// row only renders once loaded non-empty).
@@ -162,6 +171,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       node.dispose();
     }
     for (final node in _relationFocusNodes) {
+      node.dispose();
+    }
+    for (final node in _episodeFocusNodes) {
       node.dispose();
     }
     _scrollController.dispose();
@@ -283,18 +295,26 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       try {
         final detail = await source.fetchDetail(widget.item);
         if (!mounted) return;
+        final hadActions = _hasActions;
         final relationEntries = [
           for (final relation in detail.relations)
             for (final item in relation.items) (type: relation.type, item: item),
         ];
         _syncDetailCollections(detail.item);
         _replaceRelationFocusNodes(relationEntries.length);
+        _replaceEpisodeFocusNodes(detail.episodes);
         setState(() {
           _detailItem = detail.item;
           _cast = detail.cast;
           _related = detail.related;
           _relationEntries = relationEntries;
+          _episodes = detail.episodes;
         });
+        if (!hadActions && _hasActions) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _actionBarKey.currentState?.requestFocusOnFirst();
+          });
+        }
         // The row form of a Plex Discover item carries only its rating key;
         // the detail body brings the external ids (#1715). Ask again with the
         // full set whenever enrichment added id forms — not just when the bare
@@ -333,6 +353,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     ];
   }
 
+  void _replaceEpisodeFocusNodes(List<CatalogEpisode> episodes) {
+    for (final node in _episodeFocusNodes) {
+      node.dispose();
+    }
+    _episodeFocusNodes = [
+      for (var index = 0; index < episodes.length; index++) FocusNode(debugLabel: 'catalog_episode_$index'),
+    ];
+  }
+
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
 
   /// The Seerr source when the signed-in user may request this kind. Read
@@ -355,7 +384,95 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  String? _streamLookupId(CatalogItem item) =>
+      item.ids.imdb ??
+      (item.ids.tmdb == null ? null : 'tmdb:${item.ids.tmdb}') ??
+      (item.ids.tvdb == null ? null : 'tvdb:${item.ids.tvdb}') ??
+      (item.source == CatalogSourceId.stremio ? item.sourceItemId : null);
+
+  bool get _canWatchWithServices => _item.kind == MediaKind.movie && _streamLookupId(_item) != null;
+
+  bool get _hasEpisodes => _episodes.isNotEmpty;
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _canWatchWithServices || _hasEpisodes || _hasTrailer;
+
+  Future<bool> _ensureStreamingAddons() async {
+    var streaming = context.read<RemoteStreamingProvider>();
+    if (!streaming.isReady || streaming.addons.where((addon) => addon.enabled).isEmpty) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+      if (!mounted) return false;
+      streaming = context.read<RemoteStreamingProvider>();
+    }
+    return streaming.isReady && streaming.addons.any((addon) => addon.enabled);
+  }
+
+  Future<void> _watchWithServices() async {
+    if (!_canWatchWithServices) return;
+    if (!await _ensureStreamingAddons()) return;
+
+    final item = _item;
+    final id = _streamLookupId(item);
+    if (id == null) return;
+    final identifiers = <String, String>{
+      if (item.ids.imdb != null) 'imdb': item.ids.imdb!,
+      if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
+      if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
+    };
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-stream-picker'),
+          builder: (_) => RemoteStreamPickerScreen(
+            request: RemoteStreamRequest(type: 'movie', id: id, title: item.title, year: item.year),
+            identifiers: identifiers,
+            durationMs: item.runtimeMinutes == null ? null : Duration(minutes: item.runtimeMinutes!).inMilliseconds,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.streaming.streamLookupFailed);
+    }
+  }
+
+  Future<void> _watchEpisode(CatalogEpisode episode) async {
+    if (!await _ensureStreamingAddons()) return;
+    if (!mounted) return;
+    final item = _item;
+    final season = episode.seasonNumber;
+    final number = episode.episodeNumber;
+    final position = season != null && number != null
+        ? t.streaming.episodePosition(season: season, episode: number)
+        : null;
+    final title = [item.title, if (position != null) position, episode.title].join(' · ');
+    final identifiers = <String, String>{
+      if (item.ids.imdb != null) 'imdb': item.ids.imdb!,
+      if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
+      if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
+    };
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-stream-picker'),
+          builder: (_) => RemoteStreamPickerScreen(
+            request: RemoteStreamRequest(
+              type: 'series',
+              id: episode.id,
+              title: title,
+              year: episode.year ?? item.year,
+              season: season,
+              episode: number,
+            ),
+            identifiers: identifiers,
+            durationMs: episode.runtimeMinutes == null ? null : Duration(minutes: episode.runtimeMinutes!).inMilliseconds,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.streaming.streamLookupFailed);
+    }
+  }
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -398,6 +515,33 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final node = _libraryMatchFocusNodes[index];
     node.requestFocus();
     _revealFocusNode(node);
+  }
+
+  void _requestEpisodeFocus(int index) {
+    if (index < 0 || index >= _episodeFocusNodes.length) return;
+    final node = _episodeFocusNodes[index];
+    node.requestFocus();
+    _revealFocusNode(node);
+  }
+
+  void _focusSectionAboveEpisodes() {
+    if (_hasLibraryMatches) {
+      _requestLibraryMatchFocus(_libraryMatchFocusNodes.length - 1);
+    } else {
+      _focusSectionAboveLibraryMatches();
+    }
+  }
+
+  bool _focusSectionBelowEpisodes() {
+    if (_hasCast) {
+      _requestCastFocus();
+      return true;
+    }
+    if (_hasSectionsBelowCast) {
+      _focusSectionBelowCast();
+      return true;
+    }
+    return false;
   }
 
   void _requestLinkFocus(int index) {
@@ -478,6 +622,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   bool _focusSectionBelowLibraryMatches() {
+    if (_hasEpisodes) {
+      _requestEpisodeFocus(0);
+      return true;
+    }
     if (_hasCast) {
       _requestCastFocus();
       return true;
@@ -548,7 +696,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   void _focusSectionAboveCast() {
-    if (_hasLibraryMatches) {
+    if (_hasEpisodes) {
+      _requestEpisodeFocus(_episodeFocusNodes.length - 1);
+    } else if (_hasLibraryMatches) {
       _requestLibraryMatchFocus(_libraryMatchFocusNodes.length - 1);
     } else if (_hasDetailActions) {
       _requestLastDetailActionFocus();
@@ -740,6 +890,120 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           note(t.explore.libraryCheckFailed(n: unchecked), icon: Symbols.cloud_off_rounded),
         ],
       ],
+    );
+  }
+
+  Widget _buildEpisodesSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        Text(t.streaming.episodes, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          t.streaming.episodeStreamHint,
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.65)),
+        ),
+        const SizedBox(height: 10),
+        for (var index = 0; index < _episodes.length; index++) ...[
+          if (index > 0) const SizedBox(height: 8),
+          _buildEpisodeTile(theme, _episodes[index], index),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildEpisodeTile(ThemeData theme, CatalogEpisode episode, int index) {
+    final season = episode.seasonNumber;
+    final number = episode.episodeNumber;
+    final position = season != null && number != null
+        ? t.streaming.episodePosition(season: season, episode: number)
+        : null;
+    final details = [
+      if (position != null) position,
+      if (episode.runtimeMinutes != null)
+        formatDurationTextual(Duration(minutes: episode.runtimeMinutes!).inMilliseconds),
+      if (episode.year != null) '${episode.year}',
+    ];
+    final semanticLabel = [if (position != null) position, episode.title].join(': ');
+    final canMoveDown = index + 1 < _episodes.length || _hasCast || _hasSectionsBelowCast;
+    return FocusableWrapper(
+      focusNode: _episodeFocusNodes[index],
+      borderRadius: 14,
+      semanticLabel: semanticLabel,
+      semanticValue: t.streaming.episodeStreamHint,
+      onSelect: () => unawaited(_watchEpisode(episode)),
+      onNavigateUp: index > 0 ? () => _requestEpisodeFocus(index - 1) : _focusSectionAboveEpisodes,
+      onNavigateDown: canMoveDown
+          ? () {
+              if (index + 1 < _episodes.length) {
+                _requestEpisodeFocus(index + 1);
+              } else {
+                _focusSectionBelowEpisodes();
+              }
+            }
+          : null,
+      child: GestureDetector(
+        onTap: () => unawaited(_watchEpisode(episode)),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 76),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: AppIcon(Symbols.play_arrow_rounded, fill: 1, color: theme.colorScheme.onPrimaryContainer),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: .start,
+                  children: [
+                    Text(episode.title, style: theme.textTheme.titleSmall, maxLines: 2, overflow: .ellipsis),
+                    if (details.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        details.join(' · '),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                        ),
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                      ),
+                    ],
+                    if (episode.overview?.trim() case final overview? when overview.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        overview,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: .ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              AppIcon(
+                Directionality.of(context) == ui.TextDirection.rtl
+                    ? Symbols.chevron_left_rounded
+                    : Symbols.chevron_right_rounded,
+                fill: 1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1483,6 +1747,20 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                   ),
                                                 ),
                                               ),
+                                            if (_canWatchWithServices)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_watch_with_services',
+                                                icon: Symbols.cloud_rounded,
+                                                tooltip: t.streaming.watchWithServices,
+                                                onPressed: () => unawaited(_watchWithServices()),
+                                              ),
+                                            if (_hasEpisodes)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_choose_episode',
+                                                icon: Symbols.play_arrow_rounded,
+                                                tooltip: t.streaming.chooseEpisode,
+                                                onPressed: () => _requestEpisodeFocus(0),
+                                              ),
                                             if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
                                               FocusableAction(
                                                 debugLabel: 'catalog_trailer',
@@ -1542,6 +1820,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ],
                             const SizedBox(height: 24),
                             _buildLibrarySection(theme),
+                            if (_hasEpisodes) ...[
+                              const SizedBox(height: 28),
+                              _buildEpisodesSection(theme),
+                            ],
                             if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
                               const SizedBox(height: 28),
                               _buildCastSection(theme, cast),

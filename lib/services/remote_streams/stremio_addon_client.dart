@@ -12,6 +12,24 @@ class StremioAddonException implements Exception {
 
 enum StremioAddonFailure { invalidAddress, notAnAddon, unavailable, unsupportedResource, invalidResponse }
 
+class StremioAddonCatalog {
+  const StremioAddonCatalog({
+    required this.type,
+    required this.id,
+    required this.name,
+    required this.canBrowse,
+    required this.supportsSearch,
+    required this.supportsSkip,
+  });
+
+  final String type;
+  final String id;
+  final String name;
+  final bool canBrowse;
+  final bool supportsSearch;
+  final bool supportsSkip;
+}
+
 /// Bounded client for the Stremio add-on HTTP protocol. It never logs a
 /// manifest or resource URL because either may carry the add-on's secret.
 class StremioAddonClient {
@@ -36,10 +54,49 @@ class StremioAddonClient {
     if (utf8.encode(jsonEncode(payload)).length > _maxManifestBytes) {
       throw const StremioAddonException(StremioAddonFailure.invalidResponse);
     }
-    if (!_resources(payload).any((resource) => resource.supports('stream', 'movie') || resource.name == 'stream')) {
+    final resources = _resources(payload);
+    final supportsStreams = resources.any((resource) => resource.name == 'stream');
+    final supportsCatalogs = resources.any((resource) => resource.name == 'catalog') && _rawCatalogs(payload).isNotEmpty;
+    if (!supportsStreams && !supportsCatalogs) {
       throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
     }
     return Map<String, dynamic>.unmodifiable(payload);
+  }
+
+  List<StremioAddonCatalog> catalogs(StremioAddonInstallation addon) {
+    if (!_resources(addon.manifest).any((resource) => resource.name == 'catalog')) return const [];
+    final result = <StremioAddonCatalog>[];
+    for (final raw in _rawCatalogs(addon.manifest)) {
+      if (raw is! Map || result.length >= 100) continue;
+      final row = Map<String, dynamic>.from(raw);
+      final type = row['type'];
+      final id = row['id'];
+      if (type is! String || !const {'movie', 'series'}.contains(type) ||
+          id is! String || !_validSegment(id)) {
+        continue;
+      }
+      final extras = row['extra'] is List ? row['extra'] as List : const [];
+      final supportsSearchExtra = extras.any((extra) => extra is Map && extra['name'] == 'search');
+      final supportsSkip = extras.any((extra) => extra is Map && extra['name'] == 'skip');
+      final required = row['extraRequired'] is List ? row['extraRequired'] as List : const [];
+      // A catalog that requires a user-selected filter has no honest default
+      // page. Keep it available to search when possible; a future filter UI
+      // can expose the remaining required extras without changing its ID.
+      final canBrowse = required.every((extra) => extra is String && extra == 'skip') &&
+          (required.isEmpty || supportsSkip);
+      final supportsSearch = supportsSearchExtra && required.every((extra) => extra is String && {'skip', 'search'}.contains(extra));
+      result.add(
+        StremioAddonCatalog(
+          type: type,
+          id: id,
+          name: _displayText(row['name']) ?? id,
+          canBrowse: canBrowse,
+          supportsSearch: supportsSearch,
+          supportsSkip: supportsSkip,
+        ),
+      );
+    }
+    return List.unmodifiable(result);
   }
 
   Future<List<RemoteStreamCandidate>> fetchStreams(
@@ -64,6 +121,65 @@ class StremioAddonClient {
       }
     }
     return List.unmodifiable(candidates);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCatalog(
+    StremioAddonInstallation addon,
+    StremioAddonCatalog catalog, {
+    int skip = 0,
+  }) async {
+    if (skip < 0 || skip > 1000000 || !catalog.canBrowse || (skip > 0 && !catalog.supportsSkip)) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    final resources = _resources(addon.manifest);
+    if (!resources.any((resource) => resource.supports('catalog', catalog.type, catalog.id))) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    final manifestUri = _validateAddress(addon.manifestUrl, allowHttp: addon.allowHttp);
+    final extras = catalog.supportsSkip ? {'skip': '$skip'} : const <String, String>{};
+    final body = await _getJson(_resourceUri(manifestUri, 'catalog', catalog.type, catalog.id, extras: extras));
+    final raw = body['metas'];
+    if (raw is! List) throw const StremioAddonException(StremioAddonFailure.invalidResponse);
+    return [
+      for (final row in raw.take(_maxStreamsPerAddon))
+        if (row is Map) Map<String, dynamic>.from(row),
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> searchCatalog(
+    StremioAddonInstallation addon,
+    StremioAddonCatalog catalog,
+    String query, {
+    int skip = 0,
+  }) async {
+    final trimmed = query.trim();
+    if (!catalog.supportsSearch || trimmed.isEmpty || trimmed.length > 120 ||
+        trimmed.runes.any((rune) => rune < 0x20 || rune == 0x7f) || skip < 0 || skip > 1000000) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    final resources = _resources(addon.manifest);
+    if (!resources.any((resource) => resource.supports('catalog', catalog.type, catalog.id))) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    final manifestUri = _validateAddress(addon.manifestUrl, allowHttp: addon.allowHttp);
+    final extras = <String, String>{'search': trimmed, if (catalog.supportsSkip) 'skip': '$skip'};
+    final body = await _getJson(_resourceUri(manifestUri, 'catalog', catalog.type, catalog.id, extras: extras));
+    final raw = body['metas'];
+    if (raw is! List) throw const StremioAddonException(StremioAddonFailure.invalidResponse);
+    return [
+      for (final row in raw.take(_maxStreamsPerAddon))
+        if (row is Map) Map<String, dynamic>.from(row),
+    ];
+  }
+
+  Future<Map<String, dynamic>?> fetchMeta(StremioAddonInstallation addon, String type, String id) async {
+    if (!_validSegment(id)) throw const StremioAddonException(StremioAddonFailure.invalidResponse);
+    final resources = _resources(addon.manifest);
+    if (!resources.any((resource) => resource.supports('meta', type, id))) return null;
+    final manifestUri = _validateAddress(addon.manifestUrl, allowHttp: addon.allowHttp);
+    final body = await _getJson(_resourceUri(manifestUri, 'meta', type, id));
+    final meta = body['meta'];
+    return meta is Map ? Map<String, dynamic>.from(meta) : null;
   }
 
   Future<Map<String, dynamic>> _getJson(Uri uri) async {
@@ -138,12 +254,37 @@ class StremioAddonClient {
     return [for (final resource in raw) if (_AddonResource.tryParse(resource) case final parsed?) parsed];
   }
 
-  static Uri _resourceUri(Uri manifestUri, String resource, String type, String id) {
-    final segments = [...manifestUri.pathSegments.where((part) => part.isNotEmpty)];
-    if (segments.isNotEmpty && segments.last == 'manifest.json') segments.removeLast();
-    segments.addAll([resource, type, '$id.json']);
-    return manifestUri.replace(pathSegments: segments);
+  static Uri _resourceUri(
+    Uri manifestUri,
+    String resource,
+    String type,
+    String id, {
+    Map<String, String> extras = const {},
+  }) {
+    // Stremio encodes every extra property into one final path component,
+    // joined with `&` (for example, `search=Alien&skip=20.json`). Keep the
+    // add-on's configured path prefix and query intact; both can carry
+    // installation-specific routing or credentials.
+    var basePath = manifestUri.path;
+    if (basePath.endsWith('/manifest.json')) {
+      basePath = basePath.substring(0, basePath.length - '/manifest.json'.length);
+    } else if (basePath == '/manifest.json') {
+      basePath = '';
+    }
+    final resourcePath = [resource, type, id].map(Uri.encodeComponent).join('/');
+    final extraPath = extras.entries
+        .map((entry) => '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value)}')
+        .join('&');
+    final path = extras.isEmpty ? '$basePath/$resourcePath.json' : '$basePath/$resourcePath/$extraPath.json';
+    final query = manifestUri.hasQuery ? '?${manifestUri.query}' : '';
+    return Uri.parse('${manifestUri.scheme}://${manifestUri.authority}$path$query');
   }
+
+  static List<Object?> _rawCatalogs(Map<String, dynamic> manifest) =>
+      manifest['catalogs'] is List ? List<Object?>.from(manifest['catalogs'] as List) : const [];
+
+  static bool _validSegment(String value) =>
+      value.isNotEmpty && value.length <= 512 && !value.runes.any((rune) => rune < 0x20 || rune == 0x7f);
 
   static RemoteStreamCandidate? _parseCandidate(StremioAddonInstallation addon, Map<String, dynamic> row, int index) {
     final behavior = row['behaviorHints'] is Map ? Map<String, dynamic>.from(row['behaviorHints'] as Map) : const {};

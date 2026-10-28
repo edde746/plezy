@@ -6965,8 +6965,62 @@ class Translations$streaming$en {
 	/// en: 'Stremio-compatible add-ons'
 	String get addons => 'Stremio-compatible add-ons';
 
-	/// en: 'Add-ons can provide stream choices for titles in your libraries.'
-	String get addonsDescription => 'Add-ons can provide stream choices for titles in your libraries.';
+	/// en: 'This catalog couldn\'t be loaded. Refresh to try again.'
+	String get catalogLoadFailed => 'This catalog couldn\'t be loaded. Refresh to try again.';
+
+	/// en: 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.'
+	String get addonsDescription => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.';
+
+	/// en: 'Import from Stremio'
+	String get importFromStremio => 'Import from Stremio';
+
+	/// en: 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.'
+	String get stremioImportInstructions => 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.';
+
+	/// en: 'Open Stremio account link'
+	String get stremioImportOpen => 'Open Stremio account link';
+
+	/// en: 'Link code'
+	String get stremioImportCode => 'Link code';
+
+	/// en: 'Choose add-ons'
+	String get stremioImportPreviewTitle => 'Choose add-ons';
+
+	/// en: 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.'
+	String get stremioImportPreviewBody => 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.';
+
+	/// en: 'Skipped ${count} add-on(s) with an unsupported or unsecured address.'
+	String stremioImportIgnored({required Object count}) => 'Skipped ${count} add-on(s) with an unsupported or unsecured address.';
+
+	/// en: 'Catalogs'
+	String get stremioCatalogs => 'Catalogs';
+
+	/// en: 'Streams'
+	String get stremioStreams => 'Streams';
+
+	/// en: 'Add selected (${count})'
+	String stremioImportAddSelected({required Object count}) => 'Add selected (${count})';
+
+	/// en: 'Connected ${count} add-on(s) from Stremio.'
+	String stremioImportAdded({required Object count}) => 'Connected ${count} add-on(s) from Stremio.';
+
+	/// en: 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.'
+	String stremioImportPartial({required Object added, required Object failed}) => 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.';
+
+	/// en: 'Couldn\'t import add-ons from Stremio. Try again.'
+	String get stremioImportFailed => 'Couldn\'t import add-ons from Stremio. Try again.';
+
+	/// en: 'Stremio approval timed out. Start the import again.'
+	String get stremioImportTimedOut => 'Stremio approval timed out. Start the import again.';
+
+	/// en: 'No new compatible add-ons were found in this Stremio account.'
+	String get stremioImportEmpty => 'No new compatible add-ons were found in this Stremio account.';
+
+	/// en: 'Remove an add-on before importing more.'
+	String get stremioImportLimitReached => 'Remove an add-on before importing more.';
+
+	/// en: 'Add by manifest URL'
+	String get addByManifestUrl => 'Add by manifest URL';
 
 	/// en: 'Add add-on'
 	String get addAddon => 'Add add-on';
@@ -6974,8 +7028,8 @@ class Translations$streaming$en {
 	/// en: 'Add-on manifest URL'
 	String get manifestUrl => 'Add-on manifest URL';
 
-	/// en: 'Paste the add-on\'s manifest URL. PlezyNG will check its name and stream support before saving it.'
-	String get manifestUrlHint => 'Paste the add-on\'s manifest URL. PlezyNG will check its name and stream support before saving it.';
+	/// en: 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.'
+	String get manifestUrlHint => 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.';
 
 	/// en: 'Allow an unsecured HTTP address'
 	String get allowHttp => 'Allow an unsecured HTTP address';
@@ -7156,6 +7210,18 @@ class Translations$streaming$en {
 
 	/// en: 'Watch with connected services'
 	String get watchWithServices => 'Watch with connected services';
+
+	/// en: 'Choose episode'
+	String get chooseEpisode => 'Choose episode';
+
+	/// en: 'Episodes'
+	String get episodes => 'Episodes';
+
+	/// en: 'Season ${season}, episode ${episode}'
+	String episodePosition({required Object season, required Object episode}) => 'Season ${season}, episode ${episode}';
+
+	/// en: 'Opens available streams for this episode.'
+	String get episodeStreamHint => 'Opens available streams for this episode.';
 
 	/// en: 'Debrid providers'
 	String get providers => 'Debrid providers';
@@ -15115,10 +15181,28 @@ extension on Translations {
 			'streaming.clearUnreadableSettingsFailed' => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.',
 			'streaming.retrySettingsLoad' => 'Retry loading connections',
 			'streaming.addons' => 'Stremio-compatible add-ons',
-			'streaming.addonsDescription' => 'Add-ons can provide stream choices for titles in your libraries.',
+			'streaming.catalogLoadFailed' => 'This catalog couldn\'t be loaded. Refresh to try again.',
+			'streaming.addonsDescription' => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.',
+			'streaming.importFromStremio' => 'Import from Stremio',
+			'streaming.stremioImportInstructions' => 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.',
+			'streaming.stremioImportOpen' => 'Open Stremio account link',
+			'streaming.stremioImportCode' => 'Link code',
+			'streaming.stremioImportPreviewTitle' => 'Choose add-ons',
+			'streaming.stremioImportPreviewBody' => 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Skipped ${count} add-on(s) with an unsupported or unsecured address.',
+			'streaming.stremioCatalogs' => 'Catalogs',
+			'streaming.stremioStreams' => 'Streams',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Add selected (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Connected ${count} add-on(s) from Stremio.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.',
+			'streaming.stremioImportFailed' => 'Couldn\'t import add-ons from Stremio. Try again.',
+			'streaming.stremioImportTimedOut' => 'Stremio approval timed out. Start the import again.',
+			'streaming.stremioImportEmpty' => 'No new compatible add-ons were found in this Stremio account.',
+			'streaming.stremioImportLimitReached' => 'Remove an add-on before importing more.',
+			'streaming.addByManifestUrl' => 'Add by manifest URL',
 			'streaming.addAddon' => 'Add add-on',
 			'streaming.manifestUrl' => 'Add-on manifest URL',
-			'streaming.manifestUrlHint' => 'Paste the add-on\'s manifest URL. PlezyNG will check its name and stream support before saving it.',
+			'streaming.manifestUrlHint' => 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.',
 			'streaming.allowHttp' => 'Allow an unsecured HTTP address',
 			'streaming.allowHttpDescription' => 'Use only for a trusted add-on on your private network.',
 			'streaming.installAddon' => 'Connect add-on',
@@ -15179,6 +15263,10 @@ extension on Translations {
 			'streaming.remoteNeedsEpisodeNumber' => 'This episode is missing its season or episode number.',
 			'streaming.remoteNeedsExternalId' => 'PlezyNG couldn\'t find an IMDb or TMDB ID for this title.',
 			'streaming.watchWithServices' => 'Watch with connected services',
+			'streaming.chooseEpisode' => 'Choose episode',
+			'streaming.episodes' => 'Episodes',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Season ${season}, episode ${episode}',
+			'streaming.episodeStreamHint' => 'Opens available streams for this episode.',
 			'streaming.providers' => 'Debrid providers',
 			'streaming.cloudFiles' => 'Cloud files',
 			'streaming.browseCloud' => 'Browse files',
