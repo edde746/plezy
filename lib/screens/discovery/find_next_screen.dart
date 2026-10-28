@@ -806,7 +806,12 @@ class _FindNextScreenState extends State<FindNextScreen> {
                               selected: sourceReason,
                             );
                             if (selection != null && selection.applied) {
-                              setSheetState(() => sourceReason = selection.value);
+                              final value = selection.value;
+                              if (value != null && !shownSources.contains(value)) {
+                                if (shownSources.length == 48) shownSources.removeLast();
+                                shownSources.insert(0, value);
+                              }
+                              setSheetState(() => sourceReason = value);
                             }
                           },
                           child: Text(t.common.viewAll),
@@ -854,7 +859,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
                               selected: genre,
                             );
                             if (selection != null && selection.applied) {
-                              setSheetState(() => genre = selection.value);
+                              final value = selection.value;
+                              if (value != null &&
+                                  !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
+                                if (shownGenres.length == 48) shownGenres.removeLast();
+                                shownGenres.insert(0, value);
+                              }
+                              setSheetState(() => genre = value);
                             }
                           },
                           child: Text(t.common.viewAll),
@@ -1122,6 +1133,10 @@ class _FindNextScreenState extends State<FindNextScreen> {
         context.read<ActiveProfileProvider>().active?.id != profileId ||
         _ownerProfileId != profileId ||
         !sources.current(_sourceGeneration)) {
+      return;
+    }
+    if (!_matchesFilters(choice)) {
+      showErrorSnackBar(context, t.discover.findNext.noMatches);
       return;
     }
     try {
