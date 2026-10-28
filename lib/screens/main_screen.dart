@@ -86,6 +86,7 @@ import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
+import 'settings/services_settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import 'video_player_screen.dart';
 import 'profile/profile_teardown.dart';
@@ -2220,6 +2221,14 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  void _openConnectors() {
+    unawaited(
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => const ServicesSettingsScreen()),
+      ),
+    );
+  }
+
   void _openSettings() {
     if (PlatformDetector.shouldUseSideNavigation(context)) {
       _selectTab(NavigationTabId.settings);
@@ -2631,6 +2640,7 @@ class _MainScreenState extends State<MainScreen>
                                   _focusContent(restorePreviousFocus: false);
                                 },
                                 onNavigateToContent: _focusContent,
+                                onOpenConnectors: _openConnectors,
                                 onFloatingPanelChanged: (floating) {
                                   if (_isSidebarFloatingPanel == floating) return;
                                   setState(() => _isSidebarFloatingPanel = floating);
