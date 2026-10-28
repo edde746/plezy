@@ -1,6 +1,6 @@
 # Visualizer implementation status
 
-Updated: 2026-10-28. Source work is on [PlezyNG PR #55](https://github.com/snapetech-org/PlezyNG/pull/55) and [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and neither PR is release-qualified.**
+Updated: 2026-10-28. PlezyNG source work is merged in `main`; the upstream reference is [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and the implementation is not release-qualified.**
 
 ## Implemented source
 
@@ -62,7 +62,7 @@ Disclaimers preserve provenance; they do not establish redistribution rights. Th
 
 Source was inspected and dependency revisions/APIs were read from pinned upstream files. The Linux mpv patch series was composed into a separate clean source checkout. Controller regression source covers disposal during creation, stale leases, missing PCM capability and double-preset rejection. Import-limit regression source covers path aliases, shader includes, executable assets and oversized/truncated texture headers. Both suites remain unrun.
 
-**No tests, compiler builds, CI jobs, render captures, benchmarks or device qualification ran in this session.** Do not convert source preparation into a test-pass claim. All executable qualification must use compatible private ephemeral JIT runners and the required device matrix under the repository policy. Both PRs remain draft.
+**No tests, compiler builds, CI jobs, render captures, benchmarks or device qualification ran for these source increments.** Do not convert source preparation into a test-pass claim. All executable qualification must use compatible private ephemeral JIT runners and the required device matrix under the repository policy.
 
 ### Signed catalog source increment
 
