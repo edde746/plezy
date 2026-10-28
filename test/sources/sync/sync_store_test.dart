@@ -255,12 +255,54 @@ void main() {
       () async => {'username': 'reader', 'password': 'secret'},
     );
     try {
-      for (final folder in ['../outside', '', '.', './', '///']) {
+      for (final folder in [
+        '../outside',
+        '',
+        '.',
+        './',
+        '///',
+        '/state',
+        'state//nested',
+        'state/..',
+        '%2e%2e',
+        '%252e%252e',
+        'state%2f..',
+        r'folder\state',
+      ]) {
         final store = ProviderSyncStore(adapter, folder: folder);
         await expectLater(store.list(namespace), throwsA(isA<SourceException>()));
       }
       expect(requests, 0, reason: 'invalid sync roots must fail before touching the remote source');
       expect(adapter.contained('state/').path, '/books/state/');
+    } finally {
+      adapter.close();
+    }
+  });
+
+  test('WebDAV cloud sync creates only the named state file in its selected folder', () async {
+    http.Request? put;
+    final adapter = WebDavSourceAdapter(
+      const FileSource(
+        id: 'dav',
+        profileId: 'p',
+        kind: FileSourceKind.webdav,
+        name: 'WebDAV',
+        endpoint: 'https://dav.example/books/',
+      ),
+      SourceTransport(
+        client: MockClient((request) async {
+          put = request;
+          return http.Response('', 201);
+        }),
+      ),
+      () async => {'username': 'reader', 'password': 'secret'},
+    );
+    try {
+      final name = filename(1);
+      await ProviderSyncStore(adapter, folder: '.plezyng-sync').create(name, 'encrypted state');
+      expect(put!.method, 'PUT');
+      expect(put!.url.path, '/books/.plezyng-sync/$name');
+      expect(put!.body, 'encrypted state');
     } finally {
       adapter.close();
     }

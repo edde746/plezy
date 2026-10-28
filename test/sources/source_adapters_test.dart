@@ -259,6 +259,62 @@ void main() {
     await source.writeProgress(entry, progress);
     expect(requests.last.headers['If-Match'], '"revision1"');
     expect(jsonDecode(requests.last.body)['annotations'], hasLength(1));
+    expect(requests.every((request) => request.url.path.startsWith('/books/.state/')), isTrue);
+    expect(requests.every((request) => request.url.path.endsWith('.json')), isTrue);
     source.close();
+  });
+
+  test('WebDAV refuses unsafe state folders before any request', () async {
+    var requests = 0;
+    const entry = SourceEntry(
+      sourceId: 'w',
+      id: 'https://dav.example/books/book.epub',
+      title: 'Book',
+      kind: SourceItemKind.ebook,
+    );
+    final progress = PublicationProgress(
+      entryKey: entry.key,
+      edition: 'e',
+      mode: PublicationMode.reading,
+      session: 's',
+      fraction: .4,
+    );
+    for (final root in [
+      '',
+      '.',
+      './',
+      '/state',
+      'state//nested',
+      'folder/..',
+      '%2e%2e',
+      '%252e%252e',
+      'folder%2f..',
+      'folder%5c..',
+      'broken%',
+      r'folder\state',
+    ]) {
+      final source = WebDavSourceAdapter(
+        FileSource(
+          id: 'w',
+          profileId: 'p',
+          kind: FileSourceKind.webdav,
+          name: 'Books',
+          endpoint: 'https://dav.example/books/',
+          options: {'syncRoot': root},
+        ),
+        SourceTransport(
+          client: MockClient((request) async {
+            requests++;
+            return http.Response('', 200);
+          }),
+        ),
+        () async => {},
+      );
+      expect(source.capabilities.writableState, isFalse, reason: 'unsafe syncRoot: $root');
+      await expectLater(source.readProgress(entry, progress), throwsA(isA<SourceException>()));
+      await expectLater(source.writeProgress(entry, progress), throwsA(isA<SourceException>()));
+      source.close();
+    }
+    expect(requests, 0, reason: 'invalid WebDAV state folders must fail before touching the remote source');
   });
 }

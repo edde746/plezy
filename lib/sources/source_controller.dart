@@ -314,9 +314,7 @@ class SourceController extends ChangeNotifier {
     // A single configured WebDAV state folder can synchronize other sources.
     // If more than one is configured, leave cross-source progress local.
     final targets = sources
-        .where(
-          (source) => source.kind == FileSourceKind.webdav && (source.options['syncRoot']?.trim().isNotEmpty ?? false),
-        )
+        .where((source) => source.kind == FileSourceKind.webdav && adapter(source.id).capabilities.writableState)
         .toList();
     if (targets.length != 1) return null;
     final target = adapter(targets.single.id);
